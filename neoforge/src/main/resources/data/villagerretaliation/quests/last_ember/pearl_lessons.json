@@ -1,0 +1,252 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "villagerretaliation:pearl_lessons",
+  "metadata": {
+    "title": "Pearls",
+    "description": "Begin the Last Ember line by studying ender pearls without treating fear as wisdom.",
+    "questline": "last_ember",
+    "tags": [
+      "group.last_ember"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "journeyman",
+      "professions": [
+        "minecraft:cleric",
+        "minecraft:librarian"
+      ],
+      "skills": {
+        "scholarship": {
+          "min": 18
+        },
+        "medicine": {
+          "min": 12
+        }
+      }
+    }
+  },
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "study_pearls",
+  "stages": [
+    {
+      "id": "study_pearls",
+      "objectives": [
+        {
+          "id": "bring_ender_pearls",
+          "type": "item_check",
+          "item": "minecraft:ender_pearl",
+          "count": 2,
+          "tracker": {
+            "text": "Bring 2 ender pearls for study.",
+            "complete_text": "The pearls are ready.",
+            "show_progress": true,
+            "progress": 0.6
+          }
+        },
+        {
+          "id": "bring_book",
+          "type": "item_check",
+          "item": "minecraft:book",
+          "count": 1,
+          "tracker": {
+            "text": "Bring 1 book to keep the first notes.",
+            "complete_text": "The study book is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "complete_when": [
+        "bring_ender_pearls",
+        "bring_book"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Pearls",
+          "request": "question",
+          "order": -19,
+          "show_for_babies": false,
+          "lines": [
+            "Some things make villagers lower their voices because old fear taught them manners.",
+            "Ender pearls are like that. Bring two, and a book. We will study what frightens us without bowing to it."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I will bring the pearls.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not yet.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Pearls",
+          "request": "question",
+          "order": -19,
+          "show_for_babies": false,
+          "lines": [
+            "Bring 2 ender pearls and a book. We are making notes, not omens."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the lesson.",
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": "I will bring them.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "already_completed": [
+                  "The first pearl lesson is already written down."
+                ],
+                "started": [
+                  "Bring 2 ender pearls and 1 book. Keep your eyes steady if the pearls make the room feel watched."
+                ],
+                "unavailable": [
+                  "This lesson is not ready to open right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Bring 2 ender pearls and 1 book for the first Last Ember lesson."
+                ],
+                "unavailable": [
+                  "The pearl lesson is not counting right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "Good. A lesson about fear should not begin with a dare."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Do not throw the pearls unless you are prepared to explain your landing."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 2 ender pearls and 1 book.",
+        "show_progress": true,
+        "progress": 0.75
+      }
+    },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Pearls",
+          "request": "question",
+          "order": -19,
+          "show_for_babies": false,
+          "lines": [
+            "Pearls and paper. A small start, but every last road begins with a first note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Write the lesson.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Good. The first note says this: fear is information, not a master."
+                ],
+                "missing_objectives": [
+                  "The lesson still needs its pearls and book."
+                ],
+                "missing_proof": [
+                  "Bring the materials here before we write anything down."
+                ],
+                "unavailable": [
+                  "I cannot close the pearl lesson right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "The page stays open. Do not let it stare back too long."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return with the pearl study materials.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 150,
+    "gossip_reputation": 4,
+    "loot_table": "villagerretaliation:quest/pearl_lessons",
+    "memory_event": "player_completed_quest",
+    "reputation": 11
+  },
+  "ui": {
+    "title": "Pearls",
+    "icon": "minecraft:ender_pearl",
+    "color": "#6FD1B6"
+  }
+}

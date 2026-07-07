@@ -49,6 +49,1358 @@ window.VR_WIKI_DATA = {
   ],
   "quests": [
     {
+      "id": "villagerretaliation:wax_sealed_route",
+      "slug": "wax_sealed_route",
+      "title": "The Courier Packet",
+      "description": "Prepare the paper, leather, and wax a village courier needs before messages can travel safely.",
+      "questline": "courier_roads",
+      "questlineLabel": "Courier Roads",
+      "group": "courier_roads",
+      "groupLabel": "Courier Roads",
+      "tags": [
+        "group.courier_roads"
+      ],
+      "relationKey": "questline:courier_roads",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Librarian",
+          "Cartographer",
+          "Leatherworker"
+        ],
+        "skills": [
+          {
+            "skill": "Diplomacy",
+            "min": 5,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "4 Leather",
+        "12 Paper",
+        "3 Honeycomb",
+        "1 Compass"
+      ],
+      "steps": [
+        {
+          "id": "make_satchel",
+          "label": "Make Satchel",
+          "text": "Bring 4 leather and 12 paper.",
+          "progress": 0.6,
+          "hint": ""
+        },
+        {
+          "id": "bring_leather",
+          "label": "Bring Leather",
+          "text": "Bring 4 leather for a courier satchel.",
+          "progress": 0.45,
+          "hint": ""
+        },
+        {
+          "id": "bring_paper",
+          "label": "Bring Paper",
+          "text": "Bring 12 paper for route notes and copies.",
+          "progress": 0.6,
+          "hint": ""
+        },
+        {
+          "id": "seal_letters",
+          "label": "Seal Letters",
+          "text": "Bring 3 honeycomb and carry 1 compass.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "bring_honeycomb",
+          "label": "Bring Honeycomb",
+          "text": "Bring 3 honeycomb for wax seals.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "bring_compass",
+          "label": "Bring Compass",
+          "text": "Carry 1 compass to set the courier route.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the courier route supplies.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 95,
+        "reputation": 8,
+        "gossipReputation": 3,
+        "lootTable": "villagerretaliation:quest/wax_sealed_route",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "3-6",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Paper",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Honeycomb",
+            "count": "1-3",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "A message is small until it fails to arrive. Then it becomes a rumor, a panic, or a fight.",
+          "Help me prepare a courier route: leather for the satchel, paper for clean copies, honeycomb for seals that show if someone has been nosy."
+        ],
+        "accept": "I will prepare the route.",
+        "decline": "Not now.",
+        "started": [
+          "Bring 4 leather and 12 paper first. A courier with loose pages is just a breeze with legs."
+        ],
+        "reminder": [
+          "Bring 4 leather and 12 paper for the courier route.",
+          "Bring 3 honeycomb and carry 1 compass for the courier route."
+        ],
+        "completed": [
+          "Good. A proper route is a quiet bridge. You helped build one."
+        ],
+        "missing": [
+          "The courier route is still missing something. Check the tracker.",
+          "Bring the route supplies here before I seal the packet."
+        ],
+        "stages": [
+          {
+            "stageId": "make_satchel",
+            "label": "Make Satchel",
+            "trackerText": "Bring 4 leather and 12 paper.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "The Courier Packet",
+                "lines": [
+                  "A message is small until it fails to arrive. Then it becomes a rumor, a panic, or a fight.",
+                  "Help me prepare a courier route: leather for the satchel, paper for clean copies, honeycomb for seals that show if someone has been nosy."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will prepare the route.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not now.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Courier Packet",
+                "lines": [
+                  "The courier needs a satchel and paper before the seals matter."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the satchel list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The wax-sealed route is already prepared."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 4 leather and 12 paper first. A courier with loose pages is just a breeze with legs."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The courier route is not ready to ask for help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 4 leather and 12 paper for the courier route."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The courier route is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the messages stay folded here and everyone pretends waiting is a plan."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the paper dry. Bad news runs fast enough without ink helping it blur."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "seal_letters",
+            "label": "Seal Letters",
+            "trackerText": "Bring 3 honeycomb and carry 1 compass.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Courier Packet",
+                "lines": [
+                  "The satchel is possible now. Bring honeycomb and carry a compass so the route has both privacy and direction."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the seal list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 3 honeycomb and carry 1 compass for the courier route."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The courier route is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A sealed message lets trust travel farther than a shout."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the courier route supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Courier Packet",
+                "lines": [
+                  "This will let news arrive as news, not gossip with a limp."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Seal the route.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. A proper route is a quiet bridge. You helped build one."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The courier route is still missing something. Check the tracker."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the route supplies here before I seal the packet."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the courier route right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The packet stays open until the route is ready."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "make_satchel",
+            "label": "Make Satchel",
+            "trackerText": "Bring 4 leather and 12 paper.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "The Courier Packet",
+                "lines": [
+                  "A message is small until it fails to arrive. Then it becomes a rumor, a panic, or a fight.",
+                  "Help me prepare a courier route: leather for the satchel, paper for clean copies, honeycomb for seals that show if someone has been nosy."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will prepare the route.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not now.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Courier Packet",
+                "lines": [
+                  "The courier needs a satchel and paper before the seals matter."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the satchel list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The wax-sealed route is already prepared."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 4 leather and 12 paper first. A courier with loose pages is just a breeze with legs."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The courier route is not ready to ask for help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 4 leather and 12 paper for the courier route."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The courier route is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the messages stay folded here and everyone pretends waiting is a plan."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the paper dry. Bad news runs fast enough without ink helping it blur."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "seal_letters",
+            "label": "Seal Letters",
+            "trackerText": "Bring 3 honeycomb and carry 1 compass.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Courier Packet",
+                "lines": [
+                  "The satchel is possible now. Bring honeycomb and carry a compass so the route has both privacy and direction."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the seal list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 3 honeycomb and carry 1 compass for the courier route."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The courier route is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A sealed message lets trust travel farther than a shout."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the courier route supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Courier Packet",
+                "lines": [
+                  "This will let news arrive as news, not gossip with a limp."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Seal the route.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. A proper route is a quiet bridge. You helped build one."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The courier route is still missing something. Check the tracker."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the route supplies here before I seal the packet."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the courier route right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The packet stays open until the route is ready."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 0
+    },
+    {
+      "id": "villagerretaliation:night_run",
+      "slug": "night_run",
+      "title": "The Night Run",
+      "description": "Prove the courier road can survive the dangers that wait between houses and villages.",
+      "questline": "courier_roads",
+      "questlineLabel": "Courier Roads",
+      "group": "courier_roads",
+      "groupLabel": "Courier Roads",
+      "tags": [
+        "group.courier_roads"
+      ],
+      "relationKey": "questline:courier_roads",
+      "parent": "villagerretaliation:wax_sealed_route",
+      "parentSlug": "wax_sealed_route",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:wax_sealed_route",
+          "slug": "wax_sealed_route"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Journeyman",
+        "professions": [
+          "Cartographer",
+          "Fletcher",
+          "Librarian"
+        ],
+        "skills": [
+          {
+            "skill": "Diplomacy",
+            "min": 16,
+            "max": null
+          },
+          {
+            "skill": "Survival",
+            "min": 14,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "Defeat 3 Spider",
+        "Defeat 2 Skeleton",
+        "3 Lantern",
+        "3 Oak Sign"
+      ],
+      "steps": [
+        {
+          "id": "clear_road",
+          "label": "Clear Road",
+          "text": "Defeat 3 spiders and 2 skeletons.",
+          "progress": 0.6,
+          "hint": ""
+        },
+        {
+          "id": "defeat_spiders",
+          "label": "Defeat Spiders",
+          "text": "Defeat 3 spiders along the night route.",
+          "progress": 0.45,
+          "hint": ""
+        },
+        {
+          "id": "defeat_skeletons",
+          "label": "Defeat Skeletons",
+          "text": "Defeat 2 skeletons before couriers have to cross their aim.",
+          "progress": 0.6,
+          "hint": ""
+        },
+        {
+          "id": "mark_way",
+          "label": "Mark Way",
+          "text": "Bring 3 lanterns and 3 oak signs.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "bring_lanterns",
+          "label": "Bring Lanterns",
+          "text": "Bring 3 lanterns to mark the night road.",
+          "progress": 0.82,
+          "hint": ""
+        },
+        {
+          "id": "bring_oak_signs",
+          "label": "Bring Oak Signs",
+          "text": "Bring 3 oak signs so tired couriers do not guess at turns.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with proof and road markers.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 170,
+        "reputation": 13,
+        "gossipReputation": 5,
+        "lootTable": "villagerretaliation:quest/night_run",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "6-11",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Lantern",
+            "count": "1-3",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "String",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "A route is not real until someone can take it when the sun is gone.",
+          "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful; a visible road is kinder."
+        ],
+        "accept": "I will test the night road.",
+        "decline": "Not tonight.",
+        "started": [
+          "Defeat 3 spiders and 2 skeletons. Bring back a road that feels less hungry."
+        ],
+        "reminder": [
+          "Defeat 3 spiders and 2 skeletons along the night route.",
+          "Bring 3 lanterns and 3 oak signs for the night road."
+        ],
+        "completed": [
+          "Good. The first night courier will still be nervous, but now nervous has lanterns to follow."
+        ],
+        "missing": [
+          "The night road still needs work. Check the tracker before we call it proven.",
+          "Bring the road markers here so the route can be written down."
+        ],
+        "stages": [
+          {
+            "stageId": "clear_road",
+            "label": "Clear Road",
+            "trackerText": "Defeat 3 spiders and 2 skeletons.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "The Night Run",
+                "lines": [
+                  "A route is not real until someone can take it when the sun is gone.",
+                  "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful; a visible road is kinder."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will test the night road.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not tonight.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Night Run",
+                "lines": [
+                  "Clear spiders and skeletons from the route. Messages should not need armor to arrive."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the danger.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will handle it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The night run has already been proven."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Defeat 3 spiders and 2 skeletons. Bring back a road that feels less hungry."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The night route is not ready to ask for help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat 3 spiders and 2 skeletons along the night route."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The night route is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the sealed packets stay in daylight a while longer."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Do not race the dark just to impress it."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "mark_way",
+            "label": "Mark Way",
+            "trackerText": "Bring 3 lanterns and 3 oak signs.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Night Run",
+                "lines": [
+                  "The dangerous stretch is quieter. Now mark it so the next person does not need your luck."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the markers.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring them.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 3 lanterns and 3 oak signs for the night road."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The night route is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A marked road is a promise to strangers."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with proof and road markers.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Night Run",
+                "lines": [
+                  "You brought back proof and markers. That is the difference between a stunt and a road."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Mark the night route.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. The first night courier will still be nervous, but now nervous has lanterns to follow."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The night road still needs work. Check the tracker before we call it proven."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the road markers here so the route can be written down."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the night route right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A road half-marked can be worse than no road at all."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "clear_road",
+            "label": "Clear Road",
+            "trackerText": "Defeat 3 spiders and 2 skeletons.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "The Night Run",
+                "lines": [
+                  "A route is not real until someone can take it when the sun is gone.",
+                  "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful; a visible road is kinder."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will test the night road.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not tonight.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Night Run",
+                "lines": [
+                  "Clear spiders and skeletons from the route. Messages should not need armor to arrive."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the danger.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will handle it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The night run has already been proven."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Defeat 3 spiders and 2 skeletons. Bring back a road that feels less hungry."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The night route is not ready to ask for help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat 3 spiders and 2 skeletons along the night route."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The night route is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then the sealed packets stay in daylight a while longer."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Do not race the dark just to impress it."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "mark_way",
+            "label": "Mark Way",
+            "trackerText": "Bring 3 lanterns and 3 oak signs.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Night Run",
+                "lines": [
+                  "The dangerous stretch is quieter. Now mark it so the next person does not need your luck."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the markers.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring them.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 3 lanterns and 3 oak signs for the night road."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The night route is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A marked road is a promise to strangers."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with proof and road markers.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Night Run",
+                "lines": [
+                  "You brought back proof and markers. That is the difference between a stunt and a road."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Mark the night route.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. The first night courier will still be nervous, but now nervous has lanterns to follow."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The night road still needs work. Check the tracker before we call it proven."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the road markers here so the route can be written down."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the night route right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A road half-marked can be worse than no road at all."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 1
+    },
+    {
       "id": "villagerretaliation:gilded_debt",
       "slug": "gilded_debt",
       "title": "Gilded Debt",
@@ -456,23 +1808,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "There is a chamber underground that tests people without asking permission. I want a report before it tests us.",
-          "A Trial Chamber has been marked nearby. Bring proof, and we decide whether to avoid it or learn from it."
+          "A Trial Chamber has been marked nearby. Bring proof, and we decide whether to avoid it or learn from it.",
+          "The village could use help with a Trial Key and one Breeze Rod for Trial Chamber Recall.",
+          "Trial Chamber Recall is simple work, but simple work still feeds the day.",
+          "We need a Trial Key and one Breeze Rod, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Trial Chamber Recall would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Trial Chamber Recall would settle more than one worry.",
+          "I have a request for a Trial Key and one Breeze Rod, if you are willing.",
+          "This village runs better when requests like Trial Chamber Recall do not wait too long.",
+          "The stores are asking for a Trial Key and one Breeze Rod in their quiet way.",
+          "I could use a steady hand for Trial Chamber Recall.",
+          "Bring a Trial Key and one Breeze Rod, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Trial Chamber Recall needs doing before it becomes everyone's problem."
         ],
         "accept": "I will test the chamber",
         "decline": "Another time",
         "started": [
-          "The chamber is {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod."
+          "The chamber is {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod.",
+          "Trial Chamber Recall is yours now. Bring a Trial Key and one Breeze Rod when the count is ready.",
+          "I am putting Trial Chamber Recall in your hands.",
+          "Take the note for Trial Chamber Recall and bring back a Trial Key and one Breeze Rod.",
+          "Good. The village will be waiting for a Trial Key and one Breeze Rod.",
+          "Then we will count on you for Trial Chamber Recall.",
+          "Bring a Trial Key and one Breeze Rod, and we can call this useful work.",
+          "Trial Chamber Recall starts now. Keep the tracker close.",
+          "Head out for Trial Chamber Recall and return with a Trial Key and one Breeze Rod.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Trial Chamber Recall.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Trial Chamber Recall points {direction}, roughly {distance} blocks from here near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod.",
+          "That settles the posting. Now we need a Trial Key and one Breeze Rod."
         ],
         "reminder": [
-          "Trial Chamber near {target_x}, {target_z}. Key, Breeze Rod, return alive enough to explain both."
+          "Trial Chamber near {target_x}, {target_z}. Key, Breeze Rod, return alive enough to explain both.",
+          "For Trial Chamber Recall, I still need a Trial Key and one Breeze Rod.",
+          "Trial Chamber Recall is still asking for a Trial Key and one Breeze Rod.",
+          "Bring a Trial Key and one Breeze Rod back when the count is ready.",
+          "The tracker has the details for Trial Chamber Recall.",
+          "Keep Trial Chamber Recall in mind and bring a Trial Key and one Breeze Rod.",
+          "The village is still waiting on a Trial Key and one Breeze Rod.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Trial Chamber Recall is still open near {target_x}, {target_z}.",
+          "Follow the tracker for Trial Chamber Recall and bring back a Trial Key and one Breeze Rod.",
+          "You are looking for a Trial Key and one Breeze Rod for this request.",
+          "The note says a Trial Key and one Breeze Rod, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "A key and a Breeze Rod. Good. That chamber can stay mysterious, but not unmeasured."
+          "A key and a Breeze Rod. Good. That chamber can stay mysterious, but not unmeasured.",
+          "That settles Trial Chamber Recall. The village will put this to use.",
+          "Trial Chamber Recall is complete, and the help is appreciated.",
+          "Good. I can close Trial Chamber Recall with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Trial Chamber Recall is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Trial Chamber Recall complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Trial Chamber Recall is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "The items matter after you set foot in the chamber itself.",
+          "Trial Chamber Recall is still short. The tracker has the exact count.",
+          "Something is missing for Trial Chamber Recall, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Trial Chamber Recall can close.",
+          "The village is still waiting on the rest of it.",
+          "Trial Chamber Recall needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Trial Chamber Recall.",
+          "The tally still has an empty line in it.",
+          "I cannot call Trial Chamber Recall complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Trial Chamber Recall.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Bring a Trial Key. It is the chamber admitting you were there.",
-          "I also need one Breeze Rod for the recall."
+          "I still need a Trial Key and one Breeze Rod before I can close Trial Chamber Recall.",
+          "Bring a Trial Key and one Breeze Rod, then we can settle Trial Chamber Recall.",
+          "Trial Chamber Recall needs the proof in your pack first.",
+          "I cannot close Trial Chamber Recall until I see a Trial Key and one Breeze Rod.",
+          "The reward waits until a Trial Key and one Breeze Rod is here.",
+          "Show me a Trial Key and one Breeze Rod and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but a Trial Key and one Breeze Rod still needs to be here.",
+          "I need the actual proof before I mark Trial Chamber Recall done.",
+          "Come back with a Trial Key and one Breeze Rod and we can close the count.",
+          "The request is not finished without a Trial Key and one Breeze Rod.",
+          "Trial Chamber Recall still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Trial Chamber Recall.",
+          "I also need one Breeze Rod for the recall.",
+          "Trial Chamber Recall is still short. The tracker has the exact count.",
+          "Check the tracker before we close Trial Chamber Recall.",
+          "The work is not complete yet.",
+          "There is still one part of Trial Chamber Recall missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Trial Chamber Recall is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it."
         ]
       },
       "questlineOrder": 2
@@ -8736,6 +10185,5260 @@ window.VR_WIKI_DATA = {
       "questlineOrder": 10
     },
     {
+      "id": "villagerretaliation:clean_bandages",
+      "slug": "clean_bandages",
+      "title": "Bandages",
+      "description": "Help prepare simple medical supplies before the next village injury.",
+      "questline": "field_medicine",
+      "questlineLabel": "Field Medicine",
+      "group": "field_medicine",
+      "groupLabel": "Field Medicine",
+      "tags": [
+        "group.field_medicine"
+      ],
+      "relationKey": "questline:field_medicine",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Cleric",
+          "Shepherd",
+          "Leatherworker"
+        ],
+        "skills": [
+          {
+            "skill": "Medicine",
+            "min": 5,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "8 White Wool",
+        "6 String",
+        "2 Honey Bottle",
+        "4 Glass Bottle"
+      ],
+      "steps": [
+        {
+          "id": "clean_cloth",
+          "label": "Clean Cloth",
+          "text": "Bring 8 white wool and 6 string.",
+          "progress": 0.6,
+          "hint": ""
+        },
+        {
+          "id": "bring_wool",
+          "label": "Bring Wool",
+          "text": "Bring 8 white wool for clean bandages.",
+          "progress": 0.45,
+          "hint": ""
+        },
+        {
+          "id": "bring_string",
+          "label": "Bring String",
+          "text": "Bring 6 string to tie splints and wraps.",
+          "progress": 0.6,
+          "hint": ""
+        },
+        {
+          "id": "seal_jars",
+          "label": "Seal Jars",
+          "text": "Bring 2 honey bottles and 4 glass bottles.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "bring_honey",
+          "label": "Bring Honey",
+          "text": "Bring 2 honey bottles for the field kit.",
+          "progress": 0.8,
+          "hint": ""
+        },
+        {
+          "id": "bring_glass_bottles",
+          "label": "Bring Glass Bottles",
+          "text": "Bring 4 glass bottles for clean mixtures.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the field medicine supplies.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 90,
+        "reputation": 8,
+        "gossipReputation": 3,
+        "lootTable": "villagerretaliation:quest/clean_bandages",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "3-6",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Honey Bottle",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "String",
+            "count": "3-6",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "When someone is hurt, everyone suddenly believes in preparation.",
+          "I would rather prepare before the shouting. Bring clean wool and string first; rough hands can still be careful hands."
+        ],
+        "accept": "I will gather the cloth.",
+        "decline": "Not now.",
+        "started": [
+          "Bring 8 white wool and 6 string. Quiet supplies save loud minutes."
+        ],
+        "reminder": [
+          "Bring 8 white wool and 6 string for clean bandages.",
+          "Bring 2 honey bottles and 4 glass bottles for the field kit."
+        ],
+        "completed": [
+          "Good. No one will cheer for a stocked medicine kit, and that is how I prefer it."
+        ],
+        "missing": [
+          "The kit is still short. Check the tracker before we seal it.",
+          "Bring the medical supplies here so I can count them cleanly."
+        ],
+        "stages": [
+          {
+            "stageId": "clean_cloth",
+            "label": "Clean Cloth",
+            "trackerText": "Bring 8 white wool and 6 string.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Bandages",
+                "lines": [
+                  "When someone is hurt, everyone suddenly believes in preparation.",
+                  "I would rather prepare before the shouting. Bring clean wool and string first; rough hands can still be careful hands."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will gather the cloth.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not now.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Bandages",
+                "lines": [
+                  "Clean cloth first. It is dull work until the moment it is everything."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the cloth list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The bandage kit is already prepared."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 8 white wool and 6 string. Quiet supplies save loud minutes."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The medicine kit is not ready to ask for help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 8 white wool and 6 string for clean bandages."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The bandage kit is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then I will keep folding what little we have and hope not to need it."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep it clean if you can. Dirt always arrives without being invited."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "seal_jars",
+            "label": "Seal Jars",
+            "trackerText": "Bring 2 honey bottles and 4 glass bottles.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Bandages",
+                "lines": [
+                  "The wraps are ready. Now we need sealed bottles and honey, the kind of simple medicine no one praises until they can breathe again."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the bottle list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 2 honey bottles and 4 glass bottles for the field kit."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The medicine kit is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Label the bottles by memory if you must, but do not trust memory alone."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the field medicine supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Bandages",
+                "lines": [
+                  "Clean cloth, tied wraps, sealed bottles. This is the kind of mercy that fits on a shelf."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Stock the field kit.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. No one will cheer for a stocked medicine kit, and that is how I prefer it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The kit is still short. Check the tracker before we seal it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the medical supplies here so I can count them cleanly."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the medicine kit right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Care left half-done has a way of being noticed at the worst possible moment."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "clean_cloth",
+            "label": "Clean Cloth",
+            "trackerText": "Bring 8 white wool and 6 string.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Bandages",
+                "lines": [
+                  "When someone is hurt, everyone suddenly believes in preparation.",
+                  "I would rather prepare before the shouting. Bring clean wool and string first; rough hands can still be careful hands."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will gather the cloth.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not now.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Bandages",
+                "lines": [
+                  "Clean cloth first. It is dull work until the moment it is everything."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the cloth list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The bandage kit is already prepared."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 8 white wool and 6 string. Quiet supplies save loud minutes."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The medicine kit is not ready to ask for help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 8 white wool and 6 string for clean bandages."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The bandage kit is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then I will keep folding what little we have and hope not to need it."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep it clean if you can. Dirt always arrives without being invited."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "seal_jars",
+            "label": "Seal Jars",
+            "trackerText": "Bring 2 honey bottles and 4 glass bottles.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Bandages",
+                "lines": [
+                  "The wraps are ready. Now we need sealed bottles and honey, the kind of simple medicine no one praises until they can breathe again."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the bottle list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 2 honey bottles and 4 glass bottles for the field kit."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The medicine kit is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Label the bottles by memory if you must, but do not trust memory alone."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the field medicine supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Bandages",
+                "lines": [
+                  "Clean cloth, tied wraps, sealed bottles. This is the kind of mercy that fits on a shelf."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Stock the field kit.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. No one will cheer for a stocked medicine kit, and that is how I prefer it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The kit is still short. Check the tracker before we seal it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the medical supplies here so I can count them cleanly."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the medicine kit right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Care left half-done has a way of being noticed at the worst possible moment."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 0
+    },
+    {
+      "id": "villagerretaliation:night_ward",
+      "slug": "night_ward",
+      "title": "The Night Ward",
+      "description": "Help the village prepare medicine and proof against the wounds that arrive after sunset.",
+      "questline": "field_medicine",
+      "questlineLabel": "Field Medicine",
+      "group": "field_medicine",
+      "groupLabel": "Field Medicine",
+      "tags": [
+        "group.field_medicine"
+      ],
+      "relationKey": "questline:field_medicine",
+      "parent": "villagerretaliation:clean_bandages",
+      "parentSlug": "clean_bandages",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:clean_bandages",
+          "slug": "clean_bandages"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Cleric"
+        ],
+        "skills": [
+          {
+            "skill": "Medicine",
+            "min": 18,
+            "max": null
+          },
+          {
+            "skill": "Survival",
+            "min": 10,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "Defeat 3 Zombie",
+        "6 Rotten Flesh",
+        "1 Golden Apple",
+        "8 Sugar"
+      ],
+      "steps": [
+        {
+          "id": "clear_sickroom",
+          "label": "Clear Sickroom",
+          "text": "Defeat 3 zombies and bring 6 rotten flesh.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "defeat_zombies",
+          "label": "Defeat Zombies",
+          "text": "Defeat 3 zombies before they become patients or memories.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "bring_rotten_flesh",
+          "label": "Bring Rotten Flesh",
+          "text": "Bring 6 rotten flesh samples so the ward knows what bit first.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "strong_medicine",
+          "label": "Strong Medicine",
+          "text": "Bring 1 golden apple and 8 sugar.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "bring_golden_apple",
+          "label": "Bring Golden Apple",
+          "text": "Bring 1 golden apple for the ward chest.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "bring_sugar",
+          "label": "Bring Sugar",
+          "text": "Bring 8 sugar for harsh medicine that goes down easier.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the night ward supplies.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 150,
+        "reputation": 12,
+        "gossipReputation": 5,
+        "lootTable": "villagerretaliation:quest/night_ward",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "6-10",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Golden Carrot",
+            "count": "2-5",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Glass Bottle",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "Bandages are useful after a wound. A good ward tries to meet trouble before the door breaks.",
+          "Clear the dead that press too close and bring samples. Then we will make the stronger medicine no one asks about politely."
+        ],
+        "accept": "I will keep the ward quiet.",
+        "decline": "Not tonight.",
+        "started": [
+          "Defeat 3 zombies and bring 6 rotten flesh. Grim counting, but useful counting."
+        ],
+        "reminder": [
+          "Defeat 3 zombies and bring 6 rotten flesh samples for the night ward.",
+          "Bring 1 golden apple and 8 sugar for the night ward chest."
+        ],
+        "completed": [
+          "Good. I hope the ward gathers dust. Preparing for pain does not mean inviting it in."
+        ],
+        "missing": [
+          "The ward still needs something. Check the tracker before we lock the chest.",
+          "Bring the ward supplies here so I can set them aside."
+        ],
+        "stages": [
+          {
+            "stageId": "clear_sickroom",
+            "label": "Clear Sickroom",
+            "trackerText": "Defeat 3 zombies and bring 6 rotten flesh.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "The Night Ward",
+                "lines": [
+                  "Bandages are useful after a wound. A good ward tries to meet trouble before the door breaks.",
+                  "Clear the dead that press too close and bring samples. Then we will make the stronger medicine no one asks about politely."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will keep the ward quiet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not tonight.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Night Ward",
+                "lines": [
+                  "Zombies do not wait for clean rooms. Thin them out and bring the samples."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the ward work.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will handle it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The night ward is already stocked and written down."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Defeat 3 zombies and bring 6 rotten flesh. Grim counting, but useful counting."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The ward is not ready to ask this of you right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat 3 zombies and bring 6 rotten flesh samples for the night ward."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The ward is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then light a window if you pass one. It is not nothing."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Come back before your own hands need wrapping."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "strong_medicine",
+            "label": "Strong Medicine",
+            "trackerText": "Bring 1 golden apple and 8 sugar.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Night Ward",
+                "lines": [
+                  "Now the ward needs medicine with a little hope in it. Bring a golden apple and sugar."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the medicine.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 golden apple and 8 sugar for the night ward chest."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The ward is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The best cure is the one no one needs today."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the night ward supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Night Ward",
+                "lines": [
+                  "This is enough for a bad night to become a story instead of a grave."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Stock the night ward.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. I hope the ward gathers dust. Preparing for pain does not mean inviting it in."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The ward still needs something. Check the tracker before we lock the chest."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the ward supplies here so I can set them aside."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the night ward right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The chest stays open until the list is finished."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "clear_sickroom",
+            "label": "Clear Sickroom",
+            "trackerText": "Defeat 3 zombies and bring 6 rotten flesh.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "The Night Ward",
+                "lines": [
+                  "Bandages are useful after a wound. A good ward tries to meet trouble before the door breaks.",
+                  "Clear the dead that press too close and bring samples. Then we will make the stronger medicine no one asks about politely."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will keep the ward quiet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not tonight.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Night Ward",
+                "lines": [
+                  "Zombies do not wait for clean rooms. Thin them out and bring the samples."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the ward work.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will handle it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The night ward is already stocked and written down."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Defeat 3 zombies and bring 6 rotten flesh. Grim counting, but useful counting."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The ward is not ready to ask this of you right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat 3 zombies and bring 6 rotten flesh samples for the night ward."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The ward is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then light a window if you pass one. It is not nothing."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Come back before your own hands need wrapping."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "strong_medicine",
+            "label": "Strong Medicine",
+            "trackerText": "Bring 1 golden apple and 8 sugar.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Night Ward",
+                "lines": [
+                  "Now the ward needs medicine with a little hope in it. Bring a golden apple and sugar."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the medicine.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 golden apple and 8 sugar for the night ward chest."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The ward is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The best cure is the one no one needs today."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the night ward supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Night Ward",
+                "lines": [
+                  "This is enough for a bad night to become a story instead of a grave."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Stock the night ward.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. I hope the ward gathers dust. Preparing for pain does not mean inviting it in."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The ward still needs something. Check the tracker before we lock the chest."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the ward supplies here so I can set them aside."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the night ward right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The chest stays open until the list is finished."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 1
+    },
+    {
+      "id": "villagerretaliation:first_fire",
+      "slug": "first_fire",
+      "title": "Kindling",
+      "description": "Help a cook gather the first shared hearth supplies for the village.",
+      "questline": "hearthbound",
+      "questlineLabel": "Hearthbound",
+      "group": "hearthbound",
+      "groupLabel": "Hearthbound",
+      "tags": [
+        "group.hearthbound"
+      ],
+      "relationKey": "questline:hearthbound",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Farmer",
+          "Butcher",
+          "Fisherman"
+        ],
+        "skills": [
+          {
+            "skill": "Cooking",
+            "min": 5,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "1 Campfire",
+        "6 Charcoal",
+        "6 Bowl",
+        "6 Cooked Cod"
+      ],
+      "steps": [
+        {
+          "id": "kindle",
+          "label": "Kindle",
+          "text": "Bring a campfire and 6 charcoal.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "bring_campfire",
+          "label": "Bring Campfire",
+          "text": "Bring 1 campfire for the shared hearth.",
+          "progress": 0.4,
+          "hint": ""
+        },
+        {
+          "id": "bring_charcoal",
+          "label": "Bring Charcoal",
+          "text": "Bring 6 charcoal so the first fire burns clean.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "fill_pots",
+          "label": "Fill Pots",
+          "text": "Bring 6 bowls and 6 cooked cod.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "bring_bowls",
+          "label": "Bring Bowls",
+          "text": "Bring 6 bowls for the first shared meal.",
+          "progress": 0.75,
+          "hint": ""
+        },
+        {
+          "id": "bring_cooked_cod",
+          "label": "Bring Cooked Cod",
+          "text": "Bring 6 cooked cod to fill the first pots.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the hearth supplies.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 80,
+        "reputation": 7,
+        "gossipReputation": 3,
+        "lootTable": "villagerretaliation:quest/first_fire",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "3-6",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Coal",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Cooked Cod",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "A village does not become steady because one person eats well. It becomes steady when there is a warm place people trust.",
+          "Bring a campfire and clean charcoal. After that, we can talk about what goes over the flame."
+        ],
+        "accept": "I will help set the hearth.",
+        "decline": "Another time.",
+        "started": [
+          "Good. Bring a campfire and 6 charcoal. Nothing grand, just the start of somewhere people can gather."
+        ],
+        "reminder": [
+          "Bring 1 campfire and 6 charcoal for the shared hearth.",
+          "Bring 6 bowls and 6 cooked cod for the first shared meal."
+        ],
+        "completed": [
+          "There. The first fire is not much to look at yet, but people will stand closer to it than they admit."
+        ],
+        "missing": [
+          "The hearth is still missing something. Check the tracker before we light it.",
+          "Bring the hearth supplies here before we set anything down."
+        ],
+        "stages": [
+          {
+            "stageId": "kindle",
+            "label": "Kindle",
+            "trackerText": "Bring a campfire and 6 charcoal.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Kindling",
+                "lines": [
+                  "A village does not become steady because one person eats well. It becomes steady when there is a warm place people trust.",
+                  "Bring a campfire and clean charcoal. After that, we can talk about what goes over the flame."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will help set the hearth.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Kindling",
+                "lines": [
+                  "The first fire still needs its place and its fuel. A cold hearth is only furniture."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the supplies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring them.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The first fire is already warming the village."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Good. Bring a campfire and 6 charcoal. Nothing grand, just the start of somewhere people can gather."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The hearth is not ready to ask for help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 campfire and 6 charcoal for the shared hearth."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have that hearth note open right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Fair enough. A cold pot can wait, but it never waits kindly."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the charcoal dry. Damp fuel makes everyone pretend not to complain."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "fill_pots",
+            "label": "Fill Pots",
+            "trackerText": "Bring 6 bowls and 6 cooked cod.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Kindling",
+                "lines": [
+                  "The fire is one thing. The point of it is another. Bring bowls and cooked cod so no one has to eat standing alone."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the meal.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will gather it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 6 bowls and 6 cooked cod for the first shared meal."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The hearth is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A meal is better when it reaches the quiet people too."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the hearth supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Kindling",
+                "lines": [
+                  "Fire, bowls, and food. That is enough to make a room feel less temporary."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Set the hearth.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "There. The first fire is not much to look at yet, but people will stand closer to it than they admit."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The hearth is still missing something. Check the tracker before we light it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the hearth supplies here before we set anything down."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the hearth note right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Bring everything together. Scattered comfort is still scattered."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "kindle",
+            "label": "Kindle",
+            "trackerText": "Bring a campfire and 6 charcoal.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Kindling",
+                "lines": [
+                  "A village does not become steady because one person eats well. It becomes steady when there is a warm place people trust.",
+                  "Bring a campfire and clean charcoal. After that, we can talk about what goes over the flame."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will help set the hearth.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Kindling",
+                "lines": [
+                  "The first fire still needs its place and its fuel. A cold hearth is only furniture."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the supplies.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring them.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The first fire is already warming the village."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Good. Bring a campfire and 6 charcoal. Nothing grand, just the start of somewhere people can gather."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The hearth is not ready to ask for help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 campfire and 6 charcoal for the shared hearth."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "I do not have that hearth note open right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Fair enough. A cold pot can wait, but it never waits kindly."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the charcoal dry. Damp fuel makes everyone pretend not to complain."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "fill_pots",
+            "label": "Fill Pots",
+            "trackerText": "Bring 6 bowls and 6 cooked cod.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Kindling",
+                "lines": [
+                  "The fire is one thing. The point of it is another. Bring bowls and cooked cod so no one has to eat standing alone."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the meal.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will gather it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 6 bowls and 6 cooked cod for the first shared meal."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The hearth is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A meal is better when it reaches the quiet people too."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the hearth supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Kindling",
+                "lines": [
+                  "Fire, bowls, and food. That is enough to make a room feel less temporary."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Set the hearth.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "There. The first fire is not much to look at yet, but people will stand closer to it than they admit."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The hearth is still missing something. Check the tracker before we light it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the hearth supplies here before we set anything down."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the hearth note right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Bring everything together. Scattered comfort is still scattered."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 0
+    },
+    {
+      "id": "villagerretaliation:shared_table",
+      "slug": "shared_table",
+      "title": "Supper for Everyone",
+      "description": "Turn the new hearth into a dependable evening table for the village.",
+      "questline": "hearthbound",
+      "questlineLabel": "Hearthbound",
+      "group": "hearthbound",
+      "groupLabel": "Hearthbound",
+      "tags": [
+        "group.hearthbound"
+      ],
+      "relationKey": "questline:hearthbound",
+      "parent": "villagerretaliation:first_fire",
+      "parentSlug": "first_fire",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:first_fire",
+          "slug": "first_fire"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Farmer",
+          "Butcher"
+        ],
+        "skills": [
+          {
+            "skill": "Cooking",
+            "min": 14,
+            "max": null
+          },
+          {
+            "skill": "Farming",
+            "min": 10,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "12 Bread",
+        "12 Baked Potato",
+        "8 Cookie",
+        "1 Milk Bucket"
+      ],
+      "steps": [
+        {
+          "id": "stock_table",
+          "label": "Stock Table",
+          "text": "Bring 12 bread and 12 baked potatoes.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "bring_bread",
+          "label": "Bring Bread",
+          "text": "Bring 12 bread for the shared table.",
+          "progress": 0.5,
+          "hint": ""
+        },
+        {
+          "id": "bring_baked_potatoes",
+          "label": "Bring Baked Potatoes",
+          "text": "Bring 12 baked potatoes for a meal that keeps well.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "sweeten",
+          "label": "Sweeten",
+          "text": "Bring 8 cookies and carry 1 milk bucket.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "bring_cookies",
+          "label": "Bring Cookies",
+          "text": "Bring 8 cookies so the meal ends warmly.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "bring_milk",
+          "label": "Bring Milk",
+          "text": "Carry 1 milk bucket for the cooking pot.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the table supplies.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 120,
+        "reputation": 10,
+        "gossipReputation": 4,
+        "lootTable": "villagerretaliation:quest/shared_table",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "5-9",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Golden Carrot",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Cookie",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "The hearth worked. Now people are pretending they only stop by for the smoke.",
+          "Help me make it a table instead of a novelty. Bread, potatoes, and something sweet enough to end a hard day without a speech."
+        ],
+        "accept": "I will help stock the table.",
+        "decline": "Not today.",
+        "started": [
+          "Bring 12 bread and 12 baked potatoes first. We are building a habit, not a feast."
+        ],
+        "reminder": [
+          "Bring 12 bread and 12 baked potatoes for the shared table.",
+          "Bring 8 cookies and carry 1 milk bucket for the shared table."
+        ],
+        "completed": [
+          "Good. A shared table does not solve every trouble, but it makes fewer people face trouble hungry."
+        ],
+        "missing": [
+          "The table is still short. Check the tracker before we call people in.",
+          "Bring the food here before we set the table."
+        ],
+        "stages": [
+          {
+            "stageId": "stock_table",
+            "label": "Stock Table",
+            "trackerText": "Bring 12 bread and 12 baked potatoes.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Supper for Everyone",
+                "lines": [
+                  "The hearth worked. Now people are pretending they only stop by for the smoke.",
+                  "Help me make it a table instead of a novelty. Bread, potatoes, and something sweet enough to end a hard day without a speech."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will help stock the table.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not today.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Supper for Everyone",
+                "lines": [
+                  "A shared table needs food that holds. Bread and baked potatoes first."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the first list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The shared table is already set."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 12 bread and 12 baked potatoes first. We are building a habit, not a feast."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The table is not ready to ask for more help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 12 bread and 12 baked potatoes for the shared table."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The table is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Another day, then. Good habits are patient until they are ignored too long."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Food that keeps is food that forgives bad timing."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "sweeten",
+            "label": "Sweeten",
+            "trackerText": "Bring 8 cookies and carry 1 milk bucket.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Supper for Everyone",
+                "lines": [
+                  "The table has weight now. Bring cookies and a milk bucket, and it may start to feel like people are expected back."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the sweet list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 8 cookies and carry 1 milk bucket for the shared table."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The table is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Small kindnesses are still supplies."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the table supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Supper for Everyone",
+                "lines": [
+                  "This is enough for people to sit down without wondering who is allowed to stay."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Set the table.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. A shared table does not solve every trouble, but it makes fewer people face trouble hungry."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The table is still short. Check the tracker before we call people in."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the food here before we set the table."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the table note right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A half-set table makes people hover in doorways. Bring the rest when you can."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "stock_table",
+            "label": "Stock Table",
+            "trackerText": "Bring 12 bread and 12 baked potatoes.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Supper for Everyone",
+                "lines": [
+                  "The hearth worked. Now people are pretending they only stop by for the smoke.",
+                  "Help me make it a table instead of a novelty. Bread, potatoes, and something sweet enough to end a hard day without a speech."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will help stock the table.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not today.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Supper for Everyone",
+                "lines": [
+                  "A shared table needs food that holds. Bread and baked potatoes first."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the first list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The shared table is already set."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 12 bread and 12 baked potatoes first. We are building a habit, not a feast."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The table is not ready to ask for more help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 12 bread and 12 baked potatoes for the shared table."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The table is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Another day, then. Good habits are patient until they are ignored too long."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Food that keeps is food that forgives bad timing."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "sweeten",
+            "label": "Sweeten",
+            "trackerText": "Bring 8 cookies and carry 1 milk bucket.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Supper for Everyone",
+                "lines": [
+                  "The table has weight now. Bring cookies and a milk bucket, and it may start to feel like people are expected back."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the sweet list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 8 cookies and carry 1 milk bucket for the shared table."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The table is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Small kindnesses are still supplies."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the table supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Supper for Everyone",
+                "lines": [
+                  "This is enough for people to sit down without wondering who is allowed to stay."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Set the table.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. A shared table does not solve every trouble, but it makes fewer people face trouble hungry."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The table is still short. Check the tracker before we call people in."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the food here before we set the table."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the table note right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A half-set table makes people hover in doorways. Bring the rest when you can."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 1
+    },
+    {
+      "id": "villagerretaliation:pearl_lessons",
+      "slug": "pearl_lessons",
+      "title": "Pearls",
+      "description": "Begin the Last Ember line by studying ender pearls without treating fear as wisdom.",
+      "questline": "last_ember",
+      "questlineLabel": "Last Ember",
+      "group": "last_ember",
+      "groupLabel": "Last Ember",
+      "tags": [
+        "group.last_ember"
+      ],
+      "relationKey": "questline:last_ember",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Journeyman",
+        "professions": [
+          "Cleric",
+          "Librarian"
+        ],
+        "skills": [
+          {
+            "skill": "Scholarship",
+            "min": 18,
+            "max": null
+          },
+          {
+            "skill": "Medicine",
+            "min": 12,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "2 Ender Pearl",
+        "1 Book"
+      ],
+      "steps": [
+        {
+          "id": "study_pearls",
+          "label": "Study Pearls",
+          "text": "Bring 2 ender pearls and 1 book.",
+          "progress": 0.75,
+          "hint": ""
+        },
+        {
+          "id": "bring_ender_pearls",
+          "label": "Bring Ender Pearls",
+          "text": "Bring 2 ender pearls for study.",
+          "progress": 0.6,
+          "hint": ""
+        },
+        {
+          "id": "bring_book",
+          "label": "Bring Book",
+          "text": "Bring 1 book to keep the first notes.",
+          "progress": 0.75,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the pearl study materials.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 150,
+        "reputation": 11,
+        "gossipReputation": 4,
+        "lootTable": "villagerretaliation:quest/pearl_lessons",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "6-10",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Lapis Lazuli",
+            "count": "6-12",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Book",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "Some things make villagers lower their voices because old fear taught them manners.",
+          "Ender pearls are like that. Bring two, and a book. We will study what frightens us without bowing to it."
+        ],
+        "accept": "I will bring the pearls.",
+        "decline": "Not yet.",
+        "started": [
+          "Bring 2 ender pearls and 1 book. Keep your eyes steady if the pearls make the room feel watched."
+        ],
+        "reminder": [
+          "Bring 2 ender pearls and 1 book for the first Last Ember lesson."
+        ],
+        "completed": [
+          "Good. The first note says this: fear is information, not a master."
+        ],
+        "missing": [
+          "The lesson still needs its pearls and book.",
+          "Bring the materials here before we write anything down."
+        ],
+        "stages": [
+          {
+            "stageId": "study_pearls",
+            "label": "Study Pearls",
+            "trackerText": "Bring 2 ender pearls and 1 book.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Pearls",
+                "lines": [
+                  "Some things make villagers lower their voices because old fear taught them manners.",
+                  "Ender pearls are like that. Bring two, and a book. We will study what frightens us without bowing to it."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will bring the pearls.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Pearls",
+                "lines": [
+                  "Bring 2 ender pearls and a book. We are making notes, not omens."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the lesson.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring them.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The first pearl lesson is already written down."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 2 ender pearls and 1 book. Keep your eyes steady if the pearls make the room feel watched."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "This lesson is not ready to open right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 2 ender pearls and 1 book for the first Last Ember lesson."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The pearl lesson is not counting right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Good. A lesson about fear should not begin with a dare."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Do not throw the pearls unless you are prepared to explain your landing."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the pearl study materials.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Pearls",
+                "lines": [
+                  "Pearls and paper. A small start, but every last road begins with a first note."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Write the lesson.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. The first note says this: fear is information, not a master."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The lesson still needs its pearls and book."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the materials here before we write anything down."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the pearl lesson right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The page stays open. Do not let it stare back too long."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "study_pearls",
+            "label": "Study Pearls",
+            "trackerText": "Bring 2 ender pearls and 1 book.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Pearls",
+                "lines": [
+                  "Some things make villagers lower their voices because old fear taught them manners.",
+                  "Ender pearls are like that. Bring two, and a book. We will study what frightens us without bowing to it."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will bring the pearls.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Pearls",
+                "lines": [
+                  "Bring 2 ender pearls and a book. We are making notes, not omens."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the lesson.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring them.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The first pearl lesson is already written down."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 2 ender pearls and 1 book. Keep your eyes steady if the pearls make the room feel watched."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "This lesson is not ready to open right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 2 ender pearls and 1 book for the first Last Ember lesson."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The pearl lesson is not counting right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Good. A lesson about fear should not begin with a dare."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Do not throw the pearls unless you are prepared to explain your landing."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the pearl study materials.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Pearls",
+                "lines": [
+                  "Pearls and paper. A small start, but every last road begins with a first note."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Write the lesson.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. The first note says this: fear is information, not a master."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The lesson still needs its pearls and book."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the materials here before we write anything down."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the pearl lesson right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The page stays open. Do not let it stare back too long."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 0
+    },
+    {
+      "id": "villagerretaliation:nether_candle",
+      "slug": "nether_candle",
+      "title": "The Nether Candle",
+      "description": "Carry the Last Ember study into Nether materials and learn which fires deserve respect.",
+      "questline": "last_ember",
+      "questlineLabel": "Last Ember",
+      "group": "last_ember",
+      "groupLabel": "Last Ember",
+      "tags": [
+        "group.last_ember"
+      ],
+      "relationKey": "questline:last_ember",
+      "parent": "villagerretaliation:pearl_lessons",
+      "parentSlug": "pearl_lessons",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:pearl_lessons",
+          "slug": "pearl_lessons"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Expert",
+        "professions": [
+          "Cleric",
+          "Librarian"
+        ],
+        "skills": [
+          {
+            "skill": "Scholarship",
+            "min": 26,
+            "max": null
+          },
+          {
+            "skill": "Survival",
+            "min": 20,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "Defeat 3 Blaze",
+        "2 Blaze Rod",
+        "4 Blaze Powder",
+        "8 Glowstone Dust"
+      ],
+      "steps": [
+        {
+          "id": "bright_heat",
+          "label": "Bright Heat",
+          "text": "Defeat 3 blazes and bring 2 blaze rods.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "defeat_blazes",
+          "label": "Defeat Blazes",
+          "text": "Defeat 3 blazes for the Nether candle study.",
+          "progress": 0.5,
+          "hint": ""
+        },
+        {
+          "id": "bring_blaze_rods",
+          "label": "Bring Blaze Rods",
+          "text": "Bring 2 blaze rods as heat that can be counted.",
+          "progress": 0.7,
+          "hint": ""
+        },
+        {
+          "id": "bottle_heat",
+          "label": "Bottle Heat",
+          "text": "Bring 4 blaze powder and 8 glowstone dust.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "bring_blaze_powder",
+          "label": "Bring Blaze Powder",
+          "text": "Bring 4 blaze powder for controlled flame.",
+          "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "bring_glowstone",
+          "label": "Bring Glowstone",
+          "text": "Bring 8 glowstone dust so the lesson keeps its light.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the Nether candle materials.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 240,
+        "reputation": 14,
+        "gossipReputation": 5,
+        "lootTable": "villagerretaliation:quest/nether_candle",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "8-13",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Glowstone Dust",
+            "count": "6-12",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Blaze Powder",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "Pearls taught us the shape of looking away. Fire teaches something less polite.",
+          "Bring blaze rods, and proof you faced the thing that made them. After that, we bottle the lesson carefully."
+        ],
+        "accept": "I will bring Nether fire.",
+        "decline": "Not yet.",
+        "started": [
+          "Defeat 3 blazes and bring 2 blaze rods. Respect the fire, but do not flatter it."
+        ],
+        "reminder": [
+          "Defeat 3 blazes and bring 2 blaze rods for the Nether candle.",
+          "Bring 4 blaze powder and 8 glowstone dust for the Nether candle."
+        ],
+        "completed": [
+          "Good. The second note says this: some fires guide, some fires consume, and wisdom starts by knowing the difference."
+        ],
+        "missing": [
+          "The Nether candle lesson is still missing something.",
+          "Bring the Nether materials here before we seal the lesson."
+        ],
+        "stages": [
+          {
+            "stageId": "bright_heat",
+            "label": "Bright Heat",
+            "trackerText": "Defeat 3 blazes and bring 2 blaze rods.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "The Nether Candle",
+                "lines": [
+                  "Pearls taught us the shape of looking away. Fire teaches something less polite.",
+                  "Bring blaze rods, and proof you faced the thing that made them. After that, we bottle the lesson carefully."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will bring Nether fire.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Nether Candle",
+                "lines": [
+                  "Defeat blazes and bring rods. The lesson needs heat that was earned, not stolen from a chest."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the fire work.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will handle it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The Nether candle has already been written."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Defeat 3 blazes and bring 2 blaze rods. Respect the fire, but do not flatter it."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The Nether candle lesson is not ready right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat 3 blazes and bring 2 blaze rods for the Nether candle."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The Nether candle is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Good. Nether work should never begin because someone felt hurried."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Come back with your eyebrows, if you can."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "bottle_heat",
+            "label": "Bottle Heat",
+            "trackerText": "Bring 4 blaze powder and 8 glowstone dust.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Nether Candle",
+                "lines": [
+                  "The rods prove the fire. Now bring powder and glowstone dust so the lesson can be held without burning the page."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the bottle work.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 4 blaze powder and 8 glowstone dust for the Nether candle."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The Nether candle is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Powder in a bottle is still fire with patience."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the Nether candle materials.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Nether Candle",
+                "lines": [
+                  "This is flame that can be named. Dangerous, but named."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Write the Nether candle.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. The second note says this: some fires guide, some fires consume, and wisdom starts by knowing the difference."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The Nether candle lesson is still missing something."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the Nether materials here before we seal the lesson."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the Nether candle right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the powder sealed. Lessons are better when they do not escape."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "bright_heat",
+            "label": "Bright Heat",
+            "trackerText": "Defeat 3 blazes and bring 2 blaze rods.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "The Nether Candle",
+                "lines": [
+                  "Pearls taught us the shape of looking away. Fire teaches something less polite.",
+                  "Bring blaze rods, and proof you faced the thing that made them. After that, we bottle the lesson carefully."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will bring Nether fire.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Nether Candle",
+                "lines": [
+                  "Defeat blazes and bring rods. The lesson needs heat that was earned, not stolen from a chest."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the fire work.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will handle it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The Nether candle has already been written."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Defeat 3 blazes and bring 2 blaze rods. Respect the fire, but do not flatter it."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The Nether candle lesson is not ready right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat 3 blazes and bring 2 blaze rods for the Nether candle."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The Nether candle is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Good. Nether work should never begin because someone felt hurried."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Come back with your eyebrows, if you can."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "bottle_heat",
+            "label": "Bottle Heat",
+            "trackerText": "Bring 4 blaze powder and 8 glowstone dust.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About the Nether Candle",
+                "lines": [
+                  "The rods prove the fire. Now bring powder and glowstone dust so the lesson can be held without burning the page."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the bottle work.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 4 blaze powder and 8 glowstone dust for the Nether candle."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The Nether candle is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Powder in a bottle is still fire with patience."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the Nether candle materials.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About the Nether Candle",
+                "lines": [
+                  "This is flame that can be named. Dangerous, but named."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Write the Nether candle.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. The second note says this: some fires guide, some fires consume, and wisdom starts by knowing the difference."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The Nether candle lesson is still missing something."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the Nether materials here before we seal the lesson."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the Nether candle right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Keep the powder sealed. Lessons are better when they do not escape."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 1
+    },
+    {
+      "id": "villagerretaliation:eye_before_dawn",
+      "slug": "eye_before_dawn",
+      "title": "Before Dawn",
+      "description": "Prepare the Last Ember notes for the gate by gathering eyes and the courage to face what answers them.",
+      "questline": "last_ember",
+      "questlineLabel": "Last Ember",
+      "group": "last_ember",
+      "groupLabel": "Last Ember",
+      "tags": [
+        "group.last_ember"
+      ],
+      "relationKey": "questline:last_ember",
+      "parent": "villagerretaliation:nether_candle",
+      "parentSlug": "nether_candle",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:nether_candle",
+          "slug": "nether_candle"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Expert",
+        "professions": [
+          "Cleric",
+          "Librarian"
+        ],
+        "skills": [
+          {
+            "skill": "Scholarship",
+            "min": 32,
+            "max": null
+          },
+          {
+            "skill": "Survival",
+            "min": 26,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "Defeat 3 Enderman",
+        "3 Ender Eye",
+        "1 Ender Chest"
+      ],
+      "steps": [
+        {
+          "id": "answer_the_eye",
+          "label": "Answer The Eye",
+          "text": "Defeat 3 endermen and bring 3 eyes of ender.",
+          "progress": 0.75,
+          "hint": ""
+        },
+        {
+          "id": "defeat_endermen",
+          "label": "Defeat Endermen",
+          "text": "Defeat 3 endermen without letting fear write the lesson for you.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "bring_eyes",
+          "label": "Bring Eyes",
+          "text": "Bring 3 eyes of ender for the gate notes.",
+          "progress": 0.75,
+          "hint": ""
+        },
+        {
+          "id": "steady_hands",
+          "label": "Steady Hands",
+          "text": "Bring 1 ender chest.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "bring_ender_chest",
+          "label": "Bring Ender Chest",
+          "text": "Bring 1 ender chest to keep the Last Ember notes sealed.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the sealed gate materials.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 320,
+        "reputation": 16,
+        "gossipReputation": 6,
+        "lootTable": "villagerretaliation:quest/eye_before_dawn",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "10-15",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Ender Pearl",
+            "count": "1-3",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Obsidian",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "The pearls and fire point toward a door that does not care whether anyone is ready.",
+          "Bring eyes of ender, and proof you can meet the staring dark. The village needs the lesson before the gate, not after."
+        ],
+        "accept": "I will prepare for the gate.",
+        "decline": "Not yet.",
+        "started": [
+          "Defeat 3 endermen and bring 3 eyes of ender. We are not opening anything today; we are learning how not to panic tomorrow."
+        ],
+        "reminder": [
+          "Defeat 3 endermen and bring 3 eyes of ender for the gate lesson.",
+          "Bring 1 ender chest to seal the Last Ember notes."
+        ],
+        "completed": [
+          "Good. The third note says this: a door is not destiny until someone walks through it."
+        ],
+        "missing": [
+          "The gate lesson is still missing something.",
+          "Bring the gate materials here before we seal the notes."
+        ],
+        "stages": [
+          {
+            "stageId": "answer_the_eye",
+            "label": "Answer The Eye",
+            "trackerText": "Defeat 3 endermen and bring 3 eyes of ender.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Before Dawn",
+                "lines": [
+                  "The pearls and fire point toward a door that does not care whether anyone is ready.",
+                  "Bring eyes of ender, and proof you can meet the staring dark. The village needs the lesson before the gate, not after."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will prepare for the gate.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Before Dawn",
+                "lines": [
+                  "Defeat endermen and bring eyes of ender. The gate should not be the first time your hands shake."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the eye work.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will handle it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The gate notes are already steady."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Defeat 3 endermen and bring 3 eyes of ender. We are not opening anything today; we are learning how not to panic tomorrow."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The gate lesson is not ready right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat 3 endermen and bring 3 eyes of ender for the gate lesson."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The gate lesson is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "That is allowed. A gate does not become kinder because you hurry toward it."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Look away when you must. Courage is not staring until you break."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "steady_hands",
+            "label": "Steady Hands",
+            "trackerText": "Bring 1 ender chest.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Before Dawn",
+                "lines": [
+                  "The eyes are enough to point. Bring an ender chest so the notes can wait without whispering from an ordinary drawer."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the seal.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 ender chest to seal the Last Ember notes."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The gate lesson is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Some notes deserve a lid that knows how to stay shut."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the sealed gate materials.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Before Dawn",
+                "lines": [
+                  "The notes are ready to wait for the gate. That may be the hardest part."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Seal the gate notes.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. The third note says this: a door is not destiny until someone walks through it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The gate lesson is still missing something."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the gate materials here before we seal the notes."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the gate lesson right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The notes remain open, which is another way of saying vulnerable."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "answer_the_eye",
+            "label": "Answer The Eye",
+            "trackerText": "Defeat 3 endermen and bring 3 eyes of ender.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Before Dawn",
+                "lines": [
+                  "The pearls and fire point toward a door that does not care whether anyone is ready.",
+                  "Bring eyes of ender, and proof you can meet the staring dark. The village needs the lesson before the gate, not after."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will prepare for the gate.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Before Dawn",
+                "lines": [
+                  "Defeat endermen and bring eyes of ender. The gate should not be the first time your hands shake."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the eye work.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will handle it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The gate notes are already steady."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Defeat 3 endermen and bring 3 eyes of ender. We are not opening anything today; we are learning how not to panic tomorrow."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The gate lesson is not ready right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat 3 endermen and bring 3 eyes of ender for the gate lesson."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The gate lesson is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "That is allowed. A gate does not become kinder because you hurry toward it."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Look away when you must. Courage is not staring until you break."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "steady_hands",
+            "label": "Steady Hands",
+            "trackerText": "Bring 1 ender chest.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Before Dawn",
+                "lines": [
+                  "The eyes are enough to point. Bring an ender chest so the notes can wait without whispering from an ordinary drawer."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the seal.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 ender chest to seal the Last Ember notes."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The gate lesson is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Some notes deserve a lid that knows how to stay shut."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the sealed gate materials.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Before Dawn",
+                "lines": [
+                  "The notes are ready to wait for the gate. That may be the hardest part."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Seal the gate notes.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. The third note says this: a door is not destiny until someone walks through it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The gate lesson is still missing something."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the gate materials here before we seal the notes."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the gate lesson right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The notes remain open, which is another way of saying vulnerable."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 2
+    },
+    {
+      "id": "villagerretaliation:breath_after_the_roar",
+      "slug": "breath_after_the_roar",
+      "title": "After the Roar",
+      "description": "Complete the Last Ember line by returning from the End with proof that the village can survive hearing about the dragon.",
+      "questline": "last_ember",
+      "questlineLabel": "Last Ember",
+      "group": "last_ember",
+      "groupLabel": "Last Ember",
+      "tags": [
+        "group.last_ember"
+      ],
+      "relationKey": "questline:last_ember",
+      "parent": "villagerretaliation:eye_before_dawn",
+      "parentSlug": "eye_before_dawn",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:eye_before_dawn",
+          "slug": "eye_before_dawn"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Master",
+        "professions": [
+          "Cleric",
+          "Librarian"
+        ],
+        "skills": [
+          {
+            "skill": "Scholarship",
+            "min": 45,
+            "max": null
+          },
+          {
+            "skill": "Survival",
+            "min": 38,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "Defeat 1 Ender Dragon",
+        "1 Dragon Breath",
+        "16 End Stone"
+      ],
+      "steps": [
+        {
+          "id": "answer_roar",
+          "label": "Answer Roar",
+          "text": "Defeat the Ender Dragon.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "defeat_dragon",
+          "label": "Defeat Dragon",
+          "text": "Defeat the Ender Dragon.",
+          "progress": 0.55,
+          "hint": ""
+        },
+        {
+          "id": "carry_proof",
+          "label": "Carry Proof",
+          "text": "Bring 1 dragon breath and 16 end stone.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "bring_dragon_breath",
+          "label": "Bring Dragon Breath",
+          "text": "Bring 1 dragon breath as proof of the roar.",
+          "progress": 0.82,
+          "hint": ""
+        },
+        {
+          "id": "bring_end_stone",
+          "label": "Bring End Stone",
+          "text": "Bring 16 end stone so the lesson has something solid under it.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the Last Ember proof.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 900,
+        "reputation": 25,
+        "gossipReputation": 10,
+        "lootTable": "villagerretaliation:quest/breath_after_the_roar",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "18-28",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Diamond",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Ender Chest",
+            "count": "1",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "The Last Ember notes end at a place I cannot make sound harmless.",
+          "If you go through the gate and return after the dragon, bring proof that the silence after the roar belongs to the living."
+        ],
+        "accept": "I will face the dragon.",
+        "decline": "Not yet.",
+        "started": [
+          "Defeat the Ender Dragon. If that sounds too plain, good. Plain words leave more room for careful choices."
+        ],
+        "reminder": [
+          "Defeat the Ender Dragon, then bring dragon breath and end stone back to the village.",
+          "Bring 1 dragon breath and 16 end stone after the dragon is defeated."
+        ],
+        "completed": [
+          "The final note says this: the world can be vast, cruel, and still return someone home. The village will remember that without making it smaller."
+        ],
+        "missing": [
+          "The Last Ember still needs its proof.",
+          "Bring the dragon breath and end stone here before we finish the notes."
+        ],
+        "stages": [
+          {
+            "stageId": "answer_roar",
+            "label": "Answer Roar",
+            "trackerText": "Defeat the Ender Dragon.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "After the Roar",
+                "lines": [
+                  "The Last Ember notes end at a place I cannot make sound harmless.",
+                  "If you go through the gate and return after the dragon, bring proof that the silence after the roar belongs to the living."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will face the dragon.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About After the Roar",
+                "lines": [
+                  "There is no gentle wording for this stage. Face the dragon, and come back alive enough to argue about the notes."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the charge.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will return.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The Last Ember has already been carried home."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Defeat the Ender Dragon. If that sounds too plain, good. Plain words leave more room for careful choices."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The Last Ember is not ready to ask this of you right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat the Ender Dragon, then bring dragon breath and end stone back to the village."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The Last Ember is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Good. The End has waited longer than any of us. It can wait until you choose."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Return with your story still yours."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "carry_proof",
+            "label": "Carry Proof",
+            "trackerText": "Bring 1 dragon breath and 16 end stone.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About After the Roar",
+                "lines": [
+                  "The roar has ended. Bring dragon breath and end stone so the village can hold the truth without needing to invent it."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the proof.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 dragon breath and 16 end stone after the dragon is defeated."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The Last Ember is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Proof is heavy in stranger ways than stone."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the Last Ember proof.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About After the Roar",
+                "lines": [
+                  "You are here. That is the first proof. The rest can go on the table."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Finish the Last Ember.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The final note says this: the world can be vast, cruel, and still return someone home. The village will remember that without making it smaller."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The Last Ember still needs its proof."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the dragon breath and end stone here before we finish the notes."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the Last Ember right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The last page waits. It has earned patience."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "answer_roar",
+            "label": "Answer Roar",
+            "trackerText": "Defeat the Ender Dragon.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "After the Roar",
+                "lines": [
+                  "The Last Ember notes end at a place I cannot make sound harmless.",
+                  "If you go through the gate and return after the dragon, bring proof that the silence after the roar belongs to the living."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will face the dragon.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About After the Roar",
+                "lines": [
+                  "There is no gentle wording for this stage. Face the dragon, and come back alive enough to argue about the notes."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the charge.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will return.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The Last Ember has already been carried home."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Defeat the Ender Dragon. If that sounds too plain, good. Plain words leave more room for careful choices."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The Last Ember is not ready to ask this of you right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Defeat the Ender Dragon, then bring dragon breath and end stone back to the village."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The Last Ember is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Good. The End has waited longer than any of us. It can wait until you choose."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Return with your story still yours."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "carry_proof",
+            "label": "Carry Proof",
+            "trackerText": "Bring 1 dragon breath and 16 end stone.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About After the Roar",
+                "lines": [
+                  "The roar has ended. Bring dragon breath and end stone so the village can hold the truth without needing to invent it."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the proof.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 dragon breath and 16 end stone after the dragon is defeated."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The Last Ember is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Proof is heavy in stranger ways than stone."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the Last Ember proof.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About After the Roar",
+                "lines": [
+                  "You are here. That is the first proof. The rest can go on the table."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Finish the Last Ember.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "The final note says this: the world can be vast, cruel, and still return someone home. The village will remember that without making it smaller."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The Last Ember still needs its proof."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the dragon breath and end stone here before we finish the notes."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the Last Ember right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The last page waits. It has earned patience."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 3
+    },
+    {
       "id": "villagerretaliation:end_city_survey",
       "slug": "end_city_survey",
       "title": "End City Survey",
@@ -10368,23 +17071,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The watch quiver is too light.",
-          "A warning bell is useful, but arrows make trouble reconsider."
+          "A warning bell is useful, but arrows make trouble reconsider.",
+          "The village could use help with 16 arrows for Watch Arrows.",
+          "Watch Arrows is simple work, but simple work still feeds the day.",
+          "We need 16 arrows, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Watch Arrows would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Watch Arrows would settle more than one worry.",
+          "I have a request for 16 arrows, if you are willing.",
+          "This village runs better when requests like Watch Arrows do not wait too long.",
+          "The stores are asking for 16 arrows in their quiet way.",
+          "I could use a steady hand for Watch Arrows.",
+          "Bring 16 arrows, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Watch Arrows needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring arrows",
         "decline": "Another time",
         "started": [
-          "Watch Arrows is yours now. Bring the arrows back when the count is ready."
+          "Watch Arrows is yours now. Bring the arrows back when the count is ready.",
+          "Watch Arrows is yours now. Bring 16 arrows when the count is ready.",
+          "I am putting Watch Arrows in your hands.",
+          "Take the note for Watch Arrows and bring back 16 arrows.",
+          "Good. The village will be waiting for 16 arrows.",
+          "Then we will count on you for Watch Arrows.",
+          "Bring 16 arrows, and we can call this useful work.",
+          "Watch Arrows starts now. Keep the tracker close.",
+          "Head out for Watch Arrows and return with 16 arrows.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Watch Arrows.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Watch Arrows points. Bring 16 arrows.",
+          "That settles the posting. Now we need 16 arrows."
         ],
         "reminder": [
-          "Watch Arrows: I still need the arrows. Bring the full count back to me."
+          "Watch Arrows: I still need the arrows. Bring the full count back to me.",
+          "For Watch Arrows, I still need 16 arrows.",
+          "Watch Arrows is still asking for 16 arrows.",
+          "Bring 16 arrows back when the count is ready.",
+          "The tracker has the details for Watch Arrows.",
+          "Keep Watch Arrows in mind and bring 16 arrows.",
+          "The village is still waiting on 16 arrows.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Watch Arrows is still open.",
+          "Follow the tracker for Watch Arrows and bring back 16 arrows.",
+          "You are looking for 16 arrows for this request.",
+          "The note says 16 arrows, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Watch Arrows is complete. The village can use this, and you have earned the reward."
+          "Watch Arrows is complete. The village can use this, and you have earned the reward.",
+          "That settles Watch Arrows. The village will put this to use.",
+          "Watch Arrows is complete, and the help is appreciated.",
+          "Good. I can close Watch Arrows with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Watch Arrows is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Watch Arrows complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Watch Arrows is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Watch Arrows is not at the right count yet; bring the rest before turning it in.",
+          "Watch Arrows is still short. The tracker has the exact count.",
+          "Something is missing for Watch Arrows, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Watch Arrows can close.",
+          "The village is still waiting on the rest of it.",
+          "Watch Arrows needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Watch Arrows.",
+          "The tally still has an empty line in it.",
+          "I cannot call Watch Arrows complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Watch Arrows.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Watch Arrows still needs the arrows in your pack before I can close it.",
-          "Watch Arrows is still short. The tracker has the exact count."
+          "I still need 16 arrows before I can close Watch Arrows.",
+          "Bring 16 arrows, then we can settle Watch Arrows.",
+          "Watch Arrows needs the proof in your pack first.",
+          "I cannot close Watch Arrows until I see 16 arrows.",
+          "The reward waits until 16 arrows is here.",
+          "Show me 16 arrows and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 16 arrows still needs to be here.",
+          "I need the actual proof before I mark Watch Arrows done.",
+          "Come back with 16 arrows and we can close the count.",
+          "The request is not finished without 16 arrows.",
+          "Watch Arrows still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Watch Arrows.",
+          "Watch Arrows is still short. The tracker has the exact count.",
+          "Check the tracker before we close Watch Arrows.",
+          "The work is not complete yet.",
+          "There is still one part of Watch Arrows missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Watch Arrows is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 1
@@ -10607,23 +17407,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The pantry looks organized, which is not the same as prepared.",
-          "A bundle of beetroot would make the next few meals feel less accidental."
+          "A bundle of beetroot would make the next few meals feel less accidental.",
+          "The village could use help with 16 beetroot for Beetroot Bundle.",
+          "Beetroot Bundle is simple work, but simple work still feeds the day.",
+          "We need 16 beetroot, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Beetroot Bundle would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Beetroot Bundle would settle more than one worry.",
+          "I have a request for 16 beetroot, if you are willing.",
+          "This village runs better when requests like Beetroot Bundle do not wait too long.",
+          "The stores are asking for 16 beetroot in their quiet way.",
+          "I could use a steady hand for Beetroot Bundle.",
+          "Bring 16 beetroot, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Beetroot Bundle needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring beetroot",
         "decline": "Another time",
         "started": [
-          "Beetroot Bundle is yours now. Bring the beetroot back when the count is ready."
+          "Beetroot Bundle is yours now. Bring the beetroot back when the count is ready.",
+          "Beetroot Bundle is yours now. Bring 16 beetroot when the count is ready.",
+          "I am putting Beetroot Bundle in your hands.",
+          "Take the note for Beetroot Bundle and bring back 16 beetroot.",
+          "Good. The village will be waiting for 16 beetroot.",
+          "Then we will count on you for Beetroot Bundle.",
+          "Bring 16 beetroot, and we can call this useful work.",
+          "Beetroot Bundle starts now. Keep the tracker close.",
+          "Head out for Beetroot Bundle and return with 16 beetroot.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Beetroot Bundle.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Beetroot Bundle points. Bring 16 beetroot.",
+          "That settles the posting. Now we need 16 beetroot."
         ],
         "reminder": [
-          "Beetroot Bundle: I still need the beetroot. Bring the full count back to me."
+          "Beetroot Bundle: I still need the beetroot. Bring the full count back to me.",
+          "For Beetroot Bundle, I still need 16 beetroot.",
+          "Beetroot Bundle is still asking for 16 beetroot.",
+          "Bring 16 beetroot back when the count is ready.",
+          "The tracker has the details for Beetroot Bundle.",
+          "Keep Beetroot Bundle in mind and bring 16 beetroot.",
+          "The village is still waiting on 16 beetroot.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Beetroot Bundle is still open.",
+          "Follow the tracker for Beetroot Bundle and bring back 16 beetroot.",
+          "You are looking for 16 beetroot for this request.",
+          "The note says 16 beetroot, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Beetroot Bundle is complete. The village can use this, and you have earned the reward."
+          "Beetroot Bundle is complete. The village can use this, and you have earned the reward.",
+          "That settles Beetroot Bundle. The village will put this to use.",
+          "Beetroot Bundle is complete, and the help is appreciated.",
+          "Good. I can close Beetroot Bundle with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Beetroot Bundle is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Beetroot Bundle complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Beetroot Bundle is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Beetroot Bundle is not at the right count yet, bring the rest before turning it in.",
+          "Beetroot Bundle is still short. The tracker has the exact count.",
+          "Something is missing for Beetroot Bundle, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Beetroot Bundle can close.",
+          "The village is still waiting on the rest of it.",
+          "Beetroot Bundle needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Beetroot Bundle.",
+          "The tally still has an empty line in it.",
+          "I cannot call Beetroot Bundle complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Beetroot Bundle.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Beetroot Bundle still needs the beetroot in your pack before I can close it.",
-          "Beetroot Bundle is still short. The tracker has the exact count."
+          "I still need 16 beetroot before I can close Beetroot Bundle.",
+          "Bring 16 beetroot, then we can settle Beetroot Bundle.",
+          "Beetroot Bundle needs the proof in your pack first.",
+          "I cannot close Beetroot Bundle until I see 16 beetroot.",
+          "The reward waits until 16 beetroot is here.",
+          "Show me 16 beetroot and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 16 beetroot still needs to be here.",
+          "I need the actual proof before I mark Beetroot Bundle done.",
+          "Come back with 16 beetroot and we can close the count.",
+          "The request is not finished without 16 beetroot.",
+          "Beetroot Bundle still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Beetroot Bundle.",
+          "Beetroot Bundle is still short. The tracker has the exact count.",
+          "Check the tracker before we close Beetroot Bundle.",
+          "The work is not complete yet.",
+          "There is still one part of Beetroot Bundle missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Beetroot Bundle is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 0
@@ -10722,23 +17619,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The small baskets empty first.",
-          "A few sweet berries would make the next ration day feel less like punishment."
+          "A few sweet berries would make the next ration day feel less like punishment.",
+          "The village could use help with 16 sweet berries for Berry Picking.",
+          "Berry Picking is simple work, but simple work still feeds the day.",
+          "We need 16 sweet berries, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Berry Picking would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Berry Picking would settle more than one worry.",
+          "I have a request for 16 sweet berries, if you are willing.",
+          "This village runs better when requests like Berry Picking do not wait too long.",
+          "The stores are asking for 16 sweet berries in their quiet way.",
+          "I could use a steady hand for Berry Picking.",
+          "Bring 16 sweet berries, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Berry Picking needs doing before it becomes everyone's problem."
         ],
         "accept": "I can fill the berry baskets",
         "decline": "Another time",
         "started": [
-          "Berry Picking is yours now. Bring the sweet berries back when the count is ready."
+          "Berry Picking is yours now. Bring the sweet berries back when the count is ready.",
+          "Berry Picking is yours now. Bring 16 sweet berries when the count is ready.",
+          "I am putting Berry Picking in your hands.",
+          "Take the note for Berry Picking and bring back 16 sweet berries.",
+          "Good. The village will be waiting for 16 sweet berries.",
+          "Then we will count on you for Berry Picking.",
+          "Bring 16 sweet berries, and we can call this useful work.",
+          "Berry Picking starts now. Keep the tracker close.",
+          "Head out for Berry Picking and return with 16 sweet berries.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Berry Picking.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Berry Picking points. Bring 16 sweet berries.",
+          "That settles the posting. Now we need 16 sweet berries."
         ],
         "reminder": [
-          "Berry Picking: I still need the sweet berries. Bring the full count back to me."
+          "Berry Picking: I still need the sweet berries. Bring the full count back to me.",
+          "For Berry Picking, I still need 16 sweet berries.",
+          "Berry Picking is still asking for 16 sweet berries.",
+          "Bring 16 sweet berries back when the count is ready.",
+          "The tracker has the details for Berry Picking.",
+          "Keep Berry Picking in mind and bring 16 sweet berries.",
+          "The village is still waiting on 16 sweet berries.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Berry Picking is still open.",
+          "Follow the tracker for Berry Picking and bring back 16 sweet berries.",
+          "You are looking for 16 sweet berries for this request.",
+          "The note says 16 sweet berries, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Berry Picking is complete. The village can use this, and you have earned the reward."
+          "Berry Picking is complete. The village can use this, and you have earned the reward.",
+          "That settles Berry Picking. The village will put this to use.",
+          "Berry Picking is complete, and the help is appreciated.",
+          "Good. I can close Berry Picking with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Berry Picking is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Berry Picking complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Berry Picking is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Berry Picking is not at the right count yet; bring the rest before turning it in.",
+          "Berry Picking is still short. The tracker has the exact count.",
+          "Something is missing for Berry Picking, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Berry Picking can close.",
+          "The village is still waiting on the rest of it.",
+          "Berry Picking needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Berry Picking.",
+          "The tally still has an empty line in it.",
+          "I cannot call Berry Picking complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Berry Picking.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Berry Picking still needs the sweet berries in your pack before I can close it.",
-          "Berry Picking is still short. The tracker has the exact count."
+          "I still need 16 sweet berries before I can close Berry Picking.",
+          "Bring 16 sweet berries, then we can settle Berry Picking.",
+          "Berry Picking needs the proof in your pack first.",
+          "I cannot close Berry Picking until I see 16 sweet berries.",
+          "The reward waits until 16 sweet berries is here.",
+          "Show me 16 sweet berries and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 16 sweet berries still needs to be here.",
+          "I need the actual proof before I mark Berry Picking done.",
+          "Come back with 16 sweet berries and we can close the count.",
+          "The request is not finished without 16 sweet berries.",
+          "Berry Picking still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Berry Picking.",
+          "Berry Picking is still short. The tracker has the exact count.",
+          "Check the tracker before we close Berry Picking.",
+          "The work is not complete yet.",
+          "There is still one part of Berry Picking missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Berry Picking is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 1
@@ -10842,23 +17836,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "We are down to rinsing old bottles and hoping memory counts as sanitation.",
-          "Fresh glass would improve both medicine and morale."
+          "Fresh glass would improve both medicine and morale.",
+          "The village could use help with 12 glass bottles for Bottle Stock.",
+          "Bottle Stock is simple work, but simple work still feeds the day.",
+          "We need 12 glass bottles, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Bottle Stock would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Bottle Stock would settle more than one worry.",
+          "I have a request for 12 glass bottles, if you are willing.",
+          "This village runs better when requests like Bottle Stock do not wait too long.",
+          "The stores are asking for 12 glass bottles in their quiet way.",
+          "I could use a steady hand for Bottle Stock.",
+          "Bring 12 glass bottles, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Bottle Stock needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring bottles",
         "decline": "Another time",
         "started": [
-          "Bottle Stock is yours now. Bring the glass bottles back when the count is ready."
+          "Bottle Stock is yours now. Bring the glass bottles back when the count is ready.",
+          "Bottle Stock is yours now. Bring 12 glass bottles when the count is ready.",
+          "I am putting Bottle Stock in your hands.",
+          "Take the note for Bottle Stock and bring back 12 glass bottles.",
+          "Good. The village will be waiting for 12 glass bottles.",
+          "Then we will count on you for Bottle Stock.",
+          "Bring 12 glass bottles, and we can call this useful work.",
+          "Bottle Stock starts now. Keep the tracker close.",
+          "Head out for Bottle Stock and return with 12 glass bottles.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Bottle Stock.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Bottle Stock points. Bring 12 glass bottles.",
+          "That settles the posting. Now we need 12 glass bottles."
         ],
         "reminder": [
-          "Bottle Stock: I still need the glass bottles. Bring the full count back to me."
+          "Bottle Stock: I still need the glass bottles. Bring the full count back to me.",
+          "For Bottle Stock, I still need 12 glass bottles.",
+          "Bottle Stock is still asking for 12 glass bottles.",
+          "Bring 12 glass bottles back when the count is ready.",
+          "The tracker has the details for Bottle Stock.",
+          "Keep Bottle Stock in mind and bring 12 glass bottles.",
+          "The village is still waiting on 12 glass bottles.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Bottle Stock is still open.",
+          "Follow the tracker for Bottle Stock and bring back 12 glass bottles.",
+          "You are looking for 12 glass bottles for this request.",
+          "The note says 12 glass bottles, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Bottle Stock is complete. The village can use this, and you have earned the reward."
+          "Bottle Stock is complete. The village can use this, and you have earned the reward.",
+          "That settles Bottle Stock. The village will put this to use.",
+          "Bottle Stock is complete, and the help is appreciated.",
+          "Good. I can close Bottle Stock with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Bottle Stock is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Bottle Stock complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Bottle Stock is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Bottle Stock is not at the right count yet; bring the rest before turning it in.",
+          "Bottle Stock is still short. The tracker has the exact count.",
+          "Something is missing for Bottle Stock, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Bottle Stock can close.",
+          "The village is still waiting on the rest of it.",
+          "Bottle Stock needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Bottle Stock.",
+          "The tally still has an empty line in it.",
+          "I cannot call Bottle Stock complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Bottle Stock.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Bottle Stock still needs the glass bottles in your pack before I can close it.",
-          "Bottle Stock is still short. The tracker has the exact count."
+          "I still need 12 glass bottles before I can close Bottle Stock.",
+          "Bring 12 glass bottles, then we can settle Bottle Stock.",
+          "Bottle Stock needs the proof in your pack first.",
+          "I cannot close Bottle Stock until I see 12 glass bottles.",
+          "The reward waits until 12 glass bottles is here.",
+          "Show me 12 glass bottles and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 12 glass bottles still needs to be here.",
+          "I need the actual proof before I mark Bottle Stock done.",
+          "Come back with 12 glass bottles and we can close the count.",
+          "The request is not finished without 12 glass bottles.",
+          "Bottle Stock still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Bottle Stock.",
+          "Bottle Stock is still short. The tracker has the exact count.",
+          "Check the tracker before we close Bottle Stock.",
+          "The work is not complete yet.",
+          "There is still one part of Bottle Stock missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Bottle Stock is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 2
@@ -10956,23 +18047,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The bins are low. Nothing dramatic, which is usually when it becomes dramatic.",
-          "A few good loaves would quiet half the village by sunset."
+          "A few good loaves would quiet half the village by sunset.",
+          "The village could use help with 16 bread for Bread Delivery.",
+          "Bread Delivery is simple work, but simple work still feeds the day.",
+          "We need 16 bread, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Bread Delivery would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Bread Delivery would settle more than one worry.",
+          "I have a request for 16 bread, if you are willing.",
+          "This village runs better when requests like Bread Delivery do not wait too long.",
+          "The stores are asking for 16 bread in their quiet way.",
+          "I could use a steady hand for Bread Delivery.",
+          "Bring 16 bread, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Bread Delivery needs doing before it becomes everyone's problem."
         ],
         "accept": "I can help stock the larder",
         "decline": "Another time",
         "started": [
-          "Bread Delivery is yours now. Bring the bread back when the count is ready."
+          "Bread Delivery is yours now. Bring the bread back when the count is ready.",
+          "Bread Delivery is yours now. Bring 16 bread when the count is ready.",
+          "I am putting Bread Delivery in your hands.",
+          "Take the note for Bread Delivery and bring back 16 bread.",
+          "Good. The village will be waiting for 16 bread.",
+          "Then we will count on you for Bread Delivery.",
+          "Bring 16 bread, and we can call this useful work.",
+          "Bread Delivery starts now. Keep the tracker close.",
+          "Head out for Bread Delivery and return with 16 bread.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Bread Delivery.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Bread Delivery points. Bring 16 bread.",
+          "That settles the posting. Now we need 16 bread."
         ],
         "reminder": [
-          "Bread Delivery: I still need the bread. Bring the full count back to me."
+          "Bread Delivery: I still need the bread. Bring the full count back to me.",
+          "For Bread Delivery, I still need 16 bread.",
+          "Bread Delivery is still asking for 16 bread.",
+          "Bring 16 bread back when the count is ready.",
+          "The tracker has the details for Bread Delivery.",
+          "Keep Bread Delivery in mind and bring 16 bread.",
+          "The village is still waiting on 16 bread.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Bread Delivery is still open.",
+          "Follow the tracker for Bread Delivery and bring back 16 bread.",
+          "You are looking for 16 bread for this request.",
+          "The note says 16 bread, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Bread Delivery is complete. The village can use this, and you have earned the reward."
+          "Bread Delivery is complete. The village can use this, and you have earned the reward.",
+          "That settles Bread Delivery. The village will put this to use.",
+          "Bread Delivery is complete, and the help is appreciated.",
+          "Good. I can close Bread Delivery with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Bread Delivery is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Bread Delivery complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Bread Delivery is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Bread Delivery is not at the right count yet; bring the rest before turning it in.",
+          "Bread Delivery is still short. The tracker has the exact count.",
+          "Something is missing for Bread Delivery, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Bread Delivery can close.",
+          "The village is still waiting on the rest of it.",
+          "Bread Delivery needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Bread Delivery.",
+          "The tally still has an empty line in it.",
+          "I cannot call Bread Delivery complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Bread Delivery.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Bread Delivery still needs the bread in your pack before I can close it.",
-          "Bread Delivery is still short. The tracker has the exact count."
+          "I still need 16 bread before I can close Bread Delivery.",
+          "Bring 16 bread, then we can settle Bread Delivery.",
+          "Bread Delivery needs the proof in your pack first.",
+          "I cannot close Bread Delivery until I see 16 bread.",
+          "The reward waits until 16 bread is here.",
+          "Show me 16 bread and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 16 bread still needs to be here.",
+          "I need the actual proof before I mark Bread Delivery done.",
+          "Come back with 16 bread and we can close the count.",
+          "The request is not finished without 16 bread.",
+          "Bread Delivery still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Bread Delivery.",
+          "Bread Delivery is still short. The tracker has the exact count.",
+          "Check the tracker before we close Bread Delivery.",
+          "The work is not complete yet.",
+          "There is still one part of Bread Delivery missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Bread Delivery is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 3
@@ -11070,23 +18258,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "Small cracks have started introducing themselves.",
-          "I would rather meet them with clay than with a collapsed oven."
+          "I would rather meet them with clay than with a collapsed oven.",
+          "The village could use help with 16 clay balls for Clay Repairs.",
+          "Clay Repairs is simple work, but simple work still feeds the day.",
+          "We need 16 clay balls, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Clay Repairs would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Clay Repairs would settle more than one worry.",
+          "I have a request for 16 clay balls, if you are willing.",
+          "This village runs better when requests like Clay Repairs do not wait too long.",
+          "The stores are asking for 16 clay balls in their quiet way.",
+          "I could use a steady hand for Clay Repairs.",
+          "Bring 16 clay balls, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Clay Repairs needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring clay",
         "decline": "Another time",
         "started": [
-          "Clay Repairs is yours now. Bring the clay back when the count is ready."
+          "Clay Repairs is yours now. Bring the clay back when the count is ready.",
+          "Clay Repairs is yours now. Bring 16 clay balls when the count is ready.",
+          "I am putting Clay Repairs in your hands.",
+          "Take the note for Clay Repairs and bring back 16 clay balls.",
+          "Good. The village will be waiting for 16 clay balls.",
+          "Then we will count on you for Clay Repairs.",
+          "Bring 16 clay balls, and we can call this useful work.",
+          "Clay Repairs starts now. Keep the tracker close.",
+          "Head out for Clay Repairs and return with 16 clay balls.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Clay Repairs.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Clay Repairs points. Bring 16 clay balls.",
+          "That settles the posting. Now we need 16 clay balls."
         ],
         "reminder": [
-          "Clay Repairs: I still need the clay. Bring the full count back to me."
+          "Clay Repairs: I still need the clay. Bring the full count back to me.",
+          "For Clay Repairs, I still need 16 clay balls.",
+          "Clay Repairs is still asking for 16 clay balls.",
+          "Bring 16 clay balls back when the count is ready.",
+          "The tracker has the details for Clay Repairs.",
+          "Keep Clay Repairs in mind and bring 16 clay balls.",
+          "The village is still waiting on 16 clay balls.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Clay Repairs is still open.",
+          "Follow the tracker for Clay Repairs and bring back 16 clay balls.",
+          "You are looking for 16 clay balls for this request.",
+          "The note says 16 clay balls, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Clay Repairs is complete. The village can use this, and you have earned the reward."
+          "Clay Repairs is complete. The village can use this, and you have earned the reward.",
+          "That settles Clay Repairs. The village will put this to use.",
+          "Clay Repairs is complete, and the help is appreciated.",
+          "Good. I can close Clay Repairs with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Clay Repairs is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Clay Repairs complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Clay Repairs is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Clay Repairs is not at the right count yet; bring the rest before turning it in.",
+          "Clay Repairs is still short. The tracker has the exact count.",
+          "Something is missing for Clay Repairs, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Clay Repairs can close.",
+          "The village is still waiting on the rest of it.",
+          "Clay Repairs needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Clay Repairs.",
+          "The tally still has an empty line in it.",
+          "I cannot call Clay Repairs complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Clay Repairs.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Clay Repairs still needs the clay in your pack before I can close it.",
-          "Clay Repairs is still short. The tracker has the exact count."
+          "I still need 16 clay balls before I can close Clay Repairs.",
+          "Bring 16 clay balls, then we can settle Clay Repairs.",
+          "Clay Repairs needs the proof in your pack first.",
+          "I cannot close Clay Repairs until I see 16 clay balls.",
+          "The reward waits until 16 clay balls is here.",
+          "Show me 16 clay balls and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 16 clay balls still needs to be here.",
+          "I need the actual proof before I mark Clay Repairs done.",
+          "Come back with 16 clay balls and we can close the count.",
+          "The request is not finished without 16 clay balls.",
+          "Clay Repairs still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Clay Repairs.",
+          "Clay Repairs is still short. The tracker has the exact count.",
+          "Check the tracker before we close Clay Repairs.",
+          "The work is not complete yet.",
+          "There is still one part of Clay Repairs missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Clay Repairs is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 4
@@ -11190,23 +18475,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "I have shafts waiting on one side and patience failing on the other.",
-          "A bundle of feathers would fix both problems."
+          "A bundle of feathers would fix both problems.",
+          "The village could use help with 16 feathers for Feather Fletching.",
+          "Feather Fletching is simple work, but simple work still feeds the day.",
+          "We need 16 feathers, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Feather Fletching would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Feather Fletching would settle more than one worry.",
+          "I have a request for 16 feathers, if you are willing.",
+          "This village runs better when requests like Feather Fletching do not wait too long.",
+          "The stores are asking for 16 feathers in their quiet way.",
+          "I could use a steady hand for Feather Fletching.",
+          "Bring 16 feathers, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Feather Fletching needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring feathers",
         "decline": "Another time",
         "started": [
-          "Feather Fletching is yours now. Bring the feathers back when the count is ready."
+          "Feather Fletching is yours now. Bring the feathers back when the count is ready.",
+          "Feather Fletching is yours now. Bring 16 feathers when the count is ready.",
+          "I am putting Feather Fletching in your hands.",
+          "Take the note for Feather Fletching and bring back 16 feathers.",
+          "Good. The village will be waiting for 16 feathers.",
+          "Then we will count on you for Feather Fletching.",
+          "Bring 16 feathers, and we can call this useful work.",
+          "Feather Fletching starts now. Keep the tracker close.",
+          "Head out for Feather Fletching and return with 16 feathers.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Feather Fletching.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Feather Fletching points. Bring 16 feathers.",
+          "That settles the posting. Now we need 16 feathers."
         ],
         "reminder": [
-          "Feather Fletching: I still need the feathers. Bring the full count back to me."
+          "Feather Fletching: I still need the feathers. Bring the full count back to me.",
+          "For Feather Fletching, I still need 16 feathers.",
+          "Feather Fletching is still asking for 16 feathers.",
+          "Bring 16 feathers back when the count is ready.",
+          "The tracker has the details for Feather Fletching.",
+          "Keep Feather Fletching in mind and bring 16 feathers.",
+          "The village is still waiting on 16 feathers.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Feather Fletching is still open.",
+          "Follow the tracker for Feather Fletching and bring back 16 feathers.",
+          "You are looking for 16 feathers for this request.",
+          "The note says 16 feathers, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Feather Fletching is complete. The village can use this, and you have earned the reward."
+          "Feather Fletching is complete. The village can use this, and you have earned the reward.",
+          "That settles Feather Fletching. The village will put this to use.",
+          "Feather Fletching is complete, and the help is appreciated.",
+          "Good. I can close Feather Fletching with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Feather Fletching is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Feather Fletching complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Feather Fletching is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Feather Fletching is not at the right count yet; bring the rest before turning it in.",
+          "Feather Fletching is still short. The tracker has the exact count.",
+          "Something is missing for Feather Fletching, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Feather Fletching can close.",
+          "The village is still waiting on the rest of it.",
+          "Feather Fletching needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Feather Fletching.",
+          "The tally still has an empty line in it.",
+          "I cannot call Feather Fletching complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Feather Fletching.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Feather Fletching still needs the feathers in your pack before I can close it.",
-          "Feather Fletching is still short. The tracker has the exact count."
+          "I still need 16 feathers before I can close Feather Fletching.",
+          "Bring 16 feathers, then we can settle Feather Fletching.",
+          "Feather Fletching needs the proof in your pack first.",
+          "I cannot close Feather Fletching until I see 16 feathers.",
+          "The reward waits until 16 feathers is here.",
+          "Show me 16 feathers and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 16 feathers still needs to be here.",
+          "I need the actual proof before I mark Feather Fletching done.",
+          "Come back with 16 feathers and we can close the count.",
+          "The request is not finished without 16 feathers.",
+          "Feather Fletching still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Feather Fletching.",
+          "Feather Fletching is still short. The tracker has the exact count.",
+          "Check the tracker before we close Feather Fletching.",
+          "The work is not complete yet.",
+          "There is still one part of Feather Fletching missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Feather Fletching is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 5
@@ -11310,23 +18692,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The pot is ready and the fish are not.",
-          "I dislike that order of events."
+          "I dislike that order of events.",
+          "The village could use help with 10 cod for Fresh Cod.",
+          "Fresh Cod is simple work, but simple work still feeds the day.",
+          "We need 10 cod, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Fresh Cod would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Fresh Cod would settle more than one worry.",
+          "I have a request for 10 cod, if you are willing.",
+          "This village runs better when requests like Fresh Cod do not wait too long.",
+          "The stores are asking for 10 cod in their quiet way.",
+          "I could use a steady hand for Fresh Cod.",
+          "Bring 10 cod, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Fresh Cod needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring cod",
         "decline": "Another time",
         "started": [
-          "Fresh Cod is yours now. Bring the cod back when the count is ready."
+          "Fresh Cod is yours now. Bring the cod back when the count is ready.",
+          "Fresh Cod is yours now. Bring 10 cod when the count is ready.",
+          "I am putting Fresh Cod in your hands.",
+          "Take the note for Fresh Cod and bring back 10 cod.",
+          "Good. The village will be waiting for 10 cod.",
+          "Then we will count on you for Fresh Cod.",
+          "Bring 10 cod, and we can call this useful work.",
+          "Fresh Cod starts now. Keep the tracker close.",
+          "Head out for Fresh Cod and return with 10 cod.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Fresh Cod.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Fresh Cod points. Bring 10 cod.",
+          "That settles the posting. Now we need 10 cod."
         ],
         "reminder": [
-          "Fresh Cod: I still need the cod. Bring the full count back to me."
+          "Fresh Cod: I still need the cod. Bring the full count back to me.",
+          "For Fresh Cod, I still need 10 cod.",
+          "Fresh Cod is still asking for 10 cod.",
+          "Bring 10 cod back when the count is ready.",
+          "The tracker has the details for Fresh Cod.",
+          "Keep Fresh Cod in mind and bring 10 cod.",
+          "The village is still waiting on 10 cod.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Fresh Cod is still open.",
+          "Follow the tracker for Fresh Cod and bring back 10 cod.",
+          "You are looking for 10 cod for this request.",
+          "The note says 10 cod, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Fresh Cod is complete. The village can use this, and you have earned the reward."
+          "Fresh Cod is complete. The village can use this, and you have earned the reward.",
+          "That settles Fresh Cod. The village will put this to use.",
+          "Fresh Cod is complete, and the help is appreciated.",
+          "Good. I can close Fresh Cod with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Fresh Cod is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Fresh Cod complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Fresh Cod is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Fresh Cod is not at the right count yet; bring the rest before turning it in.",
+          "Fresh Cod is still short. The tracker has the exact count.",
+          "Something is missing for Fresh Cod, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Fresh Cod can close.",
+          "The village is still waiting on the rest of it.",
+          "Fresh Cod needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Fresh Cod.",
+          "The tally still has an empty line in it.",
+          "I cannot call Fresh Cod complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Fresh Cod.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Fresh Cod still needs the cod in your pack before I can close it.",
-          "Fresh Cod is still short. The tracker has the exact count."
+          "I still need 10 cod before I can close Fresh Cod.",
+          "Bring 10 cod, then we can settle Fresh Cod.",
+          "Fresh Cod needs the proof in your pack first.",
+          "I cannot close Fresh Cod until I see 10 cod.",
+          "The reward waits until 10 cod is here.",
+          "Show me 10 cod and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 10 cod still needs to be here.",
+          "I need the actual proof before I mark Fresh Cod done.",
+          "Come back with 10 cod and we can close the count.",
+          "The request is not finished without 10 cod.",
+          "Fresh Cod still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Fresh Cod.",
+          "Fresh Cod is still short. The tracker has the exact count.",
+          "Check the tracker before we close Fresh Cod.",
+          "The work is not complete yet.",
+          "There is still one part of Fresh Cod missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Fresh Cod is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 6
@@ -11430,23 +18909,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The ledger ink is getting thin.",
-          "I dislike guessing whether a line says paid, owed, or run."
+          "I dislike guessing whether a line says paid, owed, or run.",
+          "The village could use help with 6 ink sacs for Ink Supply.",
+          "Ink Supply is simple work, but simple work still feeds the day.",
+          "We need 6 ink sacs, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Ink Supply would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Ink Supply would settle more than one worry.",
+          "I have a request for 6 ink sacs, if you are willing.",
+          "This village runs better when requests like Ink Supply do not wait too long.",
+          "The stores are asking for 6 ink sacs in their quiet way.",
+          "I could use a steady hand for Ink Supply.",
+          "Bring 6 ink sacs, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Ink Supply needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring ink",
         "decline": "Another time",
         "started": [
-          "Ink Supply is yours now. Bring the ink sacs back when the count is ready."
+          "Ink Supply is yours now. Bring the ink sacs back when the count is ready.",
+          "Ink Supply is yours now. Bring 6 ink sacs when the count is ready.",
+          "I am putting Ink Supply in your hands.",
+          "Take the note for Ink Supply and bring back 6 ink sacs.",
+          "Good. The village will be waiting for 6 ink sacs.",
+          "Then we will count on you for Ink Supply.",
+          "Bring 6 ink sacs, and we can call this useful work.",
+          "Ink Supply starts now. Keep the tracker close.",
+          "Head out for Ink Supply and return with 6 ink sacs.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Ink Supply.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Ink Supply points. Bring 6 ink sacs.",
+          "That settles the posting. Now we need 6 ink sacs."
         ],
         "reminder": [
-          "Ink Supply: I still need the ink sacs. Bring the full count back to me."
+          "Ink Supply: I still need the ink sacs. Bring the full count back to me.",
+          "For Ink Supply, I still need 6 ink sacs.",
+          "Ink Supply is still asking for 6 ink sacs.",
+          "Bring 6 ink sacs back when the count is ready.",
+          "The tracker has the details for Ink Supply.",
+          "Keep Ink Supply in mind and bring 6 ink sacs.",
+          "The village is still waiting on 6 ink sacs.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Ink Supply is still open.",
+          "Follow the tracker for Ink Supply and bring back 6 ink sacs.",
+          "You are looking for 6 ink sacs for this request.",
+          "The note says 6 ink sacs, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Ink Supply is complete. The village can use this, and you have earned the reward."
+          "Ink Supply is complete. The village can use this, and you have earned the reward.",
+          "That settles Ink Supply. The village will put this to use.",
+          "Ink Supply is complete, and the help is appreciated.",
+          "Good. I can close Ink Supply with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Ink Supply is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Ink Supply complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Ink Supply is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Ink Supply is not at the right count yet; bring the rest before turning it in.",
+          "Ink Supply is still short. The tracker has the exact count.",
+          "Something is missing for Ink Supply, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Ink Supply can close.",
+          "The village is still waiting on the rest of it.",
+          "Ink Supply needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Ink Supply.",
+          "The tally still has an empty line in it.",
+          "I cannot call Ink Supply complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Ink Supply.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Ink Supply still needs the ink sacs in your pack before I can close it.",
-          "Ink Supply is still short. The tracker has the exact count."
+          "I still need 6 ink sacs before I can close Ink Supply.",
+          "Bring 6 ink sacs, then we can settle Ink Supply.",
+          "Ink Supply needs the proof in your pack first.",
+          "I cannot close Ink Supply until I see 6 ink sacs.",
+          "The reward waits until 6 ink sacs is here.",
+          "Show me 6 ink sacs and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 6 ink sacs still needs to be here.",
+          "I need the actual proof before I mark Ink Supply done.",
+          "Come back with 6 ink sacs and we can close the count.",
+          "The request is not finished without 6 ink sacs.",
+          "Ink Supply still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Ink Supply.",
+          "Ink Supply is still short. The tracker has the exact count.",
+          "Check the tracker before we close Ink Supply.",
+          "The work is not complete yet.",
+          "There is still one part of Ink Supply missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Ink Supply is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 7
@@ -11547,23 +19123,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The firebox is down to crumbs.",
-          "A cold kiln is just an expensive room with opinions."
+          "A cold kiln is just an expensive room with opinions.",
+          "The village could use help with 12 coal for Kiln Fuel.",
+          "Kiln Fuel is simple work, but simple work still feeds the day.",
+          "We need 12 coal, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Kiln Fuel would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Kiln Fuel would settle more than one worry.",
+          "I have a request for 12 coal, if you are willing.",
+          "This village runs better when requests like Kiln Fuel do not wait too long.",
+          "The stores are asking for 12 coal in their quiet way.",
+          "I could use a steady hand for Kiln Fuel.",
+          "Bring 12 coal, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Kiln Fuel needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring coal",
         "decline": "Another time",
         "started": [
-          "Kiln Fuel is yours now. Bring the coal back when the count is ready."
+          "Kiln Fuel is yours now. Bring the coal back when the count is ready.",
+          "Kiln Fuel is yours now. Bring 12 coal when the count is ready.",
+          "I am putting Kiln Fuel in your hands.",
+          "Take the note for Kiln Fuel and bring back 12 coal.",
+          "Good. The village will be waiting for 12 coal.",
+          "Then we will count on you for Kiln Fuel.",
+          "Bring 12 coal, and we can call this useful work.",
+          "Kiln Fuel starts now. Keep the tracker close.",
+          "Head out for Kiln Fuel and return with 12 coal.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Kiln Fuel.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Kiln Fuel points. Bring 12 coal.",
+          "That settles the posting. Now we need 12 coal."
         ],
         "reminder": [
-          "Kiln Fuel: I still need the coal. Bring the full count back to me."
+          "Kiln Fuel: I still need the coal. Bring the full count back to me.",
+          "For Kiln Fuel, I still need 12 coal.",
+          "Kiln Fuel is still asking for 12 coal.",
+          "Bring 12 coal back when the count is ready.",
+          "The tracker has the details for Kiln Fuel.",
+          "Keep Kiln Fuel in mind and bring 12 coal.",
+          "The village is still waiting on 12 coal.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Kiln Fuel is still open.",
+          "Follow the tracker for Kiln Fuel and bring back 12 coal.",
+          "You are looking for 12 coal for this request.",
+          "The note says 12 coal, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Kiln Fuel is complete. The village can use this, and you have earned the reward."
+          "Kiln Fuel is complete. The village can use this, and you have earned the reward.",
+          "That settles Kiln Fuel. The village will put this to use.",
+          "Kiln Fuel is complete, and the help is appreciated.",
+          "Good. I can close Kiln Fuel with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Kiln Fuel is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Kiln Fuel complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Kiln Fuel is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Kiln Fuel is not at the right count yet; bring the rest before turning it in.",
+          "Kiln Fuel is still short. The tracker has the exact count.",
+          "Something is missing for Kiln Fuel, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Kiln Fuel can close.",
+          "The village is still waiting on the rest of it.",
+          "Kiln Fuel needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Kiln Fuel.",
+          "The tally still has an empty line in it.",
+          "I cannot call Kiln Fuel complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Kiln Fuel.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Kiln Fuel still needs the coal in your pack before I can close it.",
-          "Kiln Fuel is still short. The tracker has the exact count."
+          "I still need 12 coal before I can close Kiln Fuel.",
+          "Bring 12 coal, then we can settle Kiln Fuel.",
+          "Kiln Fuel needs the proof in your pack first.",
+          "I cannot close Kiln Fuel until I see 12 coal.",
+          "The reward waits until 12 coal is here.",
+          "Show me 12 coal and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 12 coal still needs to be here.",
+          "I need the actual proof before I mark Kiln Fuel done.",
+          "Come back with 12 coal and we can close the count.",
+          "The request is not finished without 12 coal.",
+          "Kiln Fuel still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Kiln Fuel.",
+          "Kiln Fuel is still short. The tracker has the exact count.",
+          "Check the tracker before we close Kiln Fuel.",
+          "The work is not complete yet.",
+          "There is still one part of Kiln Fuel missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Kiln Fuel is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 8
@@ -11667,23 +19340,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The repair pile is mostly broken straps.",
-          "That is better than broken backs, but only if we fix it."
+          "That is better than broken backs, but only if we fix it.",
+          "The village could use help with 8 leather for Leather Repairs.",
+          "Leather Repairs is simple work, but simple work still feeds the day.",
+          "We need 8 leather, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Leather Repairs would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Leather Repairs would settle more than one worry.",
+          "I have a request for 8 leather, if you are willing.",
+          "This village runs better when requests like Leather Repairs do not wait too long.",
+          "The stores are asking for 8 leather in their quiet way.",
+          "I could use a steady hand for Leather Repairs.",
+          "Bring 8 leather, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Leather Repairs needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring leather",
         "decline": "Another time",
         "started": [
-          "Leather Repairs is yours now. Bring the leather back when the count is ready."
+          "Leather Repairs is yours now. Bring the leather back when the count is ready.",
+          "Leather Repairs is yours now. Bring 8 leather when the count is ready.",
+          "I am putting Leather Repairs in your hands.",
+          "Take the note for Leather Repairs and bring back 8 leather.",
+          "Good. The village will be waiting for 8 leather.",
+          "Then we will count on you for Leather Repairs.",
+          "Bring 8 leather, and we can call this useful work.",
+          "Leather Repairs starts now. Keep the tracker close.",
+          "Head out for Leather Repairs and return with 8 leather.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Leather Repairs.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Leather Repairs points. Bring 8 leather.",
+          "That settles the posting. Now we need 8 leather."
         ],
         "reminder": [
-          "Leather Repairs: I still need the leather. Bring the full count back to me."
+          "Leather Repairs: I still need the leather. Bring the full count back to me.",
+          "For Leather Repairs, I still need 8 leather.",
+          "Leather Repairs is still asking for 8 leather.",
+          "Bring 8 leather back when the count is ready.",
+          "The tracker has the details for Leather Repairs.",
+          "Keep Leather Repairs in mind and bring 8 leather.",
+          "The village is still waiting on 8 leather.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Leather Repairs is still open.",
+          "Follow the tracker for Leather Repairs and bring back 8 leather.",
+          "You are looking for 8 leather for this request.",
+          "The note says 8 leather, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Leather Repairs is complete. The village can use this, and you have earned the reward."
+          "Leather Repairs is complete. The village can use this, and you have earned the reward.",
+          "That settles Leather Repairs. The village will put this to use.",
+          "Leather Repairs is complete, and the help is appreciated.",
+          "Good. I can close Leather Repairs with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Leather Repairs is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Leather Repairs complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Leather Repairs is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Leather Repairs is not at the right count yet; bring the rest before turning it in.",
+          "Leather Repairs is still short. The tracker has the exact count.",
+          "Something is missing for Leather Repairs, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Leather Repairs can close.",
+          "The village is still waiting on the rest of it.",
+          "Leather Repairs needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Leather Repairs.",
+          "The tally still has an empty line in it.",
+          "I cannot call Leather Repairs complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Leather Repairs.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Leather Repairs still needs the leather in your pack before I can close it.",
-          "Leather Repairs is still short. The tracker has the exact count."
+          "I still need 8 leather before I can close Leather Repairs.",
+          "Bring 8 leather, then we can settle Leather Repairs.",
+          "Leather Repairs needs the proof in your pack first.",
+          "I cannot close Leather Repairs until I see 8 leather.",
+          "The reward waits until 8 leather is here.",
+          "Show me 8 leather and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 8 leather still needs to be here.",
+          "I need the actual proof before I mark Leather Repairs done.",
+          "Come back with 8 leather and we can close the count.",
+          "The request is not finished without 8 leather.",
+          "Leather Repairs still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Leather Repairs.",
+          "Leather Repairs is still short. The tracker has the exact count.",
+          "Check the tracker before we close Leather Repairs.",
+          "The work is not complete yet.",
+          "There is still one part of Leather Repairs missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Leather Repairs is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 9
@@ -11782,23 +19552,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "We are writing warnings on the backs of old lists.",
-          "That works until someone mistakes a raid note for a turnip count."
+          "That works until someone mistakes a raid note for a turnip count.",
+          "The village could use help with 24 paper for Map Paper.",
+          "Map Paper is simple work, but simple work still feeds the day.",
+          "We need 24 paper, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Map Paper would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Map Paper would settle more than one worry.",
+          "I have a request for 24 paper, if you are willing.",
+          "This village runs better when requests like Map Paper do not wait too long.",
+          "The stores are asking for 24 paper in their quiet way.",
+          "I could use a steady hand for Map Paper.",
+          "Bring 24 paper, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Map Paper needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring paper",
         "decline": "Another time",
         "started": [
-          "Map Paper is yours now. Bring the paper back when the count is ready."
+          "Map Paper is yours now. Bring the paper back when the count is ready.",
+          "Map Paper is yours now. Bring 24 paper when the count is ready.",
+          "I am putting Map Paper in your hands.",
+          "Take the note for Map Paper and bring back 24 paper.",
+          "Good. The village will be waiting for 24 paper.",
+          "Then we will count on you for Map Paper.",
+          "Bring 24 paper, and we can call this useful work.",
+          "Map Paper starts now. Keep the tracker close.",
+          "Head out for Map Paper and return with 24 paper.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Map Paper.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Map Paper points. Bring 24 paper.",
+          "That settles the posting. Now we need 24 paper."
         ],
         "reminder": [
-          "Map Paper: I still need the paper. Bring the full count back to me."
+          "Map Paper: I still need the paper. Bring the full count back to me.",
+          "For Map Paper, I still need 24 paper.",
+          "Map Paper is still asking for 24 paper.",
+          "Bring 24 paper back when the count is ready.",
+          "The tracker has the details for Map Paper.",
+          "Keep Map Paper in mind and bring 24 paper.",
+          "The village is still waiting on 24 paper.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Map Paper is still open.",
+          "Follow the tracker for Map Paper and bring back 24 paper.",
+          "You are looking for 24 paper for this request.",
+          "The note says 24 paper, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Map Paper is complete. The village can use this, and you have earned the reward."
+          "Map Paper is complete. The village can use this, and you have earned the reward.",
+          "That settles Map Paper. The village will put this to use.",
+          "Map Paper is complete, and the help is appreciated.",
+          "Good. I can close Map Paper with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Map Paper is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Map Paper complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Map Paper is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Map Paper is not at the right count yet; bring the rest before turning it in.",
+          "Map Paper is still short. The tracker has the exact count.",
+          "Something is missing for Map Paper, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Map Paper can close.",
+          "The village is still waiting on the rest of it.",
+          "Map Paper needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Map Paper.",
+          "The tally still has an empty line in it.",
+          "I cannot call Map Paper complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Map Paper.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Map Paper still needs the paper in your pack before I can close it.",
-          "Map Paper is still short. The tracker has the exact count."
+          "I still need 24 paper before I can close Map Paper.",
+          "Bring 24 paper, then we can settle Map Paper.",
+          "Map Paper needs the proof in your pack first.",
+          "I cannot close Map Paper until I see 24 paper.",
+          "The reward waits until 24 paper is here.",
+          "Show me 24 paper and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 24 paper still needs to be here.",
+          "I need the actual proof before I mark Map Paper done.",
+          "Come back with 24 paper and we can close the count.",
+          "The request is not finished without 24 paper.",
+          "Map Paper still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Map Paper.",
+          "Map Paper is still short. The tracker has the exact count.",
+          "Check the tracker before we close Map Paper.",
+          "The work is not complete yet.",
+          "There is still one part of Map Paper missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Map Paper is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 10
@@ -11896,23 +19763,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The seed bin is lower than I like.",
-          "If we borrow from the eating grain, spring will arrive with an argument already waiting."
+          "If we borrow from the eating grain, spring will arrive with an argument already waiting.",
+          "The village could use help with 32 wheat seeds for Seed Stockpile.",
+          "Seed Stockpile is simple work, but simple work still feeds the day.",
+          "We need 32 wheat seeds, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Seed Stockpile would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Seed Stockpile would settle more than one worry.",
+          "I have a request for 32 wheat seeds, if you are willing.",
+          "This village runs better when requests like Seed Stockpile do not wait too long.",
+          "The stores are asking for 32 wheat seeds in their quiet way.",
+          "I could use a steady hand for Seed Stockpile.",
+          "Bring 32 wheat seeds, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Seed Stockpile needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring seed grain",
         "decline": "Another time",
         "started": [
-          "Seed Stockpile is yours now. Bring the wheat seeds back when the count is ready."
+          "Seed Stockpile is yours now. Bring the wheat seeds back when the count is ready.",
+          "Seed Stockpile is yours now. Bring 32 wheat seeds when the count is ready.",
+          "I am putting Seed Stockpile in your hands.",
+          "Take the note for Seed Stockpile and bring back 32 wheat seeds.",
+          "Good. The village will be waiting for 32 wheat seeds.",
+          "Then we will count on you for Seed Stockpile.",
+          "Bring 32 wheat seeds, and we can call this useful work.",
+          "Seed Stockpile starts now. Keep the tracker close.",
+          "Head out for Seed Stockpile and return with 32 wheat seeds.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Seed Stockpile.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Seed Stockpile points. Bring 32 wheat seeds.",
+          "That settles the posting. Now we need 32 wheat seeds."
         ],
         "reminder": [
-          "Seed Stockpile: I still need the wheat seeds. Bring the full count back to me."
+          "Seed Stockpile: I still need the wheat seeds. Bring the full count back to me.",
+          "For Seed Stockpile, I still need 32 wheat seeds.",
+          "Seed Stockpile is still asking for 32 wheat seeds.",
+          "Bring 32 wheat seeds back when the count is ready.",
+          "The tracker has the details for Seed Stockpile.",
+          "Keep Seed Stockpile in mind and bring 32 wheat seeds.",
+          "The village is still waiting on 32 wheat seeds.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Seed Stockpile is still open.",
+          "Follow the tracker for Seed Stockpile and bring back 32 wheat seeds.",
+          "You are looking for 32 wheat seeds for this request.",
+          "The note says 32 wheat seeds, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Seed Stockpile is complete. The village can use this, and you have earned the reward."
+          "Seed Stockpile is complete. The village can use this, and you have earned the reward.",
+          "That settles Seed Stockpile. The village will put this to use.",
+          "Seed Stockpile is complete, and the help is appreciated.",
+          "Good. I can close Seed Stockpile with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Seed Stockpile is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Seed Stockpile complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Seed Stockpile is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Seed Stockpile is not at the right count yet; bring the rest before turning it in.",
+          "Seed Stockpile is still short. The tracker has the exact count.",
+          "Something is missing for Seed Stockpile, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Seed Stockpile can close.",
+          "The village is still waiting on the rest of it.",
+          "Seed Stockpile needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Seed Stockpile.",
+          "The tally still has an empty line in it.",
+          "I cannot call Seed Stockpile complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Seed Stockpile.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Seed Stockpile still needs the wheat seeds in your pack before I can close it.",
-          "Seed Stockpile is still short. The tracker has the exact count."
+          "I still need 32 wheat seeds before I can close Seed Stockpile.",
+          "Bring 32 wheat seeds, then we can settle Seed Stockpile.",
+          "Seed Stockpile needs the proof in your pack first.",
+          "I cannot close Seed Stockpile until I see 32 wheat seeds.",
+          "The reward waits until 32 wheat seeds is here.",
+          "Show me 32 wheat seeds and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 32 wheat seeds still needs to be here.",
+          "I need the actual proof before I mark Seed Stockpile done.",
+          "Come back with 32 wheat seeds and we can close the count.",
+          "The request is not finished without 32 wheat seeds.",
+          "Seed Stockpile still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Seed Stockpile.",
+          "Seed Stockpile is still short. The tracker has the exact count.",
+          "Check the tracker before we close Seed Stockpile.",
+          "The work is not complete yet.",
+          "There is still one part of Seed Stockpile missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Seed Stockpile is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 11
@@ -12017,23 +19981,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "A few corners of the village are getting ideas after dusk.",
-          "More torches would remind them who actually lives here."
+          "More torches would remind them who actually lives here.",
+          "The village could use help with 16 torches for Torch Bundle.",
+          "Torch Bundle is simple work, but simple work still feeds the day.",
+          "We need 16 torches, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Torch Bundle would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Torch Bundle would settle more than one worry.",
+          "I have a request for 16 torches, if you are willing.",
+          "This village runs better when requests like Torch Bundle do not wait too long.",
+          "The stores are asking for 16 torches in their quiet way.",
+          "I could use a steady hand for Torch Bundle.",
+          "Bring 16 torches, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Torch Bundle needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring torches",
         "decline": "Another time",
         "started": [
-          "Torch Bundle is yours now. Bring the torches back when the count is ready."
+          "Torch Bundle is yours now. Bring the torches back when the count is ready.",
+          "Torch Bundle is yours now. Bring 16 torches when the count is ready.",
+          "I am putting Torch Bundle in your hands.",
+          "Take the note for Torch Bundle and bring back 16 torches.",
+          "Good. The village will be waiting for 16 torches.",
+          "Then we will count on you for Torch Bundle.",
+          "Bring 16 torches, and we can call this useful work.",
+          "Torch Bundle starts now. Keep the tracker close.",
+          "Head out for Torch Bundle and return with 16 torches.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Torch Bundle.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Torch Bundle points. Bring 16 torches.",
+          "That settles the posting. Now we need 16 torches."
         ],
         "reminder": [
-          "Torch Bundle: I still need the torches. Bring the full count back to me."
+          "Torch Bundle: I still need the torches. Bring the full count back to me.",
+          "For Torch Bundle, I still need 16 torches.",
+          "Torch Bundle is still asking for 16 torches.",
+          "Bring 16 torches back when the count is ready.",
+          "The tracker has the details for Torch Bundle.",
+          "Keep Torch Bundle in mind and bring 16 torches.",
+          "The village is still waiting on 16 torches.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Torch Bundle is still open.",
+          "Follow the tracker for Torch Bundle and bring back 16 torches.",
+          "You are looking for 16 torches for this request.",
+          "The note says 16 torches, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Torch Bundle is complete. The village can use this, and you have earned the reward."
+          "Torch Bundle is complete. The village can use this, and you have earned the reward.",
+          "That settles Torch Bundle. The village will put this to use.",
+          "Torch Bundle is complete, and the help is appreciated.",
+          "Good. I can close Torch Bundle with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Torch Bundle is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Torch Bundle complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Torch Bundle is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Torch Bundle is not at the right count yet; bring the rest before turning it in.",
+          "Torch Bundle is still short. The tracker has the exact count.",
+          "Something is missing for Torch Bundle, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Torch Bundle can close.",
+          "The village is still waiting on the rest of it.",
+          "Torch Bundle needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Torch Bundle.",
+          "The tally still has an empty line in it.",
+          "I cannot call Torch Bundle complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Torch Bundle.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Torch Bundle still needs the torches in your pack before I can close it.",
-          "Torch Bundle is still short. The tracker has the exact count."
+          "I still need 16 torches before I can close Torch Bundle.",
+          "Bring 16 torches, then we can settle Torch Bundle.",
+          "Torch Bundle needs the proof in your pack first.",
+          "I cannot close Torch Bundle until I see 16 torches.",
+          "The reward waits until 16 torches is here.",
+          "Show me 16 torches and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 16 torches still needs to be here.",
+          "I need the actual proof before I mark Torch Bundle done.",
+          "Come back with 16 torches and we can close the count.",
+          "The request is not finished without 16 torches.",
+          "Torch Bundle still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Torch Bundle.",
+          "Torch Bundle is still short. The tracker has the exact count.",
+          "Check the tracker before we close Torch Bundle.",
+          "The work is not complete yet.",
+          "There is still one part of Torch Bundle missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Torch Bundle is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 12
@@ -12133,23 +20194,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "The watch posts need light, not speeches. Six lanterns would do more than ten warnings.",
-          "Night has been leaning too close to the doors. We need more lanterns before habit becomes fear."
+          "Night has been leaning too close to the doors. We need more lanterns before habit becomes fear.",
+          "The village could use help with 6 lanterns for Village Lanterns.",
+          "Village Lanterns is simple work, but simple work still feeds the day.",
+          "We need 6 lanterns, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Village Lanterns would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Village Lanterns would settle more than one worry.",
+          "I have a request for 6 lanterns, if you are willing.",
+          "This village runs better when requests like Village Lanterns do not wait too long.",
+          "The stores are asking for 6 lanterns in their quiet way.",
+          "I could use a steady hand for Village Lanterns.",
+          "Bring 6 lanterns, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Village Lanterns needs doing before it becomes everyone's problem."
         ],
         "accept": "I will bring lanterns",
         "decline": "Another time",
         "started": [
-          "Village Lanterns is yours now. Bring the lanterns back when the count is ready."
+          "Village Lanterns is yours now. Bring the lanterns back when the count is ready.",
+          "Village Lanterns is yours now. Bring 6 lanterns when the count is ready.",
+          "I am putting Village Lanterns in your hands.",
+          "Take the note for Village Lanterns and bring back 6 lanterns.",
+          "Good. The village will be waiting for 6 lanterns.",
+          "Then we will count on you for Village Lanterns.",
+          "Bring 6 lanterns, and we can call this useful work.",
+          "Village Lanterns starts now. Keep the tracker close.",
+          "Head out for Village Lanterns and return with 6 lanterns.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Village Lanterns.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Village Lanterns points. Bring 6 lanterns.",
+          "That settles the posting. Now we need 6 lanterns."
         ],
         "reminder": [
-          "Village Lanterns: I still need the lanterns. Bring the full count back to me."
+          "Village Lanterns: I still need the lanterns. Bring the full count back to me.",
+          "For Village Lanterns, I still need 6 lanterns.",
+          "Village Lanterns is still asking for 6 lanterns.",
+          "Bring 6 lanterns back when the count is ready.",
+          "The tracker has the details for Village Lanterns.",
+          "Keep Village Lanterns in mind and bring 6 lanterns.",
+          "The village is still waiting on 6 lanterns.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Village Lanterns is still open.",
+          "Follow the tracker for Village Lanterns and bring back 6 lanterns.",
+          "You are looking for 6 lanterns for this request.",
+          "The note says 6 lanterns, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Village Lanterns is complete. The village can use this, and you have earned the reward."
+          "Village Lanterns is complete. The village can use this, and you have earned the reward.",
+          "That settles Village Lanterns. The village will put this to use.",
+          "Village Lanterns is complete, and the help is appreciated.",
+          "Good. I can close Village Lanterns with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Village Lanterns is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Village Lanterns complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Village Lanterns is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Village Lanterns is not at the right count yet; bring the rest before turning it in.",
+          "Village Lanterns is still short. The tracker has the exact count.",
+          "Something is missing for Village Lanterns, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Village Lanterns can close.",
+          "The village is still waiting on the rest of it.",
+          "Village Lanterns needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Village Lanterns.",
+          "The tally still has an empty line in it.",
+          "I cannot call Village Lanterns complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Village Lanterns.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Village Lanterns still needs the lanterns in your pack before I can close it.",
-          "Village Lanterns is still short. The tracker has the exact count."
+          "I still need 6 lanterns before I can close Village Lanterns.",
+          "Bring 6 lanterns, then we can settle Village Lanterns.",
+          "Village Lanterns needs the proof in your pack first.",
+          "I cannot close Village Lanterns until I see 6 lanterns.",
+          "The reward waits until 6 lanterns is here.",
+          "Show me 6 lanterns and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 6 lanterns still needs to be here.",
+          "I need the actual proof before I mark Village Lanterns done.",
+          "Come back with 6 lanterns and we can close the count.",
+          "The request is not finished without 6 lanterns.",
+          "Village Lanterns still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Village Lanterns.",
+          "Village Lanterns is still short. The tracker has the exact count.",
+          "Check the tracker before we close Village Lanterns.",
+          "The work is not complete yet.",
+          "There is still one part of Village Lanterns missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Village Lanterns is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 13
@@ -12253,23 +20411,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "We are short on clean bedding.",
-          "No one recovers faster because the blanket is thin."
+          "No one recovers faster because the blanket is thin.",
+          "The village could use help with 12 white wool for Wool Blankets.",
+          "Wool Blankets is simple work, but simple work still feeds the day.",
+          "We need 12 white wool, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Wool Blankets would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Wool Blankets would settle more than one worry.",
+          "I have a request for 12 white wool, if you are willing.",
+          "This village runs better when requests like Wool Blankets do not wait too long.",
+          "The stores are asking for 12 white wool in their quiet way.",
+          "I could use a steady hand for Wool Blankets.",
+          "Bring 12 white wool, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Wool Blankets needs doing before it becomes everyone's problem."
         ],
         "accept": "I can bring wool",
         "decline": "Another time",
         "started": [
-          "Wool Blankets is yours now. Bring the white wool back when the count is ready."
+          "Wool Blankets is yours now. Bring the white wool back when the count is ready.",
+          "Wool Blankets is yours now. Bring 12 white wool when the count is ready.",
+          "I am putting Wool Blankets in your hands.",
+          "Take the note for Wool Blankets and bring back 12 white wool.",
+          "Good. The village will be waiting for 12 white wool.",
+          "Then we will count on you for Wool Blankets.",
+          "Bring 12 white wool, and we can call this useful work.",
+          "Wool Blankets starts now. Keep the tracker close.",
+          "Head out for Wool Blankets and return with 12 white wool.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Wool Blankets.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Wool Blankets points. Bring 12 white wool.",
+          "That settles the posting. Now we need 12 white wool."
         ],
         "reminder": [
-          "Wool Blankets: I still need the white wool. Bring the full count back to me."
+          "Wool Blankets: I still need the white wool. Bring the full count back to me.",
+          "For Wool Blankets, I still need 12 white wool.",
+          "Wool Blankets is still asking for 12 white wool.",
+          "Bring 12 white wool back when the count is ready.",
+          "The tracker has the details for Wool Blankets.",
+          "Keep Wool Blankets in mind and bring 12 white wool.",
+          "The village is still waiting on 12 white wool.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Wool Blankets is still open.",
+          "Follow the tracker for Wool Blankets and bring back 12 white wool.",
+          "You are looking for 12 white wool for this request.",
+          "The note says 12 white wool, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Wool Blankets is complete. The village can use this, and you have earned the reward."
+          "Wool Blankets is complete. The village can use this, and you have earned the reward.",
+          "That settles Wool Blankets. The village will put this to use.",
+          "Wool Blankets is complete, and the help is appreciated.",
+          "Good. I can close Wool Blankets with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Wool Blankets is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Wool Blankets complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Wool Blankets is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Wool Blankets is not at the right count yet; bring the rest before turning it in.",
+          "Wool Blankets is still short. The tracker has the exact count.",
+          "Something is missing for Wool Blankets, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Wool Blankets can close.",
+          "The village is still waiting on the rest of it.",
+          "Wool Blankets needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Wool Blankets.",
+          "The tally still has an empty line in it.",
+          "I cannot call Wool Blankets complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Wool Blankets.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road.",
           "Wool Blankets still needs the white wool in your pack before I can close it.",
-          "Wool Blankets is still short. The tracker has the exact count."
+          "I still need 12 white wool before I can close Wool Blankets.",
+          "Bring 12 white wool, then we can settle Wool Blankets.",
+          "Wool Blankets needs the proof in your pack first.",
+          "I cannot close Wool Blankets until I see 12 white wool.",
+          "The reward waits until 12 white wool is here.",
+          "Show me 12 white wool and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 12 white wool still needs to be here.",
+          "I need the actual proof before I mark Wool Blankets done.",
+          "Come back with 12 white wool and we can close the count.",
+          "The request is not finished without 12 white wool.",
+          "Wool Blankets still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Wool Blankets.",
+          "Wool Blankets is still short. The tracker has the exact count.",
+          "Check the tracker before we close Wool Blankets.",
+          "The work is not complete yet.",
+          "There is still one part of Wool Blankets missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Wool Blankets is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it."
         ]
       },
       "questlineOrder": 14
@@ -12380,23 +20635,120 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "We are shorter on eggs than we are on patience.",
-          "That usually ends with breakfast becoming a rumor."
+          "That usually ends with breakfast becoming a rumor.",
+          "The village could use help with 12 eggs for Egg Baskets.",
+          "Egg Baskets is simple work, but simple work still feeds the day.",
+          "We need 12 eggs, and I would rather ask before the shortage becomes loud.",
+          "If you have room in your pack, Egg Baskets would help.",
+          "The count is not dramatic yet, which is when it is worth fixing.",
+          "A little help with Egg Baskets would settle more than one worry.",
+          "I have a request for 12 eggs, if you are willing.",
+          "This village runs better when requests like Egg Baskets do not wait too long.",
+          "The stores are asking for 12 eggs in their quiet way.",
+          "I could use a steady hand for Egg Baskets.",
+          "Bring 12 eggs, and the village will feel the difference.",
+          "Nothing glorious here, just useful work that matters.",
+          "Egg Baskets needs doing before it becomes everyone's problem."
         ],
         "accept": "I can fill the egg baskets",
         "decline": "Another time",
         "started": [
-          "Egg Baskets is yours now. Bring the eggs back when the count is ready."
+          "Egg Baskets is yours now. Bring the eggs back when the count is ready.",
+          "Egg Baskets is yours now. Bring 12 eggs when the count is ready.",
+          "I am putting Egg Baskets in your hands.",
+          "Take the note for Egg Baskets and bring back 12 eggs.",
+          "Good. The village will be waiting for 12 eggs.",
+          "Then we will count on you for Egg Baskets.",
+          "Bring 12 eggs, and we can call this useful work.",
+          "Egg Baskets starts now. Keep the tracker close.",
+          "Head out for Egg Baskets and return with 12 eggs.",
+          "The request is open, and your name is on it now.",
+          "I will mark you down for Egg Baskets.",
+          "Bring the full count back when you have it.",
+          "You have the work now. Do it cleanly and come back safe.",
+          "Egg Baskets points. Bring 12 eggs.",
+          "That settles the posting. Now we need 12 eggs."
         ],
         "reminder": [
-          "Egg Baskets: I still need the eggs. Bring the full count back to me."
+          "Egg Baskets: I still need the eggs. Bring the full count back to me.",
+          "For Egg Baskets, I still need 12 eggs.",
+          "Egg Baskets is still asking for 12 eggs.",
+          "Bring 12 eggs back when the count is ready.",
+          "The tracker has the details for Egg Baskets.",
+          "Keep Egg Baskets in mind and bring 12 eggs.",
+          "The village is still waiting on 12 eggs.",
+          "No rush in the words, but the count still matters.",
+          "Bring the full amount back to me when you have it.",
+          "Egg Baskets is still open.",
+          "Follow the tracker for Egg Baskets and bring back 12 eggs.",
+          "You are looking for 12 eggs for this request.",
+          "The note says 12 eggs, and the note is not wrong today.",
+          "Finish the count and return here when you can.",
+          "This is simple work only if it gets done."
         ],
         "completed": [
-          "Egg Baskets is complete. The village can use this, and you have earned the reward."
+          "Egg Baskets is complete. The village can use this, and you have earned the reward.",
+          "That settles Egg Baskets. The village will put this to use.",
+          "Egg Baskets is complete, and the help is appreciated.",
+          "Good. I can close Egg Baskets with a clean mark.",
+          "This will help more than it looks like it should.",
+          "The count is right. Take your reward with my thanks.",
+          "That is enough to close the request.",
+          "Well done. Egg Baskets is finished.",
+          "The village can use this before the day is out.",
+          "I will mark Egg Baskets complete.",
+          "Good work. The note comes down now.",
+          "That is the kind of help people remember at supper.",
+          "Everything is here. Egg Baskets is settled.",
+          "The village needed this, and you brought it.",
+          "A full count makes a calmer room."
         ],
         "missing": [
           "Egg Baskets is still short. The tracker has the exact count.",
+          "Check the tracker before we close Egg Baskets.",
+          "The work is not complete yet.",
+          "There is still one part of Egg Baskets missing.",
+          "Bring the rest and I can settle the note.",
+          "The village cannot use half a finished request.",
+          "The tally says there is more to do.",
+          "You are not empty handed, but this is not complete yet.",
+          "The last pieces still matter.",
+          "I need the whole request finished before I close it.",
+          "The tracker knows what the note still needs.",
+          "Keep going. Egg Baskets is not ready to turn in yet.",
+          "The work is close enough to see, not close enough to sign.",
+          "Bring the missing part back when you have it.",
+          "The request still has work left in it.",
           "Egg Baskets still needs the eggs in your pack before I can close it.",
-          "Egg Baskets is not at the right count yet; bring the rest before turning it in."
+          "I still need 12 eggs before I can close Egg Baskets.",
+          "Bring 12 eggs, then we can settle Egg Baskets.",
+          "Egg Baskets needs the proof in your pack first.",
+          "I cannot close Egg Baskets until I see 12 eggs.",
+          "The reward waits until 12 eggs is here.",
+          "Show me 12 eggs and we can finish this properly.",
+          "The village needs the goods before the note comes down.",
+          "You are close, but 12 eggs still needs to be here.",
+          "I need the actual proof before I mark Egg Baskets done.",
+          "Come back with 12 eggs and we can close the count.",
+          "The request is not finished without 12 eggs.",
+          "Egg Baskets still needs something I can hold and count.",
+          "I need the delivery in hand before this is settled.",
+          "Bring the proof back and I will close Egg Baskets.",
+          "Egg Baskets is not at the right count yet; bring the rest before turning it in.",
+          "Egg Baskets is still short. The tracker has the exact count.",
+          "Something is missing for Egg Baskets, so check the tracker and bring the rest.",
+          "The count is not complete yet.",
+          "We need the full amount before Egg Baskets can close.",
+          "The village is still waiting on the rest of it.",
+          "Egg Baskets needs every part before I can sign it off.",
+          "The work is close, but close does not fill a shelf.",
+          "Bring the rest and we can finish Egg Baskets.",
+          "The tally still has an empty line in it.",
+          "I cannot call Egg Baskets complete while the count is short.",
+          "The tracker will show what is still missing.",
+          "There is still more to gather for Egg Baskets.",
+          "The full delivery matters here.",
+          "Not quite enough yet, but you are on the right road."
         ],
         "stages": [
           {
@@ -12410,7 +20762,20 @@ window.VR_WIKI_DATA = {
                 "label": "Egg Baskets",
                 "lines": [
                   "We are shorter on eggs than we are on patience.",
-                  "That usually ends with breakfast becoming a rumor."
+                  "That usually ends with breakfast becoming a rumor.",
+                  "The village could use help with 12 eggs for Egg Baskets.",
+                  "Egg Baskets is simple work, but simple work still feeds the day.",
+                  "We need 12 eggs, and I would rather ask before the shortage becomes loud.",
+                  "If you have room in your pack, Egg Baskets would help.",
+                  "The count is not dramatic yet, which is when it is worth fixing.",
+                  "A little help with Egg Baskets would settle more than one worry.",
+                  "I have a request for 12 eggs, if you are willing.",
+                  "This village runs better when requests like Egg Baskets do not wait too long.",
+                  "The stores are asking for 12 eggs in their quiet way.",
+                  "I could use a steady hand for Egg Baskets.",
+                  "Bring 12 eggs, and the village will feel the difference.",
+                  "Nothing glorious here, just useful work that matters.",
+                  "Egg Baskets needs doing before it becomes everyone's problem."
                 ],
                 "responses": [
                   {
@@ -12434,7 +20799,21 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Egg Baskets",
                 "lines": [
-                  "Egg Baskets is still open. I can repeat the details, or close my notes if you are done."
+                  "Egg Baskets is still open. I can repeat the details, or close my notes if you are done.",
+                  "Egg Baskets is still open. I can repeat the work or close the note if you are done.",
+                  "Egg Baskets is active. Do you need the details again?",
+                  "We still have Egg Baskets on the slate.",
+                  "The request is open, and I can remind you what it needs.",
+                  "Egg Baskets has not been closed yet.",
+                  "I can go over Egg Baskets again, or we can put it aside.",
+                  "You still have Egg Baskets in hand.",
+                  "The note is open. What do you need from me?",
+                  "Egg Baskets is waiting on the rest of the count.",
+                  "I can repeat the request or close it if you are done.",
+                  "We can talk details, abandon the work, or leave it alone.",
+                  "The village is still expecting Egg Baskets.",
+                  "Your part in Egg Baskets is not finished yet.",
+                  "Say the word and I will remind you what Egg Baskets needs."
                 ],
                 "responses": [
                   {
@@ -12469,7 +20848,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned",
                 "label": "Abandon: Abandoned",
                 "lines": [
-                  "I will set the egg baskets aside. Return if the kitchen still needs them."
+                  "I will set the egg baskets aside. Return if the kitchen still needs them.",
+                  "I will set Egg Baskets aside. Come back if the village still needs it.",
+                  "Egg Baskets is off your hands for now.",
+                  "I will clear the note and stop counting on you for this one.",
+                  "The request is set aside.",
+                  "I will mark Egg Baskets abandoned for now.",
+                  "Then we will leave Egg Baskets alone.",
+                  "I will put the tally away.",
+                  "The village will manage without this run for now.",
+                  "I will stop holding that work under your name.",
+                  "Egg Baskets is no longer active for you.",
+                  "I will take your name off the request.",
+                  "The note comes down for now.",
+                  "That closes your part in Egg Baskets for the moment.",
+                  "I will make the record clean again."
                 ]
               },
               {
@@ -12478,7 +20871,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned_cooldown",
                 "label": "Abandon: Abandoned Cooldown",
                 "lines": [
-                  "I will pause the egg count for now. Let the kitchen settle before asking again."
+                  "I will pause the egg count for now. Let the kitchen settle before asking again.",
+                  "I will pause Egg Baskets for now. Give the village a little time before asking again.",
+                  "Egg Baskets is set aside until the count settles.",
+                  "I will cool the request for a while.",
+                  "The village needs time before reopening Egg Baskets.",
+                  "I will mark this paused, not forgotten.",
+                  "Let the stores settle before we talk about Egg Baskets again.",
+                  "I will put the note away until the cooldown passes.",
+                  "Come back after the village has had time to reset.",
+                  "Egg Baskets can wait until the next proper opening.",
+                  "I will close this attempt and let the request breathe.",
+                  "The slate needs a little quiet before this comes back.",
+                  "I will pause the tally for now.",
+                  "Give this one time before you ask again.",
+                  "The request will not reopen immediately."
                 ]
               },
               {
@@ -12487,7 +20894,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned_forever",
                 "label": "Abandon: Abandoned Forever",
                 "lines": [
-                  "Then the egg request is closed for good."
+                  "Then the egg request is closed for good.",
+                  "Then Egg Baskets is closed for good.",
+                  "I will not reopen Egg Baskets.",
+                  "That request is finished permanently.",
+                  "Egg Baskets leaves the board for good.",
+                  "Then this note is gone, not paused.",
+                  "I will mark Egg Baskets as permanently closed.",
+                  "No one will ask you for this request again.",
+                  "That closes the matter completely.",
+                  "The village will not bring this one back to you.",
+                  "Egg Baskets is ended, not waiting.",
+                  "I will put a final mark on the record.",
+                  "This request is done beyond rechecking.",
+                  "Then we leave Egg Baskets in the past.",
+                  "I will close the book on that one."
                 ]
               },
               {
@@ -12496,7 +20917,21 @@ window.VR_WIKI_DATA = {
                 "key": "unavailable",
                 "label": "Abandon: Unavailable",
                 "lines": [
-                  "There is no egg count here for me to close."
+                  "There is no egg count here for me to close.",
+                  "Egg Baskets is not available from here right now.",
+                  "That request is not in your hands right now.",
+                  "I cannot offer Egg Baskets at the moment.",
+                  "Egg Baskets is closed to new help for now.",
+                  "This is not ready for you right now.",
+                  "The village is not accepting that work at the moment.",
+                  "No open note for Egg Baskets is waiting here.",
+                  "Try again later if Egg Baskets comes back around.",
+                  "I cannot move that request today.",
+                  "Egg Baskets needs different timing.",
+                  "The work exists, but not for this moment.",
+                  "I do not have authority to open that now.",
+                  "The request is out of reach for now.",
+                  "There is nothing for me to hand you on Egg Baskets."
                 ]
               },
               {
@@ -12505,7 +20940,21 @@ window.VR_WIKI_DATA = {
                 "key": "inactive",
                 "label": "Reminder: Inactive",
                 "lines": [
-                  "The kitchen has no active egg count at the moment."
+                  "The kitchen has no active egg count at the moment.",
+                  "Egg Baskets is quiet right now.",
+                  "The village is not counting Egg Baskets at the moment.",
+                  "That request is not open right now.",
+                  "Egg Baskets is waiting on better timing.",
+                  "I cannot move Egg Baskets forward just now.",
+                  "The conditions for Egg Baskets are not ready.",
+                  "The note for Egg Baskets is closed for the moment.",
+                  "No one is taking that request right now.",
+                  "Egg Baskets needs to wait a little longer.",
+                  "This is not the right moment for Egg Baskets.",
+                  "The work is real, but it is not open right now.",
+                  "I have no active count for Egg Baskets at the moment.",
+                  "Egg Baskets is between openings right now.",
+                  "The village is not ready to accept that help yet."
                 ]
               },
               {
@@ -12514,7 +20963,21 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Egg Baskets: I still need the eggs. Bring the full count back to me."
+                  "Egg Baskets: I still need the eggs. Bring the full count back to me.",
+                  "For Egg Baskets, I still need 12 eggs.",
+                  "Egg Baskets is still asking for 12 eggs.",
+                  "Bring 12 eggs back when the count is ready.",
+                  "The tracker has the details for Egg Baskets.",
+                  "Keep Egg Baskets in mind and bring 12 eggs.",
+                  "The village is still waiting on 12 eggs.",
+                  "No rush in the words, but the count still matters.",
+                  "Bring the full amount back to me when you have it.",
+                  "Egg Baskets is still open.",
+                  "Follow the tracker for Egg Baskets and bring back 12 eggs.",
+                  "You are looking for 12 eggs for this request.",
+                  "The note says 12 eggs, and the note is not wrong today.",
+                  "Finish the count and return here when you can.",
+                  "This is simple work only if it gets done."
                 ]
               },
               {
@@ -12523,7 +20986,21 @@ window.VR_WIKI_DATA = {
                 "key": "unavailable",
                 "label": "Reminder: Unavailable",
                 "lines": [
-                  "That egg-basket request is not in your hands right now."
+                  "That egg-basket request is not in your hands right now.",
+                  "Egg Baskets is not available from here right now.",
+                  "That request is not in your hands right now.",
+                  "I cannot offer Egg Baskets at the moment.",
+                  "Egg Baskets is closed to new help for now.",
+                  "This is not ready for you right now.",
+                  "The village is not accepting that work at the moment.",
+                  "No open note for Egg Baskets is waiting here.",
+                  "Try again later if Egg Baskets comes back around.",
+                  "I cannot move that request today.",
+                  "Egg Baskets needs different timing.",
+                  "The work exists, but not for this moment.",
+                  "I do not have authority to open that now.",
+                  "The request is out of reach for now.",
+                  "There is nothing for me to hand you on Egg Baskets."
                 ]
               },
               {
@@ -12532,7 +21009,21 @@ window.VR_WIKI_DATA = {
                 "key": "already_completed",
                 "label": "Start: Already completed",
                 "lines": [
-                  "The egg baskets are already settled."
+                  "The egg baskets are already settled.",
+                  "Egg Baskets is already settled on my side.",
+                  "We have already closed Egg Baskets.",
+                  "Egg Baskets does not need another tally right now.",
+                  "That work is already counted and put away.",
+                  "Egg Baskets is finished for now.",
+                  "The village has already marked Egg Baskets complete.",
+                  "I have no open note for Egg Baskets anymore.",
+                  "Egg Baskets has already been handled.",
+                  "That request is already off the board.",
+                  "We are not reopening Egg Baskets right now.",
+                  "Egg Baskets is done enough for today.",
+                  "The record for Egg Baskets is already clean.",
+                  "There is no fresh work left in Egg Baskets.",
+                  "That one is already squared away."
                 ]
               },
               {
@@ -12541,7 +21032,21 @@ window.VR_WIKI_DATA = {
                 "key": "locate_failed",
                 "label": "Start: Locate Failed",
                 "lines": [
-                  "Egg Baskets cannot be posted from here right now."
+                  "Egg Baskets cannot be posted from here right now.",
+                  "I cannot post Egg Baskets from here right now.",
+                  "Egg Baskets is not finding a proper place to start.",
+                  "No good posting point is ready for Egg Baskets.",
+                  "The village cannot place that request from here.",
+                  "Egg Baskets needs a better lead before I send you out.",
+                  "I cannot get a clean mark for Egg Baskets today.",
+                  "The request is real, but the place is not lining up.",
+                  "Something about this spot will not let Egg Baskets start.",
+                  "I need a clearer posting before I can offer Egg Baskets.",
+                  "The work is not anchoring here right now.",
+                  "I cannot set the note for Egg Baskets from this place.",
+                  "The village has no clean place to send you for that.",
+                  "Egg Baskets is refusing to settle onto the slate.",
+                  "The route for Egg Baskets is not clear enough yet."
                 ]
               },
               {
@@ -12550,7 +21055,21 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Egg Baskets is yours now. Bring the eggs back when the count is ready."
+                  "Egg Baskets is yours now. Bring the eggs back when the count is ready.",
+                  "Egg Baskets is yours now. Bring 12 eggs when the count is ready.",
+                  "I am putting Egg Baskets in your hands.",
+                  "Take the note for Egg Baskets and bring back 12 eggs.",
+                  "Good. The village will be waiting for 12 eggs.",
+                  "Then we will count on you for Egg Baskets.",
+                  "Bring 12 eggs, and we can call this useful work.",
+                  "Egg Baskets starts now. Keep the tracker close.",
+                  "Head out for Egg Baskets and return with 12 eggs.",
+                  "The request is open, and your name is on it now.",
+                  "I will mark you down for Egg Baskets.",
+                  "Bring the full count back when you have it.",
+                  "You have the work now. Do it cleanly and come back safe.",
+                  "Egg Baskets points. Bring 12 eggs.",
+                  "That settles the posting. Now we need 12 eggs."
                 ]
               },
               {
@@ -12559,7 +21078,21 @@ window.VR_WIKI_DATA = {
                 "key": "unavailable",
                 "label": "Start: Unavailable",
                 "lines": [
-                  "The kitchen is not asking you for eggs right now."
+                  "The kitchen is not asking you for eggs right now.",
+                  "Egg Baskets is not available from here right now.",
+                  "That request is not in your hands right now.",
+                  "I cannot offer Egg Baskets at the moment.",
+                  "Egg Baskets is closed to new help for now.",
+                  "This is not ready for you right now.",
+                  "The village is not accepting that work at the moment.",
+                  "No open note for Egg Baskets is waiting here.",
+                  "Try again later if Egg Baskets comes back around.",
+                  "I cannot move that request today.",
+                  "Egg Baskets needs different timing.",
+                  "The work exists, but not for this moment.",
+                  "I do not have authority to open that now.",
+                  "The request is out of reach for now.",
+                  "There is nothing for me to hand you on Egg Baskets."
                 ]
               }
             ],
@@ -12568,28 +21101,84 @@ window.VR_WIKI_DATA = {
                 "sceneId": "abandon_cancel",
                 "label": "Scene: Abandon Cancel",
                 "lines": [
-                  "Good. The pans will stay hopeful a little longer."
+                  "Good. The pans will stay hopeful a little longer.",
+                  "Good. We will keep Egg Baskets open a while longer.",
+                  "Then the request stays active.",
+                  "Fine. Keep Egg Baskets in your hands for now.",
+                  "Good. I will leave the note where it is.",
+                  "Then we keep counting on you for this one.",
+                  "The work stays open.",
+                  "Egg Baskets remains on your list.",
+                  "Good. Bring it back when you are ready.",
+                  "I will keep the tally under your name.",
+                  "Then nothing changes for Egg Baskets.",
+                  "Good. The village will wait a little longer.",
+                  "Keep the request and finish it when you can.",
+                  "I will not close the note yet.",
+                  "Then Egg Baskets stays alive."
                 ]
               },
               {
                 "sceneId": "abandon_confirm",
                 "label": "Scene: Abandon Confirm",
                 "lines": [
-                  "Put Egg Baskets aside for now?"
+                  "Put Egg Baskets aside for now?",
+                  "Are you sure you want to step away from Egg Baskets?",
+                  "Close your part in Egg Baskets for now?",
+                  "Should I mark Egg Baskets abandoned?",
+                  "Do you want me to take your name off this request?",
+                  "Set the note for Egg Baskets aside?",
+                  "Are you done with Egg Baskets for now?",
+                  "Should I stop counting on you for this one?",
+                  "Do you want to leave Egg Baskets unfinished?",
+                  "Put the work down and walk away?",
+                  "Should I close this attempt?",
+                  "Are you sure Egg Baskets can wait without you?",
+                  "Do you want the request removed from your list?",
+                  "Shall I fold this note away?",
+                  "One last check. Are you abandoning Egg Baskets?"
                 ]
               },
               {
                 "sceneId": "active_cancel",
                 "label": "Scene: Active Cancel",
                 "lines": [
-                  "Then keep the shells uncracked until you are ready."
+                  "Then keep the shells uncracked until you are ready.",
+                  "Then keep Egg Baskets close until you are ready.",
+                  "All right. We will leave Egg Baskets open.",
+                  "Keep the request and come back when you need the details.",
+                  "Then I will leave the note alone.",
+                  "No change, then. Egg Baskets stays with you.",
+                  "Good. Finish it when the count is ready.",
+                  "The work waits where it is.",
+                  "Then we do nothing more for now.",
+                  "Keep going when you are ready.",
+                  "Egg Baskets remains open.",
+                  "I will keep the tally active.",
+                  "Come back when you want to settle it.",
+                  "Then hold onto the work a little longer.",
+                  "The village will wait for the full count."
                 ]
               },
               {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then I will keep negotiating with empty pans."
+                  "Then I will keep negotiating with empty pans.",
+                  "Another time, then. I will keep Egg Baskets in mind.",
+                  "Fair enough. The request can wait a little longer.",
+                  "Then I will keep the note nearby.",
+                  "No trouble. Someone will ask again if it still matters.",
+                  "The village will manage for now.",
+                  "Then we leave Egg Baskets on the board.",
+                  "All right. I will not press you on it.",
+                  "Maybe later, if the need is still there.",
+                  "I will keep counting without your help for now.",
+                  "Then the request waits for another willing pair of hands.",
+                  "Fine. Better a clear no than a forgotten promise.",
+                  "The work is not going anywhere quickly.",
+                  "Then I will ask again when the village needs it.",
+                  "No harm. Egg Baskets can wait."
                 ]
               }
             ]
@@ -12604,7 +21193,21 @@ window.VR_WIKI_DATA = {
                 "title": "Turn-in",
                 "label": "About Egg Baskets",
                 "lines": [
-                  "If you have the eggs, we can settle Egg Baskets."
+                  "If you have the eggs, we can settle Egg Baskets.",
+                  "If you have what Egg Baskets needs, we can settle it now.",
+                  "Ready to show me the delivery for Egg Baskets?",
+                  "Bring it here and I will check the count.",
+                  "If the full count is in your pack, we can close the note.",
+                  "Let me see whether Egg Baskets is ready to finish.",
+                  "If you brought 12 eggs, this should be quick.",
+                  "We can close Egg Baskets if the goods are here.",
+                  "Show me what you brought and I will count it properly.",
+                  "If the request is complete, I can pay you now.",
+                  "Ready to finish Egg Baskets?",
+                  "Set the delivery here and we will see where the tally stands.",
+                  "If you have the supplies, the note can come down.",
+                  "Let us check the pack and close the matter if we can.",
+                  "If Egg Baskets is complete, I am ready to mark it."
                 ],
                 "responses": [
                   {
@@ -12639,7 +21242,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned",
                 "label": "Abandon: Abandoned",
                 "lines": [
-                  "I will set the egg baskets aside. Return if the kitchen still needs them."
+                  "I will set the egg baskets aside. Return if the kitchen still needs them.",
+                  "I will set Egg Baskets aside. Come back if the village still needs it.",
+                  "Egg Baskets is off your hands for now.",
+                  "I will clear the note and stop counting on you for this one.",
+                  "The request is set aside.",
+                  "I will mark Egg Baskets abandoned for now.",
+                  "Then we will leave Egg Baskets alone.",
+                  "I will put the tally away.",
+                  "The village will manage without this run for now.",
+                  "I will stop holding that work under your name.",
+                  "Egg Baskets is no longer active for you.",
+                  "I will take your name off the request.",
+                  "The note comes down for now.",
+                  "That closes your part in Egg Baskets for the moment.",
+                  "I will make the record clean again."
                 ]
               },
               {
@@ -12648,7 +21265,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned_cooldown",
                 "label": "Abandon: Abandoned Cooldown",
                 "lines": [
-                  "I will pause the egg count for now. Let the kitchen settle before asking again."
+                  "I will pause the egg count for now. Let the kitchen settle before asking again.",
+                  "I will pause Egg Baskets for now. Give the village a little time before asking again.",
+                  "Egg Baskets is set aside until the count settles.",
+                  "I will cool the request for a while.",
+                  "The village needs time before reopening Egg Baskets.",
+                  "I will mark this paused, not forgotten.",
+                  "Let the stores settle before we talk about Egg Baskets again.",
+                  "I will put the note away until the cooldown passes.",
+                  "Come back after the village has had time to reset.",
+                  "Egg Baskets can wait until the next proper opening.",
+                  "I will close this attempt and let the request breathe.",
+                  "The slate needs a little quiet before this comes back.",
+                  "I will pause the tally for now.",
+                  "Give this one time before you ask again.",
+                  "The request will not reopen immediately."
                 ]
               },
               {
@@ -12657,7 +21288,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned_forever",
                 "label": "Abandon: Abandoned Forever",
                 "lines": [
-                  "Then the egg request is closed for good."
+                  "Then the egg request is closed for good.",
+                  "Then Egg Baskets is closed for good.",
+                  "I will not reopen Egg Baskets.",
+                  "That request is finished permanently.",
+                  "Egg Baskets leaves the board for good.",
+                  "Then this note is gone, not paused.",
+                  "I will mark Egg Baskets as permanently closed.",
+                  "No one will ask you for this request again.",
+                  "That closes the matter completely.",
+                  "The village will not bring this one back to you.",
+                  "Egg Baskets is ended, not waiting.",
+                  "I will put a final mark on the record.",
+                  "This request is done beyond rechecking.",
+                  "Then we leave Egg Baskets in the past.",
+                  "I will close the book on that one."
                 ]
               },
               {
@@ -12666,7 +21311,21 @@ window.VR_WIKI_DATA = {
                 "key": "unavailable",
                 "label": "Abandon: Unavailable",
                 "lines": [
-                  "There is no egg count here for me to close."
+                  "There is no egg count here for me to close.",
+                  "Egg Baskets is not available from here right now.",
+                  "That request is not in your hands right now.",
+                  "I cannot offer Egg Baskets at the moment.",
+                  "Egg Baskets is closed to new help for now.",
+                  "This is not ready for you right now.",
+                  "The village is not accepting that work at the moment.",
+                  "No open note for Egg Baskets is waiting here.",
+                  "Try again later if Egg Baskets comes back around.",
+                  "I cannot move that request today.",
+                  "Egg Baskets needs different timing.",
+                  "The work exists, but not for this moment.",
+                  "I do not have authority to open that now.",
+                  "The request is out of reach for now.",
+                  "There is nothing for me to hand you on Egg Baskets."
                 ]
               },
               {
@@ -12675,7 +21334,21 @@ window.VR_WIKI_DATA = {
                 "key": "completed",
                 "label": "Turn-in: Completed",
                 "lines": [
-                  "Egg Baskets is complete. The village can use this, and you have earned the reward."
+                  "Egg Baskets is complete. The village can use this, and you have earned the reward.",
+                  "That settles Egg Baskets. The village will put this to use.",
+                  "Egg Baskets is complete, and the help is appreciated.",
+                  "Good. I can close Egg Baskets with a clean mark.",
+                  "This will help more than it looks like it should.",
+                  "The count is right. Take your reward with my thanks.",
+                  "That is enough to close the request.",
+                  "Well done. Egg Baskets is finished.",
+                  "The village can use this before the day is out.",
+                  "I will mark Egg Baskets complete.",
+                  "Good work. The note comes down now.",
+                  "That is the kind of help people remember at supper.",
+                  "Everything is here. Egg Baskets is settled.",
+                  "The village needed this, and you brought it.",
+                  "A full count makes a calmer room."
                 ]
               },
               {
@@ -12684,7 +21357,21 @@ window.VR_WIKI_DATA = {
                 "key": "inactive",
                 "label": "Turn-in: Inactive",
                 "lines": [
-                  "The kitchen is not accepting eggs right now."
+                  "The kitchen is not accepting eggs right now.",
+                  "Egg Baskets is quiet right now.",
+                  "The village is not counting Egg Baskets at the moment.",
+                  "That request is not open right now.",
+                  "Egg Baskets is waiting on better timing.",
+                  "I cannot move Egg Baskets forward just now.",
+                  "The conditions for Egg Baskets are not ready.",
+                  "The note for Egg Baskets is closed for the moment.",
+                  "No one is taking that request right now.",
+                  "Egg Baskets needs to wait a little longer.",
+                  "This is not the right moment for Egg Baskets.",
+                  "The work is real, but it is not open right now.",
+                  "I have no active count for Egg Baskets at the moment.",
+                  "Egg Baskets is between openings right now.",
+                  "The village is not ready to accept that help yet."
                 ]
               },
               {
@@ -12693,7 +21380,21 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Egg Baskets is still short. The tracker has the exact count."
+                  "Egg Baskets is still short. The tracker has the exact count.",
+                  "Check the tracker before we close Egg Baskets.",
+                  "The work is not complete yet.",
+                  "There is still one part of Egg Baskets missing.",
+                  "Bring the rest and I can settle the note.",
+                  "The village cannot use half a finished request.",
+                  "The tally says there is more to do.",
+                  "You are not empty handed, but this is not complete yet.",
+                  "The last pieces still matter.",
+                  "I need the whole request finished before I close it.",
+                  "The tracker knows what the note still needs.",
+                  "Keep going. Egg Baskets is not ready to turn in yet.",
+                  "The work is close enough to see, not close enough to sign.",
+                  "Bring the missing part back when you have it.",
+                  "The request still has work left in it."
                 ]
               },
               {
@@ -12702,7 +21403,21 @@ window.VR_WIKI_DATA = {
                 "key": "missing_proof",
                 "label": "Turn-in: Missing proof",
                 "lines": [
-                  "Egg Baskets still needs the eggs in your pack before I can close it."
+                  "Egg Baskets still needs the eggs in your pack before I can close it.",
+                  "I still need 12 eggs before I can close Egg Baskets.",
+                  "Bring 12 eggs, then we can settle Egg Baskets.",
+                  "Egg Baskets needs the proof in your pack first.",
+                  "I cannot close Egg Baskets until I see 12 eggs.",
+                  "The reward waits until 12 eggs is here.",
+                  "Show me 12 eggs and we can finish this properly.",
+                  "The village needs the goods before the note comes down.",
+                  "You are close, but 12 eggs still needs to be here.",
+                  "I need the actual proof before I mark Egg Baskets done.",
+                  "Come back with 12 eggs and we can close the count.",
+                  "The request is not finished without 12 eggs.",
+                  "Egg Baskets still needs something I can hold and count.",
+                  "I need the delivery in hand before this is settled.",
+                  "Bring the proof back and I will close Egg Baskets."
                 ]
               },
               {
@@ -12711,7 +21426,21 @@ window.VR_WIKI_DATA = {
                 "key": "missing_target",
                 "label": "Turn-in: Missing target",
                 "lines": [
-                  "Egg Baskets is not at the right count yet; bring the rest before turning it in."
+                  "Egg Baskets is not at the right count yet; bring the rest before turning it in.",
+                  "Egg Baskets is still short. The tracker has the exact count.",
+                  "Something is missing for Egg Baskets, so check the tracker and bring the rest.",
+                  "The count is not complete yet.",
+                  "We need the full amount before Egg Baskets can close.",
+                  "The village is still waiting on the rest of it.",
+                  "Egg Baskets needs every part before I can sign it off.",
+                  "The work is close, but close does not fill a shelf.",
+                  "Bring the rest and we can finish Egg Baskets.",
+                  "The tally still has an empty line in it.",
+                  "I cannot call Egg Baskets complete while the count is short.",
+                  "The tracker will show what is still missing.",
+                  "There is still more to gather for Egg Baskets.",
+                  "The full delivery matters here.",
+                  "Not quite enough yet, but you are on the right road."
                 ]
               },
               {
@@ -12720,7 +21449,21 @@ window.VR_WIKI_DATA = {
                 "key": "unavailable",
                 "label": "Turn-in: Unavailable",
                 "lines": [
-                  "This egg count is not ready to close yet."
+                  "This egg count is not ready to close yet.",
+                  "Egg Baskets is not available from here right now.",
+                  "That request is not in your hands right now.",
+                  "I cannot offer Egg Baskets at the moment.",
+                  "Egg Baskets is closed to new help for now.",
+                  "This is not ready for you right now.",
+                  "The village is not accepting that work at the moment.",
+                  "No open note for Egg Baskets is waiting here.",
+                  "Try again later if Egg Baskets comes back around.",
+                  "I cannot move that request today.",
+                  "Egg Baskets needs different timing.",
+                  "The work exists, but not for this moment.",
+                  "I do not have authority to open that now.",
+                  "The request is out of reach for now.",
+                  "There is nothing for me to hand you on Egg Baskets."
                 ]
               }
             ],
@@ -12729,21 +21472,63 @@ window.VR_WIKI_DATA = {
                 "sceneId": "abandon_cancel",
                 "label": "Scene: Abandon Cancel",
                 "lines": [
-                  "Good. The pans will stay hopeful a little longer."
+                  "Good. The pans will stay hopeful a little longer.",
+                  "Good. We will keep Egg Baskets open a while longer.",
+                  "Then the request stays active.",
+                  "Fine. Keep Egg Baskets in your hands for now.",
+                  "Good. I will leave the note where it is.",
+                  "Then we keep counting on you for this one.",
+                  "The work stays open.",
+                  "Egg Baskets remains on your list.",
+                  "Good. Bring it back when you are ready.",
+                  "I will keep the tally under your name.",
+                  "Then nothing changes for Egg Baskets.",
+                  "Good. The village will wait a little longer.",
+                  "Keep the request and finish it when you can.",
+                  "I will not close the note yet.",
+                  "Then Egg Baskets stays alive."
                 ]
               },
               {
                 "sceneId": "abandon_confirm",
                 "label": "Scene: Abandon Confirm",
                 "lines": [
-                  "Put Egg Baskets aside for now?"
+                  "Put Egg Baskets aside for now?",
+                  "Are you sure you want to step away from Egg Baskets?",
+                  "Close your part in Egg Baskets for now?",
+                  "Should I mark Egg Baskets abandoned?",
+                  "Do you want me to take your name off this request?",
+                  "Set the note for Egg Baskets aside?",
+                  "Are you done with Egg Baskets for now?",
+                  "Should I stop counting on you for this one?",
+                  "Do you want to leave Egg Baskets unfinished?",
+                  "Put the work down and walk away?",
+                  "Should I close this attempt?",
+                  "Are you sure Egg Baskets can wait without you?",
+                  "Do you want the request removed from your list?",
+                  "Shall I fold this note away?",
+                  "One last check. Are you abandoning Egg Baskets?"
                 ]
               },
               {
                 "sceneId": "turn_in_wait",
                 "label": "Scene: Turn In Wait",
                 "lines": [
-                  "Keep the eggs safe, then bring them back when you are ready."
+                  "Keep the eggs safe, then bring them back when you are ready.",
+                  "Hold onto the supplies for Egg Baskets until you are ready to finish.",
+                  "Then bring it back when you want the note closed.",
+                  "Keep the delivery safe until we count it.",
+                  "No hurry in the words, but do not lose the goods.",
+                  "Come back when you are ready to settle Egg Baskets.",
+                  "I will wait to close the tally.",
+                  "Keep the count together and return when you can.",
+                  "The request stays open until you turn it in.",
+                  "Bring everything back when you are ready for the reward.",
+                  "Then we will leave Egg Baskets unfinished for the moment.",
+                  "Keep it close. Lost supplies do not help anyone.",
+                  "Return when you want this properly counted.",
+                  "The tally can wait a little longer.",
+                  "I will not close the note until you say so."
                 ]
               }
             ]
@@ -12761,7 +21546,20 @@ window.VR_WIKI_DATA = {
                 "label": "Egg Baskets",
                 "lines": [
                   "We are shorter on eggs than we are on patience.",
-                  "That usually ends with breakfast becoming a rumor."
+                  "That usually ends with breakfast becoming a rumor.",
+                  "The village could use help with 12 eggs for Egg Baskets.",
+                  "Egg Baskets is simple work, but simple work still feeds the day.",
+                  "We need 12 eggs, and I would rather ask before the shortage becomes loud.",
+                  "If you have room in your pack, Egg Baskets would help.",
+                  "The count is not dramatic yet, which is when it is worth fixing.",
+                  "A little help with Egg Baskets would settle more than one worry.",
+                  "I have a request for 12 eggs, if you are willing.",
+                  "This village runs better when requests like Egg Baskets do not wait too long.",
+                  "The stores are asking for 12 eggs in their quiet way.",
+                  "I could use a steady hand for Egg Baskets.",
+                  "Bring 12 eggs, and the village will feel the difference.",
+                  "Nothing glorious here, just useful work that matters.",
+                  "Egg Baskets needs doing before it becomes everyone's problem."
                 ],
                 "responses": [
                   {
@@ -12785,7 +21583,21 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Egg Baskets",
                 "lines": [
-                  "Egg Baskets is still open. I can repeat the details, or close my notes if you are done."
+                  "Egg Baskets is still open. I can repeat the details, or close my notes if you are done.",
+                  "Egg Baskets is still open. I can repeat the work or close the note if you are done.",
+                  "Egg Baskets is active. Do you need the details again?",
+                  "We still have Egg Baskets on the slate.",
+                  "The request is open, and I can remind you what it needs.",
+                  "Egg Baskets has not been closed yet.",
+                  "I can go over Egg Baskets again, or we can put it aside.",
+                  "You still have Egg Baskets in hand.",
+                  "The note is open. What do you need from me?",
+                  "Egg Baskets is waiting on the rest of the count.",
+                  "I can repeat the request or close it if you are done.",
+                  "We can talk details, abandon the work, or leave it alone.",
+                  "The village is still expecting Egg Baskets.",
+                  "Your part in Egg Baskets is not finished yet.",
+                  "Say the word and I will remind you what Egg Baskets needs."
                 ],
                 "responses": [
                   {
@@ -12820,7 +21632,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned",
                 "label": "Abandon: Abandoned",
                 "lines": [
-                  "I will set the egg baskets aside. Return if the kitchen still needs them."
+                  "I will set the egg baskets aside. Return if the kitchen still needs them.",
+                  "I will set Egg Baskets aside. Come back if the village still needs it.",
+                  "Egg Baskets is off your hands for now.",
+                  "I will clear the note and stop counting on you for this one.",
+                  "The request is set aside.",
+                  "I will mark Egg Baskets abandoned for now.",
+                  "Then we will leave Egg Baskets alone.",
+                  "I will put the tally away.",
+                  "The village will manage without this run for now.",
+                  "I will stop holding that work under your name.",
+                  "Egg Baskets is no longer active for you.",
+                  "I will take your name off the request.",
+                  "The note comes down for now.",
+                  "That closes your part in Egg Baskets for the moment.",
+                  "I will make the record clean again."
                 ]
               },
               {
@@ -12829,7 +21655,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned_cooldown",
                 "label": "Abandon: Abandoned Cooldown",
                 "lines": [
-                  "I will pause the egg count for now. Let the kitchen settle before asking again."
+                  "I will pause the egg count for now. Let the kitchen settle before asking again.",
+                  "I will pause Egg Baskets for now. Give the village a little time before asking again.",
+                  "Egg Baskets is set aside until the count settles.",
+                  "I will cool the request for a while.",
+                  "The village needs time before reopening Egg Baskets.",
+                  "I will mark this paused, not forgotten.",
+                  "Let the stores settle before we talk about Egg Baskets again.",
+                  "I will put the note away until the cooldown passes.",
+                  "Come back after the village has had time to reset.",
+                  "Egg Baskets can wait until the next proper opening.",
+                  "I will close this attempt and let the request breathe.",
+                  "The slate needs a little quiet before this comes back.",
+                  "I will pause the tally for now.",
+                  "Give this one time before you ask again.",
+                  "The request will not reopen immediately."
                 ]
               },
               {
@@ -12838,7 +21678,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned_forever",
                 "label": "Abandon: Abandoned Forever",
                 "lines": [
-                  "Then the egg request is closed for good."
+                  "Then the egg request is closed for good.",
+                  "Then Egg Baskets is closed for good.",
+                  "I will not reopen Egg Baskets.",
+                  "That request is finished permanently.",
+                  "Egg Baskets leaves the board for good.",
+                  "Then this note is gone, not paused.",
+                  "I will mark Egg Baskets as permanently closed.",
+                  "No one will ask you for this request again.",
+                  "That closes the matter completely.",
+                  "The village will not bring this one back to you.",
+                  "Egg Baskets is ended, not waiting.",
+                  "I will put a final mark on the record.",
+                  "This request is done beyond rechecking.",
+                  "Then we leave Egg Baskets in the past.",
+                  "I will close the book on that one."
                 ]
               },
               {
@@ -12847,7 +21701,21 @@ window.VR_WIKI_DATA = {
                 "key": "unavailable",
                 "label": "Abandon: Unavailable",
                 "lines": [
-                  "There is no egg count here for me to close."
+                  "There is no egg count here for me to close.",
+                  "Egg Baskets is not available from here right now.",
+                  "That request is not in your hands right now.",
+                  "I cannot offer Egg Baskets at the moment.",
+                  "Egg Baskets is closed to new help for now.",
+                  "This is not ready for you right now.",
+                  "The village is not accepting that work at the moment.",
+                  "No open note for Egg Baskets is waiting here.",
+                  "Try again later if Egg Baskets comes back around.",
+                  "I cannot move that request today.",
+                  "Egg Baskets needs different timing.",
+                  "The work exists, but not for this moment.",
+                  "I do not have authority to open that now.",
+                  "The request is out of reach for now.",
+                  "There is nothing for me to hand you on Egg Baskets."
                 ]
               },
               {
@@ -12856,7 +21724,21 @@ window.VR_WIKI_DATA = {
                 "key": "inactive",
                 "label": "Reminder: Inactive",
                 "lines": [
-                  "The kitchen has no active egg count at the moment."
+                  "The kitchen has no active egg count at the moment.",
+                  "Egg Baskets is quiet right now.",
+                  "The village is not counting Egg Baskets at the moment.",
+                  "That request is not open right now.",
+                  "Egg Baskets is waiting on better timing.",
+                  "I cannot move Egg Baskets forward just now.",
+                  "The conditions for Egg Baskets are not ready.",
+                  "The note for Egg Baskets is closed for the moment.",
+                  "No one is taking that request right now.",
+                  "Egg Baskets needs to wait a little longer.",
+                  "This is not the right moment for Egg Baskets.",
+                  "The work is real, but it is not open right now.",
+                  "I have no active count for Egg Baskets at the moment.",
+                  "Egg Baskets is between openings right now.",
+                  "The village is not ready to accept that help yet."
                 ]
               },
               {
@@ -12865,7 +21747,21 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Egg Baskets: I still need the eggs. Bring the full count back to me."
+                  "Egg Baskets: I still need the eggs. Bring the full count back to me.",
+                  "For Egg Baskets, I still need 12 eggs.",
+                  "Egg Baskets is still asking for 12 eggs.",
+                  "Bring 12 eggs back when the count is ready.",
+                  "The tracker has the details for Egg Baskets.",
+                  "Keep Egg Baskets in mind and bring 12 eggs.",
+                  "The village is still waiting on 12 eggs.",
+                  "No rush in the words, but the count still matters.",
+                  "Bring the full amount back to me when you have it.",
+                  "Egg Baskets is still open.",
+                  "Follow the tracker for Egg Baskets and bring back 12 eggs.",
+                  "You are looking for 12 eggs for this request.",
+                  "The note says 12 eggs, and the note is not wrong today.",
+                  "Finish the count and return here when you can.",
+                  "This is simple work only if it gets done."
                 ]
               },
               {
@@ -12874,7 +21770,21 @@ window.VR_WIKI_DATA = {
                 "key": "unavailable",
                 "label": "Reminder: Unavailable",
                 "lines": [
-                  "That egg-basket request is not in your hands right now."
+                  "That egg-basket request is not in your hands right now.",
+                  "Egg Baskets is not available from here right now.",
+                  "That request is not in your hands right now.",
+                  "I cannot offer Egg Baskets at the moment.",
+                  "Egg Baskets is closed to new help for now.",
+                  "This is not ready for you right now.",
+                  "The village is not accepting that work at the moment.",
+                  "No open note for Egg Baskets is waiting here.",
+                  "Try again later if Egg Baskets comes back around.",
+                  "I cannot move that request today.",
+                  "Egg Baskets needs different timing.",
+                  "The work exists, but not for this moment.",
+                  "I do not have authority to open that now.",
+                  "The request is out of reach for now.",
+                  "There is nothing for me to hand you on Egg Baskets."
                 ]
               },
               {
@@ -12883,7 +21793,21 @@ window.VR_WIKI_DATA = {
                 "key": "already_completed",
                 "label": "Start: Already completed",
                 "lines": [
-                  "The egg baskets are already settled."
+                  "The egg baskets are already settled.",
+                  "Egg Baskets is already settled on my side.",
+                  "We have already closed Egg Baskets.",
+                  "Egg Baskets does not need another tally right now.",
+                  "That work is already counted and put away.",
+                  "Egg Baskets is finished for now.",
+                  "The village has already marked Egg Baskets complete.",
+                  "I have no open note for Egg Baskets anymore.",
+                  "Egg Baskets has already been handled.",
+                  "That request is already off the board.",
+                  "We are not reopening Egg Baskets right now.",
+                  "Egg Baskets is done enough for today.",
+                  "The record for Egg Baskets is already clean.",
+                  "There is no fresh work left in Egg Baskets.",
+                  "That one is already squared away."
                 ]
               },
               {
@@ -12892,7 +21816,21 @@ window.VR_WIKI_DATA = {
                 "key": "locate_failed",
                 "label": "Start: Locate Failed",
                 "lines": [
-                  "Egg Baskets cannot be posted from here right now."
+                  "Egg Baskets cannot be posted from here right now.",
+                  "I cannot post Egg Baskets from here right now.",
+                  "Egg Baskets is not finding a proper place to start.",
+                  "No good posting point is ready for Egg Baskets.",
+                  "The village cannot place that request from here.",
+                  "Egg Baskets needs a better lead before I send you out.",
+                  "I cannot get a clean mark for Egg Baskets today.",
+                  "The request is real, but the place is not lining up.",
+                  "Something about this spot will not let Egg Baskets start.",
+                  "I need a clearer posting before I can offer Egg Baskets.",
+                  "The work is not anchoring here right now.",
+                  "I cannot set the note for Egg Baskets from this place.",
+                  "The village has no clean place to send you for that.",
+                  "Egg Baskets is refusing to settle onto the slate.",
+                  "The route for Egg Baskets is not clear enough yet."
                 ]
               },
               {
@@ -12901,7 +21839,21 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Egg Baskets is yours now. Bring the eggs back when the count is ready."
+                  "Egg Baskets is yours now. Bring the eggs back when the count is ready.",
+                  "Egg Baskets is yours now. Bring 12 eggs when the count is ready.",
+                  "I am putting Egg Baskets in your hands.",
+                  "Take the note for Egg Baskets and bring back 12 eggs.",
+                  "Good. The village will be waiting for 12 eggs.",
+                  "Then we will count on you for Egg Baskets.",
+                  "Bring 12 eggs, and we can call this useful work.",
+                  "Egg Baskets starts now. Keep the tracker close.",
+                  "Head out for Egg Baskets and return with 12 eggs.",
+                  "The request is open, and your name is on it now.",
+                  "I will mark you down for Egg Baskets.",
+                  "Bring the full count back when you have it.",
+                  "You have the work now. Do it cleanly and come back safe.",
+                  "Egg Baskets points. Bring 12 eggs.",
+                  "That settles the posting. Now we need 12 eggs."
                 ]
               },
               {
@@ -12910,7 +21862,21 @@ window.VR_WIKI_DATA = {
                 "key": "unavailable",
                 "label": "Start: Unavailable",
                 "lines": [
-                  "The kitchen is not asking you for eggs right now."
+                  "The kitchen is not asking you for eggs right now.",
+                  "Egg Baskets is not available from here right now.",
+                  "That request is not in your hands right now.",
+                  "I cannot offer Egg Baskets at the moment.",
+                  "Egg Baskets is closed to new help for now.",
+                  "This is not ready for you right now.",
+                  "The village is not accepting that work at the moment.",
+                  "No open note for Egg Baskets is waiting here.",
+                  "Try again later if Egg Baskets comes back around.",
+                  "I cannot move that request today.",
+                  "Egg Baskets needs different timing.",
+                  "The work exists, but not for this moment.",
+                  "I do not have authority to open that now.",
+                  "The request is out of reach for now.",
+                  "There is nothing for me to hand you on Egg Baskets."
                 ]
               }
             ],
@@ -12919,28 +21885,84 @@ window.VR_WIKI_DATA = {
                 "sceneId": "abandon_cancel",
                 "label": "Scene: Abandon Cancel",
                 "lines": [
-                  "Good. The pans will stay hopeful a little longer."
+                  "Good. The pans will stay hopeful a little longer.",
+                  "Good. We will keep Egg Baskets open a while longer.",
+                  "Then the request stays active.",
+                  "Fine. Keep Egg Baskets in your hands for now.",
+                  "Good. I will leave the note where it is.",
+                  "Then we keep counting on you for this one.",
+                  "The work stays open.",
+                  "Egg Baskets remains on your list.",
+                  "Good. Bring it back when you are ready.",
+                  "I will keep the tally under your name.",
+                  "Then nothing changes for Egg Baskets.",
+                  "Good. The village will wait a little longer.",
+                  "Keep the request and finish it when you can.",
+                  "I will not close the note yet.",
+                  "Then Egg Baskets stays alive."
                 ]
               },
               {
                 "sceneId": "abandon_confirm",
                 "label": "Scene: Abandon Confirm",
                 "lines": [
-                  "Put Egg Baskets aside for now?"
+                  "Put Egg Baskets aside for now?",
+                  "Are you sure you want to step away from Egg Baskets?",
+                  "Close your part in Egg Baskets for now?",
+                  "Should I mark Egg Baskets abandoned?",
+                  "Do you want me to take your name off this request?",
+                  "Set the note for Egg Baskets aside?",
+                  "Are you done with Egg Baskets for now?",
+                  "Should I stop counting on you for this one?",
+                  "Do you want to leave Egg Baskets unfinished?",
+                  "Put the work down and walk away?",
+                  "Should I close this attempt?",
+                  "Are you sure Egg Baskets can wait without you?",
+                  "Do you want the request removed from your list?",
+                  "Shall I fold this note away?",
+                  "One last check. Are you abandoning Egg Baskets?"
                 ]
               },
               {
                 "sceneId": "active_cancel",
                 "label": "Scene: Active Cancel",
                 "lines": [
-                  "Then keep the shells uncracked until you are ready."
+                  "Then keep the shells uncracked until you are ready.",
+                  "Then keep Egg Baskets close until you are ready.",
+                  "All right. We will leave Egg Baskets open.",
+                  "Keep the request and come back when you need the details.",
+                  "Then I will leave the note alone.",
+                  "No change, then. Egg Baskets stays with you.",
+                  "Good. Finish it when the count is ready.",
+                  "The work waits where it is.",
+                  "Then we do nothing more for now.",
+                  "Keep going when you are ready.",
+                  "Egg Baskets remains open.",
+                  "I will keep the tally active.",
+                  "Come back when you want to settle it.",
+                  "Then hold onto the work a little longer.",
+                  "The village will wait for the full count."
                 ]
               },
               {
                 "sceneId": "decline",
                 "label": "Scene: Decline",
                 "lines": [
-                  "Then I will keep negotiating with empty pans."
+                  "Then I will keep negotiating with empty pans.",
+                  "Another time, then. I will keep Egg Baskets in mind.",
+                  "Fair enough. The request can wait a little longer.",
+                  "Then I will keep the note nearby.",
+                  "No trouble. Someone will ask again if it still matters.",
+                  "The village will manage for now.",
+                  "Then we leave Egg Baskets on the board.",
+                  "All right. I will not press you on it.",
+                  "Maybe later, if the need is still there.",
+                  "I will keep counting without your help for now.",
+                  "Then the request waits for another willing pair of hands.",
+                  "Fine. Better a clear no than a forgotten promise.",
+                  "The work is not going anywhere quickly.",
+                  "Then I will ask again when the village needs it.",
+                  "No harm. Egg Baskets can wait."
                 ]
               }
             ]
@@ -12955,7 +21977,21 @@ window.VR_WIKI_DATA = {
                 "title": "Turn-in",
                 "label": "About Egg Baskets",
                 "lines": [
-                  "If you have the eggs, we can settle Egg Baskets."
+                  "If you have the eggs, we can settle Egg Baskets.",
+                  "If you have what Egg Baskets needs, we can settle it now.",
+                  "Ready to show me the delivery for Egg Baskets?",
+                  "Bring it here and I will check the count.",
+                  "If the full count is in your pack, we can close the note.",
+                  "Let me see whether Egg Baskets is ready to finish.",
+                  "If you brought 12 eggs, this should be quick.",
+                  "We can close Egg Baskets if the goods are here.",
+                  "Show me what you brought and I will count it properly.",
+                  "If the request is complete, I can pay you now.",
+                  "Ready to finish Egg Baskets?",
+                  "Set the delivery here and we will see where the tally stands.",
+                  "If you have the supplies, the note can come down.",
+                  "Let us check the pack and close the matter if we can.",
+                  "If Egg Baskets is complete, I am ready to mark it."
                 ],
                 "responses": [
                   {
@@ -12990,7 +22026,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned",
                 "label": "Abandon: Abandoned",
                 "lines": [
-                  "I will set the egg baskets aside. Return if the kitchen still needs them."
+                  "I will set the egg baskets aside. Return if the kitchen still needs them.",
+                  "I will set Egg Baskets aside. Come back if the village still needs it.",
+                  "Egg Baskets is off your hands for now.",
+                  "I will clear the note and stop counting on you for this one.",
+                  "The request is set aside.",
+                  "I will mark Egg Baskets abandoned for now.",
+                  "Then we will leave Egg Baskets alone.",
+                  "I will put the tally away.",
+                  "The village will manage without this run for now.",
+                  "I will stop holding that work under your name.",
+                  "Egg Baskets is no longer active for you.",
+                  "I will take your name off the request.",
+                  "The note comes down for now.",
+                  "That closes your part in Egg Baskets for the moment.",
+                  "I will make the record clean again."
                 ]
               },
               {
@@ -12999,7 +22049,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned_cooldown",
                 "label": "Abandon: Abandoned Cooldown",
                 "lines": [
-                  "I will pause the egg count for now. Let the kitchen settle before asking again."
+                  "I will pause the egg count for now. Let the kitchen settle before asking again.",
+                  "I will pause Egg Baskets for now. Give the village a little time before asking again.",
+                  "Egg Baskets is set aside until the count settles.",
+                  "I will cool the request for a while.",
+                  "The village needs time before reopening Egg Baskets.",
+                  "I will mark this paused, not forgotten.",
+                  "Let the stores settle before we talk about Egg Baskets again.",
+                  "I will put the note away until the cooldown passes.",
+                  "Come back after the village has had time to reset.",
+                  "Egg Baskets can wait until the next proper opening.",
+                  "I will close this attempt and let the request breathe.",
+                  "The slate needs a little quiet before this comes back.",
+                  "I will pause the tally for now.",
+                  "Give this one time before you ask again.",
+                  "The request will not reopen immediately."
                 ]
               },
               {
@@ -13008,7 +22072,21 @@ window.VR_WIKI_DATA = {
                 "key": "abandoned_forever",
                 "label": "Abandon: Abandoned Forever",
                 "lines": [
-                  "Then the egg request is closed for good."
+                  "Then the egg request is closed for good.",
+                  "Then Egg Baskets is closed for good.",
+                  "I will not reopen Egg Baskets.",
+                  "That request is finished permanently.",
+                  "Egg Baskets leaves the board for good.",
+                  "Then this note is gone, not paused.",
+                  "I will mark Egg Baskets as permanently closed.",
+                  "No one will ask you for this request again.",
+                  "That closes the matter completely.",
+                  "The village will not bring this one back to you.",
+                  "Egg Baskets is ended, not waiting.",
+                  "I will put a final mark on the record.",
+                  "This request is done beyond rechecking.",
+                  "Then we leave Egg Baskets in the past.",
+                  "I will close the book on that one."
                 ]
               },
               {
@@ -13017,7 +22095,21 @@ window.VR_WIKI_DATA = {
                 "key": "unavailable",
                 "label": "Abandon: Unavailable",
                 "lines": [
-                  "There is no egg count here for me to close."
+                  "There is no egg count here for me to close.",
+                  "Egg Baskets is not available from here right now.",
+                  "That request is not in your hands right now.",
+                  "I cannot offer Egg Baskets at the moment.",
+                  "Egg Baskets is closed to new help for now.",
+                  "This is not ready for you right now.",
+                  "The village is not accepting that work at the moment.",
+                  "No open note for Egg Baskets is waiting here.",
+                  "Try again later if Egg Baskets comes back around.",
+                  "I cannot move that request today.",
+                  "Egg Baskets needs different timing.",
+                  "The work exists, but not for this moment.",
+                  "I do not have authority to open that now.",
+                  "The request is out of reach for now.",
+                  "There is nothing for me to hand you on Egg Baskets."
                 ]
               },
               {
@@ -13026,7 +22118,21 @@ window.VR_WIKI_DATA = {
                 "key": "completed",
                 "label": "Turn-in: Completed",
                 "lines": [
-                  "Egg Baskets is complete. The village can use this, and you have earned the reward."
+                  "Egg Baskets is complete. The village can use this, and you have earned the reward.",
+                  "That settles Egg Baskets. The village will put this to use.",
+                  "Egg Baskets is complete, and the help is appreciated.",
+                  "Good. I can close Egg Baskets with a clean mark.",
+                  "This will help more than it looks like it should.",
+                  "The count is right. Take your reward with my thanks.",
+                  "That is enough to close the request.",
+                  "Well done. Egg Baskets is finished.",
+                  "The village can use this before the day is out.",
+                  "I will mark Egg Baskets complete.",
+                  "Good work. The note comes down now.",
+                  "That is the kind of help people remember at supper.",
+                  "Everything is here. Egg Baskets is settled.",
+                  "The village needed this, and you brought it.",
+                  "A full count makes a calmer room."
                 ]
               },
               {
@@ -13035,7 +22141,21 @@ window.VR_WIKI_DATA = {
                 "key": "inactive",
                 "label": "Turn-in: Inactive",
                 "lines": [
-                  "The kitchen is not accepting eggs right now."
+                  "The kitchen is not accepting eggs right now.",
+                  "Egg Baskets is quiet right now.",
+                  "The village is not counting Egg Baskets at the moment.",
+                  "That request is not open right now.",
+                  "Egg Baskets is waiting on better timing.",
+                  "I cannot move Egg Baskets forward just now.",
+                  "The conditions for Egg Baskets are not ready.",
+                  "The note for Egg Baskets is closed for the moment.",
+                  "No one is taking that request right now.",
+                  "Egg Baskets needs to wait a little longer.",
+                  "This is not the right moment for Egg Baskets.",
+                  "The work is real, but it is not open right now.",
+                  "I have no active count for Egg Baskets at the moment.",
+                  "Egg Baskets is between openings right now.",
+                  "The village is not ready to accept that help yet."
                 ]
               },
               {
@@ -13044,7 +22164,21 @@ window.VR_WIKI_DATA = {
                 "key": "missing_objectives",
                 "label": "Turn-in: Missing objectives",
                 "lines": [
-                  "Egg Baskets is still short. The tracker has the exact count."
+                  "Egg Baskets is still short. The tracker has the exact count.",
+                  "Check the tracker before we close Egg Baskets.",
+                  "The work is not complete yet.",
+                  "There is still one part of Egg Baskets missing.",
+                  "Bring the rest and I can settle the note.",
+                  "The village cannot use half a finished request.",
+                  "The tally says there is more to do.",
+                  "You are not empty handed, but this is not complete yet.",
+                  "The last pieces still matter.",
+                  "I need the whole request finished before I close it.",
+                  "The tracker knows what the note still needs.",
+                  "Keep going. Egg Baskets is not ready to turn in yet.",
+                  "The work is close enough to see, not close enough to sign.",
+                  "Bring the missing part back when you have it.",
+                  "The request still has work left in it."
                 ]
               },
               {
@@ -13053,7 +22187,21 @@ window.VR_WIKI_DATA = {
                 "key": "missing_proof",
                 "label": "Turn-in: Missing proof",
                 "lines": [
-                  "Egg Baskets still needs the eggs in your pack before I can close it."
+                  "Egg Baskets still needs the eggs in your pack before I can close it.",
+                  "I still need 12 eggs before I can close Egg Baskets.",
+                  "Bring 12 eggs, then we can settle Egg Baskets.",
+                  "Egg Baskets needs the proof in your pack first.",
+                  "I cannot close Egg Baskets until I see 12 eggs.",
+                  "The reward waits until 12 eggs is here.",
+                  "Show me 12 eggs and we can finish this properly.",
+                  "The village needs the goods before the note comes down.",
+                  "You are close, but 12 eggs still needs to be here.",
+                  "I need the actual proof before I mark Egg Baskets done.",
+                  "Come back with 12 eggs and we can close the count.",
+                  "The request is not finished without 12 eggs.",
+                  "Egg Baskets still needs something I can hold and count.",
+                  "I need the delivery in hand before this is settled.",
+                  "Bring the proof back and I will close Egg Baskets."
                 ]
               },
               {
@@ -13062,7 +22210,21 @@ window.VR_WIKI_DATA = {
                 "key": "missing_target",
                 "label": "Turn-in: Missing target",
                 "lines": [
-                  "Egg Baskets is not at the right count yet; bring the rest before turning it in."
+                  "Egg Baskets is not at the right count yet; bring the rest before turning it in.",
+                  "Egg Baskets is still short. The tracker has the exact count.",
+                  "Something is missing for Egg Baskets, so check the tracker and bring the rest.",
+                  "The count is not complete yet.",
+                  "We need the full amount before Egg Baskets can close.",
+                  "The village is still waiting on the rest of it.",
+                  "Egg Baskets needs every part before I can sign it off.",
+                  "The work is close, but close does not fill a shelf.",
+                  "Bring the rest and we can finish Egg Baskets.",
+                  "The tally still has an empty line in it.",
+                  "I cannot call Egg Baskets complete while the count is short.",
+                  "The tracker will show what is still missing.",
+                  "There is still more to gather for Egg Baskets.",
+                  "The full delivery matters here.",
+                  "Not quite enough yet, but you are on the right road."
                 ]
               },
               {
@@ -13071,7 +22233,21 @@ window.VR_WIKI_DATA = {
                 "key": "unavailable",
                 "label": "Turn-in: Unavailable",
                 "lines": [
-                  "This egg count is not ready to close yet."
+                  "This egg count is not ready to close yet.",
+                  "Egg Baskets is not available from here right now.",
+                  "That request is not in your hands right now.",
+                  "I cannot offer Egg Baskets at the moment.",
+                  "Egg Baskets is closed to new help for now.",
+                  "This is not ready for you right now.",
+                  "The village is not accepting that work at the moment.",
+                  "No open note for Egg Baskets is waiting here.",
+                  "Try again later if Egg Baskets comes back around.",
+                  "I cannot move that request today.",
+                  "Egg Baskets needs different timing.",
+                  "The work exists, but not for this moment.",
+                  "I do not have authority to open that now.",
+                  "The request is out of reach for now.",
+                  "There is nothing for me to hand you on Egg Baskets."
                 ]
               }
             ],
@@ -13080,21 +22256,63 @@ window.VR_WIKI_DATA = {
                 "sceneId": "abandon_cancel",
                 "label": "Scene: Abandon Cancel",
                 "lines": [
-                  "Good. The pans will stay hopeful a little longer."
+                  "Good. The pans will stay hopeful a little longer.",
+                  "Good. We will keep Egg Baskets open a while longer.",
+                  "Then the request stays active.",
+                  "Fine. Keep Egg Baskets in your hands for now.",
+                  "Good. I will leave the note where it is.",
+                  "Then we keep counting on you for this one.",
+                  "The work stays open.",
+                  "Egg Baskets remains on your list.",
+                  "Good. Bring it back when you are ready.",
+                  "I will keep the tally under your name.",
+                  "Then nothing changes for Egg Baskets.",
+                  "Good. The village will wait a little longer.",
+                  "Keep the request and finish it when you can.",
+                  "I will not close the note yet.",
+                  "Then Egg Baskets stays alive."
                 ]
               },
               {
                 "sceneId": "abandon_confirm",
                 "label": "Scene: Abandon Confirm",
                 "lines": [
-                  "Put Egg Baskets aside for now?"
+                  "Put Egg Baskets aside for now?",
+                  "Are you sure you want to step away from Egg Baskets?",
+                  "Close your part in Egg Baskets for now?",
+                  "Should I mark Egg Baskets abandoned?",
+                  "Do you want me to take your name off this request?",
+                  "Set the note for Egg Baskets aside?",
+                  "Are you done with Egg Baskets for now?",
+                  "Should I stop counting on you for this one?",
+                  "Do you want to leave Egg Baskets unfinished?",
+                  "Put the work down and walk away?",
+                  "Should I close this attempt?",
+                  "Are you sure Egg Baskets can wait without you?",
+                  "Do you want the request removed from your list?",
+                  "Shall I fold this note away?",
+                  "One last check. Are you abandoning Egg Baskets?"
                 ]
               },
               {
                 "sceneId": "turn_in_wait",
                 "label": "Scene: Turn In Wait",
                 "lines": [
-                  "Keep the eggs safe, then bring them back when you are ready."
+                  "Keep the eggs safe, then bring them back when you are ready.",
+                  "Hold onto the supplies for Egg Baskets until you are ready to finish.",
+                  "Then bring it back when you want the note closed.",
+                  "Keep the delivery safe until we count it.",
+                  "No hurry in the words, but do not lose the goods.",
+                  "Come back when you are ready to settle Egg Baskets.",
+                  "I will wait to close the tally.",
+                  "Keep the count together and return when you can.",
+                  "The request stays open until you turn it in.",
+                  "Bring everything back when you are ready for the reward.",
+                  "Then we will leave Egg Baskets unfinished for the moment.",
+                  "Keep it close. Lost supplies do not help anyone.",
+                  "Return when you want this properly counted.",
+                  "The tally can wait a little longer.",
+                  "I will not close the note until you say so."
                 ]
               }
             ]
@@ -13103,6 +22321,1350 @@ window.VR_WIKI_DATA = {
         "branches": []
       },
       "questlineOrder": 0
+    },
+    {
+      "id": "villagerretaliation:honed_handles",
+      "slug": "honed_handles",
+      "title": "Handlework",
+      "description": "Help a village workshop rebuild the handles, grips, and lashings tools depend on.",
+      "questline": "workshop_oaths",
+      "questlineLabel": "Workshop Oaths",
+      "group": "workshop_oaths",
+      "groupLabel": "Workshop Oaths",
+      "tags": [
+        "group.workshop_oaths"
+      ],
+      "relationKey": "questline:workshop_oaths",
+      "parent": "",
+      "parentSlug": "",
+      "prerequisites": [],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Novice",
+        "professions": [
+          "Toolsmith",
+          "Fletcher",
+          "Weaponsmith"
+        ],
+        "skills": [
+          {
+            "skill": "Crafting",
+            "min": 6,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "24 Stick",
+        "8 String",
+        "6 Flint",
+        "4 Copper Ingot"
+      ],
+      "steps": [
+        {
+          "id": "raw_handles",
+          "label": "Raw Handles",
+          "text": "Bring 24 sticks and 8 string.",
+          "progress": 0.6,
+          "hint": ""
+        },
+        {
+          "id": "bring_sticks",
+          "label": "Bring Sticks",
+          "text": "Bring 24 sticks for handles and tool grips.",
+          "progress": 0.45,
+          "hint": ""
+        },
+        {
+          "id": "bring_string",
+          "label": "Bring String",
+          "text": "Bring 8 string for lashings and wraps.",
+          "progress": 0.6,
+          "hint": ""
+        },
+        {
+          "id": "edge_bits",
+          "label": "Edge Bits",
+          "text": "Bring 6 flint and 4 copper ingots.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "bring_flint",
+          "label": "Bring Flint",
+          "text": "Bring 6 flint for spare edges and scrapers.",
+          "progress": 0.8,
+          "hint": ""
+        },
+        {
+          "id": "bring_copper",
+          "label": "Bring Copper",
+          "text": "Bring 4 copper ingots for pins and fittings.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the workshop handle supplies.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 85,
+        "reputation": 8,
+        "gossipReputation": 3,
+        "lootTable": "villagerretaliation:quest/honed_handles",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "3-6",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Flint",
+            "count": "3-6",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Copper Ingot",
+            "count": "1-3",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "Everyone asks for sharp iron. Fewer people notice the handle until it snaps.",
+          "Help me restock the plain parts first: sticks for grips, string for lashings, and flint for edges that do not deserve iron."
+        ],
+        "accept": "I will help the workshop.",
+        "decline": "Not now.",
+        "started": [
+          "Bring 24 sticks and 8 string first. A good tool starts where the hand meets it."
+        ],
+        "reminder": [
+          "Bring 24 sticks and 8 string for workshop handles and lashings.",
+          "Bring 6 flint and 4 copper ingots for workshop edges and fittings."
+        ],
+        "completed": [
+          "Good. The next tool that holds together will owe you more than the person swinging it knows."
+        ],
+        "missing": [
+          "The workshop order is still short. Check the tracker before we close it.",
+          "Bring the workshop stock here before I mark it in the ledger."
+        ],
+        "stages": [
+          {
+            "stageId": "raw_handles",
+            "label": "Raw Handles",
+            "trackerText": "Bring 24 sticks and 8 string.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Handlework",
+                "lines": [
+                  "Everyone asks for sharp iron. Fewer people notice the handle until it snaps.",
+                  "Help me restock the plain parts first: sticks for grips, string for lashings, and flint for edges that do not deserve iron."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will help the workshop.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not now.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Handlework",
+                "lines": [
+                  "The workshop still needs the parts nobody writes songs about."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the handle list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring them.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The handle rack is already restocked."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 24 sticks and 8 string first. A good tool starts where the hand meets it."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The workshop is not ready to ask for that help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 24 sticks and 8 string for workshop handles and lashings."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The workshop is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then I will keep sanding split handles and pretending that counts as inventory."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Dry sticks. Clean string. It sounds simple because it matters."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "edge_bits",
+            "label": "Edge Bits",
+            "trackerText": "Bring 6 flint and 4 copper ingots.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Handlework",
+                "lines": [
+                  "The grips are covered. Bring flint and copper next, small pieces for small failures before they become large ones."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the fittings.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring them.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 6 flint and 4 copper ingots for workshop edges and fittings."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The workshop is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The smallest fitting is always the one everyone blames when it fails."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the workshop handle supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Handlework",
+                "lines": [
+                  "That is a shelf of plain things that will stop plenty of unplain disasters."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Restock the workshop.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. The next tool that holds together will owe you more than the person swinging it knows."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The workshop order is still short. Check the tracker before we close it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the workshop stock here before I mark it in the ledger."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the handle order right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The rack has gaps. Gaps have consequences."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "raw_handles",
+            "label": "Raw Handles",
+            "trackerText": "Bring 24 sticks and 8 string.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Handlework",
+                "lines": [
+                  "Everyone asks for sharp iron. Fewer people notice the handle until it snaps.",
+                  "Help me restock the plain parts first: sticks for grips, string for lashings, and flint for edges that do not deserve iron."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will help the workshop.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Not now.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Handlework",
+                "lines": [
+                  "The workshop still needs the parts nobody writes songs about."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the handle list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring them.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The handle rack is already restocked."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 24 sticks and 8 string first. A good tool starts where the hand meets it."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The workshop is not ready to ask for that help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 24 sticks and 8 string for workshop handles and lashings."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The workshop is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "Then I will keep sanding split handles and pretending that counts as inventory."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Dry sticks. Clean string. It sounds simple because it matters."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "edge_bits",
+            "label": "Edge Bits",
+            "trackerText": "Bring 6 flint and 4 copper ingots.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Handlework",
+                "lines": [
+                  "The grips are covered. Bring flint and copper next, small pieces for small failures before they become large ones."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the fittings.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring them.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 6 flint and 4 copper ingots for workshop edges and fittings."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The workshop is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The smallest fitting is always the one everyone blames when it fails."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the workshop handle supplies.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Handlework",
+                "lines": [
+                  "That is a shelf of plain things that will stop plenty of unplain disasters."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Restock the workshop.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. The next tool that holds together will owe you more than the person swinging it knows."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The workshop order is still short. Check the tracker before we close it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the workshop stock here before I mark it in the ledger."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the handle order right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The rack has gaps. Gaps have consequences."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 0
+    },
+    {
+      "id": "villagerretaliation:temper_and_tally",
+      "slug": "temper_and_tally",
+      "title": "Temper",
+      "description": "Bring the heavier materials a workshop needs before tools can be trusted under strain.",
+      "questline": "workshop_oaths",
+      "questlineLabel": "Workshop Oaths",
+      "group": "workshop_oaths",
+      "groupLabel": "Workshop Oaths",
+      "tags": [
+        "group.workshop_oaths"
+      ],
+      "relationKey": "questline:workshop_oaths",
+      "parent": "villagerretaliation:honed_handles",
+      "parentSlug": "honed_handles",
+      "prerequisites": [
+        {
+          "id": "villagerretaliation:honed_handles",
+          "slug": "honed_handles"
+        }
+      ],
+      "branchGroup": "",
+      "branchChoices": [],
+      "requirements": {
+        "minLevel": "Apprentice",
+        "professions": [
+          "Toolsmith",
+          "Armorer",
+          "Weaponsmith"
+        ],
+        "skills": [
+          {
+            "skill": "Smithing",
+            "min": 18,
+            "max": null
+          },
+          {
+            "skill": "Crafting",
+            "min": 12,
+            "max": null
+          }
+        ]
+      },
+      "target": null,
+      "objectives": [
+        "8 Iron Ingot",
+        "12 Coal",
+        "1 Grindstone"
+      ],
+      "steps": [
+        {
+          "id": "heat_stock",
+          "label": "Heat Stock",
+          "text": "Bring 8 iron ingots and 12 coal.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "bring_iron",
+          "label": "Bring Iron",
+          "text": "Bring 8 iron ingots for repairs and fittings.",
+          "progress": 0.5,
+          "hint": ""
+        },
+        {
+          "id": "bring_coal",
+          "label": "Bring Coal",
+          "text": "Bring 12 coal for steady heat.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "finish_edge",
+          "label": "Finish Edge",
+          "text": "Bring 1 grindstone.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "bring_grindstone",
+          "label": "Bring Grindstone",
+          "text": "Bring 1 grindstone to finish the workshop edge.",
+          "progress": 0.9,
+          "hint": ""
+        },
+        {
+          "id": "return",
+          "label": "Return",
+          "text": "Return with the forge stock.",
+          "progress": 1,
+          "hint": ""
+        }
+      ],
+      "rewards": {
+        "experience": 155,
+        "reputation": 12,
+        "gossipReputation": 5,
+        "lootTable": "villagerretaliation:quest/temper_and_tally",
+        "loot": [
+          {
+            "item": "Emerald",
+            "count": "6-10",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Iron Ingot",
+            "count": "2-4",
+            "weight": 1,
+            "note": ""
+          },
+          {
+            "item": "Coal",
+            "count": "4-8",
+            "weight": 1,
+            "note": ""
+          }
+        ]
+      },
+      "rules": [
+        "One-time",
+        "Locked to the quest giver",
+        "Turn-in items are consumed on completion"
+      ],
+      "dialogue": {
+        "offer": [
+          "The little parts are sorted. Now comes the part where a tool either learns discipline or becomes a complaint with a handle.",
+          "Bring iron and fuel. Then a grindstone, so we can finish the work instead of admiring hot metal."
+        ],
+        "accept": "I will bring the forge stock.",
+        "decline": "Another time.",
+        "started": [
+          "Bring 8 iron ingots and 12 coal. Good work starts before the hammer lifts."
+        ],
+        "reminder": [
+          "Bring 8 iron ingots and 12 coal for the forge tally.",
+          "Bring 1 grindstone to finish the workshop order."
+        ],
+        "completed": [
+          "Good. Tools made from this stock should fail less loudly. Ideally, not at all."
+        ],
+        "missing": [
+          "The forge tally is still short. Check the tracker before I close it.",
+          "Bring the forge stock here before I enter the tally."
+        ],
+        "stages": [
+          {
+            "stageId": "heat_stock",
+            "label": "Heat Stock",
+            "trackerText": "Bring 8 iron ingots and 12 coal.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Temper",
+                "lines": [
+                  "The little parts are sorted. Now comes the part where a tool either learns discipline or becomes a complaint with a handle.",
+                  "Bring iron and fuel. Then a grindstone, so we can finish the work instead of admiring hot metal."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will bring the forge stock.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Temper",
+                "lines": [
+                  "Iron and coal first. Heat without stock is only a way to sweat indoors."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the forge list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The forge tally is already settled."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 8 iron ingots and 12 coal. Good work starts before the hammer lifts."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The forge is not ready to ask for that help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 8 iron ingots and 12 coal for the forge tally."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The forge is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "The forge can wait. Bad tools cannot, but they pretend they can."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Coal first, then pride. Pride burns poorly."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "finish_edge",
+            "label": "Finish Edge",
+            "trackerText": "Bring 1 grindstone.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Temper",
+                "lines": [
+                  "The iron and heat are enough to begin. Bring a grindstone so the work can end properly."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the finish.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 grindstone to finish the workshop order."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The forge is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A rough edge is just unfinished honesty."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the forge stock.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Temper",
+                "lines": [
+                  "Iron, heat, and a clean finish. That is a workshop that can make promises without blushing."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Close the forge tally.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. Tools made from this stock should fail less loudly. Ideally, not at all."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The forge tally is still short. Check the tracker before I close it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the forge stock here before I enter the tally."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the forge tally right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The tally waits. Metal is patient in ways people are not."
+                ]
+              }
+            ]
+          }
+        ],
+        "commonStages": [
+          {
+            "stageId": "heat_stock",
+            "label": "Heat Stock",
+            "trackerText": "Bring 8 iron ingots and 12 coal.",
+            "slots": [
+              {
+                "slot": "offer",
+                "title": "Offer",
+                "label": "Temper",
+                "lines": [
+                  "The little parts are sorted. Now comes the part where a tool either learns discipline or becomes a complaint with a handle.",
+                  "Bring iron and fuel. Then a grindstone, so we can finish the work instead of admiring hot metal."
+                ],
+                "responses": [
+                  {
+                    "id": "accept",
+                    "label": "I will bring the forge stock.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Start Quest"
+                  },
+                  {
+                    "id": "decline",
+                    "label": "Another time.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Decline"
+                  }
+                ]
+              },
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Temper",
+                "lines": [
+                  "Iron and coal first. Heat without stock is only a way to sweat indoors."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the forge list.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "already_completed",
+                "label": "Start: Already completed",
+                "lines": [
+                  "The forge tally is already settled."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "started",
+                "label": "Start: Started",
+                "lines": [
+                  "Bring 8 iron ingots and 12 coal. Good work starts before the hammer lifts."
+                ]
+              },
+              {
+                "sceneId": "start_quest",
+                "action": "start",
+                "key": "unavailable",
+                "label": "Start: Unavailable",
+                "lines": [
+                  "The forge is not ready to ask for that help right now."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 8 iron ingots and 12 coal for the forge tally."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The forge is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "decline",
+                "label": "Scene: Decline",
+                "lines": [
+                  "The forge can wait. Bad tools cannot, but they pretend they can."
+                ]
+              },
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "Coal first, then pride. Pride burns poorly."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "finish_edge",
+            "label": "Finish Edge",
+            "trackerText": "Bring 1 grindstone.",
+            "slots": [
+              {
+                "slot": "reminder",
+                "title": "Reminder",
+                "label": "About Temper",
+                "lines": [
+                  "The iron and heat are enough to begin. Bring a grindstone so the work can end properly."
+                ],
+                "responses": [
+                  {
+                    "id": "details",
+                    "label": "Repeat the finish.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Reminder Details"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "I will bring it.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "reminder",
+                "label": "Reminder: Reminder",
+                "lines": [
+                  "Bring 1 grindstone to finish the workshop order."
+                ]
+              },
+              {
+                "sceneId": "reminder_details",
+                "action": "remind",
+                "key": "unavailable",
+                "label": "Reminder: Unavailable",
+                "lines": [
+                  "The forge is not counting that stage right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "A rough edge is just unfinished honesty."
+                ]
+              }
+            ]
+          },
+          {
+            "stageId": "return",
+            "label": "Return",
+            "trackerText": "Return with the forge stock.",
+            "slots": [
+              {
+                "slot": "turn_in",
+                "title": "Turn-in",
+                "label": "About Temper",
+                "lines": [
+                  "Iron, heat, and a clean finish. That is a workshop that can make promises without blushing."
+                ],
+                "responses": [
+                  {
+                    "id": "complete",
+                    "label": "Close the forge tally.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Complete Quest"
+                  },
+                  {
+                    "id": "leave",
+                    "label": "Not yet.",
+                    "lines": [],
+                    "targetStageId": "",
+                    "destination": "Scene: Leave"
+                  }
+                ]
+              }
+            ],
+            "choices": [],
+            "actions": [
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "completed",
+                "label": "Turn-in: Completed",
+                "lines": [
+                  "Good. Tools made from this stock should fail less loudly. Ideally, not at all."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_objectives",
+                "label": "Turn-in: Missing objectives",
+                "lines": [
+                  "The forge tally is still short. Check the tracker before I close it."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "missing_proof",
+                "label": "Turn-in: Missing proof",
+                "lines": [
+                  "Bring the forge stock here before I enter the tally."
+                ]
+              },
+              {
+                "sceneId": "complete_quest",
+                "action": "turn_in",
+                "key": "unavailable",
+                "label": "Turn-in: Unavailable",
+                "lines": [
+                  "I cannot close the forge tally right now."
+                ]
+              }
+            ],
+            "scenes": [
+              {
+                "sceneId": "leave",
+                "label": "Scene: Leave",
+                "lines": [
+                  "The tally waits. Metal is patient in ways people are not."
+                ]
+              }
+            ]
+          }
+        ],
+        "branches": []
+      },
+      "questlineOrder": 1
     }
   ],
   "gifts": {
@@ -16365,6 +26927,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/commonfolk"
     },
     {
+      "id": "steady_gaze",
+      "title": "Steady Gaze",
+      "description": "Stare precisely between a villager's eyes.",
+      "frame": "Task",
+      "hidden": true,
+      "icon": "Spyglass",
+      "parent": "reputation/commonfolk"
+    },
+    {
       "id": "story_keeper",
       "title": "Story Keeper",
       "description": "Share 5 discovered stories with villagers.",
@@ -16429,12 +27000,12 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 32134,
+    "dialogueLinesEstimate": 35439,
     "dialogueLineBreakdown": {
-      "dialogue": 31487,
+      "dialogue": 32660,
       "forcedDialogue": 270,
-      "dialogueTrees": 225,
-      "questModules": 152
+      "dialogueTrees": 2112,
+      "questModules": 397
     }
   }
 };

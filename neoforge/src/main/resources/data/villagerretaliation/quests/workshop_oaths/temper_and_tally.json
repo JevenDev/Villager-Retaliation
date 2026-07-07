@@ -1,0 +1,328 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "villagerretaliation:temper_and_tally",
+  "metadata": {
+    "title": "Temper",
+    "description": "Bring the heavier materials a workshop needs before tools can be trusted under strain.",
+    "questline": "workshop_oaths",
+    "parent": "villagerretaliation:honed_handles",
+    "tags": [
+      "group.workshop_oaths"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "apprentice",
+      "professions": [
+        "minecraft:toolsmith",
+        "minecraft:armorer",
+        "minecraft:weaponsmith"
+      ],
+      "skills": {
+        "smithing": {
+          "min": 18
+        },
+        "crafting": {
+          "min": 12
+        }
+      }
+    }
+  },
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "heat_stock",
+  "stages": [
+    {
+      "id": "heat_stock",
+      "objectives": [
+        {
+          "id": "bring_iron",
+          "type": "item_check",
+          "item": "minecraft:iron_ingot",
+          "count": 8,
+          "tracker": {
+            "text": "Bring 8 iron ingots for repairs and fittings.",
+            "complete_text": "The iron stock is ready.",
+            "show_progress": true,
+            "progress": 0.5
+          }
+        },
+        {
+          "id": "bring_coal",
+          "type": "item_check",
+          "item": "minecraft:coal",
+          "count": 12,
+          "tracker": {
+            "text": "Bring 12 coal for steady heat.",
+            "complete_text": "The forge fuel is ready.",
+            "show_progress": true,
+            "progress": 0.65
+          }
+        }
+      ],
+      "complete_when": [
+        "bring_iron",
+        "bring_coal"
+      ],
+      "next": "finish_edge",
+      "dialogue": {
+        "offer": {
+          "label": "Temper",
+          "request": "question",
+          "order": -21,
+          "show_for_babies": false,
+          "lines": [
+            "The little parts are sorted. Now comes the part where a tool either learns discipline or becomes a complaint with a handle.",
+            "Bring iron and fuel. Then a grindstone, so we can finish the work instead of admiring hot metal."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I will bring the forge stock.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Another time.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Temper",
+          "request": "question",
+          "order": -21,
+          "show_for_babies": false,
+          "lines": [
+            "Iron and coal first. Heat without stock is only a way to sweat indoors."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the forge list.",
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": "I will bring it.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "already_completed": [
+                  "The forge tally is already settled."
+                ],
+                "started": [
+                  "Bring 8 iron ingots and 12 coal. Good work starts before the hammer lifts."
+                ],
+                "unavailable": [
+                  "The forge is not ready to ask for that help right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Bring 8 iron ingots and 12 coal for the forge tally."
+                ],
+                "unavailable": [
+                  "The forge is not counting that stage right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "The forge can wait. Bad tools cannot, but they pretend they can."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Coal first, then pride. Pride burns poorly."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 8 iron ingots and 12 coal.",
+        "show_progress": true,
+        "progress": 0.65
+      }
+    },
+    {
+      "id": "finish_edge",
+      "objectives": [
+        {
+          "id": "bring_grindstone",
+          "type": "item_check",
+          "item": "minecraft:grindstone",
+          "count": 1,
+          "tracker": {
+            "text": "Bring 1 grindstone to finish the workshop edge.",
+            "complete_text": "The grindstone is ready.",
+            "show_progress": true,
+            "progress": 0.9
+          }
+        }
+      ],
+      "complete_when": [
+        "bring_grindstone"
+      ],
+      "next": "return",
+      "dialogue": {
+        "reminder": {
+          "label": "About Temper",
+          "request": "question",
+          "order": -21,
+          "show_for_babies": false,
+          "lines": [
+            "The iron and heat are enough to begin. Bring a grindstone so the work can end properly."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the finish.",
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": "I will bring it.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Bring 1 grindstone to finish the workshop order."
+                ],
+                "unavailable": [
+                  "The forge is not counting that stage right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "A rough edge is just unfinished honesty."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 1 grindstone.",
+        "show_progress": true,
+        "progress": 0.9
+      }
+    },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Temper",
+          "request": "question",
+          "order": -21,
+          "show_for_babies": false,
+          "lines": [
+            "Iron, heat, and a clean finish. That is a workshop that can make promises without blushing."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Close the forge tally.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Good. Tools made from this stock should fail less loudly. Ideally, not at all."
+                ],
+                "missing_objectives": [
+                  "The forge tally is still short. Check the tracker before I close it."
+                ],
+                "missing_proof": [
+                  "Bring the forge stock here before I enter the tally."
+                ],
+                "unavailable": [
+                  "I cannot close the forge tally right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "The tally waits. Metal is patient in ways people are not."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return with the forge stock.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 155,
+    "gossip_reputation": 5,
+    "loot_table": "villagerretaliation:quest/temper_and_tally",
+    "memory_event": "player_completed_quest",
+    "reputation": 12
+  },
+  "ui": {
+    "title": "Temper",
+    "icon": "minecraft:grindstone",
+    "color": "#B0A48E"
+  }
+}

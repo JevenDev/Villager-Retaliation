@@ -1,0 +1,327 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "villagerretaliation:breath_after_the_roar",
+  "metadata": {
+    "title": "After the Roar",
+    "description": "Complete the Last Ember line by returning from the End with proof that the village can survive hearing about the dragon.",
+    "questline": "last_ember",
+    "parent": "villagerretaliation:eye_before_dawn",
+    "tags": [
+      "group.last_ember"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "master",
+      "professions": [
+        "minecraft:cleric",
+        "minecraft:librarian"
+      ],
+      "skills": {
+        "scholarship": {
+          "min": 45
+        },
+        "survival": {
+          "min": 38
+        }
+      }
+    }
+  },
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "answer_roar",
+  "stages": [
+    {
+      "id": "answer_roar",
+      "objectives": [
+        {
+          "id": "defeat_dragon",
+          "type": "mob_kill",
+          "entity": "minecraft:ender_dragon",
+          "count": 1,
+          "tracker": {
+            "text": "Defeat the Ender Dragon.",
+            "complete_text": "The roar has ended.",
+            "show_progress": true,
+            "progress": 0.55
+          }
+        }
+      ],
+      "complete_when": [
+        "defeat_dragon"
+      ],
+      "next": "carry_proof",
+      "dialogue": {
+        "offer": {
+          "label": "After the Roar",
+          "request": "question",
+          "order": -19,
+          "show_for_babies": false,
+          "lines": [
+            "The Last Ember notes end at a place I cannot make sound harmless.",
+            "If you go through the gate and return after the dragon, bring proof that the silence after the roar belongs to the living."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I will face the dragon.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not yet.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About After the Roar",
+          "request": "question",
+          "order": -19,
+          "show_for_babies": false,
+          "lines": [
+            "There is no gentle wording for this stage. Face the dragon, and come back alive enough to argue about the notes."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the charge.",
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": "I will return.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "already_completed": [
+                  "The Last Ember has already been carried home."
+                ],
+                "started": [
+                  "Defeat the Ender Dragon. If that sounds too plain, good. Plain words leave more room for careful choices."
+                ],
+                "unavailable": [
+                  "The Last Ember is not ready to ask this of you right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Defeat the Ender Dragon, then bring dragon breath and end stone back to the village."
+                ],
+                "unavailable": [
+                  "The Last Ember is not counting that stage right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "Good. The End has waited longer than any of us. It can wait until you choose."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Return with your story still yours."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Defeat the Ender Dragon.",
+        "show_progress": true,
+        "progress": 0.55
+      }
+    },
+    {
+      "id": "carry_proof",
+      "objectives": [
+        {
+          "id": "bring_dragon_breath",
+          "type": "item_check",
+          "item": "minecraft:dragon_breath",
+          "count": 1,
+          "tracker": {
+            "text": "Bring 1 dragon breath as proof of the roar.",
+            "complete_text": "The dragon breath is ready.",
+            "show_progress": true,
+            "progress": 0.82
+          }
+        },
+        {
+          "id": "bring_end_stone",
+          "type": "item_check",
+          "item": "minecraft:end_stone",
+          "count": 16,
+          "tracker": {
+            "text": "Bring 16 end stone so the lesson has something solid under it.",
+            "complete_text": "The end stone is ready.",
+            "show_progress": true,
+            "progress": 0.9
+          }
+        }
+      ],
+      "complete_when": [
+        "bring_dragon_breath",
+        "bring_end_stone"
+      ],
+      "next": "return",
+      "dialogue": {
+        "reminder": {
+          "label": "About After the Roar",
+          "request": "question",
+          "order": -19,
+          "show_for_babies": false,
+          "lines": [
+            "The roar has ended. Bring dragon breath and end stone so the village can hold the truth without needing to invent it."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the proof.",
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": "I will bring it.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Bring 1 dragon breath and 16 end stone after the dragon is defeated."
+                ],
+                "unavailable": [
+                  "The Last Ember is not counting that stage right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Proof is heavy in stranger ways than stone."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 1 dragon breath and 16 end stone.",
+        "show_progress": true,
+        "progress": 0.9
+      }
+    },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About After the Roar",
+          "request": "question",
+          "order": -19,
+          "show_for_babies": false,
+          "lines": [
+            "You are here. That is the first proof. The rest can go on the table."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Finish the Last Ember.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "The final note says this: the world can be vast, cruel, and still return someone home. The village will remember that without making it smaller."
+                ],
+                "missing_objectives": [
+                  "The Last Ember still needs its proof."
+                ],
+                "missing_proof": [
+                  "Bring the dragon breath and end stone here before we finish the notes."
+                ],
+                "unavailable": [
+                  "I cannot close the Last Ember right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "The last page waits. It has earned patience."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return with the Last Ember proof.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 900,
+    "gossip_reputation": 10,
+    "loot_table": "villagerretaliation:quest/breath_after_the_roar",
+    "memory_event": "player_completed_quest",
+    "reputation": 25
+  },
+  "ui": {
+    "title": "After the Roar",
+    "icon": "minecraft:dragon_breath",
+    "color": "#B270FF"
+  }
+}

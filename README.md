@@ -111,7 +111,7 @@ Villagers also remember when they last saw you. Return after enough in-game days
 
 ### Quests
 
-Villagers can offer built-in quests through conversation. The player wiki currently covers 38 built-in quests, including the connected Cartographer's Atlas questline and tagged quest groups such as Dangerous Commissions, Lost Civilization, Old Roads, Village Defense, and Village Supply.
+Villagers can offer built-in quests through conversation. The player wiki currently covers 50 built-in quests, including the connected Cartographer's Atlas, Hearthbound, Field Medicine, Workshop Oaths, Courier Roads, and Last Ember questlines, plus tagged quest groups such as Dangerous Commissions, Lost Civilization, Old Roads, Village Defense, and Village Supply.
 
 Quest flow is meant to feel natural:
 

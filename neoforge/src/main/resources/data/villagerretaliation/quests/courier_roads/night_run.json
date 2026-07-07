@@ -1,0 +1,341 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "villagerretaliation:night_run",
+  "metadata": {
+    "title": "The Night Run",
+    "description": "Prove the courier road can survive the dangers that wait between houses and villages.",
+    "questline": "courier_roads",
+    "parent": "villagerretaliation:wax_sealed_route",
+    "tags": [
+      "group.courier_roads"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "journeyman",
+      "professions": [
+        "minecraft:cartographer",
+        "minecraft:fletcher",
+        "minecraft:librarian"
+      ],
+      "skills": {
+        "diplomacy": {
+          "min": 16
+        },
+        "survival": {
+          "min": 14
+        }
+      }
+    }
+  },
+  "availability": {
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "cross_villager_compatible": false,
+    "locked_to_villager": true,
+    "max_completions": 1,
+    "max_starts": 0,
+    "repeatable": false
+  },
+  "entry_stage": "clear_road",
+  "stages": [
+    {
+      "id": "clear_road",
+      "objectives": [
+        {
+          "id": "defeat_spiders",
+          "type": "mob_kill",
+          "entity": "minecraft:spider",
+          "count": 3,
+          "tracker": {
+            "text": "Defeat 3 spiders along the night route.",
+            "complete_text": "The webbed stretch is safer.",
+            "show_progress": true,
+            "progress": 0.45
+          }
+        },
+        {
+          "id": "defeat_skeletons",
+          "type": "mob_kill",
+          "entity": "minecraft:skeleton",
+          "count": 2,
+          "tracker": {
+            "text": "Defeat 2 skeletons before couriers have to cross their aim.",
+            "complete_text": "The arrow line is safer.",
+            "show_progress": true,
+            "progress": 0.6
+          }
+        }
+      ],
+      "complete_when": [
+        "defeat_spiders",
+        "defeat_skeletons"
+      ],
+      "next": "mark_way",
+      "dialogue": {
+        "offer": {
+          "label": "The Night Run",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "A route is not real until someone can take it when the sun is gone.",
+            "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful; a visible road is kinder."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I will test the night road.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not tonight.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About the Night Run",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Clear spiders and skeletons from the route. Messages should not need armor to arrive."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the danger.",
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": "I will handle it.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "already_completed": [
+                  "The night run has already been proven."
+                ],
+                "started": [
+                  "Defeat 3 spiders and 2 skeletons. Bring back a road that feels less hungry."
+                ],
+                "unavailable": [
+                  "The night route is not ready to ask for help right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Defeat 3 spiders and 2 skeletons along the night route."
+                ],
+                "unavailable": [
+                  "The night route is not counting that stage right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "Then the sealed packets stay in daylight a while longer."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Do not race the dark just to impress it."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Defeat 3 spiders and 2 skeletons.",
+        "show_progress": true,
+        "progress": 0.6
+      }
+    },
+    {
+      "id": "mark_way",
+      "objectives": [
+        {
+          "id": "bring_lanterns",
+          "type": "item_check",
+          "item": "minecraft:lantern",
+          "count": 3,
+          "tracker": {
+            "text": "Bring 3 lanterns to mark the night road.",
+            "complete_text": "The road lights are ready.",
+            "show_progress": true,
+            "progress": 0.82
+          }
+        },
+        {
+          "id": "bring_oak_signs",
+          "type": "item_check",
+          "item": "minecraft:oak_sign",
+          "count": 3,
+          "tracker": {
+            "text": "Bring 3 oak signs so tired couriers do not guess at turns.",
+            "complete_text": "The route signs are ready.",
+            "show_progress": true,
+            "progress": 0.9
+          }
+        }
+      ],
+      "complete_when": [
+        "bring_lanterns",
+        "bring_oak_signs"
+      ],
+      "next": "return",
+      "dialogue": {
+        "reminder": {
+          "label": "About the Night Run",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The dangerous stretch is quieter. Now mark it so the next person does not need your luck."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the markers.",
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": "I will bring them.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Bring 3 lanterns and 3 oak signs for the night road."
+                ],
+                "unavailable": [
+                  "The night route is not counting that stage right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "A marked road is a promise to strangers."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 3 lanterns and 3 oak signs.",
+        "show_progress": true,
+        "progress": 0.9
+      }
+    },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About the Night Run",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "You brought back proof and markers. That is the difference between a stunt and a road."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Mark the night route.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Good. The first night courier will still be nervous, but now nervous has lanterns to follow."
+                ],
+                "missing_objectives": [
+                  "The night road still needs work. Check the tracker before we call it proven."
+                ],
+                "missing_proof": [
+                  "Bring the road markers here so the route can be written down."
+                ],
+                "unavailable": [
+                  "I cannot close the night route right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "A road half-marked can be worse than no road at all."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return with proof and road markers.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 170,
+    "gossip_reputation": 5,
+    "loot_table": "villagerretaliation:quest/night_run",
+    "memory_event": "player_completed_quest",
+    "reputation": 13
+  },
+  "ui": {
+    "title": "The Night Run",
+    "icon": "minecraft:lantern",
+    "color": "#7BB7B7"
+  }
+}
