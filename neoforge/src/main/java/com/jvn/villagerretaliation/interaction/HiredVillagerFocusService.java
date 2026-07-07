@@ -57,6 +57,7 @@ public final class HiredVillagerFocusService {
                 || VillagerConversationService.isConversing(villager)
                 || villager.getTarget() != null
                 || villager.getLastHurtByMob() != null
+                || !HiredVillagerContractService.hasContract(villager)
                 || !HiredVillagerContractService.isHired(level, villager);
     }
 

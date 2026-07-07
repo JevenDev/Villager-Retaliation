@@ -25,12 +25,16 @@ public final class HiredVillagerIndex {
 
     public static void update(ServerLevel level, Villager villager) {
         if (level == null || villager == null || !villager.isAlive() || villager.isBaby()) {
-            remove(villager);
+            removeIfIndexed(villager);
+            return;
+        }
+        if (!HiredVillagerContractService.hasContract(villager)) {
+            removeIfIndexed(villager);
             return;
         }
         Optional<UUID> owner = HiredVillagerContractService.getHirer(level, villager);
         if (owner.isEmpty()) {
-            remove(villager);
+            removeIfIndexed(villager);
             return;
         }
         upsert(level, villager, owner.get());
@@ -86,10 +90,19 @@ public final class HiredVillagerIndex {
 
     private static void upsert(ServerLevel level, Villager villager, UUID owner) {
         UUID villagerId = villager.getUUID();
-        Entry previous = BY_VILLAGER.put(villagerId, new Entry(owner, level.dimension()));
-        if (previous != null && !previous.owner().equals(owner)) {
+        Entry previous = BY_VILLAGER.get(villagerId);
+        if (previous != null && previous.owner().equals(owner) && previous.dimension().equals(level.dimension())) {
+            Set<UUID> owned = BY_OWNER.get(owner);
+            if (owned != null && owned.contains(villagerId)) {
+                return;
+            }
+            BY_OWNER.computeIfAbsent(owner, ignored -> new LinkedHashSet<>()).add(villagerId);
+            return;
+        }
+        if (previous != null) {
             removeFromOwner(previous.owner(), villagerId);
         }
+        BY_VILLAGER.put(villagerId, new Entry(owner, level.dimension()));
         BY_OWNER.computeIfAbsent(owner, ignored -> new LinkedHashSet<>()).add(villagerId);
     }
 
@@ -116,6 +129,16 @@ public final class HiredVillagerIndex {
         Entry previous = BY_VILLAGER.remove(villagerId);
         if (previous != null) {
             removeFromOwner(previous.owner(), villagerId);
+        }
+    }
+
+    private static void removeIfIndexed(Villager villager) {
+        if (villager == null) {
+            return;
+        }
+        UUID villagerId = villager.getUUID();
+        if (BY_VILLAGER.containsKey(villagerId)) {
+            remove(villagerId);
         }
     }
 
