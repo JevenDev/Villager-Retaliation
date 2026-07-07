@@ -582,7 +582,11 @@ public final class HiredVillagerContractService {
     }
 
     private static void setWorkStatus(Villager villager, String status) {
-        HiredVillagerWorkService.state(villager).putString("Status", status == null ? "" : status);
+        CompoundTag state = HiredVillagerWorkService.state(villager);
+        String safeStatus = status == null ? "" : status;
+        if (!safeStatus.equals(state.getString("Status"))) {
+            state.putString("Status", safeStatus);
+        }
     }
 
     private static void clearContractScopedOrders(ServerLevel level, Villager villager, HiredVillagerRole role) {

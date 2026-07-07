@@ -219,7 +219,13 @@ public final class HiredVillagerFocusService {
         if (target == null) {
             return;
         }
-        villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target));
+        Brain<Villager> brain = villager.getBrain();
+        if (brain.getMemory(MemoryModuleType.LOOK_TARGET)
+                .map(lookTarget -> target.equals(lookTarget.currentBlockPosition()))
+                .orElse(false)) {
+            return;
+        }
+        brain.setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(target));
     }
 
     private static BlockPos currentWorkLookTarget(HiredWorkerBrain.Snapshot worker) {
