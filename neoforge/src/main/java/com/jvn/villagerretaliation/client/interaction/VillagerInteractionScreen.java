@@ -548,6 +548,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     @Override
+    public void copyCurrentDialogueTo(VillagerInteractionScreen target) {
+        if (target == null || this.villagerDialogueText.isBlank()) {
+            return;
+        }
+        target.acceptVillagerDialogue(this.villagerDialogueText, this.villagerDialogueTextSegments);
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         int slideOffset = slideOffsetY();
         int stateOffsetY = interactionStateTransitionOffsetY();

@@ -78,13 +78,18 @@ public final class VillagerInteractionClientHandler {
                 formatSpeakerLabel(villagerName, professionName)
         );
         resetVillagerChatGroup();
-        boolean replacingInteractionScreen = minecraft.screen instanceof VillagerInteractionSessionScreen;
+        VillagerInteractionSessionScreen previousInteractionScreen =
+                minecraft.screen instanceof VillagerInteractionSessionScreen interactionScreen
+                        ? interactionScreen
+                        : null;
+        boolean replacingInteractionScreen = previousInteractionScreen != null;
+        boolean replacingSameVillager = previousInteractionScreen != null
+                && previousInteractionScreen.matchesVillager(payload.entityId());
         if (!replacingInteractionScreen) {
             VillagerInteractionChatVisibility.hidePreviousVillagerMessages(minecraft);
         }
-        if (replacingInteractionScreen) {
-            VillagerInteractionSessionScreen interactionScreen = (VillagerInteractionSessionScreen) minecraft.screen;
-            interactionScreen.replaceFromServer();
+        if (previousInteractionScreen != null) {
+            previousInteractionScreen.replaceFromServer();
         }
         VillagerInteractionScreen screen = new VillagerInteractionScreen(
                 payload.entityId(),
@@ -132,6 +137,9 @@ public final class VillagerInteractionClientHandler {
                 payload.familyTree(),
                 payload.relationships()
         );
+        if (shouldPreserveDialogueOnReplacement(payload, replacingSameVillager)) {
+            previousInteractionScreen.copyCurrentDialogueTo(screen);
+        }
         minecraft.setScreen(screen);
         boolean forceCamera = payload.forcedDialogue() || payload.forceCameraTowardsVillager();
         if (replacingInteractionScreen && ClientVillagerConversationState.active()) {
@@ -139,6 +147,12 @@ public final class VillagerInteractionClientHandler {
         } else {
             ClientVillagerConversationState.start(payload.entityId(), forceCamera);
         }
+    }
+
+    private static boolean shouldPreserveDialogueOnReplacement(
+            OpenVillagerInteractionPayload payload,
+            boolean replacingSameVillager) {
+        return replacingSameVillager && !payload.forcedDialogue() && !payload.clipboardMenu();
     }
 
     public static void acceptDialogue(VillagerDialogueResponsePayload payload) {

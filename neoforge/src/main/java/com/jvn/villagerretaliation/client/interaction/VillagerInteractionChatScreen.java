@@ -97,6 +97,11 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
         this.interactionScreen.acceptVillagerDialogue(text, textSegments);
     }
 
+    @Override
+    public void copyCurrentDialogueTo(VillagerInteractionScreen target) {
+        this.interactionScreen.copyCurrentDialogueTo(target);
+    }
+
     private void returnToInteractionScreen() {
         Minecraft.getInstance().setScreen(this.interactionScreen);
     }
