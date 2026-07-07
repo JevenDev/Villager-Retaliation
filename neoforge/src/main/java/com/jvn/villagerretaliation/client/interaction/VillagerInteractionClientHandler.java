@@ -118,6 +118,7 @@ public final class VillagerInteractionClientHandler {
                 payload.activeHiredRole(),
                 payload.activeBrewingOrder(),
                 payload.activeBuilderTask(),
+                payload.farmingTillSoil(),
                 payload.selectedLoggingFilters(),
                 payload.loggingStripLogs(),
                 payload.loggingHarvestLeaves(),

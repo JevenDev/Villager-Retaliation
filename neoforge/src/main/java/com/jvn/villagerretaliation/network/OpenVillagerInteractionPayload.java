@@ -48,6 +48,7 @@ public record OpenVillagerInteractionPayload(
         HiredVillagerRole activeHiredRole,
         boolean activeBrewingOrder,
         boolean activeBuilderTask,
+        boolean farmingTillSoil,
         List<String> selectedLoggingFilters,
         boolean loggingStripLogs,
         boolean loggingHarvestLeaves,
@@ -106,6 +107,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeEnum(payload.activeHiredRole());
         buffer.writeBoolean(payload.activeBrewingOrder());
         buffer.writeBoolean(payload.activeBuilderTask());
+        buffer.writeBoolean(payload.farmingTillSoil());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.selectedLoggingFilters());
         buffer.writeBoolean(payload.loggingStripLogs());
         buffer.writeBoolean(payload.loggingHarvestLeaves());
@@ -151,6 +153,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 readHiredRoles(buffer),
                 buffer.readEnum(HiredVillagerRole.class),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 DialogueOptionPayloadCodec.readStringList(buffer),

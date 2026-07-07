@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
+import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
 import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
@@ -26,6 +27,7 @@ import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.HiredAnimalBreedingTargetPayload;
 import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.HiredBrewingOrderPayload;
+import com.jvn.villagerretaliation.network.HiredFarmingOptionPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingFilterPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingOptionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
@@ -270,6 +272,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final HiredVillagerRole activeHiredRole;
     private boolean activeBrewingOrder;
     private boolean activeBuilderTask;
+    private boolean farmingTillSoil;
     private final Set<String> selectedLoggingFilters = new LinkedHashSet<>();
     private boolean loggingStripLogs;
     private boolean loggingHarvestLeaves;
@@ -379,6 +382,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             HiredVillagerRole activeHiredRole,
             boolean activeBrewingOrder,
             boolean activeBuilderTask,
+            boolean farmingTillSoil,
             List<String> selectedLoggingFilters,
             boolean loggingStripLogs,
             boolean loggingHarvestLeaves,
@@ -425,6 +429,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.activeHiredRole = activeHiredRole;
         this.activeBrewingOrder = activeBrewingOrder;
         this.activeBuilderTask = activeBuilderTask;
+        this.farmingTillSoil = farmingTillSoil;
         this.loggingStripLogs = loggingStripLogs;
         this.loggingHarvestLeaves = loggingHarvestLeaves;
         this.loggingBonemealSaplings = loggingBonemealSaplings;
@@ -870,6 +875,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addRoleChangeOptions();
         } else if (this.page == DialoguePage.WORK) {
             addWorkOptions();
+        } else if (this.page == DialoguePage.FARMING_OPTIONS) {
+            addFarmingOptions();
         } else if (this.page == DialoguePage.LOGGING_FILTERS) {
             addLoggingFilterOptions();
         } else if (this.page == DialoguePage.ANIMAL_BREEDING_TARGETS) {
@@ -1099,7 +1106,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (isActiveHiredRole(HiredVillagerRole.LOGGING)) {
             addOption("recruit.work_config_logging", this::openLoggingFiltersPage);
         }
-        addRoleWorkConfigOption(HiredVillagerRole.FARMING, "recruit.work_config_farming", VillagerRecruitRequestPayload.Action.CONFIGURE_FARMING);
+        if (isActiveHiredRole(HiredVillagerRole.FARMING)) {
+            addOption("recruit.work_config_farming", this::openFarmingOptionsPage);
+        }
         addRoleWorkConfigOption(HiredVillagerRole.FISHING, "recruit.work_config_fishing", VillagerRecruitRequestPayload.Action.CONFIGURE_FISHING);
         if (isActiveHiredRole(HiredVillagerRole.BREWING)) {
             if (this.activeBrewingOrder) {
@@ -1134,6 +1143,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             String id = filter.toString();
             this.options.add(DialogueOption.enabled(checkmarkRowLabel(HiredLoggingFilters.label(filter), this.selectedLoggingFilters.contains(id)), () -> requestLoggingFilter(id)));
         }
+        addOption("recruit.nevermind", this::openWorkPage);
+    }
+
+    private void addFarmingOptions() {
+        addFarmingOption(HiredFarmingOptions.TILL_SOIL, "recruit.farming_till_soil", this.farmingTillSoil);
         addOption("recruit.nevermind", this::openWorkPage);
     }
 
@@ -1266,6 +1280,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.options.add(DialogueOption.enabled(
                 checkmarkRowLabel(translate(translationKey), enabled),
                 () -> requestLoggingOption(optionId)));
+    }
+
+    private void addFarmingOption(String optionId, String translationKey, boolean enabled) {
+        this.options.add(DialogueOption.enabled(
+                checkmarkRowLabel(translate(translationKey), enabled),
+                () -> requestFarmingOption(optionId)));
     }
 
     private void addBuilderStructureOptions() {
@@ -1593,6 +1613,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.LOGGING_FILTERS);
     }
 
+    private void openFarmingOptionsPage() {
+        openPage(DialoguePage.FARMING_OPTIONS);
+    }
+
     private void openAnimalBreedingTargetsPage() {
         openPage(DialoguePage.ANIMAL_BREEDING_TARGETS);
     }
@@ -1830,7 +1854,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             openPage(DialoguePage.WORK);
             return;
         }
-        if (this.page == DialoguePage.LOGGING_FILTERS) {
+        if (this.page == DialoguePage.FARMING_OPTIONS || this.page == DialoguePage.LOGGING_FILTERS) {
             openPage(DialoguePage.WORK);
             return;
         }
@@ -2015,6 +2039,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
         }
         rebuildOptionsKeepingListPosition();
+    }
+
+    private void requestFarmingOption(String optionId) {
+        sendToServer(new HiredFarmingOptionPayload(this.villagerEntityId, optionId));
+        if (HiredFarmingOptions.TILL_SOIL.equals(optionId)) {
+            this.farmingTillSoil = !this.farmingTillSoil;
+            rebuildOptionsKeepingListPosition();
+        }
     }
 
     private void requestAnimalBreedingTarget(String targetId) {
@@ -4463,6 +4495,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             case END_CONTRACT_CONFIRMATION,
                     CONTRACT_EXTENSION,
                     ROLE_CHANGE,
+                    FARMING_OPTIONS,
                     LOGGING_FILTERS,
                     ANIMAL_BREEDING_TARGETS,
                     BUILDER_STRUCTURES,
@@ -4496,6 +4529,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         ROLE,
         ROLE_CHANGE,
         WORK,
+        FARMING_OPTIONS,
         LOGGING_FILTERS,
         ANIMAL_BREEDING_TARGETS,
         BUILDER_STRUCTURES,

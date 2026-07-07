@@ -17,9 +17,11 @@
     "ShowTradesToPlayerMixin",
     "TradeWithVillagerMixin",
     "VillagerBrainTickMixin",
+    "VillagerPickupMixin",
     "VillagerPanicTriggerMixin",
     "VillagerTradeLevelingMixin",
-    "WalkNodeEvaluatorMixin"
+    "WalkNodeEvaluatorMixin",
+    "WorkAtPoiMixin"
   ],
   "client": [
     "client.ChatComponentMixin",

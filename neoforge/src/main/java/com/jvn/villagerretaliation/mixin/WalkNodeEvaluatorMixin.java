@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.mixin;
 
+import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
 import com.jvn.villagerretaliation.villager.VillagerContainerClimbGuard;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Mob;
@@ -22,8 +23,10 @@ public abstract class WalkNodeEvaluatorMixin {
             int z,
             Mob mob,
             CallbackInfoReturnable<PathType> cir) {
-        if (mob instanceof Villager
-                && VillagerContainerClimbGuard.isForbiddenStandingFloor(context.level(), new BlockPos(x, y - 1, z))) {
+        BlockPos floor = new BlockPos(x, y - 1, z);
+        if (mob instanceof Villager villager
+                && (VillagerContainerClimbGuard.isForbiddenStandingFloor(context.level(), floor)
+                || HiredVillagerFocusService.isClaimedJobSitePathFloor(villager, floor))) {
             cir.setReturnValue(PathType.BLOCKED);
         }
     }

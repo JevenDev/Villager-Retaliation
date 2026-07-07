@@ -63,11 +63,12 @@ public final class ClipboardWorkforceService {
                         || !session.inventory().hasOutputSpace();
                 boolean noStorage = brain.taskState() == HiredWorkerTaskState.PAUSED_NO_STORAGE || !storageAssigned;
                 boolean noWorkArea = role != HiredVillagerRole.BUILDER
-                        && (!session.context().hasWorkArea() || brain.taskState() == HiredWorkerTaskState.NO_WORK_AREA);
+                        && (!HiredVillagerWorkService.hasEffectiveWorkArea(level, villager, session)
+                        || brain.taskState() == HiredWorkerTaskState.NO_WORK_AREA);
                 boolean noTargets = !noWorkArea && isNoTargetState(brain);
                 boolean tooFar = role != HiredVillagerRole.BUILDER
                         && !noWorkArea
-                        && !session.context().isInsideWorkArea(villager.blockPosition());
+                        && !HiredVillagerWorkService.isInsideEffectiveWorkArea(level, villager, role, session.context(), villager.blockPosition());
                 boolean missingTools = brain.taskState() == HiredWorkerTaskState.PAUSED_MISSING_TOOL;
                 boolean materialStorageUnreachable = isMaterialStorageUnreachable(role, brain);
                 boolean materialInventoryFull = isMaterialInventoryFull(role, brain);

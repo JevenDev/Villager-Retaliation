@@ -573,6 +573,7 @@
   "villagerretaliation.gui.recruit.logging_pick_up_decay_drops": "Pick up decay drops",
   "villagerretaliation.gui.recruit.logging_no_filters": "No log filters are available.",
   "villagerretaliation.gui.recruit.work_config_farming": "Configure Farming",
+  "villagerretaliation.gui.recruit.farming_till_soil": "Till dirt and grass",
   "villagerretaliation.gui.recruit.work_config_fishing": "Configure Fishing",
   "villagerretaliation.gui.recruit.work_config_brewing": "Configure Brewing",
   "villagerretaliation.gui.recruit.stop_brewing": "Stop Brewing",

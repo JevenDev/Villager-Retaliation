@@ -602,20 +602,33 @@
       "id": "global.messages.12_work_status.messages.interaction.work.status.logging_option.037"
     },
     {
-      "key": "interaction.work.status.farming_mode",
+      "key": "interaction.work.status.farming_fields",
       "lines": [
-        "My farming approach is now {mode}.",
-        "All right. My farming approach is now {mode}.",
-        "Here's where I am with it: My farming approach is now {mode}.",
-        "For now, that is the situation. My farming approach is now {mode}.",
-        "Just so you know. My farming approach is now {mode}.",
-        "Plainly put: My farming approach is now {mode}.",
-        "That's all I have for now: My farming approach is now {mode}.",
-        "Understood. My farming approach is now {mode}.",
-        "Nothing else to add yet. My farming approach is now {mode}.",
-        "For the moment: My farming approach is now {mode}."
+        "I will work the fields and plant what I can.",
+        "All right. I will work the fields and plant what I can.",
+        "I will keep an eye on the rows and gather what is ready.",
+        "For now, I will tend the crops and fill in any empty farmland I can.",
+        "Just so you know, I will keep to the fields.",
+        "I will harvest the ripe crops and replant where I have seeds.",
+        "That is the plan. I will stay with the field work.",
+        "Understood. I will tend the crops from here.",
+        "I will keep the fields looked after.",
+        "For the moment, I will focus on the crops."
       ],
-      "id": "global.messages.12_work_status.messages.interaction.work.status.farming_mode.038"
+      "id": "global.messages.12_work_status.messages.interaction.work.status.farming_fields.038"
+    },
+    {
+      "key": "interaction.work.status.farming_option",
+      "lines": [
+        "{option} is now {state}.",
+        "All right. {option} is now {state}.",
+        "I have set {option} to {state}.",
+        "That farming option is {state}: {option}.",
+        "Understood. {option} is now {state}.",
+        "I will keep {option} {state}.",
+        "For the fields, {option} is now {state}."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.farming_option.038"
     },
     {
       "key": "interaction.work.status.animal_focus",

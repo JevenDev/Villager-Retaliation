@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
+import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -42,6 +44,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TieredItem;
@@ -79,6 +82,10 @@ public final class HiredVillagerWorkService {
     private static final int WORK_AREA_RETURN_STUCK_CHECK_TICKS = 20;
     private static final int WORK_AREA_RETURN_STUCK_LIMIT = 3;
     private static final double WORK_AREA_RETURN_MIN_PROGRESS_SQR = 0.20D;
+    private static final int WORK_AREA_TETHER_HORIZONTAL_PADDING = 2;
+    private static final int WORK_AREA_TETHER_VERTICAL_PADDING = 2;
+    private static final int FARMING_JOB_SITE_TETHER_HORIZONTAL_RADIUS = 10;
+    private static final int FARMING_JOB_SITE_TETHER_VERTICAL_RADIUS = 4;
 
     private HiredVillagerWorkService() {
     }
@@ -206,7 +213,7 @@ public final class HiredVillagerWorkService {
         BlockPos excavationEntry = excavationSurfaceEntryTarget(level, session, villager);
         BlockPos excavationCompletionEntry = excavationCompletionEntryTarget(level, session);
         HiredWorkerBrain.Snapshot brain = HiredWorkerBrain.snapshot(state, level.getGameTime());
-        if (isReturnedToWorkArea(villager, session.context(), excavationCompletionEntry, excavationEntry)) {
+        if (isReturnedToWorkArea(level, villager, session, excavationCompletionEntry, excavationEntry)) {
             if (brain.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA) {
                 VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.IDLE, null);
@@ -222,14 +229,16 @@ public final class HiredVillagerWorkService {
         if (!villager.getNavigation().isDone()
                 && navigationTarget != null
                 && ((excavationEntry != null && navigationTarget.equals(excavationEntry))
-                || context.isInsideWorkArea(navigationTarget)
+                || isInsideEffectiveWorkArea(level, villager, session.role(), context, navigationTarget)
                 || brain.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA)) {
             if (pathEntersLiquid(level, villager.getNavigation().getPath())
                     || isWetReturnPosition(level, navigationTarget)
                     || excavationEntry != null && navigationTarget.getY() < excavationEntry.getY() - 2) {
                 VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             } else {
-                BlockPos progressTarget = context.isInsideWorkArea(navigationTarget) ? navigationTarget : context.workCenter();
+                BlockPos progressTarget = isInsideEffectiveWorkArea(level, villager, session.role(), context, navigationTarget)
+                        ? navigationTarget
+                        : context.workCenter();
                 if (isWorkAreaReturnNavigationStuck(level, villager, state, progressTarget)) {
                     VillagerTaskNavigationUtil.stopHiredNavigation(villager);
                     state.putLong(NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG, gameTimeForRetry(level, villager));
@@ -521,13 +530,83 @@ public final class HiredVillagerWorkService {
                 WORK_AREA_RETURN_CLOSE_ENOUGH);
     }
 
-    private static boolean isReturnedToWorkArea(
+    public static boolean hasEffectiveWorkArea(ServerLevel level, Villager villager, HiredWorkSession session) {
+        return session != null
+                && hasEffectiveWorkArea(level, villager, session.role(), session.context());
+    }
+
+    public static boolean hasEffectiveWorkArea(
+            ServerLevel level,
             Villager villager,
+            HiredVillagerRole role,
+            HiredWorkContext context) {
+        return context != null
+                && (context.hasWorkArea() || role == HiredVillagerRole.FARMING && hasClaimedJobSiteInLevel(level, villager));
+    }
+
+    public static boolean isInsideEffectiveWorkArea(
+            ServerLevel level,
+            Villager villager,
+            HiredVillagerRole role,
             HiredWorkContext context,
+            BlockPos pos) {
+        if (isInsideEffectiveWorkArea(role, context, pos)) {
+            return true;
+        }
+        return role == HiredVillagerRole.FARMING
+                && isNearClaimedJobSite(level, villager, pos);
+    }
+
+    public static boolean isInsideEffectiveWorkArea(HiredVillagerRole role, HiredWorkContext context, BlockPos pos) {
+        return isInsidePaddedWorkArea(context, pos);
+    }
+
+    public static boolean hasClaimedJobSiteInLevel(ServerLevel level, Villager villager) {
+        return claimedJobSitePos(level, villager) != null;
+    }
+
+    public static BlockPos claimedJobSitePos(ServerLevel level, Villager villager) {
+        if (level == null || villager == null) {
+            return null;
+        }
+        return villager.getBrain().getMemory(MemoryModuleType.JOB_SITE)
+                .filter(jobSite -> jobSite.dimension().equals(level.dimension()))
+                .map(GlobalPos::pos)
+                .orElse(null);
+    }
+
+    private static boolean isInsidePaddedWorkArea(HiredWorkContext context, BlockPos pos) {
+        return context != null
+                && pos != null
+                && context.hasWorkArea()
+                && pos.getX() >= context.workMin().getX() - WORK_AREA_TETHER_HORIZONTAL_PADDING
+                && pos.getX() <= context.workMax().getX() + WORK_AREA_TETHER_HORIZONTAL_PADDING
+                && pos.getY() >= context.workMin().getY() - WORK_AREA_TETHER_VERTICAL_PADDING
+                && pos.getY() <= context.workMax().getY() + WORK_AREA_TETHER_VERTICAL_PADDING
+                && pos.getZ() >= context.workMin().getZ() - WORK_AREA_TETHER_HORIZONTAL_PADDING
+                && pos.getZ() <= context.workMax().getZ() + WORK_AREA_TETHER_HORIZONTAL_PADDING;
+    }
+
+    private static boolean isNearClaimedJobSite(ServerLevel level, Villager villager, BlockPos pos) {
+        BlockPos jobSite = claimedJobSitePos(level, villager);
+        if (jobSite == null || pos == null) {
+            return false;
+        }
+        int dx = pos.getX() - jobSite.getX();
+        int dz = pos.getZ() - jobSite.getZ();
+        return dx * dx + dz * dz <= FARMING_JOB_SITE_TETHER_HORIZONTAL_RADIUS * FARMING_JOB_SITE_TETHER_HORIZONTAL_RADIUS
+                && Math.abs(pos.getY() - jobSite.getY()) <= FARMING_JOB_SITE_TETHER_VERTICAL_RADIUS;
+    }
+
+    private static boolean isReturnedToWorkArea(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkSession session,
             BlockPos excavationEntry,
             BlockPos excavationSurfaceEntry) {
+        HiredWorkContext context = session.context();
         BlockPos pos = villager.blockPosition();
-        if (context.isInsideWorkArea(pos)) {
+        if (isInsideEffectiveWorkArea(level, villager, session.role(), context, pos)) {
             return true;
         }
         if (excavationEntry != null) {
@@ -537,7 +616,7 @@ public final class HiredVillagerWorkService {
                 && isAtExcavationSurfaceEntry(villager, context, excavationSurfaceEntry)) {
             return true;
         }
-        return context.isInsideWorkArea(pos);
+        return isInsideEffectiveWorkArea(level, villager, session.role(), context, pos);
     }
 
     private static boolean isAtExcavationSurfaceEntry(
@@ -1094,11 +1173,8 @@ public final class HiredVillagerWorkService {
             case LOGGING -> {
                 setStatus(state, "interaction.work.status.logging_filter", Map.of("filter", HiredLoggingFilters.selectionLabel(state)));
             }
-            case FARMING -> {
-                String current = state.getString("CropMode");
-                state.putString("CropMode", "harvest_replant".equals(current) ? "harvest_only" : "harvest_replant");
-                setStatus(state, "interaction.work.status.farming_mode", Map.of("mode", state.getString("CropMode")));
-            }
+            case FARMING -> setStatus(state, "interaction.work.status.farming_fields", Map.of(
+                    "till_soil", HiredFarmingOptions.tillSoil(state) ? "enabled" : "disabled"));
             case BREWING -> setStatus(
                     state,
                     BrewingWorker.orderSummaryKey(level, state),
@@ -1166,6 +1242,35 @@ public final class HiredVillagerWorkService {
         session.context().setProgressTicks(0);
         setStatus(state, "interaction.work.status.logging_option", Map.of(
                 "option", HiredLoggingOptions.label(result.optionId()),
+                "state", result.enabled() ? "enabled" : "disabled"));
+        sendStatusNotice(player, villager, state);
+    }
+
+    public static void toggleFarmingOption(ServerPlayer player, ServerLevel level, Villager villager, String optionId) {
+        if (!canManageWork(level, villager, player)) {
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
+            return;
+        }
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.FARMING) {
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.work.configure.requires_role",
+                    Map.of("role", HiredVillagerRole.FARMING.label()));
+            return;
+        }
+
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredFarmingOptions.ToggleResult result = HiredFarmingOptions.toggle(state, optionId);
+        if (result.invalid()) {
+            return;
+        }
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        HiredWorkPlan.clear(session.context());
+        session.context().setProgressTicks(0);
+        setStatus(state, "interaction.work.status.farming_option", Map.of(
+                "option", HiredFarmingOptions.label(result.optionId()),
                 "state", result.enabled() ? "enabled" : "disabled"));
         sendStatusNotice(player, villager, state);
     }
@@ -1296,9 +1401,7 @@ public final class HiredVillagerWorkService {
             state.putString("LoggingFilter", "any");
         }
         HiredLoggingOptions.initializeDefaults(state);
-        if (!state.contains("CropMode", Tag.TAG_STRING)) {
-            state.putString("CropMode", "harvest_replant");
-        }
+        HiredFarmingOptions.initializeDefaults(state);
         if (!state.contains("NavigationTargetType", Tag.TAG_STRING)) {
             state.putString("NavigationTargetType", "interesting");
         }

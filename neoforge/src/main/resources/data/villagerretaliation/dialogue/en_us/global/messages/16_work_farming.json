@@ -376,6 +376,78 @@
         "That part is done: I harvested the ripe crop and set the field right again."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.completed_crop.022"
+    },
+    {
+      "key": "interaction.work.farming.tending_fields",
+      "lines": [
+        "I am tending the fields now.",
+        "Right now, I am checking the crops.",
+        "I am working through the rows.",
+        "I am keeping the field work moving.",
+        "I am watching for ripe crops and empty farmland.",
+        "I am staying with the crops.",
+        "For the moment, I am busy in the fields.",
+        "I will keep going from here.",
+        "The field work is still moving.",
+        "I am looking after the crops."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.tending_fields.023"
+    },
+    {
+      "key": "interaction.work.farming.moving_to_soil",
+      "lines": [
+        "I am moving over to prepare that soil.",
+        "Right now, I am heading to a patch I can till.",
+        "I am getting into place to make more farmland.",
+        "I am moving to prepare another field spot.",
+        "I am heading for soil I can turn into farmland.",
+        "I will prepare that ground for crops."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.moving_to_soil.024"
+    },
+    {
+      "key": "interaction.work.farming.tilled_soil",
+      "lines": [
+        "I tilled that soil into farmland.",
+        "That patch is ready for planting now.",
+        "I prepared that ground for crops.",
+        "The soil is turned and ready.",
+        "That spot is farmland now.",
+        "I made that patch ready for planting."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.tilled_soil.025"
+    },
+    {
+      "key": "interaction.work.farming.needs_farmer_profession",
+      "lines": [
+        "I need to be a farmer before I can handle the fields properly.",
+        "I am held up for now. I need farmer work before I can tend these crops.",
+        "This is stopping the job for the moment. I need to be a farmer first.",
+        "I cannot move on yet. I am not set up as a farmer.",
+        "I will continue once I can work as a farmer.",
+        "That needs attention before I can keep working. I need farmer work first.",
+        "I am waiting on a fix. I need to be a farmer to handle this field.",
+        "The work is paused until I can work as a farmer.",
+        "This is the problem right now. I am not a farmer.",
+        "I am stuck here for the moment. I need farmer work before I can tend the field."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.needs_farmer_profession.024"
+    },
+    {
+      "key": "interaction.work.farming.needs_farmer_job_site",
+      "lines": [
+        "I need a composter nearby before I can settle into the field work.",
+        "I am held up for now. I need a composter for farmer work.",
+        "This is stopping the job for the moment. I need a farmer's work site.",
+        "I cannot move on yet. I need a composter to work from.",
+        "I will continue once I have a farmer's work site.",
+        "That needs attention before I can keep working. I need a composter nearby.",
+        "I am waiting on a fix. I need a proper farmer's work site.",
+        "The work is paused until I have a composter to work from.",
+        "This is the problem right now. I need a farmer's work site.",
+        "I am stuck here for the moment. I need a composter nearby."
+      ],
+      "id": "global.messages.16_work_farming.messages.interaction.work.farming.needs_farmer_job_site.025"
     }
   ]
 }

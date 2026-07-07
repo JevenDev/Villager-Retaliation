@@ -590,19 +590,31 @@ public final class HiredJobInventory implements Container {
         return insertSupply(stack, false, JOB_ITEM_KIND_SUPPLY);
     }
 
+    public ItemStack insertPlainSupply(ItemStack stack) {
+        return insertSupply(stack, false, JOB_ITEM_KIND_SUPPLY, false);
+    }
+
     public ItemStack insertSupplyFromStorage(ItemStack stack) {
         return insertSupply(stack, true, JOB_ITEM_KIND_SUPPLY);
     }
 
     private ItemStack insertSupply(ItemStack stack, boolean markJobItem, String jobItemKind) {
+        return insertSupply(stack, markJobItem, jobItemKind, true);
+    }
+
+    private ItemStack insertSupply(ItemStack stack, boolean markJobItem, String jobItemKind, boolean markContractItem) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
         }
         ItemStack remainder = stack.copy();
-        if (markJobItem) {
-            markAsStorageJobItem(remainder, jobItemKind, activeContractId().orElse(null));
+        if (markContractItem) {
+            if (markJobItem) {
+                markAsStorageJobItem(remainder, jobItemKind, activeContractId().orElse(null));
+            } else {
+                markWithActiveContract(remainder);
+            }
         } else {
-            markWithActiveContract(remainder);
+            removeJobItemMarker(remainder);
         }
         boolean changed = insertSupplyIntoSlots(remainder, false);
         if (!remainder.isEmpty()) {
@@ -674,11 +686,23 @@ public final class HiredJobInventory implements Container {
     }
 
     public ItemStack insertOutput(ItemStack stack) {
+        return insertOutput(stack, true);
+    }
+
+    public ItemStack insertPlainOutput(ItemStack stack) {
+        return insertOutput(stack, false);
+    }
+
+    private ItemStack insertOutput(ItemStack stack, boolean markJobItem) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
         }
         ItemStack remainder = stack.copy();
-        markWithActiveContract(remainder);
+        if (markJobItem) {
+            markWithActiveContract(remainder);
+        } else {
+            removeJobItemMarker(remainder);
+        }
         boolean changed = insertOutputIntoSlots(remainder, false);
         if (!remainder.isEmpty()) {
             changed |= insertOutputIntoSlots(remainder, true);
@@ -1245,6 +1269,24 @@ public final class HiredJobInventory implements Container {
 
     private static boolean isJobGridSlot(int slot) {
         return isValidSlot(slot) && equipmentSlotForJobSlot(slot) == null;
+    }
+
+    private static ItemStack removeJobItemMarker(ItemStack stack) {
+        if (stack == null || stack.isEmpty()) {
+            return stack;
+        }
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (customData.isEmpty() || !customData.contains(JOB_ITEM_TAG)) {
+            return stack;
+        }
+        CompoundTag tag = customData.copyTag();
+        tag.remove(JOB_ITEM_TAG);
+        if (tag.isEmpty()) {
+            stack.remove(DataComponents.CUSTOM_DATA);
+        } else {
+            stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        }
+        return stack;
     }
 
     private static EquipmentSlot equipmentSlotForJobSlot(int slot) {
