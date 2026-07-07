@@ -31,13 +31,29 @@ public final class HiredWorkerBrain {
 
     public static void setState(CompoundTag state, HiredWorkerTaskState taskState, BlockPos targetPos) {
         HiredWorkerTaskState safeState = taskState == null ? HiredWorkerTaskState.IDLE : taskState;
-        state.putString(WORKER_TASK_STATE_TAG, safeState.id());
-        if (targetPos != null && safeState.keepsBlockTarget()) {
-            state.putLong(WORKER_TASK_TARGET_POS_TAG, targetPos.asLong());
-        } else {
+        String stateId = safeState.id();
+        boolean keepBlockTarget = targetPos != null && safeState.keepsBlockTarget();
+        long packedTarget = keepBlockTarget ? targetPos.asLong() : 0L;
+        boolean stateChanged = !state.contains(WORKER_TASK_STATE_TAG, Tag.TAG_STRING)
+                || !stateId.equals(state.getString(WORKER_TASK_STATE_TAG));
+        boolean targetChanged = keepBlockTarget
+                ? !state.contains(WORKER_TASK_TARGET_POS_TAG, Tag.TAG_LONG)
+                || state.getLong(WORKER_TASK_TARGET_POS_TAG) != packedTarget
+                : state.contains(WORKER_TASK_TARGET_POS_TAG);
+        boolean storageChanged = !safeState.keepsStorageTarget() && state.contains(WORKER_STORAGE_TARGET_POS_TAG);
+        if (!stateChanged && !targetChanged && !storageChanged) {
+            return;
+        }
+
+        if (stateChanged) {
+            state.putString(WORKER_TASK_STATE_TAG, stateId);
+        }
+        if (keepBlockTarget && targetChanged) {
+            state.putLong(WORKER_TASK_TARGET_POS_TAG, packedTarget);
+        } else if (!keepBlockTarget && targetChanged) {
             state.remove(WORKER_TASK_TARGET_POS_TAG);
         }
-        if (!safeState.keepsStorageTarget()) {
+        if (storageChanged) {
             state.remove(WORKER_STORAGE_TARGET_POS_TAG);
         }
     }
@@ -47,34 +63,58 @@ public final class HiredWorkerBrain {
             clearStorageTarget(context);
             return;
         }
-        context.state().putLong(WORKER_STORAGE_TARGET_POS_TAG, storagePos.asLong());
+        CompoundTag state = context.state();
+        long packed = storagePos.asLong();
+        if (!state.contains(WORKER_STORAGE_TARGET_POS_TAG, Tag.TAG_LONG)
+                || state.getLong(WORKER_STORAGE_TARGET_POS_TAG) != packed) {
+            state.putLong(WORKER_STORAGE_TARGET_POS_TAG, packed);
+        }
     }
 
     public static void clearTarget(HiredWorkContext context) {
-        context.state().remove(WORKER_TASK_TARGET_POS_TAG);
+        if (context.state().contains(WORKER_TASK_TARGET_POS_TAG)) {
+            context.state().remove(WORKER_TASK_TARGET_POS_TAG);
+        }
     }
 
     static void clearStorageTarget(HiredWorkContext context) {
-        context.state().remove(WORKER_STORAGE_TARGET_POS_TAG);
+        if (context.state().contains(WORKER_STORAGE_TARGET_POS_TAG)) {
+            context.state().remove(WORKER_STORAGE_TARGET_POS_TAG);
+        }
     }
 
     public static void setFailure(HiredWorkContext context, String reason, long retryAfterGameTime) {
         CompoundTag state = context.state();
-        state.putString(WORKER_FAILURE_REASON_TAG, reason == null ? "" : reason);
+        String safeReason = reason == null ? "" : reason;
+        if (!state.contains(WORKER_FAILURE_REASON_TAG, Tag.TAG_STRING)
+                || !safeReason.equals(state.getString(WORKER_FAILURE_REASON_TAG))) {
+            state.putString(WORKER_FAILURE_REASON_TAG, safeReason);
+        }
         if (retryAfterGameTime > 0L) {
-            state.putLong(WORKER_RETRY_AFTER_GAME_TIME_TAG, retryAfterGameTime);
-        } else {
+            if (!state.contains(WORKER_RETRY_AFTER_GAME_TIME_TAG, Tag.TAG_LONG)
+                    || state.getLong(WORKER_RETRY_AFTER_GAME_TIME_TAG) != retryAfterGameTime) {
+                state.putLong(WORKER_RETRY_AFTER_GAME_TIME_TAG, retryAfterGameTime);
+            }
+        } else if (state.contains(WORKER_RETRY_AFTER_GAME_TIME_TAG)) {
             state.remove(WORKER_RETRY_AFTER_GAME_TIME_TAG);
         }
     }
 
     public static void clearFailure(HiredWorkContext context) {
-        context.state().remove(WORKER_FAILURE_REASON_TAG);
-        context.state().remove(WORKER_RETRY_AFTER_GAME_TIME_TAG);
+        if (context.state().contains(WORKER_FAILURE_REASON_TAG)) {
+            context.state().remove(WORKER_FAILURE_REASON_TAG);
+        }
+        if (context.state().contains(WORKER_RETRY_AFTER_GAME_TIME_TAG)) {
+            context.state().remove(WORKER_RETRY_AFTER_GAME_TIME_TAG);
+        }
     }
 
     public static void setLastTargetScanResult(HiredWorkContext context, String result) {
-        context.state().putString(WORKER_LAST_TARGET_SCAN_RESULT_TAG, result == null ? "" : result);
+        String safeResult = result == null ? "" : result;
+        if (!context.state().contains(WORKER_LAST_TARGET_SCAN_RESULT_TAG, Tag.TAG_STRING)
+                || !safeResult.equals(context.state().getString(WORKER_LAST_TARGET_SCAN_RESULT_TAG))) {
+            context.state().putString(WORKER_LAST_TARGET_SCAN_RESULT_TAG, safeResult);
+        }
     }
 
     public static Snapshot snapshot(CompoundTag state, long nowGameTime) {

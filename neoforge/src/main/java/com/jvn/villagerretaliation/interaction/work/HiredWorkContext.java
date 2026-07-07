@@ -62,15 +62,17 @@ public record HiredWorkContext(
     }
 
     public HiredWorkContext {
-        HiredWorkArea area = new HiredWorkArea(
-                workCenter,
-                workMin,
-                workMax,
-                radius,
-                verticalRadius,
-                hasWorkArea,
-                hasWorkArea);
-        jobSite = jobSite == null ? HiredJobSite.fromWorkArea(area) : jobSite;
+        if (jobSite == null) {
+            HiredWorkArea area = new HiredWorkArea(
+                    workCenter,
+                    workMin,
+                    workMax,
+                    radius,
+                    verticalRadius,
+                    hasWorkArea,
+                    hasWorkArea);
+            jobSite = HiredJobSite.fromWorkArea(area);
+        }
     }
 
     public int progressTicks() {

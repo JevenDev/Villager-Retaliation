@@ -35,7 +35,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
     private static final String FIELD_HARVEST_SCAN_CURSOR_TAG = "FarmingFieldHarvestScanCursor";
     private static final String FIELD_PLANT_SCAN_CURSOR_TAG = "FarmingFieldPlantScanCursor";
     private static final String FIELD_TILL_SCAN_CURSOR_TAG = "FarmingFieldTillScanCursor";
-    private static final int MAX_FIELD_SCAN_POSITIONS_PER_WORK_TICK = 2048;
+    private static final int MAX_FIELD_SCAN_POSITIONS_PER_WORK_TICK = 768;
     private static final int NO_FIELD_TARGET_SCAN_COOLDOWN_TICKS = 40;
     private static final int JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS = 10;
     private static final int JOB_SITE_FIELD_SCAN_VERTICAL_RADIUS = 4;
@@ -248,7 +248,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
 
     private static void activateFarmerWorkBrain(Villager villager) {
         Brain<Villager> brain = villager.getBrain();
-        brain.setActiveActivityIfPossible(Activity.WORK);
+        if (!brain.isActive(Activity.WORK)) {
+            brain.setActiveActivityIfPossible(Activity.WORK);
+        }
     }
 
     private static boolean canUseVanillaFarmerBrain(ServerLevel level, Villager villager) {
@@ -517,11 +519,20 @@ public final class FarmingWorker extends AbstractBlockWorker {
 
     private static void seedSecondaryJobSite(ServerLevel level, Villager villager, BlockPos fieldTarget) {
         BlockPos farmland = fieldTarget.below();
-        villager.getBrain().setMemory(MemoryModuleType.SECONDARY_JOB_SITE, List.of(GlobalPos.of(level.dimension(), farmland)));
+        Brain<Villager> brain = villager.getBrain();
+        GlobalPos secondaryJobSite = GlobalPos.of(level.dimension(), farmland);
+        if (brain.getMemory(MemoryModuleType.SECONDARY_JOB_SITE)
+                .filter(sites -> sites.size() == 1 && secondaryJobSite.equals(sites.getFirst()))
+                .isPresent()) {
+            return;
+        }
+        brain.setMemory(MemoryModuleType.SECONDARY_JOB_SITE, List.of(secondaryJobSite));
     }
 
     private static void clearSecondaryJobSite(Villager villager) {
-        villager.getBrain().eraseMemory(MemoryModuleType.SECONDARY_JOB_SITE);
+        if (villager.getBrain().hasMemoryValue(MemoryModuleType.SECONDARY_JOB_SITE)) {
+            villager.getBrain().eraseMemory(MemoryModuleType.SECONDARY_JOB_SITE);
+        }
     }
 
     private static void clearFieldScanState(HiredWorkContext context) {

@@ -23,7 +23,7 @@ public final class HiredWorkAreaScan {
                 ? Math.floorMod(context.state().getLong(cursorTag), totalPositions)
                 : 0L;
         long visited = 0L;
-        List<BlockPos> candidates = new ArrayList<>();
+        List<BlockPos> candidates = new ArrayList<>(Math.min(safeMaxPositions, 64));
 
         while (visited < totalPositions && visited < safeMaxPositions) {
             BlockPos pos = positionAt(context.workMin(), context.workMax(), sizeX, sizeZ, index);
@@ -51,7 +51,9 @@ public final class HiredWorkAreaScan {
     }
 
     public static void clearCursor(HiredWorkContext context, String cursorTag) {
-        context.state().remove(cursorTag);
+        if (context.state().contains(cursorTag)) {
+            context.state().remove(cursorTag);
+        }
     }
 
     private static BlockPos positionAt(BlockPos min, BlockPos max, int sizeX, int sizeZ, long index) {

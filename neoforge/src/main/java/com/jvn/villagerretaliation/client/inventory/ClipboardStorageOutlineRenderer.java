@@ -371,22 +371,43 @@ public final class ClipboardStorageOutlineRenderer {
             List<OutlinedStoragePosition> positions,
             boolean includeNormalStorage,
             boolean includePaymentStorage) {
-        List<StoragePosition> normal = new ArrayList<>();
-        List<StoragePosition> payment = new ArrayList<>();
-        for (OutlinedStoragePosition position : positions) {
-            StoragePosition storagePosition = new StoragePosition(position.dimension(), position.pos());
-            if (position.payment()) {
-                if (includePaymentStorage) {
-                    payment.add(storagePosition);
-                }
-            } else {
-                if (includeNormalStorage) {
-                    normal.add(storagePosition);
-                }
-            }
+        renderOutlinedStoragePositions(event, positions, ASSIGNED_COLOR, includeNormalStorage, false);
+        renderOutlinedStoragePositions(event, positions, PAYMENT_COLOR, false, includePaymentStorage);
+    }
+
+    private static void renderOutlinedStoragePositions(
+            RenderLevelStageEvent event,
+            List<OutlinedStoragePosition> positions,
+            int color,
+            boolean includeNormalStorage,
+            boolean includePaymentStorage) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || positions.isEmpty() || !includeNormalStorage && !includePaymentStorage) {
+            return;
         }
-        renderPositions(event, normal, ASSIGNED_COLOR);
-        renderPositions(event, payment, PAYMENT_COLOR);
+
+        PoseStack poseStack = event.getPoseStack();
+        Vec3 camera = event.getCamera().getPosition();
+        poseStack.pushPose();
+        poseStack.translate(-camera.x, -camera.y, -camera.z);
+        MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.lines());
+        float red = ((color >> 16) & 0xFF) / 255.0F;
+        float green = ((color >> 8) & 0xFF) / 255.0F;
+        float blue = (color & 0xFF) / 255.0F;
+        float alpha = ((color >> 24) & 0xFF) / 255.0F;
+        ResourceKey<Level> currentDimension = minecraft.level.dimension();
+        for (OutlinedStoragePosition position : positions) {
+            if (position.payment() && !includePaymentStorage
+                    || !position.payment() && !includeNormalStorage
+                    || !position.dimension().equals(currentDimension)
+                    || !minecraft.level.hasChunkAt(position.pos())) {
+                continue;
+            }
+            LevelRenderer.renderLineBox(poseStack, consumer, outlineBox(minecraft.level, position.pos()), red, green, blue, alpha);
+        }
+        poseStack.popPose();
+        bufferSource.endBatch(RenderType.lines());
     }
 
     private static void renderPositions(RenderLevelStageEvent event, List<StoragePosition> positions, int color) {

@@ -170,17 +170,19 @@ public final class HiredPathMemory {
 
     public static void onBlockChanged(ServerLevel level, BlockPos pos) {
         Map<Long, Long> versions = PATH_CHUNK_VERSIONS.computeIfAbsent(level.dimension(), ignored -> new HashMap<>());
-        Set<Long> changedChunks = new HashSet<>();
+        int diameter = PATH_CACHE_INVALIDATION_RADIUS * 2 + 1;
+        long[] changedChunks = new long[diameter * diameter];
+        int changedChunkCount = 0;
         int changedChunkX = SectionPos.blockToSectionCoord(pos.getX());
         int changedChunkZ = SectionPos.blockToSectionCoord(pos.getZ());
         for (int x = -PATH_CACHE_INVALIDATION_RADIUS; x <= PATH_CACHE_INVALIDATION_RADIUS; x++) {
             for (int z = -PATH_CACHE_INVALIDATION_RADIUS; z <= PATH_CACHE_INVALIDATION_RADIUS; z++) {
                 long chunkKey = ChunkPos.asLong(changedChunkX + x, changedChunkZ + z);
-                changedChunks.add(chunkKey);
+                changedChunks[changedChunkCount++] = chunkKey;
                 versions.put(chunkKey, versions.getOrDefault(chunkKey, 0L) + 1L);
             }
         }
-        invalidateChangedPathMemory(level, changedChunks);
+        invalidateChangedPathMemory(level, changedChunks, changedChunkCount);
     }
 
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
@@ -503,34 +505,56 @@ public final class HiredPathMemory {
         return true;
     }
 
-    private static void invalidateChangedPathMemory(ServerLevel level, Set<Long> changedChunks) {
-        if (changedChunks.isEmpty()) {
+    private static void invalidateChangedPathMemory(ServerLevel level, long[] changedChunks, int changedChunkCount) {
+        if (changedChunkCount <= 0) {
             return;
         }
 
         PATH_CACHE.entrySet().removeIf(entry -> entry.getKey().dimension().equals(level.dimension())
-                && entry.getValue().chunkVersions().keySet().stream().anyMatch(changedChunks::contains));
+                && hasAnyChangedChunk(entry.getValue().chunkVersions().keySet(), changedChunks, changedChunkCount));
 
         Set<UUID> changedVillagers = new HashSet<>();
-        removeEntriesInChangedChunks(PATH_FAILURES, changedChunks, changedVillagers);
-        removeEntriesInChangedChunks(AVOIDED_TARGETS, changedChunks, changedVillagers);
-        removeEntriesInChangedChunks(UNREACHABLE_APPROACHES, changedChunks, changedVillagers);
+        removeEntriesInChangedChunks(PATH_FAILURES, changedChunks, changedChunkCount, changedVillagers);
+        removeEntriesInChangedChunks(AVOIDED_TARGETS, changedChunks, changedChunkCount, changedVillagers);
+        removeEntriesInChangedChunks(UNREACHABLE_APPROACHES, changedChunks, changedChunkCount, changedVillagers);
         changedVillagers.forEach(PATH_SEARCH_BACKOFFS::remove);
     }
 
     private static <T> void removeEntriesInChangedChunks(
             Map<UUID, Map<Long, T>> positionsByVillager,
-            Set<Long> changedChunks,
+            long[] changedChunks,
+            int changedChunkCount,
             Set<UUID> changedVillagers) {
         for (Map.Entry<UUID, Map<Long, T>> entry : positionsByVillager.entrySet()) {
             boolean removed = entry.getValue()
                     .keySet()
-                    .removeIf(packedPos -> changedChunks.contains(ChunkPos.asLong(BlockPos.of(packedPos))));
+                    .removeIf(packedPos -> isChangedChunk(
+                            ChunkPos.asLong(BlockPos.of(packedPos)),
+                            changedChunks,
+                            changedChunkCount));
             if (removed) {
                 changedVillagers.add(entry.getKey());
             }
         }
         positionsByVillager.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+    }
+
+    private static boolean hasAnyChangedChunk(Set<Long> candidateChunks, long[] changedChunks, int changedChunkCount) {
+        for (Long candidate : candidateChunks) {
+            if (candidate != null && isChangedChunk(candidate, changedChunks, changedChunkCount)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isChangedChunk(long chunkKey, long[] changedChunks, int changedChunkCount) {
+        for (int i = 0; i < changedChunkCount; i++) {
+            if (changedChunks[i] == chunkKey) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isNavigationBlocked(ServerLevel level, Villager villager, BlockPos targetPos, double distanceSqr) {

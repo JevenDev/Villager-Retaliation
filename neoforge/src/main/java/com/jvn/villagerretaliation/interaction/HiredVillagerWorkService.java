@@ -1491,19 +1491,64 @@ public final class HiredVillagerWorkService {
     }
 
     private static void setStatus(CompoundTag state, String status) {
-        state.putString("Status", status == null ? "" : status);
-        state.remove(STATUS_REPLACEMENTS_TAG);
+        String safeStatus = status == null ? "" : status;
+        boolean statusMatches = state.contains("Status", Tag.TAG_STRING)
+                && safeStatus.equals(state.getString("Status"));
+        boolean hasReplacements = state.contains(STATUS_REPLACEMENTS_TAG, Tag.TAG_COMPOUND);
+        if (statusMatches && !hasReplacements) {
+            return;
+        }
+        if (!statusMatches) {
+            state.putString("Status", safeStatus);
+        }
+        if (hasReplacements) {
+            state.remove(STATUS_REPLACEMENTS_TAG);
+        }
     }
 
     private static void setStatus(CompoundTag state, String status, Map<String, String> replacements) {
-        state.putString("Status", status == null ? "" : status);
+        String safeStatus = status == null ? "" : status;
+        boolean statusMatches = state.contains("Status", Tag.TAG_STRING)
+                && safeStatus.equals(state.getString("Status"));
         if (replacements == null || replacements.isEmpty()) {
-            state.remove(STATUS_REPLACEMENTS_TAG);
+            if (statusMatches && !state.contains(STATUS_REPLACEMENTS_TAG, Tag.TAG_COMPOUND)) {
+                return;
+            }
+            if (!statusMatches) {
+                state.putString("Status", safeStatus);
+            }
+            if (state.contains(STATUS_REPLACEMENTS_TAG)) {
+                state.remove(STATUS_REPLACEMENTS_TAG);
+            }
             return;
+        }
+        if (statusMatches && replacementsMatch(state, replacements)) {
+            return;
+        }
+        if (!statusMatches) {
+            state.putString("Status", safeStatus);
         }
         CompoundTag replacementTag = new CompoundTag();
         replacements.forEach((key, value) -> replacementTag.putString(key, value == null ? "" : value));
         state.put(STATUS_REPLACEMENTS_TAG, replacementTag);
+    }
+
+    private static boolean replacementsMatch(CompoundTag state, Map<String, String> replacements) {
+        if (!state.contains(STATUS_REPLACEMENTS_TAG, Tag.TAG_COMPOUND)) {
+            return false;
+        }
+        CompoundTag replacementTag = state.getCompound(STATUS_REPLACEMENTS_TAG);
+        if (replacementTag.getAllKeys().size() != replacements.size()) {
+            return false;
+        }
+        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+            String safeValue = entry.getValue() == null ? "" : entry.getValue();
+            if (!replacementTag.contains(entry.getKey(), Tag.TAG_STRING)
+                    || !safeValue.equals(replacementTag.getString(entry.getKey()))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static Map<String, String> statusReplacements(CompoundTag state) {

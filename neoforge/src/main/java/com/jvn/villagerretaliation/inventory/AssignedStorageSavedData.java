@@ -91,17 +91,23 @@ public final class AssignedStorageSavedData extends SavedData {
     }
 
     public List<AssignedContainerRecord> assignedTo(UUID villagerId) {
-        List<AssignedContainerRecord> records = this.byVillager.getOrDefault(villagerId, List.of());
-        return records.stream()
-                .sorted(Comparator.comparingInt(AssignedContainerRecord::priority))
-                .toList();
+        List<AssignedContainerRecord> records = this.byVillager.get(villagerId);
+        return records == null || records.isEmpty() ? List.of() : List.copyOf(records);
     }
 
     public List<AssignedContainerRecord> assignedTo(UUID villagerId, String purpose) {
         String normalizedPurpose = normalizePurpose(purpose);
-        return assignedTo(villagerId).stream()
-                .filter(record -> normalizePurpose(record.purpose()).equals(normalizedPurpose))
-                .toList();
+        List<AssignedContainerRecord> records = this.byVillager.get(villagerId);
+        if (records == null || records.isEmpty()) {
+            return List.of();
+        }
+        List<AssignedContainerRecord> matches = new ArrayList<>();
+        for (AssignedContainerRecord record : records) {
+            if (normalizePurpose(record.purpose()).equals(normalizedPurpose)) {
+                matches.add(record);
+            }
+        }
+        return matches;
     }
 
     public Optional<AssignedContainerRecord> assignedAt(ResourceKey<Level> dimension, BlockPos pos) {
@@ -227,6 +233,7 @@ public final class AssignedStorageSavedData extends SavedData {
         List<AssignedContainerRecord> records = this.byVillager.computeIfAbsent(record.villagerId(), ignored -> new ArrayList<>());
         records.removeIf(candidate -> candidate.dimension().equals(record.dimension()) && candidate.pos().equals(record.pos()));
         records.add(record);
+        records.sort(Comparator.comparingInt(AssignedContainerRecord::priority));
     }
 
     private static String normalizePurpose(String purpose) {

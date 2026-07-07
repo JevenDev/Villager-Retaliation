@@ -6,6 +6,8 @@ import com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewBlock;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem.PreviewData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -76,26 +78,24 @@ public final class ConstructionBlueprintPreviewRenderer {
         BlockRenderDispatcher dispatcher = minecraft.getBlockRenderer();
         GhostBufferSource ghostBufferSource = new GhostBufferSource(bufferSource);
         VertexConsumer fillConsumer = bufferSource.getBuffer(RenderType.debugFilledBox());
+        List<RenderablePreviewBlock> renderableBlocks = new ArrayList<>();
         for (PreviewBlock block : preview.blocks()) {
             BlockPos worldPos = renderableWorldPos(minecraft.level, preview, block);
             if (worldPos == null) {
                 continue;
             }
+            renderableBlocks.add(new RenderablePreviewBlock(worldPos, block.state()));
             renderSoftFill(poseStack, fillConsumer, worldPos);
         }
         bufferSource.endBatch(RenderType.debugFilledBox());
 
-        for (PreviewBlock block : preview.blocks()) {
-            BlockPos worldPos = renderableWorldPos(minecraft.level, preview, block);
-            if (worldPos == null) {
-                continue;
-            }
+        for (RenderablePreviewBlock block : renderableBlocks) {
             BlockState state = block.state();
             if (state.getRenderShape() != RenderShape.MODEL) {
                 continue;
             }
             poseStack.pushPose();
-            poseStack.translate(worldPos.getX(), worldPos.getY(), worldPos.getZ());
+            poseStack.translate(block.worldPos().getX(), block.worldPos().getY(), block.worldPos().getZ());
             dispatcher.renderSingleBlock(
                     state,
                     poseStack,
@@ -106,6 +106,9 @@ public final class ConstructionBlueprintPreviewRenderer {
                     RenderType.translucent());
             poseStack.popPose();
         }
+    }
+
+    private record RenderablePreviewBlock(BlockPos worldPos, BlockState state) {
     }
 
     private static BlockPos renderableWorldPos(Level level, PreviewData preview, PreviewBlock block) {
