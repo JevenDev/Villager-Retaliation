@@ -52,6 +52,7 @@ public final class HiredPathMemory {
     private static final Map<UUID, NavigationProgress> NAVIGATION_PROGRESS = new HashMap<>();
     private static final Map<ResourceKey<Level>, Map<Long, TargetReservation>> TARGET_RESERVATIONS = new HashMap<>();
     private static final Map<ResourceKey<Level>, Map<Long, Long>> PATH_CHUNK_VERSIONS = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Set<Long>> PENDING_CHANGED_CHUNKS = new HashMap<>();
     private static final Map<ResourceKey<Level>, Long> LAST_EXPIRE_GAME_TIME = new HashMap<>();
     private static final Map<PathCacheKey, CachedPath> PATH_CACHE = new LinkedHashMap<>(PATH_CACHE_MAX_SIZE, 0.75F, true) {
         @Override
@@ -74,6 +75,7 @@ public final class HiredPathMemory {
         NAVIGATION_PROGRESS.clear();
         TARGET_RESERVATIONS.clear();
         PATH_CHUNK_VERSIONS.clear();
+        PENDING_CHANGED_CHUNKS.clear();
         LAST_EXPIRE_GAME_TIME.clear();
         PATH_CACHE.clear();
     }
@@ -101,6 +103,7 @@ public final class HiredPathMemory {
         }
         LAST_EXPIRE_GAME_TIME.put(dimension, now);
 
+        flushPendingChangedPathMemory(level);
         AVOIDED_TARGETS.values().forEach(targets -> targets.entrySet().removeIf(entry -> entry.getValue() <= now));
         AVOIDED_TARGETS.entrySet().removeIf(entry -> entry.getValue().isEmpty());
         PATH_FAILURES.entrySet().removeIf(entry -> entry.getValue().isEmpty());
@@ -170,19 +173,16 @@ public final class HiredPathMemory {
 
     public static void onBlockChanged(ServerLevel level, BlockPos pos) {
         Map<Long, Long> versions = PATH_CHUNK_VERSIONS.computeIfAbsent(level.dimension(), ignored -> new HashMap<>());
-        int diameter = PATH_CACHE_INVALIDATION_RADIUS * 2 + 1;
-        long[] changedChunks = new long[diameter * diameter];
-        int changedChunkCount = 0;
+        Set<Long> pendingChangedChunks = PENDING_CHANGED_CHUNKS.computeIfAbsent(level.dimension(), ignored -> new HashSet<>());
         int changedChunkX = SectionPos.blockToSectionCoord(pos.getX());
         int changedChunkZ = SectionPos.blockToSectionCoord(pos.getZ());
         for (int x = -PATH_CACHE_INVALIDATION_RADIUS; x <= PATH_CACHE_INVALIDATION_RADIUS; x++) {
             for (int z = -PATH_CACHE_INVALIDATION_RADIUS; z <= PATH_CACHE_INVALIDATION_RADIUS; z++) {
                 long chunkKey = ChunkPos.asLong(changedChunkX + x, changedChunkZ + z);
-                changedChunks[changedChunkCount++] = chunkKey;
+                pendingChangedChunks.add(chunkKey);
                 versions.put(chunkKey, versions.getOrDefault(chunkKey, 0L) + 1L);
             }
         }
-        invalidateChangedPathMemory(level, changedChunks, changedChunkCount);
     }
 
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
@@ -503,6 +503,20 @@ public final class HiredPathMemory {
             }
         }
         return true;
+    }
+
+    private static void flushPendingChangedPathMemory(ServerLevel level) {
+        Set<Long> pendingChangedChunks = PENDING_CHANGED_CHUNKS.remove(level.dimension());
+        if (pendingChangedChunks == null || pendingChangedChunks.isEmpty()) {
+            return;
+        }
+
+        long[] changedChunks = new long[pendingChangedChunks.size()];
+        int changedChunkCount = 0;
+        for (long chunkKey : pendingChangedChunks) {
+            changedChunks[changedChunkCount++] = chunkKey;
+        }
+        invalidateChangedPathMemory(level, changedChunks, changedChunkCount);
     }
 
     private static void invalidateChangedPathMemory(ServerLevel level, long[] changedChunks, int changedChunkCount) {
