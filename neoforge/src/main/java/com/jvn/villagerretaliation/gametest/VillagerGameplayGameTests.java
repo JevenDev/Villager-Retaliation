@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -156,6 +157,48 @@ public final class VillagerGameplayGameTests {
                 HiredVillagerWorkService.workArea(level, villager).center(),
                 requestedCenter,
                 "owner with held clipboard should be allowed to manage the work area");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void clipboardWorkforceActionAppliesHeldDraft(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        HiredVillagerIndex.clearRuntimeState();
+
+        ServerPlayer hirer = fakePlayer(level, "VrWorkAreaDraft");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        HiredVillagerWorkService.initializeWorkArea(level, villager);
+
+        ItemStack clipboard = clipboard();
+        HiredStorageClipboardItem.cycleMode(clipboard, 1);
+        HiredStorageClipboardItem.cycleMode(clipboard, 1);
+        HiredStorageClipboardItem.cycleMode(clipboard, 1);
+        helper.assertValueEqual(
+                HiredStorageClipboardItem.mode(clipboard),
+                HiredStorageClipboardItem.ClipboardMode.SET_WORK_AREA,
+                "clipboard mode");
+        hirer.setItemInHand(InteractionHand.MAIN_HAND, clipboard);
+
+        BlockPos first = helper.absolutePos(new BlockPos(2, 2, 2));
+        BlockPos second = helper.absolutePos(new BlockPos(6, 4, 6));
+        HiredStorageClipboardItem.handleLeftClickBlock(level, hirer, clipboard, first);
+        HiredStorageClipboardItem.handleRightClickBlock(level, hirer, clipboard, second);
+
+        VillagerInteractionService.handleClipboardWorkAreaAction(
+                hirer,
+                villager.getUUID(),
+                ClipboardWorkAreaActionPayload.Action.APPLY_HELD_DRAFT,
+                1);
+
+        HiredWorkArea applied = HiredVillagerWorkService.workArea(level, villager);
+        helper.assertValueEqual(applied.min(), HiredWorkArea.minPos(first, second), "applied draft min");
+        helper.assertValueEqual(applied.max(), HiredWorkArea.maxPos(first, second), "applied draft max");
+        helper.assertTrue(applied.explicitlyAssigned(), "applied draft should become the explicit work site");
+        helper.assertTrue(HiredStorageClipboardItem.selectedWorkArea(clipboard).first() == null, "applied draft should clear held clipboard draft");
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         villager.discard();

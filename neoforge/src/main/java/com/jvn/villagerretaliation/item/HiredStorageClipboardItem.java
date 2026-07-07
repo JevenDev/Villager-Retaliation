@@ -592,6 +592,15 @@ public final class HiredStorageClipboardItem extends Item {
         PacketDistributor.sendToPlayer(player, ClipboardWorkAreaSyncPayload.selection(level.dimension().location(), first, second, 120));
     }
 
+    public static void assignHeldWorkAreaDraft(ServerPlayer player, ServerLevel level, Villager villager) {
+        ItemStack stack = heldClipboard(player);
+        if (stack.isEmpty()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.clipboard.work_area.hold_clipboard");
+            return;
+        }
+        assignSelectedWorkArea(player, level, villager, stack);
+    }
+
     private static void assignSelectedWorkArea(ServerPlayer player, ServerLevel level, Villager villager, ItemStack stack) {
         if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
             player.displayClientMessage(Component.literal("Only the hiring player can assign this work area."), true);

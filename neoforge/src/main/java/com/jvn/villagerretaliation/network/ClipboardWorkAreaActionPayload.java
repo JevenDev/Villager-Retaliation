@@ -36,6 +36,7 @@ public record ClipboardWorkAreaActionPayload(UUID villagerId, Action action, int
     public enum Action {
         SET_CENTER_HERE,
         RESET_CENTER_TO_VILLAGER,
+        APPLY_HELD_DRAFT,
         PREVIEW,
         CONFIGURE_ROLE,
         INCREASE_HORIZONTAL_RANGE,

@@ -809,6 +809,7 @@ public final class VillagerInteractionService {
         switch (action) {
             case SET_CENTER_HERE -> HiredVillagerWorkService.setWorkCenterHere(player, level, villager);
             case RESET_CENTER_TO_VILLAGER -> HiredVillagerWorkService.resetWorkCenterToVillager(player, level, villager);
+            case APPLY_HELD_DRAFT -> HiredStorageClipboardItem.assignHeldWorkAreaDraft(player, level, villager);
             case PREVIEW -> HiredVillagerWorkService.previewWorkArea(player, level, villager);
             case CONFIGURE_ROLE -> HiredVillagerWorkService.configureRole(player, level, villager, HiredVillagerContractService.activeRole(level, villager));
             case INCREASE_HORIZONTAL_RANGE -> HiredVillagerWorkService.changeRadius(player, level, villager, 4 * stepCount);
@@ -853,7 +854,7 @@ public final class VillagerInteractionService {
                     EXPAND_DOWN,
                     CONTRACT_UP,
                     CONTRACT_DOWN -> true;
-            case PREVIEW, CONFIGURE_ROLE -> false;
+            case APPLY_HELD_DRAFT, PREVIEW, CONFIGURE_ROLE -> false;
         };
     }
 

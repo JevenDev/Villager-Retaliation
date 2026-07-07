@@ -450,10 +450,18 @@ public final class ClipboardWorkforceScreen extends Screen {
     private Component workerAreaText(WorkerRow worker) {
         return worker.hasWorkArea()
                 ? Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_assigned",
+                        workerAreaSourceText(worker),
                         worker.workAreaCenter(),
                         worker.horizontalRadius(),
                         worker.verticalRadius())
                 : Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_missing");
+    }
+
+    private Component workerAreaSourceText(WorkerRow worker) {
+        String source = worker.areaStatus() == null || worker.areaStatus().isBlank()
+                ? "assigned_area"
+                : worker.areaStatus();
+        return Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_source." + source);
     }
 
     private Component workerStorageText(WorkerRow worker) {
@@ -477,6 +485,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         drawLine(graphics, Component.literal(this.selectedWorker.displayName()), CONTENT_LEFT, y, CONTENT_RIGHT - 10, TEXT);
         Component area = this.selectedWorker.hasWorkArea()
                 ? Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_assigned",
+                        workerAreaSourceText(this.selectedWorker),
                         this.selectedWorker.workAreaCenter(),
                         this.selectedWorker.horizontalRadius(),
                         this.selectedWorker.verticalRadius())
@@ -490,6 +499,13 @@ public final class ClipboardWorkforceScreen extends Screen {
                 y,
                 Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_preview"),
                 ClipboardWorkAreaActionPayload.Action.PREVIEW);
+        y = drawJobSiteActionRow(
+                graphics,
+                mouseX,
+                mouseY,
+                y,
+                Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_apply_draft"),
+                ClipboardWorkAreaActionPayload.Action.APPLY_HELD_DRAFT);
         y = drawJobSiteActionRow(
                 graphics,
                 mouseX,

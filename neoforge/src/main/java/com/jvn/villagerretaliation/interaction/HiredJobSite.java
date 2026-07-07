@@ -93,15 +93,25 @@ public record HiredJobSite(
         return this.anchorSource.label();
     }
 
-    public enum AnchorSource {
-        NONE("assigned area"),
-        VANILLA_JOB_SITE("job block"),
-        BUILDER_TASK("build site");
+    public String sourceId() {
+        return this.anchorSource.id();
+    }
 
+    public enum AnchorSource {
+        NONE("assigned_area", "assigned area"),
+        VANILLA_JOB_SITE("job_block", "job block"),
+        BUILDER_TASK("build_site", "build site");
+
+        private final String id;
         private final String label;
 
-        AnchorSource(String label) {
+        AnchorSource(String id, String label) {
+            this.id = id;
             this.label = label;
+        }
+
+        public String id() {
+            return this.id;
         }
 
         public String label() {
