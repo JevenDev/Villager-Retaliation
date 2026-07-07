@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.interaction.HiredJobSite;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import java.util.List;
 import java.util.function.Predicate;
@@ -22,8 +23,55 @@ public record HiredWorkContext(
         boolean hasWorkArea,
         int efficiency,
         boolean autoDepositOutputs,
-        boolean useAssignedStorageForSupplies) {
+        boolean useAssignedStorageForSupplies,
+        HiredJobSite jobSite) {
     public static final String OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG = "OutputDepositedThisStorageTrip";
+
+    public HiredWorkContext(
+            HiredJobInventory inventory,
+            CompoundTag state,
+            BlockPos workCenter,
+            BlockPos workMin,
+            BlockPos workMax,
+            int radius,
+            int verticalRadius,
+            boolean hasWorkArea,
+            int efficiency,
+            boolean autoDepositOutputs,
+            boolean useAssignedStorageForSupplies) {
+        this(
+                inventory,
+                state,
+                workCenter,
+                workMin,
+                workMax,
+                radius,
+                verticalRadius,
+                hasWorkArea,
+                efficiency,
+                autoDepositOutputs,
+                useAssignedStorageForSupplies,
+                HiredJobSite.fromWorkArea(new HiredWorkArea(
+                        workCenter,
+                        workMin,
+                        workMax,
+                        radius,
+                        verticalRadius,
+                        hasWorkArea,
+                        hasWorkArea)));
+    }
+
+    public HiredWorkContext {
+        HiredWorkArea area = new HiredWorkArea(
+                workCenter,
+                workMin,
+                workMax,
+                radius,
+                verticalRadius,
+                hasWorkArea,
+                hasWorkArea);
+        jobSite = jobSite == null ? HiredJobSite.fromWorkArea(area) : jobSite;
+    }
 
     public int progressTicks() {
         return this.state.getInt("ProgressTicks");
@@ -46,14 +94,7 @@ public record HiredWorkContext(
     }
 
     public HiredWorkArea workArea() {
-        return new HiredWorkArea(
-                this.workCenter,
-                this.workMin,
-                this.workMax,
-                this.radius,
-                this.verticalRadius,
-                this.hasWorkArea,
-                this.hasWorkArea);
+        return this.jobSite.workArea();
     }
 
     public boolean isLoaded(ServerLevel level, BlockPos pos) {
@@ -61,13 +102,15 @@ public record HiredWorkContext(
     }
 
     public boolean isInsideWorkArea(BlockPos pos) {
-        return this.hasWorkArea
-                && pos.getX() >= this.workMin.getX()
-                && pos.getX() <= this.workMax.getX()
-                && pos.getY() >= this.workMin.getY()
-                && pos.getY() <= this.workMax.getY()
-                && pos.getZ() >= this.workMin.getZ()
-                && pos.getZ() <= this.workMax.getZ();
+        return this.jobSite.isInsideWorkBounds(pos);
+    }
+
+    public boolean hasNavigationTether() {
+        return this.jobSite.hasNavigationTether();
+    }
+
+    public boolean isInsideNavigationTether(BlockPos pos, int horizontalPadding, int verticalPadding) {
+        return this.jobSite.isInsideNavigationTether(pos, horizontalPadding, verticalPadding);
     }
 
     public boolean depositOutputs(Villager villager) {

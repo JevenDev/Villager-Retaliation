@@ -138,7 +138,7 @@ public final class ClipboardWorkforceService {
                         session.area().centerDescription(),
                         session.area().horizontalRadius(),
                         session.area().verticalRadius(),
-                        session.area().usable() ? "center" : "missing",
+                        session.area().usable() ? session.jobSite().sourceLabel() : "missing",
                         workModeText(role, session.state()),
                         dailyWage,
                         inventoryFull,

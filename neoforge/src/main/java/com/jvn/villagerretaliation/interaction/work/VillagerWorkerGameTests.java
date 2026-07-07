@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
+import com.jvn.villagerretaliation.interaction.HiredJobSite;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
@@ -2568,6 +2569,45 @@ public final class VillagerWorkerGameTests {
                         .map(lookTarget -> fieldTarget.equals(lookTarget.currentBlockPosition()))
                         .orElse(false),
                 "field look target should remain available for vanilla farming");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingClaimedJobBlockBecomesWorkSite(GameTestHelper helper) {
+        HiredVillagerIndex.clearRuntimeState();
+        buildFloor(helper, 0, 10, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrFarmingJobSite");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        BlockPos composterRel = new BlockPos(8, 1, 3);
+        BlockPos composter = helper.absolutePos(composterRel);
+        setBlock(helper, composterRel, Blocks.COMPOSTER.defaultBlockState());
+        Villager villager = spawnVillager(helper, new BlockPos(8, 2, 3));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        villager.getBrain().setMemory(MemoryModuleType.JOB_SITE, GlobalPos.of(level.dimension(), composter));
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        helper.assertTrue(
+                HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.FARMING),
+                "farmer role should be available for job-block site test");
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        HiredVillagerIndex.update(level, villager);
+
+        helper.assertFalse(session.area().explicitlyAssigned(), "claimed job block should not pretend to be a custom clipboard box");
+        helper.assertTrue(session.area().usable(), "claimed job block should synthesize a usable work site");
+        helper.assertValueEqual(session.jobSite().anchor(), composter, "job site anchor");
+        helper.assertValueEqual(session.jobSite().anchorSource(), HiredJobSite.AnchorSource.VANILLA_JOB_SITE, "job site source");
+        helper.assertTrue(session.context().hasWorkArea(), "worker context should scan the synthesized job-block site");
+        helper.assertTrue(
+                session.context().isInsideWorkArea(villager.blockPosition()),
+                "farmer standing by the claimed job block should be inside the synthesized site");
+
+        ClipboardWorkforceSnapshot snapshot = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertValueEqual(snapshot.workers().size(), 1, "clipboard worker rows");
+        helper.assertFalse(snapshot.workers().getFirst().noWorkArea(), "clipboard should not show missing work area for a claimed job-block site");
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         villager.discard();

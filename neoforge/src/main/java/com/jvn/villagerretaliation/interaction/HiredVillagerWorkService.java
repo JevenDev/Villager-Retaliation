@@ -540,8 +540,7 @@ public final class HiredVillagerWorkService {
             Villager villager,
             HiredVillagerRole role,
             HiredWorkContext context) {
-        return context != null
-                && (context.hasWorkArea() || role == HiredVillagerRole.FARMING && hasClaimedJobSiteInLevel(level, villager));
+        return context != null && context.hasNavigationTether();
     }
 
     public static boolean isInsideEffectiveWorkArea(
@@ -550,15 +549,19 @@ public final class HiredVillagerWorkService {
             HiredVillagerRole role,
             HiredWorkContext context,
             BlockPos pos) {
-        if (isInsideEffectiveWorkArea(role, context, pos)) {
-            return true;
-        }
-        return role == HiredVillagerRole.FARMING
-                && isNearClaimedJobSite(level, villager, pos);
+        return context != null
+                && context.isInsideNavigationTether(
+                pos,
+                WORK_AREA_TETHER_HORIZONTAL_PADDING,
+                WORK_AREA_TETHER_VERTICAL_PADDING);
     }
 
     public static boolean isInsideEffectiveWorkArea(HiredVillagerRole role, HiredWorkContext context, BlockPos pos) {
-        return isInsidePaddedWorkArea(context, pos);
+        return context != null
+                && context.isInsideNavigationTether(
+                pos,
+                WORK_AREA_TETHER_HORIZONTAL_PADDING,
+                WORK_AREA_TETHER_VERTICAL_PADDING);
     }
 
     public static boolean hasClaimedJobSiteInLevel(ServerLevel level, Villager villager) {
@@ -573,29 +576,6 @@ public final class HiredVillagerWorkService {
                 .filter(jobSite -> jobSite.dimension().equals(level.dimension()))
                 .map(GlobalPos::pos)
                 .orElse(null);
-    }
-
-    private static boolean isInsidePaddedWorkArea(HiredWorkContext context, BlockPos pos) {
-        return context != null
-                && pos != null
-                && context.hasWorkArea()
-                && pos.getX() >= context.workMin().getX() - WORK_AREA_TETHER_HORIZONTAL_PADDING
-                && pos.getX() <= context.workMax().getX() + WORK_AREA_TETHER_HORIZONTAL_PADDING
-                && pos.getY() >= context.workMin().getY() - WORK_AREA_TETHER_VERTICAL_PADDING
-                && pos.getY() <= context.workMax().getY() + WORK_AREA_TETHER_VERTICAL_PADDING
-                && pos.getZ() >= context.workMin().getZ() - WORK_AREA_TETHER_HORIZONTAL_PADDING
-                && pos.getZ() <= context.workMax().getZ() + WORK_AREA_TETHER_HORIZONTAL_PADDING;
-    }
-
-    private static boolean isNearClaimedJobSite(ServerLevel level, Villager villager, BlockPos pos) {
-        BlockPos jobSite = claimedJobSitePos(level, villager);
-        if (jobSite == null || pos == null) {
-            return false;
-        }
-        int dx = pos.getX() - jobSite.getX();
-        int dz = pos.getZ() - jobSite.getZ();
-        return dx * dx + dz * dz <= FARMING_JOB_SITE_TETHER_HORIZONTAL_RADIUS * FARMING_JOB_SITE_TETHER_HORIZONTAL_RADIUS
-                && Math.abs(pos.getY() - jobSite.getY()) <= FARMING_JOB_SITE_TETHER_VERTICAL_RADIUS;
     }
 
     private static boolean isReturnedToWorkArea(
@@ -922,6 +902,8 @@ public final class HiredVillagerWorkService {
         lines.add("Work area: " + areaDescription(session.area())
                 + ", assigned=" + session.area().explicitlyAssigned()
                 + ", usable=" + session.area().usable()
+                + ", source=" + session.jobSite().sourceLabel()
+                + ", anchor=" + HiredWorkerBrain.formatPos(session.jobSite().anchor())
                 + ", radius=" + session.area().horizontalRadius()
                 + ", verticalRadius=" + session.area().verticalRadius()
                 + ", maxRadius=" + session.maxRadius());
@@ -1314,7 +1296,45 @@ public final class HiredVillagerWorkService {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
-        return workAreaWithinMax(state, villager, maxWorkRadius(level, villager, role));
+        return jobSite(level, villager, role, state, maxWorkRadius(level, villager, role)).workArea();
+    }
+
+    public static HiredJobSite jobSite(ServerLevel level, Villager villager) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        return jobSite(level, villager, role, state, maxWorkRadius(level, villager, role));
+    }
+
+    static HiredJobSite jobSite(
+            ServerLevel level,
+            Villager villager,
+            HiredVillagerRole role,
+            CompoundTag state,
+            int maxRadius) {
+        HiredWorkArea storedArea = workAreaWithinMax(state, villager, maxRadius);
+        if (role == HiredVillagerRole.BUILDER) {
+            return HiredJobSite.fromWorkArea(storedArea.asUsable(false));
+        }
+        BlockPos claimedJobSite = role == HiredVillagerRole.FARMING ? claimedJobSitePos(level, villager) : null;
+        if (storedArea.usable()) {
+            return claimedJobSite == null
+                    ? HiredJobSite.fromWorkArea(storedArea)
+                    : HiredJobSite.withAnchor(
+                            storedArea,
+                            claimedJobSite,
+                            HiredJobSite.AnchorSource.VANILLA_JOB_SITE,
+                            FARMING_JOB_SITE_TETHER_HORIZONTAL_RADIUS,
+                            FARMING_JOB_SITE_TETHER_VERTICAL_RADIUS);
+        }
+        if (claimedJobSite != null) {
+            return HiredJobSite.fromAnchor(
+                    claimedJobSite,
+                    FARMING_JOB_SITE_TETHER_HORIZONTAL_RADIUS,
+                    FARMING_JOB_SITE_TETHER_VERTICAL_RADIUS,
+                    HiredJobSite.AnchorSource.VANILLA_JOB_SITE);
+        }
+        return HiredJobSite.fromWorkArea(storedArea);
     }
 
     public static boolean setWorkArea(ServerPlayer player, ServerLevel level, Villager villager, BlockPos first, BlockPos second) {
