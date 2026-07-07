@@ -578,9 +578,7 @@ public final class HiredVillagerContractService {
             return;
         }
         ServerPlayer hirer = level.getServer().getPlayerList().getPlayer(contract.getUUID(HIRER_TAG));
-        if (hirer != null) {
-            BuilderPaymentEscrowService.refund(hirer, villager, jobId, paid);
-        }
+        BuilderPaymentEscrowService.refundOrDrop(level, hirer, villager, jobId, paid);
     }
 
     private static void setWorkStatus(Villager villager, String status) {

@@ -13,6 +13,7 @@ public record HiredDebugPreviewSyncPayload(
         int ticks) implements CustomPacketPayload {
     public static final int MAX_WORK_AREAS = 128;
     public static final int MAX_STORAGE = 256;
+    private static final int LABEL_LENGTH = 64;
     public static final Type<HiredDebugPreviewSyncPayload> TYPE = VillagerPayloads.type("hired_debug_preview_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, HiredDebugPreviewSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(HiredDebugPreviewSyncPayload::encode, HiredDebugPreviewSyncPayload::decode);
@@ -40,16 +41,16 @@ public record HiredDebugPreviewSyncPayload(
             buffer.writeBoolean(entry.showFirstCorner());
             buffer.writeBlockPos(entry.secondCorner());
             buffer.writeBoolean(entry.showSecondCorner());
-            buffer.writeUtf(entry.ownerName());
-            buffer.writeUtf(entry.jobName());
+            buffer.writeUtf(entry.ownerName(), LABEL_LENGTH);
+            buffer.writeUtf(entry.jobName(), LABEL_LENGTH);
         }
         buffer.writeVarInt(Math.min(MAX_STORAGE, payload.storage().size()));
         for (StorageEntry entry : payload.storage()) {
             buffer.writeResourceLocation(entry.dimension());
             buffer.writeBlockPos(entry.pos());
             buffer.writeBoolean(entry.payment());
-            buffer.writeUtf(entry.ownerName());
-            buffer.writeUtf(entry.storageType());
+            buffer.writeUtf(entry.ownerName(), LABEL_LENGTH);
+            buffer.writeUtf(entry.storageType(), LABEL_LENGTH);
         }
         buffer.writeVarInt(payload.ticks());
     }
@@ -69,8 +70,8 @@ public record HiredDebugPreviewSyncPayload(
                     buffer.readBoolean(),
                     buffer.readBlockPos(),
                     buffer.readBoolean(),
-                    buffer.readUtf(),
-                    buffer.readUtf()
+                    buffer.readUtf(LABEL_LENGTH),
+                    buffer.readUtf(LABEL_LENGTH)
             ));
         }
         int storageCount = VillagerPayloads.readCollectionSize(buffer, MAX_STORAGE, "hired debug storage entries");
@@ -80,8 +81,8 @@ public record HiredDebugPreviewSyncPayload(
                     buffer.readResourceLocation(),
                     buffer.readBlockPos(),
                     buffer.readBoolean(),
-                    buffer.readUtf(),
-                    buffer.readUtf()
+                    buffer.readUtf(LABEL_LENGTH),
+                    buffer.readUtf(LABEL_LENGTH)
             ));
         }
         return new HiredDebugPreviewSyncPayload(enabled, workAreas, storage, buffer.readVarInt());
@@ -143,6 +144,6 @@ public record HiredDebugPreviewSyncPayload(
             return "";
         }
         String trimmed = label.trim();
-        return trimmed.length() > 64 ? trimmed.substring(0, 64) : trimmed;
+        return trimmed.length() > LABEL_LENGTH ? trimmed.substring(0, LABEL_LENGTH) : trimmed;
     }
 }

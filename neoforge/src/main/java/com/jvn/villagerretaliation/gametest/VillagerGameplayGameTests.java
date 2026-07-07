@@ -6,7 +6,11 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
+import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.interaction.HiredWorkArea;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.mojang.authlib.GameProfile;
@@ -36,6 +40,7 @@ import net.minecraft.world.entity.ai.goal.PanicGoal;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
@@ -102,6 +107,58 @@ public final class VillagerGameplayGameTests {
 
         HiredDebugPreviewService.setClipboardPreviewEnabled(player, false);
         HiredDebugPreviewService.clearRuntimeState();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void clipboardWorkAreaPacketsRequireOwnerAndHeldClipboard(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        HiredVillagerIndex.clearRuntimeState();
+
+        ServerPlayer hirer = fakePlayer(level, "VrWorkAreaOwner");
+        ServerPlayer otherPlayer = fakePlayer(level, "VrWorkAreaOther");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        HiredVillagerWorkService.initializeWorkArea(level, villager);
+        HiredWorkArea original = HiredVillagerWorkService.workArea(level, villager);
+
+        otherPlayer.setItemInHand(InteractionHand.MAIN_HAND, clipboard());
+        VillagerInteractionService.handleClipboardWorkAreaAction(
+                otherPlayer,
+                villager.getUUID(),
+                ClipboardWorkAreaActionPayload.Action.SET_CENTER_HERE,
+                5);
+        assertWorkAreaUnchanged(helper, level, villager, original, "non-hirer packet");
+
+        VillagerInteractionService.handleClipboardWorkAreaAction(
+                hirer,
+                villager.getUUID(),
+                ClipboardWorkAreaActionPayload.Action.SET_CENTER_HERE,
+                5);
+        assertWorkAreaUnchanged(helper, level, villager, original, "missing clipboard packet");
+
+        BlockPos requestedCenter = helper.absolutePos(new BlockPos(5, 2, 5));
+        hirer.moveTo(
+                requestedCenter.getX() + 0.5D,
+                requestedCenter.getY(),
+                requestedCenter.getZ() + 0.5D,
+                0.0F,
+                0.0F);
+        hirer.setItemInHand(InteractionHand.MAIN_HAND, clipboard());
+        VillagerInteractionService.handleClipboardWorkAreaAction(
+                hirer,
+                villager.getUUID(),
+                ClipboardWorkAreaActionPayload.Action.SET_CENTER_HERE,
+                5);
+        helper.assertValueEqual(
+                HiredVillagerWorkService.workArea(level, villager).center(),
+                requestedCenter,
+                "owner with held clipboard should be allowed to manage the work area");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        villager.discard();
         helper.succeed();
     }
 
@@ -185,6 +242,25 @@ public final class VillagerGameplayGameTests {
         BlockPos spawn = level.getSharedSpawnPos();
         player.moveTo(spawn.getX() + 0.5D, spawn.getY() + 1.0D, spawn.getZ() + 0.5D, 0.0F, 0.0F);
         return player;
+    }
+
+    private static ItemStack clipboard() {
+        return new ItemStack(VillagerRetaliationItems.CLIPBOARD.get());
+    }
+
+    private static void assertWorkAreaUnchanged(
+            GameTestHelper helper,
+            ServerLevel level,
+            Villager villager,
+            HiredWorkArea expected,
+            String label) {
+        HiredWorkArea actual = HiredVillagerWorkService.workArea(level, villager);
+        helper.assertValueEqual(actual.center(), expected.center(), label + " center");
+        helper.assertValueEqual(actual.min(), expected.min(), label + " min");
+        helper.assertValueEqual(actual.max(), expected.max(), label + " max");
+        helper.assertValueEqual(actual.horizontalRadius(), expected.horizontalRadius(), label + " horizontal radius");
+        helper.assertValueEqual(actual.verticalRadius(), expected.verticalRadius(), label + " vertical radius");
+        helper.assertValueEqual(actual.explicitlyAssigned(), expected.explicitlyAssigned(), label + " assigned flag");
     }
 
     private static Villager spawnVillager(GameTestHelper helper, BlockPos relativePos) {

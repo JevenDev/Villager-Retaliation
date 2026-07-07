@@ -65,16 +65,21 @@ public record OpenVillagerInteractionPayload(
     private static final int MAX_FAMILY_MEMBERS = 64;
     private static final int MAX_FAMILY_GENERATIONS = 16;
     private static final int MAX_ROMANTIC_BONDS = 32;
+    private static final int VILLAGER_NAME_KEY_LENGTH = 256;
+    private static final int VILLAGER_NAME_FALLBACK_LENGTH = 128;
+    private static final int PROFESSION_NAME_LENGTH = 128;
+    private static final int GENDER_NAME_LENGTH = 32;
+    private static final int CURRENCY_LABEL_LENGTH = 64;
     public static final Type<OpenVillagerInteractionPayload> TYPE = VillagerPayloads.type("open_villager_interaction");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerInteractionPayload> STREAM_CODEC =
             VillagerPayloads.codec(OpenVillagerInteractionPayload::encode, OpenVillagerInteractionPayload::decode);
 
     private static void encode(RegistryFriendlyByteBuf buffer, OpenVillagerInteractionPayload payload) {
         buffer.writeVarInt(payload.entityId());
-        buffer.writeUtf(payload.villagerNameKey());
-        buffer.writeUtf(payload.villagerNameFallback());
-        buffer.writeUtf(payload.professionName());
-        buffer.writeUtf(payload.genderName(), 32);
+        buffer.writeUtf(payload.villagerNameKey(), VILLAGER_NAME_KEY_LENGTH);
+        buffer.writeUtf(payload.villagerNameFallback(), VILLAGER_NAME_FALLBACK_LENGTH);
+        buffer.writeUtf(payload.professionName(), PROFESSION_NAME_LENGTH);
+        buffer.writeUtf(payload.genderName(), GENDER_NAME_LENGTH);
         buffer.writeBoolean(payload.baby());
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
@@ -91,9 +96,9 @@ public record OpenVillagerInteractionPayload(
         buffer.writeVarInt(payload.maxWalletEmeralds());
         buffer.writeVarInt(payload.lifetimeWalletEarned());
         buffer.writeVarInt(payload.lifetimeWalletDeposited());
-        buffer.writeUtf(payload.walletCurrencyName(), 64);
-        buffer.writeUtf(payload.walletCurrencyPluralName(), 64);
-        buffer.writeUtf(payload.walletCurrencyLabel(), 64);
+        buffer.writeUtf(payload.walletCurrencyName(), CURRENCY_LABEL_LENGTH);
+        buffer.writeUtf(payload.walletCurrencyPluralName(), CURRENCY_LABEL_LENGTH);
+        buffer.writeUtf(payload.walletCurrencyLabel(), CURRENCY_LABEL_LENGTH);
         buffer.writeResourceLocation(payload.walletCurrencyIconSprite());
         buffer.writeInt(payload.walletCurrencyTextColor());
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
@@ -118,10 +123,10 @@ public record OpenVillagerInteractionPayload(
     private static OpenVillagerInteractionPayload decode(RegistryFriendlyByteBuf buffer) {
         return new OpenVillagerInteractionPayload(
                 buffer.readVarInt(),
-                buffer.readUtf(),
-                buffer.readUtf(),
-                buffer.readUtf(),
-                buffer.readUtf(32),
+                buffer.readUtf(VILLAGER_NAME_KEY_LENGTH),
+                buffer.readUtf(VILLAGER_NAME_FALLBACK_LENGTH),
+                buffer.readUtf(PROFESSION_NAME_LENGTH),
+                buffer.readUtf(GENDER_NAME_LENGTH),
                 buffer.readBoolean(),
                 buffer.readVarInt(),
                 buffer.readEnum(VillagerReputationLevel.class),
@@ -138,9 +143,9 @@ public record OpenVillagerInteractionPayload(
                 buffer.readVarInt(),
                 buffer.readVarInt(),
                 buffer.readVarInt(),
-                buffer.readUtf(64),
-                buffer.readUtf(64),
-                buffer.readUtf(64),
+                buffer.readUtf(CURRENCY_LABEL_LENGTH),
+                buffer.readUtf(CURRENCY_LABEL_LENGTH),
+                buffer.readUtf(CURRENCY_LABEL_LENGTH),
                 buffer.readResourceLocation(),
                 buffer.readInt(),
                 buffer.readBoolean(),

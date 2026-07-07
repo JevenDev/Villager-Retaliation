@@ -43,6 +43,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
@@ -54,6 +55,7 @@ import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -199,6 +201,34 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(refundedAgain, 0, "builder escrow refund should be idempotent");
         helper.assertValueEqual(countCurrency(hirer) - beforeCurrency, 23, "refund should reach the hirer inventory");
         helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), 50, "repeated refund should not fall back to wallet funds");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void builderDeathFinalizesUnstartedEscrowWithoutLosingPayment(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerPlayer hirer = fakePlayer(level, "VrBuilderDeath");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.MASON));
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        helper.assertTrue(
+                HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.BUILDER),
+                "builder role should be available for mason test fixture");
+
+        CompoundTag state = persistentWorkState(villager);
+        UUID jobId = seedBuilderTask(state, 23, 0);
+        BuilderPaymentEscrowService.escrow(villager, jobId, 23);
+        int beforeCurrency = countCurrency(hirer);
+        BlockPos deathPos = villager.blockPosition();
+
+        HiredVillagerContractService.onVillagerDeath(level, villager);
+
+        helper.assertFalse(HiredVillagerContractService.isHired(level, villager), "dead villager should no longer have an active hire");
+        helper.assertFalse(BuilderTaskState.hasTask(state), "death finalization should clear the unstarted builder task");
+        int recovered = countCurrency(hirer) - beforeCurrency + countDroppedCurrency(level, deathPos);
+        helper.assertValueEqual(recovered, 23, "unstarted builder escrow should refund or drop without losing payment");
         villager.discard();
         helper.succeed();
     }
@@ -2332,9 +2362,10 @@ public final class VillagerWorkerGameTests {
                 true);
     }
 
-    private static void seedBuilderTask(CompoundTag state, int paidCurrency, int placedIndex) {
+    private static UUID seedBuilderTask(CompoundTag state, int paidCurrency, int placedIndex) {
         CompoundTag task = new CompoundTag();
-        task.putString("JobId", UUID.randomUUID().toString());
+        UUID jobId = UUID.randomUUID();
+        task.putString("JobId", jobId.toString());
         task.putString("StructureId", "villagerretaliation:test_structure");
         task.putString("StructureLabel", "Test Structure");
         task.putLong("Origin", BlockPos.ZERO.asLong());
@@ -2345,6 +2376,7 @@ public final class VillagerWorkerGameTests {
         task.putInt("PaidCurrency", Math.max(0, paidCurrency));
         task.putLong("StartedGameTime", 1L);
         state.put(BuilderTaskState.TASK_TAG, task);
+        return jobId;
     }
 
     private static CompoundTag persistentWorkState(Villager villager) {
@@ -2367,6 +2399,17 @@ public final class VillagerWorkerGameTests {
         for (ItemStack stack : player.getInventory().offhand) {
             if (VillagerCurrencyResources.isCurrency(player.serverLevel().getServer(), stack)) {
                 count += stack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private static int countDroppedCurrency(ServerLevel level, BlockPos center) {
+        int count = 0;
+        AABB area = new AABB(center).inflate(4.0D);
+        for (ItemEntity entity : level.getEntitiesOfClass(ItemEntity.class, area)) {
+            if (VillagerCurrencyResources.isCurrency(level.getServer(), entity.getItem())) {
+                count += entity.getItem().getCount();
             }
         }
         return count;

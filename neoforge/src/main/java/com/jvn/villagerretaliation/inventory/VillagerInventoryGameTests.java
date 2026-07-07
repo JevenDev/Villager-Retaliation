@@ -16,6 +16,7 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -338,6 +339,49 @@ public final class VillagerInventoryGameTests {
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void assignedStorageSavedDataSkipsMalformedLegacyEntries(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        UUID villagerId = UUID.nameUUIDFromBytes("villagerretaliation:storage-save-villager".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        UUID hirerId = UUID.nameUUIDFromBytes("villagerretaliation:storage-save-hirer".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        BlockPos storagePos = helper.absolutePos(new BlockPos(2, 2, 2));
+
+        CompoundTag root = new CompoundTag();
+        ListTag entries = new ListTag();
+        CompoundTag legacyValid = new CompoundTag();
+        legacyValid.putString("Dimension", level.dimension().location().toString());
+        legacyValid.putLong("Pos", storagePos.asLong());
+        legacyValid.putUUID("Villager", villagerId);
+        legacyValid.putUUID("Hirer", hirerId);
+        entries.add(legacyValid);
+
+        CompoundTag missingVillager = new CompoundTag();
+        missingVillager.putString("Dimension", level.dimension().location().toString());
+        missingVillager.putLong("Pos", helper.absolutePos(new BlockPos(3, 2, 2)).asLong());
+        entries.add(missingVillager);
+
+        CompoundTag invalidDimension = new CompoundTag();
+        invalidDimension.putString("Dimension", "not a valid id");
+        invalidDimension.putLong("Pos", helper.absolutePos(new BlockPos(4, 2, 2)).asLong());
+        invalidDimension.putUUID("Villager", UUID.randomUUID());
+        entries.add(invalidDimension);
+        root.put("Entries", entries);
+
+        AssignedStorageSavedData loaded = AssignedStorageSavedData.load(root, level.registryAccess());
+        List<AssignedStorageSavedData.AssignedContainerRecord> records = loaded.assignedTo(villagerId);
+        helper.assertValueEqual(records.size(), 1, "malformed assigned-storage entries should be skipped");
+        AssignedStorageSavedData.AssignedContainerRecord record = records.getFirst();
+        helper.assertValueEqual(record.dimension(), level.dimension(), "legacy storage dimension");
+        helper.assertValueEqual(record.pos(), storagePos, "legacy storage position");
+        helper.assertValueEqual(record.hirerId(), hirerId, "legacy storage hirer");
+        helper.assertValueEqual(record.purpose(), "general", "missing legacy purpose should default safely");
+        helper.assertValueEqual(record.validationStatus(), "unknown", "missing legacy validation should default safely");
+
+        CompoundTag saved = loaded.save(new CompoundTag(), level.registryAccess());
+        helper.assertValueEqual(saved.getList("Entries", Tag.TAG_COMPOUND).size(), 1, "save should keep only valid assigned storage");
         helper.succeed();
     }
 

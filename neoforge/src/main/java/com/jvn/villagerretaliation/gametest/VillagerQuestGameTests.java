@@ -71,6 +71,8 @@ import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
+import com.jvn.villagerretaliation.util.DatapackResourceLoader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -300,6 +302,32 @@ public final class VillagerQuestGameTests {
         unknown.addProperty("schema", "example:quest/v9");
         helper.assertTrue(QuestResourceEnvelope.read(location, unknown).isEmpty(), "unknown schema was not skipped");
         assertRecentDiagnosticContains(helper, "unsupported schema \"example:quest/v9\"");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void datapackResourceLoaderSkipsMalformedOrNonObjectRoots(GameTestHelper helper) {
+        ResourceLocation giftLocation = VillagerRetaliation.id("gifts/test/bad_root.json");
+
+        DatapackDiagnostics.clear();
+        helper.assertTrue(
+                DatapackResourceLoader.readObject(giftLocation, "gift", stringResource("[{\"item\":\"minecraft:apple\"}]")).isEmpty(),
+                "array-root gift resource should be skipped");
+        assertRecentDiagnosticContains(helper, "could not load gift data");
+
+        DatapackDiagnostics.clear();
+        helper.assertTrue(
+                DatapackResourceLoader.readObject(giftLocation, "skill trade", stringResource("{ nope")).isEmpty(),
+                "malformed skill-trade resource should be skipped");
+        assertRecentDiagnosticContains(helper, "could not load skill trade data");
+
+        DatapackDiagnostics.clear();
+        JsonObject loaded = DatapackResourceLoader
+                .readObject(giftLocation, "notification", stringResource("{\"notifications\":[]}"))
+                .orElseThrow(() -> new GameTestAssertException("valid object-root resource was skipped"));
+        helper.assertTrue(loaded.has("notifications"), "valid object-root resource should load");
+        helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "valid object-root resource should not warn");
 
         helper.succeed();
     }
@@ -4271,6 +4299,10 @@ public final class VillagerQuestGameTests {
         } catch (IOException | IllegalStateException exception) {
             throw new GameTestAssertException("Could not read quest resource " + location + ": " + exception.getMessage());
         }
+    }
+
+    private static Resource stringResource(String json) {
+        return new Resource(null, () -> new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
     }
 
     private static void assertChooseTheHorizonBranchRuntime(
