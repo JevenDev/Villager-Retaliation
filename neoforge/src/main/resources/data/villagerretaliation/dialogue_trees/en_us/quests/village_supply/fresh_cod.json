@@ -52,12 +52,40 @@
     "abandon_cancel": {
       "end": true,
       "lines": [
-        "Good. Supper forgives delay better than empty plates."
+        "Good. Supper forgives delay better than empty plates.",
+        "Good. We will keep Fresh Cod open a while longer.",
+        "Then the request stays active.",
+        "Fine. Keep Fresh Cod in your hands for now.",
+        "Good. I will leave the note where it is.",
+        "Then we keep counting on you for this one.",
+        "The work stays open.",
+        "Fresh Cod remains on your list.",
+        "Good. Bring it back when you are ready.",
+        "I will keep the tally under your name.",
+        "Then nothing changes for Fresh Cod.",
+        "Good. The village will wait a little longer.",
+        "Keep the request and finish it when you can.",
+        "I will not close the note yet.",
+        "Then Fresh Cod stays alive."
       ]
     },
     "abandon_confirm": {
       "lines": [
-        "Put Fresh Cod aside for now?"
+        "Put Fresh Cod aside for now?",
+        "Are you sure you want to step away from Fresh Cod?",
+        "Close your part in Fresh Cod for now?",
+        "Should I mark Fresh Cod abandoned?",
+        "Do you want me to take your name off this request?",
+        "Set the note for Fresh Cod aside?",
+        "Are you done with Fresh Cod for now?",
+        "Should I stop counting on you for this one?",
+        "Do you want to leave Fresh Cod unfinished?",
+        "Put the work down and walk away?",
+        "Should I close this attempt?",
+        "Are you sure Fresh Cod can wait without you?",
+        "Do you want the request removed from your list?",
+        "Shall I fold this note away?",
+        "One last check. Are you abandoning Fresh Cod?"
       ],
       "responses": [
         {
@@ -78,16 +106,72 @@
           "action": "abandon",
           "lines": {
             "abandoned": [
-              "I will clear the cod note. Come back if the pot still needs fish."
+              "I will clear the cod note. Come back if the pot still needs fish.",
+              "I will set Fresh Cod aside. Come back if the village still needs it.",
+              "Fresh Cod is off your hands for now.",
+              "I will clear the note and stop counting on you for this one.",
+              "The request is set aside.",
+              "I will mark Fresh Cod abandoned for now.",
+              "Then we will leave Fresh Cod alone.",
+              "I will put the tally away.",
+              "The village will manage without this run for now.",
+              "I will stop holding that work under your name.",
+              "Fresh Cod is no longer active for you.",
+              "I will take your name off the request.",
+              "The note comes down for now.",
+              "That closes your part in Fresh Cod for the moment.",
+              "I will make the record clean again."
             ],
             "abandoned_cooldown": [
-              "I will pause the cod request for now. Let the kitchen decide its next supper."
+              "I will pause the cod request for now. Let the kitchen decide its next supper.",
+              "I will pause Fresh Cod for now. Give the village a little time before asking again.",
+              "Fresh Cod is set aside until the count settles.",
+              "I will cool the request for a while.",
+              "The village needs time before reopening Fresh Cod.",
+              "I will mark this paused, not forgotten.",
+              "Let the stores settle before we talk about Fresh Cod again.",
+              "I will put the note away until the cooldown passes.",
+              "Come back after the village has had time to reset.",
+              "Fresh Cod can wait until the next proper opening.",
+              "I will close this attempt and let the request breathe.",
+              "The slate needs a little quiet before this comes back.",
+              "I will pause the tally for now.",
+              "Give this one time before you ask again.",
+              "The request will not reopen immediately."
             ],
             "abandoned_forever": [
-              "Then the cod request is closed for good."
+              "Then the cod request is closed for good.",
+              "Then Fresh Cod is closed for good.",
+              "I will not reopen Fresh Cod.",
+              "That request is finished permanently.",
+              "Fresh Cod leaves the board for good.",
+              "Then this note is gone, not paused.",
+              "I will mark Fresh Cod as permanently closed.",
+              "No one will ask you for this request again.",
+              "That closes the matter completely.",
+              "The village will not bring this one back to you.",
+              "Fresh Cod is ended, not waiting.",
+              "I will put a final mark on the record.",
+              "This request is done beyond rechecking.",
+              "Then we leave Fresh Cod in the past.",
+              "I will close the book on that one."
             ],
             "unavailable": [
-              "There is no fish order here to put away."
+              "There is no fish order here to put away.",
+              "Fresh Cod is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Fresh Cod at the moment.",
+              "Fresh Cod is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Fresh Cod is waiting here.",
+              "Try again later if Fresh Cod comes back around.",
+              "I cannot move that request today.",
+              "Fresh Cod needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Fresh Cod."
             ]
           },
           "type": "quest"
@@ -98,12 +182,40 @@
     "active_cancel": {
       "end": true,
       "lines": [
-        "Then keep the cod fresh until you are ready."
+        "Then keep the cod fresh until you are ready.",
+        "Then keep Fresh Cod close until you are ready.",
+        "All right. We will leave Fresh Cod open.",
+        "Keep the request and come back when you need the details.",
+        "Then I will leave the note alone.",
+        "No change, then. Fresh Cod stays with you.",
+        "Good. Finish it when the count is ready.",
+        "The work waits where it is.",
+        "Then we do nothing more for now.",
+        "Keep going when you are ready.",
+        "Fresh Cod remains open.",
+        "I will keep the tally active.",
+        "Come back when you want to settle it.",
+        "Then hold onto the work a little longer.",
+        "The village will wait for the full count."
       ]
     },
     "active_menu": {
       "lines": [
-        "Fresh Cod is still open. I can repeat the details, or close my notes if you are done."
+        "Fresh Cod is still open. I can repeat the details, or close my notes if you are done.",
+        "Fresh Cod is still open. I can repeat the work or close the note if you are done.",
+        "Fresh Cod is active. Do you need the details again?",
+        "We still have Fresh Cod on the slate.",
+        "The request is open, and I can remind you what it needs.",
+        "Fresh Cod has not been closed yet.",
+        "I can go over Fresh Cod again, or we can put it aside.",
+        "You still have Fresh Cod in hand.",
+        "The note is open. What do you need from me?",
+        "Fresh Cod is waiting on the rest of the count.",
+        "I can repeat the request or close it if you are done.",
+        "We can talk details, abandon the work, or leave it alone.",
+        "The village is still expecting Fresh Cod.",
+        "Your part in Fresh Cod is not finished yet.",
+        "Say the word and I will remind you what Fresh Cod needs."
       ],
       "responses": [
         {
@@ -132,22 +244,106 @@
           "action": "turn_in",
           "lines": {
             "completed": [
-              "Fresh Cod is complete. The village can use this, and you have earned the reward."
+              "Fresh Cod is complete. The village can use this, and you have earned the reward.",
+              "That settles Fresh Cod. The village will put this to use.",
+              "Fresh Cod is complete, and the help is appreciated.",
+              "Good. I can close Fresh Cod with a clean mark.",
+              "This will help more than it looks like it should.",
+              "The count is right. Take your reward with my thanks.",
+              "That is enough to close the request.",
+              "Well done. Fresh Cod is finished.",
+              "The village can use this before the day is out.",
+              "I will mark Fresh Cod complete.",
+              "Good work. The note comes down now.",
+              "That is the kind of help people remember at supper.",
+              "Everything is here. Fresh Cod is settled.",
+              "The village needed this, and you brought it.",
+              "A full count makes a calmer room."
             ],
             "inactive": [
-              "The kitchen is not taking cod right now."
+              "The kitchen is not taking cod right now.",
+              "Fresh Cod is quiet right now.",
+              "The village is not counting Fresh Cod at the moment.",
+              "That request is not open right now.",
+              "Fresh Cod is waiting on better timing.",
+              "I cannot move Fresh Cod forward just now.",
+              "The conditions for Fresh Cod are not ready.",
+              "The note for Fresh Cod is closed for the moment.",
+              "No one is taking that request right now.",
+              "Fresh Cod needs to wait a little longer.",
+              "This is not the right moment for Fresh Cod.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Fresh Cod at the moment.",
+              "Fresh Cod is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "missing_objectives": [
-              "Fresh Cod is still short. The tracker has the exact count."
+              "Fresh Cod is still short. The tracker has the exact count.",
+              "Check the tracker before we close Fresh Cod.",
+              "The work is not complete yet.",
+              "There is still one part of Fresh Cod missing.",
+              "Bring the rest and I can settle the note.",
+              "The village cannot use half a finished request.",
+              "The tally says there is more to do.",
+              "You are not empty handed, but this is not complete yet.",
+              "The last pieces still matter.",
+              "I need the whole request finished before I close it.",
+              "The tracker knows what the note still needs.",
+              "Keep going. Fresh Cod is not ready to turn in yet.",
+              "The work is close enough to see, not close enough to sign.",
+              "Bring the missing part back when you have it.",
+              "The request still has work left in it."
             ],
             "missing_proof": [
-              "Fresh Cod still needs the cod in your pack before I can close it."
+              "Fresh Cod still needs the cod in your pack before I can close it.",
+              "I still need 10 cod before I can close Fresh Cod.",
+              "Bring 10 cod, then we can settle Fresh Cod.",
+              "Fresh Cod needs the proof in your pack first.",
+              "I cannot close Fresh Cod until I see 10 cod.",
+              "The reward waits until 10 cod is here.",
+              "Show me 10 cod and we can finish this properly.",
+              "The village needs the goods before the note comes down.",
+              "You are close, but 10 cod still needs to be here.",
+              "I need the actual proof before I mark Fresh Cod done.",
+              "Come back with 10 cod and we can close the count.",
+              "The request is not finished without 10 cod.",
+              "Fresh Cod still needs something I can hold and count.",
+              "I need the delivery in hand before this is settled.",
+              "Bring the proof back and I will close Fresh Cod."
             ],
             "missing_target": [
-              "Fresh Cod is not at the right count yet; bring the rest before turning it in."
+              "Fresh Cod is not at the right count yet; bring the rest before turning it in.",
+              "Fresh Cod is still short. The tracker has the exact count.",
+              "Something is missing for Fresh Cod, so check the tracker and bring the rest.",
+              "The count is not complete yet.",
+              "We need the full amount before Fresh Cod can close.",
+              "The village is still waiting on the rest of it.",
+              "Fresh Cod needs every part before I can sign it off.",
+              "The work is close, but close does not fill a shelf.",
+              "Bring the rest and we can finish Fresh Cod.",
+              "The tally still has an empty line in it.",
+              "I cannot call Fresh Cod complete while the count is short.",
+              "The tracker will show what is still missing.",
+              "There is still more to gather for Fresh Cod.",
+              "The full delivery matters here.",
+              "Not quite enough yet, but you are on the right road."
             ],
             "unavailable": [
-              "This cod request is not ready to close yet."
+              "This cod request is not ready to close yet.",
+              "Fresh Cod is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Fresh Cod at the moment.",
+              "Fresh Cod is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Fresh Cod is waiting here.",
+              "Try again later if Fresh Cod comes back around.",
+              "I cannot move that request today.",
+              "Fresh Cod needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Fresh Cod."
             ]
           },
           "type": "quest"
@@ -158,13 +354,40 @@
     "decline": {
       "end": true,
       "lines": [
-        "Then supper remains mostly optimism."
+        "Then supper remains mostly optimism.",
+        "Another time, then. I will keep Fresh Cod in mind.",
+        "Fair enough. The request can wait a little longer.",
+        "Then I will keep the note nearby.",
+        "No trouble. Someone will ask again if it still matters.",
+        "The village will manage for now.",
+        "Then we leave Fresh Cod on the board.",
+        "All right. I will not press you on it.",
+        "Maybe later, if the need is still there.",
+        "I will keep counting without your help for now.",
+        "Then the request waits for another willing pair of hands.",
+        "Fine. Better a clear no than a forgotten promise.",
+        "The work is not going anywhere quickly.",
+        "Then I will ask again when the village needs it.",
+        "No harm. Fresh Cod can wait."
       ]
     },
     "offer": {
       "lines": [
         "The pot is ready and the fish are not.",
-        "I dislike that order of events."
+        "I dislike that order of events.",
+        "The village could use help with 10 cod for Fresh Cod.",
+        "Fresh Cod is simple work, but simple work still feeds the day.",
+        "We need 10 cod, and I would rather ask before the shortage becomes loud.",
+        "If you have room in your pack, Fresh Cod would help.",
+        "The count is not dramatic yet, which is when it is worth fixing.",
+        "A little help with Fresh Cod would settle more than one worry.",
+        "I have a request for 10 cod, if you are willing.",
+        "This village runs better when requests like Fresh Cod do not wait too long.",
+        "The stores are asking for 10 cod in their quiet way.",
+        "I could use a steady hand for Fresh Cod.",
+        "Bring 10 cod, and the village will feel the difference.",
+        "Nothing glorious here, just useful work that matters.",
+        "Fresh Cod needs doing before it becomes everyone's problem."
       ],
       "responses": [
         {
@@ -185,13 +408,55 @@
           "action": "remind",
           "lines": {
             "inactive": [
-              "The supper fish request is quiet for now."
+              "The supper fish request is quiet for now.",
+              "Fresh Cod is quiet right now.",
+              "The village is not counting Fresh Cod at the moment.",
+              "That request is not open right now.",
+              "Fresh Cod is waiting on better timing.",
+              "I cannot move Fresh Cod forward just now.",
+              "The conditions for Fresh Cod are not ready.",
+              "The note for Fresh Cod is closed for the moment.",
+              "No one is taking that request right now.",
+              "Fresh Cod needs to wait a little longer.",
+              "This is not the right moment for Fresh Cod.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Fresh Cod at the moment.",
+              "Fresh Cod is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "reminder": [
-              "Fresh Cod: I still need the cod. Bring the full count back to me."
+              "Fresh Cod: I still need the cod. Bring the full count back to me.",
+              "For Fresh Cod, I still need 10 cod.",
+              "Fresh Cod is still asking for 10 cod.",
+              "Bring 10 cod back when the count is ready.",
+              "The tracker has the details for Fresh Cod.",
+              "Keep Fresh Cod in mind and bring 10 cod.",
+              "The village is still waiting on 10 cod.",
+              "No rush in the words, but the count still matters.",
+              "Bring the full amount back to me when you have it.",
+              "Fresh Cod is still open.",
+              "Follow the tracker for Fresh Cod and bring back 10 cod.",
+              "You are looking for 10 cod for this request.",
+              "The note says 10 cod, and the note is not wrong today.",
+              "Finish the count and return here when you can.",
+              "This is simple work only if it gets done."
             ],
             "unavailable": [
-              "That fresh cod request is not yours right now."
+              "That fresh cod request is not yours right now.",
+              "Fresh Cod is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Fresh Cod at the moment.",
+              "Fresh Cod is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Fresh Cod is waiting here.",
+              "Try again later if Fresh Cod comes back around.",
+              "I cannot move that request today.",
+              "Fresh Cod needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Fresh Cod."
             ]
           },
           "type": "quest"
@@ -205,16 +470,72 @@
           "action": "start",
           "lines": {
             "already_completed": [
-              "The supper fish is already settled."
+              "The supper fish is already settled.",
+              "Fresh Cod is already settled on my side.",
+              "We have already closed Fresh Cod.",
+              "Fresh Cod does not need another tally right now.",
+              "That work is already counted and put away.",
+              "Fresh Cod is finished for now.",
+              "The village has already marked Fresh Cod complete.",
+              "I have no open note for Fresh Cod anymore.",
+              "Fresh Cod has already been handled.",
+              "That request is already off the board.",
+              "We are not reopening Fresh Cod right now.",
+              "Fresh Cod is done enough for today.",
+              "The record for Fresh Cod is already clean.",
+              "There is no fresh work left in Fresh Cod.",
+              "That one is already squared away."
             ],
             "locate_failed": [
-              "Fresh Cod cannot be posted from here right now."
+              "Fresh Cod cannot be posted from here right now.",
+              "I cannot post Fresh Cod from here right now.",
+              "Fresh Cod is not finding a proper place to start.",
+              "No good posting point is ready for Fresh Cod.",
+              "The village cannot place that request from here.",
+              "Fresh Cod needs a better lead before I send you out.",
+              "I cannot get a clean mark for Fresh Cod today.",
+              "The request is real, but the place is not lining up.",
+              "Something about this spot will not let Fresh Cod start.",
+              "I need a clearer posting before I can offer Fresh Cod.",
+              "The work is not anchoring here right now.",
+              "I cannot set the note for Fresh Cod from this place.",
+              "The village has no clean place to send you for that.",
+              "Fresh Cod is refusing to settle onto the slate.",
+              "The route for Fresh Cod is not clear enough yet."
             ],
             "started": [
-              "Fresh Cod is yours now. Bring the cod back when the count is ready."
+              "Fresh Cod is yours now. Bring the cod back when the count is ready.",
+              "Fresh Cod is yours now. Bring 10 cod when the count is ready.",
+              "I am putting Fresh Cod in your hands.",
+              "Take the note for Fresh Cod and bring back 10 cod.",
+              "Good. The village will be waiting for 10 cod.",
+              "Then we will count on you for Fresh Cod.",
+              "Bring 10 cod, and we can call this useful work.",
+              "Fresh Cod starts now. Keep the tracker close.",
+              "Head out for Fresh Cod and return with 10 cod.",
+              "The request is open, and your name is on it now.",
+              "I will mark you down for Fresh Cod.",
+              "Bring the full count back when you have it.",
+              "You have the work now. Do it cleanly and come back safe.",
+              "Fresh Cod points. Bring 10 cod.",
+              "That settles the posting. Now we need 10 cod."
             ],
             "unavailable": [
-              "The kitchen is not asking you for cod right now."
+              "The kitchen is not asking you for cod right now.",
+              "Fresh Cod is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Fresh Cod at the moment.",
+              "Fresh Cod is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Fresh Cod is waiting here.",
+              "Try again later if Fresh Cod comes back around.",
+              "I cannot move that request today.",
+              "Fresh Cod needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Fresh Cod."
             ]
           },
           "type": "quest"
@@ -224,7 +545,21 @@
     },
     "turn_in": {
       "lines": [
-        "If you have the cod, we can settle Fresh Cod."
+        "If you have the cod, we can settle Fresh Cod.",
+        "Fresh Cod is still on the village slate.",
+        "The work for Fresh Cod can wait a moment.",
+        "Keep Fresh Cod in mind and come back when you are ready.",
+        "The village will know what to do with the help.",
+        "That request still has room for steady hands.",
+        "We can settle Fresh Cod when the count is right.",
+        "No need to dress it up. Fresh Cod just needs finishing.",
+        "The note stays plain because the work is plain.",
+        "If the village asks again, you will know why.",
+        "There is still useful work in Fresh Cod.",
+        "Bring what is needed and we will call it done.",
+        "The request can stay quiet for now.",
+        "The tally remains where I can see it.",
+        "Come back when Fresh Cod is ready to close."
       ],
       "responses": [
         {
@@ -250,7 +585,21 @@
     "turn_in_wait": {
       "end": true,
       "lines": [
-        "Keep the cod fresh; supper is less forgiving than paperwork."
+        "Keep the cod fresh; supper is less forgiving than paperwork.",
+        "Hold onto the supplies for Fresh Cod until you are ready to finish.",
+        "Then bring it back when you want the note closed.",
+        "Keep the delivery safe until we count it.",
+        "No hurry in the words, but do not lose the goods.",
+        "Come back when you are ready to settle Fresh Cod.",
+        "I will wait to close the tally.",
+        "Keep the count together and return when you can.",
+        "The request stays open until you turn it in.",
+        "Bring everything back when you are ready for the reward.",
+        "Then we will leave Fresh Cod unfinished for the moment.",
+        "Keep it close. Lost supplies do not help anyone.",
+        "Return when you want this properly counted.",
+        "The tally can wait a little longer.",
+        "I will not close the note until you say so."
       ]
     }
   }

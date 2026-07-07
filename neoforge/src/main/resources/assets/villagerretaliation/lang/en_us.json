@@ -375,6 +375,8 @@
   "advancements.villagerretaliation.reputation.village_chronicler.description": "Share 10 discovered stories with villagers.",
   "advancements.villagerretaliation.reputation.legend_trader.title": "Legend Trader",
   "advancements.villagerretaliation.reputation.legend_trader.description": "Share 25 discovered stories with villagers.",
+  "advancements.villagerretaliation.reputation.steady_gaze.title": "Steady Gaze",
+  "advancements.villagerretaliation.reputation.steady_gaze.description": "Stare precisely between a villager's eyes.",
   "villagerretaliation.reputation.label": "Reputation",
   "villagerretaliation.reputation.value_format": "Reputation: %s",
   "villagerretaliation.reputation.tier_value_format": "%s: %s",

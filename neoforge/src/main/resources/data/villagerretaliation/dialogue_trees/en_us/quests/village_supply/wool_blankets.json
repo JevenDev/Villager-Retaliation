@@ -52,12 +52,40 @@
     "abandon_cancel": {
       "end": true,
       "lines": [
-        "Good. Clean blankets do more work than they get credit for."
+        "Good. Clean blankets do more work than they get credit for.",
+        "Good. We will keep Wool Blankets open a while longer.",
+        "Then the request stays active.",
+        "Fine. Keep Wool Blankets in your hands for now.",
+        "Good. I will leave the note where it is.",
+        "Then we keep counting on you for this one.",
+        "The work stays open.",
+        "Wool Blankets remains on your list.",
+        "Good. Bring it back when you are ready.",
+        "I will keep the tally under your name.",
+        "Then nothing changes for Wool Blankets.",
+        "Good. The village will wait a little longer.",
+        "Keep the request and finish it when you can.",
+        "I will not close the note yet.",
+        "Then Wool Blankets stays alive."
       ]
     },
     "abandon_confirm": {
       "lines": [
-        "Put Wool Blankets aside for now?"
+        "Put Wool Blankets aside for now?",
+        "Are you sure you want to step away from Wool Blankets?",
+        "Close your part in Wool Blankets for now?",
+        "Should I mark Wool Blankets abandoned?",
+        "Do you want me to take your name off this request?",
+        "Set the note for Wool Blankets aside?",
+        "Are you done with Wool Blankets for now?",
+        "Should I stop counting on you for this one?",
+        "Do you want to leave Wool Blankets unfinished?",
+        "Put the work down and walk away?",
+        "Should I close this attempt?",
+        "Are you sure Wool Blankets can wait without you?",
+        "Do you want the request removed from your list?",
+        "Shall I fold this note away?",
+        "One last check. Are you abandoning Wool Blankets?"
       ],
       "responses": [
         {
@@ -78,16 +106,72 @@
           "action": "abandon",
           "lines": {
             "abandoned": [
-              "I will set the blanket request aside. Return if the beds still run cold."
+              "I will set the blanket request aside. Return if the beds still run cold.",
+              "I will set Wool Blankets aside. Come back if the village still needs it.",
+              "Wool Blankets is off your hands for now.",
+              "I will clear the note and stop counting on you for this one.",
+              "The request is set aside.",
+              "I will mark Wool Blankets abandoned for now.",
+              "Then we will leave Wool Blankets alone.",
+              "I will put the tally away.",
+              "The village will manage without this run for now.",
+              "I will stop holding that work under your name.",
+              "Wool Blankets is no longer active for you.",
+              "I will take your name off the request.",
+              "The note comes down for now.",
+              "That closes your part in Wool Blankets for the moment.",
+              "I will make the record clean again."
             ],
             "abandoned_cooldown": [
-              "I will pause the wool request for now. Let the sickroom count its stores again."
+              "I will pause the wool request for now. Let the sickroom count its stores again.",
+              "I will pause Wool Blankets for now. Give the village a little time before asking again.",
+              "Wool Blankets is set aside until the count settles.",
+              "I will cool the request for a while.",
+              "The village needs time before reopening Wool Blankets.",
+              "I will mark this paused, not forgotten.",
+              "Let the stores settle before we talk about Wool Blankets again.",
+              "I will put the note away until the cooldown passes.",
+              "Come back after the village has had time to reset.",
+              "Wool Blankets can wait until the next proper opening.",
+              "I will close this attempt and let the request breathe.",
+              "The slate needs a little quiet before this comes back.",
+              "I will pause the tally for now.",
+              "Give this one time before you ask again.",
+              "The request will not reopen immediately."
             ],
             "abandoned_forever": [
-              "Then the wool blanket request is closed for good."
+              "Then the wool blanket request is closed for good.",
+              "Then Wool Blankets is closed for good.",
+              "I will not reopen Wool Blankets.",
+              "That request is finished permanently.",
+              "Wool Blankets leaves the board for good.",
+              "Then this note is gone, not paused.",
+              "I will mark Wool Blankets as permanently closed.",
+              "No one will ask you for this request again.",
+              "That closes the matter completely.",
+              "The village will not bring this one back to you.",
+              "Wool Blankets is ended, not waiting.",
+              "I will put a final mark on the record.",
+              "This request is done beyond rechecking.",
+              "Then we leave Wool Blankets in the past.",
+              "I will close the book on that one."
             ],
             "unavailable": [
-              "There is no blanket request here for me to close."
+              "There is no blanket request here for me to close.",
+              "Wool Blankets is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Wool Blankets at the moment.",
+              "Wool Blankets is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Wool Blankets is waiting here.",
+              "Try again later if Wool Blankets comes back around.",
+              "I cannot move that request today.",
+              "Wool Blankets needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Wool Blankets."
             ]
           },
           "type": "quest"
@@ -98,12 +182,40 @@
     "active_cancel": {
       "end": true,
       "lines": [
-        "Then keep the wool clean until you are ready."
+        "Then keep the wool clean until you are ready.",
+        "Then keep Wool Blankets close until you are ready.",
+        "All right. We will leave Wool Blankets open.",
+        "Keep the request and come back when you need the details.",
+        "Then I will leave the note alone.",
+        "No change, then. Wool Blankets stays with you.",
+        "Good. Finish it when the count is ready.",
+        "The work waits where it is.",
+        "Then we do nothing more for now.",
+        "Keep going when you are ready.",
+        "Wool Blankets remains open.",
+        "I will keep the tally active.",
+        "Come back when you want to settle it.",
+        "Then hold onto the work a little longer.",
+        "The village will wait for the full count."
       ]
     },
     "active_menu": {
       "lines": [
-        "Wool Blankets is still open. I can repeat the details, or close my notes if you are done."
+        "Wool Blankets is still open. I can repeat the details, or close my notes if you are done.",
+        "Wool Blankets is still open. I can repeat the work or close the note if you are done.",
+        "Wool Blankets is active. Do you need the details again?",
+        "We still have Wool Blankets on the slate.",
+        "The request is open, and I can remind you what it needs.",
+        "Wool Blankets has not been closed yet.",
+        "I can go over Wool Blankets again, or we can put it aside.",
+        "You still have Wool Blankets in hand.",
+        "The note is open. What do you need from me?",
+        "Wool Blankets is waiting on the rest of the count.",
+        "I can repeat the request or close it if you are done.",
+        "We can talk details, abandon the work, or leave it alone.",
+        "The village is still expecting Wool Blankets.",
+        "Your part in Wool Blankets is not finished yet.",
+        "Say the word and I will remind you what Wool Blankets needs."
       ],
       "responses": [
         {
@@ -132,22 +244,106 @@
           "action": "turn_in",
           "lines": {
             "completed": [
-              "Wool Blankets is complete. The village can use this, and you have earned the reward."
+              "Wool Blankets is complete. The village can use this, and you have earned the reward.",
+              "That settles Wool Blankets. The village will put this to use.",
+              "Wool Blankets is complete, and the help is appreciated.",
+              "Good. I can close Wool Blankets with a clean mark.",
+              "This will help more than it looks like it should.",
+              "The count is right. Take your reward with my thanks.",
+              "That is enough to close the request.",
+              "Well done. Wool Blankets is finished.",
+              "The village can use this before the day is out.",
+              "I will mark Wool Blankets complete.",
+              "Good work. The note comes down now.",
+              "That is the kind of help people remember at supper.",
+              "Everything is here. Wool Blankets is settled.",
+              "The village needed this, and you brought it.",
+              "A full count makes a calmer room."
             ],
             "inactive": [
-              "The sickroom is not accepting wool right now."
+              "The sickroom is not accepting wool right now.",
+              "Wool Blankets is quiet right now.",
+              "The village is not counting Wool Blankets at the moment.",
+              "That request is not open right now.",
+              "Wool Blankets is waiting on better timing.",
+              "I cannot move Wool Blankets forward just now.",
+              "The conditions for Wool Blankets are not ready.",
+              "The note for Wool Blankets is closed for the moment.",
+              "No one is taking that request right now.",
+              "Wool Blankets needs to wait a little longer.",
+              "This is not the right moment for Wool Blankets.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Wool Blankets at the moment.",
+              "Wool Blankets is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "missing_objectives": [
-              "Wool Blankets is still short. The tracker has the exact count."
+              "Wool Blankets is still short. The tracker has the exact count.",
+              "Check the tracker before we close Wool Blankets.",
+              "The work is not complete yet.",
+              "There is still one part of Wool Blankets missing.",
+              "Bring the rest and I can settle the note.",
+              "The village cannot use half a finished request.",
+              "The tally says there is more to do.",
+              "You are not empty handed, but this is not complete yet.",
+              "The last pieces still matter.",
+              "I need the whole request finished before I close it.",
+              "The tracker knows what the note still needs.",
+              "Keep going. Wool Blankets is not ready to turn in yet.",
+              "The work is close enough to see, not close enough to sign.",
+              "Bring the missing part back when you have it.",
+              "The request still has work left in it."
             ],
             "missing_proof": [
-              "Wool Blankets still needs the white wool in your pack before I can close it."
+              "Wool Blankets still needs the white wool in your pack before I can close it.",
+              "I still need 12 white wool before I can close Wool Blankets.",
+              "Bring 12 white wool, then we can settle Wool Blankets.",
+              "Wool Blankets needs the proof in your pack first.",
+              "I cannot close Wool Blankets until I see 12 white wool.",
+              "The reward waits until 12 white wool is here.",
+              "Show me 12 white wool and we can finish this properly.",
+              "The village needs the goods before the note comes down.",
+              "You are close, but 12 white wool still needs to be here.",
+              "I need the actual proof before I mark Wool Blankets done.",
+              "Come back with 12 white wool and we can close the count.",
+              "The request is not finished without 12 white wool.",
+              "Wool Blankets still needs something I can hold and count.",
+              "I need the delivery in hand before this is settled.",
+              "Bring the proof back and I will close Wool Blankets."
             ],
             "missing_target": [
-              "Wool Blankets is not at the right count yet; bring the rest before turning it in."
+              "Wool Blankets is not at the right count yet; bring the rest before turning it in.",
+              "Wool Blankets is still short. The tracker has the exact count.",
+              "Something is missing for Wool Blankets, so check the tracker and bring the rest.",
+              "The count is not complete yet.",
+              "We need the full amount before Wool Blankets can close.",
+              "The village is still waiting on the rest of it.",
+              "Wool Blankets needs every part before I can sign it off.",
+              "The work is close, but close does not fill a shelf.",
+              "Bring the rest and we can finish Wool Blankets.",
+              "The tally still has an empty line in it.",
+              "I cannot call Wool Blankets complete while the count is short.",
+              "The tracker will show what is still missing.",
+              "There is still more to gather for Wool Blankets.",
+              "The full delivery matters here.",
+              "Not quite enough yet, but you are on the right road."
             ],
             "unavailable": [
-              "This blanket request is not ready to close yet."
+              "This blanket request is not ready to close yet.",
+              "Wool Blankets is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Wool Blankets at the moment.",
+              "Wool Blankets is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Wool Blankets is waiting here.",
+              "Try again later if Wool Blankets comes back around.",
+              "I cannot move that request today.",
+              "Wool Blankets needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Wool Blankets."
             ]
           },
           "type": "quest"
@@ -158,13 +354,40 @@
     "decline": {
       "end": true,
       "lines": [
-        "Then I will keep pretending one blanket can be in two beds."
+        "Then I will keep pretending one blanket can be in two beds.",
+        "Another time, then. I will keep Wool Blankets in mind.",
+        "Fair enough. The request can wait a little longer.",
+        "Then I will keep the note nearby.",
+        "No trouble. Someone will ask again if it still matters.",
+        "The village will manage for now.",
+        "Then we leave Wool Blankets on the board.",
+        "All right. I will not press you on it.",
+        "Maybe later, if the need is still there.",
+        "I will keep counting without your help for now.",
+        "Then the request waits for another willing pair of hands.",
+        "Fine. Better a clear no than a forgotten promise.",
+        "The work is not going anywhere quickly.",
+        "Then I will ask again when the village needs it.",
+        "No harm. Wool Blankets can wait."
       ]
     },
     "offer": {
       "lines": [
         "We are short on clean bedding.",
-        "No one recovers faster because the blanket is thin."
+        "No one recovers faster because the blanket is thin.",
+        "The village could use help with 12 white wool for Wool Blankets.",
+        "Wool Blankets is simple work, but simple work still feeds the day.",
+        "We need 12 white wool, and I would rather ask before the shortage becomes loud.",
+        "If you have room in your pack, Wool Blankets would help.",
+        "The count is not dramatic yet, which is when it is worth fixing.",
+        "A little help with Wool Blankets would settle more than one worry.",
+        "I have a request for 12 white wool, if you are willing.",
+        "This village runs better when requests like Wool Blankets do not wait too long.",
+        "The stores are asking for 12 white wool in their quiet way.",
+        "I could use a steady hand for Wool Blankets.",
+        "Bring 12 white wool, and the village will feel the difference.",
+        "Nothing glorious here, just useful work that matters.",
+        "Wool Blankets needs doing before it becomes everyone's problem."
       ],
       "responses": [
         {
@@ -185,13 +408,55 @@
           "action": "remind",
           "lines": {
             "inactive": [
-              "The sickbed wool count is quiet for the moment."
+              "The sickbed wool count is quiet for the moment.",
+              "Wool Blankets is quiet right now.",
+              "The village is not counting Wool Blankets at the moment.",
+              "That request is not open right now.",
+              "Wool Blankets is waiting on better timing.",
+              "I cannot move Wool Blankets forward just now.",
+              "The conditions for Wool Blankets are not ready.",
+              "The note for Wool Blankets is closed for the moment.",
+              "No one is taking that request right now.",
+              "Wool Blankets needs to wait a little longer.",
+              "This is not the right moment for Wool Blankets.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Wool Blankets at the moment.",
+              "Wool Blankets is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "reminder": [
-              "Wool Blankets: I still need the white wool. Bring the full count back to me."
+              "Wool Blankets: I still need the white wool. Bring the full count back to me.",
+              "For Wool Blankets, I still need 12 white wool.",
+              "Wool Blankets is still asking for 12 white wool.",
+              "Bring 12 white wool back when the count is ready.",
+              "The tracker has the details for Wool Blankets.",
+              "Keep Wool Blankets in mind and bring 12 white wool.",
+              "The village is still waiting on 12 white wool.",
+              "No rush in the words, but the count still matters.",
+              "Bring the full amount back to me when you have it.",
+              "Wool Blankets is still open.",
+              "Follow the tracker for Wool Blankets and bring back 12 white wool.",
+              "You are looking for 12 white wool for this request.",
+              "The note says 12 white wool, and the note is not wrong today.",
+              "Finish the count and return here when you can.",
+              "This is simple work only if it gets done."
             ],
             "unavailable": [
-              "That wool blanket request is not in your hands right now."
+              "That wool blanket request is not in your hands right now.",
+              "Wool Blankets is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Wool Blankets at the moment.",
+              "Wool Blankets is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Wool Blankets is waiting here.",
+              "Try again later if Wool Blankets comes back around.",
+              "I cannot move that request today.",
+              "Wool Blankets needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Wool Blankets."
             ]
           },
           "type": "quest"
@@ -205,16 +470,72 @@
           "action": "start",
           "lines": {
             "already_completed": [
-              "The wool blankets are already settled."
+              "The wool blankets are already settled.",
+              "Wool Blankets is already settled on my side.",
+              "We have already closed Wool Blankets.",
+              "Wool Blankets does not need another tally right now.",
+              "That work is already counted and put away.",
+              "Wool Blankets is finished for now.",
+              "The village has already marked Wool Blankets complete.",
+              "I have no open note for Wool Blankets anymore.",
+              "Wool Blankets has already been handled.",
+              "That request is already off the board.",
+              "We are not reopening Wool Blankets right now.",
+              "Wool Blankets is done enough for today.",
+              "The record for Wool Blankets is already clean.",
+              "There is no fresh work left in Wool Blankets.",
+              "That one is already squared away."
             ],
             "locate_failed": [
-              "Wool Blankets cannot be posted from here right now."
+              "Wool Blankets cannot be posted from here right now.",
+              "I cannot post Wool Blankets from here right now.",
+              "Wool Blankets is not finding a proper place to start.",
+              "No good posting point is ready for Wool Blankets.",
+              "The village cannot place that request from here.",
+              "Wool Blankets needs a better lead before I send you out.",
+              "I cannot get a clean mark for Wool Blankets today.",
+              "The request is real, but the place is not lining up.",
+              "Something about this spot will not let Wool Blankets start.",
+              "I need a clearer posting before I can offer Wool Blankets.",
+              "The work is not anchoring here right now.",
+              "I cannot set the note for Wool Blankets from this place.",
+              "The village has no clean place to send you for that.",
+              "Wool Blankets is refusing to settle onto the slate.",
+              "The route for Wool Blankets is not clear enough yet."
             ],
             "started": [
-              "Wool Blankets is yours now. Bring the white wool back when the count is ready."
+              "Wool Blankets is yours now. Bring the white wool back when the count is ready.",
+              "Wool Blankets is yours now. Bring 12 white wool when the count is ready.",
+              "I am putting Wool Blankets in your hands.",
+              "Take the note for Wool Blankets and bring back 12 white wool.",
+              "Good. The village will be waiting for 12 white wool.",
+              "Then we will count on you for Wool Blankets.",
+              "Bring 12 white wool, and we can call this useful work.",
+              "Wool Blankets starts now. Keep the tracker close.",
+              "Head out for Wool Blankets and return with 12 white wool.",
+              "The request is open, and your name is on it now.",
+              "I will mark you down for Wool Blankets.",
+              "Bring the full count back when you have it.",
+              "You have the work now. Do it cleanly and come back safe.",
+              "Wool Blankets points. Bring 12 white wool.",
+              "That settles the posting. Now we need 12 white wool."
             ],
             "unavailable": [
-              "The sickroom is not asking you for wool right now."
+              "The sickroom is not asking you for wool right now.",
+              "Wool Blankets is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Wool Blankets at the moment.",
+              "Wool Blankets is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Wool Blankets is waiting here.",
+              "Try again later if Wool Blankets comes back around.",
+              "I cannot move that request today.",
+              "Wool Blankets needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Wool Blankets."
             ]
           },
           "type": "quest"
@@ -224,7 +545,21 @@
     },
     "turn_in": {
       "lines": [
-        "If you have the white wool, we can settle Wool Blankets."
+        "If you have the white wool, we can settle Wool Blankets.",
+        "Wool Blankets is still on the village slate.",
+        "The work for Wool Blankets can wait a moment.",
+        "Keep Wool Blankets in mind and come back when you are ready.",
+        "The village will know what to do with the help.",
+        "That request still has room for steady hands.",
+        "We can settle Wool Blankets when the count is right.",
+        "No need to dress it up. Wool Blankets just needs finishing.",
+        "The note stays plain because the work is plain.",
+        "If the village asks again, you will know why.",
+        "There is still useful work in Wool Blankets.",
+        "Bring what is needed and we will call it done.",
+        "The request can stay quiet for now.",
+        "The tally remains where I can see it.",
+        "Come back when Wool Blankets is ready to close."
       ],
       "responses": [
         {
@@ -250,7 +585,21 @@
     "turn_in_wait": {
       "end": true,
       "lines": [
-        "Keep the wool clean until the beds can be made."
+        "Keep the wool clean until the beds can be made.",
+        "Hold onto the supplies for Wool Blankets until you are ready to finish.",
+        "Then bring it back when you want the note closed.",
+        "Keep the delivery safe until we count it.",
+        "No hurry in the words, but do not lose the goods.",
+        "Come back when you are ready to settle Wool Blankets.",
+        "I will wait to close the tally.",
+        "Keep the count together and return when you can.",
+        "The request stays open until you turn it in.",
+        "Bring everything back when you are ready for the reward.",
+        "Then we will leave Wool Blankets unfinished for the moment.",
+        "Keep it close. Lost supplies do not help anyone.",
+        "Return when you want this properly counted.",
+        "The tally can wait a little longer.",
+        "I will not close the note until you say so."
       ]
     }
   }

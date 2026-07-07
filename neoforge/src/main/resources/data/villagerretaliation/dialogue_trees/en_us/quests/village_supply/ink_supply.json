@@ -52,12 +52,40 @@
     "abandon_cancel": {
       "end": true,
       "lines": [
-        "Good. Faded records can wait, but only briefly."
+        "Good. Faded records can wait, but only briefly.",
+        "Good. We will keep Ink Supply open a while longer.",
+        "Then the request stays active.",
+        "Fine. Keep Ink Supply in your hands for now.",
+        "Good. I will leave the note where it is.",
+        "Then we keep counting on you for this one.",
+        "The work stays open.",
+        "Ink Supply remains on your list.",
+        "Good. Bring it back when you are ready.",
+        "I will keep the tally under your name.",
+        "Then nothing changes for Ink Supply.",
+        "Good. The village will wait a little longer.",
+        "Keep the request and finish it when you can.",
+        "I will not close the note yet.",
+        "Then Ink Supply stays alive."
       ]
     },
     "abandon_confirm": {
       "lines": [
-        "Put Ink Supply aside for now?"
+        "Put Ink Supply aside for now?",
+        "Are you sure you want to step away from Ink Supply?",
+        "Close your part in Ink Supply for now?",
+        "Should I mark Ink Supply abandoned?",
+        "Do you want me to take your name off this request?",
+        "Set the note for Ink Supply aside?",
+        "Are you done with Ink Supply for now?",
+        "Should I stop counting on you for this one?",
+        "Do you want to leave Ink Supply unfinished?",
+        "Put the work down and walk away?",
+        "Should I close this attempt?",
+        "Are you sure Ink Supply can wait without you?",
+        "Do you want the request removed from your list?",
+        "Shall I fold this note away?",
+        "One last check. Are you abandoning Ink Supply?"
       ],
       "responses": [
         {
@@ -78,16 +106,72 @@
           "action": "abandon",
           "lines": {
             "abandoned": [
-              "I will set the ink request aside. Return if the ledger starts fading again."
+              "I will set the ink request aside. Return if the ledger starts fading again.",
+              "I will set Ink Supply aside. Come back if the village still needs it.",
+              "Ink Supply is off your hands for now.",
+              "I will clear the note and stop counting on you for this one.",
+              "The request is set aside.",
+              "I will mark Ink Supply abandoned for now.",
+              "Then we will leave Ink Supply alone.",
+              "I will put the tally away.",
+              "The village will manage without this run for now.",
+              "I will stop holding that work under your name.",
+              "Ink Supply is no longer active for you.",
+              "I will take your name off the request.",
+              "The note comes down for now.",
+              "That closes your part in Ink Supply for the moment.",
+              "I will make the record clean again."
             ],
             "abandoned_cooldown": [
-              "I will pause the ink request for now. Let the desk sort its records first."
+              "I will pause the ink request for now. Let the desk sort its records first.",
+              "I will pause Ink Supply for now. Give the village a little time before asking again.",
+              "Ink Supply is set aside until the count settles.",
+              "I will cool the request for a while.",
+              "The village needs time before reopening Ink Supply.",
+              "I will mark this paused, not forgotten.",
+              "Let the stores settle before we talk about Ink Supply again.",
+              "I will put the note away until the cooldown passes.",
+              "Come back after the village has had time to reset.",
+              "Ink Supply can wait until the next proper opening.",
+              "I will close this attempt and let the request breathe.",
+              "The slate needs a little quiet before this comes back.",
+              "I will pause the tally for now.",
+              "Give this one time before you ask again.",
+              "The request will not reopen immediately."
             ],
             "abandoned_forever": [
-              "Then the ink supply request is closed for good."
+              "Then the ink supply request is closed for good.",
+              "Then Ink Supply is closed for good.",
+              "I will not reopen Ink Supply.",
+              "That request is finished permanently.",
+              "Ink Supply leaves the board for good.",
+              "Then this note is gone, not paused.",
+              "I will mark Ink Supply as permanently closed.",
+              "No one will ask you for this request again.",
+              "That closes the matter completely.",
+              "The village will not bring this one back to you.",
+              "Ink Supply is ended, not waiting.",
+              "I will put a final mark on the record.",
+              "This request is done beyond rechecking.",
+              "Then we leave Ink Supply in the past.",
+              "I will close the book on that one."
             ],
             "unavailable": [
-              "There is no ink note here to put away."
+              "There is no ink note here to put away.",
+              "Ink Supply is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Ink Supply at the moment.",
+              "Ink Supply is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Ink Supply is waiting here.",
+              "Try again later if Ink Supply comes back around.",
+              "I cannot move that request today.",
+              "Ink Supply needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Ink Supply."
             ]
           },
           "type": "quest"
@@ -98,12 +182,40 @@
     "active_cancel": {
       "end": true,
       "lines": [
-        "Then keep the ink sealed until you are ready."
+        "Then keep the ink sealed until you are ready.",
+        "Then keep Ink Supply close until you are ready.",
+        "All right. We will leave Ink Supply open.",
+        "Keep the request and come back when you need the details.",
+        "Then I will leave the note alone.",
+        "No change, then. Ink Supply stays with you.",
+        "Good. Finish it when the count is ready.",
+        "The work waits where it is.",
+        "Then we do nothing more for now.",
+        "Keep going when you are ready.",
+        "Ink Supply remains open.",
+        "I will keep the tally active.",
+        "Come back when you want to settle it.",
+        "Then hold onto the work a little longer.",
+        "The village will wait for the full count."
       ]
     },
     "active_menu": {
       "lines": [
-        "Ink Supply is still open. I can repeat the details, or close my notes if you are done."
+        "Ink Supply is still open. I can repeat the details, or close my notes if you are done.",
+        "Ink Supply is still open. I can repeat the work or close the note if you are done.",
+        "Ink Supply is active. Do you need the details again?",
+        "We still have Ink Supply on the slate.",
+        "The request is open, and I can remind you what it needs.",
+        "Ink Supply has not been closed yet.",
+        "I can go over Ink Supply again, or we can put it aside.",
+        "You still have Ink Supply in hand.",
+        "The note is open. What do you need from me?",
+        "Ink Supply is waiting on the rest of the count.",
+        "I can repeat the request or close it if you are done.",
+        "We can talk details, abandon the work, or leave it alone.",
+        "The village is still expecting Ink Supply.",
+        "Your part in Ink Supply is not finished yet.",
+        "Say the word and I will remind you what Ink Supply needs."
       ],
       "responses": [
         {
@@ -132,22 +244,106 @@
           "action": "turn_in",
           "lines": {
             "completed": [
-              "Ink Supply is complete. The village can use this, and you have earned the reward."
+              "Ink Supply is complete. The village can use this, and you have earned the reward.",
+              "That settles Ink Supply. The village will put this to use.",
+              "Ink Supply is complete, and the help is appreciated.",
+              "Good. I can close Ink Supply with a clean mark.",
+              "This will help more than it looks like it should.",
+              "The count is right. Take your reward with my thanks.",
+              "That is enough to close the request.",
+              "Well done. Ink Supply is finished.",
+              "The village can use this before the day is out.",
+              "I will mark Ink Supply complete.",
+              "Good work. The note comes down now.",
+              "That is the kind of help people remember at supper.",
+              "Everything is here. Ink Supply is settled.",
+              "The village needed this, and you brought it.",
+              "A full count makes a calmer room."
             ],
             "inactive": [
-              "The ledger desk is not accepting ink right now."
+              "The ledger desk is not accepting ink right now.",
+              "Ink Supply is quiet right now.",
+              "The village is not counting Ink Supply at the moment.",
+              "That request is not open right now.",
+              "Ink Supply is waiting on better timing.",
+              "I cannot move Ink Supply forward just now.",
+              "The conditions for Ink Supply are not ready.",
+              "The note for Ink Supply is closed for the moment.",
+              "No one is taking that request right now.",
+              "Ink Supply needs to wait a little longer.",
+              "This is not the right moment for Ink Supply.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Ink Supply at the moment.",
+              "Ink Supply is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "missing_objectives": [
-              "Ink Supply is still short. The tracker has the exact count."
+              "Ink Supply is still short. The tracker has the exact count.",
+              "Check the tracker before we close Ink Supply.",
+              "The work is not complete yet.",
+              "There is still one part of Ink Supply missing.",
+              "Bring the rest and I can settle the note.",
+              "The village cannot use half a finished request.",
+              "The tally says there is more to do.",
+              "You are not empty handed, but this is not complete yet.",
+              "The last pieces still matter.",
+              "I need the whole request finished before I close it.",
+              "The tracker knows what the note still needs.",
+              "Keep going. Ink Supply is not ready to turn in yet.",
+              "The work is close enough to see, not close enough to sign.",
+              "Bring the missing part back when you have it.",
+              "The request still has work left in it."
             ],
             "missing_proof": [
-              "Ink Supply still needs the ink sacs in your pack before I can close it."
+              "Ink Supply still needs the ink sacs in your pack before I can close it.",
+              "I still need 6 ink sacs before I can close Ink Supply.",
+              "Bring 6 ink sacs, then we can settle Ink Supply.",
+              "Ink Supply needs the proof in your pack first.",
+              "I cannot close Ink Supply until I see 6 ink sacs.",
+              "The reward waits until 6 ink sacs is here.",
+              "Show me 6 ink sacs and we can finish this properly.",
+              "The village needs the goods before the note comes down.",
+              "You are close, but 6 ink sacs still needs to be here.",
+              "I need the actual proof before I mark Ink Supply done.",
+              "Come back with 6 ink sacs and we can close the count.",
+              "The request is not finished without 6 ink sacs.",
+              "Ink Supply still needs something I can hold and count.",
+              "I need the delivery in hand before this is settled.",
+              "Bring the proof back and I will close Ink Supply."
             ],
             "missing_target": [
-              "Ink Supply is not at the right count yet; bring the rest before turning it in."
+              "Ink Supply is not at the right count yet; bring the rest before turning it in.",
+              "Ink Supply is still short. The tracker has the exact count.",
+              "Something is missing for Ink Supply, so check the tracker and bring the rest.",
+              "The count is not complete yet.",
+              "We need the full amount before Ink Supply can close.",
+              "The village is still waiting on the rest of it.",
+              "Ink Supply needs every part before I can sign it off.",
+              "The work is close, but close does not fill a shelf.",
+              "Bring the rest and we can finish Ink Supply.",
+              "The tally still has an empty line in it.",
+              "I cannot call Ink Supply complete while the count is short.",
+              "The tracker will show what is still missing.",
+              "There is still more to gather for Ink Supply.",
+              "The full delivery matters here.",
+              "Not quite enough yet, but you are on the right road."
             ],
             "unavailable": [
-              "This ink supply request is not ready to close yet."
+              "This ink supply request is not ready to close yet.",
+              "Ink Supply is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Ink Supply at the moment.",
+              "Ink Supply is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Ink Supply is waiting here.",
+              "Try again later if Ink Supply comes back around.",
+              "I cannot move that request today.",
+              "Ink Supply needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Ink Supply."
             ]
           },
           "type": "quest"
@@ -158,13 +354,40 @@
     "decline": {
       "end": true,
       "lines": [
-        "Then the ledger remains a work of interpretive art."
+        "Then the ledger remains a work of interpretive art.",
+        "Another time, then. I will keep Ink Supply in mind.",
+        "Fair enough. The request can wait a little longer.",
+        "Then I will keep the note nearby.",
+        "No trouble. Someone will ask again if it still matters.",
+        "The village will manage for now.",
+        "Then we leave Ink Supply on the board.",
+        "All right. I will not press you on it.",
+        "Maybe later, if the need is still there.",
+        "I will keep counting without your help for now.",
+        "Then the request waits for another willing pair of hands.",
+        "Fine. Better a clear no than a forgotten promise.",
+        "The work is not going anywhere quickly.",
+        "Then I will ask again when the village needs it.",
+        "No harm. Ink Supply can wait."
       ]
     },
     "offer": {
       "lines": [
         "The ledger ink is getting thin.",
-        "I dislike guessing whether a line says paid, owed, or run."
+        "I dislike guessing whether a line says paid, owed, or run.",
+        "The village could use help with 6 ink sacs for Ink Supply.",
+        "Ink Supply is simple work, but simple work still feeds the day.",
+        "We need 6 ink sacs, and I would rather ask before the shortage becomes loud.",
+        "If you have room in your pack, Ink Supply would help.",
+        "The count is not dramatic yet, which is when it is worth fixing.",
+        "A little help with Ink Supply would settle more than one worry.",
+        "I have a request for 6 ink sacs, if you are willing.",
+        "This village runs better when requests like Ink Supply do not wait too long.",
+        "The stores are asking for 6 ink sacs in their quiet way.",
+        "I could use a steady hand for Ink Supply.",
+        "Bring 6 ink sacs, and the village will feel the difference.",
+        "Nothing glorious here, just useful work that matters.",
+        "Ink Supply needs doing before it becomes everyone's problem."
       ],
       "responses": [
         {
@@ -185,13 +408,55 @@
           "action": "remind",
           "lines": {
             "inactive": [
-              "The ledger ink count is quiet for the moment."
+              "The ledger ink count is quiet for the moment.",
+              "Ink Supply is quiet right now.",
+              "The village is not counting Ink Supply at the moment.",
+              "That request is not open right now.",
+              "Ink Supply is waiting on better timing.",
+              "I cannot move Ink Supply forward just now.",
+              "The conditions for Ink Supply are not ready.",
+              "The note for Ink Supply is closed for the moment.",
+              "No one is taking that request right now.",
+              "Ink Supply needs to wait a little longer.",
+              "This is not the right moment for Ink Supply.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Ink Supply at the moment.",
+              "Ink Supply is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "reminder": [
-              "Ink Supply: I still need the ink sacs. Bring the full count back to me."
+              "Ink Supply: I still need the ink sacs. Bring the full count back to me.",
+              "For Ink Supply, I still need 6 ink sacs.",
+              "Ink Supply is still asking for 6 ink sacs.",
+              "Bring 6 ink sacs back when the count is ready.",
+              "The tracker has the details for Ink Supply.",
+              "Keep Ink Supply in mind and bring 6 ink sacs.",
+              "The village is still waiting on 6 ink sacs.",
+              "No rush in the words, but the count still matters.",
+              "Bring the full amount back to me when you have it.",
+              "Ink Supply is still open.",
+              "Follow the tracker for Ink Supply and bring back 6 ink sacs.",
+              "You are looking for 6 ink sacs for this request.",
+              "The note says 6 ink sacs, and the note is not wrong today.",
+              "Finish the count and return here when you can.",
+              "This is simple work only if it gets done."
             ],
             "unavailable": [
-              "That ink supply request is not yours right now."
+              "That ink supply request is not yours right now.",
+              "Ink Supply is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Ink Supply at the moment.",
+              "Ink Supply is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Ink Supply is waiting here.",
+              "Try again later if Ink Supply comes back around.",
+              "I cannot move that request today.",
+              "Ink Supply needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Ink Supply."
             ]
           },
           "type": "quest"
@@ -205,16 +470,72 @@
           "action": "start",
           "lines": {
             "already_completed": [
-              "The ink supply is already settled."
+              "The ink supply is already settled.",
+              "Ink Supply is already settled on my side.",
+              "We have already closed Ink Supply.",
+              "Ink Supply does not need another tally right now.",
+              "That work is already counted and put away.",
+              "Ink Supply is finished for now.",
+              "The village has already marked Ink Supply complete.",
+              "I have no open note for Ink Supply anymore.",
+              "Ink Supply has already been handled.",
+              "That request is already off the board.",
+              "We are not reopening Ink Supply right now.",
+              "Ink Supply is done enough for today.",
+              "The record for Ink Supply is already clean.",
+              "There is no fresh work left in Ink Supply.",
+              "That one is already squared away."
             ],
             "locate_failed": [
-              "Ink Supply cannot be posted from here right now."
+              "Ink Supply cannot be posted from here right now.",
+              "I cannot post Ink Supply from here right now.",
+              "Ink Supply is not finding a proper place to start.",
+              "No good posting point is ready for Ink Supply.",
+              "The village cannot place that request from here.",
+              "Ink Supply needs a better lead before I send you out.",
+              "I cannot get a clean mark for Ink Supply today.",
+              "The request is real, but the place is not lining up.",
+              "Something about this spot will not let Ink Supply start.",
+              "I need a clearer posting before I can offer Ink Supply.",
+              "The work is not anchoring here right now.",
+              "I cannot set the note for Ink Supply from this place.",
+              "The village has no clean place to send you for that.",
+              "Ink Supply is refusing to settle onto the slate.",
+              "The route for Ink Supply is not clear enough yet."
             ],
             "started": [
-              "Ink Supply is yours now. Bring the ink sacs back when the count is ready."
+              "Ink Supply is yours now. Bring the ink sacs back when the count is ready.",
+              "Ink Supply is yours now. Bring 6 ink sacs when the count is ready.",
+              "I am putting Ink Supply in your hands.",
+              "Take the note for Ink Supply and bring back 6 ink sacs.",
+              "Good. The village will be waiting for 6 ink sacs.",
+              "Then we will count on you for Ink Supply.",
+              "Bring 6 ink sacs, and we can call this useful work.",
+              "Ink Supply starts now. Keep the tracker close.",
+              "Head out for Ink Supply and return with 6 ink sacs.",
+              "The request is open, and your name is on it now.",
+              "I will mark you down for Ink Supply.",
+              "Bring the full count back when you have it.",
+              "You have the work now. Do it cleanly and come back safe.",
+              "Ink Supply points. Bring 6 ink sacs.",
+              "That settles the posting. Now we need 6 ink sacs."
             ],
             "unavailable": [
-              "The ledger desk is not asking you for ink right now."
+              "The ledger desk is not asking you for ink right now.",
+              "Ink Supply is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Ink Supply at the moment.",
+              "Ink Supply is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Ink Supply is waiting here.",
+              "Try again later if Ink Supply comes back around.",
+              "I cannot move that request today.",
+              "Ink Supply needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Ink Supply."
             ]
           },
           "type": "quest"
@@ -224,7 +545,21 @@
     },
     "turn_in": {
       "lines": [
-        "If you have the ink sac, we can settle Ink Supply."
+        "If you have the ink sac, we can settle Ink Supply.",
+        "Ink Supply is still on the village slate.",
+        "The work for Ink Supply can wait a moment.",
+        "Keep Ink Supply in mind and come back when you are ready.",
+        "The village will know what to do with the help.",
+        "That request still has room for steady hands.",
+        "We can settle Ink Supply when the count is right.",
+        "No need to dress it up. Ink Supply just needs finishing.",
+        "The note stays plain because the work is plain.",
+        "If the village asks again, you will know why.",
+        "There is still useful work in Ink Supply.",
+        "Bring what is needed and we will call it done.",
+        "The request can stay quiet for now.",
+        "The tally remains where I can see it.",
+        "Come back when Ink Supply is ready to close."
       ],
       "responses": [
         {
@@ -250,7 +585,21 @@
     "turn_in_wait": {
       "end": true,
       "lines": [
-        "Keep the ink sealed until the ledger desk can take it."
+        "Keep the ink sealed until the ledger desk can take it.",
+        "Hold onto the supplies for Ink Supply until you are ready to finish.",
+        "Then bring it back when you want the note closed.",
+        "Keep the delivery safe until we count it.",
+        "No hurry in the words, but do not lose the goods.",
+        "Come back when you are ready to settle Ink Supply.",
+        "I will wait to close the tally.",
+        "Keep the count together and return when you can.",
+        "The request stays open until you turn it in.",
+        "Bring everything back when you are ready for the reward.",
+        "Then we will leave Ink Supply unfinished for the moment.",
+        "Keep it close. Lost supplies do not help anyone.",
+        "Return when you want this properly counted.",
+        "The tally can wait a little longer.",
+        "I will not close the note until you say so."
       ]
     }
   }

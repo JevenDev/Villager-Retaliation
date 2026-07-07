@@ -52,12 +52,40 @@
     "abandon_cancel": {
       "end": true,
       "lines": [
-        "Good. Some work only looks lighter after you pick it back up."
+        "Good. Some work only looks lighter after you pick it back up.",
+        "Good. We will keep Trial Chamber Recall open a while longer.",
+        "Then the request stays active.",
+        "Fine. Keep Trial Chamber Recall in your hands for now.",
+        "Good. I will leave the note where it is.",
+        "Then we keep counting on you for this one.",
+        "The work stays open.",
+        "Trial Chamber Recall remains on your list.",
+        "Good. Bring it back when you are ready.",
+        "I will keep the tally under your name.",
+        "Then nothing changes for Trial Chamber Recall.",
+        "Good. The village will wait a little longer.",
+        "Keep the request and finish it when you can.",
+        "I will not close the note yet.",
+        "Then Trial Chamber Recall stays alive."
       ]
     },
     "abandon_confirm": {
       "lines": [
-        "Are you sure you want me to put this quest aside?"
+        "Are you sure you want me to put this quest aside?",
+        "Put Trial Chamber Recall aside for now?",
+        "Are you sure you want to step away from Trial Chamber Recall?",
+        "Close your part in Trial Chamber Recall for now?",
+        "Should I mark Trial Chamber Recall abandoned?",
+        "Do you want me to take your name off this request?",
+        "Set the note for Trial Chamber Recall aside?",
+        "Are you done with Trial Chamber Recall for now?",
+        "Should I stop counting on you for this one?",
+        "Do you want to leave Trial Chamber Recall unfinished?",
+        "Put the work down and walk away?",
+        "Should I close this attempt?",
+        "Are you sure Trial Chamber Recall can wait without you?",
+        "Do you want the request removed from your list?",
+        "Shall I fold this note away?"
       ],
       "responses": [
         {
@@ -78,16 +106,72 @@
           "action": "abandon",
           "lines": {
             "abandoned": [
-              "Then I will set this aside. Come back if the work still matters."
+              "Then I will set this aside. Come back if the work still matters.",
+              "I will set Trial Chamber Recall aside. Come back if the village still needs it.",
+              "Trial Chamber Recall is off your hands for now.",
+              "I will clear the note and stop counting on you for this one.",
+              "The request is set aside.",
+              "I will mark Trial Chamber Recall abandoned for now.",
+              "Then we will leave Trial Chamber Recall alone.",
+              "I will put the tally away.",
+              "The village will manage without this run for now.",
+              "I will stop holding that work under your name.",
+              "Trial Chamber Recall is no longer active for you.",
+              "I will take your name off the request.",
+              "The note comes down for now.",
+              "That closes your part in Trial Chamber Recall for the moment.",
+              "I will make the record clean again."
             ],
             "abandoned_cooldown": [
-              "Then I will set this aside for a while. Let the trail cool before asking again."
+              "Then I will set this aside for a while. Let the trail cool before asking again.",
+              "I will pause Trial Chamber Recall for now. Give the village a little time before asking again.",
+              "Trial Chamber Recall is set aside until the count settles.",
+              "I will cool the request for a while.",
+              "The village needs time before reopening Trial Chamber Recall.",
+              "I will mark this paused, not forgotten.",
+              "Let the stores settle before we talk about Trial Chamber Recall again.",
+              "I will put the note away until the cooldown passes.",
+              "Come back after the village has had time to reset.",
+              "Trial Chamber Recall can wait until the next proper opening.",
+              "I will close this attempt and let the request breathe.",
+              "The slate needs a little quiet before this comes back.",
+              "I will pause the tally for now.",
+              "Give this one time before you ask again.",
+              "The request will not reopen immediately."
             ],
             "abandoned_forever": [
-              "Then this matter is closed. I will not reopen it."
+              "Then this matter is closed. I will not reopen it.",
+              "Then Trial Chamber Recall is closed for good.",
+              "I will not reopen Trial Chamber Recall.",
+              "That request is finished permanently.",
+              "Trial Chamber Recall leaves the board for good.",
+              "Then this note is gone, not paused.",
+              "I will mark Trial Chamber Recall as permanently closed.",
+              "No one will ask you for this request again.",
+              "That closes the matter completely.",
+              "The village will not bring this one back to you.",
+              "Trial Chamber Recall is ended, not waiting.",
+              "I will put a final mark on the record.",
+              "This request is done beyond rechecking.",
+              "Then we leave Trial Chamber Recall in the past.",
+              "I will close the book on that one."
             ],
             "unavailable": [
-              "There is no active trail here for me to fold away."
+              "There is no active trail here for me to fold away.",
+              "Trial Chamber Recall is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Trial Chamber Recall at the moment.",
+              "Trial Chamber Recall is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Trial Chamber Recall is waiting here.",
+              "Try again later if Trial Chamber Recall comes back around.",
+              "I cannot move that request today.",
+              "Trial Chamber Recall needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Trial Chamber Recall."
             ]
           },
           "type": "quest"
@@ -98,12 +182,40 @@
     "active_cancel": {
       "end": true,
       "lines": [
-        "Then keep the work close until you are ready."
+        "Then keep the work close until you are ready.",
+        "Then keep Trial Chamber Recall close until you are ready.",
+        "All right. We will leave Trial Chamber Recall open.",
+        "Keep the request and come back when you need the details.",
+        "Then I will leave the note alone.",
+        "No change, then. Trial Chamber Recall stays with you.",
+        "Good. Finish it when the count is ready.",
+        "The work waits where it is.",
+        "Then we do nothing more for now.",
+        "Keep going when you are ready.",
+        "Trial Chamber Recall remains open.",
+        "I will keep the tally active.",
+        "Come back when you want to settle it.",
+        "Then hold onto the work a little longer.",
+        "The village will wait for the full count."
       ]
     },
     "active_menu": {
       "lines": [
-        "Trial Chamber Recall is still open. I can repeat the details, or close my notes if you are done."
+        "Trial Chamber Recall is still open. I can repeat the details, or close my notes if you are done.",
+        "Trial Chamber Recall is still open. I can repeat the work or close the note if you are done.",
+        "Trial Chamber Recall is active. Do you need the details again?",
+        "We still have Trial Chamber Recall on the slate.",
+        "The request is open, and I can remind you what it needs.",
+        "Trial Chamber Recall has not been closed yet.",
+        "I can go over Trial Chamber Recall again, or we can put it aside.",
+        "You still have Trial Chamber Recall in hand.",
+        "The note is open. What do you need from me?",
+        "Trial Chamber Recall is waiting on the rest of the count.",
+        "I can repeat the request or close it if you are done.",
+        "We can talk details, abandon the work, or leave it alone.",
+        "The village is still expecting Trial Chamber Recall.",
+        "Your part in Trial Chamber Recall is not finished yet.",
+        "Say the word and I will remind you what Trial Chamber Recall needs."
       ],
       "responses": [
         {
@@ -132,22 +244,106 @@
           "action": "turn_in",
           "lines": {
             "completed": [
-              "A key and a Breeze Rod. Good. That chamber can stay mysterious, but not unmeasured."
+              "A key and a Breeze Rod. Good. That chamber can stay mysterious, but not unmeasured.",
+              "That settles Trial Chamber Recall. The village will put this to use.",
+              "Trial Chamber Recall is complete, and the help is appreciated.",
+              "Good. I can close Trial Chamber Recall with a clean mark.",
+              "This will help more than it looks like it should.",
+              "The count is right. Take your reward with my thanks.",
+              "That is enough to close the request.",
+              "Well done. Trial Chamber Recall is finished.",
+              "The village can use this before the day is out.",
+              "I will mark Trial Chamber Recall complete.",
+              "Good work. The note comes down now.",
+              "That is the kind of help people remember at supper.",
+              "Everything is here. Trial Chamber Recall is settled.",
+              "The village needed this, and you brought it.",
+              "A full count makes a calmer room."
             ],
             "inactive": [
-              "The conditions for this quest are not right at the moment."
+              "The conditions for this quest are not right at the moment.",
+              "Trial Chamber Recall is quiet right now.",
+              "The village is not counting Trial Chamber Recall at the moment.",
+              "That request is not open right now.",
+              "Trial Chamber Recall is waiting on better timing.",
+              "I cannot move Trial Chamber Recall forward just now.",
+              "The conditions for Trial Chamber Recall are not ready.",
+              "The note for Trial Chamber Recall is closed for the moment.",
+              "No one is taking that request right now.",
+              "Trial Chamber Recall needs to wait a little longer.",
+              "This is not the right moment for Trial Chamber Recall.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Trial Chamber Recall at the moment.",
+              "Trial Chamber Recall is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "missing_objectives": [
-              "I also need one Breeze Rod for the recall."
+              "I also need one Breeze Rod for the recall.",
+              "Trial Chamber Recall is still short. The tracker has the exact count.",
+              "Check the tracker before we close Trial Chamber Recall.",
+              "The work is not complete yet.",
+              "There is still one part of Trial Chamber Recall missing.",
+              "Bring the rest and I can settle the note.",
+              "The village cannot use half a finished request.",
+              "The tally says there is more to do.",
+              "You are not empty handed, but this is not complete yet.",
+              "The last pieces still matter.",
+              "I need the whole request finished before I close it.",
+              "The tracker knows what the note still needs.",
+              "Keep going. Trial Chamber Recall is not ready to turn in yet.",
+              "The work is close enough to see, not close enough to sign.",
+              "Bring the missing part back when you have it."
             ],
             "missing_proof": [
-              "Bring a Trial Key. It is the chamber admitting you were there."
+              "Bring a Trial Key. It is the chamber admitting you were there.",
+              "I still need a Trial Key and one Breeze Rod before I can close Trial Chamber Recall.",
+              "Bring a Trial Key and one Breeze Rod, then we can settle Trial Chamber Recall.",
+              "Trial Chamber Recall needs the proof in your pack first.",
+              "I cannot close Trial Chamber Recall until I see a Trial Key and one Breeze Rod.",
+              "The reward waits until a Trial Key and one Breeze Rod is here.",
+              "Show me a Trial Key and one Breeze Rod and we can finish this properly.",
+              "The village needs the goods before the note comes down.",
+              "You are close, but a Trial Key and one Breeze Rod still needs to be here.",
+              "I need the actual proof before I mark Trial Chamber Recall done.",
+              "Come back with a Trial Key and one Breeze Rod and we can close the count.",
+              "The request is not finished without a Trial Key and one Breeze Rod.",
+              "Trial Chamber Recall still needs something I can hold and count.",
+              "I need the delivery in hand before this is settled.",
+              "Bring the proof back and I will close Trial Chamber Recall."
             ],
             "missing_target": [
-              "The items matter after you set foot in the chamber itself."
+              "The items matter after you set foot in the chamber itself.",
+              "Trial Chamber Recall is still short. The tracker has the exact count.",
+              "Something is missing for Trial Chamber Recall, so check the tracker and bring the rest.",
+              "The count is not complete yet.",
+              "We need the full amount before Trial Chamber Recall can close.",
+              "The village is still waiting on the rest of it.",
+              "Trial Chamber Recall needs every part before I can sign it off.",
+              "The work is close, but close does not fill a shelf.",
+              "Bring the rest and we can finish Trial Chamber Recall.",
+              "The tally still has an empty line in it.",
+              "I cannot call Trial Chamber Recall complete while the count is short.",
+              "The tracker will show what is still missing.",
+              "There is still more to gather for Trial Chamber Recall.",
+              "The full delivery matters here.",
+              "Not quite enough yet, but you are on the right road."
             ],
             "unavailable": [
-              "This quest is not ready to close yet."
+              "This quest is not ready to close yet.",
+              "Trial Chamber Recall is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Trial Chamber Recall at the moment.",
+              "Trial Chamber Recall is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Trial Chamber Recall is waiting here.",
+              "Try again later if Trial Chamber Recall comes back around.",
+              "I cannot move that request today.",
+              "Trial Chamber Recall needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Trial Chamber Recall."
             ]
           },
           "type": "quest"
@@ -158,13 +354,40 @@
     "decline": {
       "end": true,
       "lines": [
-        "Then the chamber keeps its opinion of us to itself. For now."
+        "Then the chamber keeps its opinion of us to itself. For now.",
+        "Another time, then. I will keep Trial Chamber Recall in mind.",
+        "Fair enough. The request can wait a little longer.",
+        "Then I will keep the note nearby.",
+        "No trouble. Someone will ask again if it still matters.",
+        "The village will manage for now.",
+        "Then we leave Trial Chamber Recall on the board.",
+        "All right. I will not press you on it.",
+        "Maybe later, if the need is still there.",
+        "I will keep counting without your help for now.",
+        "Then the request waits for another willing pair of hands.",
+        "Fine. Better a clear no than a forgotten promise.",
+        "The work is not going anywhere quickly.",
+        "Then I will ask again when the village needs it.",
+        "No harm. Trial Chamber Recall can wait."
       ]
     },
     "offer": {
       "lines": [
         "There is a chamber underground that tests people without asking permission. I want a report before it tests us.",
-        "A Trial Chamber has been marked nearby. Bring proof, and we decide whether to avoid it or learn from it."
+        "A Trial Chamber has been marked nearby. Bring proof, and we decide whether to avoid it or learn from it.",
+        "The village could use help with a Trial Key and one Breeze Rod for Trial Chamber Recall.",
+        "Trial Chamber Recall is simple work, but simple work still feeds the day.",
+        "We need a Trial Key and one Breeze Rod, and I would rather ask before the shortage becomes loud.",
+        "If you have room in your pack, Trial Chamber Recall would help.",
+        "The count is not dramatic yet, which is when it is worth fixing.",
+        "A little help with Trial Chamber Recall would settle more than one worry.",
+        "I have a request for a Trial Key and one Breeze Rod, if you are willing.",
+        "This village runs better when requests like Trial Chamber Recall do not wait too long.",
+        "The stores are asking for a Trial Key and one Breeze Rod in their quiet way.",
+        "I could use a steady hand for Trial Chamber Recall.",
+        "Bring a Trial Key and one Breeze Rod, and the village will feel the difference.",
+        "Nothing glorious here, just useful work that matters.",
+        "Trial Chamber Recall needs doing before it becomes everyone's problem."
       ],
       "responses": [
         {
@@ -185,13 +408,55 @@
           "action": "remind",
           "lines": {
             "inactive": [
-              "The conditions for this quest are not right at the moment."
+              "The conditions for this quest are not right at the moment.",
+              "Trial Chamber Recall is quiet right now.",
+              "The village is not counting Trial Chamber Recall at the moment.",
+              "That request is not open right now.",
+              "Trial Chamber Recall is waiting on better timing.",
+              "I cannot move Trial Chamber Recall forward just now.",
+              "The conditions for Trial Chamber Recall are not ready.",
+              "The note for Trial Chamber Recall is closed for the moment.",
+              "No one is taking that request right now.",
+              "Trial Chamber Recall needs to wait a little longer.",
+              "This is not the right moment for Trial Chamber Recall.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Trial Chamber Recall at the moment.",
+              "Trial Chamber Recall is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "reminder": [
-              "Trial Chamber near {target_x}, {target_z}. Key, Breeze Rod, return alive enough to explain both."
+              "Trial Chamber near {target_x}, {target_z}. Key, Breeze Rod, return alive enough to explain both.",
+              "For Trial Chamber Recall, I still need a Trial Key and one Breeze Rod.",
+              "Trial Chamber Recall is still asking for a Trial Key and one Breeze Rod.",
+              "Bring a Trial Key and one Breeze Rod back when the count is ready.",
+              "The tracker has the details for Trial Chamber Recall.",
+              "Keep Trial Chamber Recall in mind and bring a Trial Key and one Breeze Rod.",
+              "The village is still waiting on a Trial Key and one Breeze Rod.",
+              "No rush in the words, but the count still matters.",
+              "Bring the full amount back to me when you have it.",
+              "Trial Chamber Recall is still open near {target_x}, {target_z}.",
+              "Follow the tracker for Trial Chamber Recall and bring back a Trial Key and one Breeze Rod.",
+              "You are looking for a Trial Key and one Breeze Rod for this request.",
+              "The note says a Trial Key and one Breeze Rod, and the note is not wrong today.",
+              "Finish the count and return here when you can.",
+              "This is simple work only if it gets done."
             ],
             "unavailable": [
-              "That quest is not in your hands right now."
+              "That quest is not in your hands right now.",
+              "Trial Chamber Recall is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Trial Chamber Recall at the moment.",
+              "Trial Chamber Recall is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Trial Chamber Recall is waiting here.",
+              "Try again later if Trial Chamber Recall comes back around.",
+              "I cannot move that request today.",
+              "Trial Chamber Recall needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Trial Chamber Recall."
             ]
           },
           "type": "quest"
@@ -205,16 +470,72 @@
           "action": "start",
           "lines": {
             "already_completed": [
-              "Trial Chamber Recall is already settled."
+              "Trial Chamber Recall is already settled.",
+              "Trial Chamber Recall is already settled on my side.",
+              "We have already closed Trial Chamber Recall.",
+              "Trial Chamber Recall does not need another tally right now.",
+              "That work is already counted and put away.",
+              "Trial Chamber Recall is finished for now.",
+              "The village has already marked Trial Chamber Recall complete.",
+              "I have no open note for Trial Chamber Recall anymore.",
+              "Trial Chamber Recall has already been handled.",
+              "That request is already off the board.",
+              "We are not reopening Trial Chamber Recall right now.",
+              "Trial Chamber Recall is done enough for today.",
+              "The record for Trial Chamber Recall is already clean.",
+              "There is no fresh work left in Trial Chamber Recall.",
+              "That one is already squared away."
             ],
             "locate_failed": [
-              "No chamber answers the map today. Maybe that is mercy."
+              "No chamber answers the map today. Maybe that is mercy.",
+              "I cannot post Trial Chamber Recall from here right now.",
+              "Trial Chamber Recall is not finding a proper place to start.",
+              "No good posting point is ready for Trial Chamber Recall.",
+              "The village cannot place that request from here.",
+              "Trial Chamber Recall needs a better lead before I send you out.",
+              "I cannot get a clean mark for Trial Chamber Recall today.",
+              "The request is real, but the place is not lining up.",
+              "Something about this spot will not let Trial Chamber Recall start.",
+              "I need a clearer posting before I can offer Trial Chamber Recall.",
+              "The work is not anchoring here right now.",
+              "I cannot set the note for Trial Chamber Recall from this place.",
+              "The village has no clean place to send you for that.",
+              "Trial Chamber Recall is refusing to settle onto the slate.",
+              "The route for Trial Chamber Recall is not clear enough yet."
             ],
             "started": [
-              "The chamber is {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod."
+              "The chamber is {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod.",
+              "Trial Chamber Recall is yours now. Bring a Trial Key and one Breeze Rod when the count is ready.",
+              "I am putting Trial Chamber Recall in your hands.",
+              "Take the note for Trial Chamber Recall and bring back a Trial Key and one Breeze Rod.",
+              "Good. The village will be waiting for a Trial Key and one Breeze Rod.",
+              "Then we will count on you for Trial Chamber Recall.",
+              "Bring a Trial Key and one Breeze Rod, and we can call this useful work.",
+              "Trial Chamber Recall starts now. Keep the tracker close.",
+              "Head out for Trial Chamber Recall and return with a Trial Key and one Breeze Rod.",
+              "The request is open, and your name is on it now.",
+              "I will mark you down for Trial Chamber Recall.",
+              "Bring the full count back when you have it.",
+              "You have the work now. Do it cleanly and come back safe.",
+              "Trial Chamber Recall points {direction}, roughly {distance} blocks from here near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod.",
+              "That settles the posting. Now we need a Trial Key and one Breeze Rod."
             ],
             "unavailable": [
-              "This request needs a better equipped ally."
+              "This request needs a better equipped ally.",
+              "Trial Chamber Recall is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Trial Chamber Recall at the moment.",
+              "Trial Chamber Recall is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Trial Chamber Recall is waiting here.",
+              "Try again later if Trial Chamber Recall comes back around.",
+              "I cannot move that request today.",
+              "Trial Chamber Recall needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Trial Chamber Recall."
             ]
           },
           "type": "quest"
@@ -224,7 +545,21 @@
     },
     "turn_in": {
       "lines": [
-        "You look like a room argued with you. Did you win anything useful?"
+        "You look like a room argued with you. Did you win anything useful?",
+        "Trial Chamber Recall is still on the village slate.",
+        "The work for Trial Chamber Recall can wait a moment.",
+        "Keep Trial Chamber Recall in mind and come back when you are ready.",
+        "The village will know what to do with the help.",
+        "That request still has room for steady hands.",
+        "We can settle Trial Chamber Recall when the count is right.",
+        "No need to dress it up. Trial Chamber Recall just needs finishing.",
+        "The note stays plain because the work is plain.",
+        "If the village asks again, you will know why.",
+        "There is still useful work in Trial Chamber Recall.",
+        "Bring what is needed and we will call it done.",
+        "The request can stay quiet for now.",
+        "The tally remains where I can see it.",
+        "Come back when Trial Chamber Recall is ready to close."
       ],
       "responses": [
         {
@@ -250,7 +585,21 @@
     "turn_in_wait": {
       "end": true,
       "lines": [
-        "Then hold onto it until you are ready to settle the matter."
+        "Then hold onto it until you are ready to settle the matter.",
+        "Hold onto the supplies for Trial Chamber Recall until you are ready to finish.",
+        "Then bring it back when you want the note closed.",
+        "Keep the delivery safe until we count it.",
+        "No hurry in the words, but do not lose the goods.",
+        "Come back when you are ready to settle Trial Chamber Recall.",
+        "I will wait to close the tally.",
+        "Keep the count together and return when you can.",
+        "The request stays open until you turn it in.",
+        "Bring everything back when you are ready for the reward.",
+        "Then we will leave Trial Chamber Recall unfinished for the moment.",
+        "Keep it close. Lost supplies do not help anyone.",
+        "Return when you want this properly counted.",
+        "The tally can wait a little longer.",
+        "I will not close the note until you say so."
       ]
     }
   }

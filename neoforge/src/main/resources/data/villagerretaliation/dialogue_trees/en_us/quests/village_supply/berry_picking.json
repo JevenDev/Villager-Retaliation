@@ -52,12 +52,40 @@
     "abandon_cancel": {
       "end": true,
       "lines": [
-        "Good. The bushes will still be sharp when you return."
+        "Good. The bushes will still be sharp when you return.",
+        "Good. We will keep Berry Picking open a while longer.",
+        "Then the request stays active.",
+        "Fine. Keep Berry Picking in your hands for now.",
+        "Good. I will leave the note where it is.",
+        "Then we keep counting on you for this one.",
+        "The work stays open.",
+        "Berry Picking remains on your list.",
+        "Good. Bring it back when you are ready.",
+        "I will keep the tally under your name.",
+        "Then nothing changes for Berry Picking.",
+        "Good. The village will wait a little longer.",
+        "Keep the request and finish it when you can.",
+        "I will not close the note yet.",
+        "Then Berry Picking stays alive."
       ]
     },
     "abandon_confirm": {
       "lines": [
-        "Put Berry Picking aside for now?"
+        "Put Berry Picking aside for now?",
+        "Are you sure you want to step away from Berry Picking?",
+        "Close your part in Berry Picking for now?",
+        "Should I mark Berry Picking abandoned?",
+        "Do you want me to take your name off this request?",
+        "Set the note for Berry Picking aside?",
+        "Are you done with Berry Picking for now?",
+        "Should I stop counting on you for this one?",
+        "Do you want to leave Berry Picking unfinished?",
+        "Put the work down and walk away?",
+        "Should I close this attempt?",
+        "Are you sure Berry Picking can wait without you?",
+        "Do you want the request removed from your list?",
+        "Shall I fold this note away?",
+        "One last check. Are you abandoning Berry Picking?"
       ],
       "responses": [
         {
@@ -78,16 +106,72 @@
           "action": "abandon",
           "lines": {
             "abandoned": [
-              "I will set the berry baskets aside. Come back if supper still needs them."
+              "I will set the berry baskets aside. Come back if supper still needs them.",
+              "I will set Berry Picking aside. Come back if the village still needs it.",
+              "Berry Picking is off your hands for now.",
+              "I will clear the note and stop counting on you for this one.",
+              "The request is set aside.",
+              "I will mark Berry Picking abandoned for now.",
+              "Then we will leave Berry Picking alone.",
+              "I will put the tally away.",
+              "The village will manage without this run for now.",
+              "I will stop holding that work under your name.",
+              "Berry Picking is no longer active for you.",
+              "I will take your name off the request.",
+              "The note comes down for now.",
+              "That closes your part in Berry Picking for the moment.",
+              "I will make the record clean again."
             ],
             "abandoned_cooldown": [
-              "I will pause the berry count for now. Let the kitchen reset before asking again."
+              "I will pause the berry count for now. Let the kitchen reset before asking again.",
+              "I will pause Berry Picking for now. Give the village a little time before asking again.",
+              "Berry Picking is set aside until the count settles.",
+              "I will cool the request for a while.",
+              "The village needs time before reopening Berry Picking.",
+              "I will mark this paused, not forgotten.",
+              "Let the stores settle before we talk about Berry Picking again.",
+              "I will put the note away until the cooldown passes.",
+              "Come back after the village has had time to reset.",
+              "Berry Picking can wait until the next proper opening.",
+              "I will close this attempt and let the request breathe.",
+              "The slate needs a little quiet before this comes back.",
+              "I will pause the tally for now.",
+              "Give this one time before you ask again.",
+              "The request will not reopen immediately."
             ],
             "abandoned_forever": [
-              "Then the berry-picking request is closed for good."
+              "Then the berry-picking request is closed for good.",
+              "Then Berry Picking is closed for good.",
+              "I will not reopen Berry Picking.",
+              "That request is finished permanently.",
+              "Berry Picking leaves the board for good.",
+              "Then this note is gone, not paused.",
+              "I will mark Berry Picking as permanently closed.",
+              "No one will ask you for this request again.",
+              "That closes the matter completely.",
+              "The village will not bring this one back to you.",
+              "Berry Picking is ended, not waiting.",
+              "I will put a final mark on the record.",
+              "This request is done beyond rechecking.",
+              "Then we leave Berry Picking in the past.",
+              "I will close the book on that one."
             ],
             "unavailable": [
-              "There are no berry baskets here for me to mark abandoned."
+              "There are no berry baskets here for me to mark abandoned.",
+              "Berry Picking is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Berry Picking at the moment.",
+              "Berry Picking is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Berry Picking is waiting here.",
+              "Try again later if Berry Picking comes back around.",
+              "I cannot move that request today.",
+              "Berry Picking needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Berry Picking."
             ]
           },
           "type": "quest"
@@ -98,12 +182,40 @@
     "active_cancel": {
       "end": true,
       "lines": [
-        "Then keep the berries unbruised until you are ready."
+        "Then keep the berries unbruised until you are ready.",
+        "Then keep Berry Picking close until you are ready.",
+        "All right. We will leave Berry Picking open.",
+        "Keep the request and come back when you need the details.",
+        "Then I will leave the note alone.",
+        "No change, then. Berry Picking stays with you.",
+        "Good. Finish it when the count is ready.",
+        "The work waits where it is.",
+        "Then we do nothing more for now.",
+        "Keep going when you are ready.",
+        "Berry Picking remains open.",
+        "I will keep the tally active.",
+        "Come back when you want to settle it.",
+        "Then hold onto the work a little longer.",
+        "The village will wait for the full count."
       ]
     },
     "active_menu": {
       "lines": [
-        "Berry Picking is still open. I can repeat the details, or close my notes if you are done."
+        "Berry Picking is still open. I can repeat the details, or close my notes if you are done.",
+        "Berry Picking is still open. I can repeat the work or close the note if you are done.",
+        "Berry Picking is active. Do you need the details again?",
+        "We still have Berry Picking on the slate.",
+        "The request is open, and I can remind you what it needs.",
+        "Berry Picking has not been closed yet.",
+        "I can go over Berry Picking again, or we can put it aside.",
+        "You still have Berry Picking in hand.",
+        "The note is open. What do you need from me?",
+        "Berry Picking is waiting on the rest of the count.",
+        "I can repeat the request or close it if you are done.",
+        "We can talk details, abandon the work, or leave it alone.",
+        "The village is still expecting Berry Picking.",
+        "Your part in Berry Picking is not finished yet.",
+        "Say the word and I will remind you what Berry Picking needs."
       ],
       "responses": [
         {
@@ -132,22 +244,106 @@
           "action": "turn_in",
           "lines": {
             "completed": [
-              "Berry Picking is complete. The village can use this, and you have earned the reward."
+              "Berry Picking is complete. The village can use this, and you have earned the reward.",
+              "That settles Berry Picking. The village will put this to use.",
+              "Berry Picking is complete, and the help is appreciated.",
+              "Good. I can close Berry Picking with a clean mark.",
+              "This will help more than it looks like it should.",
+              "The count is right. Take your reward with my thanks.",
+              "That is enough to close the request.",
+              "Well done. Berry Picking is finished.",
+              "The village can use this before the day is out.",
+              "I will mark Berry Picking complete.",
+              "Good work. The note comes down now.",
+              "That is the kind of help people remember at supper.",
+              "Everything is here. Berry Picking is settled.",
+              "The village needed this, and you brought it.",
+              "A full count makes a calmer room."
             ],
             "inactive": [
-              "The kitchen is not accepting berries right now."
+              "The kitchen is not accepting berries right now.",
+              "Berry Picking is quiet right now.",
+              "The village is not counting Berry Picking at the moment.",
+              "That request is not open right now.",
+              "Berry Picking is waiting on better timing.",
+              "I cannot move Berry Picking forward just now.",
+              "The conditions for Berry Picking are not ready.",
+              "The note for Berry Picking is closed for the moment.",
+              "No one is taking that request right now.",
+              "Berry Picking needs to wait a little longer.",
+              "This is not the right moment for Berry Picking.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Berry Picking at the moment.",
+              "Berry Picking is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "missing_objectives": [
-              "Berry Picking is still short. The tracker has the exact count."
+              "Berry Picking is still short. The tracker has the exact count.",
+              "Check the tracker before we close Berry Picking.",
+              "The work is not complete yet.",
+              "There is still one part of Berry Picking missing.",
+              "Bring the rest and I can settle the note.",
+              "The village cannot use half a finished request.",
+              "The tally says there is more to do.",
+              "You are not empty handed, but this is not complete yet.",
+              "The last pieces still matter.",
+              "I need the whole request finished before I close it.",
+              "The tracker knows what the note still needs.",
+              "Keep going. Berry Picking is not ready to turn in yet.",
+              "The work is close enough to see, not close enough to sign.",
+              "Bring the missing part back when you have it.",
+              "The request still has work left in it."
             ],
             "missing_proof": [
-              "Berry Picking still needs the sweet berries in your pack before I can close it."
+              "Berry Picking still needs the sweet berries in your pack before I can close it.",
+              "I still need 16 sweet berries before I can close Berry Picking.",
+              "Bring 16 sweet berries, then we can settle Berry Picking.",
+              "Berry Picking needs the proof in your pack first.",
+              "I cannot close Berry Picking until I see 16 sweet berries.",
+              "The reward waits until 16 sweet berries is here.",
+              "Show me 16 sweet berries and we can finish this properly.",
+              "The village needs the goods before the note comes down.",
+              "You are close, but 16 sweet berries still needs to be here.",
+              "I need the actual proof before I mark Berry Picking done.",
+              "Come back with 16 sweet berries and we can close the count.",
+              "The request is not finished without 16 sweet berries.",
+              "Berry Picking still needs something I can hold and count.",
+              "I need the delivery in hand before this is settled.",
+              "Bring the proof back and I will close Berry Picking."
             ],
             "missing_target": [
-              "Berry Picking is not at the right count yet; bring the rest before turning it in."
+              "Berry Picking is not at the right count yet; bring the rest before turning it in.",
+              "Berry Picking is still short. The tracker has the exact count.",
+              "Something is missing for Berry Picking, so check the tracker and bring the rest.",
+              "The count is not complete yet.",
+              "We need the full amount before Berry Picking can close.",
+              "The village is still waiting on the rest of it.",
+              "Berry Picking needs every part before I can sign it off.",
+              "The work is close, but close does not fill a shelf.",
+              "Bring the rest and we can finish Berry Picking.",
+              "The tally still has an empty line in it.",
+              "I cannot call Berry Picking complete while the count is short.",
+              "The tracker will show what is still missing.",
+              "There is still more to gather for Berry Picking.",
+              "The full delivery matters here.",
+              "Not quite enough yet, but you are on the right road."
             ],
             "unavailable": [
-              "This berry count is not ready to close yet."
+              "This berry count is not ready to close yet.",
+              "Berry Picking is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Berry Picking at the moment.",
+              "Berry Picking is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Berry Picking is waiting here.",
+              "Try again later if Berry Picking comes back around.",
+              "I cannot move that request today.",
+              "Berry Picking needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Berry Picking."
             ]
           },
           "type": "quest"
@@ -158,13 +354,40 @@
     "decline": {
       "end": true,
       "lines": [
-        "Fair. The bushes will keep their little knives for now."
+        "Fair. The bushes will keep their little knives for now.",
+        "Another time, then. I will keep Berry Picking in mind.",
+        "Fair enough. The request can wait a little longer.",
+        "Then I will keep the note nearby.",
+        "No trouble. Someone will ask again if it still matters.",
+        "The village will manage for now.",
+        "Then we leave Berry Picking on the board.",
+        "All right. I will not press you on it.",
+        "Maybe later, if the need is still there.",
+        "I will keep counting without your help for now.",
+        "Then the request waits for another willing pair of hands.",
+        "Fine. Better a clear no than a forgotten promise.",
+        "The work is not going anywhere quickly.",
+        "Then I will ask again when the village needs it.",
+        "No harm. Berry Picking can wait."
       ]
     },
     "offer": {
       "lines": [
         "The small baskets empty first.",
-        "A few sweet berries would make the next ration day feel less like punishment."
+        "A few sweet berries would make the next ration day feel less like punishment.",
+        "The village could use help with 16 sweet berries for Berry Picking.",
+        "Berry Picking is simple work, but simple work still feeds the day.",
+        "We need 16 sweet berries, and I would rather ask before the shortage becomes loud.",
+        "If you have room in your pack, Berry Picking would help.",
+        "The count is not dramatic yet, which is when it is worth fixing.",
+        "A little help with Berry Picking would settle more than one worry.",
+        "I have a request for 16 sweet berries, if you are willing.",
+        "This village runs better when requests like Berry Picking do not wait too long.",
+        "The stores are asking for 16 sweet berries in their quiet way.",
+        "I could use a steady hand for Berry Picking.",
+        "Bring 16 sweet berries, and the village will feel the difference.",
+        "Nothing glorious here, just useful work that matters.",
+        "Berry Picking needs doing before it becomes everyone's problem."
       ],
       "responses": [
         {
@@ -185,13 +408,55 @@
           "action": "remind",
           "lines": {
             "inactive": [
-              "The berry request has gone quiet for the moment."
+              "The berry request has gone quiet for the moment.",
+              "Berry Picking is quiet right now.",
+              "The village is not counting Berry Picking at the moment.",
+              "That request is not open right now.",
+              "Berry Picking is waiting on better timing.",
+              "I cannot move Berry Picking forward just now.",
+              "The conditions for Berry Picking are not ready.",
+              "The note for Berry Picking is closed for the moment.",
+              "No one is taking that request right now.",
+              "Berry Picking needs to wait a little longer.",
+              "This is not the right moment for Berry Picking.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Berry Picking at the moment.",
+              "Berry Picking is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "reminder": [
-              "Berry Picking: I still need the sweet berries. Bring the full count back to me."
+              "Berry Picking: I still need the sweet berries. Bring the full count back to me.",
+              "For Berry Picking, I still need 16 sweet berries.",
+              "Berry Picking is still asking for 16 sweet berries.",
+              "Bring 16 sweet berries back when the count is ready.",
+              "The tracker has the details for Berry Picking.",
+              "Keep Berry Picking in mind and bring 16 sweet berries.",
+              "The village is still waiting on 16 sweet berries.",
+              "No rush in the words, but the count still matters.",
+              "Bring the full amount back to me when you have it.",
+              "Berry Picking is still open.",
+              "Follow the tracker for Berry Picking and bring back 16 sweet berries.",
+              "You are looking for 16 sweet berries for this request.",
+              "The note says 16 sweet berries, and the note is not wrong today.",
+              "Finish the count and return here when you can.",
+              "This is simple work only if it gets done."
             ],
             "unavailable": [
-              "That berry basket count is not yours right now."
+              "That berry basket count is not yours right now.",
+              "Berry Picking is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Berry Picking at the moment.",
+              "Berry Picking is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Berry Picking is waiting here.",
+              "Try again later if Berry Picking comes back around.",
+              "I cannot move that request today.",
+              "Berry Picking needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Berry Picking."
             ]
           },
           "type": "quest"
@@ -205,16 +470,72 @@
           "action": "start",
           "lines": {
             "already_completed": [
-              "The berry baskets are already settled."
+              "The berry baskets are already settled.",
+              "Berry Picking is already settled on my side.",
+              "We have already closed Berry Picking.",
+              "Berry Picking does not need another tally right now.",
+              "That work is already counted and put away.",
+              "Berry Picking is finished for now.",
+              "The village has already marked Berry Picking complete.",
+              "I have no open note for Berry Picking anymore.",
+              "Berry Picking has already been handled.",
+              "That request is already off the board.",
+              "We are not reopening Berry Picking right now.",
+              "Berry Picking is done enough for today.",
+              "The record for Berry Picking is already clean.",
+              "There is no fresh work left in Berry Picking.",
+              "That one is already squared away."
             ],
             "locate_failed": [
-              "Berry Picking cannot be posted from here right now."
+              "Berry Picking cannot be posted from here right now.",
+              "I cannot post Berry Picking from here right now.",
+              "Berry Picking is not finding a proper place to start.",
+              "No good posting point is ready for Berry Picking.",
+              "The village cannot place that request from here.",
+              "Berry Picking needs a better lead before I send you out.",
+              "I cannot get a clean mark for Berry Picking today.",
+              "The request is real, but the place is not lining up.",
+              "Something about this spot will not let Berry Picking start.",
+              "I need a clearer posting before I can offer Berry Picking.",
+              "The work is not anchoring here right now.",
+              "I cannot set the note for Berry Picking from this place.",
+              "The village has no clean place to send you for that.",
+              "Berry Picking is refusing to settle onto the slate.",
+              "The route for Berry Picking is not clear enough yet."
             ],
             "started": [
-              "Berry Picking is yours now. Bring the sweet berries back when the count is ready."
+              "Berry Picking is yours now. Bring the sweet berries back when the count is ready.",
+              "Berry Picking is yours now. Bring 16 sweet berries when the count is ready.",
+              "I am putting Berry Picking in your hands.",
+              "Take the note for Berry Picking and bring back 16 sweet berries.",
+              "Good. The village will be waiting for 16 sweet berries.",
+              "Then we will count on you for Berry Picking.",
+              "Bring 16 sweet berries, and we can call this useful work.",
+              "Berry Picking starts now. Keep the tracker close.",
+              "Head out for Berry Picking and return with 16 sweet berries.",
+              "The request is open, and your name is on it now.",
+              "I will mark you down for Berry Picking.",
+              "Bring the full count back when you have it.",
+              "You have the work now. Do it cleanly and come back safe.",
+              "Berry Picking points. Bring 16 sweet berries.",
+              "That settles the posting. Now we need 16 sweet berries."
             ],
             "unavailable": [
-              "The kitchen is not asking you for berries right now."
+              "The kitchen is not asking you for berries right now.",
+              "Berry Picking is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Berry Picking at the moment.",
+              "Berry Picking is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Berry Picking is waiting here.",
+              "Try again later if Berry Picking comes back around.",
+              "I cannot move that request today.",
+              "Berry Picking needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Berry Picking."
             ]
           },
           "type": "quest"
@@ -224,7 +545,21 @@
     },
     "turn_in": {
       "lines": [
-        "If you have the sweet berries, we can settle Berry Picking."
+        "If you have the sweet berries, we can settle Berry Picking.",
+        "Berry Picking is still on the village slate.",
+        "The work for Berry Picking can wait a moment.",
+        "Keep Berry Picking in mind and come back when you are ready.",
+        "The village will know what to do with the help.",
+        "That request still has room for steady hands.",
+        "We can settle Berry Picking when the count is right.",
+        "No need to dress it up. Berry Picking just needs finishing.",
+        "The note stays plain because the work is plain.",
+        "If the village asks again, you will know why.",
+        "There is still useful work in Berry Picking.",
+        "Bring what is needed and we will call it done.",
+        "The request can stay quiet for now.",
+        "The tally remains where I can see it.",
+        "Come back when Berry Picking is ready to close."
       ],
       "responses": [
         {
@@ -250,7 +585,21 @@
     "turn_in_wait": {
       "end": true,
       "lines": [
-        "Keep the berries from bruising, then bring the baskets back to me."
+        "Keep the berries from bruising, then bring the baskets back to me.",
+        "Hold onto the supplies for Berry Picking until you are ready to finish.",
+        "Then bring it back when you want the note closed.",
+        "Keep the delivery safe until we count it.",
+        "No hurry in the words, but do not lose the goods.",
+        "Come back when you are ready to settle Berry Picking.",
+        "I will wait to close the tally.",
+        "Keep the count together and return when you can.",
+        "The request stays open until you turn it in.",
+        "Bring everything back when you are ready for the reward.",
+        "Then we will leave Berry Picking unfinished for the moment.",
+        "Keep it close. Lost supplies do not help anyone.",
+        "Return when you want this properly counted.",
+        "The tally can wait a little longer.",
+        "I will not close the note until you say so."
       ]
     }
   }

@@ -32,6 +32,7 @@ import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
 import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
@@ -190,6 +191,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_PORTRAIT_ORNAMENT_X_OFFSET = 1;
     private static final int INTERACTION_PORTRAIT_ORNAMENT_Y_OFFSET = 1;
     private static final float INTERACTION_PORTRAIT_ORNAMENT_Z = 119.0F;
+    private static final long MOUSE_STARE_REQUIRED_MILLIS = 10_000L;
+    private static final double VILLAGER_PORTRAIT_EYE_BRIDGE_RADIUS_X = 3.5D;
+    private static final double VILLAGER_PORTRAIT_EYE_BRIDGE_RADIUS_Y = 4.5D;
     private static final int INTERACTION_CONTAINER_OVERLAY_X = 4;
     private static final int INTERACTION_CONTAINER_OVERLAY_Y = 68;
     private static final int INTERACTION_CONTAINER_OVERLAY_WIDTH = 59;
@@ -317,6 +321,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private float pixelOptionMiddlePopBlend;
     private int lastMouseX;
     private int lastMouseY;
+    private long mouseStareStartMillis = -1L;
+    private boolean mouseStareEasterEggTriggered;
     private int renderSlideOffsetY;
     private int renderContentOffsetX;
     private boolean keyboardOptionFocusVisible;
@@ -466,6 +472,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         updateDialogueMouthAnimation();
         syncCameraFocusState();
         ClientVillagerConversationState.tickCameraFocus();
+        tickMouseEasterEggs();
     }
 
     @Override
@@ -1679,6 +1686,69 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.awaitingForcedDialogueResponse = true;
         }
         sendToServer(new VillagerDialogueRequestPayload(this.villagerEntityId, optionId));
+    }
+
+    private void tickMouseEasterEggs() {
+        if (this.closingWithAnimation || !shouldRenderInteractionContainer()) {
+            resetMouseEasterEggProgress();
+            return;
+        }
+
+        tickMouseStareEasterEgg();
+    }
+
+    private void tickMouseStareEasterEgg() {
+        if (this.mouseStareEasterEggTriggered) {
+            return;
+        }
+        if (!isMouseOverVillagerEyeBridge(this.lastMouseX, this.lastMouseY)) {
+            this.mouseStareStartMillis = -1L;
+            return;
+        }
+
+        long now = Util.getMillis();
+        if (this.mouseStareStartMillis < 0L) {
+            this.mouseStareStartMillis = now;
+        }
+        if (now - this.mouseStareStartMillis >= MOUSE_STARE_REQUIRED_MILLIS) {
+            this.mouseStareEasterEggTriggered = true;
+            sendToServer(new VillagerMouseEasterEggPayload(
+                    this.villagerEntityId,
+                    VillagerMouseEasterEggPayload.Kind.STARE));
+        }
+    }
+
+    private void resetMouseEasterEggProgress() {
+        this.mouseStareStartMillis = -1L;
+    }
+
+    private boolean isMouseOverVillagerEyeBridge(double mouseX, double mouseY) {
+        double portraitTop = interactionContainerTop() + INTERACTION_PORTRAIT_TOP;
+        return isPointInsideEllipse(
+                mouseX,
+                mouseY,
+                villagerPortraitCenterX(),
+                portraitTop + 19.0D,
+                VILLAGER_PORTRAIT_EYE_BRIDGE_RADIUS_X,
+                VILLAGER_PORTRAIT_EYE_BRIDGE_RADIUS_Y);
+    }
+
+    private double villagerPortraitCenterX() {
+        int left = interactionContainerLeft() + INTERACTION_PORTRAIT_LEFT;
+        int right = interactionContainerLeft() + INTERACTION_PORTRAIT_RIGHT;
+        return (left + right) / 2.0D;
+    }
+
+    private static boolean isPointInsideEllipse(
+            double pointX,
+            double pointY,
+            double centerX,
+            double centerY,
+            double radiusX,
+            double radiusY) {
+        double normalizedX = (pointX - centerX) / radiusX;
+        double normalizedY = (pointY - centerY) / radiusY;
+        return normalizedX * normalizedX + normalizedY * normalizedY <= 1.0D;
     }
 
     private void navigateToRootPage() {

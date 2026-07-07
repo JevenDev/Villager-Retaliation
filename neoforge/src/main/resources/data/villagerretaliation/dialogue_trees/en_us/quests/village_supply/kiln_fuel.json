@@ -52,12 +52,40 @@
     "abandon_cancel": {
       "end": true,
       "lines": [
-        "Good. The kiln cools slowly, but not forever."
+        "Good. The kiln cools slowly, but not forever.",
+        "Good. We will keep Kiln Fuel open a while longer.",
+        "Then the request stays active.",
+        "Fine. Keep Kiln Fuel in your hands for now.",
+        "Good. I will leave the note where it is.",
+        "Then we keep counting on you for this one.",
+        "The work stays open.",
+        "Kiln Fuel remains on your list.",
+        "Good. Bring it back when you are ready.",
+        "I will keep the tally under your name.",
+        "Then nothing changes for Kiln Fuel.",
+        "Good. The village will wait a little longer.",
+        "Keep the request and finish it when you can.",
+        "I will not close the note yet.",
+        "Then Kiln Fuel stays alive."
       ]
     },
     "abandon_confirm": {
       "lines": [
-        "Put Kiln Fuel aside for now?"
+        "Put Kiln Fuel aside for now?",
+        "Are you sure you want to step away from Kiln Fuel?",
+        "Close your part in Kiln Fuel for now?",
+        "Should I mark Kiln Fuel abandoned?",
+        "Do you want me to take your name off this request?",
+        "Set the note for Kiln Fuel aside?",
+        "Are you done with Kiln Fuel for now?",
+        "Should I stop counting on you for this one?",
+        "Do you want to leave Kiln Fuel unfinished?",
+        "Put the work down and walk away?",
+        "Should I close this attempt?",
+        "Are you sure Kiln Fuel can wait without you?",
+        "Do you want the request removed from your list?",
+        "Shall I fold this note away?",
+        "One last check. Are you abandoning Kiln Fuel?"
       ],
       "responses": [
         {
@@ -78,16 +106,72 @@
           "action": "abandon",
           "lines": {
             "abandoned": [
-              "I will set the fuel request aside. Return if the firebox runs low again."
+              "I will set the fuel request aside. Return if the firebox runs low again.",
+              "I will set Kiln Fuel aside. Come back if the village still needs it.",
+              "Kiln Fuel is off your hands for now.",
+              "I will clear the note and stop counting on you for this one.",
+              "The request is set aside.",
+              "I will mark Kiln Fuel abandoned for now.",
+              "Then we will leave Kiln Fuel alone.",
+              "I will put the tally away.",
+              "The village will manage without this run for now.",
+              "I will stop holding that work under your name.",
+              "Kiln Fuel is no longer active for you.",
+              "I will take your name off the request.",
+              "The note comes down for now.",
+              "That closes your part in Kiln Fuel for the moment.",
+              "I will make the record clean again."
             ],
             "abandoned_cooldown": [
-              "I will pause the coal request for now. Give the workshops time to count their fuel."
+              "I will pause the coal request for now. Give the workshops time to count their fuel.",
+              "I will pause Kiln Fuel for now. Give the village a little time before asking again.",
+              "Kiln Fuel is set aside until the count settles.",
+              "I will cool the request for a while.",
+              "The village needs time before reopening Kiln Fuel.",
+              "I will mark this paused, not forgotten.",
+              "Let the stores settle before we talk about Kiln Fuel again.",
+              "I will put the note away until the cooldown passes.",
+              "Come back after the village has had time to reset.",
+              "Kiln Fuel can wait until the next proper opening.",
+              "I will close this attempt and let the request breathe.",
+              "The slate needs a little quiet before this comes back.",
+              "I will pause the tally for now.",
+              "Give this one time before you ask again.",
+              "The request will not reopen immediately."
             ],
             "abandoned_forever": [
-              "Then the kiln fuel request is closed for good."
+              "Then the kiln fuel request is closed for good.",
+              "Then Kiln Fuel is closed for good.",
+              "I will not reopen Kiln Fuel.",
+              "That request is finished permanently.",
+              "Kiln Fuel leaves the board for good.",
+              "Then this note is gone, not paused.",
+              "I will mark Kiln Fuel as permanently closed.",
+              "No one will ask you for this request again.",
+              "That closes the matter completely.",
+              "The village will not bring this one back to you.",
+              "Kiln Fuel is ended, not waiting.",
+              "I will put a final mark on the record.",
+              "This request is done beyond rechecking.",
+              "Then we leave Kiln Fuel in the past.",
+              "I will close the book on that one."
             ],
             "unavailable": [
-              "There is no coal order here to close."
+              "There is no coal order here to close.",
+              "Kiln Fuel is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Kiln Fuel at the moment.",
+              "Kiln Fuel is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Kiln Fuel is waiting here.",
+              "Try again later if Kiln Fuel comes back around.",
+              "I cannot move that request today.",
+              "Kiln Fuel needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Kiln Fuel."
             ]
           },
           "type": "quest"
@@ -98,12 +182,40 @@
     "active_cancel": {
       "end": true,
       "lines": [
-        "Then keep the coal dry until you are ready."
+        "Then keep the coal dry until you are ready.",
+        "Then keep Kiln Fuel close until you are ready.",
+        "All right. We will leave Kiln Fuel open.",
+        "Keep the request and come back when you need the details.",
+        "Then I will leave the note alone.",
+        "No change, then. Kiln Fuel stays with you.",
+        "Good. Finish it when the count is ready.",
+        "The work waits where it is.",
+        "Then we do nothing more for now.",
+        "Keep going when you are ready.",
+        "Kiln Fuel remains open.",
+        "I will keep the tally active.",
+        "Come back when you want to settle it.",
+        "Then hold onto the work a little longer.",
+        "The village will wait for the full count."
       ]
     },
     "active_menu": {
       "lines": [
-        "Kiln Fuel is still open. I can repeat the details, or close my notes if you are done."
+        "Kiln Fuel is still open. I can repeat the details, or close my notes if you are done.",
+        "Kiln Fuel is still open. I can repeat the work or close the note if you are done.",
+        "Kiln Fuel is active. Do you need the details again?",
+        "We still have Kiln Fuel on the slate.",
+        "The request is open, and I can remind you what it needs.",
+        "Kiln Fuel has not been closed yet.",
+        "I can go over Kiln Fuel again, or we can put it aside.",
+        "You still have Kiln Fuel in hand.",
+        "The note is open. What do you need from me?",
+        "Kiln Fuel is waiting on the rest of the count.",
+        "I can repeat the request or close it if you are done.",
+        "We can talk details, abandon the work, or leave it alone.",
+        "The village is still expecting Kiln Fuel.",
+        "Your part in Kiln Fuel is not finished yet.",
+        "Say the word and I will remind you what Kiln Fuel needs."
       ],
       "responses": [
         {
@@ -132,22 +244,106 @@
           "action": "turn_in",
           "lines": {
             "completed": [
-              "Kiln Fuel is complete. The village can use this, and you have earned the reward."
+              "Kiln Fuel is complete. The village can use this, and you have earned the reward.",
+              "That settles Kiln Fuel. The village will put this to use.",
+              "Kiln Fuel is complete, and the help is appreciated.",
+              "Good. I can close Kiln Fuel with a clean mark.",
+              "This will help more than it looks like it should.",
+              "The count is right. Take your reward with my thanks.",
+              "That is enough to close the request.",
+              "Well done. Kiln Fuel is finished.",
+              "The village can use this before the day is out.",
+              "I will mark Kiln Fuel complete.",
+              "Good work. The note comes down now.",
+              "That is the kind of help people remember at supper.",
+              "Everything is here. Kiln Fuel is settled.",
+              "The village needed this, and you brought it.",
+              "A full count makes a calmer room."
             ],
             "inactive": [
-              "The kiln is not accepting coal right now."
+              "The kiln is not accepting coal right now.",
+              "Kiln Fuel is quiet right now.",
+              "The village is not counting Kiln Fuel at the moment.",
+              "That request is not open right now.",
+              "Kiln Fuel is waiting on better timing.",
+              "I cannot move Kiln Fuel forward just now.",
+              "The conditions for Kiln Fuel are not ready.",
+              "The note for Kiln Fuel is closed for the moment.",
+              "No one is taking that request right now.",
+              "Kiln Fuel needs to wait a little longer.",
+              "This is not the right moment for Kiln Fuel.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Kiln Fuel at the moment.",
+              "Kiln Fuel is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "missing_objectives": [
-              "Kiln Fuel is still short. The tracker has the exact count."
+              "Kiln Fuel is still short. The tracker has the exact count.",
+              "Check the tracker before we close Kiln Fuel.",
+              "The work is not complete yet.",
+              "There is still one part of Kiln Fuel missing.",
+              "Bring the rest and I can settle the note.",
+              "The village cannot use half a finished request.",
+              "The tally says there is more to do.",
+              "You are not empty handed, but this is not complete yet.",
+              "The last pieces still matter.",
+              "I need the whole request finished before I close it.",
+              "The tracker knows what the note still needs.",
+              "Keep going. Kiln Fuel is not ready to turn in yet.",
+              "The work is close enough to see, not close enough to sign.",
+              "Bring the missing part back when you have it.",
+              "The request still has work left in it."
             ],
             "missing_proof": [
-              "Kiln Fuel still needs the coal in your pack before I can close it."
+              "Kiln Fuel still needs the coal in your pack before I can close it.",
+              "I still need 12 coal before I can close Kiln Fuel.",
+              "Bring 12 coal, then we can settle Kiln Fuel.",
+              "Kiln Fuel needs the proof in your pack first.",
+              "I cannot close Kiln Fuel until I see 12 coal.",
+              "The reward waits until 12 coal is here.",
+              "Show me 12 coal and we can finish this properly.",
+              "The village needs the goods before the note comes down.",
+              "You are close, but 12 coal still needs to be here.",
+              "I need the actual proof before I mark Kiln Fuel done.",
+              "Come back with 12 coal and we can close the count.",
+              "The request is not finished without 12 coal.",
+              "Kiln Fuel still needs something I can hold and count.",
+              "I need the delivery in hand before this is settled.",
+              "Bring the proof back and I will close Kiln Fuel."
             ],
             "missing_target": [
-              "Kiln Fuel is not at the right count yet; bring the rest before turning it in."
+              "Kiln Fuel is not at the right count yet; bring the rest before turning it in.",
+              "Kiln Fuel is still short. The tracker has the exact count.",
+              "Something is missing for Kiln Fuel, so check the tracker and bring the rest.",
+              "The count is not complete yet.",
+              "We need the full amount before Kiln Fuel can close.",
+              "The village is still waiting on the rest of it.",
+              "Kiln Fuel needs every part before I can sign it off.",
+              "The work is close, but close does not fill a shelf.",
+              "Bring the rest and we can finish Kiln Fuel.",
+              "The tally still has an empty line in it.",
+              "I cannot call Kiln Fuel complete while the count is short.",
+              "The tracker will show what is still missing.",
+              "There is still more to gather for Kiln Fuel.",
+              "The full delivery matters here.",
+              "Not quite enough yet, but you are on the right road."
             ],
             "unavailable": [
-              "This kiln fuel request is not ready to close yet."
+              "This kiln fuel request is not ready to close yet.",
+              "Kiln Fuel is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Kiln Fuel at the moment.",
+              "Kiln Fuel is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Kiln Fuel is waiting here.",
+              "Try again later if Kiln Fuel comes back around.",
+              "I cannot move that request today.",
+              "Kiln Fuel needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Kiln Fuel."
             ]
           },
           "type": "quest"
@@ -158,13 +354,40 @@
     "decline": {
       "end": true,
       "lines": [
-        "Then the kiln and I will stare at each other in disappointment."
+        "Then the kiln and I will stare at each other in disappointment.",
+        "Another time, then. I will keep Kiln Fuel in mind.",
+        "Fair enough. The request can wait a little longer.",
+        "Then I will keep the note nearby.",
+        "No trouble. Someone will ask again if it still matters.",
+        "The village will manage for now.",
+        "Then we leave Kiln Fuel on the board.",
+        "All right. I will not press you on it.",
+        "Maybe later, if the need is still there.",
+        "I will keep counting without your help for now.",
+        "Then the request waits for another willing pair of hands.",
+        "Fine. Better a clear no than a forgotten promise.",
+        "The work is not going anywhere quickly.",
+        "Then I will ask again when the village needs it.",
+        "No harm. Kiln Fuel can wait."
       ]
     },
     "offer": {
       "lines": [
         "The firebox is down to crumbs.",
-        "A cold kiln is just an expensive room with opinions."
+        "A cold kiln is just an expensive room with opinions.",
+        "The village could use help with 12 coal for Kiln Fuel.",
+        "Kiln Fuel is simple work, but simple work still feeds the day.",
+        "We need 12 coal, and I would rather ask before the shortage becomes loud.",
+        "If you have room in your pack, Kiln Fuel would help.",
+        "The count is not dramatic yet, which is when it is worth fixing.",
+        "A little help with Kiln Fuel would settle more than one worry.",
+        "I have a request for 12 coal, if you are willing.",
+        "This village runs better when requests like Kiln Fuel do not wait too long.",
+        "The stores are asking for 12 coal in their quiet way.",
+        "I could use a steady hand for Kiln Fuel.",
+        "Bring 12 coal, and the village will feel the difference.",
+        "Nothing glorious here, just useful work that matters.",
+        "Kiln Fuel needs doing before it becomes everyone's problem."
       ],
       "responses": [
         {
@@ -185,13 +408,55 @@
           "action": "remind",
           "lines": {
             "inactive": [
-              "The firebox count is quiet for the moment."
+              "The firebox count is quiet for the moment.",
+              "Kiln Fuel is quiet right now.",
+              "The village is not counting Kiln Fuel at the moment.",
+              "That request is not open right now.",
+              "Kiln Fuel is waiting on better timing.",
+              "I cannot move Kiln Fuel forward just now.",
+              "The conditions for Kiln Fuel are not ready.",
+              "The note for Kiln Fuel is closed for the moment.",
+              "No one is taking that request right now.",
+              "Kiln Fuel needs to wait a little longer.",
+              "This is not the right moment for Kiln Fuel.",
+              "The work is real, but it is not open right now.",
+              "I have no active count for Kiln Fuel at the moment.",
+              "Kiln Fuel is between openings right now.",
+              "The village is not ready to accept that help yet."
             ],
             "reminder": [
-              "Kiln Fuel: I still need the coal. Bring the full count back to me."
+              "Kiln Fuel: I still need the coal. Bring the full count back to me.",
+              "For Kiln Fuel, I still need 12 coal.",
+              "Kiln Fuel is still asking for 12 coal.",
+              "Bring 12 coal back when the count is ready.",
+              "The tracker has the details for Kiln Fuel.",
+              "Keep Kiln Fuel in mind and bring 12 coal.",
+              "The village is still waiting on 12 coal.",
+              "No rush in the words, but the count still matters.",
+              "Bring the full amount back to me when you have it.",
+              "Kiln Fuel is still open.",
+              "Follow the tracker for Kiln Fuel and bring back 12 coal.",
+              "You are looking for 12 coal for this request.",
+              "The note says 12 coal, and the note is not wrong today.",
+              "Finish the count and return here when you can.",
+              "This is simple work only if it gets done."
             ],
             "unavailable": [
-              "That kiln fuel request is not in your hands right now."
+              "That kiln fuel request is not in your hands right now.",
+              "Kiln Fuel is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Kiln Fuel at the moment.",
+              "Kiln Fuel is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Kiln Fuel is waiting here.",
+              "Try again later if Kiln Fuel comes back around.",
+              "I cannot move that request today.",
+              "Kiln Fuel needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Kiln Fuel."
             ]
           },
           "type": "quest"
@@ -205,16 +470,72 @@
           "action": "start",
           "lines": {
             "already_completed": [
-              "The kiln fuel is already settled."
+              "The kiln fuel is already settled.",
+              "Kiln Fuel is already settled on my side.",
+              "We have already closed Kiln Fuel.",
+              "Kiln Fuel does not need another tally right now.",
+              "That work is already counted and put away.",
+              "Kiln Fuel is finished for now.",
+              "The village has already marked Kiln Fuel complete.",
+              "I have no open note for Kiln Fuel anymore.",
+              "Kiln Fuel has already been handled.",
+              "That request is already off the board.",
+              "We are not reopening Kiln Fuel right now.",
+              "Kiln Fuel is done enough for today.",
+              "The record for Kiln Fuel is already clean.",
+              "There is no fresh work left in Kiln Fuel.",
+              "That one is already squared away."
             ],
             "locate_failed": [
-              "Kiln Fuel cannot be posted from here right now."
+              "Kiln Fuel cannot be posted from here right now.",
+              "I cannot post Kiln Fuel from here right now.",
+              "Kiln Fuel is not finding a proper place to start.",
+              "No good posting point is ready for Kiln Fuel.",
+              "The village cannot place that request from here.",
+              "Kiln Fuel needs a better lead before I send you out.",
+              "I cannot get a clean mark for Kiln Fuel today.",
+              "The request is real, but the place is not lining up.",
+              "Something about this spot will not let Kiln Fuel start.",
+              "I need a clearer posting before I can offer Kiln Fuel.",
+              "The work is not anchoring here right now.",
+              "I cannot set the note for Kiln Fuel from this place.",
+              "The village has no clean place to send you for that.",
+              "Kiln Fuel is refusing to settle onto the slate.",
+              "The route for Kiln Fuel is not clear enough yet."
             ],
             "started": [
-              "Kiln Fuel is yours now. Bring the coal back when the count is ready."
+              "Kiln Fuel is yours now. Bring the coal back when the count is ready.",
+              "Kiln Fuel is yours now. Bring 12 coal when the count is ready.",
+              "I am putting Kiln Fuel in your hands.",
+              "Take the note for Kiln Fuel and bring back 12 coal.",
+              "Good. The village will be waiting for 12 coal.",
+              "Then we will count on you for Kiln Fuel.",
+              "Bring 12 coal, and we can call this useful work.",
+              "Kiln Fuel starts now. Keep the tracker close.",
+              "Head out for Kiln Fuel and return with 12 coal.",
+              "The request is open, and your name is on it now.",
+              "I will mark you down for Kiln Fuel.",
+              "Bring the full count back when you have it.",
+              "You have the work now. Do it cleanly and come back safe.",
+              "Kiln Fuel points. Bring 12 coal.",
+              "That settles the posting. Now we need 12 coal."
             ],
             "unavailable": [
-              "The workshops are not asking you for coal right now."
+              "The workshops are not asking you for coal right now.",
+              "Kiln Fuel is not available from here right now.",
+              "That request is not in your hands right now.",
+              "I cannot offer Kiln Fuel at the moment.",
+              "Kiln Fuel is closed to new help for now.",
+              "This is not ready for you right now.",
+              "The village is not accepting that work at the moment.",
+              "No open note for Kiln Fuel is waiting here.",
+              "Try again later if Kiln Fuel comes back around.",
+              "I cannot move that request today.",
+              "Kiln Fuel needs different timing.",
+              "The work exists, but not for this moment.",
+              "I do not have authority to open that now.",
+              "The request is out of reach for now.",
+              "There is nothing for me to hand you on Kiln Fuel."
             ]
           },
           "type": "quest"
@@ -224,7 +545,21 @@
     },
     "turn_in": {
       "lines": [
-        "If you have the coal, we can settle Kiln Fuel."
+        "If you have the coal, we can settle Kiln Fuel.",
+        "Kiln Fuel is still on the village slate.",
+        "The work for Kiln Fuel can wait a moment.",
+        "Keep Kiln Fuel in mind and come back when you are ready.",
+        "The village will know what to do with the help.",
+        "That request still has room for steady hands.",
+        "We can settle Kiln Fuel when the count is right.",
+        "No need to dress it up. Kiln Fuel just needs finishing.",
+        "The note stays plain because the work is plain.",
+        "If the village asks again, you will know why.",
+        "There is still useful work in Kiln Fuel.",
+        "Bring what is needed and we will call it done.",
+        "The request can stay quiet for now.",
+        "The tally remains where I can see it.",
+        "Come back when Kiln Fuel is ready to close."
       ],
       "responses": [
         {
@@ -250,7 +585,21 @@
     "turn_in_wait": {
       "end": true,
       "lines": [
-        "Keep the coal dry until the firebox is ready for it."
+        "Keep the coal dry until the firebox is ready for it.",
+        "Hold onto the supplies for Kiln Fuel until you are ready to finish.",
+        "Then bring it back when you want the note closed.",
+        "Keep the delivery safe until we count it.",
+        "No hurry in the words, but do not lose the goods.",
+        "Come back when you are ready to settle Kiln Fuel.",
+        "I will wait to close the tally.",
+        "Keep the count together and return when you can.",
+        "The request stays open until you turn it in.",
+        "Bring everything back when you are ready for the reward.",
+        "Then we will leave Kiln Fuel unfinished for the moment.",
+        "Keep it close. Lost supplies do not help anyone.",
+        "Return when you want this properly counted.",
+        "The tally can wait a little longer.",
+        "I will not close the note until you say so."
       ]
     }
   }

@@ -43,6 +43,7 @@ import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
+import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
@@ -93,6 +94,18 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerInteractionService {
     private static final UUID LOUD_LITTEN_PLAYER_ID = UUID.fromString("38492a05-b711-40d4-a39f-a3f783aa541f");
+    private static final String[] MOUSE_STARE_EASTER_EGG_LINES = {
+            "My eyes are up here. Unfortunately, so is yours.",
+            "Blink. For both our sakes.",
+            "That is the exact spot where patience goes to retire.",
+            "If you are checking for thoughts, I assure you I had several.",
+            "Yes, the bridge of my nose is structurally sound.",
+            "You are making eye contact with the space between eye contact.",
+            "I admire your focus. I fear your focus.",
+            "Did a lectern teach you to stare like that?",
+            "The village has decided this is weird.",
+            "I was going to say something wise, but you stared it away."
+    };
     private static final String EDMUNDO_EASTER_EGG_DEFINITION_ID = "villagerretaliation:easter_egg/edmundo_warning";
     private static final String BLUEPRINT_START_OPTION_ID = "construction_blueprint_start";
     private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
@@ -349,6 +362,23 @@ public final class VillagerInteractionService {
             return;
         }
         VillagerDialogueRequestHandler.handle(player, entityId, optionId);
+    }
+
+    public static void handleMouseEasterEggRequest(
+            ServerPlayer player,
+            int entityId,
+            VillagerMouseEasterEggPayload.Kind kind) {
+        if (kind == null) {
+            return;
+        }
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireDialogueConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        Villager villager = target.get().villager();
+        String line = MOUSE_STARE_EASTER_EGG_LINES[player.getRandom().nextInt(MOUSE_STARE_EASTER_EGG_LINES.length)];
+        PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(villager.getId(), line, ""));
+        VillagerReputationAdvancements.onVillagerMouseStared(player);
     }
 
     private static boolean handleConstructionBlueprintDialogueRequest(ServerPlayer player, int entityId, String optionId) {

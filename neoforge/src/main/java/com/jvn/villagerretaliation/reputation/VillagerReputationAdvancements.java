@@ -92,6 +92,7 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation STORY_KEEPER = advancementId("reputation/story_keeper");
     private static final ResourceLocation VILLAGE_CHRONICLER = advancementId("reputation/village_chronicler");
     private static final ResourceLocation LEGEND_TRADER = advancementId("reputation/legend_trader");
+    private static final ResourceLocation STEADY_GAZE = advancementId("reputation/steady_gaze");
 
     private VillagerReputationAdvancements() {
     }
@@ -114,6 +115,10 @@ public final class VillagerReputationAdvancements {
 
     public static void onSleepingVillagerBedBroken(ServerPlayer player) {
         award(player, NO_REST_FOR_THE_WICKED);
+    }
+
+    public static void onVillagerMouseStared(ServerPlayer player) {
+        award(player, STEADY_GAZE);
     }
 
     public static void onSharedStory(ServerPlayer player, int sharedStoryCount) {

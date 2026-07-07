@@ -17,7 +17,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "30";
+    private static final String PROTOCOL_VERSION = "31";
 
     private VillagerReputationNetworking() {
     }
@@ -174,6 +174,16 @@ public final class VillagerReputationNetworking {
                             player,
                             payload.entityId(),
                             payload.optionId()
+                    )))
+        );
+        network.playToServer(
+                VillagerMouseEasterEggPayload.TYPE,
+                VillagerMouseEasterEggPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleMouseEasterEggRequest(
+                            player,
+                            payload.entityId(),
+                            payload.kind()
                     )))
         );
         network.playToServer(
