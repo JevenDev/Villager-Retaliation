@@ -547,7 +547,7 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void jobInventoryProtectsGearAndKeepsOutputsOutOfSupplySlots(GameTestHelper helper) {
+    public static void jobInventoryProtectsGearAndUsesEmptyGridSlotsDynamically(GameTestHelper helper) {
         buildFloor(helper, 0, 4, 0, 4, 1);
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
@@ -571,24 +571,31 @@ public final class VillagerWorkerGameTests {
             helper.assertValueEqual(inventory.slotType(slot), HiredJobInventorySlotType.SUPPLY, "supply slot type " + slot);
         }
 
+        for (int i = 0; i < 13; i++) {
+            helper.assertTrue(inventory.insertOutput(new ItemStack(Items.COBBLESTONE, 64)).isEmpty(), "output filler should fit " + i);
+        }
+        ItemStack overflowOutput = inventory.insertOutput(new ItemStack(Items.DIRT, 3));
+        helper.assertTrue(overflowOutput.isEmpty(), "outputs should spill into empty grid slots after preferred output slots fill");
+        helper.assertTrue(inventory.getItem(6).is(Items.DIRT), "output overflow should claim the first empty supply grid slot");
+        helper.assertValueEqual(inventory.slotType(6), HiredJobInventorySlotType.OUTPUT, "claimed overflow slot type");
+
+        inventory.clearContent();
+        for (int slot = 6; slot < 18; slot++) {
+            inventory.setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+
         ItemStack supplyRemainder = inventory.insertSupplyFromStorage(new ItemStack(Items.LADDER, 3));
-        helper.assertTrue(supplyRemainder.isEmpty(), "storage-sourced supplies should fit into supply slots");
-        ItemStack storedLadders = inventory.findSupply(stack -> stack.is(Items.LADDER));
-        helper.assertTrue(HiredJobInventory.isJobItem(storedLadders), "storage-sourced supplies should be tagged as job items");
+        helper.assertTrue(supplyRemainder.isEmpty(), "storage-sourced supplies should spill into empty output grid slots");
+        helper.assertTrue(inventory.getItem(18).is(Items.LADDER), "supply overflow should claim the first empty output grid slot");
+        helper.assertValueEqual(inventory.slotType(18), HiredJobInventorySlotType.SUPPLY, "claimed supply overflow slot type");
+        helper.assertTrue(HiredJobInventory.isJobItem(inventory.getItem(18)), "storage-sourced supplies should be tagged as job items");
 
         inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_PICKAXE));
-        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_PICKAXE), "gear slots should stay synced to villager equipment");
-        for (int slot = 6; slot < 18; slot++) {
-            if (inventory.getItem(slot).isEmpty()) {
-                inventory.setItem(slot, new ItemStack(Items.DIRT, 64));
-            }
-        }
         ItemStack toolRemainder = inventory.insertToolFromStorage(new ItemStack(Items.DIAMOND_PICKAXE));
-        helper.assertFalse(toolRemainder.isEmpty(), "storage tools should not spill into output slots when job slots are full");
-        for (int slot = 18; slot < HiredJobInventory.SLOT_COUNT; slot++) {
-            helper.assertFalse(inventory.getItem(slot).is(Items.DIAMOND_PICKAXE), "output slot " + slot + " should not hold a storage tool");
-            helper.assertFalse(inventory.slotType(slot) == HiredJobInventorySlotType.SUPPLY, "output slot " + slot + " should not become a supply slot");
-        }
+        helper.assertTrue(toolRemainder.isEmpty(), "storage tools should use empty grid slots after preferred supply slots fill");
+        helper.assertTrue(inventory.getItem(19).is(Items.DIAMOND_PICKAXE), "tool overflow should use the next empty grid slot");
+        helper.assertValueEqual(inventory.slotType(19), HiredJobInventorySlotType.SUPPLY, "tool overflow slot type");
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_PICKAXE), "gear slots should stay synced to villager equipment");
         villager.discard();
         helper.succeed();
     }
@@ -966,7 +973,7 @@ public final class VillagerWorkerGameTests {
         CompoundTag state = new CompoundTag();
         HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 4), true);
         context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
-        for (int slot = 18; slot < HiredJobInventory.SLOT_COUNT; slot++) {
+        for (int slot = 6; slot < HiredJobInventory.SLOT_COUNT; slot++) {
             context.inventory().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
         }
         context.inventory().setItem(18, new ItemStack(Items.COAL, 63));
@@ -1008,7 +1015,7 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(missingToolState.failureReason(), "missing_pickaxe", "missing pickaxe reason");
         helper.assertFalse(missingTool.completed(), "missing tool should not pretend work completed");
 
-        for (int slot = 18; slot < HiredJobInventory.SLOT_COUNT; slot++) {
+        for (int slot = 6; slot < HiredJobInventory.SLOT_COUNT; slot++) {
             context.inventory().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
         }
         helper.assertFalse(context.hasOutputSpace(), "filled output inventory should report no output space");
@@ -1735,7 +1742,7 @@ public final class VillagerWorkerGameTests {
         state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
         HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 3, 4), true);
         context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
-        for (int slot = 18; slot < HiredJobInventory.SLOT_COUNT; slot++) {
+        for (int slot = 6; slot < HiredJobInventory.SLOT_COUNT; slot++) {
             context.inventory().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
         }
         context.inventory().setItem(18, new ItemStack(Items.COBBLESTONE, 63));

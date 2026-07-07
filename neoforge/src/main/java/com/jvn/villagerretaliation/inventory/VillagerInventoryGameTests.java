@@ -313,6 +313,31 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void jobInventoryMenuMarksPlayerPlacedGridItemsAsSupply(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrJobMenuSupply");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+
+        VillagerInventoryMenu menu = new VillagerInventoryMenu(
+                1,
+                player.getInventory(),
+                villager,
+                VillagerInventoryMenu.ViewMode.JOB,
+                true,
+                true);
+        menu.getSlot(18).setByPlayer(new ItemStack(Items.COD, 4));
+
+        HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+        helper.assertValueEqual(jobInventory.slotType(18), HiredJobInventorySlotType.SUPPLY, "player-placed grid item slot type");
+        helper.assertTrue(jobInventory.findSupply(stack -> stack.is(Items.COD)).is(Items.COD), "player-placed grid item should count as supply");
+
+        menu.removed(player);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void jobInventoryAssignedStorageDepositMovesExactCountOnce(GameTestHelper helper) {
         buildFloor(helper, 0, 5, 0, 4, 1);
         ServerLevel level = helper.getLevel();

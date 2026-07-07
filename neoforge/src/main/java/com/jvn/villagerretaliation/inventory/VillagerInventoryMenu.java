@@ -598,6 +598,14 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         }
 
         @Override
+        public void setByPlayer(ItemStack newStack, ItemStack oldStack) {
+            super.setByPlayer(newStack, oldStack);
+            if (!newStack.isEmpty() && this.container instanceof HiredJobInventory jobInventory) {
+                jobInventory.markPlayerPlacedSupply(this.getSlotIndex());
+            }
+        }
+
+        @Override
         public int getMaxStackSize() {
             return jobArmorEquipmentSlot(this.getSlotIndex()) != null ? 1 : super.getMaxStackSize();
         }
