@@ -17,7 +17,6 @@ import net.minecraft.util.Mth;
 final class VillagerQuestHudRenderer {
     private static final int PANEL_GAP = 4;
     private static final int NOTIFICATION_MIN_HEIGHT = 70;
-    private static final int NOTIFICATION_MAX_HEIGHT = 112;
     private static final int NOTIFICATION_SCROLL_TOP_HOLD_TICKS = 52;
     private static final int NOTIFICATION_SCROLL_TICKS = 96;
     private static final int TRACKER_SCROLL_HOLD_TICKS = 54;
@@ -211,7 +210,7 @@ final class VillagerQuestHudRenderer {
             int age) {
         int titleColor = VillagerClientUiUtil.withAlphaRound(primary ? VillagerQuestUi.TITLE_COLOR : VillagerQuestUi.TEXT_COLOR, alpha);
         int textColor = VillagerClientUiUtil.withAlphaRound(primary ? VillagerQuestUi.TEXT_COLOR : VillagerQuestUi.MUTED_TEXT_COLOR, alpha);
-        renderPanelChrome(graphics, x, y, width, height, alpha * (primary ? 1.0F : 0.72F));
+        renderPanelBackground(graphics, x, y, width, height, alpha * (primary ? 1.0F : 0.72F));
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         if (primary) {
@@ -229,7 +228,7 @@ final class VillagerQuestHudRenderer {
         if (entry.showProgress()) {
             int barLeft = contentLeft;
             int barRight = x + width - paddingX();
-            VillagerQuestUi.renderProgressBar(graphics, barLeft, progressBarTop(y, height), barRight, progressBarHeight(), entry.progress(), alpha, age, false, true);
+            VillagerQuestUi.renderProgressBar(graphics, barLeft, progressBarTop(y, height), barRight, progressBarHeight(), entry.progress(), alpha, true);
         }
     }
 
@@ -283,7 +282,7 @@ final class VillagerQuestHudRenderer {
         if (entry.showProgress()) {
             int barLeft = contentLeft;
             int barRight = x + width - paddingX();
-            VillagerQuestUi.renderProgressBar(graphics, barLeft, barTop, barRight, progressBarHeight(), entry.progress(), alpha, age, false, true);
+            VillagerQuestUi.renderProgressBar(graphics, barLeft, barTop, barRight, progressBarHeight(), entry.progress(), alpha, true);
         }
     }
 
@@ -314,7 +313,7 @@ final class VillagerQuestHudRenderer {
                 .toList();
     }
 
-    private static void renderPanelChrome(
+    private static void renderPanelBackground(
             GuiGraphics graphics,
             int x,
             int y,

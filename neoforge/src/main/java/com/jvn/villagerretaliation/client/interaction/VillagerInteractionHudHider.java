@@ -21,17 +21,15 @@ public final class VillagerInteractionHudHider {
             return;
         }
 
-        boolean chatLayer = VanillaGuiLayers.CHAT.equals(event.getName());
-        boolean exitAnimationRunning = VillagerInteractionExperimentalChrome.exitAnimationRunning();
-        if (chatLayer) {
+        if (VanillaGuiLayers.CHAT.equals(event.getName())) {
             Minecraft minecraft = Minecraft.getInstance();
-            if (minecraft.screen instanceof VillagerInteractionScreen screen) {
+            if (minecraft.screen instanceof VillagerInteractionScreen) {
                 event.setCanceled(true);
                 return;
             }
         }
 
-        if (!ClientVillagerConversationState.active() && !exitAnimationRunning) {
+        if (!ClientVillagerConversationState.active()) {
             return;
         }
 
@@ -46,27 +44,8 @@ public final class VillagerInteractionHudHider {
         }
 
         Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof VillagerInteractionScreen screen) {
-            screen.renderPositionedHudChat(event.getGuiGraphics());
+        if (minecraft.screen instanceof VillagerInteractionScreen) {
             return;
         }
-
-        if (!VillagerInteractionExperimentalChrome.exitAnimationRunning()) {
-            return;
-        }
-
-        int scaledMouseX = (int) Math.round(minecraft.mouseHandler.xpos()
-                * minecraft.getWindow().getGuiScaledWidth()
-                / minecraft.getWindow().getScreenWidth());
-        int scaledMouseY = (int) Math.round(minecraft.mouseHandler.ypos()
-                * minecraft.getWindow().getGuiScaledHeight()
-                / minecraft.getWindow().getScreenHeight());
-        VillagerInteractionExperimentalChrome.renderBackdrop(
-                event.getGuiGraphics(),
-                minecraft.getWindow().getGuiScaledWidth(),
-                minecraft.getWindow().getGuiScaledHeight(),
-                0.0F,
-                scaledMouseX,
-                scaledMouseY);
     }
 }

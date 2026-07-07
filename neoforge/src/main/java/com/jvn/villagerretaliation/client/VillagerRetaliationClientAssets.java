@@ -16,8 +16,6 @@ public final class VillagerRetaliationClientAssets {
     public static final ResourceLocation VILLAGER_TRADE_EXTENDED_TEXTURE =
             texture("gui/trade/villager_extended");
 
-    public static final ResourceLocation DIVIDER_SELECT_TEXTURE =
-            texture("gui/villager_interaction_screen/divider_select");
     public static final ResourceLocation GIFT_INVENTORY_TEXTURE =
             texture("gui/villager_interaction_screen/gift_inventory");
     public static final ResourceLocation GIFT_INFO_ICON_TEXTURE =
@@ -34,8 +32,6 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/interaction_container_ornament");
     public static final ResourceLocation INTERACTION_CONTAINER_NAMEPLATE_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container_nameplate");
-    public static final ResourceLocation INTERACTION_CONTAINER_NAMEPLATE_ORNAMENT_TEXTURE =
-            texture("gui/villager_interaction_screen/interaction_container_nameplate_ornament");
     public static final ResourceLocation INTERACTION_CONTAINER_OVERLAY_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container_overlay");
     public static final ResourceLocation INTERACTION_CONTAINER_PORTRAIT_ORNAMENT_TEXTURE =
@@ -86,16 +82,6 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/icons/interaction_container_option_active_icon");
     public static final ResourceLocation INTERACTION_CONTAINER_OPTION_SCROLL_DOWN_ICON_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_container_option_scroll_down_icon");
-    public static final ResourceLocation INTERACTION_OPTION_BUTTON_TEXTURE =
-            texture("gui/villager_interaction_screen/option_button/interaction_option_button");
-    public static final ResourceLocation INTERACTION_OPTION_HOVER_TEXTURE =
-            texture("gui/villager_interaction_screen/option_button/interaction_option_hover");
-    public static final ResourceLocation INTERACTION_OPTION_ARROW_UP_TEXTURE =
-            texture("gui/villager_interaction_screen/option_button/interactions_options_arrow_up");
-    public static final ResourceLocation INTERACTION_OPTION_ARROW_DOWN_TEXTURE =
-            texture("gui/villager_interaction_screen/option_button/interactions_options_arrow_down");
-    public static final ResourceLocation INTERACTION_OPTION_SELECTION_ARROW_HOVER_TEXTURE =
-            texture("gui/villager_interaction_screen/option_button/interaction_option_selection_arrow_hover");
     public static final ResourceLocation CLIPBOARD_WORKFORCE_BASE_TEXTURE =
             texture("gui/clipboard_workforce/clipboard_base");
     public static final ResourceLocation CLIPBOARD_WORKFORCE_PAPER_TEXTURE =
@@ -186,10 +172,6 @@ public final class VillagerRetaliationClientAssets {
     public static final ResourceLocation COMBAT_VILLAGER_CEM_MODEL_LEGACY_FOLDER =
             ResourceLocation.withDefaultNamespace("optifine/cem/" + VillagerRetaliation.MOD_ID + "/villager.jem");
 
-    public static final ResourceLocation EXPERIMENTAL_NOTIFICATION_SHADER =
-            VillagerRetaliation.id("experimental_notification");
-    public static final ResourceLocation EXPERIMENTAL_SKILLS_SHADER =
-            VillagerRetaliation.id("experimental_skills");
     public static final ResourceLocation DIALOGUE_CINEMATIC_BARS_SHADER =
             VillagerRetaliation.id("dialogue_cinematic_bars");
 

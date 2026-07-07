@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.client.quest;
 
-import com.jvn.villagerretaliation.client.interaction.VillagerInteractionScreenShaderRenderer;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import net.minecraft.client.gui.GuiGraphics;
@@ -17,32 +16,6 @@ public final class VillagerQuestUi {
     private VillagerQuestUi() {
     }
 
-    public static void renderAccentBar(
-            GuiGraphics graphics,
-            int left,
-            int top,
-            int right,
-            int bottom,
-            float alpha,
-            int elapsedTicks,
-            boolean hovered) {
-        if (right <= left || bottom <= top) {
-            return;
-        }
-
-        VillagerInteractionScreenShaderRenderer.renderExperimentalSkillBar(
-                graphics,
-                left,
-                top,
-                right,
-                bottom,
-                ACCENT_COLOR,
-                1.0F,
-                alpha,
-                elapsedTicks,
-                hovered);
-    }
-
     public static void renderProgressBar(
             GuiGraphics graphics,
             int left,
@@ -51,8 +24,6 @@ public final class VillagerQuestUi {
             int height,
             float progress,
             float alpha,
-            int elapsedTicks,
-            boolean shaderFill,
             boolean highlight) {
         if (right <= left || height <= 0) {
             return;
@@ -62,11 +33,7 @@ public final class VillagerQuestUi {
         graphics.fill(left, top, right, bottom, VillagerClientUiUtil.withAlphaRound(BAR_BACKGROUND_COLOR, alpha));
         int fillRight = left + Math.round((right - left) * Mth.clamp(progress, 0.0F, 1.0F));
         if (fillRight > left) {
-            if (shaderFill) {
-                renderAccentBar(graphics, left, top, fillRight, bottom, alpha, elapsedTicks, false);
-            } else {
-                graphics.fill(left, top, fillRight, bottom, VillagerClientUiUtil.withAlphaRound(ACCENT_COLOR, alpha));
-            }
+            graphics.fill(left, top, fillRight, bottom, VillagerClientUiUtil.withAlphaRound(ACCENT_COLOR, alpha));
         }
         if (highlight) {
             int highlightHeight = VillagerAdaptiveGuiScale.unitAtLeast(1, 1);

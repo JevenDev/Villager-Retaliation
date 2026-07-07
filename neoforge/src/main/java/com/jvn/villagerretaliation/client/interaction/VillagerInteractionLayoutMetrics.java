@@ -27,7 +27,6 @@ final class VillagerInteractionLayoutMetrics {
     private static final int PROFILE_SKILL_ROW_GAP = 2;
     private static final int PROFILE_SKILL_BAR_HEIGHT = 4;
     private static final int PROFILE_SKILL_COLUMN_GAP = 8;
-    private static final int PROFILE_SKILL_COLUMNS = 2;
 
     private VillagerInteractionLayoutMetrics() {
     }
@@ -37,15 +36,15 @@ final class VillagerInteractionLayoutMetrics {
     }
 
     static int optionWidth() {
-        return VillagerInteractionExperimentalLayout.unit(OPTION_WIDTH);
+        return VillagerInteractionLayout.unit(OPTION_WIDTH);
     }
 
     static int optionHeight() {
-        return VillagerInteractionExperimentalLayout.unit(OPTION_HEIGHT);
+        return VillagerInteractionLayout.unit(OPTION_HEIGHT);
     }
 
     static int optionTextInset() {
-        return VillagerInteractionExperimentalLayout.unit(OPTION_TEXT_INSET);
+        return VillagerInteractionLayout.unit(OPTION_TEXT_INSET);
     }
 
     static float optionTextYOffset(int optionHeight) {
@@ -53,19 +52,19 @@ final class VillagerInteractionLayoutMetrics {
     }
 
     static int optionScrollbarOffset() {
-        return VillagerInteractionExperimentalLayout.unit(OPTION_SCROLLBAR_OFFSET);
+        return VillagerInteractionLayout.unit(OPTION_SCROLLBAR_OFFSET);
     }
 
     static int optionScrollbarWidth() {
-        return VillagerInteractionExperimentalLayout.unitAtLeast(OPTION_SCROLLBAR_WIDTH, 1);
+        return VillagerInteractionLayout.unitAtLeast(OPTION_SCROLLBAR_WIDTH, 1);
     }
 
     static int optionScrollbarHitWidth() {
-        return VillagerInteractionExperimentalLayout.unitAtLeast(OPTION_SCROLLBAR_HIT_WIDTH, 1);
+        return VillagerInteractionLayout.unitAtLeast(OPTION_SCROLLBAR_HIT_WIDTH, 1);
     }
 
     static int topBackButtonGap() {
-        return VillagerInteractionExperimentalLayout.unit(TOP_BACK_BUTTON_GAP);
+        return VillagerInteractionLayout.unit(TOP_BACK_BUTTON_GAP);
     }
 
     static int optionViewportHeight(int optionCount) {

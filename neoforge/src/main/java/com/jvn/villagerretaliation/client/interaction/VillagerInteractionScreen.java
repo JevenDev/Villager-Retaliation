@@ -226,7 +226,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_LOCKED_ICON_HEIGHT = 7;
     private static final int INTERACTION_LOCKED_ICON_TEXT_GAP = 3;
     private static final int INTERACTION_ICON_SIZE = 16;
-    private static final int INTERACTION_ICON_TEXT_GAP = 4;
     private static final int INTERACTION_TOOLTIP_MAX_WIDTH = 220;
     private static final ResourceLocation DIALOGUE_BLIP_SOUND_ID = VillagerRetaliation.id("dialogue");
     private static final SoundEvent DIALOGUE_BLIP_SOUND = SoundEvent.createVariableRangeEvent(DIALOGUE_BLIP_SOUND_ID);
@@ -332,8 +331,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private long interactionStateTransitionStartMillis = -1L;
     private int interactionStateTransitionStartOffsetY;
     private int interactionStateTransitionStartOffsetX;
-    private long experimentalSkillsAnimationStartMillis = -1L;
-    private long experimentalSkillsExitStartMillis = -1L;
     private Button giftButton;
     private String villagerDialogueText = "";
     private List<DialogueTextSegment> villagerDialogueTextSegments = List.of();
@@ -346,7 +343,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int lastDialogueBlipVisibleCharacters;
     private final GiftPageContext giftPageContext = new GiftPageContext();
     private final OptionListContext optionListContext = new OptionListContext();
-    private final NavigationChromeContext navigationChromeContext = new NavigationChromeContext();
+    private final NavigationContext navigationContext = new NavigationContext();
     private final ProfilePageContext profilePageContext = new ProfilePageContext();
     private final SkillsPageContext skillsPageContext = new SkillsPageContext();
 
@@ -449,7 +446,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.page = DialoguePage.TALK;
         }
         syncCameraFocusState();
-        VillagerInteractionExperimentalChrome.resetAnimation(this.professionUiColors);
+        VillagerInteractionUiAnimation.resetAnimation();
         this.animationStartMillis = Util.getMillis();
     }
 
@@ -567,7 +564,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.screenLayerZ());
         VillagerDialogueCinematicBars.render(graphics, this.width, this.height, screenVisibility(), this.cinematicBarSlant);
-        renderPositionedBackdrop(graphics);
         graphics.pose().pushPose();
         graphics.pose().translate(0.0F, totalOffsetY, 0.0F);
         renderInteractionContainer(graphics);
@@ -2073,12 +2069,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int previousInteractionTop = interactionContainerTopForPage(previousPage) + interactionStateTransitionOffsetY();
         rememberCurrentPageOptionListPosition();
         this.page = page;
-        if (page == DialoguePage.SKILLS && previousPage != DialoguePage.SKILLS) {
-            this.experimentalSkillsAnimationStartMillis = Util.getMillis();
-            this.experimentalSkillsExitStartMillis = -1L;
-        } else if (previousPage == DialoguePage.SKILLS && page != DialoguePage.SKILLS) {
-            this.experimentalSkillsExitStartMillis = Util.getMillis();
-        }
         rebuildOptions();
         restoreRememberedPageOptionListPosition(page);
         startInteractionStateTransition(previousPage, page, previousInteractionTop, interactionContainerTopForPage(page));
@@ -3475,70 +3465,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderTopBackButton(GuiGraphics graphics, int mouseX, int mouseY) {
-        VillagerInteractionNavigationChrome.renderTopBackButton(this.navigationChromeContext, graphics, mouseX, mouseY);
+        VillagerInteractionNavigation.renderTopBackButton(this.navigationContext, graphics, mouseX, mouseY);
     }
 
     private void renderHint(GuiGraphics graphics) {
-        VillagerInteractionNavigationChrome.renderHint(this.navigationChromeContext, graphics);
-    }
-
-    void renderPositionedHudChat(GuiGraphics graphics) {
-        if (experimentalSkillsBackdropVisible()) {
-            VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.hudLayerZ());
-            renderPositionedBackdrop(graphics);
-            VillagerClientUiUtil.popGuiLayer(graphics);
-        }
-    }
-
-    private void renderPositionedBackdrop(GuiGraphics graphics) {
-        if (experimentalSkillsBackdropVisible()) {
-            renderExperimentalSkillsBackdrop(graphics);
-        }
-    }
-
-    private void renderExperimentalSkillsBackdrop(GuiGraphics graphics) {
-        int left = Math.max(0, skillsPanelLeft() - skillsContainerPaddingX() - experimentalUnit(118));
-        int top = Math.max(0, skillsPanelTop() - experimentalUnit(26));
-        int right = Math.min(this.width, skillsPanelLeft() + skillsPanelWidth() + experimentalUnit(46));
-        int bottom = Math.min(this.height, skillsPanelTop() + skillsContainerHeight() + experimentalUnit(74));
-        VillagerInteractionScreenShaderRenderer.renderExperimentalSkillsPanel(
-                graphics,
-                left,
-                top,
-                right,
-                bottom,
-                VillagerInteractionExperimentalChrome.chromeAlpha(),
-                (Util.getMillis() % 1_000_000L) / 50.0F,
-                experimentalSkillsElapsedMillis(),
-                experimentalSkillsExitElapsedMillis(),
-                VillagerInteractionExperimentalChrome.backdropElapsedMillis(),
-                VillagerInteractionExperimentalChrome.backdropExitElapsedMillis(),
-                this.width,
-                this.height,
-                this.lastMouseX,
-                this.lastMouseY,
-                this.professionUiColors,
-                true);
-    }
-
-    private boolean experimentalSkillsBackdropVisible() {
-        return false;
-    }
-
-    private float experimentalSkillsElapsedMillis() {
-        long now = Util.getMillis();
-        if (this.experimentalSkillsAnimationStartMillis < 0L) {
-            this.experimentalSkillsAnimationStartMillis = now;
-        }
-        return now - this.experimentalSkillsAnimationStartMillis;
-    }
-
-    private float experimentalSkillsExitElapsedMillis() {
-        float chromeExitElapsedMillis = VillagerInteractionExperimentalChrome.backdropExitElapsedMillis();
-        if (chromeExitElapsedMillis >= 0.0F) {
-            return chromeExitElapsedMillis;
-        }
-        return this.experimentalSkillsExitStartMillis < 0L ? -1.0F : Util.getMillis() - this.experimentalSkillsExitStartMillis;
+        VillagerInteractionNavigation.renderHint(this.navigationContext, graphics);
     }
 
     private boolean isFamilyPageActive() {
@@ -3756,11 +3687,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
-        int left = optionsLeft() - experimentalUnit(18);
-        int right = optionsLeft() + optionWidth() + experimentalUnit(4);
+        int left = optionsLeft() - uiUnit(18);
+        int right = optionsLeft() + optionWidth() + uiUnit(4);
         int top = optionsTop();
         int bottom = top + optionViewportHeight();
-        int verticalPadding = experimentalUnit(4);
+        int verticalPadding = uiUnit(4);
         return mouseX >= left && mouseX <= right && mouseY >= top - verticalPadding && mouseY <= bottom + verticalPadding;
     }
 
@@ -3793,16 +3724,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         TopBackButtonBounds bounds = topBackButtonBounds();
-        int verticalPadding = experimentalUnitAtLeast(2, 1);
+        int verticalPadding = uiUnitAtLeast(2, 1);
         return VillagerClientUiUtil.containsInclusive(mouseX, mouseY, bounds.left(), bounds.top() - verticalPadding, bounds.right(), bounds.bottom() + verticalPadding);
     }
 
     private TopBackButtonBounds topBackButtonBounds() {
-        float textScale = experimentalScaleFactor();
+        float textScale = uiScaleFactor();
         int textWidth = Math.round(this.font.width(backLabel()) * textScale);
         int textHeight = Math.round(this.font.lineHeight * textScale);
-        int left = experimentalOptionTextLeft();
-        int contentTop = experimentalOptionViewportTop();
+        int left = optionTextLeft();
+        int contentTop = optionViewportTop();
         int top = contentTop - textHeight - topBackButtonGap();
         int bottom = top + textHeight;
         return new TopBackButtonBounds(left, left + textWidth, top, bottom);
@@ -3891,23 +3822,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (usesInteractionOptionStack()) {
             return interactionOptionStackTop();
         }
-        return experimentalOptionsTop(optionViewportHeight());
+        return optionsTopForViewport(optionViewportHeight());
     }
 
-    private int experimentalOptionViewportTop() {
-        return experimentalOptionsTop(experimentalFullOptionViewportHeight());
+    private int optionViewportTop() {
+        return optionsTopForViewport(fullOptionViewportHeight());
     }
 
-    private int experimentalOptionViewportBottom() {
-        return experimentalOptionViewportTop() + experimentalFullOptionViewportHeight();
+    private int optionViewportBottom() {
+        return optionViewportTop() + fullOptionViewportHeight();
     }
 
-    private int experimentalOptionTextLeft() {
-        return experimentalOptionsLeft() + optionTextInset();
+    private int optionTextLeft() {
+        return layoutOptionsLeft() + optionTextInset();
     }
 
-    private int experimentalOptionsTop(int viewportHeight) {
-        return VillagerInteractionExperimentalLayout.optionsTop(this.height, viewportHeight);
+    private int optionsTopForViewport(int viewportHeight) {
+        return VillagerInteractionLayout.optionsTop(this.height, viewportHeight);
     }
 
     private int conversationInfoTop() {
@@ -3918,22 +3849,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (usesInteractionOptionStack()) {
             return interactionOptionStackLeft();
         }
-        return experimentalOptionsLeft();
+        return layoutOptionsLeft();
     }
 
     private int contentLeft() {
         if (this.page == DialoguePage.PROFILE || this.page == DialoguePage.SKILLS) {
-            return experimentalPageLeft();
+            return layoutPageLeft();
         }
         return optionsLeft();
     }
 
-    private int experimentalOptionsLeft() {
-        return VillagerInteractionExperimentalLayout.optionsLeft(this.width, optionWidth());
+    private int layoutOptionsLeft() {
+        return VillagerInteractionLayout.optionsLeft(this.width, optionWidth());
     }
 
-    private int experimentalPageLeft() {
-        return VillagerInteractionExperimentalLayout.pageLeft(this.width, optionWidth());
+    private int layoutPageLeft() {
+        return VillagerInteractionLayout.pageLeft(this.width, optionWidth());
     }
 
     private String reputationText() {
@@ -4042,16 +3973,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return VillagerInteractionLayoutMetrics.topBackButtonGap();
     }
 
-    private float experimentalScaleFactor() {
-        return VillagerInteractionExperimentalLayout.scaleFactor();
+    private float uiScaleFactor() {
+        return VillagerInteractionLayout.scaleFactor();
     }
 
-    private int experimentalUnit(int guiScaleThreeValue) {
-        return VillagerInteractionExperimentalLayout.unit(guiScaleThreeValue);
+    private int uiUnit(int guiScaleThreeValue) {
+        return VillagerInteractionLayout.unit(guiScaleThreeValue);
     }
 
-    private int experimentalUnitAtLeast(int guiScaleThreeValue, int minimum) {
-        return VillagerInteractionExperimentalLayout.unitAtLeast(guiScaleThreeValue, minimum);
+    private int uiUnitAtLeast(int guiScaleThreeValue, int minimum) {
+        return VillagerInteractionLayout.unitAtLeast(guiScaleThreeValue, minimum);
     }
 
     private int optionViewportHeight() {
@@ -4065,7 +3996,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return INTERACTION_OPTION_VISIBLE_ROWS * INTERACTION_OPTION_STRIDE;
     }
 
-    private int experimentalFullOptionViewportHeight() {
+    private int fullOptionViewportHeight() {
         return VillagerInteractionLayoutMetrics.fullOptionViewportHeight();
     }
 
@@ -4346,7 +4277,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (usesInteractionOptionStack()) {
             return optionsLeft() + optionWidth() + 1;
         }
-        return VillagerInteractionExperimentalLayout.scrollbarLeft(
+        return VillagerInteractionLayout.scrollbarLeft(
                 this.width,
                 optionsLeft(),
                 optionWidth(),
@@ -4799,18 +4730,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
-        public float experimentalTextScale() {
-            return VillagerInteractionScreen.this.experimentalScaleFactor();
+        public float textScale() {
+            return VillagerInteractionScreen.this.uiScaleFactor();
         }
 
         @Override
-        public int experimentalUnit(int value) {
-            return VillagerInteractionScreen.this.experimentalUnit(value);
+        public int uiUnit(int value) {
+            return VillagerInteractionScreen.this.uiUnit(value);
         }
 
         @Override
-        public int experimentalUnitAtLeast(int value, int minimum) {
-            return VillagerInteractionScreen.this.experimentalUnitAtLeast(value, minimum);
+        public int uiUnitAtLeast(int value, int minimum) {
+            return VillagerInteractionScreen.this.uiUnitAtLeast(value, minimum);
         }
 
         @Override
@@ -4977,7 +4908,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private final class NavigationChromeContext implements VillagerInteractionNavigationChrome.Context {
+    private final class NavigationContext implements VillagerInteractionNavigation.Context {
         @Override
         public Font font() {
             return VillagerInteractionScreen.this.font;
@@ -4998,7 +4929,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.page == DialoguePage.SKILLS) {
                 return VillagerInteractionScreen.this.scrollbarRight();
             }
-            return VillagerInteractionScreen.this.width - VillagerInteractionScreen.this.experimentalUnit(8);
+            return VillagerInteractionScreen.this.width - VillagerInteractionScreen.this.uiUnit(8);
         }
 
         @Override
@@ -5043,11 +4974,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public float textScale() {
-            return VillagerInteractionScreen.this.experimentalScaleFactor();
+            return VillagerInteractionScreen.this.uiScaleFactor();
         }
 
         @Override
-        public float chromeAlpha() {
+        public float uiAlpha() {
             return 1.0F;
         }
     }
@@ -5063,7 +4994,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return VillagerInteractionScreen.this.profileContainerLeft();
             }
-            return VillagerInteractionScreen.this.experimentalOptionTextLeft() - VillagerInteractionScreen.this.experimentalUnit(6);
+            return VillagerInteractionScreen.this.optionTextLeft() - VillagerInteractionScreen.this.uiUnit(6);
         }
 
         @Override
@@ -5089,7 +5020,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return PROFILE_CONTAINER_CHART_RADIUS;
             }
-            return VillagerInteractionScreen.this.experimentalUnit(PROFILE_CHART_RADIUS);
+            return VillagerInteractionScreen.this.uiUnit(PROFILE_CHART_RADIUS);
         }
 
         @Override
@@ -5097,7 +5028,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return PROFILE_CONTAINER_CHART_CENTER_X_OFFSET;
             }
-            return VillagerInteractionScreen.this.experimentalUnit(8);
+            return VillagerInteractionScreen.this.uiUnit(8);
         }
 
         @Override
@@ -5105,7 +5036,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return PROFILE_CONTAINER_CHART_CENTER_Y_OFFSET;
             }
-            return VillagerInteractionScreen.this.experimentalUnit(16);
+            return VillagerInteractionScreen.this.uiUnit(16);
         }
 
         @Override
@@ -5113,7 +5044,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return PROFILE_CONTAINER_CHART_LABEL_X_OFFSET;
             }
-            return VillagerInteractionScreen.this.experimentalUnit(18);
+            return VillagerInteractionScreen.this.uiUnit(18);
         }
 
         @Override
@@ -5121,7 +5052,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return PROFILE_CONTAINER_CHART_LABEL_Y_OFFSET;
             }
-            return VillagerInteractionScreen.this.experimentalUnit(14);
+            return VillagerInteractionScreen.this.uiUnit(14);
         }
 
         @Override
@@ -5129,7 +5060,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return PROFILE_CONTAINER_CHART_LOADING_Y_OFFSET;
             }
-            return VillagerInteractionScreen.this.experimentalUnit(32);
+            return VillagerInteractionScreen.this.uiUnit(32);
         }
 
         @Override
@@ -5137,7 +5068,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return VillagerInteractionScreen.this.profileContainerTop() + PROFILE_CONTAINER_CHART_TOP_PADDING;
             }
-            return VillagerInteractionScreen.this.topBackButtonBounds().bottom() + VillagerInteractionScreen.this.experimentalUnit(7);
+            return VillagerInteractionScreen.this.topBackButtonBounds().bottom() + VillagerInteractionScreen.this.uiUnit(7);
         }
 
         @Override
@@ -5147,11 +5078,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                         + PROFILE_CONTAINER_HEIGHT
                         - PROFILE_CONTAINER_CHART_BOTTOM_PADDING;
             }
-            int hintHeight = Math.round(VillagerInteractionScreen.this.font.lineHeight * VillagerInteractionScreen.this.experimentalScaleFactor());
-            int screenBottomLimit = VillagerInteractionScreen.this.height - hintHeight - VillagerInteractionScreen.this.experimentalUnit(8);
+            int hintHeight = Math.round(VillagerInteractionScreen.this.font.lineHeight * VillagerInteractionScreen.this.uiScaleFactor());
+            int screenBottomLimit = VillagerInteractionScreen.this.height - hintHeight - VillagerInteractionScreen.this.uiUnit(8);
             int viewportBottomLimit = VillagerInteractionScreen.this.conversationInfoTop()
                     + VillagerInteractionScreen.this.rootOptionViewportHeight()
-                    - VillagerInteractionScreen.this.experimentalUnit(4);
+                    - VillagerInteractionScreen.this.uiUnit(4);
             return Math.min(screenBottomLimit, viewportBottomLimit);
         }
 
@@ -5160,7 +5091,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return 1.0F;
             }
-            return VillagerInteractionScreen.this.experimentalScaleFactor();
+            return VillagerInteractionScreen.this.uiScaleFactor();
         }
 
         @Override
@@ -5193,7 +5124,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return PROFILE_CONTAINER_CHART_POINT_RADIUS;
             }
-            return VillagerInteractionScreen.this.experimentalUnitAtLeast(1, 1);
+            return VillagerInteractionScreen.this.uiUnitAtLeast(1, 1);
         }
 
         @Override
@@ -5201,7 +5132,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return PROFILE_CONTAINER_CHART_POINT_HOVER_RADIUS;
             }
-            return VillagerInteractionScreen.this.experimentalUnitAtLeast(2, 1);
+            return VillagerInteractionScreen.this.uiUnitAtLeast(2, 1);
         }
 
         @Override
@@ -5209,7 +5140,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (VillagerInteractionScreen.this.isEmbeddedProfilePanelActive()) {
                 return PROFILE_CONTAINER_CHART_POINT_HIT_RADIUS;
             }
-            return VillagerInteractionScreen.this.experimentalUnitAtLeast(PROFILE_CHART_POINT_HIT_RADIUS, 2);
+            return VillagerInteractionScreen.this.uiUnitAtLeast(PROFILE_CHART_POINT_HIT_RADIUS, 2);
         }
 
         @Override
@@ -5256,7 +5187,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int skillInfoTextLeft() {
-            return VillagerInteractionScreen.this.experimentalOptionTextLeft();
+            return VillagerInteractionScreen.this.optionTextLeft();
         }
 
         @Override
@@ -5266,7 +5197,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public int skillInfoScissorRight() {
-            return VillagerInteractionScreen.this.optionsScrollbarLeft() - VillagerInteractionScreen.this.experimentalUnit(4);
+            return VillagerInteractionScreen.this.optionsScrollbarLeft() - VillagerInteractionScreen.this.uiUnit(4);
         }
 
         @Override
@@ -5330,13 +5261,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
-        public float experimentalChromeAlpha() {
-            return VillagerInteractionExperimentalChrome.chromeAlpha();
+        public float uiAlpha() {
+            return VillagerInteractionUiAnimation.uiAlpha();
         }
 
         @Override
-        public int experimentalUnit(int value) {
-            return VillagerInteractionScreen.this.experimentalUnit(value);
+        public int uiUnit(int value) {
+            return VillagerInteractionScreen.this.uiUnit(value);
         }
 
         @Override
@@ -5365,8 +5296,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
-        public float experimentalTextScale() {
-            return VillagerInteractionScreen.this.experimentalScaleFactor();
+        public float textScale() {
+            return VillagerInteractionScreen.this.uiScaleFactor();
         }
 
         @Override

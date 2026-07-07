@@ -86,8 +86,8 @@ final class VillagerInteractionSkillsPage {
     }
 
     static int skillsInfoContentHeight(Context context) {
-        float scale = context.experimentalTextScale();
-        int width = VillagerInteractionUiUtil.scaledWrapWidth(context.optionWidth() - context.experimentalUnit(12), scale);
+        float scale = context.textScale();
+        int width = VillagerInteractionUiUtil.scaledWrapWidth(context.optionWidth() - context.uiUnit(12), scale);
         int y = context.optionStride();
         Optional<VillagerProfileClientCache.DisplayEntry> entry = context.profileEntry();
         if (context.selectedSkillDetails() != null && entry.isPresent()) {
@@ -103,19 +103,19 @@ final class VillagerInteractionSkillsPage {
             y = wrappedInfoLineBottom(
                     context.font(),
                     Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(context.selectedSkillDetails())),
-                    y + context.experimentalUnit(2),
+                    y + context.uiUnit(2),
                     width,
                     scale);
             return wrappedInfoLineBottom(
                     context.font(),
                     Component.literal(context.localizedExpandedSkillDescription(context.selectedSkillDetails())),
-                    y + context.experimentalUnit(4),
+                    y + context.uiUnit(4),
                     width,
                     scale);
         }
         y = wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), y, width, scale);
-        y = wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), y + context.experimentalUnit(4), width, scale);
-        return wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), y + context.experimentalUnit(4), width, scale);
+        y = wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), y + context.uiUnit(4), width, scale);
+        return wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), y + context.uiUnit(4), width, scale);
     }
 
     private static void renderSkillsInfo(Context context, GuiGraphics graphics) {
@@ -123,8 +123,8 @@ final class VillagerInteractionSkillsPage {
         int viewportTop = context.skillInfoViewportTop();
         int viewportBottom = context.skillInfoViewportBottom();
         int top = Mth.floor(viewportTop + context.optionTextYOffset() - context.skillScroll());
-        float scale = context.experimentalTextScale();
-        int width = VillagerInteractionUiUtil.scaledWrapWidth(context.optionWidth() - context.experimentalUnit(12), scale);
+        float scale = context.textScale();
+        int width = VillagerInteractionUiUtil.scaledWrapWidth(context.optionWidth() - context.uiUnit(12), scale);
         int scissorOffsetY = context.guiScissorOffsetY();
         int scissorOffsetX = context.guiScissorOffsetX();
         graphics.enableScissor(
@@ -160,19 +160,19 @@ final class VillagerInteractionSkillsPage {
                     graphics,
                     Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(context.selectedSkillDetails())),
                     left,
-                    y + context.experimentalUnit(2),
+                    y + context.uiUnit(2),
                     width);
             renderWrappedSkillInfoLine(
                     context,
                     graphics,
                     Component.literal(context.localizedExpandedSkillDescription(context.selectedSkillDetails())),
                     left,
-                    y + context.experimentalUnit(4),
+                    y + context.uiUnit(4),
                     width);
         } else {
             y = renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), left, y, width);
-            y = renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + context.experimentalUnit(4), width);
-            renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + context.experimentalUnit(4), width);
+            y = renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + context.uiUnit(4), width);
+            renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + context.uiUnit(4), width);
         }
         graphics.disableScissor();
         context.renderSkillInfoScrollbar(graphics);
@@ -190,8 +190,8 @@ final class VillagerInteractionSkillsPage {
         int viewportBottom = context.skillInfoViewportBottom();
         for (FormattedCharSequence line : context.font().split(component, width)) {
             float alpha = context.skillInfoEdgeFadeAlpha(y, viewportTop, viewportBottom);
-            VillagerInteractionUiUtil.drawScaledString(graphics, context.font(), line, left, y, VillagerInteractionUiUtil.withAlpha(context.infoSecondaryColor(), alpha), context.experimentalTextScale());
-            y += VillagerInteractionUiUtil.scaledLineStep(context.font(), context.experimentalTextScale());
+            VillagerInteractionUiUtil.drawScaledString(graphics, context.font(), line, left, y, VillagerInteractionUiUtil.withAlpha(context.infoSecondaryColor(), alpha), context.textScale());
+            y += VillagerInteractionUiUtil.scaledLineStep(context.font(), context.textScale());
         }
         return y;
     }
@@ -349,9 +349,9 @@ final class VillagerInteractionSkillsPage {
 
         int profileSkillColumnGap();
 
-        float experimentalChromeAlpha();
+        float uiAlpha();
 
-        int experimentalUnit(int value);
+        int uiUnit(int value);
 
         int infoValueColor();
 
@@ -363,7 +363,7 @@ final class VillagerInteractionSkillsPage {
 
         float optionTextYOffset();
 
-        float experimentalTextScale();
+        float textScale();
 
         int skillInfoViewportTop();
 

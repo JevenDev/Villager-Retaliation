@@ -3,8 +3,8 @@ package com.jvn.villagerretaliation.client.interaction;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 
-final class VillagerInteractionNavigationChrome {
-    private VillagerInteractionNavigationChrome() {
+final class VillagerInteractionNavigation {
+    private VillagerInteractionNavigation() {
     }
 
     static void renderTopBackButton(Context context, GuiGraphics graphics, int mouseX, int mouseY) {
@@ -17,8 +17,8 @@ final class VillagerInteractionNavigationChrome {
         int top = context.topBackTop();
         int bottom = context.topBackBottom();
         float scale = context.textScale();
-        float alpha = context.chromeAlpha();
-        if (!VillagerInteractionExperimentalChrome.shouldDrawText(alpha)) {
+        float alpha = context.uiAlpha();
+        if (!VillagerInteractionUiAnimation.shouldDrawText(alpha)) {
             return;
         }
         boolean hovered = context.topBackButtonHovered(mouseX, mouseY);
@@ -36,8 +36,8 @@ final class VillagerInteractionNavigationChrome {
         String hintText = context.hintText();
         Font font = context.font();
         float scale = context.textScale();
-        float alpha = context.chromeAlpha();
-        if (!VillagerInteractionExperimentalChrome.shouldDrawText(alpha)) {
+        float alpha = context.uiAlpha();
+        if (!VillagerInteractionUiAnimation.shouldDrawText(alpha)) {
             return;
         }
         int width = Math.round(font.width(hintText) * scale);
@@ -85,6 +85,6 @@ final class VillagerInteractionNavigationChrome {
 
         float textScale();
 
-        float chromeAlpha();
+        float uiAlpha();
     }
 }

@@ -115,20 +115,20 @@ final class VillagerInteractionGiftPage {
     }
 
     static int giftInventoryLeft(int optionsLeft, int optionWidth, int screenWidth) {
-        float scale = VillagerInteractionExperimentalLayout.scaleFactor();
+        float scale = VillagerInteractionLayout.scaleFactor();
         int scaledInventoryWidth = Math.round(INVENTORY_TEXTURE_WIDTH * scale);
         int preferredLeft = optionsLeft + optionWidth - scaledInventoryWidth;
-        int edgeMargin = VillagerInteractionExperimentalLayout.unitAtLeast(8, 4);
+        int edgeMargin = VillagerInteractionLayout.unitAtLeast(8, 4);
         int maxLeft = Math.max(edgeMargin, screenWidth - scaledInventoryWidth - edgeMargin);
         return Mth.clamp(preferredLeft, edgeMargin, maxLeft);
     }
 
     static int giftInventoryTop(int backButtonBottom, int screenHeight) {
-        float scale = VillagerInteractionExperimentalLayout.scaleFactor();
-        int edgeMargin = VillagerInteractionExperimentalLayout.unitAtLeast(8, 4);
+        float scale = VillagerInteractionLayout.scaleFactor();
+        int edgeMargin = VillagerInteractionLayout.unitAtLeast(8, 4);
         int scaledInventoryHeight = Math.round(INVENTORY_TEXTURE_HEIGHT * scale);
         int scaledButtonClearance = Math.round((INVENTORY_BUTTON_HEIGHT + INVENTORY_BUTTON_GAP) * scale);
-        int preferredTop = backButtonBottom + VillagerInteractionExperimentalLayout.unit(INVENTORY_BACK_BUTTON_GAP);
+        int preferredTop = backButtonBottom + VillagerInteractionLayout.unit(INVENTORY_BACK_BUTTON_GAP);
         int minTop = edgeMargin + scaledButtonClearance;
         int maxTop = Math.max(minTop, screenHeight - scaledInventoryHeight - edgeMargin);
         return Mth.clamp(preferredTop, minTop, maxTop);
@@ -138,7 +138,7 @@ final class VillagerInteractionGiftPage {
         return new GiftTransform(
                 giftInventoryLeft(optionsLeft, optionWidth, screenWidth),
                 giftInventoryTop(backButtonBottom, screenHeight),
-                VillagerInteractionExperimentalLayout.scaleFactor());
+                VillagerInteractionLayout.scaleFactor());
     }
 
     private static void renderGiftSlots(Context context, GuiGraphics graphics, int left, int top, int hoveredSlot) {

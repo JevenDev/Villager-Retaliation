@@ -3,7 +3,7 @@ package com.jvn.villagerretaliation.client.interaction;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
 import net.minecraft.util.Mth;
 
-final class VillagerInteractionExperimentalLayout {
+final class VillagerInteractionLayout {
     private static final float OPTIONS_LEFT_RATIO = 0.7F;
     private static final float OPTIONS_TOP_RATIO = 0.9F;
     private static final float PAGE_LEFT_RATIO = 0.7F;
@@ -14,7 +14,7 @@ final class VillagerInteractionExperimentalLayout {
     private static final int INFO_TO_OPTIONS_GAP = 28;
     private static final int PAGE_RIGHT_MARGIN = 20;
 
-    private VillagerInteractionExperimentalLayout() {
+    private VillagerInteractionLayout() {
     }
 
     static float scaleFactor() {
