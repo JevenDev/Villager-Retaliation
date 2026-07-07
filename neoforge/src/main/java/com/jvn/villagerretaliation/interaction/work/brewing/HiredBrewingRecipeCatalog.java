@@ -30,6 +30,7 @@ import net.minecraft.world.level.Level;
 
 public final class HiredBrewingRecipeCatalog {
     private static final int MAX_ROUTE_DEPTH = 8;
+    private static volatile CatalogSnapshot cachedCatalog;
 
     private HiredBrewingRecipeCatalog() {
     }
@@ -38,7 +39,30 @@ public final class HiredBrewingRecipeCatalog {
         if (level == null) {
             return List.of();
         }
-        PotionBrewing brewing = level.potionBrewing();
+        return snapshot(level.potionBrewing()).routes();
+    }
+
+    public static Optional<BrewingRoute> find(Level level, ResourceLocation itemId, ResourceLocation potionId) {
+        if (level == null || itemId == null || potionId == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(snapshot(level.potionBrewing()).byOutput().get(new BrewingKey(itemId, potionId)));
+    }
+
+    private static CatalogSnapshot snapshot(PotionBrewing brewing) {
+        CatalogSnapshot snapshot = cachedCatalog;
+        if (snapshot != null && snapshot.brewing() == brewing) {
+            return snapshot;
+        }
+        snapshot = buildSnapshot(brewing);
+        cachedCatalog = snapshot;
+        return snapshot;
+    }
+
+    private static CatalogSnapshot buildSnapshot(PotionBrewing brewing) {
+        if (brewing == null) {
+            return new CatalogSnapshot(null, List.of(), Map.of());
+        }
         List<Item> ingredients = BuiltInRegistries.ITEM.stream()
                 .filter(item -> brewing.isIngredient(new ItemStack(item)))
                 .toList();
@@ -84,16 +108,11 @@ public final class HiredBrewingRecipeCatalog {
                     entry.getValue()));
         }
         routes.sort(Comparator.comparing(route -> route.output().getHoverName().getString()));
-        return routes;
-    }
-
-    public static Optional<BrewingRoute> find(Level level, ResourceLocation itemId, ResourceLocation potionId) {
-        if (itemId == null || potionId == null) {
-            return Optional.empty();
+        Map<BrewingKey, BrewingRoute> byOutput = new HashMap<>();
+        for (BrewingRoute route : routes) {
+            byOutput.put(new BrewingKey(route.itemId(), route.potionId()), route);
         }
-        return routes(level).stream()
-                .filter(route -> route.itemId().equals(itemId) && route.potionId().equals(potionId))
-                .findFirst();
+        return new CatalogSnapshot(brewing, List.copyOf(routes), Map.copyOf(byOutput));
     }
 
     public static List<BrewingPotionChoice> potionChoices(Level level) {
@@ -265,6 +284,9 @@ public final class HiredBrewingRecipeCatalog {
     }
 
     private record BrewingKey(ResourceLocation itemId, ResourceLocation potionId) {
+    }
+
+    private record CatalogSnapshot(PotionBrewing brewing, List<BrewingRoute> routes, Map<BrewingKey, BrewingRoute> byOutput) {
     }
 
     private record SearchState(BrewingKey key, ItemStack stack, List<Item> ingredients) {

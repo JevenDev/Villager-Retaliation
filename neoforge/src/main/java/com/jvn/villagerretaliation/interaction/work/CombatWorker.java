@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,8 +25,10 @@ import net.minecraft.world.level.pathfinder.Path;
 
 public final class CombatWorker implements HiredRoleWorker {
     private static final String NEXT_PATROL_GAME_TIME_TAG = "CombatNextPatrolGameTime";
+    private static final String NEXT_TARGET_SCAN_GAME_TIME_TAG = "CombatNextTargetScanGameTime";
     private static final int MIN_PATROL_DELAY_TICKS = 60;
     private static final int RANDOM_PATROL_DELAY_TICKS = 80;
+    private static final int TARGET_SCAN_INTERVAL_TICKS = 20;
     private static final double PATROL_SPEED = 0.78D;
     private static final int PATROL_TARGET_ATTEMPTS = 10;
     private static final double TARGET_SCAN_RADIUS_PADDING = 4.0D;
@@ -84,6 +87,7 @@ public final class CombatWorker implements HiredRoleWorker {
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
         HiredRoleWorker.super.stop(level, villager, context);
         context.state().remove(NEXT_PATROL_GAME_TIME_TAG);
+        context.state().remove(NEXT_TARGET_SCAN_GAME_TIME_TAG);
         if (villager.getTarget() == null && villager.getLastHurtByMob() == null) {
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             villager.getBrain().setDefaultActivity(Activity.IDLE);
@@ -96,6 +100,12 @@ public final class CombatWorker implements HiredRoleWorker {
             return false;
         }
 
+        long gameTime = level.getGameTime();
+        CompoundTag state = context.state();
+        if (gameTime < state.getLong(NEXT_TARGET_SCAN_GAME_TIME_TAG)) {
+            return false;
+        }
+        state.putLong(NEXT_TARGET_SCAN_GAME_TIME_TAG, gameTime + TARGET_SCAN_INTERVAL_TICKS);
         return findNearestTarget(level, villager, context, mode)
                 .filter(target -> VillagerRetaliationHandler.engageCustomTarget(villager, target, false))
                 .isPresent();

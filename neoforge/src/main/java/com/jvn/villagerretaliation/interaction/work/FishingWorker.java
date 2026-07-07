@@ -40,9 +40,11 @@ public final class FishingWorker extends AbstractBlockWorker {
     private static final String CATCH_OVERFLOW_TAG = "FishingCatchOverflow";
     private static final String COLLECTING_ROD_TAG = "FishingCollectingRod";
     private static final String DEPOSITING_OUTPUTS_TAG = "FishingDepositingOutputs";
+    private static final String NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG = "NextFishingSpotScanGameTime";
     private static final int MAX_WATER_PATH_ATTEMPTS = 32;
     private static final int APPROACH_RADIUS = 6;
     private static final int WATER_SEARCH_MARGIN = 8;
+    private static final int NO_FISHING_SPOT_SCAN_COOLDOWN_TICKS = 100;
     private static final double MAX_CAST_DISTANCE_SQR = 64.0D;
     private static final double IDEAL_CAST_HORIZONTAL_DISTANCE = 5.0D;
     private static final double MIN_COMFORTABLE_CAST_HORIZONTAL_DISTANCE = 3.5D;
@@ -380,7 +382,12 @@ public final class FishingWorker extends AbstractBlockWorker {
     private FishingSpot findFishingSpot(ServerLevel level, Villager villager, HiredWorkContext context) {
         FishingSpot remembered = rememberedFishingSpot(level, context);
         if (remembered != null) {
+            context.state().remove(NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG);
             return remembered;
+        }
+        long gameTime = level.getGameTime();
+        if (gameTime < context.state().getLong(NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG)) {
+            return null;
         }
         List<BlockPos> water = new ArrayList<>();
         for (BlockPos raw : waterSearchPositions(context)) {
@@ -399,11 +406,18 @@ public final class FishingWorker extends AbstractBlockWorker {
             }
         }
         if (currentSpot != null && hasComfortableCastDistance(currentSpot.approach(), currentSpot.water())) {
+            context.state().remove(NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG);
             return currentSpot;
         }
         FishingSpot repositionedSpot = bestRepositionedFishingSpot(level, villager, context, water);
         if (repositionedSpot != null) {
+            context.state().remove(NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG);
             return repositionedSpot;
+        }
+        if (currentSpot == null) {
+            context.state().putLong(NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG, gameTime + NO_FISHING_SPOT_SCAN_COOLDOWN_TICKS);
+        } else {
+            context.state().remove(NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG);
         }
         return currentSpot;
     }
@@ -590,6 +604,7 @@ public final class FishingWorker extends AbstractBlockWorker {
     private void rememberFishingTarget(HiredWorkContext context, FishingSpot spot) {
         context.state().putLong(ACTIVE_WATER_POS_TAG, spot.water().asLong());
         context.state().putLong(ACTIVE_APPROACH_POS_TAG, spot.approach().asLong());
+        context.state().remove(NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG);
     }
 
     private void clearHookState(HiredWorkContext context) {

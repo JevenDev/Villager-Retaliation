@@ -5,7 +5,9 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -164,27 +166,41 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 bounds,
                 animal -> isEligibleAnimal(level, context, animal, selectedTargets)));
         animals.sort(Comparator.comparingDouble(villager::distanceToSqr));
+        Map<ResourceLocation, List<Animal>> animalsByType = new LinkedHashMap<>();
+        for (Animal animal : animals) {
+            animalsByType.computeIfAbsent(typeId(animal), ignored -> new ArrayList<>()).add(animal);
+        }
 
         boolean hasPairWithoutFood = false;
         BreedingPair best = null;
         double bestScore = Double.MAX_VALUE;
-        for (int i = 0; i < animals.size(); i++) {
-            Animal first = animals.get(i);
-            for (int j = i + 1; j < animals.size(); j++) {
-                Animal second = animals.get(j);
-                if (!canAttemptPair(first, second)) {
-                    continue;
-                }
-                Predicate<ItemStack> food = stack -> first.isFood(stack) && second.isFood(stack);
-                int carried = HiredSupplyCrafting.countCarried(context, food);
-                if (carried < 2 && AssignedStorageService.countItems(villager, food) <= 0) {
-                    hasPairWithoutFood = true;
-                    continue;
-                }
-                double score = villager.distanceToSqr(first) + first.distanceToSqr(second) * 0.25D;
-                if (score < bestScore) {
-                    bestScore = score;
-                    best = new BreedingPair(first, second, food, typeId(first));
+        Map<ResourceLocation, Integer> carriedFoodByType = new LinkedHashMap<>();
+        Map<ResourceLocation, Boolean> storedFoodByType = new LinkedHashMap<>();
+        for (Map.Entry<ResourceLocation, List<Animal>> entry : animalsByType.entrySet()) {
+            ResourceLocation animalType = entry.getKey();
+            List<Animal> sameTypeAnimals = entry.getValue();
+            for (int i = 0; i < sameTypeAnimals.size(); i++) {
+                Animal first = sameTypeAnimals.get(i);
+                for (int j = i + 1; j < sameTypeAnimals.size(); j++) {
+                    Animal second = sameTypeAnimals.get(j);
+                    if (!canAttemptPair(first, second)) {
+                        continue;
+                    }
+                    Predicate<ItemStack> food = stack -> first.isFood(stack) && second.isFood(stack);
+                    int carried = carriedFoodByType.computeIfAbsent(
+                            animalType,
+                            ignored -> HiredSupplyCrafting.countCarried(context, food));
+                    if (carried < 2 && !storedFoodByType.computeIfAbsent(
+                            animalType,
+                            ignored -> AssignedStorageService.countItems(villager, food) > 0)) {
+                        hasPairWithoutFood = true;
+                        continue;
+                    }
+                    double score = villager.distanceToSqr(first) + first.distanceToSqr(second) * 0.25D;
+                    if (score < bestScore) {
+                        bestScore = score;
+                        best = new BreedingPair(first, second, food, animalType);
+                    }
                 }
             }
         }
