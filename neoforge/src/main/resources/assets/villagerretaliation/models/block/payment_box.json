@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "particle": "villagerretaliation:block/payment_box_side",
+    "down": "villagerretaliation:block/payment_box_bottom",
+    "up": "villagerretaliation:block/payment_box_top",
+    "north": "villagerretaliation:block/payment_box_front",
+    "south": "villagerretaliation:block/payment_box_front",
+    "east": "villagerretaliation:block/payment_box_side",
+    "west": "villagerretaliation:block/payment_box_side"
+  }
+}

@@ -92,6 +92,10 @@ public final class PaymentBoxMenu extends AbstractContainerMenu {
         return ROW_COUNT;
     }
 
+    boolean isContainer(Container container) {
+        return this.container == container;
+    }
+
     private void addPaymentSlots(Container container) {
         for (int row = 0; row < ROW_COUNT; row++) {
             for (int column = 0; column < 9; column++) {

@@ -890,7 +890,7 @@ public final class VillagerWorkerGameTests {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         BlockPos paymentRel = new BlockPos(2, 2, 1);
         BlockPos payment = helper.absolutePos(paymentRel);
-        setBlock(helper, paymentRel, VillagerRetaliationBlocks.OAK_PAYMENT_BOX.get().defaultBlockState());
+        setBlock(helper, paymentRel, VillagerRetaliationBlocks.PAYMENT_BOX.get().defaultBlockState());
         container(level, payment).setItem(0, new ItemStack(Items.EMERALD, 16));
         AssignedStorageService.removeAssignedContainer(level, payment);
         AssignedStorageService.AssignSummary paymentAssignment = AssignedStorageService.assign(
@@ -954,7 +954,7 @@ public final class VillagerWorkerGameTests {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         BlockPos paymentRel = new BlockPos(2, 2, 1);
         BlockPos payment = helper.absolutePos(paymentRel);
-        setBlock(helper, paymentRel, VillagerRetaliationBlocks.OAK_PAYMENT_BOX.get().defaultBlockState());
+        setBlock(helper, paymentRel, VillagerRetaliationBlocks.PAYMENT_BOX.get().defaultBlockState());
         container(level, payment).setItem(0, new ItemStack(Items.EMERALD, 64));
         AssignedStorageService.removeAssignedContainer(level, payment);
         AssignedStorageService.AssignSummary paymentAssignment = AssignedStorageService.assign(
@@ -996,7 +996,7 @@ public final class VillagerWorkerGameTests {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         BlockPos netherPayment = new BlockPos(0, 80, 0);
         nether.getChunk(netherPayment);
-        nether.setBlock(netherPayment, VillagerRetaliationBlocks.OAK_PAYMENT_BOX.get().defaultBlockState(), Block.UPDATE_ALL);
+        nether.setBlock(netherPayment, VillagerRetaliationBlocks.PAYMENT_BOX.get().defaultBlockState(), Block.UPDATE_ALL);
         AssignedStorageService.removeAssignedContainer(nether, netherPayment);
 
         AssignedStorageService.AssignSummary summary = AssignedStorageService.assign(
@@ -2120,7 +2120,7 @@ public final class VillagerWorkerGameTests {
         BlockPos chest = helper.absolutePos(chestRel);
         BlockPos payment = helper.absolutePos(paymentRel);
         setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
-        setBlock(helper, paymentRel, VillagerRetaliationBlocks.OAK_PAYMENT_BOX.get().defaultBlockState());
+        setBlock(helper, paymentRel, VillagerRetaliationBlocks.PAYMENT_BOX.get().defaultBlockState());
         Container supplyAndOutput = container(level, chest);
         supplyAndOutput.setItem(0, new ItemStack(Items.LADDER, 64));
         supplyAndOutput.setItem(1, new ItemStack(Items.TORCH, 64));

@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "villagerretaliation:jungle_payment_box"
+          "name": "villagerretaliation:payment_box"
         }
       ],
       "conditions": [

@@ -1,20 +1,23 @@
 {
   "type": "minecraft:crafting_shaped",
   "pattern": [
-    "PPP",
+    "PSP",
     "PEP",
-    "PPP"
+    "PSP"
   ],
   "key": {
     "P": {
-      "item": "minecraft:crimson_planks"
+      "tag": "minecraft:planks"
+    },
+    "S": {
+      "tag": "minecraft:wooden_slabs"
     },
     "E": {
       "tag": "villagerretaliation:currency"
     }
   },
   "result": {
-    "id": "villagerretaliation:crimson_payment_box",
+    "id": "villagerretaliation:payment_box",
     "count": 1
   }
 }
