@@ -708,6 +708,7 @@
   "villagerretaliation.gui.clipboard_workforce.status.building": "Building",
   "villagerretaliation.gui.clipboard_workforce.status.depositing": "Depositing",
   "villagerretaliation.gui.clipboard_workforce.status.waiting": "Waiting",
+  "villagerretaliation.gui.clipboard_workforce.status.waiting_for_crops": "Waiting for crops",
   "villagerretaliation.gui.clipboard_workforce.status.no_work_area": "No work area",
   "villagerretaliation.gui.clipboard_workforce.status.no_targets": "No targets",
   "villagerretaliation.gui.clipboard_workforce.status.no_storage": "No storage",

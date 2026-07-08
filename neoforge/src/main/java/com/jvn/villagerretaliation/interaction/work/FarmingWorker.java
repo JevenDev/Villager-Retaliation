@@ -104,7 +104,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         if (fieldScanOnCooldown(level, context)) {
-            HiredWorkerBrain.setLastTargetScanResult(context, "field_scan_cooldown");
+            HiredWorkerBrain.setLastTargetScanResult(
+                    context,
+                    hasGrowingCropInFieldSearchArea(level, context, jobSite)
+                            ? "field_scan_cooldown_waiting_for_crops"
+                            : "field_scan_cooldown_no_targets");
             clearSecondaryJobSite(villager);
             setTaskState(context, HiredWorkerTaskState.IDLE);
             return WorkResult.idle("interaction.work.farming.waiting_for_growth");
@@ -141,7 +145,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             }
         }
 
-        finishFullFieldScanWithNoTargets(level, context);
+        finishFullFieldScanWithNoTargets(level, context, jobSite);
         DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
         if (depositResult == DepositResult.MOVING) {
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
@@ -624,6 +628,62 @@ public final class FarmingWorker extends AbstractBlockWorker {
         return state.isAir() && isVillagerFarmland(level.getBlockState(pos.below()));
     }
 
+    private static boolean hasGrowingCropInFieldSearchArea(ServerLevel level, HiredWorkContext context, BlockPos jobSite) {
+        if (context.hasWorkArea()) {
+            for (BlockPos raw : context.workAreaPositions()) {
+                if (isGrowingCropForSearchPos(level, context, raw)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (jobSite == null) {
+            return false;
+        }
+        BlockPos min = jobSite.offset(
+                -JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS,
+                -JOB_SITE_FIELD_SCAN_VERTICAL_RADIUS,
+                -JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS);
+        BlockPos max = jobSite.offset(
+                JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS,
+                JOB_SITE_FIELD_SCAN_VERTICAL_RADIUS,
+                JOB_SITE_FIELD_SCAN_HORIZONTAL_RADIUS);
+        for (BlockPos raw : BlockPos.betweenClosed(min, max)) {
+            if (isGrowingVanillaCrop(level, raw)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isGrowingCropForSearchPos(ServerLevel level, HiredWorkContext context, BlockPos raw) {
+        if (raw == null) {
+            return false;
+        }
+        if (isGrowingCropInWorkArea(level, context, raw)) {
+            return true;
+        }
+        return isGrowingCropInWorkArea(level, context, raw.above());
+    }
+
+    private static boolean isGrowingCropInWorkArea(ServerLevel level, HiredWorkContext context, BlockPos pos) {
+        if (pos == null || !context.isLoaded(level, pos)) {
+            return false;
+        }
+        if (!context.isInsideWorkArea(pos) && !context.isInsideWorkArea(pos.below())) {
+            return false;
+        }
+        return isGrowingVanillaCrop(level, pos);
+    }
+
+    private static boolean isGrowingVanillaCrop(ServerLevel level, BlockPos pos) {
+        if (pos == null || !level.hasChunkAt(pos)) {
+            return false;
+        }
+        BlockState state = level.getBlockState(pos);
+        return state.getBlock() instanceof CropBlock crop && !crop.isMaxAge(state);
+    }
+
     private static BlockPos tillTargetForSearchPos(
             ServerLevel level,
             HiredWorkContext context,
@@ -712,11 +772,15 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 && level.getGameTime() < context.state().getLong(NEXT_FIELD_SCAN_GAME_TIME_TAG);
     }
 
-    private static void finishFullFieldScanWithNoTargets(ServerLevel level, HiredWorkContext context) {
+    private static void finishFullFieldScanWithNoTargets(ServerLevel level, HiredWorkContext context, BlockPos jobSite) {
         if (context.hasWorkArea()) {
             context.state().putLong(NEXT_FIELD_SCAN_GAME_TIME_TAG, level.getGameTime() + NO_FIELD_TARGET_SCAN_COOLDOWN_TICKS);
         }
-        HiredWorkerBrain.setLastTargetScanResult(context, "field_scan_full_no_targets");
+        HiredWorkerBrain.setLastTargetScanResult(
+                context,
+                hasGrowingCropInFieldSearchArea(level, context, jobSite)
+                        ? "field_scan_full_waiting_for_crops"
+                        : "field_scan_full_no_targets");
     }
 
     private static boolean isInsideFieldSearchArea(BlockPos pos, HiredWorkContext context, BlockPos jobSite) {

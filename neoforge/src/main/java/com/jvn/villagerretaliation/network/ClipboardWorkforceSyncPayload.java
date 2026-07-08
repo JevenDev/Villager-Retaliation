@@ -14,7 +14,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot) implements CustomPacketPayload {
-    private static final int PROTOCOL_VERSION = 5;
+    private static final int PROTOCOL_VERSION = 6;
     private static final int MAX_JOB_SUMMARIES = 16;
     private static final int MAX_WORKER_ROWS = 256;
     private static final int MAX_WARNING_SUMMARIES = 64;

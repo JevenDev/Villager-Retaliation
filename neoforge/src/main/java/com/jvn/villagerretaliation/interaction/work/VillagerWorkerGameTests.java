@@ -2367,6 +2367,79 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerClipboardShowsWaitingForGrowingCrops(GameTestHelper helper) {
+        HiredVillagerIndex.clearRuntimeState();
+        buildFloor(helper, 0, 6, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingCropWait");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        BlockPos composterRel = new BlockPos(2, 1, 2);
+        setBlock(helper, composterRel, Blocks.COMPOSTER.defaultBlockState());
+        villager.getBrain().setMemory(MemoryModuleType.JOB_SITE, GlobalPos.of(level.dimension(), helper.absolutePos(composterRel)));
+        BlockPos cropRel = new BlockPos(3, 2, 2);
+        setBlock(helper, cropRel.below(), Blocks.FARMLAND.defaultBlockState());
+        setBlock(helper, cropRel, ((CropBlock) Blocks.WHEAT).getStateForAge(3));
+        BlockPos chestRel = new BlockPos(5, 2, 4);
+        BlockPos chest = helper.absolutePos(chestRel);
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, chest);
+
+        CompoundTag state = new CompoundTag();
+        HiredFarmingOptions.initializeDefaults(state);
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+
+        WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot workerState = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertValueEqual(result.status(), "interaction.work.farming.waiting_for_growth", "growing crops should leave farmer waiting");
+        helper.assertValueEqual(
+                workerState.lastTargetScanResult(),
+                "field_scan_full_waiting_for_crops",
+                "immature crop scan should not look like a generic no-target scan");
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        helper.assertTrue(
+                HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.FARMING),
+                "farmer role should be available for clipboard crop-wait test");
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putBoolean("Enabled", true);
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.GENERAL_PURPOSE);
+        HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.IDLE, null);
+        HiredWorkerBrain.setLastTargetScanResult(session.context(), workerState.lastTargetScanResult());
+        HiredVillagerIndex.update(level, villager);
+
+        ClipboardWorkforceSnapshot snapshot = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertValueEqual(snapshot.workers().size(), 1, "clipboard worker rows");
+        ClipboardWorkforceSnapshot.WorkerRow row = snapshot.workers().getFirst();
+        helper.assertValueEqual(
+                row.status(),
+                ClipboardWorkforceSnapshot.WorkerStatus.WAITING_FOR_CROPS,
+                "clipboard should show the crop-waiting status");
+        helper.assertFalse(row.noTargets(), "waiting for growing crops should not count as a no-target warning");
+
+        HiredWorkerBrain.setLastTargetScanResult(session.context(), "field_scan_full_no_targets");
+        ClipboardWorkforceSnapshot noCropSnapshot = ClipboardWorkforceService.snapshot(hirer);
+        ClipboardWorkforceSnapshot.WorkerRow noCropRow = noCropSnapshot.workers().getFirst();
+        helper.assertValueEqual(
+                noCropRow.status(),
+                ClipboardWorkforceSnapshot.WorkerStatus.NO_TARGETS,
+                "clipboard should still show no targets when no crops are growing");
+        helper.assertTrue(noCropRow.noTargets(), "empty fields should keep the no-target warning");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        HiredVillagerIndex.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void farmingWorkerPrioritizesReadyCropOverTillingSoil(GameTestHelper helper) {
         buildFloor(helper, 0, 10, 0, 6, 1);
         ServerLevel level = helper.getLevel();

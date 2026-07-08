@@ -65,7 +65,8 @@ public final class ClipboardWorkforceService {
                 boolean noWorkArea = role != HiredVillagerRole.BUILDER
                         && (!HiredVillagerWorkService.hasEffectiveWorkArea(level, villager, session)
                         || brain.taskState() == HiredWorkerTaskState.NO_WORK_AREA);
-                boolean noTargets = !noWorkArea && isNoTargetState(brain);
+                boolean waitingForCrops = !noWorkArea && isWaitingForCrops(role, brain);
+                boolean noTargets = !noWorkArea && !waitingForCrops && isNoTargetState(brain);
                 boolean tooFar = role != HiredVillagerRole.BUILDER
                         && !noWorkArea
                         && !HiredVillagerWorkService.isInsideEffectiveWorkArea(level, villager, role, session.context(), villager.blockPosition());
@@ -90,7 +91,8 @@ public final class ClipboardWorkforceService {
                         missingMaterials,
                         materialStorageUnreachable,
                         materialInventoryFull,
-                        buildSiteUnreachable);
+                        buildSiteUnreachable,
+                        waitingForCrops);
                 String diagnostic = workerDiagnostic(
                         role,
                         brain,
@@ -194,7 +196,8 @@ public final class ClipboardWorkforceService {
             boolean missingMaterials,
             boolean materialStorageUnreachable,
             boolean materialInventoryFull,
-            boolean buildSiteUnreachable) {
+            boolean buildSiteUnreachable,
+            boolean waitingForCrops) {
         if (unpaid) {
             return WorkerStatus.UNPAID;
         }
@@ -227,6 +230,9 @@ public final class ClipboardWorkforceService {
         }
         if (buildSiteUnreachable) {
             return WorkerStatus.BUILD_SITE_UNREACHABLE;
+        }
+        if (waitingForCrops) {
+            return WorkerStatus.WAITING_FOR_CROPS;
         }
         if (noTargets) {
             return WorkerStatus.NO_TARGETS;
@@ -261,6 +267,11 @@ public final class ClipboardWorkforceService {
                 || failure.contains("no_target")
                 || scan.contains("no_reachable_targets")
                 || scan.contains("no_targets");
+    }
+
+    private static boolean isWaitingForCrops(HiredVillagerRole role, HiredWorkerBrain.Snapshot brain) {
+        return role == HiredVillagerRole.FARMING
+                && lower(brain.lastTargetScanResult()).contains("waiting_for_crops");
     }
 
     private static boolean isMissingMaterials(
