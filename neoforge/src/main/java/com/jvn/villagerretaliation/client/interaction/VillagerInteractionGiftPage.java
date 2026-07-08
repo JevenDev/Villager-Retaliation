@@ -8,6 +8,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
@@ -29,8 +30,6 @@ final class VillagerInteractionGiftPage {
     private static final int INVENTORY_BUTTON_GAP = 4;
     private static final int GIFT_INFO_ICON_SIZE = 16;
     private static final int GIFT_INFO_ICON_GAP = 5;
-    private static final int INVENTORY_LEFT_OFFSET = 10;
-    private static final int INVENTORY_BACK_BUTTON_GAP = 5;
 
     private VillagerInteractionGiftPage() {
     }
@@ -41,12 +40,10 @@ final class VillagerInteractionGiftPage {
             int mouseX,
             int mouseY,
             float partialTick,
-            int optionsLeft,
-            int optionWidth,
-            int screenWidth,
-            int screenHeight,
-            int backButtonBottom) {
-        GiftTransform transform = giftTransform(optionsLeft, optionWidth, screenWidth, screenHeight, backButtonBottom);
+            int interactionContainerLeft,
+            int nameplateTop,
+            int interactionContainerWidth) {
+        GiftTransform transform = giftTransform(interactionContainerLeft, nameplateTop, interactionContainerWidth);
         double localMouseX = transform.localX(mouseX);
         double localMouseY = transform.localY(mouseY);
         int localMouseXi = Mth.floor(localMouseX);
@@ -83,12 +80,10 @@ final class VillagerInteractionGiftPage {
             Context context,
             double mouseX,
             double mouseY,
-            int optionsLeft,
-            int optionWidth,
-            int screenWidth,
-            int screenHeight,
-            int backButtonBottom) {
-        GiftTransform transform = giftTransform(optionsLeft, optionWidth, screenWidth, screenHeight, backButtonBottom);
+            int interactionContainerLeft,
+            int nameplateTop,
+            int interactionContainerWidth) {
+        GiftTransform transform = giftTransform(interactionContainerLeft, nameplateTop, interactionContainerWidth);
         double localMouseX = transform.localX(mouseX);
         double localMouseY = transform.localY(mouseY);
         int clickedSlot = giftSlotAt(localMouseX, localMouseY, 0, 0);
@@ -114,30 +109,22 @@ final class VillagerInteractionGiftPage {
         return -1;
     }
 
-    static int giftInventoryLeft(int optionsLeft, int optionWidth, int screenWidth) {
+    static int giftInventoryLeft(int interactionContainerLeft, int interactionContainerWidth) {
         float scale = VillagerInteractionLayout.scaleFactor();
         int scaledInventoryWidth = Math.round(INVENTORY_TEXTURE_WIDTH * scale);
-        int preferredLeft = optionsLeft + optionWidth - scaledInventoryWidth;
-        int edgeMargin = VillagerInteractionLayout.unitAtLeast(8, 4);
-        int maxLeft = Math.max(edgeMargin, screenWidth - scaledInventoryWidth - edgeMargin);
-        return Mth.clamp(preferredLeft, edgeMargin, maxLeft);
+        return interactionContainerLeft + (interactionContainerWidth - scaledInventoryWidth) / 2;
     }
 
-    static int giftInventoryTop(int backButtonBottom, int screenHeight) {
+    static int giftInventoryTop(int nameplateTop) {
         float scale = VillagerInteractionLayout.scaleFactor();
-        int edgeMargin = VillagerInteractionLayout.unitAtLeast(8, 4);
         int scaledInventoryHeight = Math.round(INVENTORY_TEXTURE_HEIGHT * scale);
-        int scaledButtonClearance = Math.round((INVENTORY_BUTTON_HEIGHT + INVENTORY_BUTTON_GAP) * scale);
-        int preferredTop = backButtonBottom + VillagerInteractionLayout.unit(INVENTORY_BACK_BUTTON_GAP);
-        int minTop = edgeMargin + scaledButtonClearance;
-        int maxTop = Math.max(minTop, screenHeight - scaledInventoryHeight - edgeMargin);
-        return Mth.clamp(preferredTop, minTop, maxTop);
+        return nameplateTop - scaledInventoryHeight - 1;
     }
 
-    private static GiftTransform giftTransform(int optionsLeft, int optionWidth, int screenWidth, int screenHeight, int backButtonBottom) {
+    private static GiftTransform giftTransform(int interactionContainerLeft, int nameplateTop, int interactionContainerWidth) {
         return new GiftTransform(
-                giftInventoryLeft(optionsLeft, optionWidth, screenWidth),
-                giftInventoryTop(backButtonBottom, screenHeight),
+                giftInventoryLeft(interactionContainerLeft, interactionContainerWidth),
+                giftInventoryTop(nameplateTop),
                 VillagerInteractionLayout.scaleFactor());
     }
 
@@ -184,13 +171,15 @@ final class VillagerInteractionGiftPage {
         boolean selected = inventorySlot == context.selectedInventorySlot();
         boolean hovered = inventorySlot == hoveredSlot;
         ItemStack stack = context.stackForInventorySlot(inventorySlot);
+        if (selected) {
+            graphics.fill(x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET, x + 16 + INVENTORY_ITEM_OFFSET, y + 16 + INVENTORY_ITEM_OFFSET, 0x8832D74B);
+        }
         if (!stack.isEmpty()) {
             graphics.renderItem(stack, x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET);
             graphics.renderItemDecorations(context.font(), stack, x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET);
         }
-        if (selected || hovered) {
-            int color = selected ? 0x88EAE6DC : 0x55FFFFFF;
-            graphics.fill(x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET, x + 16 + INVENTORY_ITEM_OFFSET, y + 16 + INVENTORY_ITEM_OFFSET, color);
+        if (hovered && !selected) {
+            AbstractContainerScreen.renderSlotHighlight(graphics, x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET, 0);
         }
     }
 

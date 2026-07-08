@@ -151,7 +151,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_BUTTON_SIZE = 28;
     private static final int INTERACTION_BUTTON_GAP = 1;
     private static final int INTERACTION_BUTTON_ROW_LEFT_INSET = 0;
-    private static final int INTERACTION_MENU_BUTTON_COUNT = 8;
     private static final int INTERACTION_BUTTON_HIGHLIGHT_COLOR = 0x40FFFFFF;
     private static final int INTERACTION_BUTTON_DISABLED_HIGHLIGHT_COLOR = 0x28FFFFFF;
     private static final int INTERACTION_BUTTON_HIGHLIGHT_INSET = 2;
@@ -2055,10 +2054,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.interactionStateTransitionStartOffsetY = isReturningFromProfileOrSkills(previousPage, nextPage)
                 ? this.height + INTERACTION_STATE_BOTTOM_ENTRANCE_PADDING - nextTop
                 : previousTop - nextTop;
-        this.interactionStateTransitionStartOffsetX = previousPage == DialoguePage.SKILLS || nextPage == DialoguePage.SKILLS
+        this.interactionStateTransitionStartOffsetX = usesContainerOnlyTransition(previousPage, nextPage)
                 ? 0
                 : depthDirection * INTERACTION_STATE_CONTENT_SLIDE_X;
         this.interactionStateTransitionStartMillis = Util.getMillis();
+    }
+
+    private static boolean usesContainerOnlyTransition(DialoguePage previousPage, DialoguePage nextPage) {
+        return previousPage == DialoguePage.SKILLS
+                || nextPage == DialoguePage.SKILLS
+                || previousPage == DialoguePage.GIFT
+                || nextPage == DialoguePage.GIFT;
     }
 
     private static boolean isReturningFromProfileOrSkills(DialoguePage previousPage, DialoguePage nextPage) {
@@ -2524,11 +2530,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 mouseX,
                 mouseY,
                 partialTick,
-                optionsLeft(),
-                optionWidth(),
-                this.width,
-                this.height,
-                topBackButtonBounds().bottom()
+                interactionContainerLeft(),
+                interactionNameplateTop(),
+                INTERACTION_CONTAINER_WIDTH
         );
     }
 
@@ -2593,9 +2597,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         if (highlighted >= 0 && highlighted < buttons.size()) {
             InteractionMenuButton button = buttons.get(highlighted);
-            ChatFormatting titleColor = button.active() ? ChatFormatting.YELLOW : ChatFormatting.GRAY;
             List<Component> tooltip = List.of(
-                    Component.literal(button.title()).withStyle(titleColor),
+                    Component.literal(button.title()).withStyle(ChatFormatting.YELLOW),
                     Component.literal(button.description()).withStyle(ChatFormatting.GRAY));
             if (hovered < 0 && this.keyboardInteractionMenuFocusVisible && highlighted == this.selectedInteractionMenuButton) {
                 renderKeyboardInteractionMenuTooltip(graphics, tooltip, highlighted);
@@ -2650,50 +2653,58 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private List<InteractionMenuButton> interactionMenuButtons() {
         boolean inventoryAvailable = canRequestVillagerInventory();
         boolean stayAvailable = this.stayingHere || canCommandStayHere();
-        return List.of(
-                new InteractionMenuButton(
-                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TALK_TEXTURE,
-                        translate("root.talk"),
-                        translate("interaction_button.talk.description"),
-                        this::openTalkPage,
-                        true),
-                new InteractionMenuButton(
-                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TRADE_TEXTURE,
-                        translate("root.trade"),
-                        translate("interaction_button.trade.description"),
-                        this::requestTrade,
-                        true),
-                new InteractionMenuButton(
-                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
-                        translate("root.adventures"),
-                        translate("interaction_button.adventures.description"),
-                        this::openAdventuresPage,
-                        true),
-                new InteractionMenuButton(
-                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_PROFILE_TEXTURE,
-                        translate("root.profile"),
-                        translate("interaction_button.profile.description"),
-                        this::openProfilePage,
-                        true),
-                new InteractionMenuButton(
-                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_HIRE_TEXTURE,
-                        translate(this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "interaction_button.hire_job"),
-                        translate(this.hiredByPlayer || this.hiredByOtherPlayer
-                                ? "interaction_button.job.description"
-                                : "interaction_button.hire_job.description"),
-                        this::openRecruitPage,
-                        true),
-                new InteractionMenuButton(
-                        VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_INVENTORY_TEXTURE,
-                        translate("root.inventory"),
-                        translate(inventoryAvailable
-                                ? "interaction_button.inventory.description"
-                                : "interaction_button.inventory.locked_description"),
-                        this::requestInventory,
-                        inventoryAvailable),
-                followInteractionButton(),
-                stayInteractionButton(stayAvailable)
-        );
+        List<InteractionMenuButton> buttons = new ArrayList<>();
+        buttons.add(new InteractionMenuButton(
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TALK_TEXTURE,
+                translate("root.talk"),
+                translate("interaction_button.talk.description"),
+                this::openTalkPage,
+                true));
+        buttons.add(new InteractionMenuButton(
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TRADE_TEXTURE,
+                translate("root.trade"),
+                translate("interaction_button.trade.description"),
+                this::requestTrade,
+                true));
+        buttons.add(new InteractionMenuButton(
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
+                translate("root.adventures"),
+                translate("interaction_button.adventures.description"),
+                this::openAdventuresPage,
+                true));
+        buttons.add(new InteractionMenuButton(
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_PROFILE_TEXTURE,
+                translate("root.profile"),
+                translate("interaction_button.profile.description"),
+                this::openProfilePage,
+                true));
+        if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
+            buttons.add(new InteractionMenuButton(
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_GIFT_TEXTURE,
+                    translate("root.gift"),
+                    translate("interaction_button.gift.description"),
+                    this::openGiftPage,
+                    true));
+        }
+        buttons.add(new InteractionMenuButton(
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_HIRE_TEXTURE,
+                translate(this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "interaction_button.hire_job"),
+                translate(this.hiredByPlayer || this.hiredByOtherPlayer
+                        ? "interaction_button.job.description"
+                        : "interaction_button.hire_job.description"),
+                this::openRecruitPage,
+                true));
+        buttons.add(new InteractionMenuButton(
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_INVENTORY_TEXTURE,
+                translate("root.inventory"),
+                translate(inventoryAvailable
+                        ? "interaction_button.inventory.description"
+                        : "interaction_button.inventory.locked_description"),
+                this::requestInventory,
+                inventoryAvailable));
+        buttons.add(followInteractionButton());
+        buttons.add(stayInteractionButton(stayAvailable));
+        return buttons;
     }
 
     private InteractionMenuButton followInteractionButton() {
@@ -2893,8 +2904,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean shouldRenderInteractionContainer() {
-        return this.page != DialoguePage.GIFT
-                && this.page != DialoguePage.PROFILE
+        return this.page != DialoguePage.PROFILE
                 && this.page != DialoguePage.SKILLS;
     }
 
@@ -3457,6 +3467,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return interactionContainerTopForPage(this.page);
     }
 
+    private int interactionNameplateTop() {
+        return interactionContainerTop() + INTERACTION_NAMEPLATE_Y;
+    }
+
     private int interactionContainerTopForPage(DialoguePage page) {
         if (page == DialoguePage.SKILLS) {
             return skillsProfilePanelTop();
@@ -3535,7 +3549,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (mouseY < top || mouseY >= bottom) {
             return -1;
         }
-        for (int index = 0; index < INTERACTION_MENU_BUTTON_COUNT; index++) {
+        int buttonCount = interactionMenuButtons().size();
+        for (int index = 0; index < buttonCount; index++) {
             int left = interactionMenuButtonLeft(index);
             int right = left + INTERACTION_BUTTON_SIZE;
             if (mouseX >= left && mouseX < right) {
@@ -3762,11 +3777,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 this.giftPageContext,
                 mouseX,
                 mouseY,
-                optionsLeft(),
-                optionWidth(),
-                this.width,
-                this.height,
-                topBackButtonBounds().bottom());
+                interactionContainerLeft(),
+                interactionNameplateTop(),
+                INTERACTION_CONTAINER_WIDTH);
     }
 
     private int firstGiftableInventorySlot() {
@@ -3782,11 +3795,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int giftInventoryLeft() {
-        return VillagerInteractionGiftPage.giftInventoryLeft(optionsLeft(), optionWidth(), this.width);
+        return VillagerInteractionGiftPage.giftInventoryLeft(interactionContainerLeft(), INTERACTION_CONTAINER_WIDTH);
     }
 
     private int giftInventoryTop() {
-        return VillagerInteractionGiftPage.giftInventoryTop(topBackButtonBounds().bottom(), this.height);
+        return VillagerInteractionGiftPage.giftInventoryTop(interactionNameplateTop());
     }
 
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
