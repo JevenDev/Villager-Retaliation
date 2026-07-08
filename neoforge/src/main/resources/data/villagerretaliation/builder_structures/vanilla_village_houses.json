@@ -11,20 +11,35 @@
         "minecraft:village/plains/houses/plains_small_house_5",
         "minecraft:village/plains/houses/plains_small_house_6",
         "minecraft:village/plains/houses/plains_small_house_7",
+        "minecraft:village/plains/houses/plains_small_house_8",
         "minecraft:village/plains/houses/plains_medium_house_1",
+        "minecraft:village/plains/houses/plains_medium_house_2",
         "minecraft:village/plains/houses/plains_big_house_1",
         "minecraft:village/plains/houses/plains_armorer_house_1",
         "minecraft:village/plains/houses/plains_butcher_shop_1",
+        "minecraft:village/plains/houses/plains_butcher_shop_2",
         "minecraft:village/plains/houses/plains_cartographer_1",
         "minecraft:village/plains/houses/plains_fisher_cottage_1",
         "minecraft:village/plains/houses/plains_fletcher_house_1",
         "minecraft:village/plains/houses/plains_library_1",
+        "minecraft:village/plains/houses/plains_library_2",
         "minecraft:village/plains/houses/plains_masons_house_1",
         "minecraft:village/plains/houses/plains_shepherds_house_1",
         "minecraft:village/plains/houses/plains_stable_1",
+        "minecraft:village/plains/houses/plains_stable_2",
         "minecraft:village/plains/houses/plains_tannery_1",
+        "minecraft:village/plains/houses/plains_temple_3",
+        "minecraft:village/plains/houses/plains_temple_4",
         "minecraft:village/plains/houses/plains_tool_smith_1",
-        "minecraft:village/plains/houses/plains_weaponsmith_1"
+        "minecraft:village/plains/houses/plains_weaponsmith_1",
+        "minecraft:village/plains/houses/plains_large_farm_1",
+        "minecraft:village/plains/houses/plains_small_farm_1",
+        "minecraft:village/plains/houses/plains_animal_pen_1",
+        "minecraft:village/plains/houses/plains_animal_pen_2",
+        "minecraft:village/plains/houses/plains_animal_pen_3",
+        "minecraft:village/plains/houses/plains_accessory_1",
+        "minecraft:village/plains/houses/plains_meeting_point_4",
+        "minecraft:village/plains/houses/plains_meeting_point_5"
       ]
     },
     {
@@ -43,7 +58,7 @@
         "minecraft:village/desert/houses/desert_medium_house_2",
         "minecraft:village/desert/houses/desert_armorer_1",
         "minecraft:village/desert/houses/desert_butcher_shop_1",
-        "minecraft:village/desert/houses/desert_cartographer_1",
+        "minecraft:village/desert/houses/desert_cartographer_house_1",
         "minecraft:village/desert/houses/desert_farm_1",
         "minecraft:village/desert/houses/desert_farm_2",
         "minecraft:village/desert/houses/desert_fisher_1",
@@ -53,8 +68,12 @@
         "minecraft:village/desert/houses/desert_shepherd_house_1",
         "minecraft:village/desert/houses/desert_tannery_1",
         "minecraft:village/desert/houses/desert_temple_1",
+        "minecraft:village/desert/houses/desert_temple_2",
         "minecraft:village/desert/houses/desert_tool_smith_1",
-        "minecraft:village/desert/houses/desert_weaponsmith_1"
+        "minecraft:village/desert/houses/desert_weaponsmith_1",
+        "minecraft:village/desert/houses/desert_large_farm_1",
+        "minecraft:village/desert/houses/desert_animal_pen_1",
+        "minecraft:village/desert/houses/desert_animal_pen_2"
       ]
     },
     {
@@ -71,9 +90,9 @@
         "minecraft:village/savanna/houses/savanna_small_house_8",
         "minecraft:village/savanna/houses/savanna_medium_house_1",
         "minecraft:village/savanna/houses/savanna_medium_house_2",
-        "minecraft:village/savanna/houses/savanna_big_house_1",
         "minecraft:village/savanna/houses/savanna_armorer_1",
         "minecraft:village/savanna/houses/savanna_butchers_shop_1",
+        "minecraft:village/savanna/houses/savanna_butchers_shop_2",
         "minecraft:village/savanna/houses/savanna_cartographer_1",
         "minecraft:village/savanna/houses/savanna_fisher_cottage_1",
         "minecraft:village/savanna/houses/savanna_fletcher_house_1",
@@ -82,8 +101,16 @@
         "minecraft:village/savanna/houses/savanna_shepherd_1",
         "minecraft:village/savanna/houses/savanna_tannery_1",
         "minecraft:village/savanna/houses/savanna_temple_1",
+        "minecraft:village/savanna/houses/savanna_temple_2",
         "minecraft:village/savanna/houses/savanna_tool_smith_1",
-        "minecraft:village/savanna/houses/savanna_weaponsmith_1"
+        "minecraft:village/savanna/houses/savanna_weaponsmith_1",
+        "minecraft:village/savanna/houses/savanna_weaponsmith_2",
+        "minecraft:village/savanna/houses/savanna_large_farm_1",
+        "minecraft:village/savanna/houses/savanna_large_farm_2",
+        "minecraft:village/savanna/houses/savanna_small_farm",
+        "minecraft:village/savanna/houses/savanna_animal_pen_1",
+        "minecraft:village/savanna/houses/savanna_animal_pen_2",
+        "minecraft:village/savanna/houses/savanna_animal_pen_3"
       ]
     },
     {
@@ -101,21 +128,25 @@
         "minecraft:village/snowy/houses/snowy_medium_house_1",
         "minecraft:village/snowy/houses/snowy_medium_house_2",
         "minecraft:village/snowy/houses/snowy_medium_house_3",
-        "minecraft:village/snowy/houses/snowy_big_house_1",
         "minecraft:village/snowy/houses/snowy_armorer_house_1",
+        "minecraft:village/snowy/houses/snowy_armorer_house_2",
         "minecraft:village/snowy/houses/snowy_butchers_shop_1",
+        "minecraft:village/snowy/houses/snowy_butchers_shop_2",
         "minecraft:village/snowy/houses/snowy_cartographer_house_1",
         "minecraft:village/snowy/houses/snowy_farm_1",
         "minecraft:village/snowy/houses/snowy_farm_2",
-        "minecraft:village/snowy/houses/snowy_fisher_cottage_1",
+        "minecraft:village/snowy/houses/snowy_fisher_cottage",
         "minecraft:village/snowy/houses/snowy_fletcher_house_1",
         "minecraft:village/snowy/houses/snowy_library_1",
         "minecraft:village/snowy/houses/snowy_masons_house_1",
+        "minecraft:village/snowy/houses/snowy_masons_house_2",
         "minecraft:village/snowy/houses/snowy_shepherds_house_1",
         "minecraft:village/snowy/houses/snowy_tannery_1",
         "minecraft:village/snowy/houses/snowy_temple_1",
         "minecraft:village/snowy/houses/snowy_tool_smith_1",
-        "minecraft:village/snowy/houses/snowy_weaponsmith_1"
+        "minecraft:village/snowy/houses/snowy_weapon_smith_1",
+        "minecraft:village/snowy/houses/snowy_animal_pen_1",
+        "minecraft:village/snowy/houses/snowy_animal_pen_2"
       ]
     },
     {
@@ -132,7 +163,10 @@
         "minecraft:village/taiga/houses/taiga_medium_house_3",
         "minecraft:village/taiga/houses/taiga_medium_house_4",
         "minecraft:village/taiga/houses/taiga_large_farm_1",
+        "minecraft:village/taiga/houses/taiga_large_farm_2",
+        "minecraft:village/taiga/houses/taiga_small_farm_1",
         "minecraft:village/taiga/houses/taiga_armorer_house_1",
+        "minecraft:village/taiga/houses/taiga_armorer_2",
         "minecraft:village/taiga/houses/taiga_butcher_shop_1",
         "minecraft:village/taiga/houses/taiga_cartographer_house_1",
         "minecraft:village/taiga/houses/taiga_fisher_cottage_1",
@@ -143,7 +177,9 @@
         "minecraft:village/taiga/houses/taiga_tannery_1",
         "minecraft:village/taiga/houses/taiga_temple_1",
         "minecraft:village/taiga/houses/taiga_tool_smith_1",
-        "minecraft:village/taiga/houses/taiga_weaponsmith_1"
+        "minecraft:village/taiga/houses/taiga_weaponsmith_1",
+        "minecraft:village/taiga/houses/taiga_weaponsmith_2",
+        "minecraft:village/taiga/houses/taiga_animal_pen_1"
       ]
     }
   ]
