@@ -111,13 +111,21 @@ public final class AssignedStorageSavedData extends SavedData {
     }
 
     public Optional<AssignedContainerRecord> assignedAt(ResourceKey<Level> dimension, BlockPos pos) {
-        return Optional.ofNullable(this.byContainer.get(new ContainerKey(dimension, pos.immutable())));
+        return this.byContainer.values().stream()
+                .filter(record -> record.dimension().equals(dimension) && record.pos().equals(pos))
+                .findFirst();
     }
 
     public AssignmentResult assign(AssignedContainerRecord record) {
-        ContainerKey key = new ContainerKey(record.dimension(), record.pos().immutable());
+        ContainerKey key = key(record);
         AssignedContainerRecord existing = this.byContainer.get(key);
-        if (existing != null && !existing.villagerId().equals(record.villagerId())) {
+        if (existing != null) {
+            if (!existing.villagerId().equals(record.villagerId())) {
+                return AssignmentResult.ALREADY_ASSIGNED;
+            }
+            return AssignmentResult.ALREADY_ASSIGNED;
+        }
+        if (assignedPhysicalContainerToOtherVillager(record)) {
             return AssignmentResult.ALREADY_ASSIGNED;
         }
         put(record);
@@ -128,7 +136,7 @@ public final class AssignedStorageSavedData extends SavedData {
     public int removeAssignedTo(UUID villagerId) {
         List<AssignedContainerRecord> records = new ArrayList<>(this.byVillager.getOrDefault(villagerId, List.of()));
         for (AssignedContainerRecord record : records) {
-            this.byContainer.remove(new ContainerKey(record.dimension(), record.pos()));
+            this.byContainer.remove(key(record));
         }
         this.byVillager.remove(villagerId);
         if (!records.isEmpty()) {
@@ -148,6 +156,7 @@ public final class AssignedStorageSavedData extends SavedData {
         }
 
         this.byVillager.remove(sourceVillagerId);
+        records.forEach(record -> this.byContainer.remove(key(record)));
         for (AssignedContainerRecord record : records) {
             put(new AssignedContainerRecord(
                     record.dimension(),
@@ -169,7 +178,7 @@ public final class AssignedStorageSavedData extends SavedData {
                 .filter(record -> normalizePurpose(record.purpose()).equals(normalizedPurpose))
                 .toList());
         for (AssignedContainerRecord record : records) {
-            this.byContainer.remove(new ContainerKey(record.dimension(), record.pos()));
+            this.byContainer.remove(key(record));
         }
         List<AssignedContainerRecord> remaining = this.byVillager.get(villagerId);
         if (remaining != null) {
@@ -185,15 +194,20 @@ public final class AssignedStorageSavedData extends SavedData {
     }
 
     public boolean removeAssignedAt(ResourceKey<Level> dimension, BlockPos pos) {
-        AssignedContainerRecord removed = this.byContainer.remove(new ContainerKey(dimension, pos.immutable()));
-        if (removed == null) {
+        List<AssignedContainerRecord> removed = new ArrayList<>(this.byContainer.values().stream()
+                .filter(record -> record.dimension().equals(dimension) && record.pos().equals(pos))
+                .toList());
+        if (removed.isEmpty()) {
             return false;
         }
-        List<AssignedContainerRecord> records = this.byVillager.get(removed.villagerId());
-        if (records != null) {
-            records.removeIf(candidate -> candidate.dimension().equals(removed.dimension()) && candidate.pos().equals(removed.pos()));
-            if (records.isEmpty()) {
-                this.byVillager.remove(removed.villagerId());
+        for (AssignedContainerRecord record : removed) {
+            this.byContainer.remove(key(record));
+            List<AssignedContainerRecord> records = this.byVillager.get(record.villagerId());
+            if (records != null) {
+                records.removeIf(candidate -> sameAssignment(candidate, record));
+                if (records.isEmpty()) {
+                    this.byVillager.remove(record.villagerId());
+                }
             }
         }
         setDirty();
@@ -219,21 +233,43 @@ public final class AssignedStorageSavedData extends SavedData {
     }
 
     private void put(AssignedContainerRecord record) {
-        ContainerKey key = new ContainerKey(record.dimension(), record.pos().immutable());
+        ContainerKey key = key(record);
         AssignedContainerRecord previous = this.byContainer.put(key, record);
         if (previous != null) {
             List<AssignedContainerRecord> previousList = this.byVillager.get(previous.villagerId());
             if (previousList != null) {
-                previousList.removeIf(candidate -> candidate.dimension().equals(previous.dimension()) && candidate.pos().equals(previous.pos()));
+                previousList.removeIf(candidate -> sameAssignment(candidate, previous));
                 if (previousList.isEmpty()) {
                     this.byVillager.remove(previous.villagerId());
                 }
             }
         }
         List<AssignedContainerRecord> records = this.byVillager.computeIfAbsent(record.villagerId(), ignored -> new ArrayList<>());
-        records.removeIf(candidate -> candidate.dimension().equals(record.dimension()) && candidate.pos().equals(record.pos()));
+        records.removeIf(candidate -> sameAssignment(candidate, record));
         records.add(record);
-        records.sort(Comparator.comparingInt(AssignedContainerRecord::priority));
+        records.sort(Comparator
+                .comparingInt(AssignedContainerRecord::priority)
+                .thenComparing(AssignedContainerRecord::purpose));
+    }
+
+    private boolean assignedPhysicalContainerToOtherVillager(AssignedContainerRecord record) {
+        return this.byContainer.values().stream()
+                .anyMatch(existing -> existing.dimension().equals(record.dimension())
+                        && existing.pos().equals(record.pos())
+                        && !existing.villagerId().equals(record.villagerId()));
+    }
+
+    private static boolean sameAssignment(AssignedContainerRecord first, AssignedContainerRecord second) {
+        return first.dimension().equals(second.dimension())
+                && first.pos().equals(second.pos())
+                && normalizePurpose(first.purpose()).equals(normalizePurpose(second.purpose()));
+    }
+
+    private static ContainerKey key(AssignedContainerRecord record) {
+        return new ContainerKey(
+                record.dimension(),
+                record.pos().immutable(),
+                normalizePurpose(record.purpose()));
     }
 
     private static String normalizePurpose(String purpose) {
@@ -255,6 +291,6 @@ public final class AssignedStorageSavedData extends SavedData {
             String validationStatus) {
     }
 
-    private record ContainerKey(ResourceKey<Level> dimension, BlockPos pos) {
+    private record ContainerKey(ResourceKey<Level> dimension, BlockPos pos, String purpose) {
     }
 }

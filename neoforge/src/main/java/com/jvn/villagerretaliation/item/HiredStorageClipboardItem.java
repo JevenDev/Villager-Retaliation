@@ -121,7 +121,8 @@ public final class HiredStorageClipboardItem extends Item {
 
         List<SelectedStoragePosition> selected = selectedStoragePositions(stack, clipboardMode.assignmentPurpose());
         if (!selected.isEmpty()) {
-            assignSelectedStorage(serverPlayer, level, villager, stack, selected);
+            assignSelectedStorage(serverPlayer, level, villager, stack, selected)
+                    .ifPresent(message -> displayAssignmentSummary(serverPlayer, message));
             return InteractionResult.SUCCESS;
         }
 
@@ -327,7 +328,7 @@ public final class HiredStorageClipboardItem extends Item {
         player.displayClientMessage(Component.literal(text), true);
     }
 
-    private static void assignSelectedStorage(
+    public static Optional<AssignmentSummaryMessage> assignSelectedStorage(
             ServerPlayer player,
             ServerLevel level,
             Villager villager,
@@ -336,12 +337,12 @@ public final class HiredStorageClipboardItem extends Item {
         if (selected.stream().anyMatch(SelectedStoragePosition::paymentPurpose)
                 && !HiredVillagerContractService.isHiredBy(level, villager, player)) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.payment_storage.requires_hire");
-            return;
+            return Optional.empty();
         }
         if (selected.stream().anyMatch(position -> !position.paymentPurpose())
                 && !VillagerInteractionService.canManageAssignedStorage(level, villager, player)) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.storage.assign_requires_access");
-            return;
+            return Optional.empty();
         }
 
         Map<String, List<StoragePosition>> byPurpose = new LinkedHashMap<>();
@@ -370,7 +371,7 @@ public final class HiredStorageClipboardItem extends Item {
                 HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
             }
         }
-        displayAssignmentSummary(player, assignmentSummaryMessage(assigned, alreadyAssigned, invalid, assignedByPurpose));
+        return Optional.of(assignmentSummaryMessage(assigned, alreadyAssigned, invalid, assignedByPurpose));
     }
 
     private static AssignmentSummaryMessage assignmentSummaryMessage(
@@ -660,7 +661,7 @@ public final class HiredStorageClipboardItem extends Item {
                 .map(record -> new ClipboardAssignedStorageSyncPayload.Entry(
                         record.dimension().location(),
                         record.pos(),
-                        AssignedStorageService.PAYMENT_PURPOSE.equals(record.purpose())))
+                        AssignedStorageService.PAYMENT_PURPOSE.equals(AssignedStorageService.normalizePurpose(record.purpose()))))
                 .toList();
         PacketDistributor.sendToPlayer(player, new ClipboardAssignedStorageSyncPayload(entries, 200));
     }
@@ -754,7 +755,9 @@ public final class HiredStorageClipboardItem extends Item {
             return SelectionAddResult.DIFFERENT_DIMENSION;
         }
         for (SelectedStoragePosition position : selected) {
-            if (position.position().dimension().equals(dimension) && position.position().pos().equals(pos)) {
+            if (position.position().dimension().equals(dimension)
+                    && position.position().pos().equals(pos)
+                    && position.purpose().equals(AssignedStorageService.normalizePurpose(purpose))) {
                 return SelectionAddResult.DUPLICATE;
             }
         }

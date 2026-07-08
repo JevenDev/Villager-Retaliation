@@ -171,8 +171,9 @@ public final class HiredDebugPreviewService {
             if (entries.size() >= HiredDebugPreviewSyncPayload.MAX_STORAGE) {
                 return;
             }
-            boolean payment = AssignedStorageService.PAYMENT_PURPOSE.equals(record.purpose());
-            StorageDebugKey key = new StorageDebugKey(record.dimension().location(), record.pos(), payment);
+            String purpose = AssignedStorageService.normalizePurpose(record.purpose());
+            boolean payment = AssignedStorageService.PAYMENT_PURPOSE.equals(purpose);
+            StorageDebugKey key = new StorageDebugKey(record.dimension().location(), record.pos(), purpose);
             if (seen.add(key)) {
                 entries.add(new HiredDebugPreviewSyncPayload.StorageEntry(
                         record.dimension().location(),
@@ -212,6 +213,6 @@ public final class HiredDebugPreviewService {
     private record DebugPreviewState(double radius, long nextRefreshGameTime, boolean requiresClipboard) {
     }
 
-    private record StorageDebugKey(ResourceLocation dimension, BlockPos pos, boolean payment) {
+    private record StorageDebugKey(ResourceLocation dimension, BlockPos pos, String purpose) {
     }
 }

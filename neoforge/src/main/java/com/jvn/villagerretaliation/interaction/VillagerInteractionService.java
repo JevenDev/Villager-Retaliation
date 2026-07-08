@@ -19,8 +19,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignmentSummaryMessage;
-import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummary;
-import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
+import com.jvn.villagerretaliation.item.HiredStorageClipboardItem.SelectedStoragePosition;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner;
@@ -1500,22 +1499,20 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.storage.assign_requires_access");
             return;
         }
-        List<StoragePosition> selected = HiredStorageClipboardItem.selectedContainers(clipboard);
+        List<SelectedStoragePosition> selected = HiredStorageClipboardItem.selectedStoragePositions(
+                clipboard,
+                HiredStorageClipboardItem.mode(clipboard).assignmentPurpose());
         if (selected.isEmpty()) {
             sendVillagerNotice(player, villager, "interaction.storage.select_with_clipboard");
             return;
         }
-        String purpose = HiredStorageClipboardItem.mode(clipboard).storagePurpose();
-        AssignSummary summary = AssignedStorageService.assign(player, villager, selected, purpose);
-        if (summary.assigned() > 0) {
-            HiredStorageClipboardItem.clearSelection(clipboard);
-        }
-        sendStorageAssignmentSummary(player, villager, summary);
-    }
-
-    private static void sendStorageAssignmentSummary(ServerPlayer player, Villager villager, AssignSummary summary) {
-        AssignmentSummaryMessage message = AssignedStorageService.assignmentSummaryMessage(summary);
-        sendVillagerNotice(player, villager, message.key(), message.replacements());
+        Optional<AssignmentSummaryMessage> message = HiredStorageClipboardItem.assignSelectedStorage(
+                player,
+                level,
+                villager,
+                clipboard,
+                selected);
+        message.ifPresent(summary -> sendVillagerNotice(player, villager, summary.key(), summary.replacements()));
     }
 
     private static void showAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {

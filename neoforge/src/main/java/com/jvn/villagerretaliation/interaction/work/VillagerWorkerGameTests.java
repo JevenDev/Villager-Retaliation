@@ -880,6 +880,76 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void assignedStorageSupportsMultiplePurposesPerVillagerContainer(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrMixedStorage");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager otherVillager = spawnVillager(helper, new BlockPos(2, 2, 4));
+        BlockPos chestRel = new BlockPos(4, 2, 2);
+        BlockPos chest = helper.absolutePos(chestRel);
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, chest);
+
+        AssignedStorageService.StoragePosition storage = new AssignedStorageService.StoragePosition(level.dimension(), chest);
+        AssignedStorageService.AssignSummary globalSummary = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(storage),
+                AssignedStorageService.GENERAL_PURPOSE);
+        AssignedStorageService.AssignSummary toolSummary = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(storage),
+                AssignedStorageService.TOOL_PURPOSE);
+        AssignedStorageService.AssignSummary outputSummary = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(storage),
+                AssignedStorageService.OUTPUT_PURPOSE);
+
+        helper.assertValueEqual(globalSummary.assigned(), 1, "global storage assignment");
+        helper.assertValueEqual(toolSummary.assigned(), 1, "tool storage assignment");
+        helper.assertValueEqual(outputSummary.assigned(), 1, "output storage assignment");
+        helper.assertValueEqual(AssignedStorageService.assignedStorage(level, villager).size(), 3, "mixed storage assignment count");
+        helper.assertTrue(
+                AssignedStorageService.assignedStorage(level, villager).stream()
+                        .anyMatch(record -> AssignedStorageService.GENERAL_PURPOSE.equals(record.purpose())),
+                "global storage purpose should persist");
+        helper.assertTrue(
+                AssignedStorageService.assignedStorage(level, villager).stream()
+                        .anyMatch(record -> AssignedStorageService.TOOL_PURPOSE.equals(record.purpose())),
+                "tool storage purpose should persist");
+        helper.assertTrue(
+                AssignedStorageService.assignedStorage(level, villager).stream()
+                        .anyMatch(record -> AssignedStorageService.OUTPUT_PURPOSE.equals(record.purpose())),
+                "output storage purpose should persist");
+
+        AssignedStorageService.AssignSummary duplicateTool = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(storage),
+                AssignedStorageService.TOOL_PURPOSE);
+        helper.assertValueEqual(duplicateTool.alreadyAssigned(), 1, "duplicate tool storage assignment should not add another record");
+
+        AssignedStorageService.AssignSummary conflicting = AssignedStorageService.assign(
+                hirer,
+                otherVillager,
+                List.of(storage),
+                AssignedStorageService.INPUT_PURPOSE);
+        helper.assertValueEqual(conflicting.alreadyAssigned(), 1, "same physical storage should still be owned by one villager");
+        helper.assertTrue(
+                AssignedStorageService.assignedStorage(level, otherVillager).isEmpty(),
+                "conflicting storage assignment should not persist for another villager");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        AssignedStorageService.removeAllAssignedStorage(level, otherVillager);
+        villager.discard();
+        otherVillager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void assignedStoragePersistsPurposeOwnershipAndOutputPriority(GameTestHelper helper) {
         buildFloor(helper, 0, 7, 0, 5, 1);
         ServerLevel level = helper.getLevel();
