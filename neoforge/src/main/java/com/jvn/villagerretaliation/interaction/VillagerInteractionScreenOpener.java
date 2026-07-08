@@ -177,6 +177,7 @@ public final class VillagerInteractionScreenOpener {
                 HiredVillagerContractService.activeRole(level, villager),
                 BrewingWorker.hasOrder(workState),
                 BuilderTaskState.hasTask(workState),
+                HiredVillagerContractService.isOneOffBuilderJob(level, villager),
                 HiredFarmingOptions.tillSoil(workState),
                 HiredLoggingFilters.selectedFilterStrings(workState),
                 HiredLoggingOptions.stripLogs(workState),

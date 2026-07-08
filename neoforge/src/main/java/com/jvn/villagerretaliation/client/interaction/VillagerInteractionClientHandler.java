@@ -123,6 +123,7 @@ public final class VillagerInteractionClientHandler {
                 payload.activeHiredRole(),
                 payload.activeBrewingOrder(),
                 payload.activeBuilderTask(),
+                payload.oneOffBuilderJob(),
                 payload.farmingTillSoil(),
                 payload.selectedLoggingFilters(),
                 payload.loggingStripLogs(),

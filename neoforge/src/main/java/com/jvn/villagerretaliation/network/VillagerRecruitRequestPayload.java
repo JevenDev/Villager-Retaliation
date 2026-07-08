@@ -1,21 +1,33 @@
 package com.jvn.villagerretaliation.network;
 
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record VillagerRecruitRequestPayload(int entityId, Action action) implements CustomPacketPayload {
+public record VillagerRecruitRequestPayload(int entityId, Action action, HiredVillagerRole selectedRole) implements CustomPacketPayload {
     public static final Type<VillagerRecruitRequestPayload> TYPE = VillagerPayloads.type("villager_recruit_request");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerRecruitRequestPayload> STREAM_CODEC =
             VillagerPayloads.codec(VillagerRecruitRequestPayload::encode, VillagerRecruitRequestPayload::decode);
 
+    public VillagerRecruitRequestPayload(int entityId, Action action) {
+        this(entityId, action, null);
+    }
+
     private static void encode(RegistryFriendlyByteBuf buffer, VillagerRecruitRequestPayload payload) {
         buffer.writeVarInt(payload.entityId());
         buffer.writeEnum(payload.action());
+        buffer.writeBoolean(payload.selectedRole() != null);
+        if (payload.selectedRole() != null) {
+            buffer.writeEnum(payload.selectedRole());
+        }
     }
 
     private static VillagerRecruitRequestPayload decode(RegistryFriendlyByteBuf buffer) {
-        return new VillagerRecruitRequestPayload(buffer.readVarInt(), buffer.readEnum(Action.class));
+        int entityId = buffer.readVarInt();
+        Action action = buffer.readEnum(Action.class);
+        HiredVillagerRole selectedRole = buffer.readBoolean() ? buffer.readEnum(HiredVillagerRole.class) : null;
+        return new VillagerRecruitRequestPayload(entityId, action, selectedRole);
     }
 
     @Override

@@ -13,6 +13,9 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.event.VillagerEventTriggerSavedData;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner.BuilderToolAction;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
@@ -49,10 +52,14 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -64,6 +71,11 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Rotation;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
@@ -135,6 +147,7 @@ public final class VillagerRetaliationCommands {
                         .then(villageDebugCommands())
                         .then(hiredDebugCommands())
                         .then(questDebugCommands())
+                        .then(debugCommands())
                         .then(literal("profile")
                                 .then(literal("get")
                                         .then(targetArgument()
@@ -210,6 +223,182 @@ public final class VillagerRetaliationCommands {
                                 .distinct(),
                         builder
                 ));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> debugCommands() {
+        return literal("debug")
+                .then(literal("builder")
+                        .then(literal("materials")
+                                .then(argument("structure", StringArgumentType.string())
+                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                builderStructureIdSuggestions(context.getSource()),
+                                                builder))
+                                        .executes(VillagerRetaliationCommands::placeBuilderMaterialsChests))));
+    }
+
+    private static int placeBuilderMaterialsChests(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        ServerLevel level = source.getLevel();
+        String structureValue = StringArgumentType.getString(context, "structure");
+        ResourceLocation structureId = parseBuilderStructureId(structureValue);
+        if (structureId == null) {
+            source.sendFailure(Component.literal("Invalid builder structure id: " + structureValue));
+            return 0;
+        }
+
+        Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(source.getServer(), structureId);
+        if (entry.isEmpty()) {
+            source.sendFailure(Component.literal("Unknown builder structure: " + structureId));
+            return 0;
+        }
+
+        Optional<BuilderStructureScanner.StructurePlan> plan = BuilderStructureScanner.scan(level, entry.get(), Rotation.NONE);
+        if (plan.isEmpty()) {
+            source.sendFailure(Component.literal("Could not scan builder structure: " + entry.get().menuLabel()));
+            return 0;
+        }
+
+        List<ItemStack> stacks = builderDebugSupplyStacks(plan.get());
+        int chestCount = Math.max(1, (stacks.size() + 26) / 27);
+        Direction lineDirection = debugChestLineDirection(source);
+        BlockPos preferred = debugChestPreferredPos(source);
+        List<BlockPos> chestPositions = findDebugChestPositions(level, preferred, lineDirection, chestCount);
+        if (chestPositions.size() < chestCount) {
+            source.sendFailure(Component.literal("Could not find " + chestCount + " empty chest position(s) near "
+                    + formatPos(preferred) + "."));
+            return 0;
+        }
+
+        int stackIndex = 0;
+        for (BlockPos chestPos : chestPositions) {
+            level.setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
+            if (!(level.getBlockEntity(chestPos) instanceof ChestBlockEntity chest)) {
+                source.sendFailure(Component.literal("Failed to create chest at " + formatPos(chestPos) + "."));
+                return 0;
+            }
+            for (int slot = 0; slot < chest.getContainerSize() && stackIndex < stacks.size(); slot++) {
+                chest.setItem(slot, stacks.get(stackIndex++));
+            }
+            chest.setChanged();
+        }
+
+        String chestLabel = chestPositions.size() == 1 ? "chest" : "chests";
+        source.sendSuccess(() -> Component.literal("Placed " + chestPositions.size() + " debug " + chestLabel
+                + " for " + entry.get().menuLabel()
+                + " at " + formatPos(chestPositions.getFirst())
+                + " (" + plan.get().materialSummary(6) + ")."), true);
+        return chestPositions.size();
+    }
+
+    private static Iterable<String> builderStructureIdSuggestions(CommandSourceStack source) {
+        return BuilderStructureCatalog.entries(source.getServer())
+                .stream()
+                .map(entry -> entry.id().toString())
+                .toList();
+    }
+
+    private static ResourceLocation parseBuilderStructureId(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (!normalized.contains(":")) {
+            normalized = "minecraft:" + normalized;
+        }
+        return ResourceLocation.tryParse(normalized);
+    }
+
+    private static List<ItemStack> builderDebugSupplyStacks(BuilderStructureScanner.StructurePlan plan) {
+        List<ItemStack> stacks = new ArrayList<>();
+        for (BuilderStructureScanner.MaterialRequirement material : plan.materials()) {
+            addSplitStacks(stacks, material.item(), material.count());
+        }
+        for (ItemStack tool : builderDebugToolStacks(plan)) {
+            stacks.add(tool);
+        }
+        return stacks;
+    }
+
+    private static List<ItemStack> builderDebugToolStacks(BuilderStructureScanner.StructurePlan plan) {
+        Map<BuilderToolAction, ItemStack> tools = new LinkedHashMap<>();
+        for (BuilderStructureScanner.BuildBlock block : plan.blocks()) {
+            switch (block.toolAction()) {
+                case AXE_STRIP -> tools.putIfAbsent(BuilderToolAction.AXE_STRIP, new ItemStack(Items.IRON_AXE));
+                case SHOVEL_FLATTEN -> tools.putIfAbsent(BuilderToolAction.SHOVEL_FLATTEN, new ItemStack(Items.IRON_SHOVEL));
+                case HOE_TILL -> tools.putIfAbsent(BuilderToolAction.HOE_TILL, new ItemStack(Items.IRON_HOE));
+                case NONE -> {
+                }
+            }
+        }
+        return List.copyOf(tools.values());
+    }
+
+    private static void addSplitStacks(List<ItemStack> stacks, ItemStack template, int count) {
+        if (template == null || template.isEmpty() || count <= 0) {
+            return;
+        }
+        int maxStackSize = Math.max(1, template.getMaxStackSize());
+        int remaining = count;
+        while (remaining > 0) {
+            ItemStack stack = template.copy();
+            stack.setCount(Math.min(maxStackSize, remaining));
+            stacks.add(stack);
+            remaining -= stack.getCount();
+        }
+    }
+
+    private static BlockPos debugChestPreferredPos(CommandSourceStack source) {
+        if (source.getEntity() instanceof ServerPlayer player) {
+            return player.blockPosition().relative(player.getDirection());
+        }
+        return BlockPos.containing(source.getPosition());
+    }
+
+    private static Direction debugChestLineDirection(CommandSourceStack source) {
+        if (source.getEntity() instanceof ServerPlayer player) {
+            Direction direction = player.getDirection().getClockWise();
+            return direction.getAxis().isHorizontal() ? direction : Direction.EAST;
+        }
+        return Direction.EAST;
+    }
+
+    private static List<BlockPos> findDebugChestPositions(
+            ServerLevel level,
+            BlockPos preferred,
+            Direction lineDirection,
+            int chestCount) {
+        Direction safeDirection = lineDirection == null || !lineDirection.getAxis().isHorizontal()
+                ? Direction.EAST
+                : lineDirection;
+        for (int yOffset = 0; yOffset <= 2; yOffset++) {
+            for (int radius = 0; radius <= 6; radius++) {
+                for (int x = -radius; x <= radius; x++) {
+                    for (int z = -radius; z <= radius; z++) {
+                        if (Math.max(Math.abs(x), Math.abs(z)) != radius) {
+                            continue;
+                        }
+                        BlockPos start = preferred.offset(x, yOffset, z);
+                        List<BlockPos> positions = debugChestLine(start, safeDirection, chestCount);
+                        if (positions.stream().allMatch(level::isEmptyBlock)) {
+                            return positions;
+                        }
+                    }
+                }
+            }
+        }
+        return List.of();
+    }
+
+    private static List<BlockPos> debugChestLine(BlockPos start, Direction lineDirection, int chestCount) {
+        List<BlockPos> positions = new ArrayList<>();
+        for (int i = 0; i < chestCount; i++) {
+            positions.add(start.relative(lineDirection, i * 2));
+        }
+        return positions;
+    }
+
+    private static String formatPos(BlockPos pos) {
+        return pos.getX() + " " + pos.getY() + " " + pos.getZ();
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> questDebugCommands() {

@@ -42,6 +42,38 @@
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.requires_role_choose.001"
     },
     {
+      "key": "interaction.work.builder.service_unavailable",
+      "lines": [
+        "I do not sell construction blueprints.",
+        "I am not the right villager for blueprint work.",
+        "Construction plans are not a service I can offer.",
+        "You need a builder for that kind of blueprint.",
+        "I cannot draw up a useful construction blueprint.",
+        "That service is beyond my trade.",
+        "I am not trained for construction planning.",
+        "Blueprint work is not something I can provide.",
+        "Find someone better suited to building work.",
+        "No, I cannot offer construction blueprints."
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.service_unavailable.001a"
+    },
+    {
+      "key": "interaction.work.builder.already_hired_for_other_job",
+      "lines": [
+        "I am already hired for {role}. Finish or end that job before asking me to build.",
+        "My current contract is {role}. I cannot take a construction job on top of it.",
+        "You already have me assigned to {role}. Change or end that work before construction.",
+        "I am occupied with {role} work. Building has to wait until I am free.",
+        "This contract already has me working as {role}. I cannot start a build right now.",
+        "I cannot split myself between {role} and construction.",
+        "My hired work is {role} for now. End or change it before handing me a build.",
+        "I am not free for construction while assigned to {role}.",
+        "That would conflict with my {role} work.",
+        "Clear the {role} assignment first, then we can talk construction."
+      ],
+      "id": "global.messages.18_work_builder.messages.interaction.work.builder.already_hired_for_other_job.001b"
+    },
+    {
       "key": "interaction.work.builder.no_job_site",
       "lines": [
         "Builders do not use assigned job sites. I will travel between storage and the construction site.",
@@ -156,16 +188,16 @@
     {
       "key": "interaction.work.builder.need_payment",
       "lines": [
-        "I need {cost} in your inventory or my assigned payment box before I can start building {structure}.",
-        "I am held up for now. I need {cost} in your inventory or my assigned payment box before I can start building {structure}.",
-        "This is stopping the job for the moment. I need {cost} in your inventory or my assigned payment box before I can start building {structure}.",
-        "I cannot move on yet. I need {cost} in your inventory or my assigned payment box before I can start building {structure}.",
-        "I will continue once this is fixed. I need {cost} in your inventory or my assigned payment box before I can start building {structure}.",
-        "That needs attention before I can keep working. I need {cost} in your inventory or my assigned payment box before I can start building {structure}.",
-        "I am waiting on a fix. I need {cost} in your inventory or my assigned payment box before I can start building {structure}.",
-        "The work is paused until this changes. I need {cost} in your inventory or my assigned payment box before I can start building {structure}.",
-        "This is the problem right now. I need {cost} in your inventory or my assigned payment box before I can start building {structure}.",
-        "I am stuck here for the moment. I need {cost} in your inventory or my assigned payment box before I can start building {structure}."
+        "I need {cost} from your inventory before I can start building {structure}.",
+        "I am held up for now. I need {cost} from your inventory before I can start building {structure}.",
+        "This is stopping the job for the moment. I need {cost} from your inventory before I can start building {structure}.",
+        "I cannot move on yet. I need {cost} from your inventory before I can start building {structure}.",
+        "I will continue once this is fixed. I need {cost} from your inventory before I can start building {structure}.",
+        "That needs attention before I can keep working. I need {cost} from your inventory before I can start building {structure}.",
+        "I am waiting on a fix. I need {cost} from your inventory before I can start building {structure}.",
+        "The work is paused until this changes. I need {cost} from your inventory before I can start building {structure}.",
+        "This is the problem right now. I need {cost} from your inventory before I can start building {structure}.",
+        "I am stuck here for the moment. I need {cost} from your inventory before I can start building {structure}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.need_payment.009"
     },
@@ -188,16 +220,16 @@
     {
       "key": "interaction.work.builder.blueprint_ready",
       "lines": [
-        "Here is the blueprint for {structure}. Place and rotate it where you want, construction will cost {cost} when you hand it to a builder.",
-        "That part is handled. Here is the blueprint for {structure}. Place and rotate it where you want, construction will cost {cost} when you hand it to a builder.",
-        "Here is the update: Here is the blueprint for {structure}. Place and rotate it where you want, construction will cost {cost} when you hand it to a builder.",
-        "That moved things along: Here is the blueprint for {structure}. Place and rotate it where you want, construction will cost {cost} when you hand it to a builder.",
-        "That step is finished. Here is the blueprint for {structure}. Place and rotate it where you want, construction will cost {cost} when you hand it to a builder.",
-        "I have that sorted. Here is the blueprint for {structure}. Place and rotate it where you want, construction will cost {cost} when you hand it to a builder.",
-        "That is taken care of. Here is the blueprint for {structure}. Place and rotate it where you want, construction will cost {cost} when you hand it to a builder.",
-        "The work moved forward. Here is the blueprint for {structure}. Place and rotate it where you want, construction will cost {cost} when you hand it to a builder.",
-        "I can report this much. Here is the blueprint for {structure}. Place and rotate it where you want, construction will cost {cost} when you hand it to a builder.",
-        "That part is done: Here is the blueprint for {structure}. Place and rotate it where you want, construction will cost {cost} when you hand it to a builder."
+        "Here is the blueprint for {structure}. Place and rotate it where you want, then hand it to a free builder with {cost} for the job.",
+        "That part is handled. Here is the blueprint for {structure}. Place it where you want, then bring it to a free builder with {cost}.",
+        "Here is the update: the blueprint for {structure} is ready. Set the site, then pay a free builder {cost} to build it.",
+        "That moved things along: here is the blueprint for {structure}. Place it, then hand it to a free builder with {cost}.",
+        "That step is finished. Here is the blueprint for {structure}. Choose the site, then bring {cost} to a free builder.",
+        "I have that sorted. Here is the blueprint for {structure}. Place and rotate it, then pay a free builder {cost}.",
+        "That is taken care of. Here is the blueprint for {structure}. Set the site, then hand it to a free builder with {cost}.",
+        "The work moved forward. Here is the blueprint for {structure}. Place it, then a free builder can start for {cost}.",
+        "I can report this much. The blueprint for {structure} is ready; a free builder will need {cost} when you start the job.",
+        "That part is done: here is the blueprint for {structure}. Place it where you want, then bring a free builder {cost}."
       ],
       "id": "global.messages.18_work_builder.messages.interaction.work.builder.blueprint_ready.011"
     },

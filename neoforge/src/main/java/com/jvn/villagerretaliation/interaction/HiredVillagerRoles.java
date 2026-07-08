@@ -41,8 +41,22 @@ public final class HiredVillagerRoles {
         return new ArrayList<>(roles);
     }
 
+    public static List<HiredVillagerRole> availableContractRoles(ServerLevel level, Villager villager) {
+        List<HiredVillagerRole> roles = availableRoles(level, villager).stream()
+                .filter(role -> role != HiredVillagerRole.BUILDER)
+                .toList();
+        if (roles.isEmpty()) {
+            return List.of(HiredVillagerRole.FARMING);
+        }
+        return roles;
+    }
+
+    public static boolean canOfferBuilderService(ServerLevel level, Villager villager) {
+        return availableRoles(level, villager).contains(HiredVillagerRole.BUILDER);
+    }
+
     public static HiredVillagerRole defaultRole(ServerLevel level, Villager villager) {
-        List<HiredVillagerRole> available = availableRoles(level, villager);
+        List<HiredVillagerRole> available = availableContractRoles(level, villager);
         HiredVillagerRole bestRole = available.getFirst();
         int bestScore = -1;
         for (HiredVillagerRole role : available) {
@@ -57,7 +71,7 @@ public final class HiredVillagerRoles {
 
     public static int bestRoleScore(ServerLevel level, Villager villager) {
         int best = 0;
-        for (HiredVillagerRole role : HiredVillagerRole.values()) {
+        for (HiredVillagerRole role : availableContractRoles(level, villager)) {
             best = Math.max(best, roleScore(level, villager, role));
         }
         return best;
@@ -103,7 +117,7 @@ public final class HiredVillagerRoles {
     }
 
     public static String roleSummary(ServerLevel level, Villager villager) {
-        List<HiredVillagerRole> roles = availableRoles(level, villager);
+        List<HiredVillagerRole> roles = availableContractRoles(level, villager);
         List<String> labels = roles.stream().map(HiredVillagerRole::label).toList();
         return String.join(", ", labels);
     }

@@ -108,16 +108,16 @@
     {
       "key": "interaction.contract_offer_overview",
       "lines": [
-        "I can work as {available_roles}. My daily rate is {contract_cost}.",
-        "The roles I can take are {available_roles}, and it costs {contract_cost} per day.",
-        "You may hire me as {available_roles}. The price is {contract_cost} each day.",
-        "I am available for {available_roles}, for {contract_cost} a day.",
-        "If you want my service, I can work as {available_roles}. Daily cost: {contract_cost}.",
-        "I could take the role of {available_roles}. My pay is {contract_cost} per day.",
-        "For {contract_cost} each day, I can serve as {available_roles}.",
-        "My available work is {available_roles}, and the daily rate is {contract_cost}.",
-        "I can be hired for {available_roles}. It will cost {contract_cost} a day.",
-        "These are the roles I can fill: {available_roles}. My daily cost is {contract_cost}."
+        "I can be hired for {available_roles}. Choose the work first, then the days. My daily rate starts at {contract_cost}, and you can change my assigned job later.",
+        "The services I can take are {available_roles}. Pick the work, then the length. It starts at {contract_cost} per day, and the job can be changed later.",
+        "You may hire me for {available_roles}. Choose the job before the days. My daily rate starts at {contract_cost}, and I can be reassigned later.",
+        "I am available for {available_roles}. Set the work first, then choose the days. The rate starts at {contract_cost} a day, and the assignment can change later.",
+        "If you want my service, I can work as {available_roles}. Choose the service before the term. Daily cost starts at {contract_cost}, and you can change the job later.",
+        "I could take {available_roles}. Choose which service you need, then the days. My pay starts at {contract_cost} per day, and the role can be changed later.",
+        "For contract work, I can serve as {available_roles}. Pick a service first, then a duration. It starts at {contract_cost} each day, and reassignment is possible later.",
+        "My available contract work is {available_roles}. Choose the job first and the days after. The daily rate starts at {contract_cost}; you can change my assignment later.",
+        "I can be hired for {available_roles}. Choose what I do before choosing how long. It starts at {contract_cost} a day, and the job can change later.",
+        "These are the contract roles I can fill: {available_roles}. Pick one first, then the days. My daily cost starts at {contract_cost}, and you may reassign me later."
       ],
       "id": "global.messages.09_hire_contracts.messages.interaction.contract_offer_overview.006"
     },

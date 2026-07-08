@@ -40,6 +40,7 @@ public final class HiredVillagerContractService {
     private static final String DAILY_COST_TAG = "DailyCost";
     private static final String EMERALDS_PAID_TAG = "EmeraldsPaid";
     private static final String AUTO_PAYMENT_TAG = "AutoPayment";
+    private static final String ONE_OFF_BUILDER_JOB_TAG = "OneOffBuilderJob";
     private static final String LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG = "LastAutoPaymentAttemptGameTime";
     private static final String AWAITING_AUTO_PAYMENT_START_GAME_TIME_TAG = "AwaitingAutoPaymentStartGameTime";
     private static final String ROLE_TAG = "Role";
@@ -176,16 +177,32 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         return contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .filter(tag -> !isOneOffBuilderJob(tag))
                 .map(tag -> remainingDays(level, tag))
                 .orElse(0);
     }
 
     public static int getHireCost(ServerLevel level, Villager villager, ServerPlayer player, int days) {
-        return getDailyCost(level, villager, player) * clampedContractDays(days);
+        return getHireCost(level, villager, player, days, null);
+    }
+
+    public static int getHireCost(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            int days,
+            HiredVillagerRole role) {
+        return getDailyCost(level, villager, player, role) * clampedContractDays(days);
     }
 
     public static int getDailyCost(ServerLevel level, Villager villager, ServerPlayer player) {
-        int skillScore = HiredVillagerRoles.bestRoleScore(level, villager);
+        return getDailyCost(level, villager, player, null);
+    }
+
+    public static int getDailyCost(ServerLevel level, Villager villager, ServerPlayer player, HiredVillagerRole role) {
+        int skillScore = role == null
+                ? HiredVillagerRoles.bestRoleScore(level, villager)
+                : HiredVillagerRoles.roleScore(level, villager, role);
         int skillPremium = Math.max(0, (skillScore - 50) / 10)
                 * Math.max(0, VillagerRetaliationConfig.HIRED_CONTRACT_SKILL_PREMIUM_PER_TEN.get());
         int reputationModifier = reputationCostModifier(level, villager, player);
@@ -203,6 +220,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         return contract(villager)
                 .filter(HiredVillagerContractService::isActive)
+                .filter(tag -> !isOneOffBuilderJob(tag))
                 .filter(tag -> tag.hasUUID(HIRER_TAG) && tag.getUUID(HIRER_TAG).equals(player.getUUID()))
                 .map(tag -> effectiveExtensionDays(level, tag, requestedDays))
                 .orElse(0);
@@ -220,6 +238,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         return contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .filter(tag -> !isOneOffBuilderJob(tag))
                 .map(tag -> currentRenewalDailyCost(level, villager, tag))
                 .orElseGet(() -> getDailyCost(level, villager, player));
     }
@@ -228,6 +247,7 @@ public final class HiredVillagerContractService {
         expireHireContractIfNeeded(level, villager);
         return contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .filter(tag -> !isOneOffBuilderJob(tag))
                 .map(tag -> tag.getBoolean(AUTO_PAYMENT_TAG))
                 .orElse(false);
     }
@@ -240,7 +260,9 @@ public final class HiredVillagerContractService {
 
     public static boolean toggleAutoPayment(ServerLevel level, Villager villager) {
         expireHireContractIfNeeded(level, villager);
-        Optional<CompoundTag> activeContract = contract(villager).filter(HiredVillagerContractService::isActive);
+        Optional<CompoundTag> activeContract = contract(villager)
+                .filter(HiredVillagerContractService::isActive)
+                .filter(tag -> !isOneOffBuilderJob(tag));
         if (activeContract.isEmpty()) {
             return false;
         }
@@ -254,6 +276,7 @@ public final class HiredVillagerContractService {
     public static void setAutoPaymentEnabled(Villager villager, boolean enabled) {
         contract(villager)
                 .filter(HiredVillagerContractService::isActive)
+                .filter(tag -> !isOneOffBuilderJob(tag))
                 .ifPresent(tag -> {
                     tag.putBoolean(AUTO_PAYMENT_TAG, enabled);
                     villager.setPersistenceRequired();
@@ -269,7 +292,18 @@ public final class HiredVillagerContractService {
     }
 
     public static void startHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
+        startHireContract(level, villager, player, days, emeraldsPaid, HiredVillagerRoles.defaultRole(level, villager));
+    }
+
+    public static void startHireContract(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            int days,
+            int emeraldsPaid,
+            HiredVillagerRole role) {
         int safeDays = clampedContractDays(days);
+        HiredVillagerRole safeRole = role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
         long startGameTime = level.getGameTime();
         CompoundTag tag = new CompoundTag();
         UUID contractId = UUID.randomUUID();
@@ -281,7 +315,8 @@ public final class HiredVillagerContractService {
         tag.putInt(DAILY_COST_TAG, Math.max(1, emeraldsPaid / safeDays));
         tag.putInt(EMERALDS_PAID_TAG, emeraldsPaid);
         tag.putBoolean(AUTO_PAYMENT_TAG, false);
-        tag.putString(ROLE_TAG, HiredVillagerRoles.defaultRole(level, villager).serializedName());
+        tag.putBoolean(ONE_OFF_BUILDER_JOB_TAG, false);
+        tag.putString(ROLE_TAG, safeRole.serializedName());
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
         lockProfessionForHire(villager, tag);
         villager.getPersistentData().put(CONTRACT_TAG, tag);
@@ -291,10 +326,48 @@ public final class HiredVillagerContractService {
         HiredVillagerIndex.update(level, villager);
     }
 
+    public static void startOneOffBuilderJob(ServerLevel level, Villager villager, ServerPlayer player) {
+        long startGameTime = level.getGameTime();
+        CompoundTag tag = new CompoundTag();
+        UUID contractId = UUID.randomUUID();
+        tag.putUUID(CONTRACT_ID_TAG, contractId);
+        tag.putUUID(HIRER_TAG, player.getUUID());
+        tag.putLong(START_GAME_TIME_TAG, startGameTime);
+        tag.putLong(END_GAME_TIME_TAG, Long.MAX_VALUE);
+        tag.putInt(DURATION_DAYS_TAG, 0);
+        tag.putInt(DAILY_COST_TAG, 0);
+        tag.putInt(EMERALDS_PAID_TAG, 0);
+        tag.putBoolean(AUTO_PAYMENT_TAG, false);
+        tag.putBoolean(ONE_OFF_BUILDER_JOB_TAG, true);
+        tag.putString(ROLE_TAG, HiredVillagerRole.BUILDER.serializedName());
+        tag.putString(STATUS_TAG, STATUS_ACTIVE);
+        villager.getPersistentData().put(CONTRACT_TAG, tag);
+        villager.getPersistentData().remove(OVERFLOW_CLAIM_TAG);
+        HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
+        villager.setPersistenceRequired();
+        HiredVillagerIndex.update(level, villager);
+    }
+
+    public static boolean isOneOffBuilderJob(ServerLevel level, Villager villager) {
+        expireHireContractIfNeeded(level, villager);
+        return contract(villager)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .filter(HiredVillagerContractService::isOneOffBuilderJob)
+                .isPresent();
+    }
+
+    public static void finishOneOffBuilderJob(ServerLevel level, Villager villager, String workStatus) {
+        contract(villager)
+                .filter(HiredVillagerContractService::isActive)
+                .filter(HiredVillagerContractService::isOneOffBuilderJob)
+                .ifPresent(tag -> finishContract(level, villager, tag, STATUS_ENDED, workStatus, true));
+    }
+
     public static boolean extendHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
         expireHireContractIfNeeded(level, villager);
         Optional<CompoundTag> contract = contract(villager)
                 .filter(HiredVillagerContractService::isActive)
+                .filter(tag -> !isOneOffBuilderJob(tag))
                 .filter(tag -> tag.hasUUID(HIRER_TAG) && tag.getUUID(HIRER_TAG).equals(player.getUUID()));
         if (contract.isEmpty()) {
             return false;
@@ -330,6 +403,7 @@ public final class HiredVillagerContractService {
     public static void expireHireContractIfNeeded(ServerLevel level, Villager villager) {
         contract(villager)
                 .filter(HiredVillagerContractService::isActive)
+                .filter(tag -> !isOneOffBuilderJob(tag))
                 .filter(tag -> level.getGameTime() >= tag.getLong(END_GAME_TIME_TAG))
                 .ifPresent(tag -> {
                     if (canAttemptAutoPaymentRenewal(level, villager, tag)) {
@@ -356,7 +430,7 @@ public final class HiredVillagerContractService {
 
     public static boolean setActiveRole(ServerLevel level, Villager villager, HiredVillagerRole role) {
         expireHireContractIfNeeded(level, villager);
-        if (role == null || !HiredVillagerRoles.availableRoles(level, villager).contains(role)) {
+        if (role == null || !HiredVillagerRoles.availableContractRoles(level, villager).contains(role)) {
             return false;
         }
         Optional<CompoundTag> contract = contract(villager).filter(HiredVillagerContractService::isActive);
@@ -396,6 +470,9 @@ public final class HiredVillagerContractService {
         }
 
         CompoundTag tag = storedContract.get();
+        if (isOneOffBuilderJob(tag)) {
+            return;
+        }
         if (isAwaitingAutoPayment(tag)) {
             handleAwaitingAutoPayment(level, villager, tag);
             return;
@@ -695,6 +772,10 @@ public final class HiredVillagerContractService {
 
     private static boolean isAwaitingAutoPayment(CompoundTag tag) {
         return STATUS_AWAITING_AUTO_PAYMENT.equals(tag.getString(STATUS_TAG));
+    }
+
+    private static boolean isOneOffBuilderJob(CompoundTag tag) {
+        return tag != null && tag.getBoolean(ONE_OFF_BUILDER_JOB_TAG);
     }
 
     private static UUID ensureContractId(CompoundTag tag) {

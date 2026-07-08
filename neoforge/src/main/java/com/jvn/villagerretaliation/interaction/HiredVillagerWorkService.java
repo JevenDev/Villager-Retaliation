@@ -182,6 +182,11 @@ public final class HiredVillagerWorkService {
                     HiredVillagerRoleSettings.workFinalReportMessageKey(session.role()),
                     workReportReplacements(hirer, level, villager, session, snapshot),
                     hiredWorkReportNoticeCooldownTicks());
+            if (session.role() == HiredVillagerRole.BUILDER
+                    && HiredVillagerContractService.isOneOffBuilderJob(level, villager)
+                    && !BuilderTaskState.hasTask(session.state())) {
+                HiredVillagerContractService.finishOneOffBuilderJob(level, villager, result.status());
+            }
         }
     }
 

@@ -272,6 +272,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final HiredVillagerRole activeHiredRole;
     private boolean activeBrewingOrder;
     private boolean activeBuilderTask;
+    private boolean oneOffBuilderJob;
     private boolean farmingTillSoil;
     private final Set<String> selectedLoggingFilters = new LinkedHashSet<>();
     private boolean loggingStripLogs;
@@ -312,6 +313,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private HiredBrewingRecipeCatalog.BrewingDurationChoice selectedBrewingDurationChoice;
     private HiredBrewingRecipeCatalog.BrewingLevelChoice selectedBrewingLevelChoice;
     private HiredBrewingRecipeCatalog.BrewingRoute selectedBrewingRoute;
+    private HiredVillagerRole pendingHireRole;
     private String selectedBuilderCategory;
     private BuilderStructureCatalog.Entry selectedBuilderStructure;
     private int selectedInventorySlot = -1;
@@ -382,6 +384,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             HiredVillagerRole activeHiredRole,
             boolean activeBrewingOrder,
             boolean activeBuilderTask,
+            boolean oneOffBuilderJob,
             boolean farmingTillSoil,
             List<String> selectedLoggingFilters,
             boolean loggingStripLogs,
@@ -429,6 +432,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.activeHiredRole = activeHiredRole;
         this.activeBrewingOrder = activeBrewingOrder;
         this.activeBuilderTask = activeBuilderTask;
+        this.oneOffBuilderJob = oneOffBuilderJob;
         this.farmingTillSoil = farmingTillSoil;
         this.loggingStripLogs = loggingStripLogs;
         this.loggingHarvestLeaves = loggingHarvestLeaves;
@@ -871,6 +875,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addPaymentOptions();
         } else if (this.page == DialoguePage.HIRE) {
             addHireOptions();
+        } else if (this.page == DialoguePage.HIRE_DURATION) {
+            addHireDurationOptions();
         } else if (this.page == DialoguePage.CONTRACT) {
             addContractOptions();
         } else if (this.page == DialoguePage.END_CONTRACT_CONFIRMATION) {
@@ -1012,7 +1018,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addRecruitOptions() {
-        if (this.hiredByPlayer) {
+        if (this.hiredByPlayer && !this.oneOffBuilderJob) {
             addOption("recruit.about_contract", this::openContractPage);
         } else if (this.hiredByOtherPlayer) {
             addOption("recruit.contract", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
@@ -1022,14 +1028,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
         addOption("recruit.storage", this::openStoragePage);
         if (this.hiredByPlayer) {
-            addOption("recruit.payment", this::openPaymentPage);
-            addOption("recruit.about_role", this::openRolePage);
+            if (!this.oneOffBuilderJob) {
+                addOption("recruit.payment", this::openPaymentPage);
+                addOption("recruit.about_role", this::openRolePage);
+            }
             addOption("recruit.work", this::openWorkPage);
         }
-        addOption("recruit.end_hire", () -> {
-            openEndContractConfirmationPage();
-            requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_END_HIRE_CONFIRMATION);
-        });
+        if (this.hiredByPlayer && !this.oneOffBuilderJob) {
+            addOption("recruit.end_hire", () -> {
+                openEndContractConfirmationPage();
+                requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_END_HIRE_CONFIRMATION);
+            });
+        }
         if (this.followingPlayer) {
             addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
         } else if (this.stayingHere) {
@@ -1052,13 +1062,34 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addHireOptions() {
+        addPassiveOption("recruit.hire_services_intro");
+        addHireRoleOption(HiredVillagerRole.COMBAT, "recruit.role_combat");
+        addHireRoleOption(HiredVillagerRole.MINING, "recruit.role_mining");
+        addHireRoleOption(HiredVillagerRole.LOGGING, "recruit.role_logging");
+        addHireRoleOption(HiredVillagerRole.FARMING, "recruit.role_farming");
+        addHireRoleOption(HiredVillagerRole.FISHING, "recruit.role_fishing");
+        addHireRoleOption(HiredVillagerRole.BREWING, "recruit.role_brewing");
+        addHireRoleOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.role_animal_handling");
+        addHireRoleOption(HiredVillagerRole.NITWIT, "recruit.role_nitwit");
+        if (canOfferBuilderService()) {
+            addOption("recruit.buy_blueprints", this::openBuilderStructuresPage);
+        }
+        addOption("recruit.nevermind", this::openRecruitPage);
+    }
+
+    private void addHireDurationOptions() {
+        if (this.pendingHireRole == null || !canOfferContractRole(this.pendingHireRole)) {
+            addOption("recruit.nevermind", this::openRecruitPage);
+            return;
+        }
+        this.options.add(DialogueOption.enabled(translate("recruit.hire_selected_role", this.pendingHireRole.label()), NO_ACTION));
         addOption("recruit.hire_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY));
         addOption("recruit.hire_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_THREE_DAYS));
         addOption("recruit.hire_five_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_FIVE_DAYS));
         addOption("recruit.hire_seven_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_SEVEN_DAYS));
         addOption("recruit.hire_fifteen_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_FIFTEEN_DAYS));
         addOption("recruit.hire_thirty_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.HIRE_THIRTY_DAYS));
-        addOption("recruit.nevermind", this::openRecruitPage);
+        addOption("recruit.nevermind", this::openHirePage);
     }
 
     private void addContractOptions() {
@@ -1281,7 +1312,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     translate("recruit.builder_category", category),
                     () -> openBuilderStructureCategoryPage(category)));
         }
-        addOption("recruit.nevermind", this::openWorkPage);
+        addOption("recruit.nevermind", this::openBuilderReturnPage);
     }
 
     private void addLoggingOption(String optionId, String translationKey, boolean enabled) {
@@ -1327,7 +1358,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.options.add(DialogueOption.enabled(translate("recruit.builder_selected", this.selectedBuilderStructure.menuLabel()), NO_ACTION));
         addOption("recruit.builder_confirm", () -> requestBuilderOrder(HiredBuilderOrderPayload.Action.CONFIRM, this.selectedBuilderStructure));
         addOption("recruit.builder_pick_another", this::openBuilderStructuresPage);
-        addOption("recruit.nevermind", this::openWorkPage);
+        addOption("recruit.nevermind", this::openBuilderReturnPage);
     }
 
     private String durationLabel(int durationTicks) {
@@ -1364,8 +1395,17 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addRoleChangeOption(HiredVillagerRole role, String labelKey, VillagerRecruitRequestPayload.Action action) {
-        if (canOfferHiredRole(role)) {
+        if (canOfferContractRole(role)) {
             addOption(labelKey, () -> requestRecruit(action));
+        }
+    }
+
+    private void addHireRoleOption(HiredVillagerRole role, String labelKey) {
+        if (canOfferContractRole(role)) {
+            addOption(labelKey, () -> {
+                this.pendingHireRole = role;
+                openHireDurationPage();
+            });
         }
     }
 
@@ -1375,8 +1415,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private boolean canOfferHiredRole(HiredVillagerRole role) {
-        return this.availableHiredRoles.contains(role);
+    private boolean canOfferContractRole(HiredVillagerRole role) {
+        return role != HiredVillagerRole.BUILDER && this.availableHiredRoles.contains(role);
+    }
+
+    private boolean canOfferBuilderService() {
+        return this.availableHiredRoles.contains(HiredVillagerRole.BUILDER);
     }
 
     private boolean isActiveHiredRole(HiredVillagerRole role) {
@@ -1590,7 +1634,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void openHirePage() {
+        this.pendingHireRole = null;
+        requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT);
         openPage(DialoguePage.HIRE);
+    }
+
+    private void openHireDurationPage() {
+        openPage(DialoguePage.HIRE_DURATION);
     }
 
     private void openContractPage() {
@@ -1859,7 +1909,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         if (this.page == DialoguePage.BUILDER_STRUCTURES) {
-            openPage(DialoguePage.WORK);
+            openBuilderReturnPage();
+            return;
+        }
+        if (this.page == DialoguePage.HIRE_DURATION) {
+            openPage(DialoguePage.HIRE);
             return;
         }
         if (this.page == DialoguePage.FARMING_OPTIONS || this.page == DialoguePage.LOGGING_FILTERS) {
@@ -2004,7 +2058,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void requestRecruit(VillagerRecruitRequestPayload.Action action) {
-        sendToServer(new VillagerRecruitRequestPayload(this.villagerEntityId, action));
+        HiredVillagerRole selectedRole = isHireDurationAction(action) ? this.pendingHireRole : null;
+        sendToServer(new VillagerRecruitRequestPayload(this.villagerEntityId, action, selectedRole));
         if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
             this.followingPlayer = true;
             this.stayingHere = false;
@@ -2019,8 +2074,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.activeBrewingOrder = false;
             openWorkPage();
         } else if (action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD) {
+            boolean wasOneOffBuilderJob = this.oneOffBuilderJob;
             this.activeBuilderTask = false;
+            this.oneOffBuilderJob = false;
+            if (wasOneOffBuilderJob) {
+                openRecruitPage();
+            } else {
+                openBuilderReturnPage();
+            }
+        }
+    }
+
+    private void openBuilderReturnPage() {
+        if (this.hiredByPlayer && !this.oneOffBuilderJob && isActiveHiredRole(HiredVillagerRole.BUILDER)) {
             openWorkPage();
+        } else {
+            openRecruitPage();
         }
     }
 
@@ -2055,6 +2124,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.farmingTillSoil = !this.farmingTillSoil;
             rebuildOptionsKeepingListPosition();
         }
+    }
+
+    private static boolean isHireDurationAction(VillagerRecruitRequestPayload.Action action) {
+        return action == VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY
+                || action == VillagerRecruitRequestPayload.Action.HIRE_THREE_DAYS
+                || action == VillagerRecruitRequestPayload.Action.HIRE_FIVE_DAYS
+                || action == VillagerRecruitRequestPayload.Action.HIRE_SEVEN_DAYS
+                || action == VillagerRecruitRequestPayload.Action.HIRE_FIFTEEN_DAYS
+                || action == VillagerRecruitRequestPayload.Action.HIRE_THIRTY_DAYS;
     }
 
     private void requestAnimalBreedingTarget(String targetId) {
@@ -4500,7 +4578,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             case ROOT -> 0;
             case TALK, ADVENTURES, PROFILE, SKILLS, GIFT, FAMILY, RELATIONSHIPS, RECRUIT -> 1;
             case ANCESTRY, DESCENDANTS, STORAGE, PAYMENT, HIRE, CONTRACT, ROLE, WORK -> 2;
-            case END_CONTRACT_CONFIRMATION,
+            case HIRE_DURATION,
+                    END_CONTRACT_CONFIRMATION,
                     CONTRACT_EXTENSION,
                     ROLE_CHANGE,
                     FARMING_OPTIONS,
@@ -4531,6 +4610,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         STORAGE,
         PAYMENT,
         HIRE,
+        HIRE_DURATION,
         CONTRACT,
         END_CONTRACT_CONFIRMATION,
         CONTRACT_EXTENSION,

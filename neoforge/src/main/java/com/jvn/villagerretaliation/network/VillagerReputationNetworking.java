@@ -17,7 +17,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "32";
+    private static final String PROTOCOL_VERSION = "33";
 
     private VillagerReputationNetworking() {
     }
@@ -241,7 +241,8 @@ public final class VillagerReputationNetworking {
                         ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleRecruitRequest(
                             player,
                             payload.entityId(),
-                            payload.action()
+                            payload.action(),
+                            payload.selectedRole()
                     )))
         );
         network.playToServer(

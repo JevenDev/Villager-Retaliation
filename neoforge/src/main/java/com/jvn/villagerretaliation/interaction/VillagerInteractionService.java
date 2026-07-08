@@ -274,12 +274,7 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.builder.blueprint_started");
             return InteractionResult.SUCCESS;
         }
-        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
-            return InteractionResult.FAIL;
-        }
-        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BUILDER) {
-            sendVillagerNotice(player, villager, "interaction.work.builder.requires_role_choose");
+        if (!canUseBuilderBlueprintService(player, level, villager)) {
             return InteractionResult.FAIL;
         }
         CompoundTag state = HiredVillagerWorkService.state(villager);
@@ -483,7 +478,11 @@ public final class VillagerInteractionService {
         VillagerGiftRequestHandler.handle(player, entityId, inventorySlot);
     }
 
-    public static void handleRecruitRequest(ServerPlayer player, int entityId, VillagerRecruitRequestPayload.Action action) {
+    public static void handleRecruitRequest(
+            ServerPlayer player,
+            int entityId,
+            VillagerRecruitRequestPayload.Action action,
+            HiredVillagerRole selectedRole) {
         Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
         if (target.isEmpty()) {
             return;
@@ -531,7 +530,7 @@ public final class VillagerInteractionService {
             return;
         }
 
-        if (handleHireDurationRequest(player, level, villager, action)) {
+        if (handleHireDurationRequest(player, level, villager, action, selectedRole)) {
             return;
         }
         if (handleHireExtensionRequest(player, level, villager, action)) {
@@ -657,12 +656,7 @@ public final class VillagerInteractionService {
             return;
         }
         ServerLevel level = player.serverLevel();
-        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
-            return;
-        }
-        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BUILDER) {
-            sendVillagerNotice(player, villager, "interaction.work.builder.requires_role_choose");
+        if (!canUseBuilderBlueprintService(player, level, villager)) {
             return;
         }
         CompoundTag state = HiredVillagerWorkService.state(villager);
@@ -676,6 +670,30 @@ public final class VillagerInteractionService {
             case CONFIRM -> confirmBuilderOrder(player, level, villager, state, structureId);
             case CANCEL -> cancelBuilderOrder(player, level, villager, state);
         }
+    }
+
+    private static boolean canUseBuilderBlueprintService(ServerPlayer player, ServerLevel level, Villager villager) {
+        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
+            return false;
+        }
+        if (!HiredVillagerRoles.canOfferBuilderService(level, villager)) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.service_unavailable");
+            return false;
+        }
+        if (HiredVillagerContractService.isHired(level, villager)
+                && !HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
+            return false;
+        }
+        if (HiredVillagerContractService.isHiredBy(level, villager, player)
+                && !HiredVillagerContractService.isOneOffBuilderJob(level, villager)
+                && HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BUILDER) {
+            sendVillagerNotice(player, villager, "interaction.work.builder.already_hired_for_other_job", Map.of(
+                    "role", HiredVillagerContractService.activeRole(level, villager).label()));
+            return false;
+        }
+        return true;
     }
 
     public static void handleConstructionBlueprintDeploy(ServerPlayer player, ItemStack blueprint, BlockPos targetPos) {
@@ -862,7 +880,8 @@ public final class VillagerInteractionService {
             ServerPlayer player,
             ServerLevel level,
             Villager villager,
-            VillagerRecruitRequestPayload.Action action) {
+            VillagerRecruitRequestPayload.Action action,
+            HiredVillagerRole selectedRole) {
         int days = switch (action) {
             case HIRE_ONE_DAY -> 1;
             case HIRE_THREE_DAYS -> 3;
@@ -892,7 +911,20 @@ public final class VillagerInteractionService {
             return true;
         }
 
-        int cost = HiredVillagerContractService.getHireCost(level, villager, player, days);
+        HiredVillagerRole hireRole = selectedRole == null
+                ? HiredVillagerRoles.defaultRole(level, villager)
+                : selectedRole;
+        if (!HiredVillagerRoles.availableContractRoles(level, villager).contains(hireRole)) {
+            sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.role_not_suitable",
+                    Map.of("role", hireRole.label())
+            );
+            return true;
+        }
+
+        int cost = HiredVillagerContractService.getHireCost(level, villager, player, days, hireRole);
         if (countCurrency(player) < cost) {
             sendVillagerNotice(
                     player,
@@ -906,7 +938,7 @@ public final class VillagerInteractionService {
             return true;
         }
         removeCurrency(player, cost);
-        HiredVillagerContractService.startHireContract(level, villager, player, days, cost);
+        HiredVillagerContractService.startHireContract(level, villager, player, days, cost, hireRole);
         HiredVillagerWorkService.resetForNewContract(level, villager);
         VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         VillagerRecruitmentService.sendHiredNotice(player, villager);
@@ -917,7 +949,7 @@ public final class VillagerInteractionService {
                 Map.of(
                         "time_remaining", formatDaysRemaining(days),
                         "contract_cost", formatCurrency(level, cost),
-                        "role", HiredVillagerContractService.activeRole(level, villager).label()
+                        "role", hireRole.label()
                 )
         );
         VillagerInteractionScreenOpener.refreshNormal(player, villager);
@@ -1169,12 +1201,8 @@ public final class VillagerInteractionService {
     }
 
     private static void startConstructionBlueprintJob(ServerPlayer player, ServerLevel level, Villager villager) {
-        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
-            rejectConstructionBlueprintStart(player, villager, "interaction.work.manage.requires_hirer");
-            return;
-        }
-        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.BUILDER) {
-            rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.requires_role_choose");
+        if (!canUseBuilderBlueprintService(player, level, villager)) {
+            sendForcedDialogueReputation(player, villager, constructionBlueprintOptions(), true);
             return;
         }
         ItemStack blueprint = findHeldConstructionBlueprint(player);
@@ -1231,23 +1259,16 @@ public final class VillagerInteractionService {
         }
 
         int cost = preview.jobCost() > 0 ? preview.jobCost() : plan.get().price();
-        BuilderPaymentSource paymentSource = builderPaymentSource(player, level, villager, cost);
-        if (paymentSource == BuilderPaymentSource.NONE) {
+        if (countCurrency(player) < cost) {
             rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.need_payment", Map.of(
                     "structure", entry.get().menuLabel(),
                     "cost", formatCurrency(level, cost)));
             return;
         }
-        if (paymentSource == BuilderPaymentSource.PLAYER_INVENTORY) {
-            removeCurrency(player, cost);
-        } else {
-            int consumed = consumePaymentStorageCurrency(level, villager, cost);
-            if (consumed < cost) {
-                rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.need_payment", Map.of(
-                        "structure", entry.get().menuLabel(),
-                        "cost", formatCurrency(level, cost)));
-                return;
-            }
+        removeCurrency(player, cost);
+
+        if (!HiredVillagerContractService.isHired(level, villager)) {
+            HiredVillagerContractService.startOneOffBuilderJob(level, villager, player);
         }
 
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
@@ -1286,33 +1307,6 @@ public final class VillagerInteractionService {
         sendForcedDialogueReputation(player, villager, constructionBlueprintOptions(), true);
     }
 
-    private static BuilderPaymentSource builderPaymentSource(
-            ServerPlayer player,
-            ServerLevel level,
-            Villager villager,
-            int cost) {
-        if (cost <= 0 || countCurrency(player) >= cost) {
-            return BuilderPaymentSource.PLAYER_INVENTORY;
-        }
-        if (countPaymentStorageCurrency(level, villager) >= cost) {
-            return BuilderPaymentSource.PAYMENT_STORAGE;
-        }
-        return BuilderPaymentSource.NONE;
-    }
-
-    private static int countPaymentStorageCurrency(ServerLevel level, Villager villager) {
-        return AssignedStorageService.countPaymentItems(
-                villager,
-                stack -> VillagerCurrencyResources.isCurrency(level.getServer(), stack));
-    }
-
-    private static int consumePaymentStorageCurrency(ServerLevel level, Villager villager, int cost) {
-        return AssignedStorageService.consumePaymentItems(
-                villager,
-                stack -> VillagerCurrencyResources.isCurrency(level.getServer(), stack),
-                cost);
-    }
-
     private static int builderBlueprintCost(int jobCost) {
         return Math.max(1, Math.min(5, Math.max(1, jobCost) / 10));
     }
@@ -1339,6 +1333,9 @@ public final class VillagerInteractionService {
         jobId.ifPresent(id -> ConstructionBlueprintItem.expireMatchingBlueprints(player, id));
         BuilderTaskState.clearTask(state);
         HiredVillagerWorkService.cancelWork(level, villager, HiredVillagerRole.BUILDER, "interaction.work.builder.cancelled");
+        if (HiredVillagerContractService.isOneOffBuilderJob(level, villager)) {
+            HiredVillagerContractService.finishOneOffBuilderJob(level, villager, "interaction.work.builder.cancelled");
+        }
         if (refund > 0) {
             sendVillagerNotice(player, villager, "interaction.work.builder.cancelled_refund", Map.of("cost", formatCurrency(level, refund)));
         } else {
@@ -2573,12 +2570,6 @@ public final class VillagerInteractionService {
     }
 
     private record ReputationSnapshot(int value, VillagerReputationLevel level) {
-    }
-
-    private enum BuilderPaymentSource {
-        PLAYER_INVENTORY,
-        PAYMENT_STORAGE,
-        NONE
     }
 
     private record PlacementUpdate(
