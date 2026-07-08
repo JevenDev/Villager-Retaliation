@@ -157,9 +157,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_BUTTON_HIGHLIGHT_INSET = 2;
     private static final int INTERACTION_KEYBOARD_TOOLTIP_X_GAP = 8;
     private static final int INTERACTION_KEYBOARD_TOOLTIP_Y_GAP = 4;
-    private static final int INTERACTION_CONTAINER_ORNAMENT_WIDTH = 288;
-    private static final int INTERACTION_CONTAINER_ORNAMENT_HEIGHT = 104;
-    private static final int INTERACTION_CONTAINER_ORNAMENT_Y = -3;
     private static final int INTERACTION_NAMEPLATE_TEXT_HORIZONTAL_PADDING = 8;
     private static final int INTERACTION_NAMEPLATE_TEXT_Y_OFFSET = 2;
     private static final int INTERACTION_NAMEPLATE_X = 0;
@@ -190,19 +187,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_PORTRAIT_SCISSOR_RIGHT_EXTENSION = 1;
     private static final int INTERACTION_PORTRAIT_SCALE = 54;
     private static final int INTERACTION_PORTRAIT_RENDER_Y_OFFSET = 1;
-    private static final int INTERACTION_PORTRAIT_ORNAMENT_WIDTH = 65;
-    private static final int INTERACTION_PORTRAIT_ORNAMENT_HEIGHT = 65;
-    private static final int INTERACTION_PORTRAIT_ORNAMENT_X_OFFSET = 1;
-    private static final int INTERACTION_PORTRAIT_ORNAMENT_Y_OFFSET = 1;
-    private static final float INTERACTION_PORTRAIT_ORNAMENT_Z = 119.0F;
     private static final long MOUSE_STARE_REQUIRED_MILLIS = 10_000L;
     private static final double VILLAGER_PORTRAIT_EYE_BRIDGE_RADIUS_X = 3.5D;
     private static final double VILLAGER_PORTRAIT_EYE_BRIDGE_RADIUS_Y = 4.5D;
-    private static final int INTERACTION_CONTAINER_OVERLAY_X = 4;
-    private static final int INTERACTION_CONTAINER_OVERLAY_Y = 68;
-    private static final int INTERACTION_CONTAINER_OVERLAY_WIDTH = 59;
-    private static final int INTERACTION_CONTAINER_OVERLAY_HEIGHT = 45;
-    private static final float INTERACTION_CONTAINER_OVERLAY_Z = 120.0F;
     private static final int INTERACTION_MOOD_BASELINE_LEFT = 65;
     private static final int INTERACTION_INFO_BASELINE_RIGHT = 274;
     private static final int INTERACTION_INFO_BASELINE_Y = 79;
@@ -2781,20 +2768,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private void renderInteractionContainerOrnament(GuiGraphics graphics, int left, int top) {
-        graphics.blit(
-                VillagerRetaliationClientAssets.INTERACTION_CONTAINER_ORNAMENT_TEXTURE,
-                left + (INTERACTION_CONTAINER_WIDTH - INTERACTION_CONTAINER_ORNAMENT_WIDTH) / 2,
-                top + INTERACTION_CONTAINER_ORNAMENT_Y,
-                0,
-                0,
-                INTERACTION_CONTAINER_ORNAMENT_WIDTH,
-                INTERACTION_CONTAINER_ORNAMENT_HEIGHT,
-                INTERACTION_CONTAINER_ORNAMENT_WIDTH,
-                INTERACTION_CONTAINER_ORNAMENT_HEIGHT
-        );
-    }
-
     private void blitNineSlicedTexture(
             GuiGraphics graphics,
             ResourceLocation texture,
@@ -2855,55 +2828,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 textureWidth,
                 textureHeight
         );
-    }
-
-    private void renderInteractionContainerOverlay(GuiGraphics graphics, int left, int top) {
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0F, 0.0F, INTERACTION_CONTAINER_OVERLAY_Z);
-        try {
-            graphics.blit(
-                    VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OVERLAY_TEXTURE,
-                    left + INTERACTION_CONTAINER_OVERLAY_X,
-                    top + INTERACTION_CONTAINER_OVERLAY_Y,
-                    0,
-                    0,
-                    INTERACTION_CONTAINER_OVERLAY_WIDTH,
-                    INTERACTION_CONTAINER_OVERLAY_HEIGHT,
-                    INTERACTION_CONTAINER_OVERLAY_WIDTH,
-                    INTERACTION_CONTAINER_OVERLAY_HEIGHT
-            );
-        } finally {
-            graphics.pose().popPose();
-        }
-    }
-
-    private void renderInteractionPortraitOrnament(GuiGraphics graphics, int left, int top) {
-        int portraitLeft = left + INTERACTION_PORTRAIT_LEFT;
-        int portraitTop = top + INTERACTION_PORTRAIT_TOP;
-        int portraitRight = left + INTERACTION_PORTRAIT_RIGHT;
-        int portraitBottom = top + INTERACTION_PORTRAIT_BOTTOM;
-        int ornamentLeft = (portraitLeft + portraitRight - INTERACTION_PORTRAIT_ORNAMENT_WIDTH) / 2
-                + INTERACTION_PORTRAIT_ORNAMENT_X_OFFSET;
-        int ornamentTop = (portraitTop + portraitBottom - INTERACTION_PORTRAIT_ORNAMENT_HEIGHT) / 2
-                + INTERACTION_PORTRAIT_ORNAMENT_Y_OFFSET;
-
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0F, 0.0F, INTERACTION_PORTRAIT_ORNAMENT_Z);
-        try {
-            graphics.blit(
-                    VillagerRetaliationClientAssets.INTERACTION_CONTAINER_PORTRAIT_ORNAMENT_TEXTURE,
-                    ornamentLeft,
-                    ornamentTop,
-                    0,
-                    0,
-                    INTERACTION_PORTRAIT_ORNAMENT_WIDTH,
-                    INTERACTION_PORTRAIT_ORNAMENT_HEIGHT,
-                    INTERACTION_PORTRAIT_ORNAMENT_WIDTH,
-                    INTERACTION_PORTRAIT_ORNAMENT_HEIGHT
-            );
-        } finally {
-            graphics.pose().popPose();
-        }
     }
 
     private void renderInteractionVillagerPortrait(GuiGraphics graphics, int left, int top) {

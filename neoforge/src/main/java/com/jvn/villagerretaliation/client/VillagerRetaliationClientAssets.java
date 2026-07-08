@@ -28,14 +28,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/interaction_button");
     public static final ResourceLocation INTERACTION_CONTAINER_OPTION_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container_option");
-    public static final ResourceLocation INTERACTION_CONTAINER_ORNAMENT_TEXTURE =
-            texture("gui/villager_interaction_screen/interaction_container_ornament");
     public static final ResourceLocation INTERACTION_CONTAINER_NAMEPLATE_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container_nameplate");
-    public static final ResourceLocation INTERACTION_CONTAINER_OVERLAY_TEXTURE =
-            texture("gui/villager_interaction_screen/interaction_container_overlay");
-    public static final ResourceLocation INTERACTION_CONTAINER_PORTRAIT_ORNAMENT_TEXTURE =
-            texture("gui/villager_interaction_screen/interaction_container_portrait_ornament");
     public static final ResourceLocation INTERACTION_CONTAINER_SKILLS_CONTAINER_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container_skills_container");
     public static final ResourceLocation INTERACTION_CONTAINER_SKILLS_DIALOGUE_CONTAINER_TEXTURE =
