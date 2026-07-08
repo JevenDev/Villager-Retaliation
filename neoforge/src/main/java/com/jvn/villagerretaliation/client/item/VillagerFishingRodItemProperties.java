@@ -1,10 +1,11 @@
 package com.jvn.villagerretaliation.client.item;
 
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.ItemProperties;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -13,6 +14,10 @@ import net.neoforged.neoforge.common.ItemAbilities;
 
 public final class VillagerFishingRodItemProperties {
     private static final ResourceLocation CAST_PROPERTY = ResourceLocation.withDefaultNamespace("cast");
+    private static final double ACTIVE_HOOK_LOOKUP_RADIUS = 32.0D;
+    private static final Map<Integer, Boolean> ACTIVE_HOOK_CACHE = new HashMap<>();
+    private static ClientLevel cachedLevel;
+    private static long cachedGameTime = Long.MIN_VALUE;
 
     private VillagerFishingRodItemProperties() {
     }
@@ -40,11 +45,25 @@ public final class VillagerFishingRodItemProperties {
         if (level == null) {
             return false;
         }
-        for (Entity nearby : level.entitiesForRendering()) {
-            if (nearby instanceof VillagerFishingHook hook && hook.isAlive() && hook.getOwner() == entity) {
-                return true;
-            }
+        long gameTime = level.getGameTime();
+        if (level != cachedLevel || gameTime != cachedGameTime) {
+            ACTIVE_HOOK_CACHE.clear();
+            cachedLevel = level;
+            cachedGameTime = gameTime;
         }
-        return false;
+        Boolean cached = ACTIVE_HOOK_CACHE.get(entity.getId());
+        if (cached != null) {
+            return cached;
+        }
+        boolean active = false;
+        for (VillagerFishingHook hook : level.getEntitiesOfClass(
+                VillagerFishingHook.class,
+                entity.getBoundingBox().inflate(ACTIVE_HOOK_LOOKUP_RADIUS),
+                hook -> hook.isAlive() && hook.getOwner() == entity)) {
+            active = true;
+            break;
+        }
+        ACTIVE_HOOK_CACHE.put(entity.getId(), active);
+        return active;
     }
 }

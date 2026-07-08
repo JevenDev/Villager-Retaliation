@@ -18,11 +18,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 @OnlyIn(Dist.CLIENT)
 public class VillagerFishingHookRenderer extends EntityRenderer<VillagerFishingHook> {
     private static final ResourceLocation TEXTURE_LOCATION = ResourceLocation.withDefaultNamespace("textures/entity/fishing_hook.png");
     private static final RenderType RENDER_TYPE = RenderType.entityCutout(TEXTURE_LOCATION);
+    private static final int LINE_SEGMENTS = 16;
+    private static final float LINE_HALF_WIDTH = 0.0125F;
 
     public VillagerFishingHookRenderer(EntityRendererProvider.Context context) {
         super(context);
@@ -53,11 +57,7 @@ public class VillagerFishingHookRenderer extends EntityRenderer<VillagerFishingH
         float x = (float)(hand.x - hook.x);
         float y = (float)(hand.y - hook.y);
         float z = (float)(hand.z - hook.z);
-        VertexConsumer lineConsumer = buffer.getBuffer(RenderType.lineStrip());
-        PoseStack.Pose linePose = poseStack.last();
-        for (int index = 0; index <= 16; index++) {
-            stringVertex(x, y, z, lineConsumer, linePose, fraction(index, 16), fraction(index + 1, 16));
-        }
+        renderString(x, y, z, lineOffset(x, y, z), buffer.getBuffer(RenderType.leash()), poseStack.last().pose(), packedLight);
 
         poseStack.popPose();
         super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
@@ -87,6 +87,33 @@ public class VillagerFishingHookRenderer extends EntityRenderer<VillagerFishingH
         return (float)numerator / denominator;
     }
 
+    private Vec3 lineOffset(float x, float y, float z) {
+        Vec3 direction = new Vec3(x, y, z);
+        Vector3f forwardVector = new Vector3f(0.0F, 0.0F, -1.0F).rotate(this.entityRenderDispatcher.cameraOrientation());
+        Vec3 offset = direction.cross(new Vec3(forwardVector.x(), forwardVector.y(), forwardVector.z()));
+        if (offset.lengthSqr() < 1.0E-5D) {
+            Vector3f rightVector = new Vector3f(1.0F, 0.0F, 0.0F).rotate(this.entityRenderDispatcher.cameraOrientation());
+            offset = new Vec3(rightVector.x(), rightVector.y(), rightVector.z());
+        }
+        if (offset.lengthSqr() < 1.0E-5D) {
+            offset = new Vec3(-z, 0.0D, x);
+        }
+        return offset.lengthSqr() < 1.0E-5D
+                ? new Vec3(LINE_HALF_WIDTH, 0.0D, 0.0D)
+                : offset.normalize().scale(LINE_HALF_WIDTH);
+    }
+
+    private static void renderString(float x, float y, float z, Vec3 offset, VertexConsumer consumer, Matrix4f pose, int packedLight) {
+        for (int index = 0; index <= LINE_SEGMENTS; index++) {
+            float stringFraction = fraction(index, LINE_SEGMENTS);
+            float currentX = x * stringFraction;
+            float currentY = y * (stringFraction * stringFraction + stringFraction) * 0.5F + 0.25F;
+            float currentZ = z * stringFraction;
+            stringRibbonVertex(consumer, pose, packedLight, currentX + (float)offset.x, currentY + (float)offset.y, currentZ + (float)offset.z);
+            stringRibbonVertex(consumer, pose, packedLight, currentX - (float)offset.x, currentY - (float)offset.y, currentZ - (float)offset.z);
+        }
+    }
+
     private static void vertex(VertexConsumer consumer, PoseStack.Pose pose, int packedLight, float x, int y, int u, int v) {
         consumer.addVertex(pose, x - 0.5F, y - 0.5F, 0.0F)
                 .setColor(-1)
@@ -96,18 +123,8 @@ public class VillagerFishingHookRenderer extends EntityRenderer<VillagerFishingH
                 .setNormal(pose, 0.0F, 1.0F, 0.0F);
     }
 
-    private static void stringVertex(float x, float y, float z, VertexConsumer consumer, PoseStack.Pose pose, float stringFraction, float nextStringFraction) {
-        float currentX = x * stringFraction;
-        float currentY = y * (stringFraction * stringFraction + stringFraction) * 0.5F + 0.25F;
-        float currentZ = z * stringFraction;
-        float normalX = x * nextStringFraction - currentX;
-        float normalY = y * (nextStringFraction * nextStringFraction + nextStringFraction) * 0.5F + 0.25F - currentY;
-        float normalZ = z * nextStringFraction - currentZ;
-        float length = Mth.sqrt(normalX * normalX + normalY * normalY + normalZ * normalZ);
-        normalX /= length;
-        normalY /= length;
-        normalZ /= length;
-        consumer.addVertex(pose, currentX, currentY, currentZ).setColor(-16777216).setNormal(pose, normalX, normalY, normalZ);
+    private static void stringRibbonVertex(VertexConsumer consumer, Matrix4f pose, int packedLight, float x, float y, float z) {
+        consumer.addVertex(pose, x, y, z).setColor(0, 0, 0, 255).setLight(packedLight);
     }
 
     @Override
