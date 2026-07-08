@@ -20,18 +20,23 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.animal.goat.Goat;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -39,9 +44,12 @@ import net.minecraft.world.phys.Vec3;
 public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private static final double BREEDING_REACH_SQR = 9.0D;
     private static final double HANDLING_REACH_SQR = 9.0D;
+    private static final double CULLING_REACH_SQR = 9.0D;
     private static final double EGG_PICKUP_REACH_SQR = 2.25D;
+    private static final double ANIMAL_DROP_PICKUP_REACH_SQR = 2.25D;
     private static final int BREEDING_WORK_TICKS = 3;
     private static final int PRODUCT_WORK_TICKS = 3;
+    private static final int CULLING_WORK_TICKS = 3;
     private static final int VANILLA_PARENT_BREEDING_COOLDOWN_TICKS = 6000;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
     private static final String NEXT_ANIMAL_SCAN_GAME_TIME_TAG = "NextAnimalBreedingScanGameTime";
@@ -58,6 +66,16 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             "interaction.work.animal_breeding.collected_eggs",
             true,
             false);
+    private static final HiredItemPickup.Messages ANIMAL_DROP_PICKUP_MESSAGES = new HiredItemPickup.Messages(
+            "interaction.work.animal_breeding.output_full_depositing",
+            "interaction.work.animal_breeding.output_full_blocked",
+            "animal_drop_unreachable",
+            "interaction.work.animal_breeding.animal_drop_unreachable",
+            "interaction.work.animal_breeding.animal_drop_repositioning",
+            "interaction.work.animal_breeding.moving_to_animal_drop",
+            "interaction.work.animal_breeding.collected_animal_drops",
+            true,
+            false);
 
     @Override
     public HiredVillagerRole role() {
@@ -70,9 +88,19 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             return waitForWorkAreaAssignment(level, villager, context);
         }
 
+        WorkResult cullResult = cullExcessAnimals(level, villager, context);
+        if (cullResult != null) {
+            return cullResult;
+        }
+
         WorkResult eggResult = collectGroundEggs(level, villager, context);
         if (eggResult != null) {
             return eggResult;
+        }
+
+        WorkResult animalDropResult = collectAnimalDrops(level, villager, context);
+        if (animalDropResult != null) {
+            return animalDropResult;
         }
 
         BreedingSearch search = findBreedingPair(level, villager, context);
@@ -149,6 +177,128 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         return WorkResult.completed(
                 "interaction.work.animal_breeding.completed",
                 java.util.Map.of("target", HiredAnimalBreedingTargets.label(pair.typeId())));
+    }
+
+    private WorkResult cullExcessAnimals(ServerLevel level, Villager villager, HiredWorkContext context) {
+        int cap = HiredAnimalCullSettings.cap(context.state());
+        if (cap <= HiredAnimalCullSettings.DISABLED_CAP) {
+            return null;
+        }
+
+        CullTarget target = findCullTarget(level, villager, context, cap);
+        if (target == null) {
+            return null;
+        }
+
+        ToolStorageResult weaponResult = equipBestToolOrCollectFromStorage(
+                level,
+                villager,
+                context,
+                AnimalBreedingWorker::isCullWeapon,
+                AnimalBreedingWorker::cullWeaponScore,
+                0.45D);
+        if (weaponResult.status() == ToolStorageStatus.MOVING) {
+            return WorkResult.progressed("interaction.work.animal_breeding.collecting_cull_weapon");
+        }
+        if (weaponResult.status() == ToolStorageStatus.UNREACHABLE) {
+            HiredWorkerBrain.setFailure(context, "animal_cull_weapon_storage_path_failed", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, weaponResult.storagePos());
+            return WorkResult.idle("interaction.work.animal_breeding.cull_weapon_unreachable");
+        }
+        if (weaponResult.status() == ToolStorageStatus.INVENTORY_FULL) {
+            HiredWorkerBrain.setFailure(context, "animal_cull_weapon_inventory_full", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, weaponResult.storagePos());
+            return WorkResult.idle("interaction.work.animal_breeding.cull_weapon_inventory_full");
+        }
+        if (weaponResult.tool().isEmpty()) {
+            HiredWorkerBrain.setFailure(context, "missing_cull_weapon", level.getGameTime() + 100L);
+            HiredWorkerBrain.setLastTargetScanResult(context, "animal_cull_weapon_missing");
+            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target.animal().blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.missing_cull_weapon");
+        }
+
+        Animal animal = target.animal();
+        if (!canCullFromCurrentPosition(villager, context, animal)) {
+            context.setProgressTicks(0);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, animal.blockPosition());
+            if (!moveToAnimal(level, villager, context, animal, 0.45D)) {
+                HiredWorkerBrain.setFailure(context, "animal_cull_target_unreachable", level.getGameTime() + 20L * 30L);
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, animal.blockPosition());
+                return WorkResult.idle("interaction.work.animal_breeding.cull_target_unreachable");
+            }
+            return WorkResult.progressed(
+                    "interaction.work.animal_breeding.moving_to_cull_target",
+                    java.util.Map.of("target", HiredAnimalBreedingTargets.label(target.typeId())));
+        }
+
+        stopWorkNavigation(villager);
+        faceAnimal(villager, animal);
+        HiredWorkerBrain.clearFailure(context);
+        HiredWorkerBrain.setLastTargetScanResult(context, "animal_cull_target_found");
+        setTaskState(context, HiredWorkerTaskState.WORKING, animal.blockPosition());
+
+        int progress = context.progressTicks() + 1;
+        if (progress < CULLING_WORK_TICKS) {
+            context.setProgressTicks(progress);
+            swingWorkTool(villager);
+            return WorkResult.progressed(
+                    "interaction.work.animal_breeding.culling",
+                    java.util.Map.of("target", HiredAnimalBreedingTargets.label(target.typeId())));
+        }
+
+        context.setProgressTicks(0);
+        if (!isStillCullTarget(level, context, villager, animal, target.typeId(), cap)) {
+            HiredWorkerBrain.setFailure(context, "animal_cull_target_changed", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, animal.blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.cull_target_changed");
+        }
+
+        float damage = Math.max(1000.0F, animal.getMaxHealth() * 4.0F);
+        boolean hurt = animal.hurt(level.damageSources().mobAttack(villager), damage);
+        if (!hurt || animal.isAlive()) {
+            HiredWorkerBrain.setFailure(context, "animal_cull_failed", level.getGameTime() + 100L);
+            setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, animal.blockPosition());
+            return WorkResult.idle("interaction.work.animal_breeding.cull_failed");
+        }
+
+        damageTool(context, villager, weaponResult.tool());
+        swingWorkTool(villager);
+        setTaskState(context, HiredWorkerTaskState.IDLE, animal.blockPosition());
+        return WorkResult.completed(
+                "interaction.work.animal_breeding.culled_animal",
+                java.util.Map.of(
+                        "target", HiredAnimalBreedingTargets.label(target.typeId()),
+                        "cap", Integer.toString(cap)));
+    }
+
+    private CullTarget findCullTarget(ServerLevel level, Villager villager, HiredWorkContext context, int cap) {
+        Set<ResourceLocation> selectedTargets = HiredAnimalBreedingTargets.selectedTargetIds(context.state());
+        AABB bounds = workAreaBounds(context);
+        List<Animal> animals = new ArrayList<>(level.getEntitiesOfClass(
+                Animal.class,
+                bounds,
+                animal -> isEligibleCullAnimal(level, context, villager, animal, selectedTargets)));
+        Map<ResourceLocation, List<Animal>> animalsByType = new LinkedHashMap<>();
+        for (Animal animal : animals) {
+            animalsByType.computeIfAbsent(typeId(animal), ignored -> new ArrayList<>()).add(animal);
+        }
+
+        CullTarget best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (Map.Entry<ResourceLocation, List<Animal>> entry : animalsByType.entrySet()) {
+            List<Animal> sameTypeAnimals = entry.getValue();
+            if (sameTypeAnimals.size() <= cap) {
+                continue;
+            }
+            sameTypeAnimals.sort(Comparator.comparingDouble(villager::distanceToSqr));
+            Animal candidate = sameTypeAnimals.get(0);
+            double score = villager.distanceToSqr(candidate);
+            if (score < bestScore) {
+                bestScore = score;
+                best = new CullTarget(candidate, entry.getKey(), sameTypeAnimals.size(), cap);
+            }
+        }
+        return best;
     }
 
     private BreedingSearch findBreedingPair(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -473,6 +623,18 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 GROUND_EGG_PICKUP_MESSAGES);
     }
 
+    private WorkResult collectAnimalDrops(ServerLevel level, Villager villager, HiredWorkContext context) {
+        return HiredItemPickup.collectNearestOutputItem(
+                level,
+                villager,
+                context,
+                this,
+                AnimalBreedingWorker::isAnimalDrop,
+                ANIMAL_DROP_PICKUP_REACH_SQR,
+                0.45D,
+                ANIMAL_DROP_PICKUP_MESSAGES);
+    }
+
     private AnimalProductTarget findAnimalProductTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
         Set<ResourceLocation> selectedTargets = HiredAnimalBreedingTargets.selectedTargetIds(context.state());
         AABB bounds = workAreaBounds(context);
@@ -614,6 +776,14 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 && villager.distanceToSqr(animal) <= HANDLING_REACH_SQR;
     }
 
+    private boolean canCullFromCurrentPosition(Villager villager, HiredWorkContext context, Animal animal) {
+        return animal != null
+                && animal.isAlive()
+                && context.isInsideWorkArea(villager.blockPosition())
+                && context.isInsideWorkArea(animal.blockPosition())
+                && villager.distanceToSqr(animal) <= CULLING_REACH_SQR;
+    }
+
     private boolean moveToAnimal(
             ServerLevel level,
             Villager villager,
@@ -673,6 +843,78 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         return animal instanceof Cow || animal instanceof Goat;
     }
 
+    private static boolean isEligibleCullAnimal(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            Animal animal,
+            Set<ResourceLocation> selectedTargets) {
+        return animal.isAlive()
+                && !animal.isBaby()
+                && context.isInsideWorkArea(animal.blockPosition())
+                && context.isLoaded(level, animal.blockPosition())
+                && !HiredPathMemory.isAvoided(level, villager, animal.blockPosition())
+                && !isProtectedCullAnimal(animal)
+                && HiredAnimalBreedingTargets.matches(animal, selectedTargets);
+    }
+
+    private static boolean isStillCullTarget(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            Animal animal,
+            ResourceLocation typeId,
+            int cap) {
+        Set<ResourceLocation> selectedTargets = HiredAnimalBreedingTargets.selectedTargetIds(context.state());
+        if (!isEligibleCullAnimal(level, context, villager, animal, selectedTargets)) {
+            return false;
+        }
+        AABB bounds = workAreaBounds(context);
+        int count = level.getEntitiesOfClass(
+                Animal.class,
+                bounds,
+                candidate -> typeId(candidate).equals(typeId)
+                        && isEligibleCullAnimal(level, context, villager, candidate, selectedTargets)).size();
+        return count > cap;
+    }
+
+    private static boolean isProtectedCullAnimal(Animal animal) {
+        return animal.hasCustomName()
+                || animal instanceof TamableAnimal tamable && tamable.isTame()
+                || animal instanceof AbstractHorse horse && horse.isTamed();
+    }
+
+    private static boolean isCullWeapon(ItemStack stack) {
+        return !stack.isEmpty()
+                && (stack.getItem() instanceof SwordItem
+                        || stack.getItem() instanceof AxeItem);
+    }
+
+    private static boolean isAnimalDrop(ItemStack stack) {
+        return !stack.isEmpty()
+                && (stack.is(ItemTags.MEAT)
+                        || stack.is(ItemTags.WOOL)
+                        || stack.is(Items.LEATHER)
+                        || stack.is(Items.RABBIT_HIDE)
+                        || stack.is(Items.RABBIT_FOOT)
+                        || stack.is(Items.FEATHER)
+                        || stack.is(Items.SEAGRASS)
+                        || stack.is(Items.TURTLE_SCUTE)
+                        || stack.is(Items.ARMADILLO_SCUTE));
+    }
+
+    private static double cullWeaponScore(ItemStack stack) {
+        Item item = stack.getItem();
+        double score = item instanceof SwordItem ? 2.0D : item instanceof AxeItem ? 1.0D : 0.0D;
+        if (stack.isEnchanted()) {
+            score += 0.25D;
+        }
+        if (stack.isDamageableItem()) {
+            score += Math.max(0.0D, stack.getMaxDamage() - stack.getDamageValue()) / 10000.0D;
+        }
+        return score;
+    }
+
     private static net.minecraft.sounds.SoundEvent milkingSound(Animal animal) {
         return animal instanceof Goat ? SoundEvents.GOAT_MILK : SoundEvents.COW_MILK;
     }
@@ -725,6 +967,9 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     }
 
     private record BreedingPair(Animal first, Animal second, Predicate<ItemStack> foodPredicate, ResourceLocation typeId) {
+    }
+
+    private record CullTarget(Animal animal, ResourceLocation typeId, int count, int cap) {
     }
 
     private enum AnimalProductKind {

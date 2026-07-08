@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
+import com.jvn.villagerretaliation.interaction.work.HiredAnimalCullSettings;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
@@ -186,6 +187,7 @@ public final class VillagerInteractionScreenOpener {
                 HiredLoggingOptions.plantSaplings(workState),
                 HiredLoggingOptions.pickUpDecayDrops(workState),
                 HiredAnimalBreedingTargets.selectedTargetStrings(workState),
+                HiredAnimalCullSettings.cap(workState),
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),

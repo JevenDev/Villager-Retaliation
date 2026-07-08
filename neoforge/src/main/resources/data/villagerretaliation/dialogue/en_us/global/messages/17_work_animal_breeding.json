@@ -394,6 +394,34 @@
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collected_eggs.023"
     },
     {
+      "key": "interaction.work.animal_breeding.animal_drop_unreachable",
+      "lines": [
+        "I found animal drops in the work area, but I cannot reach them safely."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.animal_drop_unreachable.044"
+    },
+    {
+      "key": "interaction.work.animal_breeding.animal_drop_repositioning",
+      "lines": [
+        "I am finding a safe path to the animal drops."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.animal_drop_repositioning.045"
+    },
+    {
+      "key": "interaction.work.animal_breeding.moving_to_animal_drop",
+      "lines": [
+        "I am moving to collect animal drops."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_animal_drop.046"
+    },
+    {
+      "key": "interaction.work.animal_breeding.collected_animal_drops",
+      "lines": [
+        "I collected {count} animal drop(s)."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collected_animal_drops.047"
+    },
+    {
       "key": "interaction.work.animal_breeding.missing_food",
       "lines": [
         "I found animals to breed, but I need the right food in my supplies.",
@@ -552,6 +580,76 @@
         "That part is done: I fed {target} for breeding."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.completed.033"
+    },
+    {
+      "key": "interaction.work.animal_breeding.collecting_cull_weapon",
+      "lines": [
+        "I found an animal group over the cull cap, so I am collecting a sword or axe."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collecting_cull_weapon.034"
+    },
+    {
+      "key": "interaction.work.animal_breeding.cull_weapon_unreachable",
+      "lines": [
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.cull_weapon_unreachable.035"
+    },
+    {
+      "key": "interaction.work.animal_breeding.cull_weapon_inventory_full",
+      "lines": [
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.cull_weapon_inventory_full.036"
+    },
+    {
+      "key": "interaction.work.animal_breeding.missing_cull_weapon",
+      "lines": [
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.missing_cull_weapon.037"
+    },
+    {
+      "key": "interaction.work.animal_breeding.cull_target_unreachable",
+      "lines": [
+        "I found an animal over the cull cap, but I cannot reach it."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.cull_target_unreachable.038"
+    },
+    {
+      "key": "interaction.work.animal_breeding.moving_to_cull_target",
+      "lines": [
+        "I am moving to cull excess {target}."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_cull_target.039"
+    },
+    {
+      "key": "interaction.work.animal_breeding.culling",
+      "lines": [
+        "I am culling excess {target}."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.culling.040"
+    },
+    {
+      "key": "interaction.work.animal_breeding.cull_target_changed",
+      "lines": [
+        "That animal group is no longer over the cull cap."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.cull_target_changed.041"
+    },
+    {
+      "key": "interaction.work.animal_breeding.cull_failed",
+      "lines": [
+        "I tried to cull an excess animal, but the hit did not finish it."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.cull_failed.042"
+    },
+    {
+      "key": "interaction.work.animal_breeding.culled_animal",
+      "lines": [
+        "I culled excess {target}. That group is being held to {cap}."
+      ],
+      "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.culled_animal.043"
     }
   ]
 }

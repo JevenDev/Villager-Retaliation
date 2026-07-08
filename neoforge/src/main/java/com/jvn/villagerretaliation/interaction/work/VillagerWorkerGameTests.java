@@ -54,6 +54,9 @@ import net.minecraft.world.entity.ai.behavior.HarvestFarmland;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
@@ -149,6 +152,141 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(idle.targetPos() == null, "idle state should clear block target");
         helper.assertTrue(idle.storageTargetPos() == null, "idle state should clear storage target");
         helper.assertValueEqual(HiredWorkerTaskState.byId("target_unreachable"), HiredWorkerTaskState.FAILED_COOLDOWN, "legacy state alias");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerCullCapUsesPerTypePoolsAndWeapon(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 7, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalCull");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(2, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(3, 2, 4));
+        spawnAnimal(helper, EntityType.PIG, new BlockPos(2, 2, 4));
+        spawnAnimal(helper, EntityType.PIG, new BlockPos(4, 2, 4));
+
+        CompoundTag state = new CompoundTag();
+        HiredAnimalCullSettings.setCap(state, 2);
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 20, () ->
+                countAliveAnimals(level, helper, Cow.class, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6)) == 2);
+
+        helper.assertValueEqual(
+                countAliveAnimals(level, helper, Cow.class, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6)),
+                2,
+                "cow pool should be culled to cap");
+        helper.assertValueEqual(
+                countAliveAnimals(level, helper, Pig.class, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6)),
+                2,
+                "pig pool should not share the cow cull cap overflow");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerCullCapDoesNotCullBabies(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 7, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalCullBabies");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(2, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        Cow firstBaby = spawnAnimal(helper, EntityType.COW, new BlockPos(2, 2, 4));
+        Cow secondBaby = spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 4));
+        firstBaby.setBaby(true);
+        secondBaby.setBaby(true);
+
+        CompoundTag state = new CompoundTag();
+        HiredAnimalCullSettings.setCap(state, 2);
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+
+        for (int tick = 0; tick < 20; tick++) {
+            worker.maintain(level, villager, context);
+            worker.tick(level, villager, hirer, context);
+            level.tickNonPassenger(villager);
+        }
+
+        helper.assertValueEqual(
+                countAliveAdultAnimals(level, helper, Cow.class, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6)),
+                2,
+                "adult cow pool should already be at the cap");
+        helper.assertValueEqual(
+                countAliveBabyAnimals(level, helper, Cow.class, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6)),
+                2,
+                "baby cows should not be culled or counted toward the adult cull cap");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerCullCapRequiresSwordOrAxe(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalCullNoWeapon");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(2, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(3, 2, 4));
+
+        CompoundTag state = new CompoundTag();
+        HiredAnimalCullSettings.setCap(state, 2);
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+
+        WorkResult result = worker.tick(level, villager, hirer, context);
+
+        helper.assertValueEqual(
+                result.status(),
+                "interaction.work.animal_breeding.missing_cull_weapon",
+                "over-cap animal handling should request a sword or axe");
+        helper.assertValueEqual(
+                countAliveAnimals(level, helper, Cow.class, new BlockPos(1, 2, 1), new BlockPos(5, 4, 5)),
+                3,
+                "animal handler should not cull without a sword or axe");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 160)
+    public static void animalHandlerCollectsCullDrops(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 7, 1);
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().getRule(GameRules.RULE_DOMOBLOOT).set(true, level.getServer());
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalCullDrops");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(2, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(3, 2, 4));
+
+        CompoundTag state = new CompoundTag();
+        HiredAnimalCullSettings.setCap(state, 2);
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 100, () ->
+                countAliveAnimals(level, helper, Cow.class, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6)) == 2
+                        && countInventoryItem(context.inventory(), Items.BEEF) > 0);
+
+        helper.assertTrue(
+                countInventoryItem(context.inventory(), Items.BEEF) > 0,
+                "animal handler should collect beef drops from culled cows into job inventory");
+
+        villager.discard();
         helper.succeed();
     }
 
@@ -3547,6 +3685,75 @@ public final class VillagerWorkerGameTests {
         }
         level.tickNonPassenger(villager);
         return villager;
+    }
+
+    private static <T extends Animal> T spawnAnimal(GameTestHelper helper, EntityType<T> type, BlockPos relativePos) {
+        ServerLevel level = helper.getLevel();
+        T animal = type.create(level);
+        if (animal == null) {
+            throw new GameTestAssertException("Could not create animal " + type);
+        }
+        BlockPos pos = helper.absolutePos(relativePos);
+        animal.moveTo(pos.getX() + 0.5D, pos.getY(), pos.getZ() + 0.5D, 0.0F, 0.0F);
+        if (!level.addFreshEntity(animal)) {
+            throw new GameTestAssertException("Could not add animal to level");
+        }
+        level.tickNonPassenger(animal);
+        return animal;
+    }
+
+    private static <T extends Animal> int countAliveAnimals(
+            ServerLevel level,
+            GameTestHelper helper,
+            Class<T> animalClass,
+            BlockPos minRelative,
+            BlockPos maxRelative) {
+        BlockPos min = helper.absolutePos(minRelative);
+        BlockPos max = helper.absolutePos(maxRelative);
+        AABB bounds = new AABB(
+                min.getX(),
+                min.getY(),
+                min.getZ(),
+                max.getX() + 1.0D,
+                max.getY() + 1.0D,
+                max.getZ() + 1.0D);
+        return level.getEntitiesOfClass(animalClass, bounds, Animal::isAlive).size();
+    }
+
+    private static <T extends Animal> int countAliveAdultAnimals(
+            ServerLevel level,
+            GameTestHelper helper,
+            Class<T> animalClass,
+            BlockPos minRelative,
+            BlockPos maxRelative) {
+        BlockPos min = helper.absolutePos(minRelative);
+        BlockPos max = helper.absolutePos(maxRelative);
+        AABB bounds = new AABB(
+                min.getX(),
+                min.getY(),
+                min.getZ(),
+                max.getX() + 1.0D,
+                max.getY() + 1.0D,
+                max.getZ() + 1.0D);
+        return level.getEntitiesOfClass(animalClass, bounds, animal -> animal.isAlive() && !animal.isBaby()).size();
+    }
+
+    private static <T extends Animal> int countAliveBabyAnimals(
+            ServerLevel level,
+            GameTestHelper helper,
+            Class<T> animalClass,
+            BlockPos minRelative,
+            BlockPos maxRelative) {
+        BlockPos min = helper.absolutePos(minRelative);
+        BlockPos max = helper.absolutePos(maxRelative);
+        AABB bounds = new AABB(
+                min.getX(),
+                min.getY(),
+                min.getZ(),
+                max.getX() + 1.0D,
+                max.getY() + 1.0D,
+                max.getZ() + 1.0D);
+        return level.getEntitiesOfClass(animalClass, bounds, animal -> animal.isAlive() && animal.isBaby()).size();
     }
 
     private static ServerPlayer fakePlayer(ServerLevel level, String name) {

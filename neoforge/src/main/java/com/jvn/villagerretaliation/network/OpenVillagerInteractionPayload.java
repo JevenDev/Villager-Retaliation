@@ -57,6 +57,7 @@ public record OpenVillagerInteractionPayload(
         boolean loggingPlantSaplings,
         boolean loggingPickUpDecayDrops,
         List<String> selectedAnimalBreedingTargets,
+        int animalCullCap,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
         List<String> knownDislikedGiftNames,
@@ -117,6 +118,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeBoolean(payload.loggingPlantSaplings());
         buffer.writeBoolean(payload.loggingPickUpDecayDrops());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.selectedAnimalBreedingTargets());
+        buffer.writeVarInt(payload.animalCullCap());
         DialogueOptionPayloadCodec.writeDialogueOptions(buffer, payload.dialogueOptions());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.knownLikedGiftNames());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.knownDislikedGiftNames());
@@ -166,6 +168,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 DialogueOptionPayloadCodec.readStringList(buffer),
+                buffer.readVarInt(),
                 DialogueOptionPayloadCodec.readDialogueOptions(buffer),
                 DialogueOptionPayloadCodec.readStringList(buffer),
                 DialogueOptionPayloadCodec.readStringList(buffer),

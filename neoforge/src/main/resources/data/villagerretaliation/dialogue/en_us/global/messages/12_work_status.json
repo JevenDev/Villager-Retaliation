@@ -695,6 +695,17 @@
       "id": "global.messages.12_work_status.messages.interaction.work.status.animal_breeding_target.040"
     },
     {
+      "key": "interaction.work.status.animal_handling_config",
+      "lines": [
+        "I will handle {target}; culling is set to {cap}.",
+        "All right. I will handle {target}; culling is set to {cap}.",
+        "Here's where I am with it: I will handle {target}; culling is set to {cap}.",
+        "For now, that is the situation. I will handle {target}; culling is set to {cap}.",
+        "Understood. I will handle {target}; culling is set to {cap}."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.animal_handling_config.040a"
+    },
+    {
       "key": "interaction.work.status.nitwit_focus",
       "lines": [
         "I have rearranged my very particular style of helping.",

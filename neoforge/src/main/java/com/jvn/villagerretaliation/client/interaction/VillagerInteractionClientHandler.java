@@ -132,6 +132,7 @@ public final class VillagerInteractionClientHandler {
                 payload.loggingPlantSaplings(),
                 payload.loggingPickUpDecayDrops(),
                 payload.selectedAnimalBreedingTargets(),
+                payload.animalCullCap(),
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
                 payload.knownDislikedGiftNames(),

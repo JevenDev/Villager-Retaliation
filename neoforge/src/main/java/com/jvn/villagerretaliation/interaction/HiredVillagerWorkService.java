@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
+import com.jvn.villagerretaliation.interaction.work.HiredAnimalCullSettings;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
@@ -1279,7 +1280,7 @@ public final class HiredVillagerWorkService {
                     setStatus(state, "interaction.work.builder.choose_structure");
                 }
             }
-            case ANIMAL_HANDLING -> setStatus(state, "interaction.work.status.animal_breeding_target", Map.of("target", HiredAnimalBreedingTargets.selectionLabel(state)));
+            case ANIMAL_HANDLING -> setStatus(state, "interaction.work.status.animal_handling_config", animalHandlingReplacements(state));
             case NITWIT -> setStatus(state, "interaction.work.status.nitwit_focus");
             default -> setStatus(state, "interaction.work.status.no_extra_setup", Map.of("role", role.label()));
         }
@@ -1388,12 +1389,45 @@ public final class HiredVillagerWorkService {
         HiredWorkSession session = HiredWorkSession.active(level, villager);
         HiredWorkPlan.clear(session.context());
         session.context().setProgressTicks(0);
-        setStatus(state, "interaction.work.status.animal_breeding_target", Map.of("target", HiredAnimalBreedingTargets.selectionLabel(state)));
+        setStatus(state, "interaction.work.status.animal_handling_config", animalHandlingReplacements(state));
+        sendStatusNotice(player, villager, state);
+    }
+
+    public static void setAnimalCullCap(ServerPlayer player, ServerLevel level, Villager villager, int cap) {
+        if (!canManageWork(level, villager, player)) {
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
+            return;
+        }
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.ANIMAL_HANDLING) {
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.work.configure.requires_role",
+                    Map.of("role", HiredVillagerRole.ANIMAL_HANDLING.label()));
+            return;
+        }
+        if (cap != HiredAnimalCullSettings.DISABLED_CAP && !HiredAnimalCullSettings.isValidCap(cap)) {
+            return;
+        }
+
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredAnimalCullSettings.setCap(state, cap);
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        HiredWorkPlan.clear(session.context());
+        session.context().setProgressTicks(0);
+        setStatus(state, "interaction.work.status.animal_handling_config", animalHandlingReplacements(state));
         sendStatusNotice(player, villager, state);
     }
 
     public static boolean canManageWork(ServerLevel level, Villager villager, ServerPlayer player) {
         return HiredVillagerContractService.isHiredBy(level, villager, player);
+    }
+
+    private static Map<String, String> animalHandlingReplacements(CompoundTag state) {
+        return Map.of(
+                "target", HiredAnimalBreedingTargets.selectionLabel(state),
+                "cap", HiredAnimalCullSettings.selectionLabel(state));
     }
 
     public static void initializeWorkArea(ServerLevel level, Villager villager) {

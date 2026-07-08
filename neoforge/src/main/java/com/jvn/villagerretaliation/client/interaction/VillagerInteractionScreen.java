@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
+import com.jvn.villagerretaliation.interaction.work.HiredAnimalCullSettings;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
 import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
@@ -25,6 +26,7 @@ import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.HiredAnimalBreedingTargetPayload;
+import com.jvn.villagerretaliation.network.HiredAnimalCullCapPayload;
 import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.HiredBrewingOrderPayload;
 import com.jvn.villagerretaliation.network.HiredFarmingOptionPayload;
@@ -281,6 +283,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean loggingPlantSaplings;
     private boolean loggingPickUpDecayDrops;
     private final Set<String> selectedAnimalBreedingTargets = new LinkedHashSet<>();
+    private int animalCullCap;
     private boolean forceCameraTowardsVillager;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
@@ -393,6 +396,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean loggingPlantSaplings,
             boolean loggingPickUpDecayDrops,
             List<String> selectedAnimalBreedingTargets,
+            int animalCullCap,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
@@ -445,6 +449,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (selectedAnimalBreedingTargets != null) {
             this.selectedAnimalBreedingTargets.addAll(selectedAnimalBreedingTargets);
         }
+        this.animalCullCap = HiredAnimalCullSettings.isValidCap(animalCullCap)
+                ? animalCullCap
+                : HiredAnimalCullSettings.DISABLED_CAP;
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
@@ -893,8 +900,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addFarmingOptions();
         } else if (this.page == DialoguePage.LOGGING_FILTERS) {
             addLoggingFilterOptions();
+        } else if (this.page == DialoguePage.ANIMAL_HANDLING_OPTIONS) {
+            addAnimalHandlingOptions();
         } else if (this.page == DialoguePage.ANIMAL_BREEDING_TARGETS) {
             addAnimalBreedingTargetOptions();
+        } else if (this.page == DialoguePage.ANIMAL_CULL_CAPS) {
+            addAnimalCullCapOptions();
         } else if (this.page == DialoguePage.BUILDER_STRUCTURES) {
             addBuilderCategoryOptions();
         } else if (this.page == DialoguePage.BUILDER_STRUCTURE_CATEGORY) {
@@ -1165,6 +1176,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 addOption("recruit.work_config_builder", this::openBuilderStructuresPage);
             }
         }
+        if (isActiveHiredRole(HiredVillagerRole.ANIMAL_HANDLING)) {
+            addOption("recruit.work_config_animal_handling", this::openAnimalHandlingOptionsPage);
+        }
         addRoleWorkConfigOption(HiredVillagerRole.NITWIT, "recruit.work_config_nitwit", VillagerRecruitRequestPayload.Action.CONFIGURE_NITWIT);
         addOption("recruit.nevermind", this::openRecruitPage);
     }
@@ -1192,6 +1206,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.nevermind", this::openWorkPage);
     }
 
+    private void addAnimalHandlingOptions() {
+        addOption("recruit.animal_handling_targets", this::openAnimalBreedingTargetsPage);
+        this.options.add(DialogueOption.enabled(
+                translate("recruit.animal_cull_cap", animalCullCapLabel(this.animalCullCap)),
+                this::openAnimalCullCapsPage));
+        addOption("recruit.nevermind", this::openWorkPage);
+    }
+
     private void addAnimalBreedingTargetOptions() {
         this.options.add(DialogueOption.enabled(checkmarkRowLabel(translate("recruit.animal_breeding_all"), this.selectedAnimalBreedingTargets.isEmpty()), () -> requestAnimalBreedingTarget("all")));
         List<ResourceLocation> targets = HiredAnimalBreedingTargets.options();
@@ -1202,7 +1224,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             String id = target.toString();
             this.options.add(DialogueOption.enabled(checkmarkRowLabel(HiredAnimalBreedingTargets.label(target), this.selectedAnimalBreedingTargets.contains(id)), () -> requestAnimalBreedingTarget(id)));
         }
-        addOption("recruit.nevermind", this::openWorkPage);
+        addOption("recruit.nevermind", this::openAnimalHandlingOptionsPage);
+    }
+
+    private void addAnimalCullCapOptions() {
+        this.options.add(DialogueOption.enabled(
+                checkmarkRowLabel(translate("recruit.animal_cull_disabled"), this.animalCullCap == HiredAnimalCullSettings.DISABLED_CAP),
+                () -> requestAnimalCullCap(HiredAnimalCullSettings.DISABLED_CAP)));
+        for (int cap : HiredAnimalCullSettings.capOptions()) {
+            this.options.add(DialogueOption.enabled(
+                    checkmarkRowLabel(translate("recruit.animal_cull_cap_option", cap), this.animalCullCap == cap),
+                    () -> requestAnimalCullCap(cap)));
+        }
+        addOption("recruit.nevermind", this::openAnimalHandlingOptionsPage);
     }
 
     private void addBrewingPotionOptions() {
@@ -1677,8 +1711,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.FARMING_OPTIONS);
     }
 
+    private void openAnimalHandlingOptionsPage() {
+        openPage(DialoguePage.ANIMAL_HANDLING_OPTIONS);
+    }
+
     private void openAnimalBreedingTargetsPage() {
         openPage(DialoguePage.ANIMAL_BREEDING_TARGETS);
+    }
+
+    private void openAnimalCullCapsPage() {
+        openPage(DialoguePage.ANIMAL_CULL_CAPS);
     }
 
     private void openBrewingPotionPage() {
@@ -1922,8 +1964,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             openPage(DialoguePage.WORK);
             return;
         }
-        if (this.page == DialoguePage.ANIMAL_BREEDING_TARGETS) {
+        if (this.page == DialoguePage.ANIMAL_HANDLING_OPTIONS) {
             openPage(DialoguePage.WORK);
+            return;
+        }
+        if (this.page == DialoguePage.ANIMAL_BREEDING_TARGETS) {
+            openPage(DialoguePage.ANIMAL_HANDLING_OPTIONS);
+            return;
+        }
+        if (this.page == DialoguePage.ANIMAL_CULL_CAPS) {
+            openPage(DialoguePage.ANIMAL_HANDLING_OPTIONS);
             return;
         }
         if (this.page == DialoguePage.WORK) {
@@ -2144,6 +2194,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (!this.selectedAnimalBreedingTargets.remove(targetId)) {
             this.selectedAnimalBreedingTargets.add(targetId);
         }
+        rebuildOptionsKeepingListPosition();
+    }
+
+    private void requestAnimalCullCap(int cap) {
+        if (cap != HiredAnimalCullSettings.DISABLED_CAP && !HiredAnimalCullSettings.isValidCap(cap)) {
+            return;
+        }
+        sendToServer(new HiredAnimalCullCapPayload(this.villagerEntityId, cap));
+        this.animalCullCap = cap;
         rebuildOptionsKeepingListPosition();
     }
 
@@ -4575,6 +4634,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return I18n.get(GUI_KEY_PREFIX + key, args);
     }
 
+    private static String animalCullCapLabel(int cap) {
+        return cap > HiredAnimalCullSettings.DISABLED_CAP ? Integer.toString(cap) : translate("recruit.animal_cull_disabled");
+    }
+
     private static int interactionPageDepth(DialoguePage page) {
         return switch (page) {
             case ROOT -> 0;
@@ -4586,10 +4649,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     ROLE_CHANGE,
                     FARMING_OPTIONS,
                     LOGGING_FILTERS,
-                    ANIMAL_BREEDING_TARGETS,
+                    ANIMAL_HANDLING_OPTIONS,
                     BUILDER_STRUCTURES,
                     BREWING_POTION -> 3;
             case BUILDER_STRUCTURE_CATEGORY,
+                    ANIMAL_BREEDING_TARGETS,
+                    ANIMAL_CULL_CAPS,
                     BREWING_LEVEL,
                     BREWING_DURATION,
                     BREWING_TYPE -> 4;
@@ -4621,7 +4686,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         WORK,
         FARMING_OPTIONS,
         LOGGING_FILTERS,
+        ANIMAL_HANDLING_OPTIONS,
         ANIMAL_BREEDING_TARGETS,
+        ANIMAL_CULL_CAPS,
         BUILDER_STRUCTURES,
         BUILDER_STRUCTURE_CATEGORY,
         BUILDER_CONFIRM,
