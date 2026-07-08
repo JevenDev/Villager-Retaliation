@@ -357,11 +357,19 @@ public final class ClipboardWorkforceService {
         if (role == HiredVillagerRole.MINING) {
             return miningDiagnostic(brain, inventoryFull, noStorage, missingMaterials, materialStorageUnreachable);
         }
+        if (role == HiredVillagerRole.FARMING) {
+            return farmingDiagnostic(brain);
+        }
+        if (role == HiredVillagerRole.FISHING) {
+            return fishingDiagnostic(brain);
+        }
         if (role != HiredVillagerRole.BUILDER) {
             return "";
         }
 
         String missing = BuilderTaskState.missingMaterials(state);
+        String reason = lower(brain.failureReason() + " " + BuilderTaskState.blockedReason(state));
+        String tool = toolLabelFromFailure(reason, "tool");
         if (materialInventoryFull) {
             if (lower(brain.failureReason()).contains("builder_material_output_storage_unreachable")) {
                 BlockPos storagePos = diagnosticStoragePos(brain);
@@ -412,6 +420,28 @@ public final class ClipboardWorkforceService {
                     : "Builder cannot path back to the next construction spot at "
                             + HiredWorkerBrain.formatPos(brain.targetPos()) + ".");
         }
+        if (reason.contains("tool_storage_unreachable")) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return limitDiagnostic(storagePos == null
+                    ? "Builder found the " + tool + " in assigned tool storage, but cannot path to that container."
+                    : "Builder found the " + tool + " in assigned tool storage at "
+                            + HiredWorkerBrain.formatPos(storagePos) + ", but cannot path to it.");
+        }
+        if (reason.contains("tool_inventory_full")) {
+            return "Builder found the " + tool + ", but cannot fit it in job gear.";
+        }
+        if (reason.contains("missing_clear_tool")) {
+            return limitDiagnostic(brain.targetPos() == null
+                    ? "Builder needs a suitable " + tool + " to clear an obstructing block."
+                    : "Builder needs a suitable " + tool + " to clear the block at "
+                            + HiredWorkerBrain.formatPos(brain.targetPos()) + ".");
+        }
+        if (reason.contains("missing_placement_tool")) {
+            return limitDiagnostic(brain.targetPos() == null
+                    ? "Builder needs a suitable " + tool + " to prepare the next construction block."
+                    : "Builder needs a suitable " + tool + " to prepare the construction block at "
+                            + HiredWorkerBrain.formatPos(brain.targetPos()) + ".");
+        }
         if (isBuilderRestockingBatch(brain, state) && !missing.isBlank()) {
             BlockPos storagePos = diagnosticStoragePos(brain);
             return limitDiagnostic(storagePos == null
@@ -428,7 +458,6 @@ public final class ClipboardWorkforceService {
             return "Inventory is full and there is no output room for builder leftovers.";
         }
 
-        String reason = lower(brain.failureReason() + " " + BuilderTaskState.blockedReason(state));
         if (reason.contains("blocked_entity")) {
             return "A mob, player, or villager is standing inside the next planned block space.";
         }
@@ -462,7 +491,13 @@ public final class ClipboardWorkforceService {
             return "Miner needs ladders in job supplies or reachable assigned storage before digging lower excavation layers.";
         }
         if (reason.contains("tool_storage_unreachable")) {
-            return "Miner cannot path to assigned tool storage for a suitable tool.";
+            return "Miner cannot path to assigned tool storage for a suitable " + toolLabelFromFailure(reason, "pickaxe") + ".";
+        }
+        if (reason.contains("tool_inventory_full")) {
+            return "Miner found the " + toolLabelFromFailure(reason, "pickaxe") + ", but cannot fit it in job gear.";
+        }
+        if (reason.contains("missing_")) {
+            return "Miner needs a suitable " + toolLabelFromFailure(reason, "pickaxe") + " before mining can continue.";
         }
         if (inventoryFull) {
             return noStorage
@@ -487,7 +522,7 @@ public final class ClipboardWorkforceService {
             return "Logger cannot path to assigned tool storage for an axe.";
         }
         if (reason.contains("tool_inventory_full")) {
-            return "Logger found a tool in storage, but its job inventory has no tool slot free.";
+            return "Logger found an axe in storage, but its job inventory has no tool slot free.";
         }
         if (reason.contains("pending_tree_unreachable")) {
             return limitDiagnostic("Logger has a tree harvest queued but cannot path back to the remaining blocks. " + summary);
@@ -514,6 +549,42 @@ public final class ClipboardWorkforceService {
         }
         if (summary.contains("pending logs=")) {
             return limitDiagnostic(summary);
+        }
+        return "";
+    }
+
+    private static String farmingDiagnostic(HiredWorkerBrain.Snapshot brain) {
+        String reason = lower(brain.failureReason());
+        if (reason.contains("farming_hoe_storage_unreachable")) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return storagePos == null
+                    ? "Farmer found a hoe in assigned tool storage, but cannot path to that container."
+                    : "Farmer found a hoe in assigned tool storage at "
+                            + HiredWorkerBrain.formatPos(storagePos) + ", but cannot path to it.";
+        }
+        if (reason.contains("farming_hoe_inventory_full")) {
+            return "Farmer found a hoe, but cannot fit it in job gear.";
+        }
+        if (reason.contains("missing_hoe")) {
+            return "Farmer needs a hoe before field work can continue.";
+        }
+        return "";
+    }
+
+    private static String fishingDiagnostic(HiredWorkerBrain.Snapshot brain) {
+        String reason = lower(brain.failureReason());
+        if (reason.contains("fishing_rod_storage_unreachable")) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return storagePos == null
+                    ? "Fisher found a fishing rod in assigned tool storage, but cannot path to that container."
+                    : "Fisher found a fishing rod in assigned tool storage at "
+                            + HiredWorkerBrain.formatPos(storagePos) + ", but cannot path to it.";
+        }
+        if (reason.contains("fishing_rod_inventory_full")) {
+            return "Fisher found a fishing rod, but cannot fit it in job gear.";
+        }
+        if (reason.contains("missing_fishing_rod")) {
+            return "Fisher needs a fishing rod before fishing can continue.";
         }
         return "";
     }
@@ -625,6 +696,26 @@ public final class ClipboardWorkforceService {
 
     private static String lower(String value) {
         return value == null ? "" : value.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    private static String toolLabelFromFailure(String reason, String fallback) {
+        String safeReason = lower(reason);
+        if (safeReason.contains("fishing_rod")) {
+            return "fishing rod";
+        }
+        if (safeReason.contains("pickaxe")) {
+            return "pickaxe";
+        }
+        if (safeReason.contains("shovel")) {
+            return "shovel";
+        }
+        if (safeReason.contains("axe")) {
+            return "axe";
+        }
+        if (safeReason.contains("hoe")) {
+            return "hoe";
+        }
+        return fallback == null || fallback.isBlank() ? "tool" : fallback;
     }
 
     private record WarningKey(WarningType type, HiredVillagerRole role) {

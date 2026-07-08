@@ -137,7 +137,7 @@ public final class BuilderStructureScanner {
         }
         int hidden = materials.size() - parts.size();
         if (hidden > 0) {
-            parts.add(hidden + " more");
+            parts.add("+" + hidden + " more");
         }
         return String.join(", ", parts);
     }

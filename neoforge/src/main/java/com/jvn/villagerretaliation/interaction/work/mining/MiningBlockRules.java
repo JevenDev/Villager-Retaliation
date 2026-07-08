@@ -86,6 +86,23 @@ public final class MiningBlockRules {
         return stack.is(ItemTags.PICKAXES) && stack.isCorrectToolForDrops(targetState);
     }
 
+    public static String requiredMiningToolLabel(HiredMiningMode mode, BlockState targetState) {
+        return mode.excavatesArea() ? requiredExcavationToolLabel(targetState) : "pickaxe";
+    }
+
+    public static String requiredExcavationToolLabel(BlockState state) {
+        if (state.is(BlockTags.MINEABLE_WITH_PICKAXE)) {
+            return "pickaxe";
+        }
+        if (state.is(BlockTags.MINEABLE_WITH_SHOVEL)) {
+            return "shovel";
+        }
+        if (state.is(BlockTags.MINEABLE_WITH_AXE)) {
+            return "axe";
+        }
+        return "tool";
+    }
+
     public static boolean isBuilderClearableObstruction(ServerLevel level, BlockPos pos, BlockState state) {
         return !state.isAir()
                 && !state.liquid()

@@ -1756,6 +1756,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
         BlockPos pos = obstruction.worldPos();
         BlockState state = level.getBlockState(pos);
+        String toolLabel = MiningBlockRules.requiredExcavationToolLabel(state);
         ToolStorageResult toolResult = equipBestToolOrCollectFromStorage(
                 level,
                 villager,
@@ -1771,9 +1772,9 @@ public final class BuilderWorker extends AbstractBlockWorker {
             clearActiveBreakingTarget(level, context, villager);
             if (toolResult.status() == ToolStorageStatus.UNREACHABLE) {
                 BuilderTaskState.setBlocked(context.state(), "tool_storage_unreachable");
-                HiredWorkerBrain.setFailure(context, "tool_storage_unreachable", level.getGameTime() + 100L);
+                HiredWorkerBrain.setFailure(context, "tool_storage_unreachable_" + toolLabel, level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, toolResult.storagePos());
-                return WorkResult.idle("interaction.work.status.tool_storage_unreachable");
+                return WorkResult.idle("interaction.work.status.tool_storage_unreachable", Map.of("tool", toolLabel));
             }
             if (toolResult.status() == ToolStorageStatus.INVENTORY_FULL) {
                 WorkResult outputDumpResult = makeRoomForToolStorage(level, villager, context);
@@ -1781,16 +1782,17 @@ public final class BuilderWorker extends AbstractBlockWorker {
                     return outputDumpResult;
                 }
                 BuilderTaskState.setBlocked(context.state(), "tool_inventory_full");
-                HiredWorkerBrain.setFailure(context, "tool_inventory_full", level.getGameTime() + 100L);
+                HiredWorkerBrain.setFailure(context, "tool_inventory_full_" + toolLabel, level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, toolResult.storagePos());
-                return WorkResult.idle("interaction.work.status.tool_inventory_full");
+                return WorkResult.idle("interaction.work.status.tool_inventory_full", Map.of("tool", toolLabel));
             }
             BuilderTaskState.setBlocked(context.state(), "missing_clear_tool");
-            HiredWorkerBrain.setFailure(context, "missing_clear_tool", 0L);
+            HiredWorkerBrain.setFailure(context, "missing_clear_tool_" + toolLabel, 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL, pos);
             return WorkResult.idle("interaction.work.builder.missing_clear_tool", Map.of(
                     "target", HiredWorkerBrain.formatPos(pos),
-                    "structure", BuilderTaskState.structureLabel(context.state())));
+                    "structure", BuilderTaskState.structureLabel(context.state()),
+                    "tool", toolLabel));
         }
         ItemStack tool = toolResult.tool();
         HiredStorageNavigationGoal.clearStorageTarget(context);
@@ -1976,11 +1978,12 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return WorkResult.progressed("interaction.work.status.collecting_tool");
         }
         clearActiveBreakingTarget(level, context, villager);
+        String toolLabel = toolActionLabel(action);
         if (toolResult.status() == ToolStorageStatus.UNREACHABLE) {
             BuilderTaskState.setBlocked(context.state(), "tool_storage_unreachable");
-            HiredWorkerBrain.setFailure(context, "tool_storage_unreachable", level.getGameTime() + 100L);
+            HiredWorkerBrain.setFailure(context, "tool_storage_unreachable_" + toolLabel, level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, toolResult.storagePos());
-            return WorkResult.idle("interaction.work.status.tool_storage_unreachable");
+            return WorkResult.idle("interaction.work.status.tool_storage_unreachable", Map.of("tool", toolLabel));
         }
         if (toolResult.status() == ToolStorageStatus.INVENTORY_FULL) {
             WorkResult outputDumpResult = makeRoomForToolStorage(level, villager, context);
@@ -1988,17 +1991,17 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 return outputDumpResult;
             }
             BuilderTaskState.setBlocked(context.state(), "tool_inventory_full");
-            HiredWorkerBrain.setFailure(context, "tool_inventory_full", level.getGameTime() + 100L);
+            HiredWorkerBrain.setFailure(context, "tool_inventory_full_" + toolLabel, level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, toolResult.storagePos());
-            return WorkResult.idle("interaction.work.status.tool_inventory_full");
+            return WorkResult.idle("interaction.work.status.tool_inventory_full", Map.of("tool", toolLabel));
         }
         BuilderTaskState.setBlocked(context.state(), "missing_placement_tool");
-        HiredWorkerBrain.setFailure(context, "missing_placement_tool", 0L);
+        HiredWorkerBrain.setFailure(context, "missing_placement_tool_" + toolLabel, 0L);
         setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL, group.materialPart().worldPos());
         return WorkResult.idle("interaction.work.builder.missing_placement_tool", Map.of(
                 "target", HiredWorkerBrain.formatPos(group.materialPart().worldPos()),
                 "structure", BuilderTaskState.structureLabel(context.state()),
-                "tool", toolActionLabel(action)));
+                "tool", toolLabel));
     }
 
     private static String toolActionLabel(BuilderStructureScanner.BuilderToolAction action) {
@@ -2660,6 +2663,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
     }
 
     public record MissingMaterials(List<String> missing) {
+        private static final int SUMMARY_LIMIT = 5;
+
         public static MissingMaterials of(BuilderStructureScanner.BuildBlock block) {
             if (block == null || !block.requiresMaterial()) {
                 return new MissingMaterials(List.of());
@@ -2675,7 +2680,13 @@ public final class BuilderWorker extends AbstractBlockWorker {
             if (this.missing.isEmpty()) {
                 return "none";
             }
-            return String.join(", ", this.missing.subList(0, Math.min(5, this.missing.size())));
+            if (this.missing.size() <= SUMMARY_LIMIT) {
+                return String.join(", ", this.missing);
+            }
+            int shown = SUMMARY_LIMIT - 1;
+            List<String> parts = new java.util.ArrayList<>(this.missing.subList(0, shown));
+            parts.add("+" + (this.missing.size() - shown) + " more");
+            return String.join(", ", parts);
         }
     }
 }

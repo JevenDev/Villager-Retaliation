@@ -584,7 +584,6 @@ public final class HiredStorageClipboardItem extends Item {
         ServerLevel level = player.serverLevel();
         WorkAreaDraft draft = selectedWorkArea(stack);
         if (!draft.complete() || !level.dimension().equals(draft.dimension())) {
-            centerWorkAreaDraft(level, player, stack, player.blockPosition());
             return;
         }
 

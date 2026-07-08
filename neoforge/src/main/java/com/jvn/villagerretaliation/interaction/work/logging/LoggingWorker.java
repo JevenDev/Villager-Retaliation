@@ -279,14 +279,14 @@ public final class LoggingWorker extends AbstractBlockWorker {
             }
             clearActiveBreakingTarget(level, context, villager);
             if (toolResult.status() == ToolStorageStatus.UNREACHABLE) {
-                HiredWorkerBrain.setFailure(context, "tool_storage_unreachable", level.getGameTime() + 100L);
+                HiredWorkerBrain.setFailure(context, "tool_storage_unreachable_axe", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, toolResult.storagePos());
-                return WorkResult.idle("interaction.work.status.tool_storage_unreachable");
+                return WorkResult.idle("interaction.work.status.tool_storage_unreachable", Map.of("tool", "axe"));
             }
             if (toolResult.status() == ToolStorageStatus.INVENTORY_FULL) {
-                HiredWorkerBrain.setFailure(context, "tool_inventory_full", level.getGameTime() + 100L);
+                HiredWorkerBrain.setFailure(context, "tool_inventory_full_axe", level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, toolResult.storagePos());
-                return WorkResult.idle("interaction.work.status.tool_inventory_full");
+                return WorkResult.idle("interaction.work.status.tool_inventory_full", Map.of("tool", "axe"));
             }
             HiredWorkerBrain.setFailure(context, "missing_axe", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
@@ -450,14 +450,14 @@ public final class LoggingWorker extends AbstractBlockWorker {
                     return WorkResult.progressed("interaction.work.status.collecting_tool");
                 }
                 if (toolResult.status() == ToolStorageStatus.UNREACHABLE) {
-                    HiredWorkerBrain.setFailure(context, "tool_storage_unreachable", level.getGameTime() + 100L);
+                    HiredWorkerBrain.setFailure(context, "tool_storage_unreachable_axe", level.getGameTime() + 100L);
                     setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, toolResult.storagePos());
-                    return WorkResult.idle("interaction.work.status.tool_storage_unreachable");
+                    return WorkResult.idle("interaction.work.status.tool_storage_unreachable", Map.of("tool", "axe"));
                 }
                 if (toolResult.status() == ToolStorageStatus.INVENTORY_FULL) {
-                    HiredWorkerBrain.setFailure(context, "tool_inventory_full", level.getGameTime() + 100L);
+                    HiredWorkerBrain.setFailure(context, "tool_inventory_full_axe", level.getGameTime() + 100L);
                     setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, toolResult.storagePos());
-                    return WorkResult.idle("interaction.work.status.tool_inventory_full");
+                    return WorkResult.idle("interaction.work.status.tool_inventory_full", Map.of("tool", "axe"));
                 }
                 HiredWorkerBrain.setFailure(context, "missing_axe", 0L);
                 setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);

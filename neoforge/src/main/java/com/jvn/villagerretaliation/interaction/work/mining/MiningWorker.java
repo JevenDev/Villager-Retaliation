@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -135,6 +136,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
 
         BlockState targetState = level.getBlockState(target.blockPos());
+        String toolLabel = MiningBlockRules.requiredMiningToolLabel(mode, targetState);
         ToolStorageResult toolResult = equipBestToolOrCollectFromStorage(
                 level,
                 villager,
@@ -149,19 +151,19 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkPlan.clear(context);
             clearActiveBreakingTarget(level, context, villager);
             if (toolResult.status() == ToolStorageStatus.UNREACHABLE) {
-                HiredWorkerBrain.setFailure(context, "tool_storage_unreachable", level.getGameTime() + 100L);
+                HiredWorkerBrain.setFailure(context, "tool_storage_unreachable_" + toolLabel, level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, toolResult.storagePos());
-                return WorkResult.idle("interaction.work.status.tool_storage_unreachable");
+                return WorkResult.idle("interaction.work.status.tool_storage_unreachable", Map.of("tool", toolLabel));
             }
             if (toolResult.status() == ToolStorageStatus.INVENTORY_FULL) {
-                HiredWorkerBrain.setFailure(context, "tool_inventory_full", level.getGameTime() + 100L);
+                HiredWorkerBrain.setFailure(context, "tool_inventory_full_" + toolLabel, level.getGameTime() + 100L);
                 setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, toolResult.storagePos());
-                return WorkResult.idle("interaction.work.status.tool_inventory_full");
+                return WorkResult.idle("interaction.work.status.tool_inventory_full", Map.of("tool", toolLabel));
             }
             MiningWorkerState.set(context, MiningWorkerState.Phase.BLOCKED_MISSING_TOOL);
-            HiredWorkerBrain.setFailure(context, "missing_pickaxe", 0L);
+            HiredWorkerBrain.setFailure(context, "missing_" + toolLabel, 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
-            return WorkResult.idle(miningStatusKey(mode, "missing_tool"));
+            return WorkResult.idle(miningStatusKey(mode, "missing_tool"), Map.of("tool", toolLabel));
         }
         ItemStack tool = toolResult.tool();
         if (toolResult.status() == ToolStorageStatus.COLLECTED && !context.isInsideWorkArea(villager.blockPosition())) {

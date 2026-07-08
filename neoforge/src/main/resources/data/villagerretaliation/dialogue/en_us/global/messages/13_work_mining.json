@@ -348,32 +348,32 @@
     {
       "key": "interaction.work.mining.missing_tool.excavate_area",
       "lines": [
-        "I need a better pickaxe, shovel, or axe before I can excavate that block.",
-        "I am held up for now. I need a better pickaxe, shovel, or axe before I can excavate that block.",
-        "This is stopping the job for the moment. I need a better pickaxe, shovel, or axe before I can excavate that block.",
-        "I cannot move on yet. I need a better pickaxe, shovel, or axe before I can excavate that block.",
-        "I will continue once this is fixed. I need a better pickaxe, shovel, or axe before I can excavate that block.",
-        "That needs attention before I can keep working. I need a better pickaxe, shovel, or axe before I can excavate that block.",
-        "I am waiting on a fix. I need a better pickaxe, shovel, or axe before I can excavate that block.",
-        "The work is paused until this changes. I need a better pickaxe, shovel, or axe before I can excavate that block.",
-        "This is the problem right now. I need a better pickaxe, shovel, or axe before I can excavate that block.",
-        "I am stuck here for the moment. I need a better pickaxe, shovel, or axe before I can excavate that block."
+        "I need a better {tool} before I can excavate that block.",
+        "I am held up for now. I need a better {tool} before I can excavate that block.",
+        "This is stopping the job for the moment. I need a better {tool} before I can excavate that block.",
+        "I cannot move on yet. I need a better {tool} before I can excavate that block.",
+        "I will continue once this is fixed. I need a better {tool} before I can excavate that block.",
+        "That needs attention before I can keep working. I need a better {tool} before I can excavate that block.",
+        "I am waiting on a fix. I need a better {tool} before I can excavate that block.",
+        "The work is paused until this changes. I need a better {tool} before I can excavate that block.",
+        "This is the problem right now. I need a better {tool} before I can excavate that block.",
+        "I am stuck here for the moment. I need a better {tool} before I can excavate that block."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.missing_tool.excavate_area.020"
     },
     {
       "key": "interaction.work.mining.missing_tool.exposed_ores",
       "lines": [
-        "I need a better pickaxe before I can break that ore.",
-        "I am held up for now. I need a better pickaxe before I can break that ore.",
-        "This is stopping the job for the moment. I need a better pickaxe before I can break that ore.",
-        "I cannot move on yet. I need a better pickaxe before I can break that ore.",
-        "I will continue once this is fixed. I need a better pickaxe before I can break that ore.",
-        "That needs attention before I can keep working. I need a better pickaxe before I can break that ore.",
-        "I am waiting on a fix. I need a better pickaxe before I can break that ore.",
-        "The work is paused until this changes. I need a better pickaxe before I can break that ore.",
-        "This is the problem right now. I need a better pickaxe before I can break that ore.",
-        "I am stuck here for the moment. I need a better pickaxe before I can break that ore."
+        "I need a better {tool} before I can break that ore.",
+        "I am held up for now. I need a better {tool} before I can break that ore.",
+        "This is stopping the job for the moment. I need a better {tool} before I can break that ore.",
+        "I cannot move on yet. I need a better {tool} before I can break that ore.",
+        "I will continue once this is fixed. I need a better {tool} before I can break that ore.",
+        "That needs attention before I can keep working. I need a better {tool} before I can break that ore.",
+        "I am waiting on a fix. I need a better {tool} before I can break that ore.",
+        "The work is paused until this changes. I need a better {tool} before I can break that ore.",
+        "This is the problem right now. I need a better {tool} before I can break that ore.",
+        "I am stuck here for the moment. I need a better {tool} before I can break that ore."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.missing_tool.exposed_ores.021"
     },
