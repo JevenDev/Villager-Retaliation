@@ -16,7 +16,9 @@ import com.jvn.villagerretaliation.network.ClipboardWorkAreaDraftPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -53,6 +55,7 @@ public final class HiredStorageClipboardItem extends Item {
     private static final String WORK_AREA_SELECTION_TAG = "WorkAreaSelection";
     private static final String DIMENSION_TAG = "Dimension";
     private static final String POS_TAG = "Pos";
+    private static final String PURPOSE_TAG = "Purpose";
     private static final String FIRST_POS_TAG = "FirstPos";
     private static final String SECOND_POS_TAG = "SecondPos";
     private static final String MODE_TAG = "Mode";
@@ -116,21 +119,13 @@ public final class HiredStorageClipboardItem extends Item {
             return InteractionResult.SUCCESS;
         }
 
+        List<SelectedStoragePosition> selected = selectedStoragePositions(stack, clipboardMode.assignmentPurpose());
+        if (!selected.isEmpty()) {
+            assignSelectedStorage(serverPlayer, level, villager, stack, selected);
+            return InteractionResult.SUCCESS;
+        }
+
         if (clipboardMode == ClipboardMode.ASSIGN_PAYMENT) {
-            List<StoragePosition> selected = selectedContainers(stack);
-            if (!selected.isEmpty()) {
-                if (!HiredVillagerContractService.isHiredBy(level, villager, serverPlayer)) {
-                    VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.payment_storage.requires_hire");
-                    return InteractionResult.SUCCESS;
-                }
-                AssignSummary summary = AssignedStorageService.assign(serverPlayer, villager, selected, AssignedStorageService.PAYMENT_PURPOSE);
-                if (summary.assigned() > 0) {
-                    clearSelection(stack);
-                    HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
-                }
-                displayAssignmentSummary(serverPlayer, summary);
-                return InteractionResult.SUCCESS;
-            }
             if (!HiredVillagerContractService.isHiredBy(level, villager, serverPlayer)) {
                 VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.payment_storage.requires_hire");
                 return InteractionResult.SUCCESS;
@@ -142,20 +137,6 @@ public final class HiredStorageClipboardItem extends Item {
                 return InteractionResult.SUCCESS;
             }
             serverPlayer.displayClientMessage(Component.literal("Select a payment container, then use the clipboard on a hired villager."), true);
-            return InteractionResult.SUCCESS;
-        }
-
-        List<StoragePosition> selected = selectedContainers(stack);
-        if (!selected.isEmpty()) {
-            if (!VillagerInteractionService.canManageAssignedStorage(level, villager, serverPlayer)) {
-                VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.storage.assign_requires_access");
-                return InteractionResult.SUCCESS;
-            }
-            AssignSummary summary = AssignedStorageService.assign(serverPlayer, villager, selected, clipboardMode.storagePurpose());
-            if (summary.assigned() > 0) {
-                clearSelection(stack);
-            }
-            displayAssignmentSummary(serverPlayer, summary);
             return InteractionResult.SUCCESS;
         }
 
@@ -299,10 +280,16 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     public static List<StoragePosition> selectedContainers(ItemStack stack) {
-        List<StoragePosition> positions = new ArrayList<>();
+        return selectedStoragePositions(stack, mode(stack).assignmentPurpose()).stream()
+                .map(SelectedStoragePosition::position)
+                .toList();
+    }
+
+    public static List<SelectedStoragePosition> selectedStoragePositions(ItemStack stack, String fallbackPurpose) {
+        List<SelectedStoragePosition> selected = new ArrayList<>();
         CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         if (customData.isEmpty() || !customData.contains(TAG)) {
-            return positions;
+            return selected;
         }
         ListTag selectedTag = customData.copyTag().getCompound(TAG).getList(SELECTED_TAG, Tag.TAG_COMPOUND);
         for (Tag rawEntry : selectedTag) {
@@ -313,16 +300,23 @@ public final class HiredStorageClipboardItem extends Item {
             if (dimensionId == null) {
                 continue;
             }
-            positions.add(new StoragePosition(
+            StoragePosition position = new StoragePosition(
                     ResourceKey.create(Registries.DIMENSION, dimensionId),
                     BlockPos.of(entryTag.getLong(POS_TAG))
-            ));
+            );
+            String purpose = entryTag.contains(PURPOSE_TAG, Tag.TAG_STRING)
+                    ? entryTag.getString(PURPOSE_TAG)
+                    : fallbackPurpose;
+            selected.add(new SelectedStoragePosition(position, AssignedStorageService.normalizePurpose(purpose)));
         }
-        return positions;
+        return selected;
     }
 
     private static void displayAssignmentSummary(ServerPlayer player, AssignSummary summary) {
-        AssignmentSummaryMessage message = AssignedStorageService.assignmentSummaryMessage(summary);
+        displayAssignmentSummary(player, AssignedStorageService.assignmentSummaryMessage(summary));
+    }
+
+    private static void displayAssignmentSummary(ServerPlayer player, AssignmentSummaryMessage message) {
         String text = VillagerDialogueResources.globalMessage(
                 player.getServer(),
                 player.getRandom(),
@@ -331,6 +325,102 @@ public final class HiredStorageClipboardItem extends Item {
                 message.replacements()
         ).orElse(message.key());
         player.displayClientMessage(Component.literal(text), true);
+    }
+
+    private static void assignSelectedStorage(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            ItemStack stack,
+            List<SelectedStoragePosition> selected) {
+        if (selected.stream().anyMatch(SelectedStoragePosition::paymentPurpose)
+                && !HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.payment_storage.requires_hire");
+            return;
+        }
+        if (selected.stream().anyMatch(position -> !position.paymentPurpose())
+                && !VillagerInteractionService.canManageAssignedStorage(level, villager, player)) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.storage.assign_requires_access");
+            return;
+        }
+
+        Map<String, List<StoragePosition>> byPurpose = new LinkedHashMap<>();
+        for (SelectedStoragePosition selectedPosition : selected) {
+            byPurpose.computeIfAbsent(selectedPosition.purpose(), ignored -> new ArrayList<>())
+                    .add(selectedPosition.position());
+        }
+
+        int assigned = 0;
+        int alreadyAssigned = 0;
+        int invalid = 0;
+        Map<String, Integer> assignedByPurpose = new LinkedHashMap<>();
+        for (Map.Entry<String, List<StoragePosition>> entry : byPurpose.entrySet()) {
+            AssignSummary summary = AssignedStorageService.assign(player, villager, entry.getValue(), entry.getKey());
+            assigned += summary.assigned();
+            alreadyAssigned += summary.alreadyAssigned();
+            invalid += summary.invalid();
+            if (summary.assigned() > 0) {
+                assignedByPurpose.merge(entry.getKey(), summary.assigned(), Integer::sum);
+            }
+        }
+
+        if (assigned > 0) {
+            clearSelection(stack);
+            if (assignedByPurpose.containsKey(AssignedStorageService.PAYMENT_PURPOSE)) {
+                HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
+            }
+        }
+        displayAssignmentSummary(player, assignmentSummaryMessage(assigned, alreadyAssigned, invalid, assignedByPurpose));
+    }
+
+    private static AssignmentSummaryMessage assignmentSummaryMessage(
+            int assigned,
+            int alreadyAssigned,
+            int invalid,
+            Map<String, Integer> assignedByPurpose) {
+        if (assigned > 0) {
+            return new AssignmentSummaryMessage(
+                    "interaction.storage.assign_result.assigned_types",
+                    Map.of(
+                            "count", Integer.toString(assigned),
+                            "plural", assigned == 1 ? "" : "s",
+                            "types", purposeSummary(assignedByPurpose)
+                    )
+            );
+        }
+        return AssignedStorageService.assignmentSummaryMessage(new AssignSummary(assigned, alreadyAssigned, invalid));
+    }
+
+    private static String purposeSummary(Map<String, Integer> counts) {
+        List<String> parts = new ArrayList<>();
+        List<String> knownPurposes = List.of(
+                AssignedStorageService.GENERAL_PURPOSE,
+                AssignedStorageService.TOOL_PURPOSE,
+                AssignedStorageService.INPUT_PURPOSE,
+                AssignedStorageService.OUTPUT_PURPOSE,
+                AssignedStorageService.PAYMENT_PURPOSE);
+        for (String purpose : knownPurposes) {
+            int count = counts.getOrDefault(purpose, 0);
+            if (count > 0) {
+                parts.add(count + " " + purposeLabel(purpose));
+            }
+        }
+        for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+            if (entry.getValue() > 0 && !knownPurposes.contains(entry.getKey())) {
+                parts.add(entry.getValue() + " " + purposeLabel(entry.getKey()));
+            }
+        }
+        return String.join(", ", parts);
+    }
+
+    private static String purposeLabel(String purpose) {
+        return switch (AssignedStorageService.normalizePurpose(purpose)) {
+            case AssignedStorageService.TOOL_PURPOSE -> "tool";
+            case AssignedStorageService.INPUT_PURPOSE -> "input";
+            case AssignedStorageService.OUTPUT_PURPOSE -> "output";
+            case AssignedStorageService.PAYMENT_PURPOSE -> "payment";
+            default -> "global";
+        };
     }
 
     public static WorkAreaDraft selectedWorkArea(ItemStack stack) {
@@ -379,9 +469,11 @@ public final class HiredStorageClipboardItem extends Item {
             return InteractionResult.FAIL;
         }
 
-        SelectionAddResult result = addSelection(stack, level.dimension(), pos);
+        SelectionAddResult result = addSelection(stack, level.dimension(), pos, clipboardMode.assignmentPurpose());
         Component message = switch (result) {
-            case ADDED -> Component.literal(clipboardMode == ClipboardMode.ASSIGN_PAYMENT ? "Payment box selected." : "Container selected.");
+            case ADDED -> Component.literal(clipboardMode == ClipboardMode.ASSIGN_PAYMENT
+                    ? "Payment box selected."
+                    : purposeLabel(clipboardMode.assignmentPurpose()) + " container selected.");
             case DUPLICATE -> Component.literal("That container is already selected.");
             case DIFFERENT_DIMENSION -> Component.literal("Clipboard selections must stay in one dimension.");
             case FULL -> Component.literal("Clipboard selection is full.");
@@ -652,21 +744,27 @@ public final class HiredStorageClipboardItem extends Item {
         return pos.getX() + " " + pos.getY() + " " + pos.getZ();
     }
 
-    private static SelectionAddResult addSelection(ItemStack stack, ResourceKey<Level> dimension, BlockPos pos) {
-        List<StoragePosition> selected = selectedContainers(stack);
-        Optional<StoragePosition> first = selected.stream().findFirst();
-        if (first.isPresent() && !first.get().dimension().equals(dimension)) {
+    private static SelectionAddResult addSelection(
+            ItemStack stack,
+            ResourceKey<Level> dimension,
+            BlockPos pos,
+            String purpose) {
+        List<SelectedStoragePosition> selected = selectedStoragePositions(stack, mode(stack).assignmentPurpose());
+        Optional<SelectedStoragePosition> first = selected.stream().findFirst();
+        if (first.isPresent() && !first.get().position().dimension().equals(dimension)) {
             return SelectionAddResult.DIFFERENT_DIMENSION;
         }
-        for (StoragePosition position : selected) {
-            if (position.dimension().equals(dimension) && position.pos().equals(pos)) {
+        for (SelectedStoragePosition position : selected) {
+            if (position.position().dimension().equals(dimension) && position.position().pos().equals(pos)) {
                 return SelectionAddResult.DUPLICATE;
             }
         }
         if (selected.size() >= MAX_SELECTIONS) {
             return SelectionAddResult.FULL;
         }
-        selected.add(new StoragePosition(dimension, pos.immutable()));
+        selected.add(new SelectedStoragePosition(
+                new StoragePosition(dimension, pos.immutable()),
+                AssignedStorageService.normalizePurpose(purpose)));
         saveSelection(stack, selected);
         return SelectionAddResult.ADDED;
     }
@@ -692,12 +790,14 @@ public final class HiredStorageClipboardItem extends Item {
         }
     }
 
-    private static void saveSelection(ItemStack stack, List<StoragePosition> selected) {
+    private static void saveSelection(ItemStack stack, List<SelectedStoragePosition> selected) {
         ListTag selectedTag = new ListTag();
-        for (StoragePosition position : selected) {
+        for (SelectedStoragePosition selectedPosition : selected) {
+            StoragePosition position = selectedPosition.position();
             CompoundTag entryTag = new CompoundTag();
             entryTag.putString(DIMENSION_TAG, position.dimension().location().toString());
             entryTag.putLong(POS_TAG, position.pos().asLong());
+            entryTag.putString(PURPOSE_TAG, selectedPosition.purpose());
             selectedTag.add(entryTag);
         }
         CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
@@ -887,6 +987,16 @@ public final class HiredStorageClipboardItem extends Item {
 
         public BlockPos center() {
             return complete() ? HiredWorkArea.centerPos(min(), max()) : null;
+        }
+    }
+
+    public record SelectedStoragePosition(StoragePosition position, String purpose) {
+        public SelectedStoragePosition {
+            purpose = AssignedStorageService.normalizePurpose(purpose);
+        }
+
+        public boolean paymentPurpose() {
+            return AssignedStorageService.PAYMENT_PURPOSE.equals(this.purpose);
         }
     }
 }

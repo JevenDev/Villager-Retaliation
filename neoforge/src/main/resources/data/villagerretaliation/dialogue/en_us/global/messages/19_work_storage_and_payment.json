@@ -138,6 +138,22 @@
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.assign_result.assigned.007"
     },
     {
+      "key": "interaction.storage.assign_result.assigned_types",
+      "lines": [
+        "Assigned {count} container{plural}: {types}.",
+        "That part is handled. Assigned {count} container{plural}: {types}.",
+        "Here is the update: Assigned {count} container{plural}: {types}.",
+        "That moved things along: Assigned {count} container{plural}: {types}.",
+        "That step is finished. Assigned {count} container{plural}: {types}.",
+        "I have that sorted. Assigned {count} container{plural}: {types}.",
+        "That is taken care of. Assigned {count} container{plural}: {types}.",
+        "The work moved forward. Assigned {count} container{plural}: {types}.",
+        "I can report this much. Assigned {count} container{plural}: {types}.",
+        "That part is done: Assigned {count} container{plural}: {types}."
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.assign_result.assigned_types.007b"
+    },
+    {
       "key": "interaction.storage.assign_result.already_assigned",
       "lines": [
         "That storage is already assigned to another villager.",
