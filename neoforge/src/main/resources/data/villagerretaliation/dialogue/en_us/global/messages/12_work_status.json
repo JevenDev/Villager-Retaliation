@@ -138,6 +138,38 @@
       "id": "global.messages.12_work_status.messages.interaction.work.status.paused_for_command.007"
     },
     {
+      "key": "interaction.work.status.tired",
+      "lines": [
+        "I am tired, so I am heading to bed.",
+        "Night has come. I am going to rest.",
+        "I am leaving the work for morning and finding my bed.",
+        "I need sleep before I can keep working.",
+        "The job can wait until morning. I am going to bed.",
+        "I am tired enough for the day and heading home.",
+        "I will pick this back up after I sleep.",
+        "It is time to rest. I am looking for my bed.",
+        "I am done for the night and going to sleep.",
+        "Morning will come soon enough. I need my bed now."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.tired.rest"
+    },
+    {
+      "key": "interaction.work.status.sleeping",
+      "lines": [
+        "I am sleeping. The work waits until morning.",
+        "I am asleep for the night.",
+        "I am resting now and will work again after morning comes.",
+        "I am in bed. The job can wait.",
+        "I am sleeping so I can return to work in the morning.",
+        "I am resting until daylight.",
+        "I have stopped for the night and gone to sleep.",
+        "I am asleep. I will continue once morning comes.",
+        "I am getting the rest I need before more work.",
+        "The night is for sleep. I will resume at morning."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.sleeping.rest"
+    },
+    {
       "key": "interaction.work.status.no_work_area",
       "lines": [
         "No work area assigned.",

@@ -62,9 +62,12 @@ public final class HiredVillagerWorkService {
     private static final String STORAGE_FULL_NOTICE_SHOWN_TAG = "StorageFullNoticeShown";
     private static final String STATUS_REPLACEMENTS_TAG = "StatusReplacements";
     private static final String COMPLETED_TASKS_TAG = "CompletedTasks";
+    private static final String VANILLA_REST_PAUSED_TAG = "VanillaRestPaused";
     public static final String WAITING_FOR_HIRER_STATUS = "interaction.work.status.waiting_for_hirer";
     private static final String STORAGE_FULL_NOTICE = "interaction.work.status.storage_full";
     private static final String PAUSED_FOR_COMMAND_STATUS = "interaction.work.status.paused_for_command";
+    private static final String TIRED_STATUS = "interaction.work.status.tired";
+    private static final String SLEEPING_STATUS = "interaction.work.status.sleeping";
     private static final double HIRED_WORK_NOTICE_RADIUS = 32.0D;
     private static final double HIRED_WORK_NOTICE_RADIUS_SQR = HIRED_WORK_NOTICE_RADIUS * HIRED_WORK_NOTICE_RADIUS;
     private static final int MIN_ROUTINE_REPORT_COOLDOWN_SECONDS = 300;
@@ -92,9 +95,16 @@ public final class HiredVillagerWorkService {
 
     public static void onVillagerTickPost(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level)
-                || HiredVillagerFocusService.shouldSkipHiredFocus(level, villager)) {
+                || shouldSkipHiredWorkTick(level, villager)) {
             return;
         }
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        if (HiredVillagerFocusService.isVanillaRestActive(villager)) {
+            pauseForVanillaRest(level, villager, session);
+            return;
+        }
+        clearVanillaRestPause(session.state());
+
         if (HiredVillagerContractService.isAwaitingAutoPayment(level, villager)) {
             VillagerTaskNavigationUtil.enableHiredWaterTraversal(villager);
             VillagerTaskNavigationUtil.moveInWaterTowardNavigationTarget(level, villager, WORK_AREA_RETURN_WALK_SPEED);
@@ -120,7 +130,6 @@ public final class HiredVillagerWorkService {
             return;
         }
 
-        HiredWorkSession session = HiredWorkSession.active(level, villager);
         if (session.worker() == null) {
             VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
@@ -187,6 +196,57 @@ public final class HiredVillagerWorkService {
                     && !BuilderTaskState.hasTask(session.state())) {
                 HiredVillagerContractService.finishOneOffBuilderJob(level, villager, result.status());
             }
+        }
+    }
+
+    private static boolean shouldSkipHiredWorkTick(ServerLevel level, Villager villager) {
+        return villager.isBaby()
+                || !villager.isAlive()
+                || villager.isTrading()
+                || VillagerConversationService.isConversing(villager)
+                || villager.getTarget() != null
+                || villager.getLastHurtByMob() != null
+                || !HiredVillagerContractService.hasContract(villager)
+                || !HiredVillagerContractService.isHired(level, villager);
+    }
+
+    private static void pauseForVanillaRest(ServerLevel level, Villager villager, HiredWorkSession session) {
+        VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
+        if (!session.state().getBoolean(VANILLA_REST_PAUSED_TAG)) {
+            if (session.worker() != null) {
+                session.worker().pause(level, villager, session.context());
+            } else {
+                HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            }
+            if (!villager.getNavigation().isDone() && !isNavigatingToHome(level, villager)) {
+                villager.getNavigation().stop();
+            }
+            session.state().putBoolean(VANILLA_REST_PAUSED_TAG, true);
+        }
+        setStatus(session.state(), villager.isSleeping() ? SLEEPING_STATUS : TIRED_STATUS);
+    }
+
+    private static boolean isNavigatingToHome(ServerLevel level, Villager villager) {
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (navigationTarget == null) {
+            return false;
+        }
+        return villager.getBrain().getMemory(MemoryModuleType.HOME)
+                .filter(home -> home.dimension() == level.dimension())
+                .map(GlobalPos::pos)
+                .map(homePos -> homePos.distSqr(navigationTarget) <= 4.0D)
+                .orElse(false);
+    }
+
+    private static void clearVanillaRestPause(CompoundTag state) {
+        if (!state.getBoolean(VANILLA_REST_PAUSED_TAG)) {
+            return;
+        }
+        state.remove(VANILLA_REST_PAUSED_TAG);
+        HiredWorkerBrain.setState(state, HiredWorkerTaskState.IDLE, null);
+        String status = state.getString("Status");
+        if (TIRED_STATUS.equals(status) || SLEEPING_STATUS.equals(status)) {
+            setStatus(state, "interaction.work.status.waiting_tick");
         }
     }
 

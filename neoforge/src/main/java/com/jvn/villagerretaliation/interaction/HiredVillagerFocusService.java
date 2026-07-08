@@ -43,10 +43,23 @@ public final class HiredVillagerFocusService {
         if (shouldSkipHiredFocus(level, villager)) {
             return false;
         }
+        if (shouldUseVanillaRest(level, villager)) {
+            return false;
+        }
 
         CompoundTag state = HiredVillagerWorkService.state(villager);
         HiredVillagerWorkService.initializeDefaults(state, villager);
         return shouldSuppressForActiveHiredJob(level, villager, state);
+    }
+
+    public static boolean shouldUseVanillaRest(ServerLevel level, Villager villager) {
+        Brain<Villager> brain = villager.getBrain();
+        return isVanillaRestActive(villager)
+                || scheduledActivity(level, brain) == Activity.REST;
+    }
+
+    public static boolean isVanillaRestActive(Villager villager) {
+        return villager.isSleeping() || villager.getBrain().isActive(Activity.REST);
     }
 
     public static boolean shouldSkipHiredFocus(ServerLevel level, Villager villager) {
@@ -103,6 +116,7 @@ public final class HiredVillagerFocusService {
     private static boolean shouldSuppressClaimedJobSiteBlockUse(ServerLevel level, Villager villager, CompoundTag state) {
         return state.getBoolean("Enabled")
                 && hasActiveHiredWorkerOwner(level, villager)
+                && !shouldUseVanillaRest(level, villager)
                 && !VillagerRetaliationVillagerBrainUtil.hasThreatMemories(villager.getBrain())
                 && HiredVillagerWorkService.hasClaimedJobSiteInLevel(level, villager);
     }
@@ -146,6 +160,7 @@ public final class HiredVillagerFocusService {
     private static boolean shouldSuppressForActiveHiredJob(ServerLevel level, Villager villager, CompoundTag state) {
         if (!state.getBoolean("Enabled")
                 || !hasActiveHiredWorkerOwner(level, villager)
+                || shouldUseVanillaRest(level, villager)
                 || VillagerRetaliationVillagerBrainUtil.hasThreatMemories(villager.getBrain())) {
             return false;
         }
@@ -196,6 +211,10 @@ public final class HiredVillagerFocusService {
         }
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
         return role != null && HiredRoleWorkerRegistry.get(role) != null;
+    }
+
+    private static Activity scheduledActivity(ServerLevel level, Brain<Villager> brain) {
+        return brain.getSchedule().getActivityAt((int) (level.getDayTime() % 24000L));
     }
 
     private static void suppressIdleAttentionBehavior(Villager villager, HiredWorkerBrain.Snapshot worker) {

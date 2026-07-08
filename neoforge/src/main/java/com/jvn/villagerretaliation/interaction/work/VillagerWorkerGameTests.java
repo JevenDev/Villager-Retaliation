@@ -1898,6 +1898,7 @@ public final class VillagerWorkerGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80000)
     public static void miningWorkerServiceExcavatesFullMixedBoxAndDeposits(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
+        level.setDayTime(1000L);
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, hirer, new BlockPos(12, 6, 6));
 
@@ -2459,6 +2460,7 @@ public final class VillagerWorkerGameTests {
     public static void hiredAiSuppressionStartsOnlyForActiveWorkAndClearsAfterDisableOrContractEnd(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 1);
         ServerLevel level = helper.getLevel();
+        level.setDayTime(1000L);
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
@@ -2482,9 +2484,57 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void hiredWorkPausesForVanillaRestAndReportsSleepStatus(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        level.setDayTime(1000L);
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        HiredVillagerWorkService.initializeWorkArea(level, villager);
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        CompoundTag state = session.state();
+        state.putBoolean("Enabled", true);
+        HiredWorkerBrain.setState(state, HiredWorkerTaskState.SELECTING_TARGET, null);
+
+        level.setDayTime(13000L);
+        helper.assertFalse(
+                HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager),
+                "scheduled rest should keep vanilla brain ticks available for bed pathing");
+        villager.getBrain().setActiveActivityIfPossible(Activity.REST);
+        HiredVillagerWorkService.onVillagerTickPost(villager);
+        helper.assertValueEqual(state.getString("Status"), "interaction.work.status.tired", "night work status");
+        helper.assertValueEqual(
+                HiredWorkerBrain.snapshot(state, level.getGameTime()).taskState(),
+                HiredWorkerTaskState.AWAITING_INSTRUCTION,
+                "hired task should pause while vanilla rest is active");
+
+        villager.startSleeping(villager.blockPosition());
+        HiredVillagerWorkService.onVillagerTickPost(villager);
+        helper.assertValueEqual(state.getString("Status"), "interaction.work.status.sleeping", "sleeping work status");
+        villager.stopSleeping();
+
+        state.putLong("NextWorkGameTime", level.getGameTime() + 200L);
+        level.setDayTime(1000L);
+        villager.getBrain().setActiveActivityIfPossible(Activity.IDLE);
+        HiredVillagerWorkService.onVillagerTickPost(villager);
+        helper.assertValueEqual(
+                HiredWorkerBrain.snapshot(state, level.getGameTime()).taskState(),
+                HiredWorkerTaskState.IDLE,
+                "hired task should be ready to resume after vanilla rest ends");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void hiredFarmingWithHoeKeepsFarmerBrainTick(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 1);
         ServerLevel level = helper.getLevel();
+        level.setDayTime(1000L);
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
@@ -2520,6 +2570,7 @@ public final class VillagerWorkerGameTests {
     public static void hiredFarmingSuppressesClaimedJobSiteBlockTargets(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 1);
         ServerLevel level = helper.getLevel();
+        level.setDayTime(1000L);
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         BlockPos composterRel = new BlockPos(3, 1, 3);
@@ -2717,6 +2768,8 @@ public final class VillagerWorkerGameTests {
         int lastRemainingBlocks = remainingMixedExcavationBlocks(level, helper, workMinRel, workMaxRel);
         int ticksSinceBlockProgress = 0;
         for (int tick = 0; tick < maxTicks && !done.getAsBoolean(); tick++) {
+            level.setDayTime(1000L);
+            villager.getBrain().setActiveActivityIfPossible(Activity.IDLE);
             HiredVillagerContractService.onVillagerTickPost(villager);
             HiredVillagerWorkService.onVillagerTickPost(villager);
             VillagerTaskNavigationUtil.tickVillagerWaterSafety(level, villager);

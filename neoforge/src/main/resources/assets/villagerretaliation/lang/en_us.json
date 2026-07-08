@@ -785,7 +785,7 @@
   "villagerretaliation.gui.speaker.named": "%s %s",
   "villagerretaliation.gui.chat.tag": "Villager",
   "villagerretaliation.gui.chat.tooltip": "Villager dialogue",
-  "villagerretaliation.gui.chat.speaker_prefix": "%s says ",
+  "villagerretaliation.gui.chat.speaker_prefix": "%s: ",
   "villagerretaliation.trade_refresh.button": "Refresh trade",
   "villagerretaliation.trade_refresh.pending": "Refresh requested",
   "villagerretaliation.trade_refresh.tooltip": "Ask about refreshing this trade tomorrow.",

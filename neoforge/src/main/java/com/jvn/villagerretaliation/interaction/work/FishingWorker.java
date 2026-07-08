@@ -198,14 +198,24 @@ public final class FishingWorker extends AbstractBlockWorker {
     }
 
     @Override
+    public void pause(ServerLevel level, Villager villager, HiredWorkContext context) {
+        clearActiveFishing(level, villager, context);
+        super.pause(level, villager, context);
+    }
+
+    @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
+        clearActiveFishing(level, villager, context);
+        super.stop(level, villager, context);
+    }
+
+    private void clearActiveFishing(ServerLevel level, Villager villager, HiredWorkContext context) {
         VillagerFishingHook hook = activeHook(level, context);
         if (hook != null) {
             hook.discard();
         }
         clearFishingTarget(context);
         stopWorkNavigation(villager);
-        super.stop(level, villager, context);
     }
 
     private ItemStack ensureFishingRod(ServerLevel level, Villager villager, HiredWorkContext context) {
