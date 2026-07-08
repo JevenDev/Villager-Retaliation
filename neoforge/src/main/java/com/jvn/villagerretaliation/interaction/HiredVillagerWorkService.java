@@ -81,7 +81,9 @@ public final class HiredVillagerWorkService {
     private static final int MAX_RETURN_INTERMEDIATE_PATH_ATTEMPTS = 24;
     private static final int EXCAVATION_SURFACE_ENTRY_SEARCH_RADIUS = 2;
     private static final float WORK_AREA_RETURN_WALK_SPEED = 0.5F;
-    private static final int WORK_AREA_RETURN_CLOSE_ENOUGH = 2;
+    private static final int WORK_AREA_RETURN_CLOSE_ENOUGH = 0;
+    private static final int WORK_AREA_RETURN_INTERMEDIATE_CLOSE_ENOUGH = 2;
+    private static final int EXCAVATION_RETURN_CLOSE_ENOUGH = 2;
     private static final int WORK_AREA_RETURN_STUCK_CHECK_TICKS = 20;
     private static final int WORK_AREA_RETURN_STUCK_LIMIT = 3;
     private static final double WORK_AREA_RETURN_MIN_PROGRESS_SQR = 0.20D;
@@ -294,14 +296,14 @@ public final class HiredVillagerWorkService {
         if (!villager.getNavigation().isDone()
                 && navigationTarget != null
                 && ((excavationEntry != null && navigationTarget.equals(excavationEntry))
-                || isInsideEffectiveWorkArea(level, villager, session.role(), context, navigationTarget)
+                || context.isInsideWorkArea(navigationTarget)
                 || brain.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA)) {
             if (pathEntersLiquid(level, villager.getNavigation().getPath())
                     || isWetReturnPosition(level, navigationTarget)
                     || excavationEntry != null && navigationTarget.getY() < excavationEntry.getY() - 2) {
                 VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             } else {
-                BlockPos progressTarget = isInsideEffectiveWorkArea(level, villager, session.role(), context, navigationTarget)
+                BlockPos progressTarget = context.isInsideWorkArea(navigationTarget)
                         ? navigationTarget
                         : context.workCenter();
                 if (isWorkAreaReturnNavigationStuck(level, villager, state, progressTarget)) {
@@ -331,7 +333,7 @@ public final class HiredVillagerWorkService {
                     entryPath.path(),
                     excavationEntry,
                     WORK_AREA_RETURN_WALK_SPEED,
-                    WORK_AREA_RETURN_CLOSE_ENOUGH)) {
+                    EXCAVATION_RETURN_CLOSE_ENOUGH)) {
                 rememberWorkAreaReturnProgress(level, villager, state, excavationEntry);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, excavationEntry);
                 setStatus(state, "interaction.work.status.returning_excavation_ladder");
@@ -527,7 +529,7 @@ public final class HiredVillagerWorkService {
                         path,
                         target,
                         speed,
-                        WORK_AREA_RETURN_CLOSE_ENOUGH)) {
+                        WORK_AREA_RETURN_INTERMEDIATE_CLOSE_ENOUGH)) {
             HiredPathMemory.rememberUnreachableApproach(level, villager, target);
             HiredPathMemory.recordPathSearchFailure(level, villager);
             return false;
@@ -651,7 +653,7 @@ public final class HiredVillagerWorkService {
             BlockPos excavationSurfaceEntry) {
         HiredWorkContext context = session.context();
         BlockPos pos = villager.blockPosition();
-        if (isInsideEffectiveWorkArea(level, villager, session.role(), context, pos)) {
+        if (context.isInsideWorkArea(pos)) {
             return true;
         }
         if (excavationEntry != null) {
@@ -661,7 +663,7 @@ public final class HiredVillagerWorkService {
                 && isAtExcavationSurfaceEntry(villager, context, excavationSurfaceEntry)) {
             return true;
         }
-        return isInsideEffectiveWorkArea(level, villager, session.role(), context, pos);
+        return false;
     }
 
     private static boolean isAtExcavationSurfaceEntry(
@@ -675,7 +677,7 @@ public final class HiredVillagerWorkService {
         int horizontalDistance = Math.abs(pos.getX() - excavationEntry.getX())
                 + Math.abs(pos.getZ() - excavationEntry.getZ());
         return excavationEntry.getY() == context.workMax().getY() + 1
-                && horizontalDistance <= WORK_AREA_RETURN_CLOSE_ENOUGH
+                && horizontalDistance <= EXCAVATION_RETURN_CLOSE_ENOUGH
                 && pos.getY() >= excavationEntry.getY()
                 && pos.getY() <= excavationEntry.getY() + 1;
     }

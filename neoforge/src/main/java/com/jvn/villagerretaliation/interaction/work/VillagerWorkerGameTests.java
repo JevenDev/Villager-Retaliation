@@ -2530,6 +2530,74 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hiredWorkerAtPaddedWorkEdgeStillReturnsToStrictBounds(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 8, 1);
+        ServerLevel level = helper.getLevel();
+        level.setDayTime(1000L);
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 4));
+        tickVillager(level, villager, 20);
+        BlockPos outsideStart = helper.absolutePos(new BlockPos(2, 2, 4));
+        villager.moveTo(outsideStart.getX() + 0.5D, outsideStart.getY(), outsideStart.getZ() + 0.5D, 0.0F, 0.0F);
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.NITWIT);
+        helper.assertTrue(
+                HiredVillagerWorkService.setWorkArea(
+                        hirer,
+                        level,
+                        villager,
+                        helper.absolutePos(new BlockPos(4, 2, 3)),
+                        helper.absolutePos(new BlockPos(6, 4, 5))),
+                "work area assignment should succeed");
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putBoolean("Enabled", true);
+        HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.IDLE, null);
+
+        helper.assertFalse(
+                session.context().isInsideWorkArea(villager.blockPosition()),
+                "fixture villager should start outside the strict work box");
+        helper.assertTrue(
+                HiredVillagerWorkService.isInsideEffectiveWorkArea(
+                        level,
+                        villager,
+                        HiredVillagerRole.NITWIT,
+                        session.context(),
+                        villager.blockPosition()),
+                "fixture villager should still be inside the old padded tether");
+        net.minecraft.world.level.pathfinder.Path preflightPath = HiredPathMemory.createPath(
+                level,
+                villager,
+                helper.absolutePos(new BlockPos(4, 2, 4)),
+                0);
+        helper.assertTrue(
+                preflightPath != null && preflightPath.canReach(),
+                "fixture should provide an exact path back into the strict work box");
+
+        HiredVillagerWorkService.onVillagerTickPost(villager);
+
+        HiredWorkSession afterTick = HiredWorkSession.active(level, villager);
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(afterTick.state(), level.getGameTime());
+        helper.assertValueEqual(
+                snapshot.taskState(),
+                HiredWorkerTaskState.RETURNING_TO_WORK_AREA,
+                "worker at padded edge should return before resuming work");
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        helper.assertTrue(
+                navigationTarget != null && afterTick.context().isInsideWorkArea(navigationTarget),
+                "return navigation target should be inside the strict work box");
+        int closeEnough = villager.getBrain()
+                .getMemory(MemoryModuleType.WALK_TARGET)
+                .map(WalkTarget::getCloseEnoughDist)
+                .orElse(-1);
+        helper.assertValueEqual(closeEnough, 0, "strict work return should require exact arrival");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void hiredFarmingWithHoeKeepsFarmerBrainTick(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 1);
