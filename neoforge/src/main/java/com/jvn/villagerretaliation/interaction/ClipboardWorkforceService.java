@@ -255,6 +255,7 @@ public final class ClipboardWorkforceService {
             case FARMING -> WorkerStatus.FARMING;
             case FISHING -> WorkerStatus.WORKING;
             case BREWING -> WorkerStatus.BREWING;
+            case COOK -> WorkerStatus.COOKING;
             case BUILDER -> WorkerStatus.BUILDING;
             default -> WorkerStatus.WORKING;
         };
@@ -288,6 +289,16 @@ public final class ClipboardWorkforceService {
             return reason.contains("missing_brewing_materials")
                     || reason.contains("interaction.work.brewing.missing_materials");
         }
+        if (role == HiredVillagerRole.COOK) {
+            if (noStorage || materialStorageUnreachable) {
+                return false;
+            }
+            String reason = lower(brain.failureReason());
+            return reason.contains("missing_cooking_raw_food")
+                    || reason.contains("missing_cooking_fuel")
+                    || reason.contains("interaction.work.cooking.missing_raw_food")
+                    || reason.contains("interaction.work.cooking.missing_fuel");
+        }
         if (role == HiredVillagerRole.MINING) {
             return !noStorage
                     && !materialStorageUnreachable
@@ -308,6 +319,7 @@ public final class ClipboardWorkforceService {
         String failure = lower(brain.failureReason());
         return switch (role) {
             case BREWING -> failure.contains("brewing_storage_path_failed");
+            case COOK -> failure.contains("cooking_storage_path_failed");
             case BUILDER -> failure.contains("builder_material_storage_unreachable");
             case MINING -> failure.contains("mining_support_storage_path_failed");
             default -> false;
@@ -322,6 +334,7 @@ public final class ClipboardWorkforceService {
             case BREWING -> failure.contains("brewing_material_inventory_full")
                     || failure.contains("brewing_water_bottle_space")
                     || failure.contains("brewing_output_full_after_brew");
+            case COOK -> failure.contains("cooking_material_inventory_full");
             case BUILDER -> failure.contains("builder_material_inventory_full")
                     || failure.contains("builder_material_output_slot_full")
                     || failure.contains("builder_material_output_storage_unreachable");
@@ -356,6 +369,15 @@ public final class ClipboardWorkforceService {
             return brewingDiagnostic(
                     brain,
                     state,
+                    inventoryFull,
+                    noStorage,
+                    missingMaterials,
+                    materialStorageUnreachable,
+                    materialInventoryFull);
+        }
+        if (role == HiredVillagerRole.COOK) {
+            return cookingDiagnostic(
+                    brain,
                     inventoryFull,
                     noStorage,
                     missingMaterials,
@@ -650,6 +672,54 @@ public final class ClipboardWorkforceService {
         }
         if (inventoryFull) {
             return "Brewer inventory is full and output storage cannot take more items right now.";
+        }
+        return "";
+    }
+
+    private static String cookingDiagnostic(
+            HiredWorkerBrain.Snapshot brain,
+            boolean inventoryFull,
+            boolean noStorage,
+            boolean missingMaterials,
+            boolean materialStorageUnreachable,
+            boolean materialInventoryFull) {
+        String reason = lower(brain.failureReason());
+        if (materialInventoryFull) {
+            return "Cook found food or fuel in assigned storage, but the job inventory has no room for it.";
+        }
+        if (materialStorageUnreachable) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return limitDiagnostic(storagePos == null
+                    ? "Cook found food or fuel in assigned input storage, but cannot path to that container."
+                    : "Cook found food or fuel in assigned input storage at "
+                            + HiredWorkerBrain.formatPos(storagePos) + ", but cannot path to it.");
+        }
+        if (missingMaterials) {
+            if (reason.contains("missing_cooking_fuel")) {
+                return "Cook needs furnace fuel in job supplies or assigned input storage.";
+            }
+            return "Cook needs raw food in job supplies or assigned input storage.";
+        }
+        if (noStorage && (reason.contains("missing_cooking_raw_food") || reason.contains("missing_cooking_fuel"))) {
+            return "Cook needs assigned input storage or carried supplies for food and fuel.";
+        }
+        if (reason.contains("no_cooking_station")) {
+            return "Cook needs a furnace or smoker inside the assigned work area.";
+        }
+        if (reason.contains("cooking_station_path_failed") || reason.contains("cooking_station_unreachable")) {
+            return "Cook cannot path to the furnace or smoker inside the assigned work area.";
+        }
+        if (reason.contains("cooking_wrong_output")) {
+            return "Cooking station output slot contains something that is not food.";
+        }
+        if (reason.contains("cooking_wrong_input")) {
+            return "Cooking station input slot contains something the cook cannot cook into food.";
+        }
+        if (reason.contains("cooking_wrong_fuel")) {
+            return "Cooking station fuel slot contains something that will not burn.";
+        }
+        if (inventoryFull) {
+            return "Cook inventory is full and output storage cannot take more cooked food right now.";
         }
         return "";
     }

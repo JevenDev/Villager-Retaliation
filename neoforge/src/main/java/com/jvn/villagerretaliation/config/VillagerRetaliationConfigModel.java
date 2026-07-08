@@ -412,6 +412,9 @@ public final class VillagerRetaliationConfigModel {
         public double brewing = 0.2D;
 
         @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double cooking = 0.2D;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
         public double builder = 0.15D;
 
         @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)

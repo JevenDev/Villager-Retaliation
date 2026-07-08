@@ -1,0 +1,160 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_cooking"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.cooking.depositing_outputs",
+      "lines": [
+        "I am putting cooked food away before tending the furnace again."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.depositing_outputs.000"
+    },
+    {
+      "key": "interaction.work.cooking.no_station",
+      "lines": [
+        "I need a furnace or smoker inside the assigned job site."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.no_station.001"
+    },
+    {
+      "key": "interaction.work.cooking.wrong_output",
+      "lines": [
+        "The cooking station has something in the output slot that is not food."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.wrong_output.002"
+    },
+    {
+      "key": "interaction.work.cooking.wrong_input",
+      "lines": [
+        "The cooking station has something in the input slot I cannot cook into food."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.wrong_input.003"
+    },
+    {
+      "key": "interaction.work.cooking.wrong_fuel",
+      "lines": [
+        "The cooking station has something in the fuel slot that will not burn."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.wrong_fuel.004"
+    },
+    {
+      "key": "interaction.work.cooking.missing_raw_food",
+      "lines": [
+        "I need raw food in my job supplies or assigned storage before I can cook."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.missing_raw_food.005"
+    },
+    {
+      "key": "interaction.work.cooking.missing_fuel",
+      "lines": [
+        "I need furnace fuel in my job supplies or assigned storage before I can cook."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.missing_fuel.006"
+    },
+    {
+      "key": "interaction.work.cooking.collecting_materials",
+      "lines": [
+        "I am collecting food and fuel for the cooking station."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.collecting_materials.007"
+    },
+    {
+      "key": "interaction.work.cooking.materials_unreachable",
+      "lines": [
+        "I found cooking supplies, but I cannot reach the assigned storage."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.materials_unreachable.008"
+    },
+    {
+      "key": "interaction.work.cooking.material_inventory_full",
+      "lines": [
+        "I found cooking supplies, but my job inventory has no room for them."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.material_inventory_full.009"
+    },
+    {
+      "key": "interaction.work.cooking.gathered_materials",
+      "lines": [
+        "I gathered cooking supplies and am heading back to the station."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.gathered_materials.010"
+    },
+    {
+      "key": "interaction.work.cooking.station_unreachable",
+      "lines": [
+        "I found a cooking station, but I cannot reach it from the job site."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.station_unreachable.011"
+    },
+    {
+      "key": "interaction.work.cooking.station_blocked",
+      "lines": [
+        "The path to the cooking station is blocked right now."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.station_blocked.012"
+    },
+    {
+      "key": "interaction.work.cooking.repositioning_station",
+      "lines": [
+        "I am finding a better place to reach the cooking station."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.repositioning_station.013"
+    },
+    {
+      "key": "interaction.work.cooking.moving_to_station",
+      "lines": [
+        "I am heading to the cooking station."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.moving_to_station.014"
+    },
+    {
+      "key": "interaction.work.cooking.output_full",
+      "lines": [
+        "I have cooked food ready, but no room to carry it."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.output_full.015"
+    },
+    {
+      "key": "interaction.work.cooking.loaded_input",
+      "lines": [
+        "I loaded {count} {item} into the cooking station."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.loaded_input.016"
+    },
+    {
+      "key": "interaction.work.cooking.loaded_fuel",
+      "lines": [
+        "I loaded {count} {item} as cooking fuel."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.loaded_fuel.017"
+    },
+    {
+      "key": "interaction.work.cooking.waiting_station",
+      "lines": [
+        "I am waiting for the cooking station to finish."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.waiting_station.018"
+    },
+    {
+      "key": "interaction.work.cooking.collected_output",
+      "lines": [
+        "I collected {count} {item} from the cooking station."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.collected_output.019"
+    },
+    {
+      "key": "interaction.work.cooking.collected_fuel_remainder",
+      "lines": [
+        "I cleared {count} {item} from the fuel slot."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.collected_fuel_remainder.020"
+    }
+  ]
+}

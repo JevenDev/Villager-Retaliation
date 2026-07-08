@@ -82,6 +82,18 @@
       "id": "global.messages.11_work_reports.messages.interaction.work_report.brewing.005"
     },
     {
+      "key": "interaction.work_report.cook",
+      "lines": [
+        "I am still tending the cooking station. I will keep food and fuel moving.",
+        "The cooking work is still going. I am watching the furnace.",
+        "I am keeping the smoker or furnace supplied for the job.",
+        "I am still on cooking duty and checking for finished food.",
+        "The cooking station has my attention until the food is done.",
+        "I am tending the heat and keeping the meals moving."
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.cook.018"
+    },
+    {
       "key": "interaction.work_report.builder",
       "lines": [
         "I am still working on the build. I will place what I can and wait on materials when I need them.",
@@ -188,6 +200,18 @@
         "Another part of the brewing is handled. I am still on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.brewing.014"
+    },
+    {
+      "key": "interaction.work_final_report.cook",
+      "lines": [
+        "I handled another bit of cooking. I am still watching the station.",
+        "The cooking moved along. I will keep the food and fuel going.",
+        "I sorted another step at the furnace. The work continues.",
+        "The food is coming along for now. I will keep tending it.",
+        "I checked the station and kept the cooking moving.",
+        "Another part of the cooking is handled. I am still on it."
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.cook.019"
     },
     {
       "key": "interaction.work_final_report.builder",

@@ -87,6 +87,7 @@ public record VillagerRecruitRequestPayload(int entityId, Action action, HiredVi
         FOLLOW,
         STAY_HERE,
         STOP_FOLLOWING,
-        STOP_STAYING_HERE
+        STOP_STAYING_HERE,
+        SET_ROLE_COOK
     }
 }

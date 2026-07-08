@@ -45,7 +45,18 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int PAGE_BUTTON_HEIGHT = 13;
     private static final int PAGE_BUTTON_LEFT = CONTENT_RIGHT - PAGE_BUTTON_WIDTH + 1;
     private static final int PAGE_BUTTON_TOP = CONTENT_BOTTOM - PAGE_BUTTON_HEIGHT;
-    private static final int FIRST_OVERVIEW_PAGE_LAST_ROLE = HiredVillagerRole.ANIMAL_HANDLING.ordinal();
+    private static final List<HiredVillagerRole> FIRST_OVERVIEW_PAGE_ROLES = List.of(
+            HiredVillagerRole.COMBAT,
+            HiredVillagerRole.MINING,
+            HiredVillagerRole.LOGGING,
+            HiredVillagerRole.FARMING,
+            HiredVillagerRole.FISHING,
+            HiredVillagerRole.BREWING,
+            HiredVillagerRole.COOK,
+            HiredVillagerRole.BUILDER);
+    private static final List<HiredVillagerRole> SECOND_OVERVIEW_PAGE_ROLES = List.of(
+            HiredVillagerRole.ANIMAL_HANDLING,
+            HiredVillagerRole.NITWIT);
     private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
     private static final ResourceLocation PAGE_FORWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_forward_highlighted");
     private static final ResourceLocation PAGE_BACKWARD = ResourceLocation.withDefaultNamespace("widget/page_backward");
@@ -864,17 +875,14 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private List<OverviewRow> overviewRows() {
         List<OverviewRow> rows = new ArrayList<>();
-        for (ClipboardWorkforceSnapshot.JobSummary job : this.snapshot.jobs()) {
-            boolean firstPageRole = job.role().ordinal() <= FIRST_OVERVIEW_PAGE_LAST_ROLE;
-            if ((this.overviewPage == 0) != firstPageRole) {
-                continue;
-            }
+        for (HiredVillagerRole role : overviewPageRoles()) {
+            int count = jobCount(role);
             rows.add(new OverviewRow(
                     RowKind.JOB,
-                    job.role(),
-                    roleName(job.role()),
-                    Integer.toString(job.count()),
-                    job.count() == 0));
+                    role,
+                    roleName(role),
+                    Integer.toString(count),
+                    count == 0));
         }
         if (this.overviewPage == 1) {
             rows.add(new OverviewRow(
@@ -897,6 +905,19 @@ public final class ClipboardWorkforceScreen extends Screen {
                     false));
         }
         return rows;
+    }
+
+    private List<HiredVillagerRole> overviewPageRoles() {
+        return this.overviewPage == 0 ? FIRST_OVERVIEW_PAGE_ROLES : SECOND_OVERVIEW_PAGE_ROLES;
+    }
+
+    private int jobCount(HiredVillagerRole role) {
+        for (ClipboardWorkforceSnapshot.JobSummary job : this.snapshot.jobs()) {
+            if (job.role() == role) {
+                return job.count();
+            }
+        }
+        return 0;
     }
 
     private Component roleName(HiredVillagerRole role) {
