@@ -8,13 +8,19 @@ import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.neoforged.neoforge.common.SpecialPlantable;
 
 public final class HiredFarmingInventoryBridge {
@@ -127,6 +133,34 @@ public final class HiredFarmingInventoryBridge {
         }
     }
 
+    public static boolean storeFarmDrops(Villager villager, HiredJobInventory inventory, List<ItemStack> drops) {
+        for (ItemStack drop : drops) {
+            if (!insertFarmPickup(villager, inventory, drop.copy()).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean plantFromJobInventory(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos cropPos) {
+        HiredJobInventory inventory = context.inventory();
+        for (int slot : plantingSlots(villager, inventory)) {
+            ItemStack stack = inventory.getItem(slot);
+            if (stack.isEmpty()) {
+                continue;
+            }
+            if (placePlant(level, villager, cropPos, stack)) {
+                inventory.removeItem(slot, 1);
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean isFarmPickupItem(Villager villager, ItemStack stack) {
         return !stack.isEmpty()
                 && (stack.is(Items.WHEAT)
@@ -139,6 +173,35 @@ public final class HiredFarmingInventoryBridge {
                 || stack.is(Items.TORCHFLOWER_SEEDS)
                 || stack.is(Items.PITCHER_POD)
                 || isPlantingItem(villager, stack));
+    }
+
+    private static boolean placePlant(ServerLevel level, Villager villager, BlockPos cropPos, ItemStack stack) {
+        boolean planted = false;
+        if (stack.is(ItemTags.VILLAGER_PLANTABLE_SEEDS) && stack.getItem() instanceof BlockItem blockItem) {
+            BlockState plantedState = blockItem.getBlock().defaultBlockState();
+            if (plantedState.canSurvive(level, cropPos)) {
+                level.setBlockAndUpdate(cropPos, plantedState);
+                level.gameEvent(GameEvent.BLOCK_PLACE, cropPos, GameEvent.Context.of(villager, plantedState));
+                planted = true;
+            }
+        } else if (stack.getItem() instanceof SpecialPlantable specialPlantable
+                && specialPlantable.villagerCanPlantItem(villager)
+                && specialPlantable.canPlacePlantAtPosition(stack, level, cropPos, Direction.DOWN)) {
+            specialPlantable.spawnPlantAtPosition(stack, level, cropPos, Direction.DOWN);
+            planted = true;
+        }
+        if (planted) {
+            level.playSound(
+                    null,
+                    cropPos.getX(),
+                    cropPos.getY(),
+                    cropPos.getZ(),
+                    SoundEvents.CROP_PLANTED,
+                    SoundSource.BLOCKS,
+                    1.0F,
+                    1.0F);
+        }
+        return planted;
     }
 
     private static HiredWorkSession activeFarmingSession(ServerLevel level, Villager villager) {

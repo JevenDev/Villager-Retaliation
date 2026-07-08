@@ -296,14 +296,14 @@ public final class HiredVillagerWorkService {
         if (!villager.getNavigation().isDone()
                 && navigationTarget != null
                 && ((excavationEntry != null && navigationTarget.equals(excavationEntry))
-                || context.isInsideWorkArea(navigationTarget)
+                || isInsideReturnedWorkArea(session, navigationTarget)
                 || brain.taskState() == HiredWorkerTaskState.RETURNING_TO_WORK_AREA)) {
             if (pathEntersLiquid(level, villager.getNavigation().getPath())
                     || isWetReturnPosition(level, navigationTarget)
                     || excavationEntry != null && navigationTarget.getY() < excavationEntry.getY() - 2) {
                 VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             } else {
-                BlockPos progressTarget = context.isInsideWorkArea(navigationTarget)
+                BlockPos progressTarget = isInsideReturnedWorkArea(session, navigationTarget)
                         ? navigationTarget
                         : context.workCenter();
                 if (isWorkAreaReturnNavigationStuck(level, villager, state, progressTarget)) {
@@ -351,7 +351,7 @@ public final class HiredVillagerWorkService {
             return true;
         }
 
-        ReturnPath returnPath = findWorkAreaReturnPath(level, villager, context);
+        ReturnPath returnPath = findWorkAreaReturnPath(level, villager, session);
         if (returnPath == null) {
             if (VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, context.workCenter(), WORK_AREA_RETURN_WALK_SPEED)) {
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
@@ -653,7 +653,7 @@ public final class HiredVillagerWorkService {
             BlockPos excavationSurfaceEntry) {
         HiredWorkContext context = session.context();
         BlockPos pos = villager.blockPosition();
-        if (context.isInsideWorkArea(pos)) {
+        if (isInsideReturnedWorkArea(session, pos)) {
             return true;
         }
         if (excavationEntry != null) {
@@ -664,6 +664,18 @@ public final class HiredVillagerWorkService {
             return true;
         }
         return false;
+    }
+
+    private static boolean isInsideReturnedWorkArea(HiredWorkSession session, BlockPos pos) {
+        if (pos == null) {
+            return false;
+        }
+        HiredWorkContext context = session.context();
+        if (context.isInsideWorkArea(pos)) {
+            return true;
+        }
+        return session.role() == HiredVillagerRole.FARMING
+                && (context.isInsideWorkArea(pos.below()) || context.isInsideWorkArea(pos.above()));
     }
 
     private static boolean isAtExcavationSurfaceEntry(
@@ -752,29 +764,23 @@ public final class HiredVillagerWorkService {
         return Math.max(minimumRetry, HiredPathMemory.recordPathSearchFailure(level, villager));
     }
 
-    private static ReturnPath findWorkAreaReturnPath(ServerLevel level, Villager villager, HiredWorkContext context) {
+    private static ReturnPath findWorkAreaReturnPath(ServerLevel level, Villager villager, HiredWorkSession session) {
         if (HiredPathMemory.shouldDelayPathSearch(level, villager)) {
             return null;
         }
+        HiredWorkContext context = session.context();
         BlockPos clamped = new BlockPos(
                 Mth.clamp(villager.blockPosition().getX(), context.workMin().getX(), context.workMax().getX()),
                 Mth.clamp(villager.blockPosition().getY(), context.workMin().getY(), context.workMax().getY()),
                 Mth.clamp(villager.blockPosition().getZ(), context.workMin().getZ(), context.workMax().getZ()));
 
         List<BlockPos> candidates = new ArrayList<>();
-        if (isValidWorkAreaReturnCandidate(level, context, clamped)) {
-            candidates.add(clamped);
-        }
-        if (isValidWorkAreaReturnCandidate(level, context, context.workCenter())) {
-            candidates.add(context.workCenter());
-        }
+        addWorkAreaReturnCandidate(level, session, candidates, clamped);
+        addWorkAreaReturnCandidate(level, session, candidates, context.workCenter());
         for (BlockPos raw : BlockPos.betweenClosed(
                 clamped.offset(-3, -2, -3),
                 clamped.offset(3, 2, 3))) {
-            BlockPos candidate = raw.immutable();
-            if (isValidWorkAreaReturnCandidate(level, context, candidate)) {
-                candidates.add(candidate);
-            }
+            addWorkAreaReturnCandidate(level, session, candidates, raw.immutable());
         }
 
         candidates.sort(Comparator.comparingDouble(pos -> returnTargetScore(villager, context, pos)));
@@ -785,7 +791,7 @@ public final class HiredVillagerWorkService {
             if (evaluated >= HiredPathMemory.adjustedCandidateLimit(level, villager, MAX_RETURN_TARGETS_TO_PATHFIND)) {
                 break;
             }
-            if (!isValidWorkAreaReturnCandidate(level, context, candidate)
+            if (!isValidWorkAreaReturnCandidate(level, session, candidate)
                     || HiredPathMemory.isApproachRecentlyUnreachable(level, villager, candidate)) {
                 continue;
             }
@@ -829,26 +835,64 @@ public final class HiredVillagerWorkService {
     }
 
     private static boolean isValidWorkAreaReturnTarget(ServerLevel level, BlockPos pos) {
+        return isValidWorkAreaReturnTarget(level, pos, null);
+    }
+
+    private static boolean isValidWorkAreaReturnTarget(ServerLevel level, BlockPos pos, HiredVillagerRole role) {
         if (!level.hasChunkAt(pos) || !level.hasChunkAt(pos.above()) || !level.hasChunkAt(pos.below())) {
             return false;
         }
         BlockState feet = level.getBlockState(pos);
         BlockState head = level.getBlockState(pos.above());
         BlockState floor = level.getBlockState(pos.below());
-        return isReturnPassable(feet)
-                && isReturnPassable(head)
-                && (floor.isSolid() || feet.is(Blocks.LADDER));
+        return isReturnPassable(level, pos, feet, role)
+                && isReturnPassable(level, pos.above(), head, role)
+                && (isReturnFloor(floor, role) || feet.is(Blocks.LADDER));
+    }
+
+    private static void addWorkAreaReturnCandidate(
+            ServerLevel level,
+            HiredWorkSession session,
+            List<BlockPos> candidates,
+            BlockPos candidate) {
+        BlockPos target = workAreaReturnCandidateTarget(level, session, candidate);
+        if (target != null && !candidates.contains(target)) {
+            candidates.add(target);
+        }
+    }
+
+    private static BlockPos workAreaReturnCandidateTarget(
+            ServerLevel level,
+            HiredWorkSession session,
+            BlockPos candidate) {
+        if (isValidWorkAreaReturnCandidate(level, session, candidate)) {
+            return candidate;
+        }
+        if (session.role() == HiredVillagerRole.FARMING
+                && session.context().isInsideWorkArea(candidate)
+                && isValidWorkAreaReturnCandidate(level, session, candidate.above())) {
+            return candidate.above();
+        }
+        return null;
     }
 
     private static boolean isValidWorkAreaReturnCandidate(
             ServerLevel level,
-            HiredWorkContext context,
+            HiredWorkSession session,
             BlockPos candidate) {
-        return context.isInsideWorkArea(candidate) && isValidWorkAreaReturnTarget(level, candidate);
+        return isInsideReturnedWorkArea(session, candidate)
+                && isValidWorkAreaReturnTarget(level, candidate, session.role());
     }
 
-    private static boolean isReturnPassable(BlockState state) {
-        return state.isAir() || state.is(Blocks.LADDER);
+    private static boolean isReturnPassable(ServerLevel level, BlockPos pos, BlockState state, HiredVillagerRole role) {
+        if (state.isAir() || state.is(Blocks.LADDER)) {
+            return true;
+        }
+        return role == HiredVillagerRole.FARMING && state.getCollisionShape(level, pos).isEmpty();
+    }
+
+    private static boolean isReturnFloor(BlockState state, HiredVillagerRole role) {
+        return state.isSolid() || role == HiredVillagerRole.FARMING && state.is(Blocks.FARMLAND);
     }
 
     private static boolean pathEntersLiquid(ServerLevel level, Path path) {

@@ -14,17 +14,21 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CropBlock;
 import net.minecraft.world.level.block.FarmBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.ItemAbilities;
@@ -61,22 +65,13 @@ public final class FarmingWorker extends AbstractBlockWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         HiredFarmingInventoryBridge.sweepPersonalFarmItemsToJobInventory(villager, context);
 
-        DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
-        if (depositResult == DepositResult.MOVING) {
-            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-            return WorkResult.progressed("interaction.work.farming.no_target_depositing");
-        }
-        if (depositResult == DepositResult.STORAGE_FULL) {
-            return WorkResult.idle(storageFullStatus(context));
-        }
-
         if (villager.getVillagerData().getProfession() != VillagerProfession.FARMER) {
             HiredWorkerBrain.setFailure(context, "farmer_profession_required", 0L);
             HiredWorkerBrain.setLastTargetScanResult(context, "farmer_profession_required");
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             return WorkResult.idle("interaction.work.farming.needs_farmer_profession");
         }
-        if (!HiredVillagerWorkService.hasClaimedJobSiteInLevel(level, villager)) {
+        if (!context.hasWorkArea() && !HiredVillagerWorkService.hasClaimedJobSiteInLevel(level, villager)) {
             HiredWorkerBrain.setFailure(context, "farmer_job_site_required", 0L);
             HiredWorkerBrain.setLastTargetScanResult(context, "farmer_job_site_required");
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
@@ -92,14 +87,14 @@ public final class FarmingWorker extends AbstractBlockWorker {
         clearActiveBreakingTarget(level, context, villager);
         HiredWorkerBrain.clearFailure(context);
         activateFarmerWorkBrain(villager);
-        return guideVanillaFieldWork(level, villager, context);
+        return guideFieldWork(level, villager, context);
     }
 
-    private WorkResult guideVanillaFieldWork(ServerLevel level, Villager villager, HiredWorkContext context) {
+    private WorkResult guideFieldWork(ServerLevel level, Villager villager, HiredWorkContext context) {
         BlockPos jobSite = HiredVillagerWorkService.claimedJobSitePos(level, villager);
         BlockPos currentFieldTarget = currentFieldWalkTarget(level, villager, context, jobSite);
         if (currentFieldTarget != null) {
-            return guideVanillaFieldTarget(level, villager, context, currentFieldTarget, "vanilla_field_target");
+            return guideFieldTarget(level, villager, context, currentFieldTarget, "vanilla_field_target");
         }
 
         ItemStack hoe = context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT);
@@ -121,7 +116,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return WorkResult.progressed("interaction.work.farming.searching_scan");
         }
         if (harvestSearch.target() != null) {
-            return guideVanillaFieldTarget(level, villager, context, harvestSearch.target(), "field_harvest_target_found");
+            return guideFieldTarget(level, villager, context, harvestSearch.target(), "field_harvest_target_found");
         }
 
         if (HiredFarmingOptions.tillSoil(context.state()) && context.hasWorkArea()) {
@@ -142,17 +137,25 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 return WorkResult.progressed("interaction.work.farming.searching_scan");
             }
             if (plantSearch.target() != null) {
-                return guideVanillaFieldTarget(level, villager, context, plantSearch.target(), "field_plant_target_found");
+                return guideFieldTarget(level, villager, context, plantSearch.target(), "field_plant_target_found");
             }
         }
 
         finishFullFieldScanWithNoTargets(level, context);
+        DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
+        if (depositResult == DepositResult.MOVING) {
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+            return WorkResult.progressed("interaction.work.farming.no_target_depositing");
+        }
+        if (depositResult == DepositResult.STORAGE_FULL) {
+            return WorkResult.idle(storageFullStatus(context));
+        }
         clearSecondaryJobSite(villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
         return WorkResult.idle("interaction.work.farming.waiting_for_growth");
     }
 
-    private WorkResult guideVanillaFieldTarget(
+    private WorkResult guideFieldTarget(
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
@@ -161,13 +164,94 @@ public final class FarmingWorker extends AbstractBlockWorker {
         seedSecondaryJobSite(level, villager, target);
         HiredWorkerBrain.setLastTargetScanResult(context, scanResult);
         if (isInVanillaFieldWorkRange(villager, target)) {
-            setTaskState(context, HiredWorkerTaskState.IDLE);
-            return WorkResult.progressed("interaction.work.farming.tending_fields");
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            if (isHarvestableVanillaFieldTarget(level, target)) {
+                return harvestCrop(level, villager, context, target);
+            }
+            if (isPlantableVanillaFieldTarget(level, target)) {
+                return plantCrop(level, villager, context, target);
+            }
+            HiredWorkerBrain.setLastTargetScanResult(context, "field_target_changed");
+            setTaskState(context, HiredWorkerTaskState.IDLE, target);
+            return WorkResult.idle("interaction.work.farming.target_changed");
         }
 
-        VillagerTaskNavigationUtil.setHiredWalkTarget(villager, target, FIELD_GUIDE_WALK_SPEED, FIELD_GUIDE_CLOSE_ENOUGH);
-        setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target);
-        return WorkResult.progressed("interaction.work.farming.moving_to_crop");
+        return moveToFieldTarget(
+                level,
+                villager,
+                context,
+                target,
+                target,
+                "interaction.work.farming.moving_to_crop",
+                "interaction.work.farming.crop_blocked");
+    }
+
+    private WorkResult harvestCrop(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos cropTarget) {
+        ItemStack hoe = context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT);
+        BlockState state = level.getBlockState(cropTarget);
+        if (!(state.getBlock() instanceof CropBlock crop) || !crop.isMaxAge(state)) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "harvest_target_changed");
+            setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
+            return WorkResult.idle("interaction.work.farming.target_changed");
+        }
+
+        List<ItemStack> drops = Block.getDrops(state, level, cropTarget, level.getBlockEntity(cropTarget), villager, hoe);
+        if (!context.canStoreOutputs(drops)) {
+            OutputFullHandling outputFull = handleOutputFullInventory(
+                    level,
+                    context,
+                    villager,
+                    FIELD_GUIDE_WALK_SPEED,
+                    cropTarget,
+                    "interaction.work.farming.output_full_depositing",
+                    "interaction.work.farming.output_full_blocked");
+            if (outputFull.handled()) {
+                return outputFull.result();
+            }
+            if (!context.canStoreOutputs(drops)) {
+                return WorkResult.idle("interaction.work.farming.output_full_blocked");
+            }
+        }
+
+        faceBlock(villager, cropTarget);
+        swingWorkTool(villager);
+        EnchantmentHelper.onHitBlock(level, hoe, villager, villager, EquipmentSlot.MAINHAND, cropTarget.getCenter(), state, ignored -> {
+        });
+        level.destroyBlock(cropTarget, false, villager);
+        HiredPathMemory.onBlockChanged(level, cropTarget);
+        HiredPathMemory.rememberRecent(level, cropTarget);
+
+        if (!HiredFarmingInventoryBridge.storeFarmDrops(villager, context.inventory(), drops)) {
+            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
+            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, cropTarget);
+            return WorkResult.idle("interaction.work.farming.output_full_blocked");
+        }
+
+        boolean replanted = HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget);
+        HiredWorkerBrain.clearFailure(context);
+        setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
+        return WorkResult.progressed(replanted
+                ? "interaction.work.farming.completed_crop"
+                : "interaction.work.farming.completed_output");
+    }
+
+    private WorkResult plantCrop(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos cropTarget) {
+        if (!isPlantableVanillaFieldTarget(level, cropTarget)) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "plant_target_changed");
+            setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
+            return WorkResult.idle("interaction.work.farming.target_changed");
+        }
+        if (!HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget)) {
+            HiredWorkerBrain.setFailure(context, "missing_planting_item", 0L);
+            setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, cropTarget);
+            return WorkResult.idle("interaction.work.farming.missing_planting_item");
+        }
+
+        faceBlock(villager, cropTarget);
+        swingWorkTool(villager);
+        HiredWorkerBrain.clearFailure(context);
+        setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
+        return WorkResult.progressed("interaction.work.farming.tending_fields");
     }
 
     private WorkResult guideSoilTillTarget(
@@ -179,11 +263,86 @@ public final class FarmingWorker extends AbstractBlockWorker {
         BlockPos standTarget = soilTarget.above();
         if (!isInVanillaFieldWorkRange(villager, standTarget)) {
             clearSecondaryJobSite(villager);
-            VillagerTaskNavigationUtil.setHiredWalkTarget(villager, standTarget, FIELD_GUIDE_WALK_SPEED, FIELD_GUIDE_CLOSE_ENOUGH);
-            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, soilTarget);
-            return WorkResult.progressed("interaction.work.farming.moving_to_soil");
+            return moveToFieldTarget(
+                    level,
+                    villager,
+                    context,
+                    standTarget,
+                    soilTarget,
+                    "interaction.work.farming.moving_to_soil",
+                    "interaction.work.farming.crop_blocked");
         }
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
         return tillSoil(level, villager, context, soilTarget);
+    }
+
+    private WorkResult moveToFieldTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos navigationTarget,
+            BlockPos workTarget,
+            String movingStatus,
+            String blockedStatus) {
+        if (navigationTarget == null || workTarget == null) {
+            setTaskState(context, HiredWorkerTaskState.IDLE);
+            return WorkResult.idle("interaction.work.farming.target_changed");
+        }
+
+        BlockPos currentNavigationTarget = villager.getNavigation().getTargetPos();
+        if (!villager.getNavigation().isDone() && navigationTarget.equals(currentNavigationTarget)) {
+            if (HiredPathMemory.isNavigationBlocked(
+                    level,
+                    villager,
+                    navigationTarget,
+                    villager.distanceToSqr(navigationTarget.getCenter()))) {
+                VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+                HiredPathMemory.clearNavigationProgress(villager);
+                HiredPathMemory.rememberUnreachableApproach(level, villager, navigationTarget);
+            } else {
+                HiredWorkerBrain.clearFailure(context);
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, workTarget);
+                return WorkResult.progressed(movingStatus);
+            }
+        }
+
+        if (HiredPathMemory.shouldDelayPathSearch(level, villager)
+                || HiredPathMemory.isApproachRecentlyUnreachable(level, villager, navigationTarget)) {
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            setTaskState(context, HiredWorkerTaskState.IDLE, workTarget);
+            return WorkResult.progressed(blockedStatus);
+        }
+
+        Path path = HiredPathMemory.createPath(level, villager, navigationTarget, FIELD_GUIDE_CLOSE_ENOUGH);
+        if (path != null && path.canReach()) {
+            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(
+                    villager,
+                    path,
+                    navigationTarget,
+                    FIELD_GUIDE_WALK_SPEED,
+                    FIELD_GUIDE_CLOSE_ENOUGH);
+            if (moved) {
+                HiredPathMemory.clearFailure(villager, workTarget);
+                HiredPathMemory.clearUnreachableApproach(villager, navigationTarget);
+                HiredPathMemory.clearPathSearchFailures(villager);
+                HiredPathMemory.rememberNavigationProgress(
+                        level,
+                        villager,
+                        navigationTarget,
+                        villager.distanceToSqr(navigationTarget.getCenter()));
+                HiredWorkerBrain.clearFailure(context);
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, workTarget);
+                return WorkResult.progressed(movingStatus);
+            }
+        }
+
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+        HiredPathMemory.clearNavigationProgress(villager);
+        HiredPathMemory.rememberUnreachableApproach(level, villager, navigationTarget);
+        HiredPathMemory.recordFailure(level, villager, workTarget);
+        HiredWorkerBrain.setLastTargetScanResult(context, "field_target_unreachable");
+        setTaskState(context, HiredWorkerTaskState.IDLE, workTarget);
+        return WorkResult.progressed(blockedStatus);
     }
 
     private WorkResult tillSoil(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos soilTarget) {
@@ -272,10 +431,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
                     cursorTag,
                     MAX_FIELD_SCAN_POSITIONS_PER_WORK_TICK,
                     pos -> context.isLoaded(level, pos)
-                            && (harvestOnly
-                            ? isHarvestableVanillaFieldTarget(level, pos)
-                            : isPlantableVanillaFieldTarget(level, pos)));
-            BlockPos target = bestFieldTarget(villager, scan.candidates());
+                            && fieldTargetForSearchPos(level, context, pos, harvestOnly) != null);
+            BlockPos target = bestFieldTarget(level, villager, context, scan.candidates(), harvestOnly);
             if (target != null) {
                 clearFieldScanState(context);
                 context.state().remove(NEXT_FIELD_SCAN_GAME_TIME_TAG);
@@ -360,6 +517,32 @@ public final class FarmingWorker extends AbstractBlockWorker {
         return best;
     }
 
+    private static BlockPos bestFieldTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            List<BlockPos> candidates,
+            boolean harvestOnly) {
+        BlockPos best = null;
+        double bestScore = Double.MAX_VALUE;
+        for (BlockPos candidate : candidates) {
+            BlockPos target = fieldTargetForSearchPos(level, context, candidate, harvestOnly);
+            if (target == null) {
+                continue;
+            }
+            if (HiredPathMemory.isAvoided(level, villager, target)
+                    || HiredPathMemory.isApproachRecentlyUnreachable(level, villager, target)) {
+                continue;
+            }
+            double score = villager.distanceToSqr(target.getCenter());
+            if (score < bestScore) {
+                bestScore = score;
+                best = target;
+            }
+        }
+        return best;
+    }
+
     private static BlockPos bestTillTarget(
             ServerLevel level,
             Villager villager,
@@ -371,6 +554,10 @@ public final class FarmingWorker extends AbstractBlockWorker {
         for (BlockPos candidate : candidates) {
             BlockPos target = tillTargetForSearchPos(level, context, candidate, hoe);
             if (target == null) {
+                continue;
+            }
+            if (HiredPathMemory.isAvoided(level, villager, target)
+                    || HiredPathMemory.isApproachRecentlyUnreachable(level, villager, target.above())) {
                 continue;
             }
             double score = villager.distanceToSqr(target.above().getCenter());
@@ -385,6 +572,37 @@ public final class FarmingWorker extends AbstractBlockWorker {
     private static boolean isUsableVanillaFieldTarget(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos pos) {
         return isHarvestableVanillaFieldTarget(level, pos)
                 || HiredFarmingInventoryBridge.hasJobPlantingItem(villager, context) && isPlantableVanillaFieldTarget(level, pos);
+    }
+
+    private static BlockPos fieldTargetForSearchPos(
+            ServerLevel level,
+            HiredWorkContext context,
+            BlockPos raw,
+            boolean harvestOnly) {
+        if (raw == null) {
+            return null;
+        }
+        if (isFieldTargetForSearch(level, context, raw, harvestOnly)) {
+            return raw.immutable();
+        }
+        BlockPos above = raw.above();
+        return isFieldTargetForSearch(level, context, above, harvestOnly) ? above.immutable() : null;
+    }
+
+    private static boolean isFieldTargetForSearch(
+            ServerLevel level,
+            HiredWorkContext context,
+            BlockPos target,
+            boolean harvestOnly) {
+        if (target == null || !context.hasWorkArea() || !context.isLoaded(level, target)) {
+            return false;
+        }
+        if (!context.isInsideWorkArea(target) && !context.isInsideWorkArea(target.below())) {
+            return false;
+        }
+        return harvestOnly
+                ? isHarvestableVanillaFieldTarget(level, target)
+                : isPlantableVanillaFieldTarget(level, target);
     }
 
     private static boolean isHarvestableVanillaFieldTarget(ServerLevel level, BlockPos pos) {
@@ -463,6 +681,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 .map(walkTarget -> walkTarget.getTarget().currentBlockPosition())
                 .filter(target -> !target.equals(jobSite))
                 .filter(target -> isInsideFieldSearchArea(target, context, jobSite))
+                .filter(target -> !HiredPathMemory.isAvoided(level, villager, target))
+                .filter(target -> !HiredPathMemory.isApproachRecentlyUnreachable(level, villager, target))
                 .filter(target -> isUsableVanillaFieldTarget(level, villager, context, target))
                 .orElse(null);
     }
@@ -479,6 +699,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 .map(walkTarget -> walkTarget.getTarget().currentBlockPosition())
                 .map(target -> tillTargetForSearchPos(level, context, target, hoe))
                 .filter(target -> target != null)
+                .filter(target -> !HiredPathMemory.isAvoided(level, villager, target))
+                .filter(target -> !HiredPathMemory.isApproachRecentlyUnreachable(level, villager, target.above()))
                 .orElse(null);
     }
 
@@ -499,7 +721,9 @@ public final class FarmingWorker extends AbstractBlockWorker {
 
     private static boolean isInsideFieldSearchArea(BlockPos pos, HiredWorkContext context, BlockPos jobSite) {
         if (context.hasWorkArea()) {
-            return context.isInsideWorkArea(pos);
+            return context.isInsideWorkArea(pos)
+                    || context.isInsideWorkArea(pos.below())
+                    || context.isInsideWorkArea(pos.above());
         }
         if (jobSite == null) {
             return false;

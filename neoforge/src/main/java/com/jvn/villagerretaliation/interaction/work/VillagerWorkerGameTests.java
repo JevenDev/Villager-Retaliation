@@ -1979,10 +1979,10 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
-    public static void farmingWorkerDefersCropHandlingToFarmerBrain(GameTestHelper helper) {
+    public static void farmingWorkerHarvestsAndReplantsReadyCrop(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 5, 1);
         ServerLevel level = helper.getLevel();
-        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingVanilla");
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingDirect");
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
         BlockPos composterRel = new BlockPos(2, 1, 2);
@@ -1995,14 +1995,107 @@ public final class VillagerWorkerGameTests {
         CompoundTag state = new CompoundTag();
         HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 4), false);
         context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+        context.inventory().insertPlainSupply(new ItemStack(Items.WHEAT_SEEDS));
 
         WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
         BlockState crop = level.getBlockState(helper.absolutePos(cropRel));
-        helper.assertValueEqual(crop.getValue(CropBlock.AGE), 7, "farming worker should not harvest crops directly");
-        helper.assertFalse(context.inventory().hasOutput(stack -> stack.is(Items.WHEAT)), "custom farming should not create job output");
-        helper.assertTrue(villager.getBrain().isActive(Activity.WORK), "farming worker should hand off to vanilla work activity");
-        helper.assertValueEqual(result.status(), "interaction.work.farming.tending_fields", "field tending status");
+        helper.assertTrue(crop.is(Blocks.WHEAT), "farming worker should replant wheat after harvesting");
+        helper.assertValueEqual(crop.getValue(CropBlock.AGE), 0, "replanted wheat should start fresh");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.WHEAT)), "harvested wheat should be stored as job output");
+        helper.assertValueEqual(result.status(), "interaction.work.farming.completed_crop", "direct crop completion status");
 
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerFindsCropsAboveAssignedFarmlandLayerWithoutJobSite(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingLayer");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        BlockPos cropRel = new BlockPos(3, 2, 2);
+        setBlock(helper, cropRel.below(), Blocks.FARMLAND.defaultBlockState());
+        setBlock(helper, cropRel, ((CropBlock) Blocks.WHEAT).getStateForAge(7));
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, cropRel.below(), cropRel.below(), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+        context.inventory().insertPlainSupply(new ItemStack(Items.WHEAT_SEEDS));
+
+        WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
+        BlockState crop = level.getBlockState(helper.absolutePos(cropRel));
+        helper.assertTrue(crop.is(Blocks.WHEAT), "farmer should replant the crop above an assigned farmland-layer area");
+        helper.assertValueEqual(crop.getValue(CropBlock.AGE), 0, "replanted crop should be immature");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.WHEAT)), "soil-layer crop harvest should store output");
+        helper.assertValueEqual(result.status(), "interaction.work.farming.completed_crop", "soil-layer crop completion status");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerPlantsEmptyFarmlandFromJobInventory(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingPlant");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        BlockPos cropRel = new BlockPos(3, 2, 2);
+        setBlock(helper, cropRel.below(), Blocks.FARMLAND.defaultBlockState());
+        setBlock(helper, cropRel, Blocks.AIR.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, cropRel.below(), cropRel.below(), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+        context.inventory().insertPlainSupply(new ItemStack(Items.WHEAT_SEEDS));
+
+        WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
+        BlockState crop = level.getBlockState(helper.absolutePos(cropRel));
+        helper.assertTrue(crop.is(Blocks.WHEAT), "farmer should plant wheat above assigned empty farmland");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.WHEAT_SEEDS), 0, "planting should consume one job seed");
+        helper.assertValueEqual(result.status(), "interaction.work.farming.tending_fields", "planting status");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerKeepsHarvestingBeforeDepositingPartialOutput(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingBatch");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        BlockPos chestRel = new BlockPos(2, 2, 3);
+        BlockPos chest = helper.absolutePos(chestRel);
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, chest);
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+
+        BlockPos cropRel = new BlockPos(3, 2, 2);
+        setBlock(helper, cropRel.below(), Blocks.FARMLAND.defaultBlockState());
+        setBlock(helper, cropRel, ((CropBlock) Blocks.WHEAT).getStateForAge(7));
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+        context.inventory().insertPlainSupply(new ItemStack(Items.WHEAT_SEEDS));
+        context.inventory().insertPlainOutput(new ItemStack(Items.WHEAT, 3));
+
+        WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
+        BlockState crop = level.getBlockState(helper.absolutePos(cropRel));
+        helper.assertValueEqual(result.status(), "interaction.work.farming.completed_crop", "farmer should keep harvesting before storage");
+        helper.assertTrue(crop.is(Blocks.WHEAT), "farmer should harvest and replant the next ready crop");
+        helper.assertValueEqual(countItem(container(level, chest), Items.WHEAT), 0, "farmer should not deposit while more crops are ready");
+        helper.assertTrue(countInventoryItem(context.inventory(), Items.WHEAT) > 3, "new harvest should stay in job output");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
         villager.discard();
         helper.succeed();
     }
@@ -2040,6 +2133,69 @@ public final class VillagerWorkerGameTests {
                 "guided crop should seed vanilla secondary farmland memory");
         helper.assertTrue(level.getBlockState(crop).getBlock() == Blocks.WHEAT,
                 "guide should leave actual harvesting to vanilla");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerStartsHiredNavigationToAssignedCropWithoutJobSite(GameTestHelper helper) {
+        HiredPathMemory.clear();
+        buildFloor(helper, 0, 10, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingNoSiteCrop");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        BlockPos cropRel = new BlockPos(7, 2, 3);
+        BlockPos crop = helper.absolutePos(cropRel);
+        setBlock(helper, cropRel.below(), Blocks.FARMLAND.defaultBlockState());
+        setBlock(helper, cropRel, ((CropBlock) Blocks.WHEAT).getStateForAge(7));
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(9, 4, 5), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+
+        WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
+
+        helper.assertValueEqual(result.status(), "interaction.work.farming.moving_to_crop", "assigned crop navigation status");
+        helper.assertValueEqual(villager.getNavigation().getTargetPos(), crop, "farmer should start hired navigation to the assigned crop");
+        helper.assertTrue(
+                villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
+                        .map(walkTarget -> crop.equals(walkTarget.getTarget().currentBlockPosition()))
+                        .orElse(false),
+                "farmer should expose the crop as the active hired walk target");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void farmingWorkerStartsHiredNavigationToAssignedDirtWithoutJobSite(GameTestHelper helper) {
+        HiredPathMemory.clear();
+        buildFloor(helper, 0, 10, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFarmingNoSiteDirt");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        BlockPos dirtRel = new BlockPos(7, 1, 3);
+        BlockPos standTarget = helper.absolutePos(dirtRel.above());
+        setBlock(helper, dirtRel, Blocks.DIRT.defaultBlockState());
+        setBlock(helper, dirtRel.above(), Blocks.AIR.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        HiredFarmingOptions.initializeDefaults(state);
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 1, 1), new BlockPos(9, 3, 5), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+
+        WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
+
+        helper.assertValueEqual(result.status(), "interaction.work.farming.moving_to_soil", "assigned dirt navigation status");
+        helper.assertValueEqual(villager.getNavigation().getTargetPos(), standTarget, "farmer should start hired navigation above assigned dirt");
+        helper.assertTrue(
+                villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
+                        .map(walkTarget -> standTarget.equals(walkTarget.getTarget().currentBlockPosition()))
+                        .orElse(false),
+                "farmer should expose the soil stand target as the active hired walk target");
 
         villager.discard();
         helper.succeed();
@@ -2592,6 +2748,95 @@ public final class VillagerWorkerGameTests {
                 .map(WalkTarget::getCloseEnoughDist)
                 .orElse(-1);
         helper.assertValueEqual(closeEnough, 0, "strict work return should require exact arrival");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hiredFarmerStandingAcrossAssignedFieldLayersStopsReturning(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        level.setDayTime(1000L);
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        BlockPos cropRel = new BlockPos(3, 2, 3);
+        setBlock(helper, cropRel.below(), Blocks.FARMLAND.defaultBlockState());
+        Villager villager = spawnVillager(helper, cropRel);
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        setBlock(helper, cropRel, ((CropBlock) Blocks.WHEAT).getStateForAge(7));
+        BlockPos crop = helper.absolutePos(cropRel);
+        villager.moveTo(crop.getX() + 0.5D, crop.getY(), crop.getZ() + 0.5D, 0.0F, 0.0F);
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        helper.assertTrue(
+                HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.FARMING),
+                "farmer role should be active for farmland-layer return test");
+        helper.assertTrue(
+                HiredVillagerWorkService.setWorkArea(
+                        hirer,
+                        level,
+                        villager,
+                        helper.absolutePos(new BlockPos(2, 1, 2)),
+                        helper.absolutePos(new BlockPos(4, 1, 4))),
+                "farmland-layer work area assignment should succeed");
+
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putBoolean("Enabled", true);
+        session.state().putLong("NextWorkGameTime", level.getGameTime() + 200L);
+        session.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_HOE));
+        HiredWorkerBrain.setState(
+                session.state(),
+                HiredWorkerTaskState.RETURNING_TO_WORK_AREA,
+                helper.absolutePos(cropRel.below()));
+
+        helper.assertFalse(
+                session.context().isInsideWorkArea(villager.blockPosition()),
+                "fixture farmer feet should be above the strict farmland-layer work box");
+        helper.assertTrue(
+                session.context().isInsideWorkArea(villager.blockPosition().below()),
+                "fixture farmer should be standing on an assigned farmland-layer block");
+
+        HiredVillagerWorkService.onVillagerTickPost(villager);
+
+        HiredWorkSession afterTick = HiredWorkSession.active(level, villager);
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(afterTick.state(), level.getGameTime());
+        helper.assertValueEqual(
+                snapshot.taskState(),
+                HiredWorkerTaskState.IDLE,
+                "farmer standing above assigned farmland should stop returning and resume work");
+        helper.assertFalse(
+                villager.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET),
+                "resolved farmland-layer return should clear stale pathing");
+
+        helper.assertTrue(
+                HiredVillagerWorkService.setWorkArea(hirer, level, villager, crop, crop),
+                "crop-layer work area assignment should succeed");
+        villager.moveTo(crop.getX() + 0.5D, crop.getY() - 0.0625D, crop.getZ() + 0.5D, 0.0F, 0.0F);
+        HiredWorkSession cropLayerSession = HiredWorkSession.active(level, villager);
+        cropLayerSession.state().putBoolean("Enabled", true);
+        cropLayerSession.state().putLong("NextWorkGameTime", level.getGameTime() + 200L);
+        HiredWorkerBrain.setState(
+                cropLayerSession.state(),
+                HiredWorkerTaskState.RETURNING_TO_WORK_AREA,
+                crop);
+
+        helper.assertFalse(
+                cropLayerSession.context().isInsideWorkArea(villager.blockPosition()),
+                "fixture farmer feet should be below the strict crop-layer work box");
+        helper.assertTrue(
+                cropLayerSession.context().isInsideWorkArea(villager.blockPosition().above()),
+                "fixture farmer should be standing under an assigned crop-layer block");
+
+        HiredVillagerWorkService.onVillagerTickPost(villager);
+
+        HiredWorkSession afterCropLayerTick = HiredWorkSession.active(level, villager);
+        HiredWorkerBrain.Snapshot cropLayerSnapshot = HiredWorkerBrain.snapshot(afterCropLayerTick.state(), level.getGameTime());
+        helper.assertValueEqual(
+                cropLayerSnapshot.taskState(),
+                HiredWorkerTaskState.IDLE,
+                "farmer standing at farmland height under assigned crops should stop returning and resume work");
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         villager.discard();
