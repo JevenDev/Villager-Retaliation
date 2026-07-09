@@ -789,7 +789,7 @@ public final class VillagerInteractionService {
             case SHOW -> showAssignedStorage(player, level, villager);
             case REMOVE -> removeAssignedStorage(player, level, villager);
             case CLEAR_SELECTION -> {
-                HiredStorageClipboardItem.clearSelection(clipboard);
+                HiredStorageClipboardItem.clearSelection(player, clipboard);
                 sendVillagerNotice(player, villager, "interaction.clipboard.selection_cleared");
             }
         }

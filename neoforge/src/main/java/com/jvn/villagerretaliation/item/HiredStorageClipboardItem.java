@@ -92,7 +92,7 @@ public final class HiredStorageClipboardItem extends Item {
             return InteractionResultHolder.success(stack);
         }
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer && player.isShiftKeyDown()) {
-            clearSelection(stack);
+            clearSelection(serverPlayer, stack);
             serverPlayer.displayClientMessage(Component.literal("Clipboard selection cleared."), true);
             return InteractionResultHolder.success(stack);
         }
@@ -292,8 +292,8 @@ public final class HiredStorageClipboardItem extends Item {
         ClipboardMode next = cycleMode(clipboard, delta, storageVariantOnly);
         if (slot != null) {
             slot.setChanged();
-            player.containerMenu.broadcastChanges();
         }
+        syncClipboardStack(player);
         player.displayClientMessage(Component.literal("Clipboard mode: ")
                 .append(next.labelComponent()), true);
     }
@@ -385,6 +385,7 @@ public final class HiredStorageClipboardItem extends Item {
 
         if (assigned > 0) {
             clearSelection(stack);
+            syncClipboardStack(player);
             if (assignedByPurpose.containsKey(AssignedStorageService.PAYMENT_PURPOSE)) {
                 HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
             }
@@ -496,7 +497,7 @@ public final class HiredStorageClipboardItem extends Item {
 
     public static InteractionResult selectContainer(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
         if (player.isShiftKeyDown()) {
-            clearSelection(stack);
+            clearSelection(player, stack);
             player.displayClientMessage(Component.literal("Clipboard selection cleared."), true);
             return InteractionResult.SUCCESS;
         }
@@ -525,6 +526,9 @@ public final class HiredStorageClipboardItem extends Item {
             case DIFFERENT_DIMENSION -> Component.literal("Clipboard selections must stay in one dimension.");
             case FULL -> Component.literal("Clipboard selection is full.");
         };
+        if (result == SelectionAddResult.ADDED) {
+            syncClipboardStack(player);
+        }
         player.displayClientMessage(message, true);
         return InteractionResult.SUCCESS;
     }
@@ -553,6 +557,8 @@ public final class HiredStorageClipboardItem extends Item {
         }
         if (player.isShiftKeyDown()) {
             clearWorkAreaSelection(stack);
+            syncClipboardStack(player);
+            clearWorkAreaOutline(player);
             player.displayClientMessage(Component.literal("Work area selection cleared."), true);
             return InteractionResult.SUCCESS;
         }
@@ -576,6 +582,7 @@ public final class HiredStorageClipboardItem extends Item {
         if (nodes.isEmpty()) {
             HiredRoute updated = new HiredRoute(List.of(node), false);
             saveRouteSelection(stack, level.dimension(), updated);
+            syncClipboardStack(player);
             sendSelectedRouteOutline(player, level, updated);
             player.displayClientMessage(Component.literal("Route node 1/" + HiredRoute.MAX_NODES + " added."), true);
             return InteractionResult.SUCCESS;
@@ -585,6 +592,7 @@ public final class HiredStorageClipboardItem extends Item {
             if (route.loop()) {
                 HiredRoute updated = new HiredRoute(nodes, false);
                 saveRouteSelection(stack, level.dimension(), updated);
+                syncClipboardStack(player);
                 sendSelectedRouteOutline(player, level, updated);
                 player.displayClientMessage(Component.literal("Route loop opened."), true);
                 return InteractionResult.SUCCESS;
@@ -596,6 +604,7 @@ public final class HiredStorageClipboardItem extends Item {
             }
             HiredRoute updated = new HiredRoute(nodes, true);
             saveRouteSelection(stack, level.dimension(), updated);
+            syncClipboardStack(player);
             sendSelectedRouteOutline(player, level, updated);
             player.displayClientMessage(Component.literal("Route loop closed."), true);
             return InteractionResult.SUCCESS;
@@ -621,6 +630,7 @@ public final class HiredStorageClipboardItem extends Item {
         nodes.add(node);
         HiredRoute updated = new HiredRoute(nodes, false);
         saveRouteSelection(stack, level.dimension(), updated);
+        syncClipboardStack(player);
         sendSelectedRouteOutline(player, level, updated);
         player.displayClientMessage(Component.literal("Route node " + updated.nodes().size() + "/" + HiredRoute.MAX_NODES + " added."), true);
         return InteractionResult.SUCCESS;
@@ -647,6 +657,7 @@ public final class HiredStorageClipboardItem extends Item {
         } else {
             saveRouteSelection(stack, level.dimension(), updated);
         }
+        syncClipboardStack(player);
         sendSelectedRouteOutline(player, level, updated);
         String message = "Route node removed.";
         if (draft.route().loop()) {
@@ -675,6 +686,7 @@ public final class HiredStorageClipboardItem extends Item {
         BlockPos second = position == WorkAreaPosition.SECOND ? pos.immutable() : draft.second();
 
         saveWorkAreaSelection(stack, level.dimension(), first, second);
+        syncClipboardStack(player);
         if (first != null && second != null) {
             sendSelectedWorkAreaOutline(player, level, first, second);
         }
@@ -715,6 +727,7 @@ public final class HiredStorageClipboardItem extends Item {
             second = area.max();
         }
         saveWorkAreaSelection(stack, level.dimension(), first, second);
+        syncClipboardStack(player);
         sendSelectedWorkAreaOutline(player, level, first, second);
         player.displayClientMessage(Component.literal("Job site draft: " + dimensions(first, second)
                 + " centered at " + positionDescription(center) + "."), true);
@@ -797,6 +810,7 @@ public final class HiredStorageClipboardItem extends Item {
         }
 
         saveWorkAreaSelection(stack, level.dimension(), min, max);
+        syncClipboardStack(player);
         sendSelectedWorkAreaOutline(player, level, min, max);
         WorkAreaDraft updated = selectedWorkArea(stack);
         player.displayClientMessage(Component.literal("Job site draft: " + dimensions(updated.min(), updated.max())
@@ -839,6 +853,20 @@ public final class HiredStorageClipboardItem extends Item {
         PacketDistributor.sendToPlayer(player, ClipboardRouteSyncPayload.single(level.dimension().location(), route, route == null || route.isEmpty() ? 0 : 160));
     }
 
+    private static void clearClipboardOutlines(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, new ClipboardAssignedStorageSyncPayload(List.of(), 0));
+        clearWorkAreaOutline(player);
+        clearRouteOutline(player);
+    }
+
+    private static void clearWorkAreaOutline(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, new ClipboardWorkAreaSyncPayload(List.of(), 0));
+    }
+
+    private static void clearRouteOutline(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, new ClipboardRouteSyncPayload(List.of(), 0));
+    }
+
     public static void assignHeldWorkAreaDraft(ServerPlayer player, ServerLevel level, Villager villager) {
         ItemStack stack = heldClipboard(player);
         if (stack.isEmpty()) {
@@ -866,6 +894,7 @@ public final class HiredStorageClipboardItem extends Item {
 
         if (HiredVillagerWorkService.setWorkArea(player, level, villager, draft.first(), draft.second())) {
             clearWorkAreaSelection(stack);
+            syncClipboardStack(player);
             sendWorkAreaOutline(player, level, villager);
         }
     }
@@ -892,6 +921,7 @@ public final class HiredStorageClipboardItem extends Item {
             HiredRoute route = draft.route().validatedChain();
             if (HiredVillagerWorkService.setRoute(player, level, villager, route)) {
                 clearRouteSelection(stack);
+                syncClipboardStack(player);
                 sendRouteOutline(player, level, route);
                 player.displayClientMessage(Component.literal("Assigned route: " + routeDescription(route) + "."), true);
             }
@@ -901,6 +931,7 @@ public final class HiredStorageClipboardItem extends Item {
         HiredRoute assigned = HiredVillagerWorkService.route(level, villager);
         if (!assigned.isEmpty()) {
             saveRouteSelection(stack, level.dimension(), assigned);
+            syncClipboardStack(player);
             sendRouteOutline(player, level, assigned);
             player.displayClientMessage(Component.literal("Loaded route for editing: " + routeDescription(assigned) + "."), true);
             return;
@@ -924,6 +955,14 @@ public final class HiredStorageClipboardItem extends Item {
         }
         Slot slot = player.containerMenu.slots.get(menuSlotIndex);
         return VillagerRetaliationItems.isClipboard(slot.getItem()) ? slot : null;
+    }
+
+    private static void syncClipboardStack(ServerPlayer player) {
+        player.getInventory().setChanged();
+        player.inventoryMenu.broadcastChanges();
+        if (player.containerMenu != player.inventoryMenu) {
+            player.containerMenu.broadcastChanges();
+        }
     }
 
     private static String dimensions(BlockPos first, BlockPos second) {
@@ -990,6 +1029,12 @@ public final class HiredStorageClipboardItem extends Item {
         } else {
             stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
         }
+    }
+
+    public static void clearSelection(ServerPlayer player, ItemStack stack) {
+        clearSelection(stack);
+        syncClipboardStack(player);
+        clearClipboardOutlines(player);
     }
 
     private static void saveSelection(ItemStack stack, List<SelectedStoragePosition> selected) {
