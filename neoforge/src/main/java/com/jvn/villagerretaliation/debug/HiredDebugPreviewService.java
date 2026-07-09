@@ -3,10 +3,12 @@ package com.jvn.villagerretaliation.debug;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.network.ClipboardRouteEntry;
 import com.jvn.villagerretaliation.network.HiredDebugPreviewSyncPayload;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
@@ -37,43 +39,67 @@ public final class HiredDebugPreviewService {
 
     public static DebugPreviewSummary toggle(ServerPlayer player, double radius) {
         UUID playerId = player.getUUID();
-        if (ENABLED_PLAYERS.containsKey(playerId)) {
-            ENABLED_PLAYERS.remove(playerId);
-            PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
-            return new DebugPreviewSummary(false, 0, 0, 0, sanitizeRadius(radius));
+        DebugPreviewState state = ENABLED_PLAYERS.get(playerId);
+        if (state != null && state.commandEnabled()) {
+            return applyState(player, state.withCommand(false, sanitizeRadius(radius)).refreshNow(), sanitizeRadius(radius));
         }
-        ENABLED_PLAYERS.put(playerId, new DebugPreviewState(sanitizeRadius(radius), 0L, false));
-        return refreshNow(player);
+        DebugPreviewState updated = state == null
+                ? new DebugPreviewState(sanitizeRadius(radius), 0L, true, false, false)
+                : state.withCommand(true, sanitizeRadius(radius)).refreshNow();
+        return applyState(player, updated, sanitizeRadius(radius));
     }
 
     public static DebugPreviewSummary setEnabled(ServerPlayer player, boolean enabled, double radius) {
         UUID playerId = player.getUUID();
-        if (!enabled) {
-            ENABLED_PLAYERS.remove(playerId);
-            PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
-            return new DebugPreviewSummary(false, 0, 0, 0, sanitizeRadius(radius));
-        }
-        ENABLED_PLAYERS.put(playerId, new DebugPreviewState(sanitizeRadius(radius), 0L, false));
-        return refreshNow(player);
+        DebugPreviewState state = ENABLED_PLAYERS.get(playerId);
+        DebugPreviewState updated = state == null
+                ? new DebugPreviewState(sanitizeRadius(radius), 0L, enabled, false, false)
+                : state.withCommand(enabled, sanitizeRadius(radius)).refreshNow();
+        return applyState(player, updated, sanitizeRadius(radius));
     }
 
     public static DebugPreviewSummary setClipboardPreviewEnabled(ServerPlayer player, boolean enabled) {
         if (!enabled) {
-            return setEnabled(player, false, DEFAULT_RADIUS);
+            DebugPreviewState state = ENABLED_PLAYERS.get(player.getUUID());
+            if (state == null) {
+                return new DebugPreviewSummary(false, 0, 0, 0, DEFAULT_RADIUS);
+            }
+            return applyState(player, state.withClipboard(false).refreshNow(), DEFAULT_RADIUS);
         }
         if (!hasHeldClipboard(player)) {
-            ENABLED_PLAYERS.remove(player.getUUID());
-            PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
+            DebugPreviewState state = ENABLED_PLAYERS.get(player.getUUID());
+            if (state != null) {
+                return applyState(player, state.withClipboard(false).refreshNow(), DEFAULT_RADIUS);
+            }
             return new DebugPreviewSummary(false, 0, 0, 0, DEFAULT_RADIUS);
         }
         DebugPreviewState state = ENABLED_PLAYERS.get(player.getUUID());
         if (state != null
+                && state.clipboardEnabled()
                 && player.level() instanceof ServerLevel level
                 && level.getGameTime() < state.nextRefreshGameTime()) {
             return new DebugPreviewSummary(true, 0, 0, 0, state.radius());
         }
-        ENABLED_PLAYERS.put(player.getUUID(), new DebugPreviewState(DEFAULT_RADIUS, 0L, true));
-        return refreshNow(player);
+        DebugPreviewState updated = state == null
+                ? new DebugPreviewState(DEFAULT_RADIUS, 0L, false, true, false)
+                : state.withClipboard(true).refreshNow();
+        return applyState(player, updated, DEFAULT_RADIUS);
+    }
+
+    public static DebugPreviewSummary setDebugHudPreviewEnabled(ServerPlayer player, boolean enabled) {
+        UUID playerId = player.getUUID();
+        DebugPreviewState state = ENABLED_PLAYERS.get(playerId);
+        if (state != null
+                && enabled
+                && state.debugHudEnabled()
+                && player.level() instanceof ServerLevel level
+                && level.getGameTime() < state.nextRefreshGameTime()) {
+            return new DebugPreviewSummary(true, 0, 0, 0, state.radius());
+        }
+        DebugPreviewState updated = state == null
+                ? new DebugPreviewState(DEFAULT_RADIUS, 0L, false, false, enabled)
+                : state.withDebugHud(enabled).refreshNow();
+        return applyState(player, updated, DEFAULT_RADIUS);
     }
 
     public static void onPlayerTick(ServerPlayer player) {
@@ -81,10 +107,14 @@ public final class HiredDebugPreviewService {
         if (state == null || !(player.level() instanceof ServerLevel level)) {
             return;
         }
-        if (state.requiresClipboard() && !hasHeldClipboard(player)) {
-            ENABLED_PLAYERS.remove(player.getUUID());
-            PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
-            return;
+        if (state.clipboardEnabled() && !hasHeldClipboard(player)) {
+            state = state.withClipboard(false).refreshNow();
+            if (!state.active()) {
+                ENABLED_PLAYERS.remove(player.getUUID());
+                PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
+                return;
+            }
+            ENABLED_PLAYERS.put(player.getUUID(), state);
         }
         long gameTime = level.getGameTime();
         if (gameTime < state.nextRefreshGameTime()) {
@@ -119,6 +149,7 @@ public final class HiredDebugPreviewService {
         List<Villager> villagers = nearbyHiredVillagers(level, player, state.radius());
         List<HiredDebugPreviewSyncPayload.WorkAreaEntry> workAreas = new ArrayList<>();
         List<HiredDebugPreviewSyncPayload.StorageEntry> storage = new ArrayList<>();
+        List<ClipboardRouteEntry> routes = new ArrayList<>();
         Set<StorageDebugKey> seenStorage = new LinkedHashSet<>();
         ResourceLocation currentDimension = level.dimension().location();
         for (Villager villager : villagers) {
@@ -140,14 +171,30 @@ public final class HiredDebugPreviewService {
                         role.label()
                 ));
             }
+            HiredRoute route = HiredVillagerWorkService.route(level, villager);
+            if (!route.isEmpty() && routes.size() < HiredDebugPreviewSyncPayload.MAX_ROUTES) {
+                routes.add(new ClipboardRouteEntry(currentDimension, route.nodes(), route.loop(), ownerName, role.label()));
+            }
             addStorageEntries(storage, seenStorage, ownerName, AssignedStorageService.allAssignedStorage(level, villager));
         }
-        PacketDistributor.sendToPlayer(player, new HiredDebugPreviewSyncPayload(true, workAreas, storage, VISIBLE_TICKS));
+        PacketDistributor.sendToPlayer(player, new HiredDebugPreviewSyncPayload(true, workAreas, storage, routes, VISIBLE_TICKS));
         ENABLED_PLAYERS.put(player.getUUID(), new DebugPreviewState(
                 state.radius(),
                 gameTime + REFRESH_TICKS,
-                state.requiresClipboard()));
+                state.commandEnabled(),
+                state.clipboardEnabled(),
+                state.debugHudEnabled()));
         return new DebugPreviewSummary(true, villagers.size(), workAreas.size(), storage.size(), state.radius());
+    }
+
+    private static DebugPreviewSummary applyState(ServerPlayer player, DebugPreviewState state, double fallbackRadius) {
+        if (!state.active()) {
+            ENABLED_PLAYERS.remove(player.getUUID());
+            PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
+            return new DebugPreviewSummary(false, 0, 0, 0, fallbackRadius);
+        }
+        ENABLED_PLAYERS.put(player.getUUID(), state);
+        return refreshNow(player);
     }
 
     private static List<Villager> nearbyHiredVillagers(ServerLevel level, ServerPlayer player, double radius) {
@@ -210,7 +257,32 @@ public final class HiredDebugPreviewService {
     public record DebugPreviewSummary(boolean enabled, int villagers, int workAreas, int storage, double radius) {
     }
 
-    private record DebugPreviewState(double radius, long nextRefreshGameTime, boolean requiresClipboard) {
+    private record DebugPreviewState(
+            double radius,
+            long nextRefreshGameTime,
+            boolean commandEnabled,
+            boolean clipboardEnabled,
+            boolean debugHudEnabled) {
+        private boolean active() {
+            return this.commandEnabled || this.clipboardEnabled || this.debugHudEnabled;
+        }
+
+        private DebugPreviewState refreshNow() {
+            return new DebugPreviewState(this.radius, 0L, this.commandEnabled, this.clipboardEnabled, this.debugHudEnabled);
+        }
+
+        private DebugPreviewState withCommand(boolean enabled, double radius) {
+            double nextRadius = enabled ? radius : (this.clipboardEnabled || this.debugHudEnabled ? DEFAULT_RADIUS : radius);
+            return new DebugPreviewState(nextRadius, this.nextRefreshGameTime, enabled, this.clipboardEnabled, this.debugHudEnabled);
+        }
+
+        private DebugPreviewState withClipboard(boolean enabled) {
+            return new DebugPreviewState(this.radius, this.nextRefreshGameTime, this.commandEnabled, enabled, this.debugHudEnabled);
+        }
+
+        private DebugPreviewState withDebugHud(boolean enabled) {
+            return new DebugPreviewState(this.radius, this.nextRefreshGameTime, this.commandEnabled, this.clipboardEnabled, enabled);
+        }
     }
 
     private record StorageDebugKey(ResourceLocation dimension, BlockPos pos, String purpose) {

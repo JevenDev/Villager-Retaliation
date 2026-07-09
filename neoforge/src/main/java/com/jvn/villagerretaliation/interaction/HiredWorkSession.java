@@ -15,6 +15,7 @@ public record HiredWorkSession(
         HiredJobInventory inventory,
         int maxRadius,
         HiredWorkArea area,
+        HiredRoute route,
         HiredJobSite jobSite,
         int efficiency,
         HiredWorkContext context) {
@@ -32,6 +33,7 @@ public record HiredWorkSession(
         int maxRadius = HiredVillagerWorkService.maxWorkRadius(level, villager, safeRole, roleScore);
         HiredJobSite jobSite = HiredVillagerWorkService.jobSite(level, villager, safeRole, state, maxRadius);
         HiredWorkArea area = jobSite.workArea();
+        HiredRoute route = HiredRoute.fromState(state);
         int efficiency = HiredVillagerWorkService.efficiencyPercent(level, villager, safeRole, state, inventory, roleScore);
         HiredWorkContext context = new HiredWorkContext(
                 inventory,
@@ -45,7 +47,8 @@ public record HiredWorkSession(
                 efficiency,
                 state.getBoolean("AutoDepositOutputs"),
                 state.getBoolean("UseAssignedStorageForSupplies"),
-                jobSite);
-        return new HiredWorkSession(state, safeRole, worker, inventory, maxRadius, area, jobSite, efficiency, context);
+                jobSite,
+                route);
+        return new HiredWorkSession(state, safeRole, worker, inventory, maxRadius, area, route, jobSite, efficiency, context);
     }
 }

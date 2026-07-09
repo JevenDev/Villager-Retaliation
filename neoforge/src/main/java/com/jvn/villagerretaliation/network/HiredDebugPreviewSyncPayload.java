@@ -10,9 +10,11 @@ public record HiredDebugPreviewSyncPayload(
         boolean enabled,
         List<WorkAreaEntry> workAreas,
         List<StorageEntry> storage,
+        List<ClipboardRouteEntry> routes,
         int ticks) implements CustomPacketPayload {
     public static final int MAX_WORK_AREAS = 128;
     public static final int MAX_STORAGE = 256;
+    public static final int MAX_ROUTES = 128;
     private static final int LABEL_LENGTH = 64;
     public static final Type<HiredDebugPreviewSyncPayload> TYPE = VillagerPayloads.type("hired_debug_preview_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, HiredDebugPreviewSyncPayload> STREAM_CODEC =
@@ -21,11 +23,12 @@ public record HiredDebugPreviewSyncPayload(
     public HiredDebugPreviewSyncPayload {
         workAreas = workAreas == null ? List.of() : List.copyOf(workAreas.stream().limit(MAX_WORK_AREAS).toList());
         storage = storage == null ? List.of() : List.copyOf(storage.stream().limit(MAX_STORAGE).toList());
+        routes = routes == null ? List.of() : List.copyOf(routes.stream().limit(MAX_ROUTES).toList());
         ticks = Math.max(0, ticks);
     }
 
     public static HiredDebugPreviewSyncPayload disabled() {
-        return new HiredDebugPreviewSyncPayload(false, List.of(), List.of(), 0);
+        return new HiredDebugPreviewSyncPayload(false, List.of(), List.of(), List.of(), 0);
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, HiredDebugPreviewSyncPayload payload) {
@@ -51,6 +54,10 @@ public record HiredDebugPreviewSyncPayload(
             buffer.writeBoolean(entry.payment());
             buffer.writeUtf(entry.ownerName(), LABEL_LENGTH);
             buffer.writeUtf(entry.storageType(), LABEL_LENGTH);
+        }
+        buffer.writeVarInt(Math.min(MAX_ROUTES, payload.routes().size()));
+        for (ClipboardRouteEntry entry : payload.routes()) {
+            ClipboardRouteSyncPayload.encodeEntry(buffer, entry);
         }
         buffer.writeVarInt(payload.ticks());
     }
@@ -85,7 +92,12 @@ public record HiredDebugPreviewSyncPayload(
                     buffer.readUtf(LABEL_LENGTH)
             ));
         }
-        return new HiredDebugPreviewSyncPayload(enabled, workAreas, storage, buffer.readVarInt());
+        int routeCount = VillagerPayloads.readCollectionSize(buffer, MAX_ROUTES, "hired debug route entries");
+        List<ClipboardRouteEntry> routes = new ArrayList<>(routeCount);
+        for (int index = 0; index < routeCount; index++) {
+            routes.add(ClipboardRouteSyncPayload.decodeEntry(buffer));
+        }
+        return new HiredDebugPreviewSyncPayload(enabled, workAreas, storage, routes, buffer.readVarInt());
     }
 
     @Override

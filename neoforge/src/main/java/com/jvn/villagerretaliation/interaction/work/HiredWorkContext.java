@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.HiredJobSite;
+import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import java.util.List;
 import java.util.function.Predicate;
@@ -24,7 +25,8 @@ public record HiredWorkContext(
         int efficiency,
         boolean autoDepositOutputs,
         boolean useAssignedStorageForSupplies,
-        HiredJobSite jobSite) {
+        HiredJobSite jobSite,
+        HiredRoute route) {
     public static final String OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG = "OutputDepositedThisStorageTrip";
 
     public HiredWorkContext(
@@ -58,7 +60,8 @@ public record HiredWorkContext(
                         radius,
                         verticalRadius,
                         hasWorkArea,
-                        hasWorkArea)));
+                        hasWorkArea)),
+                HiredRoute.empty());
     }
 
     public HiredWorkContext {
@@ -72,6 +75,9 @@ public record HiredWorkContext(
                     hasWorkArea,
                     hasWorkArea);
             jobSite = HiredJobSite.fromWorkArea(area);
+        }
+        if (route == null) {
+            route = HiredRoute.empty();
         }
     }
 
@@ -105,6 +111,18 @@ public record HiredWorkContext(
 
     public boolean isInsideWorkArea(BlockPos pos) {
         return this.jobSite.isInsideWorkBounds(pos);
+    }
+
+    public boolean hasRoute() {
+        return this.route.usableForNavigation();
+    }
+
+    public boolean isInsideRouteArea(BlockPos pos) {
+        return this.route.isNearRoute(pos, HiredRoute.MAX_NODE_DISTANCE, Math.max(2, this.verticalRadius));
+    }
+
+    public boolean isInsideWorkAreaOrRoute(BlockPos pos) {
+        return isInsideWorkArea(pos) || isInsideRouteArea(pos);
     }
 
     public boolean hasNavigationTether() {

@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
 import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
+import com.jvn.villagerretaliation.interaction.work.HiredRouteNavigator;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
@@ -42,6 +43,7 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -270,6 +272,9 @@ public final class HiredVillagerWorkService {
     }
 
     private static boolean shouldReturnToWorkArea(HiredWorkSession session) {
+        if (HiredVillagerRoleSettings.supportsRoutes(session.role()) && session.route().usableForNavigation()) {
+            return false;
+        }
         return session.role() != HiredVillagerRole.BUILDER || !BuilderTaskState.hasTask(session.state());
     }
 
@@ -1021,6 +1026,9 @@ public final class HiredVillagerWorkService {
                 + ", radius=" + session.area().horizontalRadius()
                 + ", verticalRadius=" + session.area().verticalRadius()
                 + ", maxRadius=" + session.maxRadius());
+        lines.add("Route: nodes=" + session.route().nodes().size()
+                + ", loop=" + session.route().loop()
+                + ", supportsRoutes=" + HiredVillagerRoleSettings.supportsRoutes(session.role()));
         lines.add("Inventory/storage: outputStacks=" + outputStacks
                 + ", outputItems=" + outputItems
                 + ", autoDeposit=" + session.state().getBoolean("AutoDepositOutputs")
@@ -1038,6 +1046,8 @@ public final class HiredVillagerWorkService {
         state.putBoolean("Enabled", true);
         state.remove("NextWorkGameTime");
         state.remove("ProgressTicks");
+        HiredRoute.clear(state);
+        HiredRouteNavigator.clearProgress(state);
         resetReportProgress(state);
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
         int radius = HiredVillagerRoleSettings.defaultHorizontalRadius(role, MIN_WORK_RADIUS, maxWorkRadius(level, villager, role));
@@ -1517,6 +1527,45 @@ public final class HiredVillagerWorkService {
         initializeDefaults(state, villager);
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
         return jobSite(level, villager, role, state, maxWorkRadius(level, villager, role));
+    }
+
+    public static HiredRoute route(ServerLevel level, Villager villager) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        return HiredRoute.fromState(state);
+    }
+
+    public static boolean setRoute(ServerPlayer player, ServerLevel level, Villager villager, HiredRoute route) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        if (!HiredVillagerRoleSettings.supportsRoutes(role)) {
+            player.displayClientMessage(Component.literal(role.label() + " jobs do not use routes."), true);
+            return false;
+        }
+        HiredRoute safeRoute = route == null ? HiredRoute.empty() : route.validatedChain();
+        if (safeRoute.isEmpty()) {
+            player.displayClientMessage(Component.literal("Build a route first."), true);
+            return false;
+        }
+        safeRoute.save(state);
+        HiredRouteNavigator.clearProgress(state);
+        HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, safeRoute.first());
+        setStatus(state, "interaction.work.status.waiting_tick");
+        return true;
+    }
+
+    public static boolean clearRoute(ServerPlayer player, ServerLevel level, Villager villager) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        if (HiredRoute.fromState(state).isEmpty()) {
+            player.displayClientMessage(Component.literal("No route is assigned."), true);
+            return false;
+        }
+        HiredRoute.clear(state);
+        HiredRouteNavigator.clearProgress(state);
+        HiredWorkerBrain.setState(state, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+        return true;
     }
 
     static HiredJobSite jobSite(

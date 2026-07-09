@@ -63,6 +63,10 @@ public final class HiredVillagerRoleSettings {
         };
     }
 
+    public static boolean supportsRoutes(HiredVillagerRole role) {
+        return role == HiredVillagerRole.COMBAT || role == HiredVillagerRole.HUNTING;
+    }
+
     public static double skillGrowthAmount(HiredVillagerRole role) {
         double amount = switch (role) {
             case COMBAT, HUNTING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_COMBAT.get();
