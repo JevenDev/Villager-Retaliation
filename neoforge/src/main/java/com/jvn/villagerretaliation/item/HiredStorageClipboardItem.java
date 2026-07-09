@@ -8,10 +8,12 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignSummar
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.ClipboardAssignedStorageSyncPayload;
+import com.jvn.villagerretaliation.network.ClipboardRouteSyncPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaDraftPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerLocale;
@@ -53,11 +55,14 @@ public final class HiredStorageClipboardItem extends Item {
     private static final String TAG = "VillagerRetaliationClipboard";
     private static final String SELECTED_TAG = "Selected";
     private static final String WORK_AREA_SELECTION_TAG = "WorkAreaSelection";
+    private static final String ROUTE_SELECTION_TAG = "RouteSelection";
     private static final String DIMENSION_TAG = "Dimension";
     private static final String POS_TAG = "Pos";
     private static final String PURPOSE_TAG = "Purpose";
     private static final String FIRST_POS_TAG = "FirstPos";
     private static final String SECOND_POS_TAG = "SecondPos";
+    private static final String NODES_TAG = "Nodes";
+    private static final String LOOP_TAG = "Loop";
     private static final String MODE_TAG = "Mode";
     private static final String LAST_STORAGE_MODE_TAG = "LastStorageMode";
     private static final int MAX_SELECTIONS = 8;
@@ -118,6 +123,10 @@ public final class HiredStorageClipboardItem extends Item {
             assignSelectedWorkArea(serverPlayer, level, villager, stack);
             return InteractionResult.SUCCESS;
         }
+        if (clipboardMode == ClipboardMode.ROUTE) {
+            handleRouteVillager(serverPlayer, level, villager, stack);
+            return InteractionResult.SUCCESS;
+        }
 
         List<SelectedStoragePosition> selected = selectedStoragePositions(stack, clipboardMode.assignmentPurpose());
         if (!selected.isEmpty()) {
@@ -172,7 +181,7 @@ public final class HiredStorageClipboardItem extends Item {
         tooltip.add(Component.translatable("item.villagerretaliation.clipboard.mode").withStyle(ChatFormatting.GRAY)
                 .append(currentMode.labelComponent()));
 
-        int count = selectedContainers(stack).size();
+        int count = currentMode == ClipboardMode.ROUTE ? 0 : selectedContainers(stack).size();
         if (count > 0) {
             tooltip.add(Component.literal(count + " selected container" + (count == 1 ? "" : "s")).withStyle(ChatFormatting.AQUA));
         }
@@ -182,6 +191,11 @@ public final class HiredStorageClipboardItem extends Item {
                     ? "Job site draft: " + dimensions(draft.min(), draft.max())
                     : "Job site corners: " + (draft.first() == null ? "0" : draft.second() == null ? "1" : "2") + "/2")
                     .withStyle(ChatFormatting.GOLD));
+        }
+        RouteDraft routeDraft = selectedRoute(stack);
+        if (!routeDraft.isEmpty()) {
+            tooltip.add(Component.literal("Route draft: " + routeDescription(routeDraft.route()))
+                    .withStyle(ChatFormatting.AQUA));
         }
         if (!TooltipKeyState.hasShiftDown()) {
             tooltip.add(Component.translatable("item.villagerretaliation.tooltip.hold_shift").withStyle(ChatFormatting.DARK_GRAY));
@@ -201,10 +215,14 @@ public final class HiredStorageClipboardItem extends Item {
                 tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.work_area_move").withStyle(ChatFormatting.GRAY));
                 tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.work_area_resize").withStyle(ChatFormatting.GRAY));
             }
+            case ROUTE -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.route").withStyle(ChatFormatting.GRAY));
         }
-        tooltip.add(Component.translatable(currentMode == ClipboardMode.SET_WORK_AREA
+        String clearKey = currentMode == ClipboardMode.SET_WORK_AREA
                 ? "item.villagerretaliation.clipboard.controls.clear_work_area"
-                : "item.villagerretaliation.clipboard.controls.clear").withStyle(ChatFormatting.DARK_GRAY));
+                : currentMode == ClipboardMode.ROUTE
+                ? "item.villagerretaliation.clipboard.controls.clear_route"
+                : "item.villagerretaliation.clipboard.controls.clear";
+        tooltip.add(Component.translatable(clearKey).withStyle(ChatFormatting.DARK_GRAY));
     }
 
     public static ClipboardMode mode(ItemStack stack) {
@@ -448,6 +466,34 @@ public final class HiredStorageClipboardItem extends Item {
         return new WorkAreaDraft(dimension, first, second);
     }
 
+    public static RouteDraft selectedRoute(ItemStack stack) {
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (customData.isEmpty() || !customData.contains(TAG)) {
+            return RouteDraft.empty();
+        }
+        CompoundTag clipboardTag = customData.copyTag().getCompound(TAG);
+        if (!clipboardTag.contains(ROUTE_SELECTION_TAG, Tag.TAG_COMPOUND)) {
+            return RouteDraft.empty();
+        }
+        CompoundTag selectionTag = clipboardTag.getCompound(ROUTE_SELECTION_TAG);
+        ResourceLocation dimensionId = ResourceLocation.tryParse(selectionTag.getString(DIMENSION_TAG));
+        if (dimensionId == null) {
+            return RouteDraft.empty();
+        }
+        List<BlockPos> nodes = new ArrayList<>();
+        ListTag nodeTags = selectionTag.getList(NODES_TAG, Tag.TAG_LONG);
+        for (Tag rawNode : nodeTags) {
+            if (rawNode instanceof net.minecraft.nbt.LongTag nodeTag && nodes.size() < HiredRoute.MAX_NODES) {
+                nodes.add(BlockPos.of(nodeTag.getAsLong()));
+            }
+        }
+        if (nodes.isEmpty()) {
+            return RouteDraft.empty();
+        }
+        ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, dimensionId);
+        return new RouteDraft(dimension, new HiredRoute(nodes, selectionTag.getBoolean(LOOP_TAG)).validatedChain());
+    }
+
     public static InteractionResult selectContainer(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
         if (player.isShiftKeyDown()) {
             clearSelection(stack);
@@ -497,6 +543,7 @@ public final class HiredStorageClipboardItem extends Item {
                 }
                 yield centerWorkAreaDraft(level, player, stack, pos);
             }
+            case ROUTE -> editRoute(level, player, stack, pos);
         };
     }
 
@@ -510,6 +557,106 @@ public final class HiredStorageClipboardItem extends Item {
             return InteractionResult.SUCCESS;
         }
         return selectWorkAreaPosition(level, player, stack, pos, WorkAreaPosition.FIRST);
+    }
+
+    private static InteractionResult editRoute(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
+        if (player.isShiftKeyDown()) {
+            return removeRouteNode(level, player, stack, pos);
+        }
+
+        RouteDraft draft = selectedRoute(stack);
+        if (!draft.isEmpty() && !level.dimension().equals(draft.dimension())) {
+            player.displayClientMessage(Component.literal("Route nodes must stay in one dimension."), true);
+            return InteractionResult.FAIL;
+        }
+
+        HiredRoute route = draft.isEmpty() ? HiredRoute.empty() : draft.route();
+        List<BlockPos> nodes = new ArrayList<>(route.nodes());
+        BlockPos node = pos.immutable();
+        if (nodes.isEmpty()) {
+            HiredRoute updated = new HiredRoute(List.of(node), false);
+            saveRouteSelection(stack, level.dimension(), updated);
+            sendSelectedRouteOutline(player, level, updated);
+            player.displayClientMessage(Component.literal("Route node 1/" + HiredRoute.MAX_NODES + " added."), true);
+            return InteractionResult.SUCCESS;
+        }
+
+        if (node.equals(nodes.getFirst()) && nodes.size() >= 2) {
+            if (route.loop()) {
+                HiredRoute updated = new HiredRoute(nodes, false);
+                saveRouteSelection(stack, level.dimension(), updated);
+                sendSelectedRouteOutline(player, level, updated);
+                player.displayClientMessage(Component.literal("Route loop opened."), true);
+                return InteractionResult.SUCCESS;
+            }
+            if (!HiredRoute.canConnect(nodes.getLast(), nodes.getFirst())) {
+                player.displayClientMessage(Component.literal("Cannot close route loop; the last node is more than "
+                        + HiredRoute.MAX_NODE_DISTANCE + " blocks from the first."), true);
+                return InteractionResult.FAIL;
+            }
+            HiredRoute updated = new HiredRoute(nodes, true);
+            saveRouteSelection(stack, level.dimension(), updated);
+            sendSelectedRouteOutline(player, level, updated);
+            player.displayClientMessage(Component.literal("Route loop closed."), true);
+            return InteractionResult.SUCCESS;
+        }
+
+        if (route.contains(node)) {
+            player.displayClientMessage(Component.literal("That route node is already selected."), true);
+            return InteractionResult.SUCCESS;
+        }
+        if (route.loop()) {
+            player.displayClientMessage(Component.literal("Open the route loop before adding more nodes."), true);
+            return InteractionResult.FAIL;
+        }
+        if (nodes.size() >= HiredRoute.MAX_NODES) {
+            player.displayClientMessage(Component.literal("Route already has the maximum of " + HiredRoute.MAX_NODES + " nodes."), true);
+            return InteractionResult.FAIL;
+        }
+        if (!HiredRoute.canConnect(nodes.getLast(), node)) {
+            player.displayClientMessage(Component.literal("Route nodes must be within " + HiredRoute.MAX_NODE_DISTANCE + " blocks of each other."), true);
+            return InteractionResult.FAIL;
+        }
+
+        nodes.add(node);
+        HiredRoute updated = new HiredRoute(nodes, false);
+        saveRouteSelection(stack, level.dimension(), updated);
+        sendSelectedRouteOutline(player, level, updated);
+        player.displayClientMessage(Component.literal("Route node " + updated.nodes().size() + "/" + HiredRoute.MAX_NODES + " added."), true);
+        return InteractionResult.SUCCESS;
+    }
+
+    private static InteractionResult removeRouteNode(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
+        RouteDraft draft = selectedRoute(stack);
+        if (draft.isEmpty() || !level.dimension().equals(draft.dimension())) {
+            player.displayClientMessage(Component.literal("No route node selected at this block."), true);
+            return InteractionResult.SUCCESS;
+        }
+        int removedIndex = draft.route().indexOf(pos);
+        if (removedIndex < 0) {
+            player.displayClientMessage(Component.literal("No route node selected at this block."), true);
+            return InteractionResult.SUCCESS;
+        }
+
+        List<BlockPos> nodes = new ArrayList<>(draft.route().nodes());
+        nodes.remove(removedIndex);
+        HiredRoute updated = new HiredRoute(nodes, false).validatedChain();
+        boolean truncated = updated.nodes().size() < nodes.size();
+        if (updated.isEmpty()) {
+            clearRouteSelection(stack);
+        } else {
+            saveRouteSelection(stack, level.dimension(), updated);
+        }
+        sendSelectedRouteOutline(player, level, updated);
+        String message = "Route node removed.";
+        if (draft.route().loop()) {
+            message += " Loop opened.";
+        }
+        if (truncated) {
+            message += " Disconnected downstream nodes were removed.";
+        }
+        player.displayClientMessage(Component.literal(message), true);
+        return InteractionResult.SUCCESS;
     }
 
     private static InteractionResult selectWorkAreaPosition(
@@ -684,6 +831,14 @@ public final class HiredStorageClipboardItem extends Item {
         PacketDistributor.sendToPlayer(player, ClipboardWorkAreaSyncPayload.selection(level.dimension().location(), first, second, 120));
     }
 
+    private static void sendRouteOutline(ServerPlayer player, ServerLevel level, HiredRoute route) {
+        PacketDistributor.sendToPlayer(player, ClipboardRouteSyncPayload.single(level.dimension().location(), route, route == null || route.isEmpty() ? 0 : 200));
+    }
+
+    private static void sendSelectedRouteOutline(ServerPlayer player, ServerLevel level, HiredRoute route) {
+        PacketDistributor.sendToPlayer(player, ClipboardRouteSyncPayload.single(level.dimension().location(), route, route == null || route.isEmpty() ? 0 : 160));
+    }
+
     public static void assignHeldWorkAreaDraft(ServerPlayer player, ServerLevel level, Villager villager) {
         ItemStack stack = heldClipboard(player);
         if (stack.isEmpty()) {
@@ -715,6 +870,45 @@ public final class HiredStorageClipboardItem extends Item {
         }
     }
 
+    private static void handleRouteVillager(ServerPlayer player, ServerLevel level, Villager villager, ItemStack stack) {
+        if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
+            player.displayClientMessage(Component.literal("Only the hiring player can assign this route."), true);
+            return;
+        }
+        if (player.isShiftKeyDown()) {
+            if (HiredVillagerWorkService.clearRoute(player, level, villager)) {
+                sendRouteOutline(player, level, HiredRoute.empty());
+                player.displayClientMessage(Component.literal("Route cleared."), true);
+            }
+            return;
+        }
+
+        RouteDraft draft = selectedRoute(stack);
+        if (!draft.isEmpty()) {
+            if (!level.dimension().equals(draft.dimension())) {
+                player.displayClientMessage(Component.literal("Route nodes must be in this dimension."), true);
+                return;
+            }
+            HiredRoute route = draft.route().validatedChain();
+            if (HiredVillagerWorkService.setRoute(player, level, villager, route)) {
+                clearRouteSelection(stack);
+                sendRouteOutline(player, level, route);
+                player.displayClientMessage(Component.literal("Assigned route: " + routeDescription(route) + "."), true);
+            }
+            return;
+        }
+
+        HiredRoute assigned = HiredVillagerWorkService.route(level, villager);
+        if (!assigned.isEmpty()) {
+            saveRouteSelection(stack, level.dimension(), assigned);
+            sendRouteOutline(player, level, assigned);
+            player.displayClientMessage(Component.literal("Loaded route for editing: " + routeDescription(assigned) + "."), true);
+            return;
+        }
+
+        player.displayClientMessage(Component.literal("Right-click blocks in Route Mode to add route nodes."), true);
+    }
+
     private static ItemStack heldClipboard(ServerPlayer player) {
         ItemStack mainHand = player.getMainHandItem();
         if (VillagerRetaliationItems.isClipboard(mainHand)) {
@@ -742,6 +936,11 @@ public final class HiredStorageClipboardItem extends Item {
 
     private static String positionDescription(BlockPos pos) {
         return pos.getX() + " " + pos.getY() + " " + pos.getZ();
+    }
+
+    private static String routeDescription(HiredRoute route) {
+        int count = route == null ? 0 : route.nodes().size();
+        return count + " node" + (count == 1 ? "" : "s") + (route != null && route.loop() ? ", loop" : ", back-and-forth");
     }
 
     private static SelectionAddResult addSelection(
@@ -780,6 +979,7 @@ public final class HiredStorageClipboardItem extends Item {
         CompoundTag clipboardTag = tag.getCompound(TAG);
         clipboardTag.remove(SELECTED_TAG);
         clipboardTag.remove(WORK_AREA_SELECTION_TAG);
+        clipboardTag.remove(ROUTE_SELECTION_TAG);
         if (clipboardTag.isEmpty()) {
             tag.remove(TAG);
         } else {
@@ -807,6 +1007,29 @@ public final class HiredStorageClipboardItem extends Item {
                     ? tag.getCompound(TAG)
                     : new CompoundTag();
             clipboardTag.put(SELECTED_TAG, selectedTag);
+            tag.put(TAG, clipboardTag);
+        });
+    }
+
+    private static void saveRouteSelection(ItemStack stack, ResourceKey<Level> dimension, HiredRoute route) {
+        if (route == null || route.isEmpty()) {
+            clearRouteSelection(stack);
+            return;
+        }
+        HiredRoute safeRoute = route.validatedChain();
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
+            CompoundTag clipboardTag = tag.contains(TAG, Tag.TAG_COMPOUND)
+                    ? tag.getCompound(TAG)
+                    : new CompoundTag();
+            CompoundTag selectionTag = new CompoundTag();
+            ListTag nodeTags = new ListTag();
+            for (BlockPos node : safeRoute.nodes()) {
+                nodeTags.add(net.minecraft.nbt.LongTag.valueOf(node.asLong()));
+            }
+            selectionTag.putString(DIMENSION_TAG, dimension.location().toString());
+            selectionTag.put(NODES_TAG, nodeTags);
+            selectionTag.putBoolean(LOOP_TAG, safeRoute.loop());
+            clipboardTag.put(ROUTE_SELECTION_TAG, selectionTag);
             tag.put(TAG, clipboardTag);
         });
     }
@@ -853,6 +1076,26 @@ public final class HiredStorageClipboardItem extends Item {
         }
     }
 
+    private static void clearRouteSelection(ItemStack stack) {
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (customData.isEmpty() || !customData.contains(TAG)) {
+            return;
+        }
+        CompoundTag tag = customData.copyTag();
+        CompoundTag clipboardTag = tag.getCompound(TAG);
+        clipboardTag.remove(ROUTE_SELECTION_TAG);
+        if (clipboardTag.isEmpty()) {
+            tag.remove(TAG);
+        } else {
+            tag.put(TAG, clipboardTag);
+        }
+        if (tag.isEmpty()) {
+            stack.remove(DataComponents.CUSTOM_DATA);
+        } else {
+            stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
+        }
+    }
+
     private enum SelectionAddResult {
         ADDED,
         DUPLICATE,
@@ -872,7 +1115,8 @@ public final class HiredStorageClipboardItem extends Item {
         ASSIGN_OUTPUT_STORAGE("assign_output_storage", "Assign Output Storage"),
         ASSIGN_PAYMENT("assign_payment", "Assign Payment Box"),
         WORK_AREA("work_area", "Preview Job Site"),
-        SET_WORK_AREA("set_work_area", "Edit Job Site");
+        SET_WORK_AREA("set_work_area", "Edit Job Site"),
+        ROUTE("route", "Route Mode");
 
         private static final ClipboardMode[] VALUES = values();
         private static final ClipboardMode[] STORAGE_VALUES = {
@@ -885,7 +1129,8 @@ public final class HiredStorageClipboardItem extends Item {
                 ASSIGN_STORAGE,
                 ASSIGN_PAYMENT,
                 WORK_AREA,
-                SET_WORK_AREA
+                SET_WORK_AREA,
+                ROUTE
         };
         private final String id;
         private final String label;
@@ -909,6 +1154,7 @@ public final class HiredStorageClipboardItem extends Item {
             case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> ChatFormatting.BLUE;
             case WORK_AREA -> ChatFormatting.YELLOW;
             case SET_WORK_AREA -> ChatFormatting.GOLD;
+            case ROUTE -> ChatFormatting.AQUA;
             };
         }
 
@@ -989,6 +1235,23 @@ public final class HiredStorageClipboardItem extends Item {
 
         public BlockPos center() {
             return complete() ? HiredWorkArea.centerPos(min(), max()) : null;
+        }
+    }
+
+    public record RouteDraft(ResourceKey<Level> dimension, HiredRoute route) {
+        public RouteDraft {
+            route = route == null ? HiredRoute.empty() : route.validatedChain();
+            if (route.isEmpty()) {
+                dimension = null;
+            }
+        }
+
+        private static RouteDraft empty() {
+            return new RouteDraft(null, HiredRoute.empty());
+        }
+
+        public boolean isEmpty() {
+            return this.route.isEmpty();
         }
     }
 
