@@ -80,11 +80,16 @@ public final class CombatWorker implements HiredRoleWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         context.setProgressTicks(0);
         HiredCombatMode mode = HiredCombatMode.fromState(context.state());
-        WorkResult ammoResult = HiredRangedAmmo.ensureReady(level, villager, context, PATROL_SPEED);
-        if (ammoResult != null) {
-            return ammoResult;
+        if (hasActiveTarget(villager) && HiredRangedAmmo.isRangedAttackBlockedByAmmo(villager)) {
+            VillagerRetaliationHandler.clearCustomTarget(villager);
         }
-        if (villager.getTarget() != null && villager.getTarget().isAlive()) {
+        if (!hasActiveTarget(villager)) {
+            WorkResult ammoResult = HiredRangedAmmo.ensureReady(level, villager, context, PATROL_SPEED);
+            if (ammoResult != null) {
+                return ammoResult;
+            }
+        }
+        if (hasActiveTarget(villager)) {
             HiredWorkerBrain.setLastTargetScanResult(context, "engaged_target");
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING, villager.getTarget().blockPosition());
             return WorkResult.idle(activeStatusKey(mode), activeStatusReplacements(villager));
@@ -131,6 +136,10 @@ public final class CombatWorker implements HiredRoleWorker {
         return findNearestTarget(level, villager, context, mode)
                 .filter(target -> VillagerRetaliationHandler.engageCustomTarget(villager, target, false))
                 .isPresent();
+    }
+
+    private static boolean hasActiveTarget(Villager villager) {
+        return villager.getTarget() != null && villager.getTarget().isAlive();
     }
 
     private static Optional<LivingEntity> findNearestTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredCombatMode mode) {

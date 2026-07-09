@@ -27,6 +27,7 @@ import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ChargedProjectiles;
+import net.minecraft.world.phys.AABB;
 
 final class VillagerRangedCombatHelper {
     private static final Map<UUID, Integer> SEE_TIME = new HashMap<>();
@@ -43,6 +44,7 @@ final class VillagerRangedCombatHelper {
     private static final int CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS = 20;
     private static final double TRIDENT_MAX_DISTANCE_SQR = 144.0D;
     private static final int TRIDENT_ATTACK_INTERVAL_TICKS = 40;
+    private static final double POINT_BLANK_RANGED_EDGE_REACH_SQR = 1.0D;
 
     private VillagerRangedCombatHelper() {
     }
@@ -70,12 +72,12 @@ final class VillagerRangedCombatHelper {
         }
         if (!HiredRangedAmmo.canUseRangedAttack(villager, rangedWeapon)) {
             stopAmmoBlockedRangedUse(villager, rangedWeapon);
-            return false;
+            return true;
         }
 
-        boolean hasLineOfSight = villager.hasLineOfSight(target);
+        boolean hasLineOfSight = hasRangedLineOfSight(villager, target, villager.hasLineOfSight(target));
         if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(rangedWeapon)) {
-            hasLineOfSight = villager.getSensing().hasLineOfSight(target);
+            hasLineOfSight = hasRangedLineOfSight(villager, target, villager.getSensing().hasLineOfSight(target));
             int seeTime = updateSeeTime(villager, hasLineOfSight);
             handleCrossbowAttack(villager, target, level, rangedWeapon, hasLineOfSight, seeTime, movementSpeed);
             return true;
@@ -200,8 +202,9 @@ final class VillagerRangedCombatHelper {
             int seeTime,
             double movementSpeed
     ) {
-        if (distanceSqr <= 100.0D && seeTime >= 20) {
+        if (hasLineOfSight && (villager.isUsingItem() || distanceSqr <= 100.0D && seeTime >= 5)) {
             VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+            VillagerRetaliationRetaliationUtil.clearPathingState(villager);
         } else {
             VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
         }
@@ -348,6 +351,28 @@ final class VillagerRangedCombatHelper {
                 stopCrossbowAttack(villager);
             }
         }
+    }
+
+    private static boolean hasRangedLineOfSight(
+            AbstractVillager villager,
+            LivingEntity target,
+            boolean vanillaLineOfSight) {
+        return vanillaLineOfSight || hasPointBlankRangedShot(villager, target);
+    }
+
+    static boolean hasPointBlankRangedShot(AbstractVillager villager, LivingEntity target) {
+        return isPointBlankRange(villager, target)
+                && VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target);
+    }
+
+    private static boolean isPointBlankRange(AbstractVillager villager, LivingEntity target) {
+        AABB villagerBox = villager.getBoundingBox();
+        AABB targetBox = target.getBoundingBox();
+        double xGap = Math.max(0.0D, Math.max(villagerBox.minX - targetBox.maxX, targetBox.minX - villagerBox.maxX));
+        double zGap = Math.max(0.0D, Math.max(villagerBox.minZ - targetBox.maxZ, targetBox.minZ - villagerBox.maxZ));
+        return villagerBox.maxY > targetBox.minY
+                && targetBox.maxY > villagerBox.minY
+                && xGap * xGap + zGap * zGap <= POINT_BLANK_RANGED_EDGE_REACH_SQR;
     }
 
     private static void tickCrossbowPathing(

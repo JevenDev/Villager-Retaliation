@@ -119,7 +119,10 @@ public final class HuntingWorker extends AbstractBlockWorker {
         }
 
         clearStaleActiveTargetIfNeeded(level, villager, context, targets);
-        if (villager.getTarget() != null && villager.getTarget().isAlive()) {
+        if (hasActiveTarget(villager) && HiredRangedAmmo.isRangedAttackBlockedByAmmo(villager)) {
+            clearActiveHuntingTarget(villager, context);
+        }
+        if (hasActiveTarget(villager)) {
             HiredWorkerBrain.setLastTargetScanResult(context, "engaged_target");
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING, villager.getTarget().blockPosition());
             return WorkResult.idle(activeStatusKey(targets), activeStatusReplacements(villager, targets));
@@ -206,6 +209,10 @@ public final class HuntingWorker extends AbstractBlockWorker {
 
     private static BlockPos nearestHuntingLootPosition(ServerLevel level, Villager villager, HiredWorkContext context) {
         return HiredItemPickup.nearestOutputItemPosition(level, villager, context, HuntingWorker::isHuntingLoot);
+    }
+
+    private static boolean hasActiveTarget(Villager villager) {
+        return villager.getTarget() != null && villager.getTarget().isAlive();
     }
 
     private static boolean tryAcquireTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredHuntingTargets.Selection targets) {

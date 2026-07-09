@@ -4,14 +4,23 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import java.util.ArrayList;
+import java.util.Comparator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.phys.Vec3;
 
 public final class HiredRangedAmmo {
     public static final String FAILURE_STORAGE_PATH = "ranged_ammo_storage_path_failed";
@@ -23,6 +32,9 @@ public final class HiredRangedAmmo {
     public static final String STATUS_STORAGE_UNREACHABLE = "interaction.work.status.arrow_storage_unreachable";
     public static final String STATUS_INVENTORY_FULL = "interaction.work.status.arrow_inventory_full";
     private static final int RESTOCK_COUNT = 64;
+    private static final double ARROW_PICKUP_HORIZONTAL_REACH_SQR = 0.64D;
+    private static final double ARROW_PICKUP_VERTICAL_REACH = 1.25D;
+    private static final int ARROW_PATH_CLOSE_ENOUGH = 0;
 
     private HiredRangedAmmo() {
     }
@@ -73,6 +85,12 @@ public final class HiredRangedAmmo {
         return villager instanceof Villager regular && hasAmmo(regular);
     }
 
+    public static boolean isRangedAttackBlockedByAmmo(AbstractVillager villager) {
+        ItemStack weapon = VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager);
+        return VillagerRetaliationVillagerWeapons.isRangedWeapon(weapon)
+                && !canUseRangedAttack(villager, weapon);
+    }
+
     public static ItemStack consumeAmmo(Villager villager) {
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         ItemStack available = inventory.findSupply(HiredRangedAmmo::isAmmo);
@@ -102,6 +120,10 @@ public final class HiredRangedAmmo {
                 && hasAmmo(context)) {
             HiredWorkerBrain.clearFailure(context);
             return null;
+        }
+        WorkResult recoveredArrow = recoverNearbyArrow(level, villager, context, speed);
+        if (recoveredArrow != null) {
+            return recoveredArrow;
         }
         if (!context.useAssignedStorageForSupplies()) {
             return missingAmmo(context);
@@ -155,6 +177,130 @@ public final class HiredRangedAmmo {
 
     private static boolean roleRequiresAmmo(HiredVillagerRole role) {
         return role == HiredVillagerRole.COMBAT || role == HiredVillagerRole.HUNTING;
+    }
+
+    private static WorkResult recoverNearbyArrow(ServerLevel level, Villager villager, HiredWorkContext context, double speed) {
+        AbstractArrow arrow = findNearestRecoverableArrow(level, villager, context);
+        if (arrow == null) {
+            return null;
+        }
+
+        BlockPos arrowPos = arrow.blockPosition();
+        if (!canRecoverFromCurrentPosition(villager, context, arrow)) {
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_TARGET, arrowPos);
+            if (!moveToArrow(level, villager, context, arrow, speed)) {
+                if (HiredPathMemory.recordFailure(level, villager, arrowPos)) {
+                    HiredWorkerBrain.setFailure(context, FAILURE_STORAGE_PATH, level.getGameTime() + 100L);
+                    HiredWorkerBrain.setState(context, HiredWorkerTaskState.FAILED_COOLDOWN, arrowPos);
+                    return WorkResult.idle(STATUS_STORAGE_UNREACHABLE);
+                }
+                return WorkResult.progressed(STATUS_COLLECTING);
+            }
+            HiredWorkerBrain.clearFailure(context);
+            return WorkResult.progressed(STATUS_COLLECTING);
+        }
+
+        ItemStack pickupStack = arrow.getPickupItemStackOrigin();
+        if (pickupStack.isEmpty() || !isAmmo(pickupStack)) {
+            return null;
+        }
+        ItemStack recovered = pickupStack.copyWithCount(1);
+        ItemStack remainder = context.inventory().insertSupply(recovered);
+        if (!remainder.isEmpty()) {
+            HiredWorkerBrain.setFailure(context, FAILURE_INVENTORY_FULL, level.getGameTime() + 100L);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, arrowPos);
+            return WorkResult.idle(STATUS_INVENTORY_FULL);
+        }
+
+        villager.getNavigation().stop();
+        villager.getLookControl().setLookAt(Vec3.atCenterOf(arrowPos));
+        villager.take(arrow, 1);
+        arrow.discard();
+        HiredPathMemory.clearFailure(villager, arrowPos);
+        HiredPathMemory.clearNavigationProgress(villager);
+        HiredWorkerBrain.clearFailure(context);
+        HiredWorkerBrain.setLastTargetScanResult(context, "ranged_arrow_recovered");
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+        return WorkResult.progressed(STATUS_GATHERED);
+    }
+
+    private static AbstractArrow findNearestRecoverableArrow(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context) {
+        ArrayList<AbstractArrow> arrows = new ArrayList<>(level.getEntitiesOfClass(
+                AbstractArrow.class,
+                HiredWorkCollectionBounds.around(context),
+                arrow -> isRecoverableArrow(level, context, villager, arrow)));
+        arrows.sort(Comparator.comparingDouble(villager::distanceToSqr));
+        return arrows.isEmpty() ? null : arrows.getFirst();
+    }
+
+    private static boolean isRecoverableArrow(
+            ServerLevel level,
+            HiredWorkContext context,
+            Villager villager,
+            AbstractArrow arrow) {
+        BlockPos pos = arrow.blockPosition();
+        return arrow.isAlive()
+                && (((AbstractArrowAccessor) arrow).villagerretaliation$isInGround() || arrow.isNoPhysics())
+                && arrow.shakeTime <= 0
+                && isAmmo(arrow.getPickupItemStackOrigin())
+                && context.isInsideWorkAreaOrRoute(pos)
+                && context.isLoaded(level, pos)
+                && !HiredPathMemory.isAvoided(level, villager, pos);
+    }
+
+    private static boolean canRecoverFromCurrentPosition(
+            Villager villager,
+            HiredWorkContext context,
+            AbstractArrow arrow) {
+        return context.isInsideWorkAreaOrRoute(villager.blockPosition())
+                && context.isInsideWorkAreaOrRoute(arrow.blockPosition())
+                && isCloseEnoughToRecover(villager, arrow);
+    }
+
+    private static boolean moveToArrow(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            AbstractArrow arrow,
+            double speed) {
+        if (!context.isInsideWorkAreaOrRoute(villager.blockPosition())
+                || !context.isInsideWorkAreaOrRoute(arrow.blockPosition())) {
+            villager.getNavigation().stop();
+            return false;
+        }
+        if (isCloseEnoughToRecover(villager, arrow)) {
+            villager.getNavigation().stop();
+            villager.getLookControl().setLookAt(arrow.position());
+            return true;
+        }
+
+        BlockPos targetPos = arrow.blockPosition();
+        Path currentPath = villager.getNavigation().getPath();
+        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, context::isInsideWorkAreaOrRoute)) {
+            villager.getNavigation().stop();
+            return false;
+        }
+        Path path = HiredPathMemory.createPath(level, villager, targetPos, ARROW_PATH_CLOSE_ENOUGH);
+        if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkAreaOrRoute)) {
+            villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
+            boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, targetPos, speed, ARROW_PATH_CLOSE_ENOUGH);
+            if (moved) {
+                HiredPathMemory.rememberNavigationProgress(level, villager, targetPos, villager.distanceToSqr(targetPos.getCenter()));
+            }
+            return moved;
+        }
+        HiredPathMemory.clearNavigationProgress(villager);
+        return false;
+    }
+
+    private static boolean isCloseEnoughToRecover(Villager villager, AbstractArrow arrow) {
+        double dx = villager.getX() - arrow.getX();
+        double dz = villager.getZ() - arrow.getZ();
+        return dx * dx + dz * dz <= ARROW_PICKUP_HORIZONTAL_REACH_SQR
+                && Math.abs(villager.getY() - arrow.getY()) <= ARROW_PICKUP_VERTICAL_REACH;
     }
 
     private static ItemStack ammoCheckedWeapon(HiredWorkContext context, Villager villager) {

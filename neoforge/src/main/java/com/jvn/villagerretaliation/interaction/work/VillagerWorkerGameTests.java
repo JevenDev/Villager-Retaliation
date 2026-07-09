@@ -26,6 +26,7 @@ import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
+import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
@@ -61,6 +62,8 @@ import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameRules;
@@ -323,6 +326,92 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(countInventoryItem(context.inventory(), Items.BEEF), 2, "hunter should collect route loot into job output");
         helper.assertFalse(beef.isAlive(), "collected route loot item should be removed");
 
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hunterRecoversStuckArrowNearRoute(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 8, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrHunterRouteArrow");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(new BlockPos(2, 2, 3), new BlockPos(6, 2, 3)));
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.BOW));
+
+        BlockPos arrowPos = helper.absolutePos(new BlockPos(6, 2, 3));
+        Arrow arrow = new Arrow(
+                level,
+                arrowPos.getX() + 0.5D,
+                arrowPos.getY(),
+                arrowPos.getZ() + 0.5D,
+                new ItemStack(Items.ARROW),
+                null);
+        arrow.pickup = AbstractArrow.Pickup.DISALLOWED;
+        ((AbstractArrowAccessor) arrow).villagerretaliation$setInGround(true);
+        level.addFreshEntity(arrow);
+
+        HuntingWorker worker = new HuntingWorker();
+        WorkResult firstResult = worker.tick(level, villager, hirer, context);
+
+        helper.assertTrue(firstResult != null, "hunter should process route arrow recovery");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.ARROW), 0, "hunter should not recover route arrow from range");
+        helper.assertTrue(arrow.isAlive(), "route arrow should remain until the hunter walks over to it");
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 100, () ->
+                countInventoryItem(context.inventory(), Items.ARROW) == 1 && !arrow.isAlive());
+
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.ARROW), 1, "hunter should recover stuck route arrow into supplies");
+        helper.assertFalse(arrow.isAlive(), "recovered route arrow entity should be removed");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hunterClearsActiveTargetToRecoverMissingCrossbowAmmo(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 8, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrHunterActiveAmmo");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.HUNTING);
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(7, 4, 7), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.CROSSBOW));
+        Cow target = spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        villager.setTarget(target);
+
+        BlockPos arrowPos = helper.absolutePos(new BlockPos(6, 2, 3));
+        Arrow arrow = new Arrow(
+                level,
+                arrowPos.getX() + 0.5D,
+                arrowPos.getY(),
+                arrowPos.getZ() + 0.5D,
+                new ItemStack(Items.ARROW),
+                null);
+        arrow.pickup = AbstractArrow.Pickup.DISALLOWED;
+        ((AbstractArrowAccessor) arrow).villagerretaliation$setInGround(true);
+        level.addFreshEntity(arrow);
+
+        WorkResult result = new HuntingWorker().tick(level, villager, hirer, context);
+
+        helper.assertTrue(result != null, "hunter should process missing active-target ammo");
+        helper.assertValueEqual(result.status(), HiredRangedAmmo.STATUS_COLLECTING, "hunter should recover ammo before chasing");
+        helper.assertTrue(target.isAlive(), "ammo recovery should not hurt the hunting target");
+        helper.assertTrue(villager.getTarget() == null, "hunter should clear active target while restocking ranged ammo");
+        helper.assertTrue(arrow.isAlive(), "hunter should walk to the arrow instead of recovering it from range");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.ARROW), 0, "hunter should not recover arrow until in pickup reach");
+
+        target.discard();
         villager.discard();
         helper.succeed();
     }
