@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.mojang.authlib.GameProfile;
 import java.lang.reflect.Method;
@@ -254,6 +255,31 @@ public final class VillagerGameplayGameTests {
         helper.assertFalse(villager.getBrain().hasMemoryValue(MemoryModuleType.HIDING_PLACE), "suppressed hidden state should clear hiding place");
         helper.assertFalse(villager.getBrain().hasMemoryValue(MemoryModuleType.HEARD_BELL_TIME), "suppressed hidden state should clear bell memory");
 
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void combatTargetSuppressesVanillaBrainTick(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Zombie hostile = spawnZombie(helper, new BlockPos(4, 2, 1));
+
+        helper.assertFalse(
+                VillagerRetaliationVillagerBrainUtil.shouldSuppressVanillaBrainTickForCombat(villager),
+                "idle villager should keep vanilla brain tick"
+        );
+        villager.setTarget(hostile);
+        helper.assertTrue(
+                VillagerRetaliationVillagerBrainUtil.shouldSuppressVanillaBrainTickForCombat(villager),
+                "active combat target should suppress vanilla brain tick"
+        );
+        villager.setTarget(null);
+        helper.assertFalse(
+                VillagerRetaliationVillagerBrainUtil.shouldSuppressVanillaBrainTickForCombat(villager),
+                "villager without combat target should resume vanilla brain tick"
+        );
+
+        hostile.discard();
         villager.discard();
         helper.succeed();
     }

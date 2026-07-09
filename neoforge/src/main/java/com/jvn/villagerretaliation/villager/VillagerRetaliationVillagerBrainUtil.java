@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.villager;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import javax.annotation.Nullable;
 import net.minecraft.server.level.ServerLevel;
@@ -36,6 +37,14 @@ public final class VillagerRetaliationVillagerBrainUtil {
     public static void clearMovementMemories(AbstractVillager villager) {
         clearPathingMemories(villager);
         VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.LOOK_TARGET);
+    }
+
+    public static boolean shouldSuppressVanillaBrainTickForCombat(Villager villager) {
+        LivingEntity target = villager.getTarget();
+        return VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()
+                && target != null
+                && target != villager
+                && target.isAlive();
     }
 
     public static void stopNavigationAndClearPathing(AbstractVillager villager) {
