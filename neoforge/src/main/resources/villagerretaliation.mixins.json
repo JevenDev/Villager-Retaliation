@@ -17,6 +17,7 @@
     "SetRaidStatusMixin",
     "ShowTradesToPlayerMixin",
     "TradeWithVillagerMixin",
+    "VillagerHiredNavigationMixin",
     "VillagerBrainTickMixin",
     "VillagerPickupMixin",
     "VillagerPanicTriggerMixin",

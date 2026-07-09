@@ -89,13 +89,11 @@ public final class VillagerTaskNavigationUtil {
     private static final Map<UUID, SurfaceEscapeSearch> SURFACE_ESCAPE_SEARCHES = new HashMap<>();
     private static final Map<UUID, HiredNavigationSettings> HIRED_NAVIGATION_SETTINGS = new HashMap<>();
     private static final Map<UUID, WaterMovementProgress> WATER_MOVEMENT_PROGRESS = new HashMap<>();
-    private static final Map<UUID, Long> HIRED_WALK_TARGETS = new HashMap<>();
-
     private VillagerTaskNavigationUtil() {
     }
 
     public static void stopNavigationAndClearTargets(Villager villager) {
-        HIRED_WALK_TARGETS.remove(villager.getUUID());
+        clearHiredWalkTarget(villager);
         VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearMovement(villager);
     }
 
@@ -114,17 +112,18 @@ public final class VillagerTaskNavigationUtil {
         if (villager.getNavigation().moveTo(path, speed)) {
             return true;
         }
+        clearHiredWalkTarget(villager);
         VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
         return false;
     }
 
     public static void setHiredWalkTarget(Villager villager, BlockPos target, double speed, int closeEnough) {
         if (target == null) {
-            HIRED_WALK_TARGETS.remove(villager.getUUID());
+            clearHiredWalkTarget(villager);
             VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
             return;
         }
-        HIRED_WALK_TARGETS.put(villager.getUUID(), target.asLong());
+        hiredNavigationState(villager).villagerretaliation$setHiredWalkTarget(target);
         float speedModifier = (float) speed;
         if (hasMatchingWalkTarget(villager, target, speedModifier, closeEnough)) {
             return;
@@ -135,7 +134,7 @@ public final class VillagerTaskNavigationUtil {
     }
 
     public static void stopHiredNavigation(Villager villager) {
-        HIRED_WALK_TARGETS.remove(villager.getUUID());
+        clearHiredWalkTarget(villager);
         VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
     }
 
@@ -144,15 +143,22 @@ public final class VillagerTaskNavigationUtil {
     }
 
     public static boolean isHiredWalkTarget(Villager villager) {
-        Long packedTarget = HIRED_WALK_TARGETS.get(villager.getUUID());
-        if (packedTarget == null) {
+        BlockPos target = hiredNavigationState(villager).villagerretaliation$getHiredWalkTarget();
+        if (target == null) {
             return false;
         }
-        BlockPos target = BlockPos.of(packedTarget);
         return villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
                 .map(WalkTarget::getTarget)
                 .map(tracker -> tracker.currentBlockPosition().equals(target))
                 .orElse(false);
+    }
+
+    private static HiredNavigationState hiredNavigationState(Villager villager) {
+        return (HiredNavigationState) villager;
+    }
+
+    private static void clearHiredWalkTarget(Villager villager) {
+        hiredNavigationState(villager).villagerretaliation$setHiredWalkTarget(null);
     }
 
     private static boolean hasMatchingWalkTarget(Villager villager, BlockPos target, float speedModifier, int closeEnough) {
@@ -924,7 +930,6 @@ public final class VillagerTaskNavigationUtil {
         SURFACE_ESCAPE_SEARCHES.clear();
         HIRED_NAVIGATION_SETTINGS.clear();
         WATER_MOVEMENT_PROGRESS.clear();
-        HIRED_WALK_TARGETS.clear();
     }
 
     public static void clearRuntimeState(Villager villager) {
@@ -935,7 +940,7 @@ public final class VillagerTaskNavigationUtil {
         SURFACE_ESCAPE_SEARCHES.remove(villager.getUUID());
         HIRED_NAVIGATION_SETTINGS.remove(villager.getUUID());
         WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
-        HIRED_WALK_TARGETS.remove(villager.getUUID());
+        clearHiredWalkTarget(villager);
     }
 
     private static void openDoorAtPathNode(ServerLevel level, Villager villager, Node node) {
