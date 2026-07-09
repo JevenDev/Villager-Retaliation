@@ -19,6 +19,7 @@ import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
@@ -157,6 +158,41 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(idle.targetPos() == null, "idle state should clear block target");
         helper.assertTrue(idle.storageTargetPos() == null, "idle state should clear storage target");
         helper.assertValueEqual(HiredWorkerTaskState.byId("target_unreachable"), HiredWorkerTaskState.FAILED_COOLDOWN, "legacy state alias");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void courierRoleIsAvailableToEveryProfessionIncludingUnemployed(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        Villager unemployed = spawnVillager(helper, new BlockPos(2, 2, 2));
+        unemployed.setVillagerData(unemployed.getVillagerData().setProfession(VillagerProfession.NONE));
+        Villager farmer = spawnVillager(helper, new BlockPos(4, 2, 2));
+        farmer.setVillagerData(farmer.getVillagerData().setProfession(VillagerProfession.FARMER));
+        Villager baby = spawnVillager(helper, new BlockPos(3, 2, 4));
+        baby.setBaby(true);
+
+        helper.assertTrue(
+                HiredVillagerRoles.availableContractRoles(level, unemployed).contains(HiredVillagerRole.COURIER),
+                "unemployed villagers should always offer the courier role");
+        helper.assertTrue(
+                HiredVillagerRoles.availableContractRoles(level, farmer).contains(HiredVillagerRole.COURIER),
+                "employed villagers should always offer the courier role");
+        helper.assertTrue(
+                HiredVillagerRoles.isSkillUnlocked(unemployed, HiredVillagerRole.COURIER, 0),
+                "courier should not require a skill threshold");
+        helper.assertTrue(
+                HiredVillagerRoles.availableContractRoles(level, baby).isEmpty(),
+                "baby villagers should have no available hired roles");
+        ServerPlayer hirer = fakePlayer(level, "VrBabyHireGuard");
+        HiredVillagerContractService.startHireContract(level, baby, hirer, 1, 8, HiredVillagerRole.COURIER);
+        helper.assertFalse(
+                HiredVillagerContractService.hasContract(baby),
+                "baby villagers should reject direct contract creation");
+
+        unemployed.discard();
+        farmer.discard();
+        baby.discard();
         helper.succeed();
     }
 
@@ -1193,17 +1229,22 @@ public final class VillagerWorkerGameTests {
                 AssignedStorageService.TOOL_PURPOSE);
         helper.assertValueEqual(duplicateTool.alreadyAssigned(), 1, "duplicate tool storage assignment should not add another record");
 
-        AssignedStorageService.AssignSummary conflicting = AssignedStorageService.assign(
+        AssignedStorageService.AssignSummary shared = AssignedStorageService.assign(
                 hirer,
                 otherVillager,
                 List.of(storage),
                 AssignedStorageService.INPUT_PURPOSE);
-        helper.assertValueEqual(conflicting.alreadyAssigned(), 1, "same physical storage should still be owned by one villager");
-        helper.assertTrue(
-                AssignedStorageService.assignedStorage(level, otherVillager).isEmpty(),
-                "conflicting storage assignment should not persist for another villager");
+        helper.assertValueEqual(shared.assigned(), 1, "same physical storage should be shareable by another villager");
+        helper.assertValueEqual(
+                AssignedStorageService.assignedStorage(level, otherVillager).size(),
+                1,
+                "shared storage assignment should persist independently");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
+        helper.assertValueEqual(
+                AssignedStorageService.assignedStorage(level, otherVillager).size(),
+                1,
+                "removing one villager's assignments should preserve another villager's shared assignment");
         AssignedStorageService.removeAllAssignedStorage(level, otherVillager);
         villager.discard();
         otherVillager.discard();
@@ -1240,12 +1281,12 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(inputSummary.assigned(), 1, "input storage assignment");
         helper.assertValueEqual(outputSummary.assigned(), 1, "output storage assignment");
 
-        AssignedStorageService.AssignSummary conflicting = AssignedStorageService.assign(
+        AssignedStorageService.AssignSummary shared = AssignedStorageService.assign(
                 hirer,
                 otherVillager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
                 AssignedStorageService.OUTPUT_PURPOSE);
-        helper.assertValueEqual(conflicting.alreadyAssigned(), 1, "storage ownership should not leak to another villager");
+        helper.assertValueEqual(shared.assigned(), 1, "output storage should be shareable by another villager");
 
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         inventory.insertOutput(new ItemStack(Items.COBBLESTONE, 7));
@@ -2341,6 +2382,93 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(result.status(), "interaction.work.farming.completed_crop", "direct crop completion status");
 
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void courierMovesInputToOutputAlongAssignedRoute(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierRoute");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        BlockPos inputRel = new BlockPos(2, 2, 2);
+        BlockPos outputRel = new BlockPos(6, 2, 2);
+        BlockPos input = helper.absolutePos(inputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, input);
+        AssignedStorageService.removeAssignedContainer(level, output);
+        container(level, input).setItem(0, new ItemStack(Items.COBBLESTONE, 20));
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "courier input assignment");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "courier output assignment");
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(new BlockPos(3, 2, 2), new BlockPos(5, 2, 2)));
+        CourierWorker worker = new CourierWorker();
+
+        WorkResult pickup = worker.tick(level, villager, hirer, context);
+        helper.assertTrue(pickup.progressed(), "courier should collect the input load");
+        helper.assertValueEqual(countItem(container(level, input), Items.COBBLESTONE), 0, "courier should remove input items once");
+
+        moveVillagerToBlock(villager, helper.absolutePos(new BlockPos(3, 2, 2)));
+        worker.tick(level, villager, hirer, context);
+        moveVillagerToBlock(villager, helper.absolutePos(new BlockPos(5, 2, 2)));
+        worker.tick(level, villager, hirer, context);
+        WorkResult delivery = worker.tick(level, villager, hirer, context);
+
+        helper.assertTrue(delivery.completed(), "courier delivery should complete at output storage");
+        helper.assertValueEqual(countItem(container(level, output), Items.COBBLESTONE), 20, "courier output item count");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.COBBLESTONE), 0, "courier should retain no duplicate cargo");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void paymentStorageCanBeSharedByMultipleVillagers(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrSharedPayment");
+        Villager first = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Villager second = spawnVillager(helper, new BlockPos(1, 2, 3));
+        BlockPos paymentRel = new BlockPos(3, 2, 2);
+        BlockPos payment = helper.absolutePos(paymentRel);
+        setBlock(helper, paymentRel, VillagerRetaliationBlocks.PAYMENT_BOX.get().defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, payment);
+        AssignedStorageService.StoragePosition storage = new AssignedStorageService.StoragePosition(level.dimension(), payment);
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer, first, List.of(storage), AssignedStorageService.PAYMENT_PURPOSE).assigned(), 1,
+                "first villager shared payment assignment");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer, second, List.of(storage), AssignedStorageService.PAYMENT_PURPOSE).assigned(), 1,
+                "second villager shared payment assignment");
+        helper.assertValueEqual(AssignedStorageService.assignedPaymentStorage(level, first).size(), 1,
+                "first villager should retain payment assignment");
+        helper.assertValueEqual(AssignedStorageService.assignedPaymentStorage(level, second).size(), 1,
+                "second villager should retain payment assignment");
+
+        AssignedStorageService.removeAllAssignedStorage(level, first);
+        helper.assertValueEqual(AssignedStorageService.assignedPaymentStorage(level, second).size(), 1,
+                "removing first villager should preserve shared payment assignment");
+        AssignedStorageService.removeAllAssignedStorage(level, second);
+        first.discard();
+        second.discard();
         helper.succeed();
     }
 

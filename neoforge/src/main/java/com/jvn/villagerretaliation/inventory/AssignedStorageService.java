@@ -115,7 +115,7 @@ public final class AssignedStorageService {
     public static int removeAssignedStorage(ServerLevel level, Villager villager) {
         int removed = 0;
         for (AssignedContainerRecord record : assignedStorage(level, villager)) {
-            if (AssignedStorageSavedData.get(level).removeAssignedAt(record.dimension(), record.pos())) {
+            if (AssignedStorageSavedData.get(level).removeAssignment(record)) {
                 removed++;
             }
         }
@@ -340,6 +340,19 @@ public final class AssignedStorageService {
             Villager villager,
             Predicate<ItemStack> predicate) {
         return nearestAssignedStoragePosContaining(level, villager, predicate, StorageUse.INPUT);
+    }
+
+    public static BlockPos nearestAssignedInputStoragePosContaining(
+            ServerLevel level,
+            Villager villager,
+            Predicate<ItemStack> predicate,
+            Predicate<BlockPos> positionFilter) {
+        return nearestAssignedStoragePosContaining(
+                level,
+                villager,
+                predicate,
+                positionFilter,
+                StorageUse.INPUT);
     }
 
     public static List<BlockPos> assignedStoragePositionsContaining(

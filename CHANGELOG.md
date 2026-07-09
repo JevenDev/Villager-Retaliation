@@ -5,6 +5,8 @@
 The Hired Help update turns recruitment into a full hired-worker system with contracts, job roles, assigned storage, work areas, payment boxes, wallets, and workforce management, while also expanding quests, dialogue authoring, villager AI, UI, and pack-development tooling.
 
 - Added the Smelter hired role. Smelters use furnaces or blast furnaces inside their work area, retrieve raw iron, copper, or gold and fuel from job supplies or assigned storage, and deposit finished ingots as job output.
+- Added the universally available Courier hired role, including for unemployed villagers. Couriers collect up to 64 items per trip from assigned input storage, follow their required route to assigned output storage, deposit the delivery, and follow the route back for another load.
+- Storage and payment-container assignments can now be shared by multiple hired villagers without one villager removing another villager's assignment.
 
 ### Added
 

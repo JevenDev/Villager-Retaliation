@@ -302,8 +302,14 @@ public final class HiredVillagerContractService {
             int days,
             int emeraldsPaid,
             HiredVillagerRole role) {
+        if (level == null || villager == null || villager.isBaby() || player == null) {
+            return;
+        }
         int safeDays = clampedContractDays(days);
         HiredVillagerRole safeRole = role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
+        if (safeRole == null || !HiredVillagerRoles.availableContractRoles(level, villager).contains(safeRole)) {
+            return;
+        }
         long startGameTime = level.getGameTime();
         CompoundTag tag = new CompoundTag();
         UUID contractId = UUID.randomUUID();
@@ -327,6 +333,9 @@ public final class HiredVillagerContractService {
     }
 
     public static void startOneOffBuilderJob(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (level == null || villager == null || villager.isBaby() || player == null) {
+            return;
+        }
         long startGameTime = level.getGameTime();
         CompoundTag tag = new CompoundTag();
         UUID contractId = UUID.randomUUID();

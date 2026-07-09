@@ -66,6 +66,7 @@ public record ClipboardWorkforceSnapshot(
         BREWING,
         COOKING,
         SMELTING,
+        COURIERING,
         BUILDING,
         DEPOSITING,
         WAITING,

@@ -25,6 +25,7 @@ public final class HiredRoleWorkerRegistry {
         register(new AnimalBreedingWorker());
         register(new CookingWorker());
         register(new SmeltingWorker());
+        register(new CourierWorker());
     }
 
     private HiredRoleWorkerRegistry() {

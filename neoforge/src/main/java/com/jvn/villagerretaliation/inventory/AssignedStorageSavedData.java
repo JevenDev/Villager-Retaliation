@@ -120,17 +120,26 @@ public final class AssignedStorageSavedData extends SavedData {
         ContainerKey key = key(record);
         AssignedContainerRecord existing = this.byContainer.get(key);
         if (existing != null) {
-            if (!existing.villagerId().equals(record.villagerId())) {
-                return AssignmentResult.ALREADY_ASSIGNED;
-            }
-            return AssignmentResult.ALREADY_ASSIGNED;
-        }
-        if (assignedPhysicalContainerToOtherVillager(record)) {
             return AssignmentResult.ALREADY_ASSIGNED;
         }
         put(record);
         setDirty();
         return AssignmentResult.ASSIGNED;
+    }
+
+    public boolean removeAssignment(AssignedContainerRecord record) {
+        if (record == null || this.byContainer.remove(key(record)) == null) {
+            return false;
+        }
+        List<AssignedContainerRecord> records = this.byVillager.get(record.villagerId());
+        if (records != null) {
+            records.removeIf(candidate -> sameAssignment(candidate, record));
+            if (records.isEmpty()) {
+                this.byVillager.remove(record.villagerId());
+            }
+        }
+        setDirty();
+        return true;
     }
 
     public int removeAssignedTo(UUID villagerId) {
@@ -252,13 +261,6 @@ public final class AssignedStorageSavedData extends SavedData {
                 .thenComparing(AssignedContainerRecord::purpose));
     }
 
-    private boolean assignedPhysicalContainerToOtherVillager(AssignedContainerRecord record) {
-        return this.byContainer.values().stream()
-                .anyMatch(existing -> existing.dimension().equals(record.dimension())
-                        && existing.pos().equals(record.pos())
-                        && !existing.villagerId().equals(record.villagerId()));
-    }
-
     private static boolean sameAssignment(AssignedContainerRecord first, AssignedContainerRecord second) {
         return first.dimension().equals(second.dimension())
                 && first.pos().equals(second.pos())
@@ -269,6 +271,7 @@ public final class AssignedStorageSavedData extends SavedData {
         return new ContainerKey(
                 record.dimension(),
                 record.pos().immutable(),
+                record.villagerId(),
                 normalizePurpose(record.purpose()));
     }
 
@@ -291,6 +294,6 @@ public final class AssignedStorageSavedData extends SavedData {
             String validationStatus) {
     }
 
-    private record ContainerKey(ResourceKey<Level> dimension, BlockPos pos, String purpose) {
+    private record ContainerKey(ResourceKey<Level> dimension, BlockPos pos, UUID villagerId, String purpose) {
     }
 }

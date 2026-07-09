@@ -1037,6 +1037,7 @@ public final class VillagerInteractionService {
             case SET_ROLE_NITWIT -> HiredVillagerRole.NITWIT;
             case SET_ROLE_COOK -> HiredVillagerRole.COOK;
             case SET_ROLE_SMELTER -> HiredVillagerRole.SMELTER;
+            case SET_ROLE_COURIER -> HiredVillagerRole.COURIER;
             default -> null;
         };
         if (role == null) {

@@ -261,6 +261,7 @@ public final class ClipboardWorkforceService {
             case BREWING -> WorkerStatus.BREWING;
             case COOK -> WorkerStatus.COOKING;
             case SMELTER -> WorkerStatus.SMELTING;
+            case COURIER -> WorkerStatus.COURIERING;
             case BUILDER -> WorkerStatus.BUILDING;
             default -> WorkerStatus.WORKING;
         };
@@ -314,6 +315,9 @@ public final class ClipboardWorkforceService {
                     || reason.contains("interaction.work.smelting.missing_raw_ore")
                     || reason.contains("interaction.work.smelting.missing_fuel");
         }
+        if (role == HiredVillagerRole.COURIER) {
+            return !noStorage && lower(brain.failureReason()).contains("courier_input_empty");
+        }
         if (role == HiredVillagerRole.MINING) {
             return !noStorage
                     && !materialStorageUnreachable
@@ -336,6 +340,8 @@ public final class ClipboardWorkforceService {
             case BREWING -> failure.contains("brewing_storage_path_failed");
             case COOK -> failure.contains("cooking_storage_path_failed");
             case SMELTER -> failure.contains("smelting_storage_path_failed");
+            case COURIER -> failure.contains("courier_input_unreachable")
+                    || failure.contains("courier_output_unreachable");
             case BUILDER -> failure.contains("builder_material_storage_unreachable");
             case MINING -> failure.contains("mining_support_storage_path_failed");
             default -> false;
@@ -409,6 +415,9 @@ public final class ClipboardWorkforceService {
                     missingMaterials,
                     materialStorageUnreachable,
                     materialInventoryFull);
+        }
+        if (role == HiredVillagerRole.COURIER) {
+            return courierDiagnostic(brain, inventoryFull, noStorage);
         }
         if (role == HiredVillagerRole.LOGGING) {
             return loggingDiagnostic(brain, context, inventoryFull, noStorage);
@@ -859,6 +868,44 @@ public final class ClipboardWorkforceService {
         }
         if (inventoryFull) {
             return "Smelter inventory is full and output storage cannot take more ingots right now.";
+        }
+        return "";
+    }
+
+    private static String courierDiagnostic(
+            HiredWorkerBrain.Snapshot brain,
+            boolean inventoryFull,
+            boolean noStorage) {
+        String reason = lower(brain.failureReason());
+        if (reason.contains("courier_missing_route")) {
+            return "Courier needs an assigned route before deliveries can begin.";
+        }
+        if (reason.contains("courier_missing_input_storage")) {
+            return "Courier needs at least one assigned input container.";
+        }
+        if (reason.contains("courier_missing_output_storage") || reason.contains("courier_output_unavailable")) {
+            return "Courier needs at least one loaded assigned output container.";
+        }
+        if (reason.contains("courier_input_empty")) {
+            return "Courier is waiting for items in assigned input storage.";
+        }
+        if (reason.contains("courier_input_unreachable")) {
+            return "Courier cannot reach the selected input container.";
+        }
+        if (reason.contains("courier_output_unreachable")) {
+            return "Courier cannot reach the selected output container.";
+        }
+        if (reason.contains("courier_route_unreachable")) {
+            return "Courier cannot reach the next node on the assigned route.";
+        }
+        if (reason.contains("courier_output_full")) {
+            return "Courier's assigned output storage is full.";
+        }
+        if (noStorage) {
+            return "Courier needs assigned input and output storage.";
+        }
+        if (inventoryFull) {
+            return "Courier inventory is full and the delivery cannot be deposited.";
         }
         return "";
     }

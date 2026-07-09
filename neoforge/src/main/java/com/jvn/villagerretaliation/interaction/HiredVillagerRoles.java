@@ -25,13 +25,17 @@ public final class HiredVillagerRoles {
             Map.entry(HiredVillagerRole.ANIMAL_HANDLING, List.of(VillagerSkill.ANIMAL_HANDLING)),
             Map.entry(HiredVillagerRole.NITWIT, List.of(VillagerSkill.SURVIVAL, VillagerSkill.GATHERING, VillagerSkill.DIPLOMACY)),
             Map.entry(HiredVillagerRole.COOK, List.of(VillagerSkill.COOKING)),
-            Map.entry(HiredVillagerRole.SMELTER, List.of(VillagerSkill.SMITHING, VillagerSkill.MINING))
+            Map.entry(HiredVillagerRole.SMELTER, List.of(VillagerSkill.SMITHING, VillagerSkill.MINING)),
+            Map.entry(HiredVillagerRole.COURIER, List.of(VillagerSkill.GATHERING, VillagerSkill.SURVIVAL))
     );
 
     private HiredVillagerRoles() {
     }
 
     public static List<HiredVillagerRole> availableRoles(ServerLevel level, Villager villager) {
+        if (villager == null || villager.isBaby()) {
+            return List.of();
+        }
         EnumSet<HiredVillagerRole> roles = preferredRoles(villager);
         for (HiredVillagerRole role : HiredVillagerRole.values()) {
             if (isSkillUnlocked(level, villager, role)) {
@@ -48,9 +52,6 @@ public final class HiredVillagerRoles {
         List<HiredVillagerRole> roles = availableRoles(level, villager).stream()
                 .filter(role -> role != HiredVillagerRole.BUILDER)
                 .toList();
-        if (roles.isEmpty()) {
-            return List.of(HiredVillagerRole.FARMING);
-        }
         return roles;
     }
 
@@ -60,6 +61,9 @@ public final class HiredVillagerRoles {
 
     public static HiredVillagerRole defaultRole(ServerLevel level, Villager villager) {
         List<HiredVillagerRole> available = availableContractRoles(level, villager);
+        if (available.isEmpty()) {
+            return null;
+        }
         HiredVillagerRole bestRole = available.getFirst();
         int bestScore = -1;
         for (HiredVillagerRole role : available) {
@@ -111,6 +115,9 @@ public final class HiredVillagerRoles {
     public static boolean isSkillUnlocked(Villager villager, HiredVillagerRole role, int roleScore) {
         if (!isProfessionEligible(villager, role)) {
             return false;
+        }
+        if (role == HiredVillagerRole.COURIER) {
+            return true;
         }
         return roleScore >= SKILL_UNLOCK_THRESHOLD;
     }

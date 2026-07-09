@@ -42,6 +42,7 @@ public final class HiredVillagerRoleSettings {
             case BREWING -> "interaction.work_report.brewing";
             case COOK -> "interaction.work_report.cook";
             case SMELTER -> "interaction.work_report.smelter";
+            case COURIER -> "interaction.work_report.courier";
             case BUILDER -> "interaction.work_report.builder";
             case ANIMAL_HANDLING -> "interaction.work_report.animal_handling";
             case NITWIT -> "interaction.work_report.nitwit";
@@ -59,6 +60,7 @@ public final class HiredVillagerRoleSettings {
             case BREWING -> "interaction.work_final_report.brewing";
             case COOK -> "interaction.work_final_report.cook";
             case SMELTER -> "interaction.work_final_report.smelter";
+            case COURIER -> "interaction.work_final_report.courier";
             case BUILDER -> "interaction.work_final_report.builder";
             case ANIMAL_HANDLING -> "interaction.work_final_report.animal_handling";
             case NITWIT -> "interaction.work_final_report.nitwit";
@@ -66,7 +68,9 @@ public final class HiredVillagerRoleSettings {
     }
 
     public static boolean supportsRoutes(HiredVillagerRole role) {
-        return role == HiredVillagerRole.COMBAT || role == HiredVillagerRole.HUNTING;
+        return role == HiredVillagerRole.COMBAT
+                || role == HiredVillagerRole.HUNTING
+                || role == HiredVillagerRole.COURIER;
     }
 
     public static double skillGrowthAmount(HiredVillagerRole role) {
@@ -79,6 +83,7 @@ public final class HiredVillagerRoleSettings {
             case BREWING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_BREWING.get();
             case COOK -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_COOKING.get();
             case SMELTER -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_MINING.get();
+            case COURIER -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NAVIGATION.get();
             case BUILDER -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_BUILDER.get();
             case ANIMAL_HANDLING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_ANIMAL_HANDLING.get();
             case NITWIT -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NITWIT.get();
