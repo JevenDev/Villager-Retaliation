@@ -206,6 +206,7 @@ public final class HiredPathMemory {
     }
 
     public static boolean shouldDelayPathSearch(ServerLevel level, Villager villager) {
+        flushPendingChangedPathMemory(level);
         PathSearchBackoff backoff = PATH_SEARCH_BACKOFFS.get(villager.getUUID());
         return backoff != null && backoff.retryAfterGameTime() > level.getGameTime();
     }
@@ -286,6 +287,7 @@ public final class HiredPathMemory {
     }
 
     public static long pathSearchRetryCooldownTicks(ServerLevel level, Villager villager) {
+        flushPendingChangedPathMemory(level);
         PathSearchBackoff backoff = PATH_SEARCH_BACKOFFS.get(villager.getUUID());
         if (backoff == null) {
             return 0L;
@@ -315,6 +317,7 @@ public final class HiredPathMemory {
     }
 
     public static boolean isApproachRecentlyUnreachable(ServerLevel level, Villager villager, BlockPos approach) {
+        flushPendingChangedPathMemory(level);
         Map<Long, Long> approaches = UNREACHABLE_APPROACHES.get(villager.getUUID());
         if (approaches == null) {
             return false;
@@ -371,6 +374,7 @@ public final class HiredPathMemory {
     }
 
     public static boolean isAvoided(ServerLevel level, Villager villager, BlockPos pos) {
+        flushPendingChangedPathMemory(level);
         Map<Long, Long> avoided = AVOIDED_TARGETS.get(villager.getUUID());
         if (avoided == null) {
             return false;
