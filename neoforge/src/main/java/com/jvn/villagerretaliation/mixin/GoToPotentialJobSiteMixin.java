@@ -1,8 +1,8 @@
 package com.jvn.villagerretaliation.mixin;
 
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.GoToPotentialJobSite;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,8 +17,7 @@ public abstract class GoToPotentialJobSiteMixin {
             Villager villager,
             long gameTime,
             CallbackInfo ci) {
-        if (villager.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET)
-                && !villager.getNavigation().isDone()) {
+        if (VillagerTaskNavigationUtil.hasActiveHiredWalkTarget(villager)) {
             ci.cancel();
         }
     }

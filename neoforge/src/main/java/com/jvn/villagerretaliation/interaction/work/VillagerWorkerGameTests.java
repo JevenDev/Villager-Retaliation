@@ -3046,6 +3046,32 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hiredWalkTargetTrackingDoesNotClaimVanillaNavigation(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        BlockPos target = helper.absolutePos(new BlockPos(6, 2, 3));
+
+        villager.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(target), 0.5F, 1));
+        helper.assertFalse(
+                VillagerTaskNavigationUtil.isHiredWalkTarget(villager),
+                "an ordinary vanilla walk target must not be marked as hired navigation");
+
+        VillagerTaskNavigationUtil.setHiredWalkTarget(villager, target, 0.5D, 1);
+        helper.assertTrue(
+                VillagerTaskNavigationUtil.isHiredWalkTarget(villager),
+                "hired walk targets should be identifiable by job-site mixins");
+
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+        helper.assertFalse(
+                VillagerTaskNavigationUtil.isHiredWalkTarget(villager),
+                "stopping hired navigation should clear its marker");
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void hiredWorkPausesForVanillaRestAndReportsSleepStatus(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 1);
