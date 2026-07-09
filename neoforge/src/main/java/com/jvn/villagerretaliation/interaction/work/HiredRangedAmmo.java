@@ -7,8 +7,6 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
-import java.util.ArrayList;
-import java.util.Comparator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
@@ -228,12 +226,12 @@ public final class HiredRangedAmmo {
             ServerLevel level,
             Villager villager,
             HiredWorkContext context) {
-        ArrayList<AbstractArrow> arrows = new ArrayList<>(level.getEntitiesOfClass(
+        return HiredEntitySearch.nearest(
+                level,
                 AbstractArrow.class,
-                context.collectionBounds(),
-                arrow -> isRecoverableArrow(level, context, villager, arrow)));
-        arrows.sort(Comparator.comparingDouble(villager::distanceToSqr));
-        return arrows.isEmpty() ? null : arrows.getFirst();
+                context.assignment().entitySearchBounds(),
+                arrow -> isRecoverableArrow(level, context, villager, arrow),
+                villager::distanceToSqr);
     }
 
     private static boolean isRecoverableArrow(

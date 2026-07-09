@@ -234,12 +234,13 @@ public final class HuntingWorker extends AbstractBlockWorker {
     private static Optional<LivingEntity> findNearestTarget(ServerLevel level, Villager villager, HiredWorkContext context, HiredHuntingTargets.Selection targets) {
         double horizontalRadius = Math.max(6.0D, context.horizontalSearchRadius() + TARGET_SCAN_RADIUS_PADDING);
         double verticalRadius = Math.max(4.0D, context.verticalRadius() + 2.0D);
-        return level.getEntitiesOfClass(
-                        LivingEntity.class,
-                        villager.getBoundingBox().inflate(horizontalRadius, verticalRadius, horizontalRadius),
-                        target -> isEligibleTarget(villager, target, context, targets))
-                .stream()
-                .min((first, second) -> Double.compare(villager.distanceToSqr(first), villager.distanceToSqr(second)));
+        LivingEntity target = HiredEntitySearch.nearest(
+                level,
+                LivingEntity.class,
+                villager.getBoundingBox().inflate(horizontalRadius, verticalRadius, horizontalRadius),
+                candidate -> isEligibleTarget(villager, candidate, context, targets),
+                villager::distanceToSqr);
+        return Optional.ofNullable(target);
     }
 
     private static boolean isEligibleTarget(Villager villager, LivingEntity target, HiredWorkContext context, HiredHuntingTargets.Selection targets) {

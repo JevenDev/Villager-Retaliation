@@ -1,8 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
@@ -108,12 +106,12 @@ public final class HiredItemPickup {
             HiredWorkContext context,
             Predicate<ItemStack> itemFilter) {
         Predicate<ItemStack> safeFilter = itemFilter == null ? ignored -> true : itemFilter;
-        ArrayList<ItemEntity> items = new ArrayList<>(level.getEntitiesOfClass(
+        return HiredEntitySearch.nearest(
+                level,
                 ItemEntity.class,
-                context.collectionBounds(),
-                item -> isCollectableOutputItem(level, context, villager, item, safeFilter)));
-        items.sort(Comparator.comparingDouble(villager::distanceToSqr));
-        return items.isEmpty() ? null : items.getFirst();
+                context.assignment().entitySearchBounds(),
+                item -> isCollectableOutputItem(level, context, villager, item, safeFilter),
+                villager::distanceToSqr);
     }
 
     private static boolean isCollectableOutputItem(

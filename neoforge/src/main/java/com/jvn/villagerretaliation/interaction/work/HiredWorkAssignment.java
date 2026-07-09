@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.interaction.HiredJobSite;
 import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
+import java.util.ArrayList;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 
@@ -13,6 +15,7 @@ public final class HiredWorkAssignment {
     private final HiredJobSite jobSite;
     private final HiredRoute route;
     private AABB collectionBounds;
+    private List<AABB> entitySearchBounds;
 
     private HiredWorkAssignment(HiredJobSite jobSite, HiredRoute route) {
         this.jobSite = jobSite;
@@ -74,6 +77,15 @@ public final class HiredWorkAssignment {
         return this.collectionBounds;
     }
 
+    public List<AABB> entitySearchBounds() {
+        if (this.entitySearchBounds == null) {
+            this.entitySearchBounds = hasRoute()
+                    ? List.copyOf(routeSegmentBounds())
+                    : List.of(collectionBounds());
+        }
+        return this.entitySearchBounds;
+    }
+
     private boolean isInsideCollectionBounds(BlockPos pos) {
         return pos != null && collectionBounds().contains(pos.getCenter());
     }
@@ -113,5 +125,33 @@ public final class HiredWorkAssignment {
                 maxX + horizontalPadding + 1.0D,
                 maxY + verticalPadding + 1.0D,
                 maxZ + horizontalPadding + 1.0D);
+    }
+
+    private List<AABB> routeSegmentBounds() {
+        List<BlockPos> nodes = this.route.nodes();
+        int horizontalPadding = HiredRoute.MAX_NODE_DISTANCE;
+        int verticalPadding = Math.max(2, workArea().verticalRadius());
+        List<AABB> bounds = new ArrayList<>(Math.max(1, nodes.size()));
+        if (nodes.size() == 1) {
+            bounds.add(segmentBounds(nodes.getFirst(), nodes.getFirst(), horizontalPadding, verticalPadding));
+            return bounds;
+        }
+        for (int index = 1; index < nodes.size(); index++) {
+            bounds.add(segmentBounds(nodes.get(index - 1), nodes.get(index), horizontalPadding, verticalPadding));
+        }
+        if (this.route.loop()) {
+            bounds.add(segmentBounds(nodes.getLast(), nodes.getFirst(), horizontalPadding, verticalPadding));
+        }
+        return bounds;
+    }
+
+    private static AABB segmentBounds(BlockPos first, BlockPos second, int horizontalPadding, int verticalPadding) {
+        return new AABB(
+                Math.min(first.getX(), second.getX()) - horizontalPadding,
+                Math.min(first.getY(), second.getY()) - verticalPadding,
+                Math.min(first.getZ(), second.getZ()) - horizontalPadding,
+                Math.max(first.getX(), second.getX()) + horizontalPadding + 1.0D,
+                Math.max(first.getY(), second.getY()) + verticalPadding + 1.0D,
+                Math.max(first.getZ(), second.getZ()) + horizontalPadding + 1.0D);
     }
 }
