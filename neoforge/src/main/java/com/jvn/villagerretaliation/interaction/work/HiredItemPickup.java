@@ -110,7 +110,7 @@ public final class HiredItemPickup {
         Predicate<ItemStack> safeFilter = itemFilter == null ? ignored -> true : itemFilter;
         ArrayList<ItemEntity> items = new ArrayList<>(level.getEntitiesOfClass(
                 ItemEntity.class,
-                HiredWorkCollectionBounds.around(context),
+                context.collectionBounds(),
                 item -> isCollectableOutputItem(level, context, villager, item, safeFilter)));
         items.sort(Comparator.comparingDouble(villager::distanceToSqr));
         return items.isEmpty() ? null : items.getFirst();

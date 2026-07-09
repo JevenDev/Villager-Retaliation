@@ -230,7 +230,7 @@ public final class HiredRangedAmmo {
             HiredWorkContext context) {
         ArrayList<AbstractArrow> arrows = new ArrayList<>(level.getEntitiesOfClass(
                 AbstractArrow.class,
-                HiredWorkCollectionBounds.around(context),
+                context.collectionBounds(),
                 arrow -> isRecoverableArrow(level, context, villager, arrow)));
         arrows.sort(Comparator.comparingDouble(villager::distanceToSqr));
         return arrows.isEmpty() ? null : arrows.getFirst();

@@ -12,6 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
 
 public record HiredWorkContext(
         HiredJobInventory inventory,
@@ -25,8 +26,7 @@ public record HiredWorkContext(
         int efficiency,
         boolean autoDepositOutputs,
         boolean useAssignedStorageForSupplies,
-        HiredJobSite jobSite,
-        HiredRoute route) {
+        HiredWorkAssignment assignment) {
     public static final String OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG = "OutputDepositedThisStorageTrip";
 
     public HiredWorkContext(
@@ -53,19 +53,47 @@ public record HiredWorkContext(
                 efficiency,
                 autoDepositOutputs,
                 useAssignedStorageForSupplies,
-                HiredJobSite.fromWorkArea(new HiredWorkArea(
+                HiredWorkAssignment.of(HiredJobSite.fromWorkArea(new HiredWorkArea(
                         workCenter,
                         workMin,
                         workMax,
                         radius,
                         verticalRadius,
                         hasWorkArea,
-                        hasWorkArea)),
-                HiredRoute.empty());
+                        hasWorkArea)), HiredRoute.empty()));
+    }
+
+    public HiredWorkContext(
+            HiredJobInventory inventory,
+            CompoundTag state,
+            BlockPos workCenter,
+            BlockPos workMin,
+            BlockPos workMax,
+            int radius,
+            int verticalRadius,
+            boolean hasWorkArea,
+            int efficiency,
+            boolean autoDepositOutputs,
+            boolean useAssignedStorageForSupplies,
+            HiredJobSite jobSite,
+            HiredRoute route) {
+        this(
+                inventory,
+                state,
+                workCenter,
+                workMin,
+                workMax,
+                radius,
+                verticalRadius,
+                hasWorkArea,
+                efficiency,
+                autoDepositOutputs,
+                useAssignedStorageForSupplies,
+                HiredWorkAssignment.of(jobSite, route));
     }
 
     public HiredWorkContext {
-        if (jobSite == null) {
+        if (assignment == null) {
             HiredWorkArea area = new HiredWorkArea(
                     workCenter,
                     workMin,
@@ -74,10 +102,7 @@ public record HiredWorkContext(
                     verticalRadius,
                     hasWorkArea,
                     hasWorkArea);
-            jobSite = HiredJobSite.fromWorkArea(area);
-        }
-        if (route == null) {
-            route = HiredRoute.empty();
+            assignment = HiredWorkAssignment.of(HiredJobSite.fromWorkArea(area), HiredRoute.empty());
         }
     }
 
@@ -102,7 +127,15 @@ public record HiredWorkContext(
     }
 
     public HiredWorkArea workArea() {
-        return this.jobSite.workArea();
+        return this.assignment.workArea();
+    }
+
+    public HiredJobSite jobSite() {
+        return this.assignment.jobSite();
+    }
+
+    public HiredRoute route() {
+        return this.assignment.route();
     }
 
     public boolean isLoaded(ServerLevel level, BlockPos pos) {
@@ -110,27 +143,31 @@ public record HiredWorkContext(
     }
 
     public boolean isInsideWorkArea(BlockPos pos) {
-        return this.jobSite.isInsideWorkBounds(pos);
+        return this.assignment.isInsideWorkArea(pos);
     }
 
     public boolean hasRoute() {
-        return this.route.usableForNavigation();
+        return this.assignment.hasRoute();
     }
 
     public boolean isInsideRouteArea(BlockPos pos) {
-        return this.route.isNearRoute(pos, HiredRoute.MAX_NODE_DISTANCE, Math.max(2, this.verticalRadius));
+        return this.assignment.isInsideRouteArea(pos);
     }
 
     public boolean isInsideWorkAreaOrRoute(BlockPos pos) {
-        return hasRoute() ? isInsideRouteArea(pos) : isInsideWorkArea(pos);
+        return this.assignment.isInsideWorkAreaOrRoute(pos);
+    }
+
+    public AABB collectionBounds() {
+        return this.assignment.collectionBounds();
     }
 
     public boolean hasNavigationTether() {
-        return this.jobSite.hasNavigationTether();
+        return this.assignment.hasNavigationTether();
     }
 
     public boolean isInsideNavigationTether(BlockPos pos, int horizontalPadding, int verticalPadding) {
-        return this.jobSite.isInsideNavigationTether(pos, horizontalPadding, verticalPadding);
+        return this.assignment.isInsideNavigationTether(pos, horizontalPadding, verticalPadding);
     }
 
     public boolean depositOutputs(Villager villager) {
