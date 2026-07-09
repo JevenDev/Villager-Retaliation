@@ -58,6 +58,26 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void jobInventoryReusesItsLoadedViewUntilRuntimeStateClears(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+
+        HiredJobInventory first = HiredJobInventory.getJobInventory(villager);
+        first.setItem(6, new ItemStack(Items.COBBLESTONE));
+        HiredJobInventory reused = HiredJobInventory.getJobInventory(villager);
+        helper.assertTrue(first == reused, "job inventory lookups should reuse the loaded runtime view");
+        helper.assertTrue(reused.getItem(6).is(Items.COBBLESTONE), "reused inventory should retain current contents");
+
+        HiredJobInventory.clearRuntimeState(villager);
+        HiredJobInventory reloaded = HiredJobInventory.getJobInventory(villager);
+        helper.assertFalse(first == reloaded, "runtime cleanup should release the cached inventory view");
+        helper.assertTrue(reloaded.getItem(6).is(Items.COBBLESTONE), "reloaded inventory should read persisted contents");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void jobInventoryCleansEmptyPersistenceAndMaintainsOnlyEquipment(GameTestHelper helper) {
         buildFloor(helper, 0, 4, 0, 4, 1);
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));

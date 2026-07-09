@@ -18,6 +18,7 @@
     "ShowTradesToPlayerMixin",
     "TradeWithVillagerMixin",
     "VillagerHiredNavigationMixin",
+    "VillagerJobInventoryMixin",
     "VillagerBrainTickMixin",
     "VillagerPickupMixin",
     "VillagerPanicTriggerMixin",

@@ -70,7 +70,7 @@ public final class HiredJobInventory implements Container {
     }
 
     public static HiredJobInventory getJobInventory(Villager villager) {
-        return new HiredJobInventory(villager);
+        return ((HiredJobInventoryHolder) villager).villagerretaliation$getOrCreateJobInventory();
     }
 
     public static void maintainEquipmentSlots(Villager villager) {
@@ -91,7 +91,7 @@ public final class HiredJobInventory implements Container {
         if (!shouldMaintainEquipmentAuthority(villager)) {
             return;
         }
-        new HiredJobInventory(villager).maintainEquipmentAuthority();
+        getJobInventory(villager).maintainEquipmentAuthority();
     }
 
     private static boolean shouldMaintainEquipmentAuthority(Villager villager) {
@@ -114,6 +114,7 @@ public final class HiredJobInventory implements Container {
     public static void clearRuntimeState(Villager villager) {
         if (villager != null) {
             NEXT_EQUIPMENT_MAINTENANCE_TICKS.remove(villager.getUUID());
+            ((HiredJobInventoryHolder) villager).villagerretaliation$clearJobInventory();
         }
     }
 
@@ -160,7 +161,7 @@ public final class HiredJobInventory implements Container {
     }
 
     public static void dropAll(Villager villager, LivingDropsEvent event) {
-        HiredJobInventory inventory = new HiredJobInventory(villager);
+        HiredJobInventory inventory = getJobInventory(villager);
         for (int slot = 0; slot < inventory.getContainerSize(); slot++) {
             ItemStack stack = inventory.getItem(slot);
             if (!stack.isEmpty()) {
