@@ -60,6 +60,10 @@ public final class CombatWorker implements HiredRoleWorker {
             return;
         }
 
+        if (context.hasRoute() && HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED)) {
+            return;
+        }
+
         if (mode.roams()) {
             maintainPatrol(level, villager, context);
         } else {
@@ -89,6 +93,11 @@ public final class CombatWorker implements HiredRoleWorker {
         if (tryAcquireTarget(level, villager, context, mode)) {
             HiredWorkerBrain.setLastTargetScanResult(context, "found_target");
             return WorkResult.progressed(activeStatusKey(mode), activeStatusReplacements(villager));
+        }
+
+        if (context.hasRoute() && HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED)) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "route_patrol");
+            return WorkResult.idle(passiveStatusKey(mode));
         }
 
         HiredWorkerBrain.setLastTargetScanResult(context, mode.roams() ? "patrolling" : "guarding");
@@ -140,7 +149,7 @@ public final class CombatWorker implements HiredRoleWorker {
                 || !target.isAlive()
                 || !villager.canAttack(target)
                 || !villager.hasLineOfSight(target)
-                || !context.isInsideWorkArea(target.blockPosition())
+                || !context.isInsideWorkAreaOrRoute(target.blockPosition())
                 || target.isAlliedTo(villager)
                 || target instanceof AbstractVillager
                 || target instanceof IronGolem

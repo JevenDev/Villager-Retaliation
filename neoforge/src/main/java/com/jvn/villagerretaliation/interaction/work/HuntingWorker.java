@@ -63,7 +63,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
 
     @Override
     public void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
-        if (!context.hasWorkArea()) {
+        if (!context.hasWorkArea() && !context.hasRoute()) {
             setTaskState(context, HiredWorkerTaskState.NO_WORK_AREA);
             return;
         }
@@ -94,13 +94,17 @@ public final class HuntingWorker extends AbstractBlockWorker {
             return;
         }
 
+        if (context.hasRoute() && HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED)) {
+            return;
+        }
+
         maintainPatrol(level, villager, context);
     }
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         context.setProgressTicks(0);
-        if (!context.hasWorkArea()) {
+        if (!context.hasWorkArea() && !context.hasRoute()) {
             return waitForWorkAreaAssignment(level, villager, context);
         }
 
@@ -109,7 +113,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
         if (weaponResult != null) {
             return weaponResult;
         }
-        if (!context.isInsideWorkArea(villager.blockPosition())) {
+        if (!context.hasRoute() && !context.isInsideWorkArea(villager.blockPosition())) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
             return WorkResult.progressed("interaction.work.status.returning_bounds");
         }
@@ -134,6 +138,11 @@ public final class HuntingWorker extends AbstractBlockWorker {
         if (tryAcquireTarget(level, villager, context, targets)) {
             HiredWorkerBrain.setLastTargetScanResult(context, "found_target");
             return WorkResult.progressed(activeStatusKey(targets), activeStatusReplacements(villager, targets));
+        }
+
+        if (context.hasRoute() && HiredRouteNavigator.maintainRoute(level, villager, context, PATROL_SPEED)) {
+            HiredWorkerBrain.setLastTargetScanResult(context, "route_patrol");
+            return WorkResult.idle(passiveStatusKey(targets), passiveStatusReplacements(targets));
         }
 
         HiredWorkerBrain.setLastTargetScanResult(context, "no_targets");
@@ -241,7 +250,7 @@ public final class HuntingWorker extends AbstractBlockWorker {
                 || !target.isAlive()
                 || !villager.canAttack(target)
                 || requireLineOfSight && !VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target)
-                || !context.isInsideWorkArea(target.blockPosition())
+                || !context.isInsideWorkAreaOrRoute(target.blockPosition())
                 || !VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)
                 || target.isAlliedTo(villager)
                 || target instanceof AbstractVillager
