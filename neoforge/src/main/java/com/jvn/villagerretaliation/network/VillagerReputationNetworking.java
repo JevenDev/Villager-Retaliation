@@ -17,7 +17,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "34";
+    private static final String PROTOCOL_VERSION = "35";
 
     private VillagerReputationNetworking() {
     }
@@ -123,6 +123,12 @@ public final class VillagerReputationNetworking {
         network.safePlayToClientThreaded(
                 ClipboardWorkAreaSyncPayload.TYPE,
                 ClipboardWorkAreaSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                ClipboardRouteSyncPayload.TYPE,
+                ClipboardRouteSyncPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer",
                 "accept"
         );
@@ -389,6 +395,15 @@ public final class VillagerReputationNetworking {
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
                         ToucanNetwork.withServerPlayer(context, player ->
                                 com.jvn.villagerretaliation.debug.HiredDebugPreviewService.setClipboardPreviewEnabled(
+                                        player,
+                                        payload.enabled())))
+        );
+        network.playToServer(
+                HiredDebugHudPreviewPayload.TYPE,
+                HiredDebugHudPreviewPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.debug.HiredDebugPreviewService.setDebugHudPreviewEnabled(
                                         player,
                                         payload.enabled())))
         );
