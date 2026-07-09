@@ -67,6 +67,8 @@ public final class HiredVillagerWorkService {
     private static final String STATUS_REPLACEMENTS_TAG = "StatusReplacements";
     private static final String COMPLETED_TASKS_TAG = "CompletedTasks";
     private static final String VANILLA_REST_PAUSED_TAG = "VanillaRestPaused";
+    private static final String DEFAULTS_VERSION_TAG = "DefaultsVersion";
+    private static final int DEFAULTS_VERSION = 1;
     public static final String WAITING_FOR_HIRER_STATUS = "interaction.work.status.waiting_for_hirer";
     private static final String STORAGE_FULL_NOTICE = "interaction.work.status.storage_full";
     private static final String PAUSED_FOR_COMMAND_STATUS = "interaction.work.status.paused_for_command";
@@ -1683,6 +1685,9 @@ public final class HiredVillagerWorkService {
     }
 
     static void initializeDefaults(CompoundTag state, Villager villager) {
+        if (state.getInt(DEFAULTS_VERSION_TAG) >= DEFAULTS_VERSION) {
+            return;
+        }
         boolean hadStoredArea = state.contains(HiredWorkArea.WORK_CENTER_POS_TAG, Tag.TAG_LONG)
                 && state.contains(HiredWorkArea.WORK_MIN_POS_TAG, Tag.TAG_LONG)
                 && state.contains(HiredWorkArea.WORK_MAX_POS_TAG, Tag.TAG_LONG);
@@ -1727,6 +1732,7 @@ public final class HiredVillagerWorkService {
             int radius = Mth.clamp(state.getInt(HiredWorkArea.RADIUS_TAG), MIN_WORK_RADIUS, baseWorkRadiusCap());
             HiredWorkArea.fromCenter(villager.blockPosition(), radius, Math.min(radius, 8), state.getBoolean(HiredWorkArea.WORK_AREA_ASSIGNED_TAG)).save(state);
         }
+        state.putInt(DEFAULTS_VERSION_TAG, DEFAULTS_VERSION);
     }
 
     private static BlockPos workCenter(CompoundTag state, Villager villager) {
