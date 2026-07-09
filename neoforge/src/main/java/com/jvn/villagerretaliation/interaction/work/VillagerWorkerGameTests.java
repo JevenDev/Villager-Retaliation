@@ -488,10 +488,7 @@ public final class VillagerWorkerGameTests {
         ServerPlayer hirer = fakePlayer(level, "VrBuilderDeath");
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.MASON));
-        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
-        helper.assertTrue(
-                HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.BUILDER),
-                "builder role should be available for mason test fixture");
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.BUILDER);
 
         CompoundTag state = persistentWorkState(villager);
         UUID jobId = seedBuilderTask(state, 23, 0);
@@ -1556,8 +1553,13 @@ public final class VillagerWorkerGameTests {
         state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
         HiredWorkContext context = context(helper, villager, state, targetRel, new BlockPos(3, 2, 3), true);
         context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
-        for (int slot : context.inventory().supplySlots()) {
-            context.inventory().setItem(slot, new ItemStack(Items.STICK, 64));
+        for (int slot = 6; slot < HiredJobInventory.SLOT_COUNT; slot++) {
+            context.inventory().setItem(
+                    slot,
+                    HiredJobInventory.markAsProtectedVillagerProperty(
+                            new ItemStack(Items.STICK, 64),
+                            villager,
+                            "full_support_inventory_fixture"));
         }
 
         WorkResult result = new MiningWorker().tick(level, villager, hirer, context);
