@@ -50,6 +50,9 @@ public record OpenVillagerInteractionPayload(
         boolean activeBuilderTask,
         boolean oneOffBuilderJob,
         boolean farmingTillSoil,
+        boolean huntingAnimals,
+        boolean huntingHostiles,
+        boolean huntingPlayers,
         List<String> selectedLoggingFilters,
         boolean loggingStripLogs,
         boolean loggingHarvestLeaves,
@@ -111,6 +114,9 @@ public record OpenVillagerInteractionPayload(
         buffer.writeBoolean(payload.activeBuilderTask());
         buffer.writeBoolean(payload.oneOffBuilderJob());
         buffer.writeBoolean(payload.farmingTillSoil());
+        buffer.writeBoolean(payload.huntingAnimals());
+        buffer.writeBoolean(payload.huntingHostiles());
+        buffer.writeBoolean(payload.huntingPlayers());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.selectedLoggingFilters());
         buffer.writeBoolean(payload.loggingStripLogs());
         buffer.writeBoolean(payload.loggingHarvestLeaves());
@@ -157,6 +163,9 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 readHiredRoles(buffer),
                 buffer.readEnum(HiredVillagerRole.class),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),

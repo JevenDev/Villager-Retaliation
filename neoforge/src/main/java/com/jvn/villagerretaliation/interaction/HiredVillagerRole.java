@@ -4,6 +4,7 @@ import java.util.Locale;
 
 public enum HiredVillagerRole {
     COMBAT("combat"),
+    HUNTING("hunting"),
     MINING("mining"),
     LOGGING("logging"),
     FARMING("farming"),

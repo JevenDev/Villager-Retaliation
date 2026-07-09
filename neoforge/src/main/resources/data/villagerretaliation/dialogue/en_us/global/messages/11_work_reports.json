@@ -22,6 +22,18 @@
       "id": "global.messages.11_work_reports.messages.interaction.work_report.combat.000"
     },
     {
+      "key": "interaction.work_report.hunting",
+      "lines": [
+        "I am still ranging the hunting grounds. I will keep looking for valid targets.",
+        "The hunt is still moving. I am checking the assigned area.",
+        "I am staying inside the hunting bounds and watching for quarry.",
+        "I am still on the hunt you assigned.",
+        "The hunting ground is quiet for now, but I am keeping at it.",
+        "I am keeping my weapon ready and covering the area."
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_report.hunting.019"
+    },
+    {
       "key": "interaction.work_report.mining",
       "lines": [
         "I am still working the stone. I will keep digging and haul back what I can.",
@@ -140,6 +152,18 @@
         "The guard work is holding steady. I will keep my eyes open."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.combat.009"
+    },
+    {
+      "key": "interaction.work_final_report.hunting",
+      "lines": [
+        "I finished another pass through the hunting grounds. I will keep ranging.",
+        "That sweep is done for now. I am still watching for valid targets.",
+        "I checked another stretch of the assigned hunting area.",
+        "The hunt is quiet for the moment, but I am staying with it.",
+        "I made another pass through the grounds and kept to the bounds.",
+        "That part of the hunting route is handled for now."
+      ],
+      "id": "global.messages.11_work_reports.messages.interaction.work_final_report.hunting.020"
     },
     {
       "key": "interaction.work_final_report.mining",

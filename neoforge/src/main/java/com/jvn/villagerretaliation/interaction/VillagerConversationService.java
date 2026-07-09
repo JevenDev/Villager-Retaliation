@@ -45,6 +45,8 @@ public final class VillagerConversationService {
             return false;
         }
 
+        VillagerInteractionService.prepareForInteractionSession(player, villager);
+
         UUID existingPlayerId = PLAYER_BY_VILLAGER.get(villager.getUUID());
         if (existingPlayerId != null && !existingPlayerId.equals(player.getUUID())) {
             return false;

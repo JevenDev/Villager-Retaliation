@@ -8,9 +8,11 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.Worker
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderBuildPhase;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
+import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
+import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
 import com.jvn.villagerretaliation.interaction.work.logging.LoggingWorker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.network.ClipboardWorkforceSyncPayload;
@@ -396,6 +398,13 @@ public final class ClipboardWorkforceService {
         if (role == HiredVillagerRole.FISHING) {
             return fishingDiagnostic(brain);
         }
+        String rangedAmmo = rangedAmmoDiagnostic(brain, role);
+        if (!rangedAmmo.isBlank()) {
+            return rangedAmmo;
+        }
+        if (role == HiredVillagerRole.HUNTING) {
+            return huntingDiagnostic(brain);
+        }
         if (role != HiredVillagerRole.BUILDER) {
             return "";
         }
@@ -622,6 +631,65 @@ public final class ClipboardWorkforceService {
         return "";
     }
 
+    private static String rangedAmmoDiagnostic(HiredWorkerBrain.Snapshot brain, HiredVillagerRole role) {
+        if (role != HiredVillagerRole.COMBAT && role != HiredVillagerRole.HUNTING) {
+            return "";
+        }
+        String reason = lower(brain.failureReason());
+        String worker = role == HiredVillagerRole.HUNTING ? "Hunter" : "Guard";
+        if (reason.contains(HiredRangedAmmo.FAILURE_STORAGE_PATH)) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return storagePos == null
+                    ? worker + " found arrows in assigned storage, but cannot path to that container."
+                    : worker + " found arrows in assigned storage at "
+                            + HiredWorkerBrain.formatPos(storagePos) + ", but cannot path to it.";
+        }
+        if (reason.contains(HiredRangedAmmo.FAILURE_INVENTORY_FULL)) {
+            return worker + " found arrows, but cannot fit them in job supplies.";
+        }
+        if (reason.contains(HiredRangedAmmo.FAILURE_MISSING)) {
+            return worker + " needs arrows before using a bow or crossbow for hired work.";
+        }
+        return "";
+    }
+
+    private static String huntingDiagnostic(HiredWorkerBrain.Snapshot brain) {
+        String reason = lower(brain.failureReason());
+        if (reason.contains("hunting_loot_unreachable")) {
+            return "Hunter found loot from the hunt but cannot path to it.";
+        }
+        if (reason.contains("output_inventory_full")) {
+            return "Hunter found hunting loot to collect, but its job output is full.";
+        }
+        if (reason.contains("tool_storage_unreachable_hunting_weapon")) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return storagePos == null
+                    ? "Hunter found a bow, crossbow, axe, or sword in assigned tool storage, but cannot path to that container."
+                    : "Hunter found a bow, crossbow, axe, or sword in assigned tool storage at "
+                            + HiredWorkerBrain.formatPos(storagePos) + ", but cannot path to it.";
+        }
+        if (reason.contains("tool_inventory_full_hunting_weapon")) {
+            return "Hunter found a bow, crossbow, axe, or sword, but cannot fit it in job gear.";
+        }
+        if (reason.contains("hunting_arrow_storage_path_failed")) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return storagePos == null
+                    ? "Hunter found arrows in assigned storage, but cannot path to that container."
+                    : "Hunter found arrows in assigned storage at "
+                            + HiredWorkerBrain.formatPos(storagePos) + ", but cannot path to it.";
+        }
+        if (reason.contains("hunting_arrow_inventory_full")) {
+            return "Hunter found arrows, but cannot fit them in job supplies.";
+        }
+        if (reason.contains("missing_hunting_arrows")) {
+            return "Hunter needs arrows before hunting with a bow or crossbow.";
+        }
+        if (reason.contains("missing_hunting_weapon")) {
+            return "Hunter needs a bow, crossbow, axe, or sword before hunting can continue.";
+        }
+        return "";
+    }
+
     private static String brewingDiagnostic(
             HiredWorkerBrain.Snapshot brain,
             CompoundTag state,
@@ -765,6 +833,7 @@ public final class ClipboardWorkforceService {
         return switch (role) {
             case MINING -> HiredMiningMode.fromState(state).label();
             case COMBAT -> HiredCombatMode.fromState(state).label();
+            case HUNTING -> HiredHuntingTargets.selectionLabel(state);
             default -> "";
         };
     }
@@ -795,6 +864,9 @@ public final class ClipboardWorkforceService {
         }
         if (safeReason.contains("hoe")) {
             return "hoe";
+        }
+        if (safeReason.contains("hunting_weapon")) {
+            return "bow, crossbow, axe, or sword";
         }
         return fallback == null || fallback.isBlank() ? "tool" : fallback;
     }

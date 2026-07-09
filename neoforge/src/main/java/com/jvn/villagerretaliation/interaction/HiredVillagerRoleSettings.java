@@ -8,6 +8,7 @@ public final class HiredVillagerRoleSettings {
 
     public static int defaultHorizontalRadius(HiredVillagerRole role, int minRadius, int maxRadius) {
         int preferred = switch (role) {
+            case HUNTING -> 64;
             case MINING -> 24;
             case LOGGING -> 32;
             case FARMING -> 24;
@@ -20,6 +21,7 @@ public final class HiredVillagerRoleSettings {
 
     public static int defaultVerticalRadius(HiredVillagerRole role, int maxRadius) {
         int preferred = switch (role) {
+            case HUNTING -> 16;
             case LOGGING -> 16;
             case FARMING -> 6;
             case FISHING -> 8;
@@ -32,6 +34,7 @@ public final class HiredVillagerRoleSettings {
     public static String workReportMessageKey(HiredVillagerRole role) {
         return switch (role) {
             case COMBAT -> "interaction.work_report.combat";
+            case HUNTING -> "interaction.work_report.hunting";
             case MINING -> "interaction.work_report.mining";
             case LOGGING -> "interaction.work_report.logging";
             case FARMING -> "interaction.work_report.farming";
@@ -47,6 +50,7 @@ public final class HiredVillagerRoleSettings {
     public static String workFinalReportMessageKey(HiredVillagerRole role) {
         return switch (role) {
             case COMBAT -> "interaction.work_final_report.combat";
+            case HUNTING -> "interaction.work_final_report.hunting";
             case MINING -> "interaction.work_final_report.mining";
             case LOGGING -> "interaction.work_final_report.logging";
             case FARMING -> "interaction.work_final_report.farming";
@@ -61,7 +65,7 @@ public final class HiredVillagerRoleSettings {
 
     public static double skillGrowthAmount(HiredVillagerRole role) {
         double amount = switch (role) {
-            case COMBAT -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_COMBAT.get();
+            case COMBAT, HUNTING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_COMBAT.get();
             case MINING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_MINING.get();
             case LOGGING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_LOGGING.get();
             case FARMING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_FARMING.get();

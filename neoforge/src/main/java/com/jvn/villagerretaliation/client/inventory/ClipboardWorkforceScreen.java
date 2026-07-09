@@ -47,14 +47,15 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int PAGE_BUTTON_TOP = CONTENT_BOTTOM - PAGE_BUTTON_HEIGHT;
     private static final List<HiredVillagerRole> FIRST_OVERVIEW_PAGE_ROLES = List.of(
             HiredVillagerRole.COMBAT,
+            HiredVillagerRole.HUNTING,
             HiredVillagerRole.MINING,
             HiredVillagerRole.LOGGING,
             HiredVillagerRole.FARMING,
             HiredVillagerRole.FISHING,
             HiredVillagerRole.BREWING,
-            HiredVillagerRole.COOK,
-            HiredVillagerRole.BUILDER);
+            HiredVillagerRole.COOK);
     private static final List<HiredVillagerRole> SECOND_OVERVIEW_PAGE_ROLES = List.of(
+            HiredVillagerRole.BUILDER,
             HiredVillagerRole.ANIMAL_HANDLING,
             HiredVillagerRole.NITWIT);
     private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
@@ -531,14 +532,17 @@ public final class ClipboardWorkforceScreen extends Screen {
                 y,
                 Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_center_villager"),
                 ClipboardWorkAreaActionPayload.Action.RESET_CENTER_TO_VILLAGER);
-        if (this.selectedWorker.role() == HiredVillagerRole.MINING) {
+        if (this.selectedWorker.role() == HiredVillagerRole.MINING || this.selectedWorker.role() == HiredVillagerRole.HUNTING) {
+            String configureKey = this.selectedWorker.role() == HiredVillagerRole.HUNTING
+                    ? "villagerretaliation.gui.clipboard_workforce.job_site_configure_hunting"
+                    : "villagerretaliation.gui.clipboard_workforce.job_site_configure_mining";
             y = drawJobSiteActionRow(
                     graphics,
                     mouseX,
                     mouseY,
                     y,
                     Component.translatable(
-                            "villagerretaliation.gui.clipboard_workforce.job_site_configure_mining",
+                            configureKey,
                             Component.literal(this.selectedWorker.workMode())),
                     ClipboardWorkAreaActionPayload.Action.CONFIGURE_ROLE);
         }

@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCata
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalCullSettings;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
+import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
 import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
@@ -30,6 +31,7 @@ import com.jvn.villagerretaliation.network.HiredAnimalCullCapPayload;
 import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.HiredBrewingOrderPayload;
 import com.jvn.villagerretaliation.network.HiredFarmingOptionPayload;
+import com.jvn.villagerretaliation.network.HiredHuntingTargetPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingFilterPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingOptionPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
@@ -262,6 +264,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean activeBuilderTask;
     private boolean oneOffBuilderJob;
     private boolean farmingTillSoil;
+    private boolean huntingAnimals;
+    private boolean huntingHostiles;
+    private boolean huntingPlayers;
     private final Set<String> selectedLoggingFilters = new LinkedHashSet<>();
     private boolean loggingStripLogs;
     private boolean loggingHarvestLeaves;
@@ -375,6 +380,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean activeBuilderTask,
             boolean oneOffBuilderJob,
             boolean farmingTillSoil,
+            boolean huntingAnimals,
+            boolean huntingHostiles,
+            boolean huntingPlayers,
             List<String> selectedLoggingFilters,
             boolean loggingStripLogs,
             boolean loggingHarvestLeaves,
@@ -424,6 +432,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.activeBuilderTask = activeBuilderTask;
         this.oneOffBuilderJob = oneOffBuilderJob;
         this.farmingTillSoil = farmingTillSoil;
+        this.huntingAnimals = huntingAnimals;
+        this.huntingHostiles = huntingHostiles;
+        this.huntingPlayers = huntingPlayers;
         this.loggingStripLogs = loggingStripLogs;
         this.loggingHarvestLeaves = loggingHarvestLeaves;
         this.loggingBonemealSaplings = loggingBonemealSaplings;
@@ -882,6 +893,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addRoleChangeOptions();
         } else if (this.page == DialoguePage.WORK) {
             addWorkOptions();
+        } else if (this.page == DialoguePage.HUNTING_OPTIONS) {
+            addHuntingOptions();
         } else if (this.page == DialoguePage.FARMING_OPTIONS) {
             addFarmingOptions();
         } else if (this.page == DialoguePage.LOGGING_FILTERS) {
@@ -1061,6 +1074,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void addHireOptions() {
         addPassiveOption("recruit.hire_services_intro");
         addHireRoleOption(HiredVillagerRole.COMBAT, "recruit.role_combat");
+        addHireRoleOption(HiredVillagerRole.HUNTING, "recruit.role_hunting");
         addHireRoleOption(HiredVillagerRole.MINING, "recruit.role_mining");
         addHireRoleOption(HiredVillagerRole.LOGGING, "recruit.role_logging");
         addHireRoleOption(HiredVillagerRole.FARMING, "recruit.role_farming");
@@ -1122,6 +1136,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addRoleChangeOptions() {
         addRoleChangeOption(HiredVillagerRole.COMBAT, "recruit.role_combat", VillagerRecruitRequestPayload.Action.SET_ROLE_COMBAT);
+        addRoleChangeOption(HiredVillagerRole.HUNTING, "recruit.role_hunting", VillagerRecruitRequestPayload.Action.SET_ROLE_HUNTING);
         addRoleChangeOption(HiredVillagerRole.MINING, "recruit.role_mining", VillagerRecruitRequestPayload.Action.SET_ROLE_MINING);
         addRoleChangeOption(HiredVillagerRole.LOGGING, "recruit.role_logging", VillagerRecruitRequestPayload.Action.SET_ROLE_LOGGING);
         addRoleChangeOption(HiredVillagerRole.FARMING, "recruit.role_farming", VillagerRecruitRequestPayload.Action.SET_ROLE_FARMING);
@@ -1140,6 +1155,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.work_assigned_supplies", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES));
         addOption("recruit.work_auto_deposit", () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS));
         addRoleWorkConfigOption(HiredVillagerRole.COMBAT, "recruit.work_config_combat", VillagerRecruitRequestPayload.Action.CONFIGURE_COMBAT);
+        if (isActiveHiredRole(HiredVillagerRole.HUNTING)) {
+            addOption("recruit.work_config_hunting", this::openHuntingOptionsPage);
+        }
         addRoleWorkConfigOption(HiredVillagerRole.MINING, "recruit.work_config_mining", VillagerRecruitRequestPayload.Action.CONFIGURE_MINING);
         if (isActiveHiredRole(HiredVillagerRole.LOGGING)) {
             addOption("recruit.work_config_logging", this::openLoggingFiltersPage);
@@ -1189,6 +1207,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addFarmingOptions() {
         addFarmingOption(HiredFarmingOptions.TILL_SOIL, "recruit.farming_till_soil", this.farmingTillSoil);
+        addOption("recruit.nevermind", this::openWorkPage);
+    }
+
+    private void addHuntingOptions() {
+        addHuntingTargetOption(HiredHuntingTargets.ANIMALS, "recruit.hunting_animals", this.huntingAnimals);
+        addHuntingTargetOption(HiredHuntingTargets.HOSTILES, "recruit.hunting_hostiles", this.huntingHostiles);
+        addHuntingTargetOption(HiredHuntingTargets.PLAYERS, "recruit.hunting_players", this.huntingPlayers);
+        addHuntingTargetOption(HiredHuntingTargets.ALL, "recruit.hunting_all", this.huntingAnimals && this.huntingHostiles);
         addOption("recruit.nevermind", this::openWorkPage);
     }
 
@@ -1347,6 +1373,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.options.add(DialogueOption.enabled(
                 checkmarkRowLabel(translate(translationKey), enabled),
                 () -> requestFarmingOption(optionId)));
+    }
+
+    private void addHuntingTargetOption(String targetId, String translationKey, boolean enabled) {
+        this.options.add(DialogueOption.enabled(
+                checkmarkRowLabel(translate(translationKey), enabled),
+                () -> requestHuntingTarget(targetId)));
     }
 
     private void addBuilderStructureOptions() {
@@ -1689,6 +1721,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.WORK);
     }
 
+    private void openHuntingOptionsPage() {
+        openPage(DialoguePage.HUNTING_OPTIONS);
+    }
+
     private void openLoggingFiltersPage() {
         openPage(DialoguePage.LOGGING_FILTERS);
     }
@@ -1946,7 +1982,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             openPage(DialoguePage.HIRE);
             return;
         }
-        if (this.page == DialoguePage.FARMING_OPTIONS || this.page == DialoguePage.LOGGING_FILTERS) {
+        if (this.page == DialoguePage.HUNTING_OPTIONS
+                || this.page == DialoguePage.FARMING_OPTIONS
+                || this.page == DialoguePage.LOGGING_FILTERS) {
             openPage(DialoguePage.WORK);
             return;
         }
@@ -2169,6 +2207,24 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             this.farmingTillSoil = !this.farmingTillSoil;
             rebuildOptionsKeepingListPosition();
         }
+    }
+
+    private void requestHuntingTarget(String targetId) {
+        sendToServer(new HiredHuntingTargetPayload(this.villagerEntityId, targetId));
+        switch (targetId) {
+            case HiredHuntingTargets.ANIMALS -> this.huntingAnimals = !this.huntingAnimals;
+            case HiredHuntingTargets.HOSTILES -> this.huntingHostiles = !this.huntingHostiles;
+            case HiredHuntingTargets.PLAYERS -> this.huntingPlayers = !this.huntingPlayers;
+            case HiredHuntingTargets.ALL -> {
+                boolean enabled = !(this.huntingAnimals && this.huntingHostiles);
+                this.huntingAnimals = enabled;
+                this.huntingHostiles = enabled;
+            }
+            default -> {
+                return;
+            }
+        }
+        rebuildOptionsKeepingListPosition();
     }
 
     private static boolean isHireDurationAction(VillagerRecruitRequestPayload.Action action) {
@@ -4584,6 +4640,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     END_CONTRACT_CONFIRMATION,
                     CONTRACT_EXTENSION,
                     ROLE_CHANGE,
+                    HUNTING_OPTIONS,
                     FARMING_OPTIONS,
                     LOGGING_FILTERS,
                     ANIMAL_HANDLING_OPTIONS,
@@ -4621,6 +4678,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         ROLE,
         ROLE_CHANGE,
         WORK,
+        HUNTING_OPTIONS,
         FARMING_OPTIONS,
         LOGGING_FILTERS,
         ANIMAL_HANDLING_OPTIONS,

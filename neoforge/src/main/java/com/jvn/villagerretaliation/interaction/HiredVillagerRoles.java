@@ -13,17 +13,18 @@ import net.minecraft.world.entity.npc.Villager;
 
 public final class HiredVillagerRoles {
     private static final int SKILL_UNLOCK_THRESHOLD = 55;
-    private static final Map<HiredVillagerRole, List<VillagerSkill>> ROLE_SKILLS = Map.of(
-            HiredVillagerRole.COMBAT, List.of(VillagerSkill.GUARDING, VillagerSkill.ARCHERY, VillagerSkill.SMITHING),
-            HiredVillagerRole.MINING, List.of(VillagerSkill.MINING, VillagerSkill.MASONRY),
-            HiredVillagerRole.LOGGING, List.of(VillagerSkill.GATHERING, VillagerSkill.CRAFTING),
-            HiredVillagerRole.FARMING, List.of(VillagerSkill.FARMING),
-            HiredVillagerRole.FISHING, List.of(VillagerSkill.FISHING, VillagerSkill.SURVIVAL),
-            HiredVillagerRole.BREWING, List.of(VillagerSkill.MEDICINE),
-            HiredVillagerRole.BUILDER, List.of(VillagerSkill.MASONRY, VillagerSkill.CRAFTING, VillagerSkill.GATHERING),
-            HiredVillagerRole.ANIMAL_HANDLING, List.of(VillagerSkill.ANIMAL_HANDLING),
-            HiredVillagerRole.NITWIT, List.of(VillagerSkill.SURVIVAL, VillagerSkill.GATHERING, VillagerSkill.DIPLOMACY),
-            HiredVillagerRole.COOK, List.of(VillagerSkill.COOKING)
+    private static final Map<HiredVillagerRole, List<VillagerSkill>> ROLE_SKILLS = Map.ofEntries(
+            Map.entry(HiredVillagerRole.COMBAT, List.of(VillagerSkill.GUARDING, VillagerSkill.ARCHERY, VillagerSkill.SMITHING)),
+            Map.entry(HiredVillagerRole.HUNTING, List.of(VillagerSkill.ARCHERY, VillagerSkill.SURVIVAL, VillagerSkill.ANIMAL_HANDLING)),
+            Map.entry(HiredVillagerRole.MINING, List.of(VillagerSkill.MINING, VillagerSkill.MASONRY)),
+            Map.entry(HiredVillagerRole.LOGGING, List.of(VillagerSkill.GATHERING, VillagerSkill.CRAFTING)),
+            Map.entry(HiredVillagerRole.FARMING, List.of(VillagerSkill.FARMING)),
+            Map.entry(HiredVillagerRole.FISHING, List.of(VillagerSkill.FISHING, VillagerSkill.SURVIVAL)),
+            Map.entry(HiredVillagerRole.BREWING, List.of(VillagerSkill.MEDICINE)),
+            Map.entry(HiredVillagerRole.BUILDER, List.of(VillagerSkill.MASONRY, VillagerSkill.CRAFTING, VillagerSkill.GATHERING)),
+            Map.entry(HiredVillagerRole.ANIMAL_HANDLING, List.of(VillagerSkill.ANIMAL_HANDLING)),
+            Map.entry(HiredVillagerRole.NITWIT, List.of(VillagerSkill.SURVIVAL, VillagerSkill.GATHERING, VillagerSkill.DIPLOMACY)),
+            Map.entry(HiredVillagerRole.COOK, List.of(VillagerSkill.COOKING))
     );
 
     private HiredVillagerRoles() {
@@ -126,16 +127,16 @@ public final class HiredVillagerRoles {
     private static EnumSet<HiredVillagerRole> preferredRoles(Villager villager) {
         return switch (VillagerProfessionSkills.professionKey(villager)) {
             case "nitwit" -> EnumSet.of(HiredVillagerRole.NITWIT);
-            case "armorer", "weaponsmith" -> EnumSet.of(HiredVillagerRole.COMBAT, HiredVillagerRole.MINING);
+            case "armorer", "weaponsmith" -> EnumSet.of(HiredVillagerRole.COMBAT, HiredVillagerRole.HUNTING, HiredVillagerRole.MINING);
             case "toolsmith" -> EnumSet.of(HiredVillagerRole.MINING, HiredVillagerRole.LOGGING, HiredVillagerRole.BUILDER);
             case "mason" -> EnumSet.of(HiredVillagerRole.BUILDER, HiredVillagerRole.MINING);
             case "farmer" -> EnumSet.of(HiredVillagerRole.FARMING, HiredVillagerRole.COOK, HiredVillagerRole.ANIMAL_HANDLING);
             case "fisherman" -> EnumSet.of(HiredVillagerRole.FISHING);
             case "cartographer" -> EnumSet.of(HiredVillagerRole.FISHING, HiredVillagerRole.BUILDER);
             case "cleric" -> EnumSet.of(HiredVillagerRole.BREWING);
-            case "butcher" -> EnumSet.of(HiredVillagerRole.COOK, HiredVillagerRole.ANIMAL_HANDLING);
-            case "shepherd", "leatherworker" -> EnumSet.of(HiredVillagerRole.ANIMAL_HANDLING);
-            case "fletcher" -> EnumSet.of(HiredVillagerRole.COMBAT, HiredVillagerRole.LOGGING);
+            case "butcher" -> EnumSet.of(HiredVillagerRole.COOK, HiredVillagerRole.ANIMAL_HANDLING, HiredVillagerRole.HUNTING);
+            case "shepherd", "leatherworker" -> EnumSet.of(HiredVillagerRole.ANIMAL_HANDLING, HiredVillagerRole.HUNTING);
+            case "fletcher" -> EnumSet.of(HiredVillagerRole.COMBAT, HiredVillagerRole.HUNTING, HiredVillagerRole.LOGGING);
             default -> EnumSet.noneOf(HiredVillagerRole.class);
         };
     }

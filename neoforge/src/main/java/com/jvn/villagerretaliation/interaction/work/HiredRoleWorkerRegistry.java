@@ -14,6 +14,7 @@ public final class HiredRoleWorkerRegistry {
 
     static {
         register(new CombatWorker());
+        register(new HuntingWorker());
         register(new LoggingWorker());
         register(new MiningWorker());
         register(new FarmingWorker());

@@ -5,6 +5,8 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.Act
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
@@ -86,6 +88,14 @@ public final class VillagerRetaliationHandler {
         VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
         VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
+    }
+
+    public static void suspendCombatForInteraction(Villager villager) {
+        clearAnger(villager);
+    }
+
+    public static void clearCustomTarget(Villager villager) {
+        clearAnger(villager, false);
     }
 
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
@@ -314,6 +324,12 @@ public final class VillagerRetaliationHandler {
         }
         if (!VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)) {
             clearAnger(villager);
+            handlePassivePotionState(villager);
+            return;
+        }
+        if (isHiredHunter(level, villager)
+                && !VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target)) {
+            clearAnger(villager, false);
             handlePassivePotionState(villager);
             return;
         }
@@ -731,6 +747,10 @@ public final class VillagerRetaliationHandler {
     private static boolean shouldRetaliateAgainstAttacker(Villager villager, LivingEntity attacker) {
         return VillagerRetaliationConfig.VILLAGERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
                 || !isHostileMobAttacker(villager, attacker);
+    }
+
+    private static boolean isHiredHunter(ServerLevel level, Villager villager) {
+        return HiredVillagerContractService.activeRole(level, villager) == HiredVillagerRole.HUNTING;
     }
 
     private static boolean tryHandleUnarmedLowGutsPlayerHit(Villager villager, LivingEntity attacker) {

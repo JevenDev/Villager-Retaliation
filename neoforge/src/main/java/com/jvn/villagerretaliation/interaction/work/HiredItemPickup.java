@@ -94,6 +94,15 @@ public final class HiredItemPickup {
                 : WorkResult.progressed(messages.collected(), Map.of("count", Integer.toString(moved)));
     }
 
+    public static BlockPos nearestOutputItemPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Predicate<ItemStack> itemFilter) {
+        ItemEntity item = findNearestOutputItem(level, villager, context, itemFilter);
+        return item == null ? null : item.blockPosition();
+    }
+
     private static ItemEntity findNearestOutputItem(
             ServerLevel level,
             Villager villager,

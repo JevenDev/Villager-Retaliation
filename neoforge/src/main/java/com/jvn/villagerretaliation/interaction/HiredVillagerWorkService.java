@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalCullSettings;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
+import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
@@ -75,6 +76,7 @@ public final class HiredVillagerWorkService {
     private static final int MIN_WORK_RADIUS = 4;
     private static final int SKILL_RADIUS_BASELINE = 50;
     private static final int MAX_SKILLED_WORK_RADIUS = 32;
+    private static final int HUNTING_WORK_RADIUS = 64;
     private static final int WORK_AREA_RETURN_PATH_RETRY_TICKS = 20;
     private static final int MAX_RETURN_TARGETS_TO_PATHFIND = 32;
     private static final int RETURN_INTERMEDIATE_SEARCH_RADIUS = 10;
@@ -1186,6 +1188,10 @@ public final class HiredVillagerWorkService {
         }
         int max = maxWorkRadius(level, villager, role);
         HiredWorkArea area = workAreaWithinMax(state, villager, max);
+        if (role == HiredVillagerRole.HUNTING) {
+            changeCenteredHuntingRadius(player, villager, state, area, max, direction, delta);
+            return;
+        }
         BlockPos center = area.center();
         BlockPos min = area.min();
         BlockPos maxPos = area.max();
@@ -1202,6 +1208,31 @@ public final class HiredVillagerWorkService {
         setStatus(state, "interaction.work.status.bounds", Map.of(
                 "dimensions", dimensions(updated),
                 "bounds", updated.boundsDescription()));
+        sendStatusNotice(player, villager, state);
+    }
+
+    private static void changeCenteredHuntingRadius(
+            ServerPlayer player,
+            Villager villager,
+            CompoundTag state,
+            HiredWorkArea area,
+            int max,
+            Direction direction,
+            int delta) {
+        boolean vertical = direction.getAxis() == Direction.Axis.Y;
+        int horizontalRadius = area.horizontalRadius();
+        int verticalRadius = area.verticalRadius();
+        if (vertical) {
+            verticalRadius = HiredWorkArea.clampRadius(verticalRadius + delta, 1, max);
+        } else {
+            horizontalRadius = HiredWorkArea.clampRadius(horizontalRadius + delta, MIN_WORK_RADIUS, max);
+        }
+        HiredWorkArea.fromCenter(area.center(), horizontalRadius, verticalRadius, true).clampedTo(max).save(state);
+        setStatus(state, vertical
+                ? "interaction.work.status.vertical_radius"
+                : "interaction.work.status.horizontal_radius", Map.of(
+                "radius", Integer.toString(vertical ? verticalRadius : horizontalRadius),
+                "max", Integer.toString(max)));
         sendStatusNotice(player, villager, state);
     }
 
@@ -1263,6 +1294,13 @@ public final class HiredVillagerWorkService {
                 HiredWorkPlan.clear(session.context());
                 session.context().setProgressTicks(0);
                 setStatus(state, "interaction.work.status.mining_orders", Map.of("mode", next.label()));
+            }
+            case HUNTING -> {
+                HiredHuntingTargets.initializeDefaults(state);
+                HiredWorkSession session = HiredWorkSession.active(level, villager);
+                HiredWorkPlan.clear(session.context());
+                session.context().setProgressTicks(0);
+                setStatus(state, "interaction.work.status.hunting_orders", Map.of("mode", HiredHuntingTargets.selectionLabel(state)));
             }
             case LOGGING -> {
                 setStatus(state, "interaction.work.status.logging_filter", Map.of("filter", HiredLoggingFilters.selectionLabel(state)));
@@ -1366,6 +1404,36 @@ public final class HiredVillagerWorkService {
         setStatus(state, "interaction.work.status.farming_option", Map.of(
                 "option", HiredFarmingOptions.label(result.optionId()),
                 "state", result.enabled() ? "enabled" : "disabled"));
+        sendStatusNotice(player, villager, state);
+    }
+
+    public static void toggleHuntingTarget(ServerPlayer player, ServerLevel level, Villager villager, String targetId) {
+        if (!canManageWork(level, villager, player)) {
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
+            return;
+        }
+        if (HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.HUNTING) {
+            com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(
+                    player,
+                    villager,
+                    "interaction.work.configure.requires_role",
+                    Map.of("role", HiredVillagerRole.HUNTING.label()));
+            return;
+        }
+
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        HiredHuntingTargets.ToggleResult result = HiredHuntingTargets.toggle(state, targetId);
+        if (result.invalid()) {
+            return;
+        }
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        HiredWorkPlan.clear(session.context());
+        session.context().setProgressTicks(0);
+        setStatus(state, "interaction.work.status.hunting_target", Map.of(
+                "target", HiredHuntingTargets.label(result.optionId()),
+                "state", result.enabled() ? "enabled" : "disabled",
+                "mode", HiredHuntingTargets.selectionLabel(state)));
         sendStatusNotice(player, villager, state);
     }
 
@@ -1491,6 +1559,21 @@ public final class HiredVillagerWorkService {
         }
         int maxRadius = maxWorkRadius(level, villager, role);
         HiredWorkArea requested = HiredWorkArea.fromBounds(first, second, true);
+        if (role == HiredVillagerRole.HUNTING) {
+            HiredWorkArea current = workAreaWithinMax(state, villager, maxRadius);
+            int horizontalRadius = current.explicitlyAssigned()
+                    ? current.horizontalRadius()
+                    : HiredVillagerRoleSettings.defaultHorizontalRadius(role, MIN_WORK_RADIUS, maxRadius);
+            int verticalRadius = current.explicitlyAssigned()
+                    ? current.verticalRadius()
+                    : HiredVillagerRoleSettings.defaultVerticalRadius(role, maxRadius);
+            HiredWorkArea.fromCenter(requested.center(), horizontalRadius, verticalRadius, true)
+                    .clampedTo(maxRadius)
+                    .save(state);
+            setStatus(state, "interaction.work.status.center_set_here", Map.of("range", workArea(state, villager).rangeDescription()));
+            sendStatusNotice(player, villager, state);
+            return true;
+        }
         HiredWorkArea area = requested.clampedTo(maxRadius);
         boolean capped = requested.horizontalRadius() > area.horizontalRadius()
                 || requested.verticalRadius() > area.verticalRadius();
@@ -1573,6 +1656,10 @@ public final class HiredVillagerWorkService {
         if (!state.contains(HiredCombatMode.STATE_TAG, Tag.TAG_STRING)) {
             state.putString(HiredCombatMode.STATE_TAG, HiredCombatMode.GUARD.serializedName());
         }
+        if (!state.contains(HiredHuntingMode.STATE_TAG, Tag.TAG_STRING)) {
+            state.putString(HiredHuntingMode.STATE_TAG, HiredHuntingMode.fromState(state).serializedName());
+        }
+        HiredHuntingTargets.initializeDefaults(state);
         if (!state.contains("Status", Tag.TAG_STRING)) {
             setStatus(state, "interaction.work.status.waiting_tick");
         }
@@ -1614,6 +1701,9 @@ public final class HiredVillagerWorkService {
     }
 
     static int maxWorkRadius(ServerLevel level, Villager villager, HiredVillagerRole role, int roleScore) {
+        if (role == HiredVillagerRole.HUNTING) {
+            return HUNTING_WORK_RADIUS;
+        }
         int base = baseWorkRadiusCap();
         int max = Mth.clamp(VillagerRetaliationConfig.HIRED_WORK_MAX_RADIUS.get(), base, MAX_SKILLED_WORK_RADIUS);
         int score = Mth.clamp(roleScore, 0, 100);

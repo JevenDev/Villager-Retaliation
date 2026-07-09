@@ -119,7 +119,7 @@ public final class VillagerInteractionService {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
-                && shouldStayConversable(player, villager);
+                && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
 
     public static boolean shouldSuppressClientVanillaInteraction(Villager villager, Player player, InteractionHand hand) {
@@ -153,14 +153,14 @@ public final class VillagerInteractionService {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
                 && VillagerRetaliationItems.isClipboard(player.getItemInHand(hand))
-                && shouldStayConversable(player, villager);
+                && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
 
     public static boolean shouldHandleConstructionBlueprintInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
                 && ConstructionBlueprintItem.isBlueprint(player.getItemInHand(hand))
-                && shouldStayConversable(player, villager);
+                && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
 
     public static InteractionResult handleVillagerRightClick(Villager villager, ServerPlayer player) {
@@ -192,6 +192,10 @@ public final class VillagerInteractionService {
             VillagerAmbientIndicatorService.onTradeRefused(villager);
             sendVillagerNotice(player, villager, "interaction.refuse_angry");
             return InteractionResult.FAIL;
+        }
+
+        if (isCombatBusy(villager) && canInterruptHiredWorkForInteraction(player, villager)) {
+            VillagerRetaliationHandler.suspendCombatForInteraction(villager);
         }
 
         if (shouldTriggerEdmundoEasterEgg(player, villager)
@@ -1022,6 +1026,7 @@ public final class VillagerInteractionService {
             VillagerRecruitRequestPayload.Action action) {
         HiredVillagerRole role = switch (action) {
             case SET_ROLE_COMBAT -> HiredVillagerRole.COMBAT;
+            case SET_ROLE_HUNTING -> HiredVillagerRole.HUNTING;
             case SET_ROLE_MINING -> HiredVillagerRole.MINING;
             case SET_ROLE_LOGGING -> HiredVillagerRole.LOGGING;
             case SET_ROLE_FARMING -> HiredVillagerRole.FARMING;
@@ -1066,6 +1071,7 @@ public final class VillagerInteractionService {
             VillagerRecruitRequestPayload.Action action) {
         HiredVillagerRole configureRole = switch (action) {
             case CONFIGURE_COMBAT -> HiredVillagerRole.COMBAT;
+            case CONFIGURE_HUNTING -> HiredVillagerRole.HUNTING;
             case CONFIGURE_MINING -> HiredVillagerRole.MINING;
             case CONFIGURE_LOGGING -> HiredVillagerRole.LOGGING;
             case CONFIGURE_FARMING -> HiredVillagerRole.FARMING;
@@ -1429,6 +1435,22 @@ public final class VillagerInteractionService {
         }
         focusVillagerOnPlayer(villager, player);
         HiredVillagerWorkService.toggleFarmingOption(player, level, villager, optionId);
+    }
+
+    public static void handleHuntingTargetRequest(ServerPlayer player, int entityId, String targetId) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
+            return;
+        }
+        focusVillagerOnPlayer(villager, player);
+        HiredVillagerWorkService.toggleHuntingTarget(player, level, villager, targetId);
     }
 
     public static void handleAnimalBreedingTargetRequest(ServerPlayer player, int entityId, String targetId) {
@@ -2093,11 +2115,17 @@ public final class VillagerInteractionService {
     }
 
     public static boolean canUseInteractionSystem(ServerPlayer player, Villager villager) {
-        return canUseInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+        return canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
 
     public static boolean canUseForcedInteractionSystem(ServerPlayer player, Villager villager) {
         return canUseInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get());
+    }
+
+    static void prepareForInteractionSession(ServerPlayer player, Villager villager) {
+        if (isCombatBusy(villager) && canInterruptHiredWorkForInteraction(player, villager)) {
+            VillagerRetaliationHandler.suspendCombatForInteraction(villager);
+        }
     }
 
     public static boolean shouldStayConversable(ServerPlayer player, Villager villager) {
@@ -2138,8 +2166,24 @@ public final class VillagerInteractionService {
                 && player.distanceToSqr(villager) <= maxDistance * maxDistance;
     }
 
+    private static boolean canOpenInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping, double maxDistance) {
+        return villager.isAlive()
+                && (allowSleeping || !villager.isSleeping())
+                && !villager.isTrading()
+                && (!isCombatBusy(villager) || canInterruptHiredWorkForInteraction(player, villager))
+                && !VillagerRetaliationHandler.isHostileTowards(villager, player)
+                && player.isAlive()
+                && !player.isSpectator()
+                && player.distanceToSqr(villager) <= maxDistance * maxDistance;
+    }
+
     private static boolean isCombatBusy(Villager villager) {
         return villager.getTarget() != null || villager.getLastHurtByMob() != null;
+    }
+
+    private static boolean canInterruptHiredWorkForInteraction(ServerPlayer player, Villager villager) {
+        return villager.level() instanceof ServerLevel level
+                && HiredVillagerContractService.isHiredBy(level, villager, player);
     }
 
     private static boolean shouldRefuseDespisedConversation(Villager villager, ServerPlayer player) {

@@ -41,8 +41,7 @@ public enum HiredCombatMode {
     }
 
     public HiredCombatMode next() {
-        HiredCombatMode[] values = values();
-        return values[(this.ordinal() + 1) % values.length];
+        return this == GUARD ? ROAMING : GUARD;
     }
 
     public static HiredCombatMode bySerializedName(String value) {
@@ -63,6 +62,6 @@ public enum HiredCombatMode {
             return GUARD;
         }
         HiredCombatMode mode = bySerializedName(state.getString(STATE_TAG));
-        return mode == null ? GUARD : mode;
+        return mode == null ? GUARD : mode == ATTACK_ALL || mode == HUNTING ? ROAMING : mode;
     }
 }

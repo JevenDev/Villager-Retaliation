@@ -29,7 +29,7 @@ public final class CombatWorker implements HiredRoleWorker {
     private static final int MIN_PATROL_DELAY_TICKS = 60;
     private static final int RANDOM_PATROL_DELAY_TICKS = 80;
     private static final int TARGET_SCAN_INTERVAL_TICKS = 20;
-    private static final double PATROL_SPEED = 0.78D;
+    private static final double PATROL_SPEED = 0.55D;
     private static final int PATROL_TARGET_ATTEMPTS = 10;
     private static final double TARGET_SCAN_RADIUS_PADDING = 4.0D;
 
@@ -40,9 +40,18 @@ public final class CombatWorker implements HiredRoleWorker {
 
     @Override
     public void maintain(ServerLevel level, Villager villager, HiredWorkContext context) {
+        HiredWorkerBrain.Snapshot brain = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
+        if (brain.taskState().keepsStorageTarget() && brain.storageTargetPos() != null) {
+            return;
+        }
         HiredCombatMode mode = HiredCombatMode.fromState(context.state());
         if (villager.getTarget() != null || villager.getLastHurtByMob() != null) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING, villager.blockPosition());
+            return;
+        }
+
+        if (!HiredRangedAmmo.hasAmmoForEquippedWeapon(context, villager)) {
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, context.workCenter());
             return;
         }
 
@@ -67,6 +76,10 @@ public final class CombatWorker implements HiredRoleWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         context.setProgressTicks(0);
         HiredCombatMode mode = HiredCombatMode.fromState(context.state());
+        WorkResult ammoResult = HiredRangedAmmo.ensureReady(level, villager, context, PATROL_SPEED);
+        if (ammoResult != null) {
+            return ammoResult;
+        }
         if (villager.getTarget() != null && villager.getTarget().isAlive()) {
             HiredWorkerBrain.setLastTargetScanResult(context, "engaged_target");
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING, villager.getTarget().blockPosition());

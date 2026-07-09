@@ -19,6 +19,7 @@ import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalCullSettings;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
+import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
@@ -146,6 +147,7 @@ public final class VillagerInteractionScreenOpener {
         VillagerReputationNetworking.sendProfile(player, villager, profile);
         net.minecraft.nbt.CompoundTag workState = HiredVillagerWorkService.state(villager);
         HiredVillagerWorkService.initializeDefaults(workState, villager);
+        HiredHuntingTargets.Selection huntingTargets = HiredHuntingTargets.fromState(workState);
         return new OpenVillagerInteractionPayload(
                 villager.getId(),
                 "",
@@ -180,6 +182,9 @@ public final class VillagerInteractionScreenOpener {
                 BuilderTaskState.hasTask(workState),
                 HiredVillagerContractService.isOneOffBuilderJob(level, villager),
                 HiredFarmingOptions.tillSoil(workState),
+                huntingTargets.animals(),
+                huntingTargets.hostiles(),
+                huntingTargets.players(),
                 HiredLoggingFilters.selectedFilterStrings(workState),
                 HiredLoggingOptions.stripLogs(workState),
                 HiredLoggingOptions.harvestLeaves(workState),

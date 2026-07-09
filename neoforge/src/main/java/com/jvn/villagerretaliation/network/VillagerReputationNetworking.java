@@ -322,6 +322,16 @@ public final class VillagerReputationNetworking {
                     )))
         );
         network.playToServer(
+                HiredHuntingTargetPayload.TYPE,
+                HiredHuntingTargetPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleHuntingTargetRequest(
+                            player,
+                            payload.entityId(),
+                            payload.targetId()
+                    )))
+        );
+        network.playToServer(
                 HiredAnimalBreedingTargetPayload.TYPE,
                 HiredAnimalBreedingTargetPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->

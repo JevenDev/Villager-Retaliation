@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -64,6 +65,10 @@ final class VillagerRangedCombatHelper {
 
         if (VillagerRetaliationVillagerWeapons.isTridentWeapon(rangedWeapon)) {
             return tryTridentAttack(villager, target, level, distanceSqr, movementSpeed);
+        }
+        if (!HiredRangedAmmo.canUseRangedAttack(villager, rangedWeapon)) {
+            stopAmmoBlockedRangedUse(villager, rangedWeapon);
+            return false;
         }
 
         boolean hasLineOfSight = villager.hasLineOfSight(target);
@@ -204,8 +209,11 @@ final class VillagerRangedCombatHelper {
                 int drawTicks = villager.getTicksUsingItem();
                 if (drawTicks >= BOW_DRAW_TICKS) {
                     villager.stopUsingItem();
-                    fireBowLikeIllusioner(villager, target, level, BowItem.getPowerForTime(drawTicks));
-                    ATTACK_DELAY.put(villager.getUUID(), BOW_ATTACK_INTERVAL_TICKS);
+                    if (fireBowLikeIllusioner(villager, target, level, BowItem.getPowerForTime(drawTicks))) {
+                        ATTACK_DELAY.put(villager.getUUID(), BOW_ATTACK_INTERVAL_TICKS);
+                    } else {
+                        ATTACK_DELAY.put(villager.getUUID(), INITIAL_RANGED_WINDUP_TICKS);
+                    }
                 }
             }
             return;
@@ -222,12 +230,12 @@ final class VillagerRangedCombatHelper {
         }
     }
 
-    private static void fireBowLikeIllusioner(AbstractVillager villager, LivingEntity target, ServerLevel level, float power) {
+    private static boolean fireBowLikeIllusioner(AbstractVillager villager, LivingEntity target, ServerLevel level, float power) {
         InteractionHand hand = VillagerRetaliationVillagerWeapons.getHoldingHand(villager, VillagerRetaliationVillagerWeapons::isBowWeapon);
         ItemStack bowStack = villager.getItemInHand(hand);
-        ItemStack ammo = villager.getProjectile(bowStack);
+        ItemStack ammo = resolveBowProjectile(villager, bowStack);
         if (ammo.isEmpty()) {
-            ammo = new ItemStack(Items.ARROW);
+            return false;
         }
 
         AbstractArrow arrow = ProjectileUtil.getMobArrow(villager, ammo, power, bowStack);
@@ -248,6 +256,7 @@ final class VillagerRangedCombatHelper {
         );
         villager.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (villager.getRandom().nextFloat() * 0.4F + 0.8F));
         level.addFreshEntity(arrow);
+        return true;
     }
 
     private static void handleCrossbowAttack(
@@ -294,7 +303,10 @@ final class VillagerRangedCombatHelper {
             int chargeTicks = villager.getTicksUsingItem();
             if (chargeTicks >= CrossbowItem.getChargeDuration(using, villager)) {
                 villager.releaseUsingItem();
-                ensureCrossbowMarkedCharged(villager);
+                if (!ensureCrossbowMarkedCharged(villager)) {
+                    stopCrossbowAttack(villager);
+                    return;
+                }
                 CROSSBOW_STATE.put(villagerId, CrossbowState.CHARGED);
                 ATTACK_DELAY.put(villagerId, nextCrossbowPostLoadDelay(villager));
             }
@@ -399,24 +411,49 @@ final class VillagerRangedCombatHelper {
         }
     }
 
-    private static void ensureCrossbowMarkedCharged(AbstractVillager villager) {
+    private static boolean ensureCrossbowMarkedCharged(AbstractVillager villager) {
         InteractionHand hand = VillagerRetaliationVillagerWeapons.getHoldingHand(villager, VillagerRetaliationVillagerWeapons::isCrossbowWeapon);
         ItemStack weapon = villager.getItemInHand(hand);
         if (weapon.getItem() instanceof CrossbowItem && !CrossbowItem.isCharged(weapon)) {
-            weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(List.of(resolveDefaultCrossbowProjectile(villager, weapon))));
+            ItemStack projectile = resolveDefaultCrossbowProjectile(villager, weapon);
+            if (projectile.isEmpty()) {
+                return false;
+            }
+            weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(List.of(projectile)));
             villager.setItemInHand(hand, weapon.copy());
         }
+        return true;
     }
 
     private static ItemStack resolveDefaultCrossbowProjectile(AbstractVillager villager, ItemStack crossbow) {
-        ItemStack projectile = villager.getProjectile(crossbow);
+        ItemStack projectile = HiredRangedAmmo.requiresAmmo(villager, crossbow)
+                ? HiredRangedAmmo.consumeAmmo(villager)
+                : defaultMobProjectile(villager, crossbow);
         if (projectile.isEmpty()) {
-            projectile = new ItemStack(Items.ARROW);
-        } else {
-            projectile = projectile.copyWithCount(1);
+            return ItemStack.EMPTY;
         }
         projectile.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
         return projectile;
+    }
+
+    private static ItemStack resolveBowProjectile(AbstractVillager villager, ItemStack bow) {
+        if (HiredRangedAmmo.requiresAmmo(villager, bow)) {
+            return HiredRangedAmmo.consumeAmmo(villager);
+        }
+        return defaultMobProjectile(villager, bow);
+    }
+
+    private static ItemStack defaultMobProjectile(AbstractVillager villager, ItemStack weapon) {
+        ItemStack projectile = villager.getProjectile(weapon);
+        return projectile.isEmpty() ? new ItemStack(Items.ARROW) : projectile.copyWithCount(1);
+    }
+
+    private static void stopAmmoBlockedRangedUse(AbstractVillager villager, ItemStack weapon) {
+        if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(weapon)) {
+            stopCrossbowAttack(villager);
+        } else if (villager.isUsingItem() && VillagerRetaliationVillagerWeapons.isBowWeapon(villager.getUseItem())) {
+            villager.stopUsingItem();
+        }
     }
 
     private enum CrossbowState {

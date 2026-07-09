@@ -282,6 +282,66 @@
       "id": "global.messages.12_work_status.messages.interaction.work.status.tool_inventory_full.014"
     },
     {
+      "key": "interaction.work.status.collecting_arrows",
+      "lines": [
+        "I am collecting arrows from assigned storage.",
+        "Right now, that is my focus. I am collecting arrows from assigned storage.",
+        "That is my current step. I am collecting arrows from assigned storage.",
+        "I am keeping the job moving. I am collecting arrows from assigned storage.",
+        "This is where I am in the work. I am collecting arrows from assigned storage.",
+        "I am staying with the task. I am collecting arrows from assigned storage."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.collecting_arrows.101"
+    },
+    {
+      "key": "interaction.work.status.gathered_arrows",
+      "lines": [
+        "I have arrows and am returning to the work area.",
+        "Arrows are stocked. I am heading back to work.",
+        "I gathered arrows and am returning to the assigned area.",
+        "I have what I need for ranged work now.",
+        "The arrows are ready. I am going back to my post.",
+        "I restocked arrows and am returning to work."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.gathered_arrows.102"
+    },
+    {
+      "key": "interaction.work.status.missing_arrows",
+      "lines": [
+        "I need arrows before I can use a bow or crossbow for hired work.",
+        "My ranged weapon needs arrows first.",
+        "I cannot use this ranged weapon without arrows.",
+        "Give me arrows in job supplies or assigned storage.",
+        "The job is waiting on arrows.",
+        "I have the ranged weapon, but I need arrows for it."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.missing_arrows.103"
+    },
+    {
+      "key": "interaction.work.status.arrow_storage_unreachable",
+      "lines": [
+        "I found arrows in assigned storage, but I cannot reach that container.",
+        "The arrows are stored somewhere I cannot path to.",
+        "I can see where the arrows are assigned, but I cannot get there.",
+        "I need a reachable path to the arrow storage.",
+        "The job is paused because I cannot reach the arrows.",
+        "I found arrows, but the storage path is blocked."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.arrow_storage_unreachable.104"
+    },
+    {
+      "key": "interaction.work.status.arrow_inventory_full",
+      "lines": [
+        "I found arrows, but I cannot fit them in my job supplies.",
+        "The arrow storage is reachable, but my work gear has no room.",
+        "I need space in job supplies before I can carry arrows.",
+        "The job is paused because I cannot store arrows.",
+        "I reached the arrows, but my supplies are full.",
+        "I cannot pick up arrows until there is room in the job inventory."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.arrow_inventory_full.105"
+    },
+    {
       "key": "interaction.work.status.return_path_lost",
       "lines": [
         "I lost the path back into the work area, so I am finding a better way down.",
@@ -600,6 +660,34 @@
         "For the moment: My mining orders are now {mode}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.mining_orders.035"
+    },
+    {
+      "key": "interaction.work.status.hunting_orders",
+      "lines": [
+        "My hunting orders are now {mode}.",
+        "All right. My hunting orders are now {mode}.",
+        "Here is the update: My hunting orders are now {mode}.",
+        "Understood. My hunting orders are now {mode}.",
+        "For the moment, I will hunt: {mode}.",
+        "I will range the assigned grounds under {mode} orders.",
+        "That is settled. My hunting orders are now {mode}.",
+        "Nothing else to add yet. My hunting orders are now {mode}.",
+        "Plainly put: My hunting orders are now {mode}.",
+        "For now, I will follow {mode} hunting orders."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.hunting_orders.100"
+    },
+    {
+      "key": "interaction.work.status.hunting_target",
+      "lines": [
+        "{target} is now {state}. Current hunting orders: {mode}.",
+        "All right. {target} is now {state}. Current hunting orders: {mode}.",
+        "I have set {target} to {state}. Current hunting orders: {mode}.",
+        "Understood. {target} is now {state}.",
+        "For the hunt, {target} is now {state}.",
+        "That target setting is now {state}: {target}."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.hunting_target.101"
     },
     {
       "key": "interaction.work.status.logging_filter",

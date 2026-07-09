@@ -1,0 +1,175 @@
+package com.jvn.villagerretaliation.interaction.work;
+
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.CrossbowItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+
+public final class HiredRangedAmmo {
+    public static final String FAILURE_STORAGE_PATH = "ranged_ammo_storage_path_failed";
+    public static final String FAILURE_INVENTORY_FULL = "ranged_ammo_inventory_full";
+    public static final String FAILURE_MISSING = "missing_ranged_ammo";
+    public static final String STATUS_COLLECTING = "interaction.work.status.collecting_arrows";
+    public static final String STATUS_GATHERED = "interaction.work.status.gathered_arrows";
+    public static final String STATUS_MISSING = "interaction.work.status.missing_arrows";
+    public static final String STATUS_STORAGE_UNREACHABLE = "interaction.work.status.arrow_storage_unreachable";
+    public static final String STATUS_INVENTORY_FULL = "interaction.work.status.arrow_inventory_full";
+    private static final int RESTOCK_COUNT = 64;
+
+    private HiredRangedAmmo() {
+    }
+
+    public static boolean isAmmo(ItemStack stack) {
+        return stack.is(Items.ARROW)
+                || stack.is(Items.SPECTRAL_ARROW)
+                || stack.is(Items.TIPPED_ARROW);
+    }
+
+    public static boolean isWeaponRequiringAmmo(ItemStack weapon) {
+        return VillagerRetaliationVillagerWeapons.isBowWeapon(weapon)
+                || VillagerRetaliationVillagerWeapons.isCrossbowWeapon(weapon);
+    }
+
+    public static boolean hasAmmo(HiredWorkContext context) {
+        return !context.inventory().findSupply(HiredRangedAmmo::isAmmo).isEmpty();
+    }
+
+    public static boolean hasAmmo(Villager villager) {
+        return !HiredJobInventory.getJobInventory(villager).findSupply(HiredRangedAmmo::isAmmo).isEmpty();
+    }
+
+    public static boolean hasAmmoForEquippedWeapon(HiredWorkContext context) {
+        return hasAmmoForEquippedWeapon(context, null);
+    }
+
+    public static boolean hasAmmoForEquippedWeapon(HiredWorkContext context, Villager villager) {
+        ItemStack weapon = ammoCheckedWeapon(context, villager);
+        return !isWeaponRequiringAmmo(weapon) || hasAmmo(context);
+    }
+
+    public static boolean requiresAmmo(AbstractVillager villager, ItemStack weapon) {
+        return isWeaponRequiringAmmo(weapon)
+                && villager instanceof Villager regular
+                && regular.level() instanceof ServerLevel level
+                && HiredVillagerContractService.isHired(level, regular)
+                && roleRequiresAmmo(HiredVillagerContractService.activeRole(level, regular));
+    }
+
+    public static boolean canUseRangedAttack(AbstractVillager villager, ItemStack weapon) {
+        if (!requiresAmmo(villager, weapon)) {
+            return true;
+        }
+        if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(weapon) && CrossbowItem.isCharged(weapon)) {
+            return true;
+        }
+        return villager instanceof Villager regular && hasAmmo(regular);
+    }
+
+    public static ItemStack consumeAmmo(Villager villager) {
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        ItemStack available = inventory.findSupply(HiredRangedAmmo::isAmmo);
+        if (available.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack projectile = available.copyWithCount(1);
+        return inventory.consumeSupply(HiredRangedAmmo::isAmmo, 1) > 0
+                ? projectile
+                : ItemStack.EMPTY;
+    }
+
+    public static ItemStack consumeAmmo(AbstractVillager villager) {
+        return villager instanceof Villager regular ? consumeAmmo(regular) : ItemStack.EMPTY;
+    }
+
+    public static WorkResult ensureReady(ServerLevel level, Villager villager, HiredWorkContext context, double speed) {
+        ItemStack weapon = ammoCheckedWeapon(context, villager);
+        if (!isWeaponRequiringAmmo(weapon)) {
+            return null;
+        }
+        if (hasAmmo(context)) {
+            HiredWorkerBrain.clearFailure(context);
+            return null;
+        }
+        if (context.inventory().promoteOutputToSupply(HiredRangedAmmo::isAmmo, RESTOCK_COUNT) > 0
+                && hasAmmo(context)) {
+            HiredWorkerBrain.clearFailure(context);
+            return null;
+        }
+        if (!context.useAssignedStorageForSupplies()) {
+            return missingAmmo(context);
+        }
+
+        BlockPos storage = AssignedStorageService.nearestAssignedNonPaymentStoragePosContaining(
+                level,
+                villager,
+                HiredRangedAmmo::isAmmo);
+        if (storage == null) {
+            return missingAmmo(context);
+        }
+
+        HiredWorkerBrain.setStorageTarget(context, storage);
+        HiredStorageNavigationGoal.Result result = HiredStorageNavigationGoal.moveToStorageTarget(
+                level,
+                context,
+                villager,
+                storage,
+                speed);
+        if (result == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.clearFailure(context);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_STORAGE, storage);
+            return WorkResult.progressed(STATUS_COLLECTING);
+        }
+        if (result == HiredStorageNavigationGoal.Result.FAILED) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.setFailure(context, FAILURE_STORAGE_PATH, level.getGameTime() + 100L);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
+            return WorkResult.idle(STATUS_STORAGE_UNREACHABLE);
+        }
+
+        int moved = AssignedStorageService.transferItemsAtAssignedNonPaymentStorage(
+                villager,
+                storage,
+                HiredRangedAmmo::isAmmo,
+                RESTOCK_COUNT,
+                context.inventory()::insertSupplyFromStorage);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
+        if (moved > 0) {
+            HiredWorkerBrain.clearFailure(context);
+            HiredWorkerBrain.setLastTargetScanResult(context, "ranged_ammo_restocked");
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+            return WorkResult.progressed(STATUS_GATHERED);
+        }
+
+        HiredWorkerBrain.setFailure(context, FAILURE_INVENTORY_FULL, level.getGameTime() + 100L);
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
+        return WorkResult.idle(STATUS_INVENTORY_FULL);
+    }
+
+    private static boolean roleRequiresAmmo(HiredVillagerRole role) {
+        return role == HiredVillagerRole.COMBAT || role == HiredVillagerRole.HUNTING;
+    }
+
+    private static ItemStack ammoCheckedWeapon(HiredWorkContext context, Villager villager) {
+        ItemStack jobWeapon = context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT);
+        if (isWeaponRequiringAmmo(jobWeapon) || villager == null) {
+            return jobWeapon;
+        }
+        ItemStack carriedWeapon = VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager);
+        return isWeaponRequiringAmmo(carriedWeapon) ? carriedWeapon : jobWeapon;
+    }
+
+    private static WorkResult missingAmmo(HiredWorkContext context) {
+        HiredWorkerBrain.setFailure(context, FAILURE_MISSING, 0L);
+        HiredWorkerBrain.setLastTargetScanResult(context, "ranged_ammo_missing");
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_MISSING_TOOL);
+        return WorkResult.idle(STATUS_MISSING);
+    }
+}

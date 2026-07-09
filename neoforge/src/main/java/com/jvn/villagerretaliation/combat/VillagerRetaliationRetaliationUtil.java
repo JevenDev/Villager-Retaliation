@@ -26,7 +26,11 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.CollisionContext;
 
 public final class VillagerRetaliationRetaliationUtil {
     private static final String PERSISTENT_TARGET_UUID = "Target";
@@ -316,6 +320,21 @@ public final class VillagerRetaliationRetaliationUtil {
                 && villager.hasLineOfSight(target)
                 && villager.isWithinMeleeAttackRange(target)
                 && isWithinTightMeleeAttackRange(villager, target);
+    }
+
+    public static boolean hasClearLineOfSight(AbstractVillager villager, LivingEntity target) {
+        if (!(villager.level() instanceof ServerLevel level) || target == null || !target.isAlive()) {
+            return false;
+        }
+        Vec3 start = villager.getEyePosition();
+        Vec3 end = target.getEyePosition();
+        return level.clip(new ClipContext(
+                start,
+                end,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                CollisionContext.empty()))
+                .getType() == HitResult.Type.MISS;
     }
 
     private static boolean isWithinTightMeleeAttackRange(AbstractVillager villager, LivingEntity target) {
