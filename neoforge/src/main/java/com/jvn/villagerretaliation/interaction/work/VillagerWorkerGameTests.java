@@ -3480,7 +3480,8 @@ public final class VillagerWorkerGameTests {
         HiredVillagerIndex.clearRuntimeState();
         buildFloor(helper, 0, 32, 0, 32, 1);
         ServerLevel level = helper.getLevel();
-        ServerPlayer hirer = fakePlayer(level, "VrRoutePriority");
+        level.setDayTime(1000L);
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         Villager otherVillager = spawnVillager(helper, new BlockPos(3, 2, 2));
