@@ -13,8 +13,8 @@ import com.jvn.villagerretaliation.network.ClipboardRouteEntry;
 import com.jvn.villagerretaliation.network.ClipboardRouteSyncPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaEntry;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
-import com.jvn.villagerretaliation.network.HiredDebugHudPreviewPayload;
 import com.jvn.villagerretaliation.network.HiredDebugPreviewSyncPayload;
+import com.jvn.villagerretaliation.network.HiredHitboxDebugPreviewPayload;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
@@ -64,9 +64,9 @@ public final class ClipboardStorageOutlineRenderer {
     private static long workAreasVisibleUntilGameTime;
     private static long routesVisibleUntilGameTime;
     private static long debugPreviewVisibleUntilGameTime;
-    private static long nextDebugHudPreviewPingGameTime;
+    private static long nextHitboxDebugPreviewPingGameTime;
     private static boolean debugPreviewEnabled;
-    private static boolean debugHudPreviewSent;
+    private static boolean hitboxDebugPreviewSent;
     private static boolean nearbyWorkAreaPreviewsEnabled;
     private static boolean nearbyStoragePreviewsEnabled;
     private static boolean nearbyPaymentPreviewsEnabled;
@@ -208,7 +208,7 @@ public final class ClipboardStorageOutlineRenderer {
             DEBUG_WORK_AREAS.clear();
             DEBUG_ROUTES.clear();
             debugPreviewEnabled = false;
-            debugHudPreviewSent = false;
+            hitboxDebugPreviewSent = false;
             nearbyWorkAreaPreviewsEnabled = false;
             nearbyStoragePreviewsEnabled = false;
             nearbyPaymentPreviewsEnabled = false;
@@ -266,24 +266,24 @@ public final class ClipboardStorageOutlineRenderer {
     public static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null) {
-            debugHudPreviewSent = false;
-            nextDebugHudPreviewPingGameTime = 0L;
+            hitboxDebugPreviewSent = false;
+            nextHitboxDebugPreviewPingGameTime = 0L;
             return;
         }
-        boolean debugVisible = minecraft.getDebugOverlay().showDebugScreen();
+        boolean debugVisible = minecraft.getEntityRenderDispatcher().shouldRenderHitBoxes();
         long gameTime = minecraft.level.getGameTime();
         if (debugVisible) {
-            if (!debugHudPreviewSent || gameTime >= nextDebugHudPreviewPingGameTime) {
-                PacketDistributor.sendToServer(new HiredDebugHudPreviewPayload(true));
-                debugHudPreviewSent = true;
-                nextDebugHudPreviewPingGameTime = gameTime + 40L;
+            if (!hitboxDebugPreviewSent || gameTime >= nextHitboxDebugPreviewPingGameTime) {
+                PacketDistributor.sendToServer(new HiredHitboxDebugPreviewPayload(true));
+                hitboxDebugPreviewSent = true;
+                nextHitboxDebugPreviewPingGameTime = gameTime + 40L;
             }
             return;
         }
-        if (debugHudPreviewSent) {
-            PacketDistributor.sendToServer(new HiredDebugHudPreviewPayload(false));
-            debugHudPreviewSent = false;
-            nextDebugHudPreviewPingGameTime = 0L;
+        if (hitboxDebugPreviewSent) {
+            PacketDistributor.sendToServer(new HiredHitboxDebugPreviewPayload(false));
+            hitboxDebugPreviewSent = false;
+            nextHitboxDebugPreviewPingGameTime = 0L;
         }
     }
 

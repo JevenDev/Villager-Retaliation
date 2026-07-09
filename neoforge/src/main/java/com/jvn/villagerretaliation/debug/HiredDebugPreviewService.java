@@ -86,19 +86,19 @@ public final class HiredDebugPreviewService {
         return applyState(player, updated, DEFAULT_RADIUS);
     }
 
-    public static DebugPreviewSummary setDebugHudPreviewEnabled(ServerPlayer player, boolean enabled) {
+    public static DebugPreviewSummary setHitboxDebugPreviewEnabled(ServerPlayer player, boolean enabled) {
         UUID playerId = player.getUUID();
         DebugPreviewState state = ENABLED_PLAYERS.get(playerId);
         if (state != null
                 && enabled
-                && state.debugHudEnabled()
+                && state.hitboxDebugEnabled()
                 && player.level() instanceof ServerLevel level
                 && level.getGameTime() < state.nextRefreshGameTime()) {
             return new DebugPreviewSummary(true, 0, 0, 0, state.radius());
         }
         DebugPreviewState updated = state == null
                 ? new DebugPreviewState(DEFAULT_RADIUS, 0L, false, false, enabled)
-                : state.withDebugHud(enabled).refreshNow();
+                : state.withHitboxDebug(enabled).refreshNow();
         return applyState(player, updated, DEFAULT_RADIUS);
     }
 
@@ -183,7 +183,7 @@ public final class HiredDebugPreviewService {
                 gameTime + REFRESH_TICKS,
                 state.commandEnabled(),
                 state.clipboardEnabled(),
-                state.debugHudEnabled()));
+                state.hitboxDebugEnabled()));
         return new DebugPreviewSummary(true, villagers.size(), workAreas.size(), storage.size(), state.radius());
     }
 
@@ -262,25 +262,25 @@ public final class HiredDebugPreviewService {
             long nextRefreshGameTime,
             boolean commandEnabled,
             boolean clipboardEnabled,
-            boolean debugHudEnabled) {
+            boolean hitboxDebugEnabled) {
         private boolean active() {
-            return this.commandEnabled || this.clipboardEnabled || this.debugHudEnabled;
+            return this.commandEnabled || this.clipboardEnabled || this.hitboxDebugEnabled;
         }
 
         private DebugPreviewState refreshNow() {
-            return new DebugPreviewState(this.radius, 0L, this.commandEnabled, this.clipboardEnabled, this.debugHudEnabled);
+            return new DebugPreviewState(this.radius, 0L, this.commandEnabled, this.clipboardEnabled, this.hitboxDebugEnabled);
         }
 
         private DebugPreviewState withCommand(boolean enabled, double radius) {
-            double nextRadius = enabled ? radius : (this.clipboardEnabled || this.debugHudEnabled ? DEFAULT_RADIUS : radius);
-            return new DebugPreviewState(nextRadius, this.nextRefreshGameTime, enabled, this.clipboardEnabled, this.debugHudEnabled);
+            double nextRadius = enabled ? radius : (this.clipboardEnabled || this.hitboxDebugEnabled ? DEFAULT_RADIUS : radius);
+            return new DebugPreviewState(nextRadius, this.nextRefreshGameTime, enabled, this.clipboardEnabled, this.hitboxDebugEnabled);
         }
 
         private DebugPreviewState withClipboard(boolean enabled) {
-            return new DebugPreviewState(this.radius, this.nextRefreshGameTime, this.commandEnabled, enabled, this.debugHudEnabled);
+            return new DebugPreviewState(this.radius, this.nextRefreshGameTime, this.commandEnabled, enabled, this.hitboxDebugEnabled);
         }
 
-        private DebugPreviewState withDebugHud(boolean enabled) {
+        private DebugPreviewState withHitboxDebug(boolean enabled) {
             return new DebugPreviewState(this.radius, this.nextRefreshGameTime, this.commandEnabled, this.clipboardEnabled, enabled);
         }
     }
