@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.interaction.HiredJobSite;
+import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
@@ -3132,6 +3133,7 @@ public final class VillagerWorkerGameTests {
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Villager otherVillager = spawnVillager(helper, new BlockPos(4, 2, 3));
         villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
         BlockPos composterRel = new BlockPos(3, 1, 3);
         setBlock(helper, composterRel, Blocks.COMPOSTER.defaultBlockState());
@@ -3155,7 +3157,18 @@ public final class VillagerWorkerGameTests {
                 HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager),
                 "ready hired farmer should keep vanilla brain ticks for vanilla farming");
 
+        villager.getBrain().setMemory(MemoryModuleType.INTERACTION_TARGET, otherVillager);
+        villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(otherVillager.blockPosition()));
+        HiredVillagerFocusService.onVillagerTickPre(villager);
+        helper.assertFalse(
+                villager.getBrain().hasMemoryValue(MemoryModuleType.INTERACTION_TARGET),
+                "ready hired farmer should still ignore social interaction targets");
+        helper.assertFalse(
+                villager.getBrain().hasMemoryValue(MemoryModuleType.LOOK_TARGET),
+                "ready hired farmer should still ignore social look targets");
+
         HiredVillagerContractService.endHireContract(level, villager, hirer);
+        otherVillager.discard();
         villager.discard();
         helper.succeed();
     }
@@ -3307,6 +3320,122 @@ public final class VillagerWorkerGameTests {
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         HiredVillagerIndex.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void assignedRouteSatisfiesWorkSiteAndTakesPriority(GameTestHelper helper) {
+        HiredVillagerIndex.clearRuntimeState();
+        buildFloor(helper, 0, 32, 0, 32, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrRoutePriority");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager otherVillager = spawnVillager(helper, new BlockPos(3, 2, 2));
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.COMBAT);
+        BlockPos firstRouteNode = helper.absolutePos(new BlockPos(2, 2, 2));
+        BlockPos secondRouteNode = helper.absolutePos(new BlockPos(6, 2, 2));
+        HiredRoute route = new HiredRoute(List.of(firstRouteNode, secondRouteNode), false);
+        helper.assertTrue(
+                HiredVillagerWorkService.setRoute(hirer, level, villager, route),
+                "route assignment should succeed");
+
+        HiredWorkSession routeOnly = HiredWorkSession.active(level, villager);
+        helper.assertFalse(routeOnly.context().hasWorkArea(), "route-only combat worker should not need a work site");
+        helper.assertTrue(
+                HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager),
+                "route-assigned worker should suppress vanilla social AI before route movement starts");
+        helper.assertTrue(
+                HiredVillagerWorkService.hasEffectiveWorkArea(level, villager, routeOnly),
+                "route should satisfy the effective work assignment");
+        helper.assertTrue(
+                HiredVillagerWorkService.isInsideEffectiveWorkArea(
+                        level,
+                        villager,
+                        HiredVillagerRole.COMBAT,
+                        routeOnly.context(),
+                        firstRouteNode),
+                "route node should be inside the effective assignment");
+
+        villager.getBrain().setMemory(MemoryModuleType.INTERACTION_TARGET, otherVillager);
+        villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(otherVillager.blockPosition()));
+        HiredVillagerFocusService.onVillagerTickPre(villager);
+        helper.assertFalse(
+                villager.getBrain().hasMemoryValue(MemoryModuleType.INTERACTION_TARGET),
+                "route-assigned worker should drop social interaction targets");
+        helper.assertFalse(
+                villager.getBrain().hasMemoryValue(MemoryModuleType.LOOK_TARGET),
+                "route-assigned worker should drop social look targets before movement starts");
+
+        otherVillager.getBrain().setMemory(MemoryModuleType.INTERACTION_TARGET, villager);
+        otherVillager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(villager.blockPosition()));
+        otherVillager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(new BlockPosTracker(villager.blockPosition()), 0.4F, 2));
+        HiredVillagerFocusService.onVillagerTickPre(otherVillager);
+        helper.assertFalse(
+                otherVillager.getBrain().hasMemoryValue(MemoryModuleType.INTERACTION_TARGET),
+                "nearby villagers should not keep a busy hired worker as an interaction target");
+        helper.assertFalse(
+                otherVillager.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET),
+                "nearby villagers should not walk over to socialize with a busy hired worker");
+
+        BlockPos workSiteMin = helper.absolutePos(new BlockPos(28, 2, 28));
+        BlockPos workSiteMax = helper.absolutePos(new BlockPos(30, 4, 30));
+        helper.assertTrue(
+                HiredVillagerWorkService.setWorkArea(hirer, level, villager, workSiteMin, workSiteMax),
+                "work site assignment should succeed while a route exists");
+        HiredWorkSession routeAndSite = HiredWorkSession.active(level, villager);
+        BlockPos insideWorkSite = helper.absolutePos(new BlockPos(29, 2, 29));
+        helper.assertTrue(routeAndSite.context().isInsideWorkArea(insideWorkSite), "fixture position should be inside the assigned work site");
+        helper.assertFalse(
+                routeAndSite.context().isInsideWorkAreaOrRoute(insideWorkSite),
+                "route-priority target filters should ignore the assigned work site");
+        helper.assertFalse(
+                HiredVillagerWorkService.isInsideEffectiveWorkArea(
+                        level,
+                        villager,
+                        HiredVillagerRole.COMBAT,
+                        routeAndSite.context(),
+                        insideWorkSite),
+                "route should take priority over an assigned work site");
+        helper.assertTrue(
+                HiredVillagerWorkService.isInsideEffectiveWorkArea(
+                        level,
+                        villager,
+                        HiredVillagerRole.COMBAT,
+                        routeAndSite.context(),
+                        firstRouteNode),
+                "route should remain the effective assignment");
+
+        HiredVillagerIndex.update(level, villager);
+        ClipboardWorkforceSnapshot snapshot = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertValueEqual(snapshot.workers().size(), 1, "clipboard worker rows");
+        ClipboardWorkforceSnapshot.WorkerRow row = snapshot.workers().getFirst();
+        helper.assertFalse(row.noWorkArea(), "clipboard should not report missing work area for a route-assigned worker");
+        helper.assertFalse(row.tooFar(), "clipboard should not report too far while the worker is on its route");
+        helper.assertValueEqual(row.areaStatus(), "route", "clipboard assignment source");
+
+        helper.assertTrue(
+                HiredVillagerWorkService.clearRoute(hirer, level, villager),
+                "route clear should succeed");
+        HiredWorkSession siteOnly = HiredWorkSession.active(level, villager);
+        helper.assertFalse(siteOnly.context().hasRoute(), "cleared route should no longer be active");
+        helper.assertTrue(
+                HiredVillagerWorkService.hasEffectiveWorkArea(level, villager, siteOnly),
+                "work site should satisfy the effective assignment after route clear");
+        helper.assertTrue(
+                HiredVillagerWorkService.isInsideEffectiveWorkArea(
+                        level,
+                        villager,
+                        HiredVillagerRole.COMBAT,
+                        siteOnly.context(),
+                        insideWorkSite),
+                "work site should take over after route clear");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        HiredVillagerIndex.clearRuntimeState();
+        otherVillager.discard();
         villager.discard();
         helper.succeed();
     }

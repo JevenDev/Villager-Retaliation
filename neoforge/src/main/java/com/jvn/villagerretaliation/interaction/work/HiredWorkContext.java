@@ -122,7 +122,7 @@ public record HiredWorkContext(
     }
 
     public boolean isInsideWorkAreaOrRoute(BlockPos pos) {
-        return isInsideWorkArea(pos) || isInsideRouteArea(pos);
+        return hasRoute() ? isInsideRouteArea(pos) : isInsideWorkArea(pos);
     }
 
     public boolean hasNavigationTether() {

@@ -57,6 +57,8 @@ public final class ClipboardWorkforceService {
                 HiredWorkSession session = HiredWorkSession.active(level, villager);
                 HiredVillagerRole role = session.role();
                 HiredWorkerBrain.Snapshot brain = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
+                boolean routeAssigned = HiredVillagerWorkService.usesRouteAssignment(role, session.context());
+                boolean hasEffectiveWorkAssignment = HiredVillagerWorkService.hasEffectiveWorkArea(level, villager, session);
                 int storageCount = AssignedStorageService.assignedStorage(level, villager).size();
                 int paymentStorageCount = AssignedStorageService.assignedPaymentStorage(level, villager).size();
                 boolean storageAssigned = storageCount > 0;
@@ -65,7 +67,7 @@ public final class ClipboardWorkforceService {
                         || !session.inventory().hasOutputSpace();
                 boolean noStorage = brain.taskState() == HiredWorkerTaskState.PAUSED_NO_STORAGE || !storageAssigned;
                 boolean noWorkArea = role != HiredVillagerRole.BUILDER
-                        && (!HiredVillagerWorkService.hasEffectiveWorkArea(level, villager, session)
+                        && (!hasEffectiveWorkAssignment
                         || brain.taskState() == HiredWorkerTaskState.NO_WORK_AREA);
                 boolean waitingForCrops = !noWorkArea && isWaitingForCrops(role, brain);
                 boolean noTargets = !noWorkArea && !waitingForCrops && isNoTargetState(brain);
@@ -137,12 +139,12 @@ public final class ClipboardWorkforceService {
                         diagnostic,
                         storageAssigned,
                         storageCount,
-                        session.area().horizontalRadius(),
-                        session.area().usable(),
-                        session.area().centerDescription(),
-                        session.area().horizontalRadius(),
-                        session.area().verticalRadius(),
-                        session.area().usable() ? session.jobSite().sourceId() : "missing",
+                        routeAssigned ? session.route().nodes().size() : session.area().horizontalRadius(),
+                        routeAssigned || session.area().usable(),
+                        routeAssigned ? routeDescription(session.route()) : session.area().centerDescription(),
+                        routeAssigned ? session.route().nodes().size() : session.area().horizontalRadius(),
+                        routeAssigned ? 0 : session.area().verticalRadius(),
+                        routeAssigned ? "route" : session.area().usable() ? session.jobSite().sourceId() : "missing",
                         workModeText(role, session.state()),
                         dailyWage,
                         inventoryFull,
@@ -836,6 +838,11 @@ public final class ClipboardWorkforceService {
             case HUNTING -> HiredHuntingTargets.selectionLabel(state);
             default -> "";
         };
+    }
+
+    private static String routeDescription(HiredRoute route) {
+        int count = route == null ? 0 : route.nodes().size();
+        return count + " node" + (count == 1 ? "" : "s") + (route != null && route.loop() ? ", loop" : ", back-and-forth");
     }
 
     private static void addWarning(Map<WarningKey, Integer> warnings, WarningType type, HiredVillagerRole role, boolean active) {

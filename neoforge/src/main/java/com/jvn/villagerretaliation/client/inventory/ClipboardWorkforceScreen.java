@@ -460,6 +460,10 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private Component workerAreaText(WorkerRow worker) {
+        if (routeAssigned(worker)) {
+            return Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_route_assigned",
+                    worker.workAreaCenter());
+        }
         return worker.hasWorkArea()
                 ? Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_assigned",
                         workerAreaSourceText(worker),
@@ -467,6 +471,10 @@ public final class ClipboardWorkforceScreen extends Screen {
                         worker.horizontalRadius(),
                         worker.verticalRadius())
                 : Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_missing");
+    }
+
+    private boolean routeAssigned(WorkerRow worker) {
+        return worker != null && "route".equals(worker.areaStatus());
     }
 
     private Component workerAreaSourceText(WorkerRow worker) {
@@ -495,13 +503,7 @@ public final class ClipboardWorkforceScreen extends Screen {
 
         int y = CONTENT_TOP + JOB_PAGE_ROW_START_OFFSET;
         drawLine(graphics, Component.literal(this.selectedWorker.displayName()), CONTENT_LEFT, y, CONTENT_RIGHT - 10, TEXT);
-        Component area = this.selectedWorker.hasWorkArea()
-                ? Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_assigned",
-                        workerAreaSourceText(this.selectedWorker),
-                        this.selectedWorker.workAreaCenter(),
-                        this.selectedWorker.horizontalRadius(),
-                        this.selectedWorker.verticalRadius())
-                : Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_missing");
+        Component area = workerAreaText(this.selectedWorker);
         drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area", area), CONTENT_LEFT, y + 10, this.selectedWorker.noWorkArea() ? WARNING : MUTED);
         y = CONTENT_TOP + 47;
         y = drawJobSiteActionRow(

@@ -615,7 +615,7 @@ public final class HiredVillagerWorkService {
             Villager villager,
             HiredVillagerRole role,
             HiredWorkContext context) {
-        return context != null && context.hasNavigationTether();
+        return context != null && (usesRouteAssignment(role, context) || context.hasNavigationTether());
     }
 
     public static boolean isInsideEffectiveWorkArea(
@@ -625,18 +625,28 @@ public final class HiredVillagerWorkService {
             HiredWorkContext context,
             BlockPos pos) {
         return context != null
-                && context.isInsideNavigationTether(
-                pos,
-                WORK_AREA_TETHER_HORIZONTAL_PADDING,
-                WORK_AREA_TETHER_VERTICAL_PADDING);
+                && (usesRouteAssignment(role, context)
+                ? context.isInsideRouteArea(pos)
+                : context.isInsideNavigationTether(
+                        pos,
+                        WORK_AREA_TETHER_HORIZONTAL_PADDING,
+                        WORK_AREA_TETHER_VERTICAL_PADDING));
     }
 
     public static boolean isInsideEffectiveWorkArea(HiredVillagerRole role, HiredWorkContext context, BlockPos pos) {
         return context != null
-                && context.isInsideNavigationTether(
-                pos,
-                WORK_AREA_TETHER_HORIZONTAL_PADDING,
-                WORK_AREA_TETHER_VERTICAL_PADDING);
+                && (usesRouteAssignment(role, context)
+                ? context.isInsideRouteArea(pos)
+                : context.isInsideNavigationTether(
+                        pos,
+                        WORK_AREA_TETHER_HORIZONTAL_PADDING,
+                        WORK_AREA_TETHER_VERTICAL_PADDING));
+    }
+
+    public static boolean usesRouteAssignment(HiredVillagerRole role, HiredWorkContext context) {
+        return HiredVillagerRoleSettings.supportsRoutes(role)
+                && context != null
+                && context.hasRoute();
     }
 
     public static boolean hasClaimedJobSiteInLevel(ServerLevel level, Villager villager) {
