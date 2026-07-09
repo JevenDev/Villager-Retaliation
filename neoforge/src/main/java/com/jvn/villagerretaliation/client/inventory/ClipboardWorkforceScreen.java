@@ -56,6 +56,7 @@ public final class ClipboardWorkforceScreen extends Screen {
             HiredVillagerRole.COOK);
     private static final List<HiredVillagerRole> SECOND_OVERVIEW_PAGE_ROLES = List.of(
             HiredVillagerRole.BUILDER,
+            HiredVillagerRole.SMELTER,
             HiredVillagerRole.ANIMAL_HANDLING,
             HiredVillagerRole.NITWIT);
     private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");

@@ -1081,6 +1081,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addHireRoleOption(HiredVillagerRole.FISHING, "recruit.role_fishing");
         addHireRoleOption(HiredVillagerRole.BREWING, "recruit.role_brewing");
         addHireRoleOption(HiredVillagerRole.COOK, "recruit.role_cook");
+        addHireRoleOption(HiredVillagerRole.SMELTER, "recruit.role_smelter");
         addHireRoleOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.role_animal_handling");
         addHireRoleOption(HiredVillagerRole.NITWIT, "recruit.role_nitwit");
         if (canOfferBuilderService()) {
@@ -1143,6 +1144,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addRoleChangeOption(HiredVillagerRole.FISHING, "recruit.role_fishing", VillagerRecruitRequestPayload.Action.SET_ROLE_FISHING);
         addRoleChangeOption(HiredVillagerRole.BREWING, "recruit.role_brewing", VillagerRecruitRequestPayload.Action.SET_ROLE_BREWING);
         addRoleChangeOption(HiredVillagerRole.COOK, "recruit.role_cook", VillagerRecruitRequestPayload.Action.SET_ROLE_COOK);
+        addRoleChangeOption(HiredVillagerRole.SMELTER, "recruit.role_smelter", VillagerRecruitRequestPayload.Action.SET_ROLE_SMELTER);
         addRoleChangeOption(HiredVillagerRole.BUILDER, "recruit.role_builder", VillagerRecruitRequestPayload.Action.SET_ROLE_BUILDER);
         addRoleChangeOption(HiredVillagerRole.ANIMAL_HANDLING, "recruit.role_animal_handling", VillagerRecruitRequestPayload.Action.SET_ROLE_ANIMAL_HANDLING);
         addRoleChangeOption(HiredVillagerRole.NITWIT, "recruit.role_nitwit", VillagerRecruitRequestPayload.Action.SET_ROLE_NITWIT);

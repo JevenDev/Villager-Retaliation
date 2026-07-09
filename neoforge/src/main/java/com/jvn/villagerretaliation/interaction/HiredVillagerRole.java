@@ -13,7 +13,8 @@ public enum HiredVillagerRole {
     BUILDER("builder"),
     ANIMAL_HANDLING("animal_handling"),
     NITWIT("nitwit"),
-    COOK("cook");
+    COOK("cook"),
+    SMELTER("smelter");
 
     private final String serializedName;
 

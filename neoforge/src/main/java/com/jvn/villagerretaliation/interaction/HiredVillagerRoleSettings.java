@@ -41,6 +41,7 @@ public final class HiredVillagerRoleSettings {
             case FISHING -> "interaction.work_report.fishing";
             case BREWING -> "interaction.work_report.brewing";
             case COOK -> "interaction.work_report.cook";
+            case SMELTER -> "interaction.work_report.smelter";
             case BUILDER -> "interaction.work_report.builder";
             case ANIMAL_HANDLING -> "interaction.work_report.animal_handling";
             case NITWIT -> "interaction.work_report.nitwit";
@@ -57,6 +58,7 @@ public final class HiredVillagerRoleSettings {
             case FISHING -> "interaction.work_final_report.fishing";
             case BREWING -> "interaction.work_final_report.brewing";
             case COOK -> "interaction.work_final_report.cook";
+            case SMELTER -> "interaction.work_final_report.smelter";
             case BUILDER -> "interaction.work_final_report.builder";
             case ANIMAL_HANDLING -> "interaction.work_final_report.animal_handling";
             case NITWIT -> "interaction.work_final_report.nitwit";
@@ -76,6 +78,7 @@ public final class HiredVillagerRoleSettings {
             case FISHING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NAVIGATION.get();
             case BREWING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_BREWING.get();
             case COOK -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_COOKING.get();
+            case SMELTER -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_MINING.get();
             case BUILDER -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_BUILDER.get();
             case ANIMAL_HANDLING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_ANIMAL_HANDLING.get();
             case NITWIT -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NITWIT.get();

@@ -260,6 +260,7 @@ public final class ClipboardWorkforceService {
             case FISHING -> WorkerStatus.WORKING;
             case BREWING -> WorkerStatus.BREWING;
             case COOK -> WorkerStatus.COOKING;
+            case SMELTER -> WorkerStatus.SMELTING;
             case BUILDER -> WorkerStatus.BUILDING;
             default -> WorkerStatus.WORKING;
         };
@@ -303,6 +304,16 @@ public final class ClipboardWorkforceService {
                     || reason.contains("interaction.work.cooking.missing_raw_food")
                     || reason.contains("interaction.work.cooking.missing_fuel");
         }
+        if (role == HiredVillagerRole.SMELTER) {
+            if (noStorage || materialStorageUnreachable) {
+                return false;
+            }
+            String reason = lower(brain.failureReason());
+            return reason.contains("missing_smelting_raw_ore")
+                    || reason.contains("missing_smelting_fuel")
+                    || reason.contains("interaction.work.smelting.missing_raw_ore")
+                    || reason.contains("interaction.work.smelting.missing_fuel");
+        }
         if (role == HiredVillagerRole.MINING) {
             return !noStorage
                     && !materialStorageUnreachable
@@ -324,6 +335,7 @@ public final class ClipboardWorkforceService {
         return switch (role) {
             case BREWING -> failure.contains("brewing_storage_path_failed");
             case COOK -> failure.contains("cooking_storage_path_failed");
+            case SMELTER -> failure.contains("smelting_storage_path_failed");
             case BUILDER -> failure.contains("builder_material_storage_unreachable");
             case MINING -> failure.contains("mining_support_storage_path_failed");
             default -> false;
@@ -339,6 +351,7 @@ public final class ClipboardWorkforceService {
                     || failure.contains("brewing_water_bottle_space")
                     || failure.contains("brewing_output_full_after_brew");
             case COOK -> failure.contains("cooking_material_inventory_full");
+            case SMELTER -> failure.contains("smelting_material_inventory_full");
             case BUILDER -> failure.contains("builder_material_inventory_full")
                     || failure.contains("builder_material_output_slot_full")
                     || failure.contains("builder_material_output_storage_unreachable");
@@ -381,6 +394,15 @@ public final class ClipboardWorkforceService {
         }
         if (role == HiredVillagerRole.COOK) {
             return cookingDiagnostic(
+                    brain,
+                    inventoryFull,
+                    noStorage,
+                    missingMaterials,
+                    materialStorageUnreachable,
+                    materialInventoryFull);
+        }
+        if (role == HiredVillagerRole.SMELTER) {
+            return smeltingDiagnostic(
                     brain,
                     inventoryFull,
                     noStorage,
@@ -790,6 +812,53 @@ public final class ClipboardWorkforceService {
         }
         if (inventoryFull) {
             return "Cook inventory is full and output storage cannot take more cooked food right now.";
+        }
+        return "";
+    }
+
+    private static String smeltingDiagnostic(
+            HiredWorkerBrain.Snapshot brain,
+            boolean inventoryFull,
+            boolean noStorage,
+            boolean missingMaterials,
+            boolean materialStorageUnreachable,
+            boolean materialInventoryFull) {
+        String reason = lower(brain.failureReason());
+        if (materialInventoryFull) {
+            return "Smelter found raw ore or fuel in assigned storage, but the job inventory has no room for it.";
+        }
+        if (materialStorageUnreachable) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return limitDiagnostic(storagePos == null
+                    ? "Smelter found raw ore or fuel in assigned input storage, but cannot path to that container."
+                    : "Smelter found raw ore or fuel in assigned input storage at "
+                            + HiredWorkerBrain.formatPos(storagePos) + ", but cannot path to it.");
+        }
+        if (missingMaterials) {
+            return reason.contains("missing_smelting_fuel")
+                    ? "Smelter needs furnace fuel in job supplies or assigned input storage."
+                    : "Smelter needs raw iron, copper, or gold in job supplies or assigned input storage.";
+        }
+        if (noStorage && (reason.contains("missing_smelting_raw_ore") || reason.contains("missing_smelting_fuel"))) {
+            return "Smelter needs assigned input storage or carried supplies for raw ore and fuel.";
+        }
+        if (reason.contains("no_smelting_station")) {
+            return "Smelter needs a furnace or blast furnace inside the assigned work area.";
+        }
+        if (reason.contains("smelting_station_path_failed") || reason.contains("smelting_station_unreachable")) {
+            return "Smelter cannot path to the furnace or blast furnace inside the assigned work area.";
+        }
+        if (reason.contains("smelting_wrong_output")) {
+            return "Smelting station output slot contains something other than a supported metal ingot.";
+        }
+        if (reason.contains("smelting_wrong_input")) {
+            return "Smelting station input slot must contain raw iron, copper, or gold.";
+        }
+        if (reason.contains("smelting_wrong_fuel")) {
+            return "Smelting station fuel slot contains something that will not burn.";
+        }
+        if (inventoryFull) {
+            return "Smelter inventory is full and output storage cannot take more ingots right now.";
         }
         return "";
     }

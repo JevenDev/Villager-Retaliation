@@ -4,6 +4,8 @@
 
 The Hired Help update turns recruitment into a full hired-worker system with contracts, job roles, assigned storage, work areas, payment boxes, wallets, and workforce management, while also expanding quests, dialogue authoring, villager AI, UI, and pack-development tooling.
 
+- Added the Smelter hired role. Smelters use furnaces or blast furnaces inside their work area, retrieve raw iron, copper, or gold and fuel from job supplies or assigned storage, and deposit finished ingots as job output.
+
 ### Added
 
 - Added hired villager contracts with role and duration selection, reputation/skill-based daily pricing, early-end refunds, recurring payment handling, unpaid/loaded-chunk status tracking, and dedicated hire menus.

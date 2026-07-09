@@ -1,0 +1,178 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_smelting"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.smelting.depositing_outputs",
+      "lines": [
+        "I am putting smelted ore away before tending the furnace again."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.depositing_outputs.000"
+    },
+    {
+      "key": "interaction.work.smelting.no_station",
+      "lines": [
+        "I need a furnace or blast furnace inside the assigned job site."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.no_station.001"
+    },
+    {
+      "key": "interaction.work.smelting.wrong_output",
+      "lines": [
+        "The smelting station has something in the output slot that is not a supported metal ingot."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.wrong_output.002"
+    },
+    {
+      "key": "interaction.work.smelting.wrong_input",
+      "lines": [
+        "The smelting station needs raw iron, copper, or gold in its input slot."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.wrong_input.003"
+    },
+    {
+      "key": "interaction.work.smelting.wrong_fuel",
+      "lines": [
+        "The smelting station has something in the fuel slot that will not burn."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.wrong_fuel.004"
+    },
+    {
+      "key": "interaction.work.smelting.missing_raw_ore",
+      "lines": [
+        "I need raw ore in my job supplies or assigned storage before I can smelt."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.missing_raw_ore.005"
+    },
+    {
+      "key": "interaction.work.smelting.missing_fuel",
+      "lines": [
+        "I need furnace fuel in my job supplies or assigned storage before I can smelt."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.missing_fuel.006"
+    },
+    {
+      "key": "interaction.work.smelting.collecting_materials",
+      "lines": [
+        "I am collecting ore and fuel for the smelting station."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.collecting_materials.007"
+    },
+    {
+      "key": "interaction.work.smelting.materials_unreachable",
+      "lines": [
+        "I found smelting supplies, but I cannot reach the assigned storage."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.materials_unreachable.008"
+    },
+    {
+      "key": "interaction.work.smelting.material_inventory_full",
+      "lines": [
+        "I found smelting supplies, but my job inventory has no room for them."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.material_inventory_full.009"
+    },
+    {
+      "key": "interaction.work.smelting.gathered_materials",
+      "lines": [
+        "I gathered smelting supplies and am heading back to the station."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.gathered_materials.010"
+    },
+    {
+      "key": "interaction.work.smelting.station_unreachable",
+      "lines": [
+        "I found a smelting station, but I cannot reach it from the job site."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.station_unreachable.011"
+    },
+    {
+      "key": "interaction.work.smelting.station_blocked",
+      "lines": [
+        "The path to the smelting station is blocked right now."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.station_blocked.012"
+    },
+    {
+      "key": "interaction.work.smelting.repositioning_station",
+      "lines": [
+        "I am finding a better place to reach the smelting station."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.repositioning_station.013"
+    },
+    {
+      "key": "interaction.work.smelting.moving_to_station",
+      "lines": [
+        "I am heading to the smelting station."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.moving_to_station.014"
+    },
+    {
+      "key": "interaction.work.smelting.output_full",
+      "lines": [
+        "I have smelted ore ready, but no room to carry it."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.output_full.015"
+    },
+    {
+      "key": "interaction.work.smelting.loaded_input",
+      "lines": [
+        "I loaded {count} {item} into the smelting station."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.loaded_input.016"
+    },
+    {
+      "key": "interaction.work.smelting.loaded_fuel",
+      "lines": [
+        "I loaded {count} {item} as smelting fuel."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.loaded_fuel.017"
+    },
+    {
+      "key": "interaction.work.smelting.waiting_station",
+      "lines": [
+        "I am waiting for the smelting station to finish."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.waiting_station.018"
+    },
+    {
+      "key": "interaction.work.smelting.collected_output",
+      "lines": [
+        "I collected {count} {item} from the smelting station."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.collected_output.019"
+    },
+    {
+      "key": "interaction.work.smelting.collected_fuel_remainder",
+      "lines": [
+        "I cleared {count} {item} from the fuel slot."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work.smelting.collected_fuel_remainder.020"
+    },
+    {
+      "key": "interaction.work_report.smelter",
+      "lines": [
+        "I am still tending the smelting station and keeping ore and fuel moving.",
+        "The smelting work is still going. I am watching the furnace.",
+        "I am keeping the furnace or blast furnace supplied for the job."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work_report.smelter.021"
+    },
+    {
+      "key": "interaction.work_final_report.smelter",
+      "lines": [
+        "I handled another batch of ore. I am still watching the station.",
+        "The smelting moved along. I will keep the ore and fuel going.",
+        "I collected another batch of ingots and the work continues."
+      ],
+      "id": "global.messages.21_work_smelting.messages.interaction.work_final_report.smelter.022"
+    }
+  ]
+}

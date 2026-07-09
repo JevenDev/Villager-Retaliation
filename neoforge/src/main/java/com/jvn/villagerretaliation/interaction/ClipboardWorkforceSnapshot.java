@@ -65,6 +65,7 @@ public record ClipboardWorkforceSnapshot(
         FARMING,
         BREWING,
         COOKING,
+        SMELTING,
         BUILDING,
         DEPOSITING,
         WAITING,
