@@ -318,7 +318,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         Path path = HiredPathMemory.createPath(level, villager, navigationTarget, FIELD_GUIDE_CLOSE_ENOUGH);
-        if (path != null && path.canReach()) {
+        if (pathMakesProgressTowardField(villager, path, navigationTarget)) {
             boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(
                     villager,
                     path,
@@ -339,6 +339,16 @@ public final class FarmingWorker extends AbstractBlockWorker {
                 return WorkResult.progressed(movingStatus);
             }
         }
+        if (path == null) {
+            VillagerTaskNavigationUtil.setHiredWalkTarget(
+                    villager,
+                    navigationTarget,
+                    FIELD_GUIDE_WALK_SPEED,
+                    FIELD_GUIDE_CLOSE_ENOUGH);
+            HiredWorkerBrain.clearFailure(context);
+            setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, workTarget);
+            return WorkResult.progressed(movingStatus);
+        }
 
         VillagerTaskNavigationUtil.stopHiredNavigation(villager);
         HiredPathMemory.clearNavigationProgress(villager);
@@ -347,6 +357,19 @@ public final class FarmingWorker extends AbstractBlockWorker {
         HiredWorkerBrain.setLastTargetScanResult(context, "field_target_unreachable");
         setTaskState(context, HiredWorkerTaskState.IDLE, workTarget);
         return WorkResult.progressed(blockedStatus);
+    }
+
+    private static boolean pathMakesProgressTowardField(Villager villager, Path path, BlockPos target) {
+        if (path == null || path.getEndNode() == null) {
+            return false;
+        }
+        BlockPos end = path.getEndNode().asBlockPos();
+        boolean endsInWorkRange = Math.abs(end.getX() - target.getX()) <= FIELD_GUIDE_CLOSE_ENOUGH
+                && Math.abs(end.getY() - target.getY()) <= FIELD_GUIDE_CLOSE_ENOUGH
+                && Math.abs(end.getZ() - target.getZ()) <= FIELD_GUIDE_CLOSE_ENOUGH;
+        return path.canReach()
+                || endsInWorkRange
+                || end.distSqr(target) < villager.blockPosition().distSqr(target);
     }
 
     private WorkResult tillSoil(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos soilTarget) {

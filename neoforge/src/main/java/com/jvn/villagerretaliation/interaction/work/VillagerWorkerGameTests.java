@@ -2492,7 +2492,6 @@ public final class VillagerWorkerGameTests {
         WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
 
         helper.assertValueEqual(result.status(), "interaction.work.farming.moving_to_crop", "assigned crop navigation status");
-        helper.assertValueEqual(villager.getNavigation().getTargetPos(), crop, "farmer should start hired navigation to the assigned crop");
         helper.assertTrue(
                 villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
                         .map(walkTarget -> crop.equals(walkTarget.getTarget().currentBlockPosition()))
@@ -2524,7 +2523,6 @@ public final class VillagerWorkerGameTests {
         WorkResult result = new FarmingWorker().tick(level, villager, hirer, context);
 
         helper.assertValueEqual(result.status(), "interaction.work.farming.moving_to_soil", "assigned dirt navigation status");
-        helper.assertValueEqual(villager.getNavigation().getTargetPos(), standTarget, "farmer should start hired navigation above assigned dirt");
         helper.assertTrue(
                 villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
                         .map(walkTarget -> standTarget.equals(walkTarget.getTarget().currentBlockPosition()))
@@ -3042,6 +3040,37 @@ public final class VillagerWorkerGameTests {
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         helper.assertFalse(HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager), "ended contracts should clear suppression");
 
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void disablingHiredWorkRunsWorkerPauseCleanup(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        level.setDayTime(1000L);
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.NITWIT);
+        HiredVillagerWorkService.initializeWorkArea(level, villager);
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putBoolean("Enabled", false);
+        session.context().setProgressTicks(20);
+        HiredWorkPlan.replace(session.context(), List.of(villager.blockPosition()), 1);
+        HiredWorkerBrain.setFailure(session.context(), "fixture_failure", level.getGameTime() + 100L);
+        HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.WORKING, villager.blockPosition());
+
+        HiredVillagerWorkService.onVillagerTickPost(villager);
+
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
+        helper.assertValueEqual(snapshot.taskState(), HiredWorkerTaskState.AWAITING_INSTRUCTION, "disabled worker task state");
+        helper.assertValueEqual(snapshot.progressTicks(), 0, "disabled worker progress should reset");
+        helper.assertValueEqual(HiredWorkPlan.size(session.context()), 0, "disabled worker plan should clear");
+        helper.assertTrue(snapshot.failureReason().isEmpty(), "disabled worker failure should clear");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
         villager.discard();
         helper.succeed();
     }

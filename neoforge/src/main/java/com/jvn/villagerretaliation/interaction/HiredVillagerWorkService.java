@@ -67,6 +67,7 @@ public final class HiredVillagerWorkService {
     private static final String STATUS_REPLACEMENTS_TAG = "StatusReplacements";
     private static final String COMPLETED_TASKS_TAG = "CompletedTasks";
     private static final String VANILLA_REST_PAUSED_TAG = "VanillaRestPaused";
+    private static final String DISABLED_WORK_PAUSED_TAG = "DisabledWorkPaused";
     private static final String DEFAULTS_VERSION_TAG = "DefaultsVersion";
     private static final int DEFAULTS_VERSION = 1;
     public static final String WAITING_FOR_HIRER_STATUS = "interaction.work.status.waiting_for_hirer";
@@ -148,11 +149,19 @@ public final class HiredVillagerWorkService {
         }
         if (!session.state().getBoolean("Enabled")) {
             VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
-            VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
-            HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            if (!session.state().getBoolean(DISABLED_WORK_PAUSED_TAG)) {
+                if (session.worker() != null) {
+                    session.worker().pause(level, villager, session.context());
+                } else {
+                    HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+                }
+                VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+                session.state().putBoolean(DISABLED_WORK_PAUSED_TAG, true);
+            }
             setStatus(session.state(), "interaction.work.status.paused");
             return;
         }
+        session.state().remove(DISABLED_WORK_PAUSED_TAG);
         if (VillagerRecruitmentService.isFollowingAnyPlayer(villager)) {
             VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             pauseForRecruitmentCommand(level, villager, session);
