@@ -41,10 +41,10 @@ public final class VillagerRetaliationVillagerBrainUtil {
 
     public static boolean shouldSuppressVanillaBrainTickForCombat(Villager villager) {
         LivingEntity target = villager.getTarget();
-        return VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()
-                && target != null
+        return target != null
                 && target != villager
-                && target.isAlive();
+                && target.isAlive()
+                && VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get();
     }
 
     public static void stopNavigationAndClearPathing(AbstractVillager villager) {

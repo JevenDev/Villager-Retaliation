@@ -24,8 +24,8 @@ public abstract class VillagerBrainTickMixin {
             ServerLevel level,
             LivingEntity entity) {
         if (entity instanceof Villager villager) {
-            if (HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager)
-                    || VillagerRetaliationVillagerBrainUtil.shouldSuppressVanillaBrainTickForCombat(villager)) {
+            if (VillagerRetaliationVillagerBrainUtil.shouldSuppressVanillaBrainTickForCombat(villager)
+                    || HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager)) {
                 return;
             }
             brain.tick(level, villager);
