@@ -11,8 +11,9 @@ import java.util.UUID;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.Mth;
+import net.minecraft.util.TimeUtil;
 import net.minecraft.util.Unit;
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
@@ -31,12 +32,13 @@ final class VillagerRangedCombatHelper {
     private static final Map<UUID, Integer> SEE_TIME = new HashMap<>();
     private static final Map<UUID, Integer> ATTACK_DELAY = new HashMap<>();
     private static final Map<UUID, CrossbowState> CROSSBOW_STATE = new HashMap<>();
+    private static final Map<UUID, Integer> CROSSBOW_UPDATE_PATH_DELAY = new HashMap<>();
     private static final double MAX_BOW_DISTANCE_SQR = 225.0D;
     private static final int BOW_DRAW_TICKS = 20;
     private static final int BOW_ATTACK_INTERVAL_TICKS = 20;
     private static final int INITIAL_RANGED_WINDUP_TICKS = 2;
-    private static final double CROSSBOW_BACK_UP_DISTANCE = 5.0D;
-    private static final float CROSSBOW_BACK_UP_STRAFE_SPEED = 0.75F;
+    private static final UniformInt CROSSBOW_PATHFINDING_DELAY_RANGE = TimeUtil.rangeOfSeconds(1, 2);
+    private static final int CROSSBOW_MINIMUM_SEE_TIME = 5;
     private static final int CROSSBOW_POST_LOAD_DELAY_BASE_TICKS = 20;
     private static final int CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS = 20;
     private static final double TRIDENT_MAX_DISTANCE_SQR = 144.0D;
@@ -73,7 +75,9 @@ final class VillagerRangedCombatHelper {
 
         boolean hasLineOfSight = villager.hasLineOfSight(target);
         if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(rangedWeapon)) {
-            handleCrossbowAttack(villager, target, level, rangedWeapon, hasLineOfSight, movementSpeed);
+            hasLineOfSight = villager.getSensing().hasLineOfSight(target);
+            int seeTime = updateSeeTime(villager, hasLineOfSight);
+            handleCrossbowAttack(villager, target, level, rangedWeapon, hasLineOfSight, seeTime, movementSpeed);
             return true;
         }
 
@@ -94,6 +98,7 @@ final class VillagerRangedCombatHelper {
         SEE_TIME.remove(villager.getUUID());
         ATTACK_DELAY.remove(villager.getUUID());
         CROSSBOW_STATE.remove(villager.getUUID());
+        CROSSBOW_UPDATE_PATH_DELAY.remove(villager.getUUID());
         if (villager.isUsingItem()) {
             ItemStack using = villager.getUseItem();
             if (VillagerRetaliationVillagerWeapons.isBowWeapon(using) || VillagerRetaliationVillagerWeapons.isCrossbowWeapon(using)) {
@@ -107,7 +112,8 @@ final class VillagerRangedCombatHelper {
         UUID villagerId = villager.getUUID();
         return SEE_TIME.containsKey(villagerId)
                 || ATTACK_DELAY.containsKey(villagerId)
-                || CROSSBOW_STATE.containsKey(villagerId);
+                || CROSSBOW_STATE.containsKey(villagerId)
+                || CROSSBOW_UPDATE_PATH_DELAY.containsKey(villagerId);
     }
 
     static void seedInitialAttackDelay(AbstractVillager villager, ItemStack equippedWeapon) {
@@ -116,6 +122,7 @@ final class VillagerRangedCombatHelper {
         } else if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(equippedWeapon)) {
             ATTACK_DELAY.remove(villager.getUUID());
             CROSSBOW_STATE.remove(villager.getUUID());
+            CROSSBOW_UPDATE_PATH_DELAY.remove(villager.getUUID());
         }
     }
 
@@ -265,24 +272,28 @@ final class VillagerRangedCombatHelper {
             ServerLevel level,
             ItemStack rangedWeapon,
             boolean hasLineOfSight,
+            int seeTime,
             double movementSpeed
     ) {
-        if (!hasLineOfSight || !isWithinCrossbowAttackRange(villager, target, rangedWeapon)) {
-            stopCrossbowAttack(villager);
-            VillagerRetaliationRetaliationUtil.moveTowardReachableRetaliationTarget(villager, target, movementSpeed);
-            return;
-        }
-
-        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
-        villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
-        if (target.closerThan(villager, CROSSBOW_BACK_UP_DISTANCE)) {
-            villager.getMoveControl().strafe(-CROSSBOW_BACK_UP_STRAFE_SPEED, 0.0F);
-            villager.setYRot(Mth.rotateIfNecessary(villager.getYRot(), villager.yHeadRot, 0.0F));
-        }
-
         UUID villagerId = villager.getUUID();
         CrossbowState state = CROSSBOW_STATE.getOrDefault(villager.getUUID(), CrossbowState.UNCHARGED);
+        boolean shouldPathToTarget = (!isWithinCrossbowAttackRange(villager, target, rangedWeapon)
+                || seeTime < CROSSBOW_MINIMUM_SEE_TIME)
+                && ATTACK_DELAY.getOrDefault(villagerId, 0) == 0;
+        if (shouldPathToTarget) {
+            tickCrossbowPathing(villager, target, movementSpeed, state == CrossbowState.UNCHARGED);
+        } else {
+            CROSSBOW_UPDATE_PATH_DELAY.remove(villagerId);
+            VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+            VillagerRetaliationRetaliationUtil.clearPathingState(villager);
+        }
+
+        villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
+
         if (state == CrossbowState.UNCHARGED) {
+            if (shouldPathToTarget) {
+                return;
+            }
             villager.startUsingItem(VillagerRetaliationVillagerWeapons.getHoldingHand(villager, VillagerRetaliationVillagerWeapons::isCrossbowWeapon));
             CROSSBOW_STATE.put(villagerId, CrossbowState.CHARGING);
             return;
@@ -327,6 +338,9 @@ final class VillagerRangedCombatHelper {
         }
 
         if (state == CrossbowState.READY_TO_ATTACK) {
+            if (!hasLineOfSight) {
+                return;
+            }
             if (fireCrossbowLikePillager(villager, target, level)) {
                 ATTACK_DELAY.remove(villagerId);
                 CROSSBOW_STATE.put(villagerId, CrossbowState.UNCHARGED);
@@ -334,6 +348,22 @@ final class VillagerRangedCombatHelper {
                 stopCrossbowAttack(villager);
             }
         }
+    }
+
+    private static void tickCrossbowPathing(
+            AbstractVillager villager,
+            LivingEntity target,
+            double movementSpeed,
+            boolean canRun
+    ) {
+        UUID villagerId = villager.getUUID();
+        int updatePathDelay = CROSSBOW_UPDATE_PATH_DELAY.getOrDefault(villagerId, 0) - 1;
+        if (updatePathDelay <= 0) {
+            VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
+            villager.getNavigation().moveTo(target, canRun ? movementSpeed : movementSpeed * 0.5D);
+            updatePathDelay = CROSSBOW_PATHFINDING_DELAY_RANGE.sample(villager.getRandom());
+        }
+        CROSSBOW_UPDATE_PATH_DELAY.put(villagerId, updatePathDelay);
     }
 
     private static boolean fireCrossbowLikePillager(AbstractVillager villager, LivingEntity target, ServerLevel level) {
@@ -346,7 +376,6 @@ final class VillagerRangedCombatHelper {
         if (!CrossbowItem.isCharged(weapon)) {
             return false;
         }
-        clampToSingleChargedProjectile(weapon);
 
         crossbowItem.performShooting(
                 level,
@@ -354,26 +383,11 @@ final class VillagerRangedCombatHelper {
                 hand,
                 weapon,
                 1.6F,
-                VillagerSocialAttributeBehavior.adjustRangedInaccuracy(level, villager, (float) (14 - level.getDifficulty().getId() * 4)),
+                (float) (14 - level.getDifficulty().getId() * 4),
                 target
         );
-        weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
         villager.setItemInHand(hand, weapon.copy());
         return true;
-    }
-
-    private static void clampToSingleChargedProjectile(ItemStack weapon) {
-        ChargedProjectiles chargedProjectiles = weapon.getOrDefault(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
-        if (chargedProjectiles.isEmpty()) {
-            return;
-        }
-
-        List<ItemStack> projectiles = chargedProjectiles.getItems();
-        if (projectiles.size() <= 1) {
-            return;
-        }
-
-        weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(projectiles.get(0).copyWithCount(1)));
     }
 
     private static int nextCrossbowPostLoadDelay(AbstractVillager villager) {
@@ -395,6 +409,7 @@ final class VillagerRangedCombatHelper {
         }
         ATTACK_DELAY.remove(villager.getUUID());
         CROSSBOW_STATE.remove(villager.getUUID());
+        CROSSBOW_UPDATE_PATH_DELAY.remove(villager.getUUID());
         clearChargedCrossbows(villager);
     }
 

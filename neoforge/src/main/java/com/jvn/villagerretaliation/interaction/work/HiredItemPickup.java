@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work;
 
+import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -111,7 +112,7 @@ public final class HiredItemPickup {
         Predicate<ItemStack> safeFilter = itemFilter == null ? ignored -> true : itemFilter;
         ArrayList<ItemEntity> items = new ArrayList<>(level.getEntitiesOfClass(
                 ItemEntity.class,
-                workAreaBounds(context),
+                collectionBounds(context),
                 item -> isCollectableOutputItem(level, context, villager, item, safeFilter)));
         items.sort(Comparator.comparingDouble(villager::distanceToSqr));
         return items.isEmpty() ? null : items.getFirst();
@@ -126,7 +127,7 @@ public final class HiredItemPickup {
         BlockPos pos = item.blockPosition();
         return item.isAlive()
                 && itemFilter.test(item.getItem())
-                && context.isInsideWorkArea(pos)
+                && context.isInsideWorkAreaOrRoute(pos)
                 && context.isLoaded(level, pos)
                 && !HiredPathMemory.isAvoided(level, villager, pos);
     }
@@ -136,8 +137,8 @@ public final class HiredItemPickup {
             HiredWorkContext context,
             ItemEntity item,
             double reachSqr) {
-        return context.isInsideWorkArea(villager.blockPosition())
-                && context.isInsideWorkArea(item.blockPosition())
+        return context.isInsideWorkAreaOrRoute(villager.blockPosition())
+                && context.isInsideWorkAreaOrRoute(item.blockPosition())
                 && villager.distanceToSqr(item) <= reachSqr;
     }
 
@@ -149,8 +150,8 @@ public final class HiredItemPickup {
             ItemEntity item,
             double reachSqr,
             double speed) {
-        if (!context.isInsideWorkArea(villager.blockPosition())
-                || !context.isInsideWorkArea(item.blockPosition())) {
+        if (!context.isInsideWorkAreaOrRoute(villager.blockPosition())
+                || !context.isInsideWorkAreaOrRoute(item.blockPosition())) {
             worker.stopWorkNavigation(villager);
             return false;
         }
@@ -162,12 +163,12 @@ public final class HiredItemPickup {
 
         BlockPos targetPos = item.blockPosition();
         Path currentPath = villager.getNavigation().getPath();
-        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, context::isInsideWorkArea)) {
+        if (currentPath != null && !HiredMoveToBlockFaceJob.pathStaysInsideFilter(currentPath, context::isInsideWorkAreaOrRoute)) {
             worker.stopWorkNavigation(villager);
             return false;
         }
         Path path = HiredPathMemory.createPath(level, villager, targetPos, 0);
-        if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
+        if (path != null && path.canReach() && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkAreaOrRoute)) {
             villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
             boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(villager, path, targetPos, speed, 0);
             if (moved) {
@@ -179,7 +180,10 @@ public final class HiredItemPickup {
         return false;
     }
 
-    private static AABB workAreaBounds(HiredWorkContext context) {
+    private static AABB collectionBounds(HiredWorkContext context) {
+        if (context.hasRoute()) {
+            return routeBounds(context);
+        }
         return new AABB(
                 context.workMin().getX(),
                 context.workMin().getY(),
@@ -187,6 +191,33 @@ public final class HiredItemPickup {
                 context.workMax().getX() + 1.0D,
                 context.workMax().getY() + 1.0D,
                 context.workMax().getZ() + 1.0D);
+    }
+
+    private static AABB routeBounds(HiredWorkContext context) {
+        HiredRoute route = context.route();
+        int horizontalPadding = HiredRoute.MAX_NODE_DISTANCE;
+        int verticalPadding = Math.max(2, context.verticalRadius());
+        int minX = Integer.MAX_VALUE;
+        int minY = Integer.MAX_VALUE;
+        int minZ = Integer.MAX_VALUE;
+        int maxX = Integer.MIN_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        int maxZ = Integer.MIN_VALUE;
+        for (BlockPos node : route.nodes()) {
+            minX = Math.min(minX, node.getX());
+            minY = Math.min(minY, node.getY());
+            minZ = Math.min(minZ, node.getZ());
+            maxX = Math.max(maxX, node.getX());
+            maxY = Math.max(maxY, node.getY());
+            maxZ = Math.max(maxZ, node.getZ());
+        }
+        return new AABB(
+                minX - horizontalPadding,
+                minY - verticalPadding,
+                minZ - horizontalPadding,
+                maxX + horizontalPadding + 1.0D,
+                maxY + verticalPadding + 1.0D,
+                maxZ + horizontalPadding + 1.0D);
     }
 
     public record Messages(

@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.interaction.HiredJobSite;
 import com.jvn.villagerretaliation.interaction.HiredRoute;
+import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
@@ -286,6 +287,41 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(
                 countInventoryItem(context.inventory(), Items.BEEF) > 0,
                 "animal handler should collect beef drops from culled cows into job inventory");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hunterCollectsLootNearRoute(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 8, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrHunterRouteLoot");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(new BlockPos(2, 2, 3), new BlockPos(6, 2, 3)));
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+
+        BlockPos lootPos = helper.absolutePos(new BlockPos(4, 2, 3));
+        ItemEntity beef = new ItemEntity(
+                level,
+                lootPos.getX() + 0.5D,
+                lootPos.getY(),
+                lootPos.getZ() + 0.5D,
+                new ItemStack(Items.BEEF, 2));
+        level.addFreshEntity(beef);
+
+        WorkResult result = new HuntingWorker().tick(level, villager, hirer, context);
+
+        helper.assertTrue(result != null, "hunter should process route loot");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.BEEF), 2, "hunter should collect route loot into job output");
+        helper.assertFalse(beef.isAlive(), "collected route loot item should be removed");
 
         villager.discard();
         helper.succeed();
@@ -3726,6 +3762,34 @@ public final class VillagerWorkerGameTests {
                 100,
                 true,
                 true);
+    }
+
+    private static HiredWorkContext routeContext(
+            GameTestHelper helper,
+            Villager villager,
+            CompoundTag state,
+            List<BlockPos> routeRelativeNodes) {
+        List<BlockPos> routeNodes = new ArrayList<>();
+        for (BlockPos node : routeRelativeNodes) {
+            routeNodes.add(helper.absolutePos(node));
+        }
+        BlockPos center = routeNodes.isEmpty() ? helper.absolutePos(BlockPos.ZERO) : routeNodes.getFirst();
+        HiredWorkArea disabledArea = HiredWorkArea.fromCenter(center, 1, 2, false).asUsable(false);
+        HiredWorkerBrain.initialize(state);
+        return new HiredWorkContext(
+                HiredJobInventory.getJobInventory(villager),
+                state,
+                center,
+                disabledArea.min(),
+                disabledArea.max(),
+                disabledArea.horizontalRadius(),
+                disabledArea.verticalRadius(),
+                false,
+                100,
+                true,
+                true,
+                HiredJobSite.fromWorkArea(disabledArea),
+                new HiredRoute(routeNodes, false));
     }
 
     private static double horizontalDistance(BlockPos first, BlockPos second) {
