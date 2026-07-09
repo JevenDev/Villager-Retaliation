@@ -61,8 +61,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static final String NEXT_WORK_GAME_TIME_TAG = "NextWorkGameTime";
     private static final String NEXT_TREE_SCAN_GAME_TIME_TAG = "NextLoggingTreeScanGameTime";
     private static final String TREE_SCAN_CURSOR_TAG = "LoggingTreeScanCursor";
-    private static final String NEXT_ACCESS_LEAF_SCAN_GAME_TIME_TAG = "NextLoggingAccessLeafScanGameTime";
-    private static final String ACCESS_LEAF_SCAN_CURSOR_TAG = "LoggingAccessLeafScanCursor";
     private static final String PENDING_TREE_ORIGIN_TAG = "PendingLoggingTreeOrigin";
     private static final String PENDING_TREE_LOGS_TAG = "PendingLoggingTreeLogs";
     private static final String PENDING_TREE_LEAVES_TAG = "PendingLoggingTreeLeaves";
@@ -79,7 +77,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static final int TREE_LEAF_LOG_ATTACHMENT_RADIUS = 2;
     private static final int MIN_NATURAL_LEAVES = 4;
     private static final int MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK = 512;
-    private static final int MAX_ACCESS_LEAF_SCAN_POSITIONS_PER_WORK_TICK = 768;
     private static final String NEXT_SAPLING_SCAN_GAME_TIME_TAG = "NextLoggingSaplingScanGameTime";
     private static final String SAPLING_SCAN_CURSOR_TAG = "LoggingSaplingScanCursor";
     private static final int MAX_SAPLING_SCAN_POSITIONS_PER_WORK_TICK = 768;
@@ -87,14 +84,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static final int MAX_TREE_PROGRESS_TICKS = 180;
     private static final int MAX_LOGGING_TARGETS_TO_PATHFIND = 64;
     private static final int MAX_PLANNED_TREE_TARGETS = 12;
-    private static final int MAX_PLANNED_ACCESS_LEAF_TARGETS = 8;
     private static final int MAX_PLANNED_SAPLING_TARGETS = 8;
     private static final String TREE_OBJECTIVE = "tree";
     private static final String TREE_ROUTE_OBJECTIVE = "tree_route";
     private static final String SINGLE_TREE_OBJECTIVE = "single_tree";
     private static final String GROVE_OBJECTIVE = "grove";
-    private static final String ACCESS_LEAF_OBJECTIVE = "tree_access_leaf";
-    private static final String ACCESS_LEAF_ROUTE_OBJECTIVE = "tree_access_leaf_route";
     private static final String SAPLING_ROUTE_OBJECTIVE = "sapling_route";
     private static final String SINGLE_SAPLING_OBJECTIVE = "single_sapling";
     private static final int MAX_TREE_LEAVES_PER_HARVEST = 384;
@@ -117,14 +111,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
             "tree_scan_full_no_reachable_targets",
             "tree_scan_partial_",
             "tree_target_found",
-            NO_TARGET_SCAN_COOLDOWN_TICKS);
-    private static final HiredTargetSearch.Messages ACCESS_LEAF_SEARCH_MESSAGES = new HiredTargetSearch.Messages(
-            "active_tree_access_leaf",
-            "planned_tree_access_leaf",
-            "tree_access_leaf_scan_cooldown",
-            "tree_access_leaf_scan_full_no_reachable_targets",
-            "tree_access_leaf_scan_partial_",
-            "tree_access_leaf_target_found",
             NO_TARGET_SCAN_COOLDOWN_TICKS);
     private static final HiredTargetSearch.Messages SAPLING_SEARCH_MESSAGES = new HiredTargetSearch.Messages(
             "active_sapling_target",
@@ -159,7 +145,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 : "pending none";
         return "Logging: " + pending
                 + ", treeScan=" + scanState(context, TREE_SCAN_CURSOR_TAG, NEXT_TREE_SCAN_GAME_TIME_TAG)
-                + ", accessLeafScan=" + scanState(context, ACCESS_LEAF_SCAN_CURSOR_TAG, NEXT_ACCESS_LEAF_SCAN_GAME_TIME_TAG)
                 + ", saplingScan=" + scanState(context, SAPLING_SCAN_CURSOR_TAG, NEXT_SAPLING_SCAN_GAME_TIME_TAG);
     }
 
@@ -685,10 +670,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return hasPlanObjective(context, TREE_OBJECTIVE, TREE_ROUTE_OBJECTIVE, SINGLE_TREE_OBJECTIVE, GROVE_OBJECTIVE);
     }
 
-    private static boolean hasAccessLeafPlan(HiredWorkContext context) {
-        return hasPlanObjective(context, ACCESS_LEAF_OBJECTIVE, ACCESS_LEAF_ROUTE_OBJECTIVE);
-    }
-
     private static boolean hasSaplingPlan(HiredWorkContext context) {
         return hasPlanObjective(context, SAPLING_ROUTE_OBJECTIVE, SINGLE_SAPLING_OBJECTIVE);
     }
@@ -809,19 +790,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return workTreeAccessLeaf(level, villager, context, active);
     }
 
-    private WorkResult clearTreeAccessLeaf(ServerLevel level, Villager villager, HiredWorkContext context) {
-        setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-        HiredPathTarget target = findTreeAccessLeaf(level, villager, context);
-        if (target == null) {
-            if (isAccessLeafScanInProgress(context)) {
-                setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-                return WorkResult.progressed("interaction.work.logging.searching_scan");
-            }
-            return null;
-        }
-        return workTreeAccessLeaf(level, villager, context, target);
-    }
-
     private WorkResult workTreeAccessLeaf(
             ServerLevel level,
             Villager villager,
@@ -878,71 +846,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
         clearActiveBreakingTarget(level, context, villager);
         clearTreeTargetSearch(context);
         return WorkResult.progressed("interaction.work.logging.clearing_access_leaf");
-    }
-
-    private HiredPathTarget findTreeAccessLeaf(ServerLevel level, Villager villager, HiredWorkContext context) {
-        Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
-        return HiredTargetSearch.find(
-                level,
-                context,
-                () -> activeWorkTarget(level, context, villager),
-                target -> context.isInsideWorkArea(target.blockPos())
-                        && context.isLoaded(level, target.blockPos())
-                        && !isTemporarilyAvoidedTarget(level, villager, target.blockPos())
-                        && isTreeAccessLeaf(level, target.blockPos(), filters),
-                candidateFilter -> plannedAccessLeafTarget(level, villager, context, candidateFilter),
-                pos -> context.isInsideWorkArea(pos)
-                        && context.isLoaded(level, pos)
-                        && !isTemporarilyAvoidedTarget(level, villager, pos)
-                        && isTreeAccessLeaf(level, pos, filters),
-                NEXT_ACCESS_LEAF_SCAN_GAME_TIME_TAG,
-                ACCESS_LEAF_SCAN_CURSOR_TAG,
-                MAX_ACCESS_LEAF_SCAN_POSITIONS_PER_WORK_TICK,
-                candidates -> rebuildAccessLeafObjective(level, villager, context, candidates, filters),
-                ACCESS_LEAF_SEARCH_MESSAGES);
-    }
-
-    private HiredPathTarget rebuildAccessLeafObjective(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context,
-            List<BlockPos> candidates,
-            Set<ResourceLocation> filters) {
-        List<BlockPos> ordered = HiredWorkPlan.routeOrder(villager.blockPosition(), candidates, MAX_PLANNED_ACCESS_LEAF_TARGETS);
-        HiredWorkPlan.replaceWithObjective(
-                context,
-                ordered.size() > 1 ? ACCESS_LEAF_ROUTE_OBJECTIVE : ACCESS_LEAF_OBJECTIVE,
-                ordered.isEmpty() ? null : ordered.getFirst(),
-                ordered,
-                MAX_PLANNED_ACCESS_LEAF_TARGETS);
-        return plannedAccessLeafTarget(
-                level,
-                villager,
-                context,
-                pos -> context.isInsideWorkArea(pos)
-                        && context.isLoaded(level, pos)
-                        && !isTemporarilyAvoidedTarget(level, villager, pos)
-                        && isTreeAccessLeaf(level, pos, filters));
-    }
-
-    private HiredPathTarget plannedAccessLeafTarget(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context,
-            Predicate<BlockPos> validator) {
-        if (!hasAccessLeafPlan(context)) {
-            return null;
-        }
-        Predicate<BlockPos> safeValidator = validator == null ? ignored -> true : validator;
-        HiredWorkPlan.retainMatching(context, safeValidator, MAX_PLANNED_ACCESS_LEAF_TARGETS);
-        for (BlockPos planned : HiredWorkPlan.targets(context)) {
-            HiredPathTarget target = choosePhysicalReachableTarget(level, villager, context, List.of(planned));
-            if (target != null && safeValidator.test(target.blockPos())) {
-                return target;
-            }
-        }
-        HiredWorkPlan.clear(context);
-        return null;
     }
 
     private HiredPathTarget choosePhysicalReachableTarget(
@@ -1035,13 +938,8 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return false;
     }
 
-    private static boolean isAccessLeafScanInProgress(HiredWorkContext context) {
-        return HiredWorkAreaScan.isInProgress(context, ACCESS_LEAF_SCAN_CURSOR_TAG);
-    }
-
     private static void clearTreeTargetSearch(HiredWorkContext context) {
         HiredWorkAreaScan.clearCursor(context, TREE_SCAN_CURSOR_TAG);
-        HiredWorkAreaScan.clearCursor(context, ACCESS_LEAF_SCAN_CURSOR_TAG);
         HiredWorkAreaScan.clearCursor(context, SAPLING_SCAN_CURSOR_TAG);
         wakeTreeTargetSearch(context);
         wakeSaplingTargetSearch(context);
@@ -1049,7 +947,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
 
     private static void wakeTreeTargetSearch(HiredWorkContext context) {
         context.state().remove(NEXT_TREE_SCAN_GAME_TIME_TAG);
-        context.state().remove(NEXT_ACCESS_LEAF_SCAN_GAME_TIME_TAG);
     }
 
     private static void wakeSaplingTargetSearch(HiredWorkContext context) {
