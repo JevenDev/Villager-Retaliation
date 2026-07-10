@@ -302,8 +302,10 @@ public final class ClipboardWorkforceService {
             String reason = lower(brain.failureReason());
             return reason.contains("missing_cooking_raw_food")
                     || reason.contains("missing_cooking_fuel")
+                    || reason.contains("missing_cooking_crafting_materials")
                     || reason.contains("interaction.work.cooking.missing_raw_food")
-                    || reason.contains("interaction.work.cooking.missing_fuel");
+                    || reason.contains("interaction.work.cooking.missing_fuel")
+                    || reason.contains("interaction.work.cooking.missing_crafting_materials");
         }
         if (role == HiredVillagerRole.SMELTER) {
             if (noStorage || materialStorageUnreachable) {
@@ -799,10 +801,21 @@ public final class ClipboardWorkforceService {
             if (reason.contains("missing_cooking_fuel")) {
                 return "Cook needs furnace fuel in job supplies or assigned input storage.";
             }
+            if (reason.contains("missing_cooking_crafting_materials")) {
+                return "Cook needs recipe ingredients for the filtered food in job supplies or assigned input storage.";
+            }
             return "Cook needs raw food in job supplies or assigned input storage.";
         }
-        if (noStorage && (reason.contains("missing_cooking_raw_food") || reason.contains("missing_cooking_fuel"))) {
+        if (noStorage && (reason.contains("missing_cooking_raw_food")
+                || reason.contains("missing_cooking_fuel")
+                || reason.contains("missing_cooking_crafting_materials"))) {
             return "Cook needs assigned input storage or carried supplies for food and fuel.";
+        }
+        if (reason.contains("no_cooking_crafting_table")) {
+            return "Cook needs a crafting table inside the assigned work area for the filtered food recipe.";
+        }
+        if (reason.contains("cooking_crafting_table_unreachable")) {
+            return "Cook cannot path to the crafting table inside the assigned work area.";
         }
         if (reason.contains("no_cooking_station")) {
             return "Cook needs a furnace or smoker inside the assigned work area.";

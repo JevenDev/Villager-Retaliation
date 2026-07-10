@@ -1,12 +1,15 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
@@ -15,6 +18,7 @@ import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.Blocks;
 
 public final class HiredSupplyCrafting {
     private static final int MAX_CRAFTING_DEPTH = 8;
@@ -50,20 +54,28 @@ public final class HiredSupplyCrafting {
     }
 
     public static boolean craftCarriedSupplyItem(ServerLevel level, HiredWorkContext context, Item item) {
-        return craftCarriedSupplyItem(level, context, item, new HashSet<>());
+        return craftCarriedSupplyItem(level, context, item, new HashSet<>(), true);
+    }
+
+    public static boolean craftCarriedSupplyItemWithStations(
+            ServerLevel level,
+            HiredWorkContext context,
+            Item item) {
+        return craftCarriedSupplyItem(level, context, item, new HashSet<>(), hasCraftingTable(level, context));
     }
 
     private static boolean craftCarriedSupplyItem(
             ServerLevel level,
             HiredWorkContext context,
             Item item,
-            Set<Item> visiting) {
+            Set<Item> visiting,
+            boolean hasCraftingTable) {
         if (!visiting.add(item)) {
             return false;
         }
         for (RecipeHolder<CraftingRecipe> holder : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
             CraftingRecipe recipe = holder.value();
-            if (recipe.isSpecial() || !recipe.canCraftInDimensions(3, 3)) {
+            if (recipe.isSpecial() || !canUseRecipe(recipe, hasCraftingTable)) {
                 continue;
             }
             ItemStack result = recipe.getResultItem(level.registryAccess());
@@ -71,7 +83,7 @@ public final class HiredSupplyCrafting {
                 continue;
             }
             Map<Item, Integer> ingredients = new HashMap<>();
-            if (!prepareRecipeIngredients(level, context, recipe, ingredients, visiting)) {
+            if (!prepareRecipeIngredients(level, context, recipe, ingredients, visiting, hasCraftingTable)) {
                 continue;
             }
             if (!canInsertSupply(context, result) && !willConsumeAnyOnlyCarriedSupplyStack(context, ingredients)) {
@@ -82,6 +94,9 @@ public final class HiredSupplyCrafting {
                 context.inventory().consumeSupply(stack -> stack.is(entry.getKey()), entry.getValue());
             }
             ItemStack remainder = context.inventory().insertSupply(result.copy());
+            if (remainder.isEmpty()) {
+                insertCraftingRemainders(context, ingredients);
+            }
             visiting.remove(item);
             return remainder.isEmpty();
         }
@@ -94,7 +109,8 @@ public final class HiredSupplyCrafting {
             HiredWorkContext context,
             CraftingRecipe recipe,
             Map<Item, Integer> ingredients,
-            Set<Item> visiting) {
+            Set<Item> visiting,
+            boolean hasCraftingTable) {
         for (Ingredient ingredient : recipe.getIngredients()) {
             if (ingredient.isEmpty()) {
                 continue;
@@ -107,7 +123,7 @@ public final class HiredSupplyCrafting {
                 Item optionItem = option.getItem();
                 int needed = ingredients.getOrDefault(optionItem, 0) + 1;
                 while (countCarried(context, optionItem) < needed) {
-                    if (!craftCarriedSupplyItem(level, context, optionItem, visiting)) {
+                    if (!craftCarriedSupplyItem(level, context, optionItem, visiting, hasCraftingTable)) {
                         break;
                     }
                 }
@@ -160,16 +176,82 @@ public final class HiredSupplyCrafting {
         return false;
     }
 
+    private static void insertCraftingRemainders(HiredWorkContext context, Map<Item, Integer> ingredients) {
+        List<ItemStack> remainders = new ArrayList<>();
+        for (Map.Entry<Item, Integer> entry : ingredients.entrySet()) {
+            ItemStack ingredient = new ItemStack(entry.getKey());
+            if (!ingredient.hasCraftingRemainingItem()) {
+                continue;
+            }
+            for (int count = 0; count < entry.getValue(); count++) {
+                ItemStack craftingRemainder = ingredient.getCraftingRemainingItem();
+                if (!craftingRemainder.isEmpty()) {
+                    remainders.add(craftingRemainder.copy());
+                }
+            }
+        }
+        for (ItemStack remainder : remainders) {
+            context.inventory().insertSupply(remainder);
+        }
+    }
+
+    public static boolean requiresCraftingTable(CraftingRecipe recipe) {
+        return recipe != null && !recipe.canCraftInDimensions(2, 2);
+    }
+
+    public static boolean canUseRecipe(ServerLevel level, HiredWorkContext context, CraftingRecipe recipe) {
+        return canUseRecipe(recipe, hasCraftingTable(level, context));
+    }
+
+    private static boolean canUseRecipe(CraftingRecipe recipe, boolean hasCraftingTable) {
+        return recipe != null
+                && recipe.canCraftInDimensions(3, 3)
+                && (!requiresCraftingTable(recipe) || hasCraftingTable);
+    }
+
+    public static boolean hasCraftingTable(ServerLevel level, HiredWorkContext context) {
+        if (level == null || context == null || !context.hasWorkArea()) {
+            return false;
+        }
+        for (BlockPos pos : context.workAreaPositions()) {
+            if (context.isLoaded(level, pos) && level.getBlockState(pos).is(Blocks.CRAFTING_TABLE)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static final class MaterialPlanner {
         private final ServerLevel level;
         private final Villager villager;
         private final HiredWorkContext context;
+        private final boolean respectStorageFilter;
+        private final boolean hasCraftingTable;
         private final Map<Item, Integer> surplus = new HashMap<>();
 
         public MaterialPlanner(ServerLevel level, Villager villager, HiredWorkContext context) {
+            this(level, villager, context, true, false);
+        }
+
+        public MaterialPlanner(
+                ServerLevel level,
+                Villager villager,
+                HiredWorkContext context,
+                boolean respectStorageFilter) {
+            this(level, villager, context, respectStorageFilter, false);
+        }
+
+        public MaterialPlanner(
+                ServerLevel level,
+                Villager villager,
+                HiredWorkContext context,
+                boolean respectStorageFilter,
+                boolean requireCraftingStations) {
             this.level = level;
             this.villager = villager;
             this.context = context;
+            this.respectStorageFilter = respectStorageFilter;
+            this.hasCraftingTable = !requireCraftingStations || hasCraftingTable(level, context);
         }
 
         public boolean plan(Item item, int count, Map<Item, Integer> planned) {
@@ -186,7 +268,41 @@ public final class HiredSupplyCrafting {
         }
 
         public int directAvailable(Item item, Map<Item, Integer> planned) {
-            return Math.max(0, countAvailable(this.villager, this.context, item) - planned.getOrDefault(item, 0));
+            int available = countCarried(this.context, item);
+            if (this.context.useAssignedStorageForSupplies()) {
+                available += this.respectStorageFilter
+                        ? AssignedStorageService.countItems(this.villager, stack -> stack.is(item))
+                        : AssignedStorageService.countItemsIgnoringFilter(this.villager, stack -> stack.is(item));
+            }
+            return Math.max(0, available - planned.getOrDefault(item, 0));
+        }
+
+        public boolean planRecipe(CraftingRecipe recipe, int desiredCount, Map<Item, Integer> planned) {
+            if (recipe == null || desiredCount <= 0 || recipe.isSpecial() || !canUseRecipe(recipe, this.hasCraftingTable)) {
+                return false;
+            }
+            ItemStack result = recipe.getResultItem(this.level.registryAccess());
+            if (result.isEmpty()) {
+                return false;
+            }
+            Map<Item, Integer> trial = new LinkedHashMap<>(planned);
+            Map<Item, Integer> trialSurplus = new LinkedHashMap<>(this.surplus);
+            if (!planRecipe(
+                    recipe,
+                    result.getItem(),
+                    result.getCount(),
+                    desiredCount,
+                    trial,
+                    trialSurplus,
+                    new HashSet<>(),
+                    0)) {
+                return false;
+            }
+            planned.clear();
+            planned.putAll(trial);
+            this.surplus.clear();
+            this.surplus.putAll(trialSurplus);
+            return true;
         }
 
         public int surplusAvailable(Item item) {
@@ -228,7 +344,7 @@ public final class HiredSupplyCrafting {
             }
             for (RecipeHolder<CraftingRecipe> holder : this.level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
                 CraftingRecipe recipe = holder.value();
-                if (recipe.isSpecial()) {
+                if (recipe.isSpecial() || !canUseRecipe(recipe, this.hasCraftingTable)) {
                     continue;
                 }
                 ItemStack result = recipe.getResultItem(this.level.registryAccess());

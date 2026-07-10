@@ -27,6 +27,9 @@ import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
+import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
+import com.jvn.villagerretaliation.item.VillagerItemFilterData;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
@@ -67,6 +70,8 @@ import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.AbstractCookingRecipe;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -158,6 +163,161 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(idle.targetPos() == null, "idle state should clear block target");
         helper.assertTrue(idle.storageTargetPos() == null, "idle state should clear storage target");
         helper.assertValueEqual(HiredWorkerTaskState.byId("target_unreachable"), HiredWorkerTaskState.FAILED_COOLDOWN, "legacy state alias");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void supplyCraftingRequiresTableForBreadAndCraftsWhenPresent(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 8, 0, 8, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                new CompoundTag(),
+                new BlockPos(1, 2, 1),
+                new BlockPos(7, 4, 7),
+                true);
+        HiredJobInventory inventory = context.inventory();
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.WHEAT, 3)).isEmpty(), "wheat should fit");
+
+        helper.assertFalse(
+                HiredSupplyCrafting.craftCarriedSupplyItemWithStations(level, context, Items.BREAD),
+                "bread should require a crafting table");
+        helper.assertValueEqual(countInventoryItem(inventory, Items.WHEAT), 3, "failed craft should preserve wheat");
+
+        setBlock(helper, new BlockPos(3, 2, 3), Blocks.CRAFTING_TABLE.defaultBlockState());
+        helper.assertTrue(
+                HiredSupplyCrafting.craftCarriedSupplyItemWithStations(level, context, Items.BREAD),
+                "bread should craft when a table is in the work area");
+        helper.assertValueEqual(countInventoryItem(inventory, Items.WHEAT), 0, "bread should consume three wheat");
+        helper.assertValueEqual(countInventoryItem(inventory, Items.BREAD), 1, "bread output");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void supplyCraftingBuildsCakePrerequisitesAndReturnsBuckets(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 8, 0, 8, 1);
+        setBlock(helper, new BlockPos(3, 2, 3), Blocks.CRAFTING_TABLE.defaultBlockState());
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                new CompoundTag(),
+                new BlockPos(1, 2, 1),
+                new BlockPos(7, 4, 7),
+                true);
+        HiredJobInventory inventory = context.inventory();
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.MILK_BUCKET, 3)).isEmpty(), "milk should fit");
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.SUGAR_CANE, 2)).isEmpty(), "sugar cane should fit");
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.EGG)).isEmpty(), "egg should fit");
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.WHEAT, 3)).isEmpty(), "wheat should fit");
+
+        helper.assertTrue(
+                HiredSupplyCrafting.craftCarriedSupplyItemWithStations(level, context, Items.CAKE),
+                "cake should recursively craft sugar from sugar cane");
+        helper.assertValueEqual(countInventoryItem(inventory, Items.CAKE), 1, "cake output");
+        helper.assertValueEqual(countInventoryItem(inventory, Items.SUGAR_CANE), 0, "sugar cane prerequisite input");
+        helper.assertValueEqual(countInventoryItem(inventory, Items.BUCKET), 3, "milk buckets should be returned");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void cookFilterSelectsOnlyConfiguredCraftableFood(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 8, 0, 8, 1);
+        setBlock(helper, new BlockPos(3, 2, 3), Blocks.CRAFTING_TABLE.defaultBlockState());
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        ServerPlayer hirer = fakePlayer(level, "VrCookFilterStorage");
+        BlockPos storageRelative = new BlockPos(4, 2, 4);
+        BlockPos storage = helper.absolutePos(storageRelative);
+        setBlock(helper, storageRelative, Blocks.CHEST.defaultBlockState());
+        container(level, storage).setItem(0, new ItemStack(Items.WHEAT, 3));
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), storage)),
+                AssignedStorageService.INPUT_PURPOSE);
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                new CompoundTag(),
+                new BlockPos(1, 2, 1),
+                new BlockPos(7, 4, 7),
+                true);
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.BREAD));
+        VillagerItemFilterService.replaceFilter(villager, filter);
+
+        helper.assertValueEqual(
+                AssignedStorageService.countItems(villager, stack -> stack.is(Items.WHEAT)),
+                0,
+                "normal withdrawals should still honor the bread allowlist");
+        helper.assertValueEqual(
+                AssignedStorageService.countItemsIgnoringFilter(villager, stack -> stack.is(Items.WHEAT)),
+                3,
+                "cook recipe planning should see wheat behind its output filter");
+
+        CookingWorker.CraftingAssessment bread = CookingWorker.assessCraftingTargets(
+                level,
+                villager,
+                context,
+                VillagerItemFilterService.assignedFilter(villager));
+        helper.assertTrue(bread.selection() != null, "configured bread should produce a crafting plan");
+        helper.assertTrue(bread.selection().result().is(Items.BREAD), "crafting plan should target bread");
+
+        VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.CAKE));
+        VillagerItemFilterService.replaceFilter(villager, filter);
+        CookingWorker.CraftingAssessment cake = CookingWorker.assessCraftingTargets(
+                level,
+                villager,
+                context,
+                VillagerItemFilterService.assignedFilter(villager));
+        helper.assertTrue(cake.selection() == null, "unavailable cake materials should not produce a plan");
+        helper.assertTrue(cake.hasRecipe(), "the configured cake recipe should still be recognized");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @SuppressWarnings("unchecked")
+    public static void cookFilterKeepsSmokerRecipesAndFiltersTheirOutputs(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        RecipeType<AbstractCookingRecipe> smoking =
+                (RecipeType<AbstractCookingRecipe>) (RecipeType<?>) RecipeType.SMOKING;
+        ItemStack cookedBeefFilter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(cookedBeefFilter, 0, new ItemStack(Items.COOKED_BEEF));
+        ItemStack breadFilter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(breadFilter, 0, new ItemStack(Items.BREAD));
+
+        helper.assertTrue(
+                CookingWorker.isCookableFoodForFilter(
+                        level,
+                        new ItemStack(Items.BEEF),
+                        smoking,
+                        cookedBeefFilter),
+                "a cooked-beef filter should keep the smoker beef recipe available");
+        helper.assertFalse(
+                CookingWorker.isCookableFoodForFilter(
+                        level,
+                        new ItemStack(Items.BEEF),
+                        smoking,
+                        breadFilter),
+                "a bread filter should reject cooked beef from the smoker");
+        helper.assertTrue(
+                CookingWorker.isCookableFoodForFilter(
+                        level,
+                        new ItemStack(Items.BEEF),
+                        smoking,
+                        ItemStack.EMPTY),
+                "an unfiltered cook should preserve legacy smoker behavior");
         helper.succeed();
     }
 

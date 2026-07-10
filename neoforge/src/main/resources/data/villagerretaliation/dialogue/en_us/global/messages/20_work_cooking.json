@@ -155,6 +155,62 @@
         "I cleared {count} {item} from the fuel slot."
       ],
       "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.collected_fuel_remainder.020"
+    },
+    {
+      "key": "interaction.work.cooking.no_crafting_table",
+      "lines": [
+        "I need a crafting table inside the assigned job site for that food."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.no_crafting_table.021"
+    },
+    {
+      "key": "interaction.work.cooking.missing_crafting_materials",
+      "lines": [
+        "I need the recipe ingredients in my job supplies or assigned storage before I can make the filtered food."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.missing_crafting_materials.022"
+    },
+    {
+      "key": "interaction.work.cooking.collecting_crafting_materials",
+      "lines": [
+        "I am collecting ingredients for the filtered food recipe."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.collecting_crafting_materials.023"
+    },
+    {
+      "key": "interaction.work.cooking.gathered_crafting_materials",
+      "lines": [
+        "I gathered the recipe ingredients and am heading back to prepare the food."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.gathered_crafting_materials.024"
+    },
+    {
+      "key": "interaction.work.cooking.moving_to_crafting_table",
+      "lines": [
+        "I am heading to the crafting table to prepare the filtered food."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.moving_to_crafting_table.025"
+    },
+    {
+      "key": "interaction.work.cooking.crafting_table_unreachable",
+      "lines": [
+        "I found a crafting table, but I cannot reach it from the job site."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.crafting_table_unreachable.026"
+    },
+    {
+      "key": "interaction.work.cooking.craft_failed",
+      "lines": [
+        "I could not finish the filtered food recipe with the ingredients I gathered."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.craft_failed.027"
+    },
+    {
+      "key": "interaction.work.cooking.crafted_food",
+      "lines": [
+        "I prepared {count} {item}."
+      ],
+      "id": "global.messages.20_work_cooking.messages.interaction.work.cooking.crafted_food.028"
     }
   ]
 }
