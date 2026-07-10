@@ -25,6 +25,9 @@ import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.party.PartyRecord;
+import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import java.util.List;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -142,6 +145,20 @@ public final class VillagerInteractionScreenOpener {
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         boolean hiredByPlayer = HiredVillagerContractService.isHiredBy(level, villager, player);
         boolean hiredAnyPlayer = HiredVillagerContractService.isHired(level, villager);
+        PartyRecord villagerParty = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        PartyVillagerRecord partyVillager = villagerParty == null ? null : villagerParty.villager(villager.getUUID());
+        PartyRecord playerParty = PartyService.getPartyForPlayer(level, player.getUUID()).orElse(null);
+        boolean partyVillagerAuthorized = partyVillager != null
+                && villagerParty.leaderId().equals(player.getUUID())
+                && partyVillager.recruiterId().equals(player.getUUID());
+        boolean partyRecruitAvailable = partyVillager == null
+                && !hiredAnyPlayer
+                && (playerParty == null
+                || playerParty.leaderId().equals(player.getUUID())
+                && playerParty.villagers().size() < PartyService.MAX_VILLAGERS);
+        int partyRemainingDays = partyVillager == null
+                ? 0
+                : partyVillager.remainingDays(level.getServer().overworld().getGameTime());
         VillagerWalletService.WalletSnapshot wallet = VillagerWalletService.getWallet(villager);
         VillagerCurrencyResources.Text currencyText = VillagerCurrencyResources.text(level.getServer());
         VillagerReputationNetworking.sendProfile(player, villager, profile);
@@ -166,6 +183,10 @@ public final class VillagerInteractionScreenOpener {
                 hiredByPlayer,
                 hiredAnyPlayer && !hiredByPlayer,
                 HiredVillagerContractService.getRemainingHireDays(level, villager),
+                partyVillager != null,
+                partyVillagerAuthorized,
+                partyRecruitAvailable,
+                partyRemainingDays,
                 VillagerWalletService.getVendorCurrencyAvailable(villager),
                 VillagerWalletService.getVendorCurrencyCap(villager),
                 wallet.lifetimeEarned(),

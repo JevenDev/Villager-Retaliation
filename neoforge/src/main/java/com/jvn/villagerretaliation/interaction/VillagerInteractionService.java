@@ -610,17 +610,31 @@ public final class VillagerInteractionService {
         Villager villager = contextTarget.villager();
         ServerLevel level = contextTarget.level();
         boolean ownsContract = HiredVillagerContractService.isHiredBy(level, villager, player);
+        com.jvn.villagerretaliation.party.PartyRecord recruitedParty =
+                com.jvn.villagerretaliation.party.PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        com.jvn.villagerretaliation.party.PartyVillagerRecord partyVillager = recruitedParty == null
+                ? null
+                : recruitedParty.villager(villager.getUUID());
+        boolean ownsPartyContract = recruitedParty != null
+                && partyVillager != null
+                && recruitedParty.leaderId().equals(player.getUUID())
+                && partyVillager.recruiterId().equals(player.getUUID());
         boolean canAdministerContract = ownsContract && isContractAdministrationAction(action);
+        boolean canAdministerPartyContract = ownsPartyContract && isPartyAdministrationAction(action);
         boolean canOpenJobInventory = action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
                 && com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(level, villager, player);
         if (!VillagerRecruitmentService.canRecruit(level, villager, player)
                 && !canAdministerContract
+                && !canAdministerPartyContract
                 && !canOpenJobInventory) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
 
         focusVillagerOnPlayer(villager, player);
+        if (handlePartyVillagerRequest(player, level, villager, action, recruitedParty, partyVillager)) {
+            return;
+        }
         if (action == VillagerRecruitRequestPayload.Action.FOLLOW
                 || action == VillagerRecruitRequestPayload.Action.STAY_HERE
                 || action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
@@ -859,6 +873,126 @@ public final class VillagerInteractionService {
                  STOP_BUILDER_BUILD -> true;
             default -> false;
         };
+    }
+
+    private static boolean isPartyAdministrationAction(VillagerRecruitRequestPayload.Action action) {
+        return switch (action) {
+            case EXTEND_ONE_DAY,
+                 EXTEND_THREE_DAYS,
+                 EXTEND_FIVE_DAYS,
+                 EXTEND_SEVEN_DAYS,
+                 EXTEND_FIFTEEN_DAYS,
+                 EXTEND_THIRTY_DAYS,
+                 VIEW_CONTRACT,
+                 OPEN_JOB_INVENTORY,
+                 FOLLOW,
+                 STAY_HERE,
+                 PROMPT_PARTY_DISMISS_CONFIRMATION,
+                 DECLINE_PARTY_DISMISS_CONFIRMATION,
+                 PARTY_DISMISS -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean handlePartyVillagerRequest(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            VillagerRecruitRequestPayload.Action action,
+            com.jvn.villagerretaliation.party.PartyRecord party,
+            com.jvn.villagerretaliation.party.PartyVillagerRecord record) {
+        if (action == VillagerRecruitRequestPayload.Action.PROMPT_PARTY_RECRUIT_CONFIRMATION) {
+            player.sendSystemMessage(Component.translatable(
+                    "villagerretaliation.party.recruit.confirmation",
+                    VillagerPresetNameRegistry.resolveDisplayName(villager)));
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.DECLINE_PARTY_RECRUIT_CONFIRMATION) {
+            player.sendSystemMessage(Component.translatable("villagerretaliation.party.action_cancelled"));
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.PARTY_RECRUIT) {
+            boolean createsParty = com.jvn.villagerretaliation.party.PartyService
+                    .getPartyForPlayer(level, player.getUUID())
+                    .isEmpty();
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
+                    com.jvn.villagerretaliation.party.PartyVillagerContractService.recruit(player, villager);
+            if (result.success() && createsParty) {
+                player.sendSystemMessage(Component.translatable("villagerretaliation.party.created"));
+            }
+            sendPartyContractResult(player, result);
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return true;
+        }
+        if (party == null || record == null) {
+            return false;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.FOLLOW
+                || action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
+                    action == VillagerRecruitRequestPayload.Action.FOLLOW
+                            ? com.jvn.villagerretaliation.party.PartyVillagerContractService.setFollowing(player, villager)
+                            : com.jvn.villagerretaliation.party.PartyVillagerContractService.setStaying(player, villager);
+            sendPartyContractResult(player, result);
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return true;
+        }
+        int extensionDays = switch (action) {
+            case EXTEND_ONE_DAY -> 1;
+            case EXTEND_THREE_DAYS -> 3;
+            case EXTEND_FIVE_DAYS -> 5;
+            case EXTEND_SEVEN_DAYS -> 7;
+            case EXTEND_FIFTEEN_DAYS -> 15;
+            case EXTEND_THIRTY_DAYS -> 30;
+            default -> 0;
+        };
+        if (extensionDays > 0) {
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
+                    com.jvn.villagerretaliation.party.PartyVillagerContractService.extend(player, villager, extensionDays);
+            sendPartyContractResult(player, result);
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.VIEW_CONTRACT) {
+            player.sendSystemMessage(Component.translatable(
+                    "villagerretaliation.party.contract.remaining",
+                    record.remainingDays(level.getServer().overworld().getGameTime()),
+                    com.jvn.villagerretaliation.party.PartyVillagerContractService.DAILY_EMERALD_COST));
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.PROMPT_PARTY_DISMISS_CONFIRMATION) {
+            player.sendSystemMessage(Component.translatable(
+                    "villagerretaliation.party.dismiss.confirmation",
+                    VillagerPresetNameRegistry.resolveDisplayName(villager)));
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.DECLINE_PARTY_DISMISS_CONFIRMATION) {
+            player.sendSystemMessage(Component.translatable("villagerretaliation.party.action_cancelled"));
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.PARTY_DISMISS) {
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
+                    com.jvn.villagerretaliation.party.PartyVillagerContractService.dismiss(player, villager);
+            sendPartyContractResult(player, result);
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
+                || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
+            player.sendSystemMessage(Component.translatable("villagerretaliation.party.error.use_follow_or_stay"));
+            return true;
+        }
+        return false;
+    }
+
+    private static void sendPartyContractResult(
+            ServerPlayer player,
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result) {
+        if (result.days() > 0 || result.emeraldCost() > 0) {
+            player.sendSystemMessage(Component.translatable(result.messageKey(), result.days(), result.emeraldCost()));
+        } else {
+            player.sendSystemMessage(Component.translatable(result.messageKey()));
+        }
     }
 
     private static boolean canUseBuilderBlueprintService(ServerPlayer player, ServerLevel level, Villager villager) {

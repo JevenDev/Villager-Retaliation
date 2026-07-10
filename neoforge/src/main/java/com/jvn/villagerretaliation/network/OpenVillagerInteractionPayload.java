@@ -34,6 +34,10 @@ public record OpenVillagerInteractionPayload(
         boolean hiredByPlayer,
         boolean hiredByOtherPlayer,
         int hiredRemainingDays,
+        boolean recruitedPartyVillager,
+        boolean partyVillagerAuthorized,
+        boolean partyRecruitAvailable,
+        int partyRemainingDays,
         int walletEmeralds,
         int maxWalletEmeralds,
         int lifetimeWalletEarned,
@@ -98,6 +102,10 @@ public record OpenVillagerInteractionPayload(
         buffer.writeBoolean(payload.hiredByPlayer());
         buffer.writeBoolean(payload.hiredByOtherPlayer());
         buffer.writeVarInt(payload.hiredRemainingDays());
+        buffer.writeBoolean(payload.recruitedPartyVillager());
+        buffer.writeBoolean(payload.partyVillagerAuthorized());
+        buffer.writeBoolean(payload.partyRecruitAvailable());
+        buffer.writeVarInt(payload.partyRemainingDays());
         buffer.writeVarInt(payload.walletEmeralds());
         buffer.writeVarInt(payload.maxWalletEmeralds());
         buffer.writeVarInt(payload.lifetimeWalletEarned());
@@ -147,6 +155,10 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
+                buffer.readVarInt(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),

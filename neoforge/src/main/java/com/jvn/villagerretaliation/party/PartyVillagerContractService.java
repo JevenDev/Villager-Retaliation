@@ -103,6 +103,7 @@ public final class PartyVillagerContractService {
         attachEntityState(level, villager, membership.partyId(), record);
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
         VillagerRecruitmentService.applyPartyFollowing(level, villager, player);
+        PartySyncService.syncParty(level.getServer(), membership.partyId());
         return ContractResult.success(
                 "villagerretaliation.party.villager_recruited",
                 membership.partyId(),
@@ -137,6 +138,7 @@ public final class PartyVillagerContractService {
         record.extend(newEnd, extensionDays, cost);
         PartyService.markChanged(level);
         villager.setPersistenceRequired();
+        PartySyncService.syncParty(level.getServer(), party.id());
         return ContractResult.success(
                 "villagerretaliation.party.contract_extended",
                 party.id(),
@@ -153,6 +155,7 @@ public final class PartyVillagerContractService {
         context.record().setFollowing();
         PartyService.markChanged(context.level());
         VillagerRecruitmentService.applyPartyFollowing(context.level(), villager, player);
+        PartySyncService.syncParty(context.level().getServer(), context.party().id());
         return ContractResult.success("villagerretaliation.party.villager_following", context.party().id(), context.record(), 0, 0);
     }
 
@@ -165,6 +168,7 @@ public final class PartyVillagerContractService {
         context.record().setStaying(context.level().dimension().location(), anchor);
         PartyService.markChanged(context.level());
         VillagerRecruitmentService.applyPartyStay(context.level(), villager, player);
+        PartySyncService.syncParty(context.level().getServer(), context.party().id());
         return ContractResult.success("villagerretaliation.party.villager_staying", context.party().id(), context.record(), 0, 0);
     }
 
@@ -179,6 +183,7 @@ public final class PartyVillagerContractService {
         }
         cleanupEntity(villager);
         closeJobInventories(context.level().getServer(), villager.getId());
+        PartySyncService.syncParty(context.level().getServer(), context.party().id());
         return ContractResult.success("villagerretaliation.party.villager_dismissed", context.party().id(), removed, 0, 0);
     }
 
@@ -243,6 +248,17 @@ public final class PartyVillagerContractService {
         PartyService.markChanged(level);
         attachEntityState(level, villager, party.id(), record);
         applyCommandState(level, villager, party, record);
+        PartySyncService.syncParty(level.getServer(), party.id());
+    }
+
+    public static void onVillagerUnloaded(Villager villager) {
+        if (villager != null && villager.level() instanceof ServerLevel level) {
+            PartyService.getPartyForVillager(level, villager.getUUID())
+                    .ifPresent(party -> PartySyncService.syncPartyWithUnavailableVillager(
+                            level.getServer(),
+                            party.id(),
+                            villager.getUUID()));
+        }
     }
 
     public static void onVillagerDeath(Villager villager) {
@@ -257,6 +273,7 @@ public final class PartyVillagerContractService {
         cleanupEntity(villager);
         closeJobInventories(level.getServer(), villager.getId());
         notifyLeader(level.getServer(), party, "villagerretaliation.party.villager_died");
+        PartySyncService.syncParty(level.getServer(), party.id());
     }
 
     public static void onServerTick(MinecraftServer server) {
@@ -345,6 +362,7 @@ public final class PartyVillagerContractService {
             closeJobInventories(server, loaded.getId());
         }
         notifyLeader(server, party, "villagerretaliation.party.contract_expired");
+        PartySyncService.syncParty(server, party.id());
     }
 
     private static void attachEntityState(ServerLevel level, Villager villager, UUID partyId, PartyVillagerRecord record) {

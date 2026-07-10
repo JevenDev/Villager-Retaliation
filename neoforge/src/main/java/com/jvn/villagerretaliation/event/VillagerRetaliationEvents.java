@@ -36,6 +36,9 @@ import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
+import com.jvn.villagerretaliation.party.PartyActionHandler;
+import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartySyncService;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
@@ -115,11 +118,20 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             VillagerQuestService.clearRuntimeState(player);
             VillagerReputationNetworking.sendServerConfig(player);
+            PartySyncService.sendTo(player);
+            PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())
+                    .ifPresent(party -> PartySyncService.syncParty(player.getServer(), party.id()));
+            PartyActionHandler.sendPendingInvitation(player);
         }
     }
 
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())
+                    .ifPresent(party -> PartySyncService.syncPartyWithOfflinePlayer(
+                            player.getServer(),
+                            party.id(),
+                            player.getUUID()));
             VillagerQuestService.clearRuntimeState(player);
             HiredDebugPreviewService.clearRuntimeState(player);
         }
@@ -128,6 +140,7 @@ public final class VillagerRetaliationEvents {
     public static void onPlayerClone(PlayerEvent.Clone event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             VillagerQuestService.clearRuntimeState(player);
+            PartySyncService.sendTo(player);
         }
     }
 
@@ -346,6 +359,15 @@ public final class VillagerRetaliationEvents {
 
         if (event.getTarget() instanceof Villager && player instanceof ServerPlayer serverPlayer) {
             VillagerReputationAdvancements.onVillagerInteraction(serverPlayer);
+        }
+
+        if (event.getTarget() instanceof ServerPlayer target
+                && player instanceof ServerPlayer serverPlayer
+                && !target.getUUID().equals(serverPlayer.getUUID())) {
+            PartyActionHandler.openPlayerMenu(serverPlayer, target);
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.CONSUME);
+            return;
         }
 
         ItemStack interactionStack = player.getItemInHand(event.getHand());
@@ -626,6 +648,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
+            PartyVillagerContractService.onVillagerUnloaded(villager);
+        }
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
         VillagerSocialGraphService.onEntityLeaveLevel(event.getEntity());

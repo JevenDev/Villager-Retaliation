@@ -17,7 +17,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "37";
+    private static final String PROTOCOL_VERSION = "38";
 
     private VillagerReputationNetworking() {
     }
@@ -143,6 +143,31 @@ public final class VillagerReputationNetworking {
                 ClipboardWorkforceSyncPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.inventory.ClipboardWorkforceClient",
                 "accept"
+        );
+        network.safePlayToClientThreaded(
+                PartyRosterSyncPayload.TYPE,
+                PartyRosterSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.party.PartyRosterClient",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                PartyInvitationSyncPayload.TYPE,
+                PartyInvitationSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.party.PartyInvitationClient",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                OpenPlayerPartyMenuPayload.TYPE,
+                OpenPlayerPartyMenuPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.party.PlayerPartyInteractionClient",
+                "open"
+        );
+        network.playToServer(
+                PartyActionRequestPayload.TYPE,
+                PartyActionRequestPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.party.PartyActionHandler.handle(player, payload)))
         );
         network.playToServer(
                 QuestTrackerRequestPayload.TYPE,

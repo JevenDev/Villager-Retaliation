@@ -103,7 +103,11 @@ public final class PartyService {
         PartySavedData data = partyData(target.serverLevel());
         PartyInvitation invitation = data.invitation(invitationId).orElse(null);
         long now = serverGameTime(target.getServer());
-        if (invitation == null || !invitation.targetId().equals(target.getUUID()) || invitation.isExpired(now)) {
+        if (invitation != null && invitation.isExpired(now)) {
+            data.removeInvitation(invitationId);
+            return PartyResult.failure("villagerretaliation.party.invitation_expired");
+        }
+        if (invitation == null || !invitation.targetId().equals(target.getUUID())) {
             data.removeInvitation(invitationId);
             return PartyResult.failure("villagerretaliation.party.error.invitation_invalid");
         }

@@ -64,6 +64,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_gift");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_HIRE_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_hire");
+    /** Single replacement point for the temporary party recruitment button artwork. */
+    public static final ResourceLocation PARTY_RECRUITMENT_PLACEHOLDER_ICON = INTERACTION_BUTTON_ICON_HIRE_TEXTURE;
     public static final ResourceLocation INTERACTION_BUTTON_ICON_INVENTORY_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_inventory");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_START_FOLLOW_TEXTURE =

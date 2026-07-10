@@ -100,7 +100,7 @@ public final class PartyRecord {
         return null;
     }
 
-    PartyVillagerRecord villager(UUID villagerId) {
+    public PartyVillagerRecord villager(UUID villagerId) {
         for (PartyVillagerRecord record : this.villagers) {
             if (record.villagerId().equals(villagerId)) {
                 return record;

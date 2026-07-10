@@ -252,6 +252,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean hiredByPlayer;
     private final boolean hiredByOtherPlayer;
     private int hiredRemainingDays;
+    private final boolean recruitedPartyVillager;
+    private final boolean partyVillagerAuthorized;
+    private final boolean partyRecruitAvailable;
+    private int partyRemainingDays;
     private final int walletEmeralds;
     private final int maxWalletEmeralds;
     private final int lifetimeWalletEarned;
@@ -311,6 +315,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private HiredBrewingRecipeCatalog.BrewingLevelChoice selectedBrewingLevelChoice;
     private HiredBrewingRecipeCatalog.BrewingRoute selectedBrewingRoute;
     private HiredVillagerRole pendingHireRole;
+    private boolean confirmingPartyRecruit;
+    private boolean confirmingPartyDismiss;
     private String selectedBuilderCategory;
     private BuilderStructureCatalog.Entry selectedBuilderStructure;
     private int selectedInventorySlot = -1;
@@ -367,6 +373,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean hiredByPlayer,
             boolean hiredByOtherPlayer,
             int hiredRemainingDays,
+            boolean recruitedPartyVillager,
+            boolean partyVillagerAuthorized,
+            boolean partyRecruitAvailable,
+            int partyRemainingDays,
             int walletEmeralds,
             int maxWalletEmeralds,
             int lifetimeWalletEarned,
@@ -417,6 +427,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.hiredByPlayer = hiredByPlayer;
         this.hiredByOtherPlayer = hiredByOtherPlayer;
         this.hiredRemainingDays = Math.max(0, hiredRemainingDays);
+        this.recruitedPartyVillager = recruitedPartyVillager;
+        this.partyVillagerAuthorized = partyVillagerAuthorized;
+        this.partyRecruitAvailable = partyRecruitAvailable;
+        this.partyRemainingDays = Math.max(0, partyRemainingDays);
         this.walletEmeralds = Math.max(0, walletEmeralds);
         this.maxWalletEmeralds = Math.max(0, maxWalletEmeralds);
         this.lifetimeWalletEarned = Math.max(0, lifetimeWalletEarned);
@@ -998,7 +1012,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (canRequestVillagerInventory()) {
                 addOption("root.inventory", this::requestInventory);
             }
-            this.options.add(DialogueOption.enabled(translate(this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "root.recruit"), this::openRecruitPage));
+            this.options.add(DialogueOption.enabled(translate(
+                    this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager
+                            ? "root.job"
+                            : "root.recruit"), this::openRecruitPage));
             if (this.relationships.hasRelationships()) {
                 addOption("root.relationships", this::openRelationshipPage);
             }
@@ -1008,6 +1025,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addRootRecruitmentOptions() {
+        if (this.recruitedPartyVillager && !this.partyVillagerAuthorized) {
+            return;
+        }
         if (this.followingPlayer) {
             addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
             if (canCommandStayHere()) {
@@ -1031,6 +1051,24 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addRecruitOptions() {
+        if (this.recruitedPartyVillager) {
+            if (!this.partyVillagerAuthorized) {
+                addPassiveOption("party.leader_only");
+                return;
+            }
+            addOption("party.about_contract", this::openContractPage);
+            addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
+            if (this.stayingHere) {
+                addOption("party.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
+            } else {
+                addOption("party.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
+            }
+            addOption("party.dismiss", this::openPartyDismissConfirmationPage);
+            return;
+        }
+        if (this.partyRecruitAvailable) {
+            addOption("party.recruit", this::openPartyRecruitConfirmationPage);
+        }
         if (this.hiredByPlayer && !this.oneOffBuilderJob) {
             addOption("recruit.about_contract", this::openContractPage);
         } else if (this.hiredByOtherPlayer) {
@@ -1110,12 +1148,34 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addContractOptions() {
-        addOption("recruit.contract_days_left", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
+        if (this.recruitedPartyVillager) {
+            this.options.add(DialogueOption.enabled(
+                    translate("party.remaining_days", this.partyRemainingDays),
+                    NO_ACTION));
+        }
+        addOption(this.recruitedPartyVillager ? "party.contract_days_left" : "recruit.contract_days_left",
+                () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
         addOption("recruit.extend_contract", this::openContractExtensionPage);
         addOption("recruit.nevermind", this::openRecruitPage);
     }
 
     private void addEndContractConfirmationOptions() {
+        if (this.confirmingPartyRecruit) {
+            addOption("party.recruit_confirm", () -> requestRecruit(VillagerRecruitRequestPayload.Action.PARTY_RECRUIT));
+            addOption("recruit.nevermind", () -> {
+                requestRecruit(VillagerRecruitRequestPayload.Action.DECLINE_PARTY_RECRUIT_CONFIRMATION);
+                openRecruitPage();
+            });
+            return;
+        }
+        if (this.confirmingPartyDismiss) {
+            addOption("party.dismiss_confirm", () -> requestRecruit(VillagerRecruitRequestPayload.Action.PARTY_DISMISS));
+            addOption("recruit.nevermind", () -> {
+                requestRecruit(VillagerRecruitRequestPayload.Action.DECLINE_PARTY_DISMISS_CONFIRMATION);
+                openRecruitPage();
+            });
+            return;
+        }
         addOption("recruit.end_hire_confirm", () -> requestRecruit(VillagerRecruitRequestPayload.Action.END_HIRE));
         addOption("recruit.nevermind", () -> {
             requestRecruit(VillagerRecruitRequestPayload.Action.DECLINE_END_HIRE_CONFIRMATION);
@@ -1124,6 +1184,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addContractExtensionOptions() {
+        if (this.recruitedPartyVillager) {
+            addOption("party.extend_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_ONE_DAY));
+            addOption("party.extend_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_THREE_DAYS));
+            addOption("party.extend_five_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIVE_DAYS));
+            addOption("party.extend_seven_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_SEVEN_DAYS));
+            addOption("party.extend_fifteen_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIFTEEN_DAYS));
+            addOption("party.extend_thirty_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_THIRTY_DAYS));
+            addOption("recruit.nevermind", this::openContractPage);
+            return;
+        }
         addOption("recruit.extend_one_day", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_ONE_DAY));
         addOption("recruit.extend_three_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_THREE_DAYS));
         addOption("recruit.extend_five_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIVE_DAYS));
@@ -1715,6 +1785,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void openEndContractConfirmationPage() {
+        this.confirmingPartyRecruit = false;
+        this.confirmingPartyDismiss = false;
+        openPage(DialoguePage.END_CONTRACT_CONFIRMATION);
+    }
+
+    private void openPartyRecruitConfirmationPage() {
+        this.confirmingPartyRecruit = true;
+        this.confirmingPartyDismiss = false;
+        requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_PARTY_RECRUIT_CONFIRMATION);
+        openPage(DialoguePage.END_CONTRACT_CONFIRMATION);
+    }
+
+    private void openPartyDismissConfirmationPage() {
+        this.confirmingPartyRecruit = false;
+        this.confirmingPartyDismiss = true;
+        requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_PARTY_DISMISS_CONFIRMATION);
         openPage(DialoguePage.END_CONTRACT_CONFIRMATION);
     }
 
@@ -2721,7 +2807,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private List<InteractionMenuButton> interactionMenuButtons() {
         boolean inventoryAvailable = canRequestVillagerInventory();
-        boolean stayAvailable = this.stayingHere || canCommandStayHere();
+        boolean stayAvailable = this.recruitedPartyVillager
+                ? this.partyVillagerAuthorized
+                : this.stayingHere || canCommandStayHere();
         List<InteractionMenuButton> buttons = new ArrayList<>();
         buttons.add(new InteractionMenuButton(
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TALK_TEXTURE,
@@ -2756,9 +2844,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     true));
         }
         buttons.add(new InteractionMenuButton(
-                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_HIRE_TEXTURE,
-                translate(this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "interaction_button.hire_job"),
-                translate(this.hiredByPlayer || this.hiredByOtherPlayer
+                VillagerRetaliationClientAssets.PARTY_RECRUITMENT_PLACEHOLDER_ICON,
+                translate(this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager ? "root.job" : "interaction_button.hire_job"),
+                translate(this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager
                         ? "interaction_button.job.description"
                         : "interaction_button.hire_job.description"),
                 this::openRecruitPage,
@@ -2777,6 +2865,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private InteractionMenuButton followInteractionButton() {
+        if (this.recruitedPartyVillager) {
+            return new InteractionMenuButton(
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_START_FOLLOW_TEXTURE,
+                    translate(this.stayingHere ? "party.follow_me" : "party.following"),
+                    translate("interaction_button.follow_me.description"),
+                    () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW),
+                    this.partyVillagerAuthorized && this.stayingHere);
+        }
         if (this.followingPlayer) {
             return new InteractionMenuButton(
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STOP_FOLLOW_TEXTURE,
@@ -2794,6 +2890,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private InteractionMenuButton stayInteractionButton(boolean active) {
+        if (this.recruitedPartyVillager) {
+            return new InteractionMenuButton(
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STAY_TEXTURE,
+                    translate(this.stayingHere ? "party.staying" : "party.stay_here"),
+                    translate("interaction_button.stay_here.description"),
+                    () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE),
+                    this.partyVillagerAuthorized && !this.stayingHere);
+        }
         if (this.stayingHere) {
             return new InteractionMenuButton(
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_STAY_TEXTURE,
