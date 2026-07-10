@@ -206,9 +206,8 @@ public final class HiredVillagerContractService {
     }
 
     public static int getDailyCost(ServerLevel level, Villager villager, ServerPlayer player, HiredVillagerRole role) {
-        int skillScore = role == null
-                ? HiredVillagerRoles.bestRoleScore(level, villager)
-                : HiredVillagerRoles.roleScore(level, villager, role);
+        // Contracts permit free role changes, so price every role against the villager's best available work.
+        int skillScore = HiredVillagerRoles.bestRoleScore(level, villager);
         int skillPremium = Math.max(0, (skillScore - 50) / 10)
                 * Math.max(0, VillagerRetaliationConfig.HIRED_CONTRACT_SKILL_PREMIUM_PER_TEN.get());
         int reputationModifier = reputationCostModifier(level, villager, player);
