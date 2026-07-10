@@ -1258,7 +1258,8 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredPathTarget target) {
         return target != null
                 && context.isInsideWorkArea(villager.blockPosition())
-                && villager.blockPosition().distSqr(target.blockPos()) <= 4;
+                && Math.abs(villager.blockPosition().getY() - target.approachPos().getY()) <= 1
+                && villager.distanceToSqr(target.approachPos().getCenter()) <= 4.0D;
     }
 
     private boolean settleNearExcavationTarget(

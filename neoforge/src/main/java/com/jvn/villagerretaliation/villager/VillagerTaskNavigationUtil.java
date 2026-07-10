@@ -55,6 +55,7 @@ public final class VillagerTaskNavigationUtil {
     private static final double LADDER_DISMOUNT_REACHED_DISTANCE_SQR = 1.0D;
     private static final long ACTIVE_LADDER_CLIMB_TICKS = 80L;
     private static final long RECENT_LADDER_DISMOUNT_TICKS = 60L;
+    private static final int RECENT_LADDER_SETTLE_CHECKS = 20;
     private static final double RECENT_LADDER_DISMOUNT_DISTANCE_SQR = 16.0D;
     private static final double ACTIVE_LADDER_COLUMN_DISTANCE_SQR = 2.25D;
     private static final int LADDER_ESCAPE_SEARCH_RADIUS = 12;
@@ -185,6 +186,9 @@ public final class VillagerTaskNavigationUtil {
     }
 
     public static void tickPathLadders(ServerLevel level, Villager villager) {
+        if (settleRecentLadderDismount(level, villager)) {
+            return;
+        }
         BlockPos target = villager.getNavigation().isDone() ? null : villager.getNavigation().getTargetPos();
         if (continueActiveLadderClimb(level, villager, target, 0.45D)) {
             return;
@@ -607,7 +611,55 @@ public final class VillagerTaskNavigationUtil {
                 bottomOfLadderColumn(level, ladder).immutable(),
                 topOfLadderColumn(level, ladder).immutable(),
                 dismount.immutable(),
-                level.getGameTime() + RECENT_LADDER_DISMOUNT_TICKS));
+                level.getGameTime() + RECENT_LADDER_DISMOUNT_TICKS,
+                0));
+    }
+
+    private static boolean settleRecentLadderDismount(ServerLevel level, Villager villager) {
+        UUID villagerId = villager.getUUID();
+        RecentLadderDismount recent = RECENT_LADDER_DISMOUNTS.get(villagerId);
+        if (recent == null) {
+            return false;
+        }
+        if (recent.expiresGameTime() <= level.getGameTime()
+                || recent.settleChecks() >= RECENT_LADDER_SETTLE_CHECKS
+                || villager.distanceToSqr(recent.dismount().getCenter()) > LADDER_DISMOUNT_REACHED_DISTANCE_SQR) {
+            RECENT_LADDER_DISMOUNTS.remove(villagerId);
+            return false;
+        }
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (isHiredWalkTarget(villager)
+                && navigationTarget != null
+                && !navigationTarget.equals(recent.dismount())) {
+            RECENT_LADDER_DISMOUNTS.remove(villagerId);
+            return false;
+        }
+
+        stopHiredNavigation(villager);
+        villager.setNoGravity(false);
+        villager.setDeltaMovement(Vec3.ZERO);
+        villager.moveTo(
+                recent.dismount().getX() + 0.5D,
+                recent.dismount().getY(),
+                recent.dismount().getZ() + 0.5D,
+                villager.getYRot(),
+                villager.getXRot());
+        villager.getMoveControl().setWantedPosition(
+                recent.dismount().getX() + 0.5D,
+                recent.dismount().getY(),
+                recent.dismount().getZ() + 0.5D,
+                0.0D);
+        villager.getBrain().setMemoryWithExpiry(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(recent.dismount()), 0.0F, 0),
+                RECENT_LADDER_DISMOUNT_TICKS);
+        RECENT_LADDER_DISMOUNTS.put(villagerId, new RecentLadderDismount(
+                recent.bottom(),
+                recent.top(),
+                recent.dismount(),
+                recent.expiresGameTime(),
+                recent.settleChecks() + 1));
+        return true;
     }
 
     private static boolean shouldAvoidRecentLadderDismount(ServerLevel level, Villager villager) {
@@ -1413,7 +1465,12 @@ public final class VillagerTaskNavigationUtil {
         }
     }
 
-    private record RecentLadderDismount(BlockPos bottom, BlockPos top, BlockPos dismount, long expiresGameTime) {
+    private record RecentLadderDismount(
+            BlockPos bottom,
+            BlockPos top,
+            BlockPos dismount,
+            long expiresGameTime,
+            int settleChecks) {
     }
 
     private record LadderSearch(
