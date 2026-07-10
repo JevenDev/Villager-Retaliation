@@ -44,6 +44,8 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private static final int PLAYER_HOTBAR_Y = 214;
     private static final int SLOT_SIZE = 18;
     private static final ResourceLocation EMPTY_SLOT_SWORD_ICON = ResourceLocation.withDefaultNamespace("item/empty_slot_sword");
+    private static final ResourceLocation EMPTY_SLOT_FILTER_ICON =
+            ResourceLocation.withDefaultNamespace("item/empty_slot_smithing_template");
 
     private Container villagerInventory;
     private final Villager villager;
@@ -307,12 +309,16 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     private void addJobSlots() {
         for (int slot = 0; slot < this.villagerSlotCount; slot++) {
-            addSlot(new JobInventorySlot(
-                    this.villagerInventory,
-                    slot,
-                    jobSlotX(slot),
-                    jobSlotY(slot)
-            ));
+            if (slot == HiredJobInventory.FILTER_SLOT) {
+                addSlot(new JobFilterSlot(this.villagerInventory, slot, jobSlotX(slot), jobSlotY(slot)));
+            } else {
+                addSlot(new JobInventorySlot(
+                        this.villagerInventory,
+                        slot,
+                        jobSlotX(slot),
+                        jobSlotY(slot)
+                ));
+            }
         }
     }
 
@@ -622,6 +628,27 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         }
     }
 
+    private static final class JobFilterSlot extends Slot {
+        private JobFilterSlot(Container container, int slot, int x, int y) {
+            super(container, slot, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return false;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
+        }
+
+        @Override
+        public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
+            return Pair.of(InventoryMenu.BLOCK_ATLAS, EMPTY_SLOT_FILTER_ICON);
+        }
+    }
+
     private static final class VillagerHandSlot extends Slot {
         private final ResourceLocation icon;
         private final Villager villager;
@@ -710,6 +737,9 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         if (slot == JOB_MAINHAND_SLOT || slot == JOB_OFFHAND_SLOT) {
             return HELD_X;
         }
+        if (slot == HiredJobInventory.FILTER_SLOT) {
+            return HELD_X + SLOT_SIZE;
+        }
         int gridIndex = slot - JOB_EQUIPMENT_SLOT_COUNT;
         int column = gridIndex % 9;
         return VILLAGER_INVENTORY_X + column * SLOT_SIZE;
@@ -723,6 +753,9 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             return HELD_Y;
         }
         if (slot == JOB_OFFHAND_SLOT) {
+            return OFFHAND_Y;
+        }
+        if (slot == HiredJobInventory.FILTER_SLOT) {
             return OFFHAND_Y;
         }
         int gridIndex = slot - JOB_EQUIPMENT_SLOT_COUNT;

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,7 +28,8 @@ import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 public final class HiredJobInventory implements Container {
-    public static final int SLOT_COUNT = 33;
+    public static final int FILTER_SLOT = 33;
+    public static final int SLOT_COUNT = 34;
     public static final int MAINHAND_SLOT = 4;
     public static final int OFFHAND_SLOT = 5;
     private static final int ARMOR_SLOT_COUNT = 4;
@@ -242,6 +244,15 @@ public final class HiredJobInventory implements Container {
     @Override
     public void setItem(int slot, ItemStack stack) {
         if (!isValidSlot(slot)) {
+            return;
+        }
+        if (slot == FILTER_SLOT) {
+            if (!stack.isEmpty() && !VillagerRetaliationItems.isItemFilter(stack)) {
+                return;
+            }
+            this.items.set(slot, stack.isEmpty() ? ItemStack.EMPTY : stack.copyWithCount(1));
+            this.slotTypes[slot] = HiredJobInventorySlotType.NORMAL;
+            setChanged();
             return;
         }
         EquipmentSlot equipmentSlot = equipmentSlotForJobSlot(slot);
@@ -543,6 +554,9 @@ public final class HiredJobInventory implements Container {
         }
         int count = 0;
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (slot == FILTER_SLOT) {
+                continue;
+            }
             ItemStack stack = this.items.get(slot);
             if (!stack.isEmpty()
                     && canHirerRemoveFromJobInventory(stack)
@@ -560,6 +574,9 @@ public final class HiredJobInventory implements Container {
     public int countRemovableItemsWithoutContract() {
         int count = 0;
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (slot == FILTER_SLOT) {
+                continue;
+            }
             ItemStack stack = this.items.get(slot);
             if (!stack.isEmpty() && canHirerRemoveFromJobInventory(stack) && jobItemContractId(stack).isEmpty()) {
                 count += stack.getCount();
@@ -574,6 +591,9 @@ public final class HiredJobInventory implements Container {
         }
         int marked = 0;
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (slot == FILTER_SLOT) {
+                continue;
+            }
             ItemStack stack = this.items.get(slot);
             if (stack.isEmpty() || !canHirerRemoveFromJobInventory(stack)) {
                 continue;
@@ -1269,7 +1289,7 @@ public final class HiredJobInventory implements Container {
     }
 
     private static boolean isJobGridSlot(int slot) {
-        return isValidSlot(slot) && equipmentSlotForJobSlot(slot) == null;
+        return slot >= OFFHAND_SLOT + 1 && slot < FILTER_SLOT;
     }
 
     private static ItemStack removeJobItemMarker(ItemStack stack) {
@@ -1319,6 +1339,9 @@ public final class HiredJobInventory implements Container {
     }
 
     private static HiredJobInventorySlotType defaultType(int slot) {
+        if (slot == FILTER_SLOT) {
+            return HiredJobInventorySlotType.NORMAL;
+        }
         if (equipmentSlotForJobSlot(slot) != null) {
             return HiredJobInventorySlotType.GEAR;
         }

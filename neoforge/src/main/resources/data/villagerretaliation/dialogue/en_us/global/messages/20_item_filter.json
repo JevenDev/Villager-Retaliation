@@ -1,0 +1,58 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.item_filter"
+  },
+  "messages": [
+    {
+      "key": "interaction.item_filter.prompt",
+      "lines": ["How should I use this item filter?"],
+      "id": "global.messages.20_item_filter.prompt.000"
+    },
+    {
+      "key": "interaction.item_filter.adult_hired_only",
+      "lines": ["Only an adult villager with an active job can use that filter."],
+      "id": "global.messages.20_item_filter.adult_hired_only.001"
+    },
+    {
+      "key": "interaction.item_filter.not_hired",
+      "lines": ["Hire me before assigning an item filter."],
+      "id": "global.messages.20_item_filter.not_hired.002"
+    },
+    {
+      "key": "interaction.item_filter.requires_hirer",
+      "lines": ["Only the one who hired me can change my item filter."],
+      "id": "global.messages.20_item_filter.requires_hirer.003"
+    },
+    {
+      "key": "interaction.item_filter.missing",
+      "lines": ["Keep holding the item filter while we decide."],
+      "id": "global.messages.20_item_filter.missing.004"
+    },
+    {
+      "key": "interaction.item_filter.assigned_allowlist",
+      "lines": ["All right. I will only withdraw the items on this list."],
+      "id": "global.messages.20_item_filter.assigned_allowlist.005"
+    },
+    {
+      "key": "interaction.item_filter.assigned_denylist",
+      "lines": ["All right. I will avoid withdrawing the items on this list."],
+      "id": "global.messages.20_item_filter.assigned_denylist.006"
+    },
+    {
+      "key": "interaction.item_filter.replaced",
+      "lines": ["I replaced the old filter and returned it to you."],
+      "id": "global.messages.20_item_filter.replaced.007"
+    },
+    {
+      "key": "interaction.item_filter.replaced_dropped",
+      "lines": ["I replaced the old filter. Your inventory was full, so I set it down beside you."],
+      "id": "global.messages.20_item_filter.replaced_dropped.008"
+    }
+  ]
+}

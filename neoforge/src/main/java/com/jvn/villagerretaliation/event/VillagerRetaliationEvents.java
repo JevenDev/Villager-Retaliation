@@ -380,6 +380,14 @@ public final class VillagerRetaliationEvents {
         }
 
         if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleItemFilterInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleItemFilterVillagerRightClick(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
+
+        if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer
                 && VillagerRetaliationDebugItems.isDebugVillagerTool(interactionStack.getItem())) {
             InteractionResult result = interactionStack.interactLivingEntity(player, villager, event.getHand());

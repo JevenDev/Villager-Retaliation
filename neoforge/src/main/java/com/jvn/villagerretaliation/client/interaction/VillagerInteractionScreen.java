@@ -101,6 +101,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final String DIALOGUE_TREE_LEAVE_OPTION_ID = DialogueTreeService.LEAVE_OPTION_ID;
     private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
     private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
+    private static final String ITEM_FILTER_ALLOWLIST_OPTION_ID = "item_filter_use_allowlist";
+    private static final String ITEM_FILTER_DENYLIST_OPTION_ID = "item_filter_use_denylist";
+    private static final String ITEM_FILTER_NEVERMIND_OPTION_ID = "item_filter_nevermind";
     private static final String QUEST_V2_TAG = "quest_v2";
     private static final String QUEST_OFFER_HINT_TAG = "quest_offer_hint";
     private static final float OPTION_SCROLL_LERP = 0.32F;
@@ -1627,6 +1630,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addDialogueOption(String label, String optionId, boolean locked) {
+        label = switch (optionId) {
+            case ITEM_FILTER_ALLOWLIST_OPTION_ID -> translate("item_filter.assign.allowlist");
+            case ITEM_FILTER_DENYLIST_OPTION_ID -> translate("item_filter.assign.denylist");
+            case ITEM_FILTER_NEVERMIND_OPTION_ID -> translate("item_filter.assign.nevermind");
+            default -> label;
+        };
         if (BLUEPRINT_CHANGE_OPTION_ID.equals(optionId)) {
             this.options.add(DialogueOption.enabled(label, this::openBuilderStructuresPage));
             return;

@@ -91,7 +91,9 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.blit(
-                VillagerRetaliationClientAssets.VILLAGER_INVENTORY_TEXTURE,
+                this.menu.isJobInventory()
+                        ? VillagerRetaliationClientAssets.VILLAGER_JOB_INVENTORY_TEXTURE
+                        : VillagerRetaliationClientAssets.VILLAGER_INVENTORY_TEXTURE,
                 this.leftPos,
                 this.topPos,
                 0,
