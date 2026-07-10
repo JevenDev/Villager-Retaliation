@@ -512,10 +512,11 @@ final class MiningHazardManager {
             return output;
         }
         ItemStack supply = context.inventory().findSupply(predicate);
-        if (supply.isEmpty() || context.inventory().consumeSupply(predicate, 1) <= 0) {
+        if (supply.isEmpty()) {
             return ItemStack.EMPTY;
         }
-        return supply.copyWithCount(1);
+        ItemStack consumed = supply.copyWithCount(1);
+        return context.inventory().consumeSupply(predicate, 1) > 0 ? consumed : ItemStack.EMPTY;
     }
 
     private static boolean isSafeFillStack(ServerLevel level, BlockPos pos, ItemStack stack) {

@@ -2611,6 +2611,104 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 360)
+    public static void miningWorkerFetchesLavaPlugBlocksFromAssignedStorage(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 0);
+        buildFloor(helper, 0, 8, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerStoredLavaPlug");
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+        BlockPos lavaRel = targetRel.east();
+        BlockPos chestRel = new BlockPos(7, 2, 3);
+        BlockPos chest = helper.absolutePos(chestRel);
+        Villager villager = spawnVillager(helper, targetRel.above());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+        setBlock(helper, lavaRel, Blocks.LAVA.defaultBlockState());
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        container(level, chest).setItem(0, new ItemStack(Items.COBBLESTONE, 8));
+        AssignedStorageService.removeAssignedContainer(level, chest);
+        AssignedStorageService.AssignSummary assignment = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.GENERAL_PURPOSE);
+        helper.assertValueEqual(assignment.assigned(), 1, "hazard fill storage assignment");
+        helper.assertValueEqual(
+                AssignedStorageService.countItems(villager, stack -> stack.is(Items.COBBLESTONE)),
+                8,
+                "hazard fill blocks visible in assigned input storage");
+        helper.assertTrue(
+                AssignedStorageService.nearestAssignedStoragePosContaining(
+                        level,
+                        villager,
+                        stack -> stack.is(Items.COBBLESTONE)) != null,
+                "hazard fill storage should be discoverable before worker navigation");
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, targetRel, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        MiningWorker worker = new MiningWorker();
+
+        WorkResult firstResult = worker.tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot firstSnapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertValueEqual(firstResult.status(), "interaction.work.mining.hazard.gathered_fill_blocks",
+                "hazard storage transfer status");
+        helper.assertValueEqual(firstSnapshot.taskState(), HiredWorkerTaskState.RETURNING_TO_WORK_AREA,
+                "hazard storage transfer task state");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.COBBLESTONE), 1,
+                "worker should retain the single fill block fetched for the active plan");
+        helper.assertValueEqual(countItem(container(level, chest), Items.COBBLESTONE), 7,
+                "hazard remediation should debit the fetched fill block from assigned storage");
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 280, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir());
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                "miner should return from assigned storage and finish the excavation target");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(lavaRel)).is(Blocks.COBBLESTONE),
+                "miner should use a stored fill block to seal the exposed lava");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80)
+    public static void miningWorkerWaitsForLavaPlugBlocksWithoutExposingHazard(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerMissingLavaPlug");
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+        BlockPos lavaRel = targetRel.east();
+        Villager villager = spawnVillager(helper, targetRel.above());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+        setBlock(helper, lavaRel, Blocks.LAVA.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, targetRel, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+
+        WorkResult result = new MiningWorker().tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertValueEqual(result.status(), "interaction.work.mining.hazard.missing_fill_blocks",
+                "missing hazard fill status");
+        helper.assertValueEqual(snapshot.taskState(), HiredWorkerTaskState.WAITING_FOR_MATERIALS,
+                "missing hazard fill task state");
+        helper.assertValueEqual(snapshot.failureReason(), "missing_hazard_fill_blocks",
+                "missing hazard fill reason");
+        helper.assertValueEqual(MiningWorker.phase(context), "blocked_missing_supplies",
+                "missing hazard fill mining phase");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).is(Blocks.STONE),
+                "miner must not open the excavation face without a lava plug");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(lavaRel)).is(Blocks.LAVA),
+                "blocked miner should leave the contained lava source untouched");
+
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 500)
     public static void miningWorkerDrainsBoundedWaterPocketWithTemporaryFill(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 0);
