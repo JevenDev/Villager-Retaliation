@@ -32,13 +32,14 @@ public final class VillagerInventoryAccess {
                 villager,
                 VillagerInventoryMenu.ViewMode.PERSONAL,
                 true,
-                HiredVillagerContractService.canAccessJobInventory(level, villager, player));
+                VillagerJobInventoryAuthorization.canAccess(level, villager, player));
         return true;
     }
 
     public static boolean openJobInventory(ServerPlayer player, Villager villager) {
         if (!(villager.level() instanceof ServerLevel level)
-                || !HiredVillagerContractService.canAccessJobInventory(level, villager, player)) {
+                || !com.jvn.villagerretaliation.interaction.VillagerInteractionService.canUseInteractionSystem(player, villager)
+                || !VillagerJobInventoryAuthorization.canAccess(level, villager, player)) {
             return false;
         }
         boolean personalInventoryAccess = canAccess(level, villager, player);

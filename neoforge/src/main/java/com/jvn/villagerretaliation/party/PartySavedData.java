@@ -95,6 +95,10 @@ public final class PartySavedData extends SavedData {
         return Optional.ofNullable(this.invitationsById.get(invitationId));
     }
 
+    public List<PartyRecord> parties() {
+        return List.copyOf(this.partiesById.values());
+    }
+
     public List<PartyInvitation> invitationsFor(UUID targetId, long gameTime) {
         pruneExpiredInvitations(gameTime);
         return this.invitationsById.values().stream()

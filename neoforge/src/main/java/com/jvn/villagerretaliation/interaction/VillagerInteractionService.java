@@ -564,7 +564,10 @@ public final class VillagerInteractionService {
         }
         ServerLevel level = player.serverLevel();
         boolean canAccessPersonalInventory = VillagerInventoryAccess.canAccess(level, villager, player);
-        boolean canAccessJobInventory = HiredVillagerContractService.canAccessJobInventory(level, villager, player);
+        boolean canAccessJobInventory = com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(
+                level,
+                villager,
+                player);
         if (jobInventory && !canAccessJobInventory) {
             sendVillagerNotice(player, villager, "interaction.job_inventory.requires_hirer");
             return;
@@ -609,7 +612,7 @@ public final class VillagerInteractionService {
         boolean ownsContract = HiredVillagerContractService.isHiredBy(level, villager, player);
         boolean canAdministerContract = ownsContract && isContractAdministrationAction(action);
         boolean canOpenJobInventory = action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
-                && HiredVillagerContractService.canAccessJobInventory(level, villager, player);
+                && com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(level, villager, player);
         if (!VillagerRecruitmentService.canRecruit(level, villager, player)
                 && !canAdministerContract
                 && !canOpenJobInventory) {
@@ -682,7 +685,7 @@ public final class VillagerInteractionService {
             case PROMPT_END_HIRE_CONFIRMATION -> sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_prompt");
             case DECLINE_END_HIRE_CONFIRMATION -> sendVillagerNotice(player, villager, "interaction.end_hire_confirmation_declined");
             case OPEN_JOB_INVENTORY -> {
-                if (!HiredVillagerContractService.canAccessJobInventory(level, villager, player)) {
+                if (!com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(level, villager, player)) {
                     sendVillagerNotice(player, villager, "interaction.job_inventory.requires_hirer");
                     return;
                 }
@@ -1082,6 +1085,10 @@ public final class VillagerInteractionService {
         }
         if (HiredVillagerContractService.isHiredBy(level, villager, player)) {
             sendHiredContractNotice(player, level, villager);
+            return true;
+        }
+        if (com.jvn.villagerretaliation.party.PartyService.getPartyForVillager(level, villager.getUUID()).isPresent()) {
+            sendVillagerNotice(player, villager, "villagerretaliation.party.error.villager_already_in_party");
             return true;
         }
         if (HiredVillagerContractService.isHired(level, villager)) {
@@ -1931,26 +1938,11 @@ public final class VillagerInteractionService {
     }
 
     private static int countCurrency(ServerPlayer player) {
-        int count = 0;
-        for (ItemStack stack : player.getInventory().items) {
-            if (VillagerCurrencyResources.isCurrency(player.serverLevel().getServer(), stack)) {
-                count += stack.getCount();
-            }
-        }
-        for (ItemStack stack : player.getInventory().offhand) {
-            if (VillagerCurrencyResources.isCurrency(player.serverLevel().getServer(), stack)) {
-                count += stack.getCount();
-            }
-        }
-        return count;
+        return VillagerCurrencyPayment.count(player);
     }
 
     private static void removeCurrency(ServerPlayer player, int count) {
-        int remaining = count;
-        remaining = removeCurrencyFrom(player, player.getInventory().items, remaining);
-        if (remaining > 0) {
-            removeCurrencyFrom(player, player.getInventory().offhand, remaining);
-        }
+        VillagerCurrencyPayment.tryRemove(player, count);
     }
 
     private static void giveCurrency(ServerPlayer player, int count) {
@@ -1963,22 +1955,6 @@ public final class VillagerInteractionService {
             }
             remaining -= chunk;
         }
-    }
-
-    private static int removeCurrencyFrom(ServerPlayer player, List<ItemStack> stacks, int count) {
-        int remaining = count;
-        for (ItemStack stack : stacks) {
-            if (remaining <= 0) {
-                break;
-            }
-            if (!VillagerCurrencyResources.isCurrency(player.serverLevel().getServer(), stack)) {
-                continue;
-            }
-            int removed = Math.min(remaining, stack.getCount());
-            stack.shrink(removed);
-            remaining -= removed;
-        }
-        return remaining;
     }
 
     private static String formatCurrency(ServerLevel level, int count) {

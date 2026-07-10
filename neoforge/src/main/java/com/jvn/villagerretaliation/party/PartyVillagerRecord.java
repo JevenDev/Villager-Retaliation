@@ -126,6 +126,19 @@ public final class PartyVillagerRecord {
         return this.lastKnownDimension;
     }
 
+    public int remainingDays(long gameTime) {
+        return com.jvn.villagerretaliation.interaction.VillagerContractTime.remainingDays(
+                gameTime,
+                this.contractEndGameTime);
+    }
+
+    public int availableExtensionDays(long gameTime, int requestedDays) {
+        return com.jvn.villagerretaliation.interaction.VillagerContractTime.availableExtensionDays(
+                gameTime,
+                this.contractEndGameTime,
+                requestedDays);
+    }
+
     void setFollowing() {
         this.commandMode = PartyCommandMode.FOLLOW;
         this.stayDimension = null;

@@ -35,6 +35,7 @@ import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
@@ -140,6 +141,7 @@ public final class VillagerRetaliationEvents {
         VillagerCombatSurvivalService.clearRuntimeState();
         VillagerConversationService.clearRuntimeState();
         VillagerRecruitmentService.clearRuntimeState();
+        PartyVillagerContractService.clearRuntimeState();
         HiredVillagerWorkService.clearRuntimeState();
         HiredVillagerIndex.clearRuntimeState();
         HiredJobInventory.clearRuntimeState();
@@ -163,6 +165,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
+        PartyVillagerContractService.onServerTick(event.getServer());
         if (!BUILDER_CATALOG_SYNC_DIRTY.compareAndSet(true, false)) {
             return;
         }
@@ -227,6 +230,7 @@ public final class VillagerRetaliationEvents {
             broadcastVillagerDeathMessage(villager, event.getSource());
             VillagerCombatSurvivalService.onVillagerDeath(villager);
             VillagerRecruitmentService.notifyRecruitmentDeath(villager, event.getSource().getEntity());
+            PartyVillagerContractService.onVillagerDeath(villager);
             VillagerQuestService.onVillagerDeath(villager);
             if (villager.level() instanceof ServerLevel level) {
                 HiredVillagerContractService.onVillagerDeath(level, villager);
@@ -318,6 +322,9 @@ public final class VillagerRetaliationEvents {
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         VillagerNaturalJobArmor.onEntityJoinLevel(event);
         VillagerRetaliationHandler.onEntityJoinLevel(event);
+        if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
+            PartyVillagerContractService.onVillagerLoaded(villager);
+        }
     }
 
     public static void onPlayerStartTracking(PlayerEvent.StartTracking event) {

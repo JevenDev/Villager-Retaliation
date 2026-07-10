@@ -1356,7 +1356,10 @@ public final class HiredJobInventory implements Container {
     }
 
     private Optional<UUID> activeContractId() {
-        return HiredVillagerContractService.currentContractId(this.villager);
+        if (!(this.villager.level() instanceof net.minecraft.server.level.ServerLevel level)) {
+            return Optional.empty();
+        }
+        return VillagerJobInventoryAuthorization.activeContractId(level, this.villager);
     }
 
     private static ItemStack markAsStorageJobItem(ItemStack stack, String kind, UUID contractId) {

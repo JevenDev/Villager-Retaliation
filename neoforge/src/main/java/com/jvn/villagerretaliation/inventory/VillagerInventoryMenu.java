@@ -165,6 +165,12 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
+        if (this.viewMode == ViewMode.JOB && !hasJobInventoryAccess(player)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.closeContainer();
+            }
+            return ItemStack.EMPTY;
+        }
         Slot sourceSlot = this.slots.get(index);
         if (!sourceSlot.hasItem()) {
             return ItemStack.EMPTY;
@@ -194,6 +200,12 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        if (this.viewMode == ViewMode.JOB && !hasJobInventoryAccess(player)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                serverPlayer.closeContainer();
+            }
+            return;
+        }
         super.clicked(slotId, button, clickType, player);
         stripPlayerSideTradePaymentTracking(player);
     }
@@ -513,7 +525,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private static boolean jobInventoryAccess(Inventory playerInventory, Villager villager) {
         return !(playerInventory.player instanceof ServerPlayer serverPlayer)
                 || villager.level() instanceof ServerLevel level
-                && com.jvn.villagerretaliation.interaction.HiredVillagerContractService.canAccessJobInventory(level, villager, serverPlayer);
+                && VillagerJobInventoryAuthorization.canAccess(level, villager, serverPlayer);
     }
 
     private static Container createVillagerInventory(Villager villager, ViewMode viewMode) {
@@ -651,7 +663,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             return !(player instanceof ServerPlayer serverPlayer)
                     || this.villager != null
                     && this.villager.level() instanceof ServerLevel level
-                    && com.jvn.villagerretaliation.interaction.HiredVillagerContractService.canAccessJobInventory(
+                    && VillagerJobInventoryAuthorization.canAccess(
                             level,
                             this.villager,
                             serverPlayer);
@@ -714,7 +726,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                 && (!(player instanceof ServerPlayer serverPlayer)
                 || this.villager == null
                 || this.villager.level() instanceof ServerLevel level
-                && com.jvn.villagerretaliation.interaction.HiredVillagerContractService.canAccessJobInventory(level, this.villager, serverPlayer));
+                && VillagerJobInventoryAuthorization.canAccess(level, this.villager, serverPlayer));
     }
 
     private record ClientMenuData(int entityId, ViewMode viewMode, boolean personalInventoryAccess, boolean jobInventoryAccess) {

@@ -54,9 +54,8 @@ public final class HiredVillagerContractService {
     private static final String STATUS_ENDED = "ended";
     private static final String STATUS_EXPIRED = "expired";
     private static final String STATUS_AWAITING_AUTO_PAYMENT = "awaiting_auto_payment";
-    private static final long DAY_TICKS = 24000L;
+    private static final long DAY_TICKS = VillagerContractTime.DAY_TICKS;
     private static final long OVERFLOW_CLAIM_TICKS = 3L * DAY_TICKS;
-    private static final int MAX_CONTRACT_DAYS = 30;
     private static final int HIRED_PROFESSION_LOCK_XP = 1;
 
     private HiredVillagerContractService() {
@@ -480,8 +479,7 @@ public final class HiredVillagerContractService {
     }
 
     private static int remainingDays(ServerLevel level, CompoundTag contract) {
-        long remainingTicks = Math.max(0L, contract.getLong(END_GAME_TIME_TAG) - level.getGameTime());
-        return (int) Math.max(1L, (remainingTicks + DAY_TICKS - 1L) / DAY_TICKS);
+        return VillagerContractTime.remainingDays(level.getGameTime(), contract.getLong(END_GAME_TIME_TAG));
     }
 
     private static void maybeAutoRenew(ServerLevel level, Villager villager) {
@@ -761,16 +759,14 @@ public final class HiredVillagerContractService {
     }
 
     private static int clampedContractDays(int days) {
-        return Mth.clamp(days, 1, MAX_CONTRACT_DAYS);
+        return VillagerContractTime.clampedPurchaseDays(days);
     }
 
     private static int effectiveExtensionDays(ServerLevel level, CompoundTag tag, int requestedDays) {
-        int safeRequestedDays = clampedContractDays(requestedDays);
-        long currentEnd = Math.max(level.getGameTime(), tag.getLong(END_GAME_TIME_TAG));
-        long remainingTicks = Math.max(0L, currentEnd - level.getGameTime());
-        long availableTicks = Math.max(0L, MAX_CONTRACT_DAYS * DAY_TICKS - remainingTicks);
-        int maxAdditionalDays = (int) Math.min(MAX_CONTRACT_DAYS, availableTicks / DAY_TICKS);
-        return Math.min(safeRequestedDays, maxAdditionalDays);
+        return VillagerContractTime.availableExtensionDays(
+                level.getGameTime(),
+                tag.getLong(END_GAME_TIME_TAG),
+                requestedDays);
     }
 
     private static int currentRenewalDailyCost(ServerLevel level, Villager villager, CompoundTag tag) {

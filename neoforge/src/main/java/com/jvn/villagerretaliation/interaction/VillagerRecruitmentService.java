@@ -9,6 +9,8 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -141,6 +143,51 @@ public final class VillagerRecruitmentService {
         clearFollowTarget(villager);
     }
 
+    public static void applyPartyFollowing(ServerLevel level, Villager villager, ServerPlayer leader) {
+        applyPartyFollowing(level, villager, leader == null ? null : leader.getUUID());
+    }
+
+    public static void applyPartyFollowing(ServerLevel level, Villager villager, UUID leaderId) {
+        if (level == null || villager == null || leaderId == null
+                || !PartyVillagerContractService.hasPartyEntityReference(villager)) {
+            return;
+        }
+        beginFollowing(level, villager, leaderId);
+        villager.setPersistenceRequired();
+    }
+
+    public static void applyPartyStay(ServerLevel level, Villager villager, ServerPlayer leader) {
+        applyPartyStay(level, villager, leader, villager == null ? null : villager.blockPosition());
+    }
+
+    public static void applyPartyStay(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer leader,
+            BlockPos anchor) {
+        applyPartyStay(level, villager, leader == null ? null : leader.getUUID(), anchor);
+    }
+
+    public static void applyPartyStay(
+            ServerLevel level,
+            Villager villager,
+            UUID leaderId,
+            BlockPos anchor) {
+        if (level == null || villager == null || leaderId == null || anchor == null
+                || !PartyVillagerContractService.hasPartyEntityReference(villager)) {
+            return;
+        }
+        beginStayingHere(villager, leaderId, anchor);
+        villager.setPersistenceRequired();
+    }
+
+    public static void clearPartyFollowing(Villager villager) {
+        if (PartyVillagerContractService.hasPartyEntityReference(villager)) {
+            clearFollowTarget(villager);
+            villager.setPersistenceRequired();
+        }
+    }
+
     public static boolean stopFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
         if (!isFollowStateOwnedBy(villager, player)) {
             return false;
@@ -165,6 +212,9 @@ public final class VillagerRecruitmentService {
     }
 
     public static void stopFollowingIfFollowingAttacker(Villager villager, Player attacker) {
+        if (attacker != null && PartyService.areInSameParty(villager, attacker)) {
+            return;
+        }
         if (attacker != null
                 && villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
                 && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(attacker.getUUID())) {
@@ -291,16 +341,28 @@ public final class VillagerRecruitmentService {
             return;
         }
 
+        boolean partyVillager = PartyVillagerContractService.isActivePartyVillager(level, villager);
         UUID playerId = villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY);
         ServerPlayer player = level.getServer().getPlayerList().getPlayer(playerId);
         if (isFollowMode(villager)) {
-            updateTravelMemoryIfReady(level, villager);
+            if (partyVillager && player == null) {
+                suppressFollowerAiIfNeeded(villager);
+                stopFollowNavigation(villager);
+                return;
+            }
+            if (!partyVillager) {
+                updateTravelMemoryIfReady(level, villager);
+            }
             if (!isValidFollowTarget(level, villager, player)) {
-                clearFollowTarget(villager);
+                if (partyVillager) {
+                    stopFollowNavigation(villager);
+                } else {
+                    clearFollowTarget(villager);
+                }
                 return;
             }
             syncVehicleWithPlayer(villager, player);
-            if (isBeyondMaxFollowDistance(villager, player)) {
+            if (!partyVillager && isBeyondMaxFollowDistance(villager, player)) {
                 stopFollowingBecauseLeftBehind(level, villager, player);
                 sendNoLongerFollowingNotice(player, villager);
                 return;
@@ -448,6 +510,11 @@ public final class VillagerRecruitmentService {
     }
 
     private static void suppressFollowerAi(Villager villager) {
+        if (villager.level() instanceof ServerLevel level
+                && PartyVillagerContractService.isActivePartyVillager(level, villager)
+                && (villager.getTarget() != null || villager.getLastHurtByMob() != null)) {
+            return;
+        }
         Brain<Villager> brain = villager.getBrain();
         VillagerRetaliationVillagerBrainUtil.clearMovementMemories(villager);
         brain.eraseMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
@@ -534,6 +601,15 @@ public final class VillagerRecruitmentService {
     }
 
     private static boolean isValidFollowTarget(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (PartyVillagerContractService.isActivePartyVillager(level, villager)) {
+            return player != null
+                    && player.isAlive()
+                    && !player.isSpectator()
+                    && villager.isAlive()
+                    && PartyVillagerContractService.leaderId(level, villager)
+                    .filter(player.getUUID()::equals)
+                    .isPresent();
+        }
         return player != null
                 && player.isAlive()
                 && !player.isSpectator()
@@ -590,8 +666,12 @@ public final class VillagerRecruitmentService {
     }
 
     private static void beginFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+        beginFollowing(level, villager, player.getUUID());
+    }
+
+    private static void beginFollowing(ServerLevel level, Villager villager, UUID playerId) {
         BlockPos start = villager.blockPosition();
-        villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, player.getUUID());
+        villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, playerId);
         villager.getPersistentData().putString(FOLLOW_MODE_KEY, FOLLOW_MODE_FOLLOW);
         villager.getPersistentData().putFloat(FOLLOW_START_HEALTH_KEY, villager.getHealth());
         villager.getPersistentData().putFloat(FOLLOW_MIN_HEALTH_KEY, villager.getHealth());
@@ -608,8 +688,15 @@ public final class VillagerRecruitmentService {
     }
 
     private static void beginStayingHere(ServerLevel level, Villager villager, ServerPlayer player) {
-        BlockPos anchor = villager.blockPosition();
-        villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, player.getUUID());
+        beginStayingHere(level, villager, player, villager.blockPosition());
+    }
+
+    private static void beginStayingHere(ServerLevel level, Villager villager, ServerPlayer player, BlockPos anchor) {
+        beginStayingHere(villager, player.getUUID(), anchor);
+    }
+
+    private static void beginStayingHere(Villager villager, UUID playerId, BlockPos anchor) {
+        villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, playerId);
         villager.getPersistentData().putString(FOLLOW_MODE_KEY, FOLLOW_MODE_STAY);
         villager.getPersistentData().putInt(STAY_ANCHOR_X_KEY, anchor.getX());
         villager.getPersistentData().putInt(STAY_ANCHOR_Y_KEY, anchor.getY());
@@ -809,6 +896,7 @@ public final class VillagerRecruitmentService {
 
     private static boolean canTakeFollowCommand(Villager villager, ServerPlayer player) {
         return !isHiredAnyPlayer(villager)
+                && !PartyVillagerContractService.hasPartyEntityReference(villager)
                 && followingPlayerId(villager).map(player.getUUID()::equals).orElse(true);
     }
 
