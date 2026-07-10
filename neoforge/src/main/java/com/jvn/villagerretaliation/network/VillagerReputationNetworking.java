@@ -17,7 +17,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "36";
+    private static final String PROTOCOL_VERSION = "37";
 
     private VillagerReputationNetworking() {
     }
@@ -397,6 +397,16 @@ public final class VillagerReputationNetworking {
                                 com.jvn.villagerretaliation.debug.HiredDebugPreviewService.setClipboardPreviewEnabled(
                                         player,
                                         payload.enabled())))
+        );
+        network.playToServer(
+                ItemFilterModeChangePayload.TYPE,
+                ItemFilterModeChangePayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.item.VillagerItemFilterItem.handleModeChange(
+                                        player,
+                                        payload.menuSlotIndex(),
+                                        payload.modeId())))
         );
         network.playToServer(
                 HiredHitboxDebugPreviewPayload.TYPE,

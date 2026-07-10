@@ -17,6 +17,8 @@ public final class VillagerRetaliationMenus {
             MENUS.register("villager_inventory", () -> IMenuTypeExtension.create(VillagerInventoryMenu::new));
     public static final DeferredHolder<MenuType<?>, MenuType<PaymentBoxMenu>> PAYMENT_BOX =
             MENUS.register("payment_box", () -> IMenuTypeExtension.create(PaymentBoxMenu::new));
+    public static final DeferredHolder<MenuType<?>, MenuType<VillagerItemFilterMenu>> ITEM_FILTER =
+            MENUS.register("item_filter", () -> IMenuTypeExtension.create(VillagerItemFilterMenu::new));
 
     private VillagerRetaliationMenus() {
     }
