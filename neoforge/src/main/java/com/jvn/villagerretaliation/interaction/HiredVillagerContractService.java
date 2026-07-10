@@ -62,7 +62,7 @@ public final class HiredVillagerContractService {
 
     public static boolean isHired(ServerLevel level, Villager villager) {
         expireHireContractIfNeeded(level, villager);
-        return contract(villager).filter(HiredVillagerContractService::isActive).isPresent();
+        return contract(villager).filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment).isPresent();
     }
 
     public static boolean isHiredBy(ServerLevel level, Villager villager, ServerPlayer player) {
