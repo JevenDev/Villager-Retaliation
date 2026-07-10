@@ -3,11 +3,13 @@ package com.jvn.villagerretaliation.inventory;
 import com.jvn.villagerretaliation.block.PaymentBoxBlockEntity;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignmentResult;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -1030,8 +1032,12 @@ public final class AssignedStorageService {
             Predicate<AssignedContainerRecord> recordFilter) {
         AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
         Map<BlockPos, VillagerInventoryOverflowService.ContainerCandidate> containers = new LinkedHashMap<>();
+        Optional<UUID> contractHirer = HiredVillagerContractService.currentContractHirer(villager);
         for (AssignedContainerRecord record : data.assignedTo(villager.getUUID())) {
             if (recordFilter != null && !recordFilter.test(record)) {
+                continue;
+            }
+            if (contractHirer.isPresent() && !contractHirer.get().equals(record.hirerId())) {
                 continue;
             }
             ServerLevel targetLevel = level.getServer().getLevel(record.dimension());

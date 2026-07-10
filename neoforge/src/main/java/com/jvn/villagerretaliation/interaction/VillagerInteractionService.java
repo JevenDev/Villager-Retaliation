@@ -1760,8 +1760,10 @@ public final class VillagerInteractionService {
     }
 
     public static boolean canManageAssignedStorage(ServerLevel level, Villager villager, ServerPlayer player) {
-        return HiredVillagerContractService.isHiredBy(level, villager, player)
-                || VillagerInventoryAccess.canAccess(level, villager, player);
+        if (HiredVillagerContractService.isHired(level, villager)) {
+            return HiredVillagerContractService.isHiredBy(level, villager, player);
+        }
+        return VillagerInventoryAccess.canAccess(level, villager, player);
     }
 
     private static ItemStack findClipboard(ServerPlayer player) {

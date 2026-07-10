@@ -98,6 +98,13 @@ public final class HiredVillagerContractService {
                 .map(HiredVillagerContractService::ensureContractId);
     }
 
+    public static Optional<UUID> currentContractHirer(Villager villager) {
+        return contract(villager)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .filter(tag -> tag.hasUUID(HIRER_TAG))
+                .map(tag -> tag.getUUID(HIRER_TAG));
+    }
+
     public static boolean hasBlockingJobInventoryOverflow(ServerLevel level, Villager villager) {
         return activeOverflowClaim(level, villager).isPresent();
     }
@@ -169,10 +176,7 @@ public final class HiredVillagerContractService {
 
     public static Optional<UUID> getHirer(ServerLevel level, Villager villager) {
         expireHireContractIfNeeded(level, villager);
-        return contract(villager)
-                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
-                .filter(tag -> tag.hasUUID(HIRER_TAG))
-                .map(tag -> tag.getUUID(HIRER_TAG));
+        return currentContractHirer(villager);
     }
 
     public static int getRemainingHireDays(ServerLevel level, Villager villager) {
