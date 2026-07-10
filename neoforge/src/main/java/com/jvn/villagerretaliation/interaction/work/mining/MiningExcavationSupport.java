@@ -12,7 +12,6 @@ import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -32,172 +31,21 @@ import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
 public final class MiningExcavationSupport {
-    private static final String EXCAVATION_LADDER_X_TAG = "ExcavationLadderX";
-    private static final String EXCAVATION_LADDER_Z_TAG = "ExcavationLadderZ";
-    private static final String EXCAVATION_LADDER_FACING_TAG = "ExcavationLadderFacing";
     private static final int TORCH_LAYER_INTERVAL = 5;
-    private static final int SURFACE_ENTRY_SEARCH_RADIUS = 2;
 
     private MiningExcavationSupport() {
     }
 
     public static BlockPos entryTarget(ServerLevel level, HiredWorkContext context) {
-        if (level == null || context == null || !context.hasWorkArea()) {
-            return null;
-        }
-        LadderShaft stored = storedLadderShaft(context);
-        BlockPos entry = stored == null ? null : highestExistingLadder(level, context, stored);
-        if (entry != null) {
-            return entry;
-        }
-        for (LadderShaft candidate : ladderShaftCandidates(context)) {
-            entry = highestExistingLadder(level, context, candidate);
-            if (entry != null) {
-                storeLadderShaft(context, candidate);
-                return entry;
-            }
-        }
-        return null;
+        return MiningExcavationShaft.entryTarget(level, context);
     }
 
     public static BlockPos returnTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
-        BlockPos entry = entryTarget(level, context);
-        if (entry != null) {
-            if (isAtEntry(villager, entry) || isAtLadderSurfaceEntry(villager, entry)) {
-                return entry;
-            }
-            BlockPos surfaceEntry = bestSurfaceEntryTarget(level, villager, context, entry);
-            if (surfaceEntry != null) {
-                return surfaceEntry;
-            }
-            return entry;
-        }
-        BlockPos surface = bestSurfaceEntryTarget(level, villager, context, null);
-        if (surface != null) {
-            return surface;
-        }
-        BlockPos fallback = new BlockPos(context.workCenter().getX(), context.workMax().getY() + 1, context.workCenter().getZ());
-        return level.hasChunkAt(fallback) ? fallback : context.workCenter();
+        return MiningExcavationShaft.returnTarget(level, villager, context);
     }
 
     public static BlockPos currentLayerDescentTarget(ServerLevel level, HiredWorkContext context) {
-        Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
-        if (currentLayerY == null || currentLayerY >= context.workMax().getY()) {
-            return null;
-        }
-        LadderShaft shaft = storedLadderShaft(context);
-        if (shaft == null) {
-            entryTarget(level, context);
-            shaft = storedLadderShaft(context);
-        }
-        int targetY = Math.min(context.workMax().getY(), currentLayerY + 1);
-        if (shaft == null || !hasCompleteLadderToLayer(level, context, targetY)) {
-            return null;
-        }
-
-        for (int y = targetY; y >= currentLayerY; y--) {
-            BlockPos target = new BlockPos(shaft.x(), y, shaft.z());
-            if (level.hasChunkAt(target) && level.getBlockState(target).is(Blocks.LADDER)) {
-                return target.immutable();
-            }
-        }
-        return null;
-    }
-
-    private static boolean isAtEntry(Villager villager, BlockPos entry) {
-        return villager.blockPosition().distSqr(entry) <= 1.0D
-                && Math.abs(villager.blockPosition().getY() - entry.getY()) <= 1;
-    }
-
-    private static boolean isAtLadderSurfaceEntry(Villager villager, BlockPos entry) {
-        BlockPos pos = villager.blockPosition();
-        int horizontalDistance = Math.abs(pos.getX() - entry.getX()) + Math.abs(pos.getZ() - entry.getZ());
-        return horizontalDistance <= 1 && pos.getY() >= entry.getY() && pos.getY() <= entry.getY() + 2;
-    }
-
-    private static BlockPos bestSurfaceEntryTarget(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context,
-            BlockPos ladderEntry) {
-        int entryY = context.workMax().getY() + 1;
-        List<SurfaceEntryCandidate> candidates = new ArrayList<>();
-        addSurfaceEntryCandidate(level, villager, context, candidates, ladderEntry, new BlockPos(
-                context.workCenter().getX(),
-                entryY,
-                context.workCenter().getZ()));
-        BlockPos min = context.workMin().offset(-SURFACE_ENTRY_SEARCH_RADIUS, 1, -SURFACE_ENTRY_SEARCH_RADIUS);
-        BlockPos max = context.workMax().offset(SURFACE_ENTRY_SEARCH_RADIUS, 1, SURFACE_ENTRY_SEARCH_RADIUS);
-        for (BlockPos raw : BlockPos.betweenClosed(min, max)) {
-            BlockPos candidate = raw.immutable();
-            if (candidate.getY() == entryY) {
-                addSurfaceEntryCandidate(level, villager, context, candidates, ladderEntry, candidate);
-            }
-        }
-        candidates.sort(Comparator.comparingDouble(SurfaceEntryCandidate::score));
-
-        BlockPos fallback = null;
-        double fallbackScore = Double.MAX_VALUE;
-        for (SurfaceEntryCandidate candidate : candidates) {
-            if (candidate.score() < fallbackScore) {
-                fallback = candidate.pos();
-                fallbackScore = candidate.score();
-            }
-            Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
-            if (path != null && path.canReach()) {
-                return candidate.pos();
-            }
-        }
-        return fallback;
-    }
-
-    private static void addSurfaceEntryCandidate(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context,
-            List<SurfaceEntryCandidate> candidates,
-            BlockPos ladderEntry,
-            BlockPos candidate) {
-        if (!isValidSurfaceEntryTarget(level, candidate)) {
-            return;
-        }
-        if (ladderEntry != null && candidate.distSqr(ladderEntry.above()) > 4.0D) {
-            return;
-        }
-        double centerDistance = candidate.distSqr(context.workCenter().above());
-        double villagerDistance = villager.distanceToSqr(candidate.getCenter());
-        double ladderDistance = ladderEntry == null ? 0.0D : candidate.distSqr(ladderEntry.above()) * 0.75D;
-        int outsideX = distanceOutside(candidate.getX(), context.workMin().getX(), context.workMax().getX());
-        int outsideZ = distanceOutside(candidate.getZ(), context.workMin().getZ(), context.workMax().getZ());
-        candidates.add(new SurfaceEntryCandidate(
-                candidate,
-                villagerDistance + centerDistance * 0.5D + ladderDistance + (outsideX + outsideZ) * 6.0D));
-    }
-
-    private static boolean isValidSurfaceEntryTarget(ServerLevel level, BlockPos pos) {
-        if (!level.hasChunkAt(pos) || !level.hasChunkAt(pos.above()) || !level.hasChunkAt(pos.below())) {
-            return false;
-        }
-        BlockState feet = level.getBlockState(pos);
-        BlockState head = level.getBlockState(pos.above());
-        BlockState floor = level.getBlockState(pos.below());
-        return isReturnPassable(feet)
-                && isReturnPassable(head)
-                && (floor.isSolid() || feet.is(Blocks.LADDER));
-    }
-
-    private static boolean isReturnPassable(BlockState state) {
-        return state.isAir() || state.is(Blocks.LADDER);
-    }
-
-    private static int distanceOutside(int value, int min, int max) {
-        if (value < min) {
-            return min - value;
-        }
-        if (value > max) {
-            return value - max;
-        }
-        return 0;
+        return MiningExcavationShaft.currentLayerDescentTarget(level, context);
     }
 
     public static WorkResult maintain(
@@ -240,9 +88,9 @@ public final class MiningExcavationSupport {
         if (currentLayerY == null) {
             return null;
         }
-        if (!requiresLadderToContinue(level, context, currentLayerY)
+        if (!MiningExcavationShaft.requiresLadder(level, context, currentLayerY)
                 || hasInventorySupportSupply(context, SupportType.LADDER)
-                || hasCompleteLadderToLayer(level, context, currentLayerY)) {
+                || MiningExcavationShaft.hasCompleteRouteToLayer(level, context, currentLayerY)) {
             return null;
         }
         MiningWorkerState.set(context, MiningWorkerState.Phase.BLOCKED_MISSING_SUPPLIES);
@@ -259,9 +107,9 @@ public final class MiningExcavationSupport {
         if (currentLayerY == null) {
             return null;
         }
-        boolean needsLadders = requiresLadderToContinue(level, context, currentLayerY)
+        boolean needsLadders = MiningExcavationShaft.requiresLadder(level, context, currentLayerY)
                 && context.inventory().findSupply(SupportType.LADDER::matchesSupply).isEmpty()
-                && !hasCompleteLadderToLayer(level, context, currentLayerY)
+                && !MiningExcavationShaft.hasCompleteRouteToLayer(level, context, currentLayerY)
                 && AssignedStorageService.countItems(villager, SupportType.LADDER::matchesSupply) > 0;
         if (needsLadders && !canAcceptSupportSupply(context, SupportType.LADDER)) {
             return blockOnFullSupportInventory(level, context);
@@ -355,150 +203,31 @@ public final class MiningExcavationSupport {
     }
 
     public static boolean shouldUseLadderFallback(HiredWorkContext context, Villager villager, HiredPathTarget target) {
-        if (target == null) {
-            return false;
-        }
-        if (!context.isInsideWorkArea(villager.blockPosition())) {
-            return true;
-        }
-        int verticalDelta = target.approachPos().getY() - villager.blockPosition().getY();
-        if (villager.blockPosition().getY() >= context.workMax().getY() - 1 && verticalDelta >= 0) {
-            return false;
-        }
-        return Math.abs(verticalDelta) > 1;
+        return MiningExcavationShaft.shouldUseFallback(context, villager, target);
     }
 
     public static boolean hasCompleteLadderRouteToLayer(ServerLevel level, HiredWorkContext context, int layerY) {
-        return hasCompleteLadderToLayer(level, context, layerY);
+        return MiningExcavationShaft.hasCompleteRouteToLayer(level, context, layerY);
     }
 
     public static boolean canMineCurrentLayerTarget(ServerLevel level, HiredWorkContext context, BlockPos target) {
-        if (target == null) {
-            return false;
-        }
-        Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
-        if (currentLayerY == null
-                || target.getY() != currentLayerY
-                || !requiresLadderToContinue(level, context, currentLayerY)
-                || hasCompleteLadderToLayer(level, context, currentLayerY)) {
-            return true;
-        }
-        LadderShaft shaft = ladderShaft(level, context, currentLayerY);
-        if (shaft == null) {
-            return false;
-        }
-        if (isLadderShaftColumn(target, shaft)) {
-            return true;
-        }
-        BlockPos shaftPos = new BlockPos(shaft.x(), currentLayerY, shaft.z());
-        if (currentLayerY <= context.workMin().getY()) {
-            return false;
-        }
-        if ((MiningBlockRules.isMineableExcavationBlock(level, context, shaftPos)
-                || isMineableLadderShaftBlock(level, shaftPos))
-                && !MiningBlockRules.hasAdjacentExcavationFluid(level, shaftPos)) {
-            return false;
-        }
-        return target.getY() == currentLayerY && horizontalDistance(target, shaftPos) == 1;
+        return MiningExcavationShaft.canMineCurrentLayerTarget(level, context, target);
     }
 
     public static boolean isNeededLadderShaftTarget(ServerLevel level, HiredWorkContext context, BlockPos target) {
-        if (target == null) {
-            return false;
-        }
-        Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
-        if (currentLayerY == null
-                || target.getY() != currentLayerY
-                || !requiresLadderToContinue(level, context, currentLayerY)
-                || hasCompleteLadderToLayer(level, context, currentLayerY)) {
-            return false;
-        }
-        LadderShaft shaft = ladderShaft(level, context, currentLayerY);
-        return shaft != null
-                && isLadderShaftColumn(target, shaft)
-                && isMineableLadderShaftBlock(level, target)
-                && !MiningBlockRules.hasAdjacentExcavationFluid(level, target);
+        return MiningExcavationShaft.isNeededTarget(level, context, target);
     }
 
     public static BlockPos nextNeededLadderShaftTarget(ServerLevel level, HiredWorkContext context) {
-        Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
-        if (currentLayerY == null
-                || !requiresLadderToContinue(level, context, currentLayerY)
-                || hasCompleteLadderToLayer(level, context, currentLayerY)) {
-            return null;
-        }
-        LadderShaft shaft = ladderShaft(level, context, currentLayerY);
-        if (shaft == null) {
-            return null;
-        }
-        BlockPos target = new BlockPos(shaft.x(), currentLayerY, shaft.z());
-        return isNeededLadderShaftTarget(level, context, target) ? target : null;
+        return MiningExcavationShaft.nextNeededTarget(level, context);
     }
 
     public static boolean needsLadderRouteOutputReserve(ServerLevel level, HiredWorkContext context, BlockPos target) {
-        if (target == null) {
-            return false;
-        }
-        Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
-        if (currentLayerY == null
-                || target.getY() != currentLayerY
-                || !requiresLadderToContinue(level, context, currentLayerY)
-                || hasCompleteLadderToLayer(level, context, currentLayerY)) {
-            return false;
-        }
-        LadderShaft shaft = ladderShaft(level, context, currentLayerY);
-        return shaft != null && !isLadderShaftColumn(target, shaft);
-    }
-
-    private static boolean isLadderShaftColumn(BlockPos pos, LadderShaft shaft) {
-        return pos.getX() == shaft.x() && pos.getZ() == shaft.z();
-    }
-
-    private static int horizontalDistance(BlockPos first, BlockPos second) {
-        return Math.abs(first.getX() - second.getX()) + Math.abs(first.getZ() - second.getZ());
-    }
-
-    private static boolean isMineableLadderShaftBlock(ServerLevel level, BlockPos pos) {
-        if (!MiningBlockRules.isBuilderClearableObstruction(level, pos, level.getBlockState(pos))) {
-            return false;
-        }
-        for (Direction direction : Direction.values()) {
-            BlockPos neighbor = pos.relative(direction);
-            if (!level.hasChunkAt(neighbor)) {
-                continue;
-            }
-            BlockState neighborState = level.getBlockState(neighbor);
-            if (neighborState.isAir() || neighborState.liquid() || neighborState.is(Blocks.LADDER)) {
-                return true;
-            }
-        }
-        return false;
+        return MiningExcavationShaft.needsOutputReserve(level, context, target);
     }
 
     private static int supportFloorY(ServerLevel level, HiredWorkContext context, int currentLayerY) {
-        int openY = deepestOpenSupportY(level, context);
-        openY = Math.max(openY, currentLayerY);
-        return Math.clamp(openY, context.workMin().getY(), context.workMax().getY());
-    }
-
-    private static int deepestOpenSupportY(ServerLevel level, HiredWorkContext context) {
-        int lowestOpenY = context.workMax().getY();
-        LadderShaft stored = storedLadderShaft(context);
-        Iterable<LadderShaft> candidates = stored == null ? ladderShaftCandidates(context) : List.of(stored);
-        for (LadderShaft candidate : candidates) {
-            int topY = ladderTopY(level, context, candidate);
-            for (int y = topY; y >= context.workMin().getY(); y--) {
-                BlockPos pos = new BlockPos(candidate.x(), y, candidate.z());
-                if (!level.hasChunkAt(pos)) {
-                    continue;
-                }
-                BlockState state = level.getBlockState(pos);
-                if (state.isAir() || state.is(Blocks.LADDER)) {
-                    lowestOpenY = Math.min(lowestOpenY, y);
-                }
-            }
-        }
-        return lowestOpenY;
+        return MiningExcavationShaft.supportFloorY(level, context, currentLayerY);
     }
 
     private static SupportPlacement nextSupportPlacement(
@@ -520,21 +249,21 @@ public final class MiningExcavationSupport {
             HiredWorkContext context,
             int lowestOpenY,
             int currentLayerY) {
-        if (!requiresLadderToContinue(level, context, currentLayerY)) {
+        if (!MiningExcavationShaft.requiresLadder(level, context, currentLayerY)) {
             return null;
         }
-        LadderShaft shaft = ladderShaft(level, villager, context, lowestOpenY);
+        MiningExcavationShaft.Shaft shaft = MiningExcavationShaft.select(level, villager, context, lowestOpenY);
         if (shaft == null) {
             return null;
         }
-        int topY = ladderTopY(level, context, shaft);
+        int topY = MiningExcavationShaft.topY(level, context, shaft);
         for (int y = topY; y >= lowestOpenY; y--) {
-            BlockPos pos = new BlockPos(shaft.x(), y, shaft.z());
+            BlockPos pos = shaft.at(y);
             BlockState current = level.getBlockState(pos);
             if (current.is(Blocks.LADDER)) {
                 continue;
             }
-            BlockState ladder = Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, shaft.facing());
+            BlockState ladder = shaft.ladderState();
             if (hasInventorySupportSupply(context, SupportType.LADDER)
                     && (canPlaceSupportBlock(level, pos, ladder)
                     || canPrepareSupportBacking(level, context, pos, ladder)
@@ -543,267 +272,6 @@ public final class MiningExcavationSupport {
             }
         }
         return null;
-    }
-
-    private static LadderShaft ladderShaft(ServerLevel level, HiredWorkContext context, int lowestOpenY) {
-        return ladderShaft(level, null, context, lowestOpenY, false);
-    }
-
-    private static LadderShaft ladderShaft(ServerLevel level, Villager villager, HiredWorkContext context, int lowestOpenY) {
-        return ladderShaft(level, villager, context, lowestOpenY, true);
-    }
-
-    private static LadderShaft ladderShaft(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context,
-            int lowestOpenY,
-            boolean storeSelectedShaft) {
-        LadderShaft stored = storedLadderShaft(context);
-        if (stored != null) {
-            return stored;
-        }
-        for (LadderShaft candidate : ladderShaftCandidatesByTop(level, villager, context)) {
-            int topY = ladderTopY(level, context, candidate);
-            for (int y = topY; y >= lowestOpenY; y--) {
-                BlockPos pos = new BlockPos(candidate.x(), y, candidate.z());
-                BlockState ladder = Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, candidate.facing());
-                if (level.getBlockState(pos).is(Blocks.LADDER)
-                        || canPlaceSupportBlock(level, pos, ladder)
-                        || canPrepareSupportBacking(level, context, pos, ladder)) {
-                    if (storeSelectedShaft) {
-                        storeLadderShaft(context, candidate);
-                    }
-                    return candidate;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static LadderShaft storedLadderShaft(HiredWorkContext context) {
-        if (!context.state().contains(EXCAVATION_LADDER_X_TAG)
-                || !context.state().contains(EXCAVATION_LADDER_Z_TAG)
-                || !context.state().contains(EXCAVATION_LADDER_FACING_TAG)) {
-            return null;
-        }
-        int x = context.state().getInt(EXCAVATION_LADDER_X_TAG);
-        int z = context.state().getInt(EXCAVATION_LADDER_Z_TAG);
-        Direction facing = Direction.byName(context.state().getString(EXCAVATION_LADDER_FACING_TAG));
-        if (facing == null || facing.getAxis().isVertical()) {
-            return null;
-        }
-        BlockPos pos = new BlockPos(x, context.workMax().getY(), z);
-        LadderShaft shaft = new LadderShaft(x, z, facing);
-        return context.isInsideWorkArea(pos) && isLadderShaftCandidate(context, shaft) ? shaft : null;
-    }
-
-    private static int ladderTopY(ServerLevel level, HiredWorkContext context) {
-        LadderShaft stored = storedLadderShaft(context);
-        if (stored != null) {
-            return ladderTopY(level, context, stored);
-        }
-        int topY = context.workMax().getY();
-        boolean foundSurface = false;
-        for (LadderShaft candidate : ladderShaftCandidates(context)) {
-            int candidateTopY = ladderTopY(level, context, candidate);
-            if (candidateTopY < topY) {
-                topY = candidateTopY;
-            }
-            foundSurface = foundSurface || candidateTopY < context.workMax().getY();
-        }
-        return foundSurface ? topY : context.workMax().getY();
-    }
-
-    private static int ladderTopY(ServerLevel level, HiredWorkContext context, LadderShaft shaft) {
-        for (int y = context.workMax().getY(); y >= context.workMin().getY(); y--) {
-            if (hasSurfaceDismount(level, context, shaft, y)) {
-                return y;
-            }
-        }
-        return context.workMax().getY();
-    }
-
-    private static boolean hasSurfaceDismount(ServerLevel level, HiredWorkContext context, LadderShaft shaft, int y) {
-        BlockPos ladder = new BlockPos(shaft.x(), y, shaft.z());
-        if (!level.hasChunkAt(ladder)) {
-            return false;
-        }
-        BlockState ladderState = Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, shaft.facing());
-        BlockState current = level.getBlockState(ladder);
-        if (!current.is(Blocks.LADDER)
-                && !canPlaceSupportBlock(level, ladder, ladderState)
-                && !canPrepareSupportBacking(level, context, ladder, ladderState)) {
-            return false;
-        }
-        for (Direction direction : Direction.Plane.HORIZONTAL) {
-            BlockPos dismount = ladder.relative(direction);
-            if (context.isInsideWorkArea(dismount)
-                    && HiredMoveToBlockFaceJob.isValidApproachPosition(level, dismount)) {
-                return true;
-            }
-            BlockPos surfaceDismount = dismount.above();
-            if (isAdjacentSurfaceExit(context, surfaceDismount)
-                    && isValidSurfaceEntryTarget(level, surfaceDismount)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static boolean hasSurfaceExitDismount(ServerLevel level, HiredWorkContext context, LadderShaft shaft) {
-        BlockPos ladderTop = new BlockPos(shaft.x(), context.workMax().getY(), shaft.z());
-        return surfaceExitScore(level, context, ladderTop) < Double.MAX_VALUE;
-    }
-
-    private static double surfaceExitScore(ServerLevel level, HiredWorkContext context, LadderShaft shaft) {
-        BlockPos ladderTop = new BlockPos(shaft.x(), context.workMax().getY(), shaft.z());
-        return surfaceExitScore(level, context, ladderTop);
-    }
-
-    private static double surfaceExitScore(ServerLevel level, HiredWorkContext context, BlockPos ladderTop) {
-        double bestScore = Double.MAX_VALUE;
-        for (Direction direction : Direction.Plane.HORIZONTAL) {
-            BlockPos surfaceDismount = ladderTop.relative(direction).above();
-            if (!isAdjacentSurfaceExit(context, surfaceDismount)
-                    || !isValidSurfaceEntryTarget(level, surfaceDismount)) {
-                continue;
-            }
-            bestScore = Math.min(bestScore, surfaceDismount.distSqr(context.workCenter().above()));
-        }
-        return bestScore;
-    }
-
-    private static boolean isAdjacentSurfaceExit(HiredWorkContext context, BlockPos pos) {
-        return pos.getY() == context.workMax().getY() + 1
-                && !context.isInsideWorkArea(pos)
-                && pos.getX() >= context.workMin().getX() - 1
-                && pos.getX() <= context.workMax().getX() + 1
-                && pos.getZ() >= context.workMin().getZ() - 1
-                && pos.getZ() <= context.workMax().getZ() + 1;
-    }
-
-    private static boolean isLadderShaftCandidate(HiredWorkContext context, LadderShaft shaft) {
-        for (LadderShaft candidate : ladderShaftCandidates(context)) {
-            if (candidate.equals(shaft)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static void storeLadderShaft(HiredWorkContext context, LadderShaft shaft) {
-        context.state().putInt(EXCAVATION_LADDER_X_TAG, shaft.x());
-        context.state().putInt(EXCAVATION_LADDER_Z_TAG, shaft.z());
-        context.state().putString(EXCAVATION_LADDER_FACING_TAG, shaft.facing().getName());
-    }
-
-    private static List<LadderShaft> ladderShaftCandidates(HiredWorkContext context) {
-        LinkedHashSet<LadderShaft> candidates = new LinkedHashSet<>(cornerLadderShaftCandidates(context));
-        int minX = context.workMin().getX();
-        int maxX = context.workMax().getX();
-        int minZ = context.workMin().getZ();
-        int maxZ = context.workMax().getZ();
-        int centerX = context.workCenter().getX();
-        int centerZ = context.workCenter().getZ();
-        addLadderShaftCandidate(candidates, minX, centerZ, Direction.EAST);
-        addLadderShaftCandidate(candidates, maxX, centerZ, Direction.WEST);
-        addLadderShaftCandidate(candidates, centerX, minZ, Direction.SOUTH);
-        addLadderShaftCandidate(candidates, centerX, maxZ, Direction.NORTH);
-        return new ArrayList<>(candidates);
-    }
-
-    private static List<LadderShaft> cornerLadderShaftCandidates(HiredWorkContext context) {
-        int minX = context.workMin().getX();
-        int maxX = context.workMax().getX();
-        int minZ = context.workMin().getZ();
-        int maxZ = context.workMax().getZ();
-        LinkedHashSet<LadderShaft> candidates = new LinkedHashSet<>();
-        addLadderShaftCandidate(candidates, minX, minZ, Direction.SOUTH);
-        addLadderShaftCandidate(candidates, minX, minZ, Direction.EAST);
-        addLadderShaftCandidate(candidates, maxX, minZ, Direction.SOUTH);
-        addLadderShaftCandidate(candidates, maxX, minZ, Direction.WEST);
-        addLadderShaftCandidate(candidates, maxX, maxZ, Direction.NORTH);
-        addLadderShaftCandidate(candidates, maxX, maxZ, Direction.WEST);
-        addLadderShaftCandidate(candidates, minX, maxZ, Direction.NORTH);
-        addLadderShaftCandidate(candidates, minX, maxZ, Direction.EAST);
-        return new ArrayList<>(candidates);
-    }
-
-    private static List<LadderShaft> ladderShaftCandidatesByTop(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context) {
-        BlockPos storage = villager == null ? null : context.nearestDepositStorage(level, villager);
-        LinkedHashSet<LadderShaft> ordered = new LinkedHashSet<>();
-        if (storage != null) {
-            ordered.addAll(storageFacingLadderShaftCandidates(context, storage));
-        }
-        ordered.addAll(storage == null ? cornerLadderShaftCandidates(context) : ladderShaftCandidates(context));
-        List<LadderShaft> candidates = new ArrayList<>(ordered);
-        candidates.sort(Comparator
-                .comparingInt((LadderShaft shaft) -> hasSurfaceExitDismount(level, context, shaft) ? 0 : 1)
-                .thenComparingDouble(shaft -> storageSurfaceExitScore(level, context, shaft, storage))
-                .thenComparingInt(shaft -> ladderTopY(level, context, shaft))
-                .thenComparingDouble(shaft -> surfaceExitScore(level, context, shaft)));
-        return candidates;
-    }
-
-    private static List<LadderShaft> storageFacingLadderShaftCandidates(HiredWorkContext context, BlockPos storage) {
-        int minX = context.workMin().getX();
-        int maxX = context.workMax().getX();
-        int minZ = context.workMin().getZ();
-        int maxZ = context.workMax().getZ();
-        int storageX = Math.clamp(storage.getX(), minX, maxX);
-        int storageZ = Math.clamp(storage.getZ(), minZ, maxZ);
-        LinkedHashSet<LadderShaft> candidates = new LinkedHashSet<>();
-
-        if (storage.getX() >= maxX) {
-            addLadderShaftCandidate(candidates, maxX, storageZ, Direction.WEST);
-        }
-        if (storage.getX() <= minX) {
-            addLadderShaftCandidate(candidates, minX, storageZ, Direction.EAST);
-        }
-        if (storage.getZ() >= maxZ) {
-            addLadderShaftCandidate(candidates, storageX, maxZ, Direction.NORTH);
-        }
-        if (storage.getZ() <= minZ) {
-            addLadderShaftCandidate(candidates, storageX, minZ, Direction.SOUTH);
-        }
-        addLadderShaftCandidate(candidates, maxX, storageZ, Direction.WEST);
-        addLadderShaftCandidate(candidates, minX, storageZ, Direction.EAST);
-        addLadderShaftCandidate(candidates, storageX, maxZ, Direction.NORTH);
-        addLadderShaftCandidate(candidates, storageX, minZ, Direction.SOUTH);
-        return new ArrayList<>(candidates);
-    }
-
-    private static void addLadderShaftCandidate(
-            LinkedHashSet<LadderShaft> candidates,
-            int x,
-            int z,
-            Direction facing) {
-        candidates.add(new LadderShaft(x, z, facing));
-    }
-
-    private static double storageSurfaceExitScore(
-            ServerLevel level,
-            HiredWorkContext context,
-            LadderShaft shaft,
-            BlockPos storage) {
-        if (storage == null) {
-            return 0.0D;
-        }
-        BlockPos ladderTop = new BlockPos(shaft.x(), context.workMax().getY(), shaft.z());
-        double bestScore = Double.MAX_VALUE;
-        for (Direction direction : Direction.Plane.HORIZONTAL) {
-            BlockPos surfaceDismount = ladderTop.relative(direction).above();
-            if (!isAdjacentSurfaceExit(context, surfaceDismount)
-                    || !isValidSurfaceEntryTarget(level, surfaceDismount)) {
-                continue;
-            }
-            bestScore = Math.min(bestScore, surfaceDismount.distSqr(storage));
-        }
-        return bestScore;
     }
 
     private static boolean hasPendingTorchSupportPlacement(
@@ -829,7 +297,7 @@ public final class MiningExcavationSupport {
                 continue;
             }
             for (TorchPlacement placement : torchPlacements(context, y)) {
-                if (isLadderShaft(context, placement.pos())) {
+                if (MiningExcavationShaft.isShaftColumn(context, placement.pos())) {
                     continue;
                 }
                 BlockState torch = Blocks.WALL_TORCH.defaultBlockState().setValue(WallTorchBlock.FACING, placement.facing());
@@ -926,49 +394,6 @@ public final class MiningExcavationSupport {
         return WorkResult.idle("interaction.work.mining.support.inventory_full");
     }
 
-    private static boolean requiresLadderToContinue(ServerLevel level, HiredWorkContext context, int layerY) {
-        return layerY < ladderTopY(level, context);
-    }
-
-    private static boolean hasCompleteLadderToLayer(ServerLevel level, HiredWorkContext context, int layerY) {
-        LadderShaft shaft = storedLadderShaft(context);
-        Iterable<LadderShaft> candidates = shaft == null ? ladderShaftCandidates(context) : List.of(shaft);
-        for (LadderShaft candidate : candidates) {
-            int topY = ladderTopY(level, context, candidate);
-            if (layerY >= topY) {
-                storeLadderShaft(context, candidate);
-                return true;
-            }
-            boolean complete = true;
-            for (int y = topY; y >= layerY; y--) {
-                BlockPos pos = new BlockPos(candidate.x(), y, candidate.z());
-                if (!level.hasChunkAt(pos) || !level.getBlockState(pos).is(Blocks.LADDER)) {
-                    complete = false;
-                    break;
-                }
-            }
-            if (complete) {
-                storeLadderShaft(context, candidate);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static BlockPos highestExistingLadder(ServerLevel level, HiredWorkContext context, LadderShaft shaft) {
-        if (shaft == null) {
-            return null;
-        }
-        int topY = ladderTopY(level, context, shaft);
-        for (int y = topY; y >= context.workMin().getY(); y--) {
-            BlockPos pos = new BlockPos(shaft.x(), y, shaft.z());
-            if (level.hasChunkAt(pos) && level.getBlockState(pos).is(Blocks.LADDER)) {
-                return pos.immutable();
-            }
-        }
-        return null;
-    }
-
     private static HiredPathTarget supportPlacementTarget(
             ServerLevel level,
             Villager villager,
@@ -1053,7 +478,7 @@ public final class MiningExcavationSupport {
         return new ArrayList<>(placements);
     }
 
-    private static boolean canPlaceSupportBlock(ServerLevel level, BlockPos pos, BlockState state) {
+    static boolean canPlaceSupportBlock(ServerLevel level, BlockPos pos, BlockState state) {
         return level.hasChunkAt(pos)
                 && level.getBlockState(pos).isAir()
                 && state.canSurvive(level, pos);
@@ -1083,7 +508,7 @@ public final class MiningExcavationSupport {
         return canPlaceSupportBlock(level, pos, state);
     }
 
-    private static boolean canPrepareSupportBacking(ServerLevel level, HiredWorkContext context, BlockPos pos, BlockState state) {
+    static boolean canPrepareSupportBacking(ServerLevel level, HiredWorkContext context, BlockPos pos, BlockState state) {
         SupportBackingNeed need = supportBackingNeed(level, context, pos, state);
         return need != null && hasInventorySupportBacking(level, context, need);
     }
@@ -1177,14 +602,6 @@ public final class MiningExcavationSupport {
                 && pos.getZ() <= context.workMax().getZ() + 1;
     }
 
-    private static boolean isLadderShaft(HiredWorkContext context, BlockPos pos) {
-        LadderShaft shaft = storedLadderShaft(context);
-        return shaft != null && shaft.x() == pos.getX() && shaft.z() == pos.getZ();
-    }
-
-    private record LadderShaft(int x, int z, Direction facing) {
-    }
-
     private record TorchPlacement(BlockPos pos, Direction facing) {
     }
 
@@ -1192,9 +609,6 @@ public final class MiningExcavationSupport {
     }
 
     private record SupportBackingNeed(BlockPos backingPos, Direction supportFace) {
-    }
-
-    private record SurfaceEntryCandidate(BlockPos pos, double score) {
     }
 
     private enum SupportType {
