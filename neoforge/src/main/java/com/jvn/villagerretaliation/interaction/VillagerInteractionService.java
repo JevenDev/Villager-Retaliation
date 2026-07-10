@@ -606,9 +606,13 @@ public final class VillagerInteractionService {
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
         ServerLevel level = contextTarget.level();
+        boolean ownsContract = HiredVillagerContractService.isHiredBy(level, villager, player);
+        boolean canAdministerContract = ownsContract && isContractAdministrationAction(action);
+        boolean canOpenJobInventory = action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
+                && HiredVillagerContractService.canAccessJobInventory(level, villager, player);
         if (!VillagerRecruitmentService.canRecruit(level, villager, player)
-                && (action != VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
-                || !HiredVillagerContractService.canAccessJobInventory(level, villager, player))) {
+                && !canAdministerContract
+                && !canOpenJobInventory) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
@@ -786,6 +790,59 @@ public final class VillagerInteractionService {
             case CONFIRM -> confirmBuilderOrder(player, level, villager, state, structureId);
             case CANCEL -> cancelBuilderOrder(player, level, villager, state);
         }
+    }
+
+    private static boolean isContractAdministrationAction(VillagerRecruitRequestPayload.Action action) {
+        return switch (action) {
+            case EXTEND_ONE_DAY,
+                 EXTEND_THREE_DAYS,
+                 EXTEND_FIVE_DAYS,
+                 EXTEND_SEVEN_DAYS,
+                 EXTEND_FIFTEEN_DAYS,
+                 EXTEND_THIRTY_DAYS,
+                 VIEW_CONTRACT,
+                 OPEN_JOB_INVENTORY,
+                 SHOW_STORAGE,
+                 DEPOSIT_EARNINGS,
+                 REMOVE_STORAGE,
+                 SHOW_PAYMENT_STORAGE,
+                 REMOVE_PAYMENT_STORAGE,
+                 TOGGLE_AUTO_PAYMENT,
+                 PROMPT_END_HIRE_CONFIRMATION,
+                 DECLINE_END_HIRE_CONFIRMATION,
+                 END_HIRE,
+                 VIEW_ROLE,
+                 SET_ROLE_COMBAT,
+                 SET_ROLE_HUNTING,
+                 SET_ROLE_MINING,
+                 SET_ROLE_LOGGING,
+                 SET_ROLE_FARMING,
+                 SET_ROLE_FISHING,
+                 SET_ROLE_BREWING,
+                 SET_ROLE_BUILDER,
+                 SET_ROLE_ANIMAL_HANDLING,
+                 SET_ROLE_NITWIT,
+                 SET_ROLE_COOK,
+                 SET_ROLE_SMELTER,
+                 SET_ROLE_COURIER,
+                 VIEW_WORK_STATUS,
+                 TOGGLE_WORK_ENABLED,
+                 TOGGLE_USE_ASSIGNED_SUPPLIES,
+                 TOGGLE_AUTO_DEPOSIT_OUTPUTS,
+                 CONFIGURE_COMBAT,
+                 CONFIGURE_HUNTING,
+                 CONFIGURE_MINING,
+                 CONFIGURE_LOGGING,
+                 CONFIGURE_FARMING,
+                 CONFIGURE_FISHING,
+                 CONFIGURE_BREWING,
+                 CONFIGURE_BUILDER,
+                 CONFIGURE_ANIMAL_HANDLING,
+                 CONFIGURE_NITWIT,
+                 STOP_BREWING,
+                 STOP_BUILDER_BUILD -> true;
+            default -> false;
+        };
     }
 
     private static boolean canUseBuilderBlueprintService(ServerPlayer player, ServerLevel level, Villager villager) {
