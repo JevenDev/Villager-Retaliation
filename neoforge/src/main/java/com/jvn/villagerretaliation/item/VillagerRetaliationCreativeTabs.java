@@ -22,6 +22,7 @@ public final class VillagerRetaliationCreativeTabs {
                         VillagerRetaliationBlocks.PAYMENT_BOXES.forEach(block -> output.accept(block.get()));
                         output.accept(VillagerRetaliationItems.CLIPBOARD.get());
                         output.accept(VillagerRetaliationItems.CONSTRUCTION_BLUEPRINT.get());
+                        output.accept(VillagerRetaliationItems.ITEM_FILTER.get());
                     })
                     .build());
 
