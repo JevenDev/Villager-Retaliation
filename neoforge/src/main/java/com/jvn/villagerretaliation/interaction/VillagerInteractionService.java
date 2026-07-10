@@ -453,25 +453,17 @@ public final class VillagerInteractionService {
         VillagerItemFilterData.Mode selectedMode = ITEM_FILTER_DENYLIST_OPTION_ID.equals(optionId)
                 ? VillagerItemFilterData.Mode.DENYLIST
                 : VillagerItemFilterData.Mode.ALLOWLIST;
-        ItemStack assignedFilter = heldFilter.copyWithCount(1);
-        VillagerItemFilterData.setMode(assignedFilter, selectedMode);
-        ItemStack oldFilter = VillagerItemFilterService.replaceFilter(villager, assignedFilter);
-        if (!player.getAbilities().instabuild) {
-            heldFilter.shrink(1);
+        VillagerItemFilterService.AssignmentResult assignment =
+                VillagerItemFilterService.assignHeldFilter(player, villager, selectedMode);
+        if (!assignment.assigned()) {
+            sendVillagerNotice(player, villager, "interaction.item_filter.missing");
+            VillagerConversationService.endForPlayer(player, true);
+            return true;
         }
-
-        boolean hadOldFilter = !oldFilter.isEmpty();
-        boolean droppedOldFilter = false;
-        if (!oldFilter.isEmpty() && !player.getInventory().add(oldFilter)) {
-            player.drop(oldFilter, false);
-            droppedOldFilter = true;
-        }
-        player.getInventory().setChanged();
-        player.containerMenu.broadcastChanges();
         String noticeKey;
-        if (droppedOldFilter) {
+        if (assignment.droppedOldFilter()) {
             noticeKey = "interaction.item_filter.replaced_dropped";
-        } else if (hadOldFilter) {
+        } else if (assignment.replaced()) {
             noticeKey = "interaction.item_filter.replaced";
         } else if (selectedMode == VillagerItemFilterData.Mode.DENYLIST) {
             noticeKey = "interaction.item_filter.assigned_denylist";

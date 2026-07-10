@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerItemFilterItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.recipe.VillagerItemFilterCopyRecipe;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.mojang.authlib.GameProfile;
@@ -159,6 +160,71 @@ public final class VillagerInventoryGameTests {
 
         villager.discard();
         legacyVillager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerItemFilterAssignmentConsumesAndReturnsExactlyOne(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrFilterAssignment");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+
+        ItemStack firstStack = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get(), 3);
+        VillagerItemFilterData.setEntry(firstStack, 0, new ItemStack(Items.COBBLESTONE));
+        hirer.getInventory().setItem(hirer.getInventory().selected, firstStack);
+        VillagerItemFilterService.AssignmentResult first = VillagerItemFilterService.assignHeldFilter(
+                hirer, villager, VillagerItemFilterData.Mode.ALLOWLIST);
+        helper.assertTrue(first.assigned() && !first.replaced(), "first filter should be assigned without replacement");
+        helper.assertValueEqual(hirer.getMainHandItem().getCount(), 2,
+                "survival assignment should consume exactly one held filter");
+        helper.assertTrue(VillagerItemFilterData.entry(
+                        VillagerItemFilterService.assignedFilter(villager), 0).is(Items.COBBLESTONE),
+                "assigned filter should copy the held configuration");
+
+        hirer.getInventory().setItem(1, hirer.getMainHandItem().copy());
+        ItemStack replacementStack = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get(), 2);
+        VillagerItemFilterData.setEntry(replacementStack, 0, new ItemStack(Items.DIRT));
+        hirer.getInventory().setItem(hirer.getInventory().selected, replacementStack);
+        int cobblestoneFiltersBefore = hirer.getInventory().items.stream()
+                .filter(VillagerRetaliationItems::isItemFilter)
+                .filter(stack -> VillagerItemFilterData.entry(stack, 0).is(Items.COBBLESTONE))
+                .mapToInt(ItemStack::getCount)
+                .sum();
+        VillagerItemFilterService.AssignmentResult replacement = VillagerItemFilterService.assignHeldFilter(
+                hirer, villager, VillagerItemFilterData.Mode.DENYLIST);
+        int cobblestoneFiltersAfter = hirer.getInventory().items.stream()
+                .filter(VillagerRetaliationItems::isItemFilter)
+                .filter(stack -> VillagerItemFilterData.entry(stack, 0).is(Items.COBBLESTONE))
+                .mapToInt(ItemStack::getCount)
+                .sum();
+        helper.assertTrue(replacement.assigned() && replacement.replaced(),
+                "second assignment should report replacement");
+        helper.assertValueEqual(hirer.getMainHandItem().getCount(), 1,
+                "replacement should consume exactly one new filter");
+        helper.assertValueEqual(cobblestoneFiltersAfter, cobblestoneFiltersBefore + 1,
+                "replacement should return exactly one old filter");
+        helper.assertTrue(VillagerItemFilterData.mode(VillagerItemFilterService.assignedFilter(villager))
+                        == VillagerItemFilterData.Mode.DENYLIST
+                        && VillagerItemFilterData.entry(
+                        VillagerItemFilterService.assignedFilter(villager), 0).is(Items.DIRT),
+                "replacement should apply the selected mode only to the assigned copy");
+
+        ServerPlayer outsider = fakePlayer(level, "VrFilterAssignmentOutsider");
+        outsider.getInventory().setItem(
+                outsider.getInventory().selected,
+                new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get(), 2));
+        VillagerItemFilterService.AssignmentResult rejected = VillagerItemFilterService.assignHeldFilter(
+                outsider, villager, VillagerItemFilterData.Mode.ALLOWLIST);
+        helper.assertFalse(rejected.assigned(), "a player who did not hire the villager should be rejected");
+        helper.assertValueEqual(outsider.getMainHandItem().getCount(), 2,
+                "rejected assignment should not consume a filter");
+        helper.assertTrue(VillagerItemFilterData.mode(VillagerItemFilterService.assignedFilter(villager))
+                        == VillagerItemFilterData.Mode.DENYLIST,
+                "rejected assignment should not replace the villager's filter");
+
+        villager.discard();
         helper.succeed();
     }
 
