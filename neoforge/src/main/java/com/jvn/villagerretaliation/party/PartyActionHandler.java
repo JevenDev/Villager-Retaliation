@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.OpenPlayerPartyMenuPayload;
 import com.jvn.villagerretaliation.network.PartyActionRequestPayload;
 import com.jvn.villagerretaliation.network.PartyInvitationSyncPayload;
+import com.jvn.villagerretaliation.quest.PartyQuestService;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.network.chat.Component;
@@ -133,6 +134,7 @@ public final class PartyActionHandler {
         PartyService.PartyResult result = PartyService.leaveParty(player);
         notice(player, result.messageKey());
         if (result.success() && party != null) {
+            PartyQuestService.detachPlayer(player.serverLevel(), party, player.getUUID());
             PartySyncService.clear(player.getServer(), player.getUUID());
             PartySyncService.syncParty(player.getServer(), party.id());
         }
@@ -143,6 +145,7 @@ public final class PartyActionHandler {
         PartyService.PartyResult result = PartyService.removePlayer(leader, targetId);
         notice(leader, result.messageKey());
         if (result.success() && party != null) {
+            PartyQuestService.detachPlayer(leader.serverLevel(), party, targetId);
             PartySyncService.clear(leader.getServer(), targetId);
             ServerPlayer removed = leader.getServer().getPlayerList().getPlayer(targetId);
             if (removed != null) {
@@ -159,6 +162,7 @@ public final class PartyActionHandler {
             return;
         }
         List<UUID> affectedPlayers = List.copyOf(party.playerIds());
+        PartyQuestService.detachAll(leader.serverLevel(), party);
         PartyVillagerContractService.disband(leader);
         PartySyncService.clear(leader.getServer(), affectedPlayers);
         for (UUID playerId : affectedPlayers) {

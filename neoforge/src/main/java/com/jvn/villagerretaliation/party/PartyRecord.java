@@ -17,15 +17,17 @@ public final class PartyRecord {
     private static final String TAG_PLAYERS = "Players";
     private static final String TAG_PLAYER = "Player";
     private static final String TAG_VILLAGERS = "Villagers";
+    private static final String TAG_SHARED_QUESTS = "SharedQuests";
 
     private final UUID id;
     private final UUID leaderId;
     private final long createdGameTime;
     private final List<UUID> playerIds;
     private final List<PartyVillagerRecord> villagers;
+    private final List<PartySharedQuestRecord> sharedQuests;
 
     PartyRecord(UUID id, UUID leaderId, long createdGameTime) {
-        this(id, leaderId, createdGameTime, new ArrayList<>(List.of(leaderId)), new ArrayList<>());
+        this(id, leaderId, createdGameTime, new ArrayList<>(List.of(leaderId)), new ArrayList<>(), new ArrayList<>());
     }
 
     private PartyRecord(
@@ -33,12 +35,14 @@ public final class PartyRecord {
             UUID leaderId,
             long createdGameTime,
             List<UUID> playerIds,
-            List<PartyVillagerRecord> villagers) {
+            List<PartyVillagerRecord> villagers,
+            List<PartySharedQuestRecord> sharedQuests) {
         this.id = id;
         this.leaderId = leaderId;
         this.createdGameTime = Math.max(0L, createdGameTime);
         this.playerIds = playerIds;
         this.villagers = villagers;
+        this.sharedQuests = sharedQuests;
         normalizePlayers();
     }
 
@@ -60,6 +64,20 @@ public final class PartyRecord {
 
     public List<PartyVillagerRecord> villagers() {
         return Collections.unmodifiableList(this.villagers);
+    }
+
+    public List<PartySharedQuestRecord> sharedQuests() {
+        return Collections.unmodifiableList(this.sharedQuests);
+    }
+
+    public void addSharedQuest(PartySharedQuestRecord sharedQuest) {
+        if (sharedQuest != null && this.sharedQuests.stream().noneMatch(existing -> existing.instanceId().equals(sharedQuest.instanceId()))) {
+            this.sharedQuests.add(sharedQuest);
+        }
+    }
+
+    public boolean removeSharedQuest(UUID instanceId) {
+        return this.sharedQuests.removeIf(sharedQuest -> sharedQuest.instanceId().equals(instanceId));
     }
 
     public int totalMembers() {
@@ -115,6 +133,7 @@ public final class PartyRecord {
 
     void removeDuplicatePlayers(Set<UUID> claimedPlayers) {
         this.playerIds.removeIf(playerId -> !playerId.equals(this.leaderId) && !claimedPlayers.add(playerId));
+        pruneSharedQuests();
     }
 
     void removeDuplicateVillagers(Set<UUID> claimedVillagers) {
@@ -138,6 +157,11 @@ public final class PartyRecord {
             villagersTag.add(villager.save());
         }
         tag.put(TAG_VILLAGERS, villagersTag);
+        ListTag sharedQuestsTag = new ListTag();
+        for (PartySharedQuestRecord sharedQuest : this.sharedQuests) {
+            sharedQuestsTag.add(sharedQuest.save());
+        }
+        tag.put(TAG_SHARED_QUESTS, sharedQuestsTag);
         return tag;
     }
 
@@ -163,7 +187,22 @@ public final class PartyRecord {
                 }
             }
         }
-        return new PartyRecord(tag.getUUID(TAG_ID), leaderId, tag.getLong(TAG_CREATED_GAME_TIME), players, villagers);
+        List<PartySharedQuestRecord> sharedQuests = new ArrayList<>();
+        for (Tag rawSharedQuest : tag.getList(TAG_SHARED_QUESTS, Tag.TAG_COMPOUND)) {
+            if (rawSharedQuest instanceof CompoundTag sharedQuestTag) {
+                PartySharedQuestRecord sharedQuest = PartySharedQuestRecord.load(sharedQuestTag);
+                if (sharedQuest != null) {
+                    sharedQuests.add(sharedQuest);
+                }
+            }
+        }
+        return new PartyRecord(
+                tag.getUUID(TAG_ID),
+                leaderId,
+                tag.getLong(TAG_CREATED_GAME_TIME),
+                players,
+                villagers,
+                sharedQuests);
     }
 
     private void normalizePlayers() {
@@ -178,5 +217,16 @@ public final class PartyRecord {
         if (this.villagers.size() > PartyService.MAX_VILLAGERS) {
             this.villagers.subList(PartyService.MAX_VILLAGERS, this.villagers.size()).clear();
         }
+        pruneSharedQuests();
+    }
+
+    private void pruneSharedQuests() {
+        Set<UUID> currentPlayers = Set.copyOf(this.playerIds);
+        Set<UUID> questInstances = new LinkedHashSet<>();
+        for (PartySharedQuestRecord sharedQuest : this.sharedQuests) {
+            sharedQuest.retainEnrollments(currentPlayers);
+        }
+        this.sharedQuests.removeIf(sharedQuest -> sharedQuest.enrollments().isEmpty()
+                || !questInstances.add(sharedQuest.instanceId()));
     }
 }

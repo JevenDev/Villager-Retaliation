@@ -248,6 +248,12 @@ public final class PartyVillagerContractService {
         PartyService.markChanged(level);
         attachEntityState(level, villager, party.id(), record);
         applyCommandState(level, villager, party, record);
+        for (UUID playerId : party.playerIds()) {
+            ServerPlayer member = level.getServer().getPlayerList().getPlayer(playerId);
+            if (member != null) {
+                com.jvn.villagerretaliation.quest.VillagerQuestService.attachPendingPartyQuests(member);
+            }
+        }
         PartySyncService.syncParty(level.getServer(), party.id());
     }
 

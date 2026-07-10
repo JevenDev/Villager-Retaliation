@@ -117,6 +117,7 @@ public final class VillagerRetaliationEvents {
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             VillagerQuestService.clearRuntimeState(player);
+            VillagerQuestService.attachPendingPartyQuests(player);
             VillagerReputationNetworking.sendServerConfig(player);
             PartySyncService.sendTo(player);
             PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())

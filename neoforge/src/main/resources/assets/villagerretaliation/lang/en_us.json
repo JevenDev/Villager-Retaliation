@@ -1495,6 +1495,7 @@
   "villagerretaliation.party.villager_dismissed": "Villager dismissed from the party.",
   "villagerretaliation.party.contract_expired": "A recruited villager's party contract expired.",
   "villagerretaliation.party.villager_died": "A recruited party villager died.",
+  "villagerretaliation.party.quest_shared": "Quest progress is now shared with eligible party members.",
   "villagerretaliation.party.error.invitation_invalid": "This invitation is no longer valid.",
   "villagerretaliation.party.error.leader_only": "Only the party leader may perform this action.",
   "villagerretaliation.party.error.player_limit": "This party already has 4 players.",

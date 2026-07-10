@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -59,7 +60,10 @@ public final class VillagerRetaliationRetaliationUtil {
             Map<UUID, AngerTarget> angerTargets,
             String persistentTagRoot
     ) {
-        if (VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker) || !villager.isAlive() || attacker == villager) {
+        if (VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker)
+                || !villager.isAlive()
+                || attacker == villager
+                || PartyService.areInSameParty(villager, attacker)) {
             return false;
         }
 
@@ -277,6 +281,10 @@ public final class VillagerRetaliationRetaliationUtil {
             return null;
         }
         if (!target.isAlive()) {
+            clearAnger.run();
+            return null;
+        }
+        if (PartyService.areInSameParty(villager, target)) {
             clearAnger.run();
             return null;
         }

@@ -36,6 +36,9 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_EXPIRED_TIME = "ExpiredGameTime";
     private static final String TAG_VISITED_TARGET = "VisitedTarget";
     private static final String TAG_HAS_PROOF = "HasProof";
+    private static final String TAG_PENDING_PARTY_REWARD = "PendingPartyReward";
+    private static final String TAG_PARTY_REWARD_CLAIMED = "PartyRewardClaimed";
+    private static final String TAG_PARTY_QUEST_INSTANCE = "PartyQuestInstance";
     private static final String TAG_ISSUER_NAME = "IssuerName";
     private static final String TAG_ISSUER_PROFESSION = "IssuerProfession";
     private static final String TAG_ISSUER_LEVEL = "IssuerLevel";
@@ -422,6 +425,9 @@ public class VillagerQuestSavedData extends SavedData {
         private long expiredGameTime;
         private boolean visitedTarget;
         private boolean hasProof;
+        private boolean pendingPartyReward;
+        private boolean partyRewardClaimed;
+        private UUID partyQuestInstanceId;
         private String issuerName = "";
         private String issuerProfession = "";
         private int issuerLevel;
@@ -454,6 +460,11 @@ public class VillagerQuestSavedData extends SavedData {
             progress.expiredGameTime = tag.getLong(TAG_EXPIRED_TIME);
             progress.visitedTarget = tag.getBoolean(TAG_VISITED_TARGET);
             progress.hasProof = tag.getBoolean(TAG_HAS_PROOF);
+            progress.pendingPartyReward = tag.getBoolean(TAG_PENDING_PARTY_REWARD);
+            progress.partyRewardClaimed = tag.getBoolean(TAG_PARTY_REWARD_CLAIMED);
+            if (tag.hasUUID(TAG_PARTY_QUEST_INSTANCE)) {
+                progress.partyQuestInstanceId = tag.getUUID(TAG_PARTY_QUEST_INSTANCE);
+            }
             progress.issuerName = tag.getString(TAG_ISSUER_NAME);
             progress.issuerProfession = tag.getString(TAG_ISSUER_PROFESSION);
             progress.issuerLevel = tag.getInt(TAG_ISSUER_LEVEL);
@@ -522,6 +533,11 @@ public class VillagerQuestSavedData extends SavedData {
             tag.putLong(TAG_EXPIRED_TIME, this.expiredGameTime);
             tag.putBoolean(TAG_VISITED_TARGET, this.visitedTarget);
             tag.putBoolean(TAG_HAS_PROOF, this.hasProof);
+            tag.putBoolean(TAG_PENDING_PARTY_REWARD, this.pendingPartyReward);
+            tag.putBoolean(TAG_PARTY_REWARD_CLAIMED, this.partyRewardClaimed);
+            if (this.partyQuestInstanceId != null) {
+                tag.putUUID(TAG_PARTY_QUEST_INSTANCE, this.partyQuestInstanceId);
+            }
             if (!this.issuerName.isBlank()) {
                 tag.putString(TAG_ISSUER_NAME, this.issuerName);
             }
@@ -624,6 +640,33 @@ public class VillagerQuestSavedData extends SavedData {
             return this.hasProof;
         }
 
+        public boolean pendingPartyReward() {
+            return this.pendingPartyReward && !this.partyRewardClaimed;
+        }
+
+        public boolean partyRewardClaimed() {
+            return this.partyRewardClaimed;
+        }
+
+        public void markPendingPartyReward() {
+            if (!this.partyRewardClaimed) {
+                this.pendingPartyReward = true;
+            }
+        }
+
+        public void markPartyRewardClaimed() {
+            this.pendingPartyReward = false;
+            this.partyRewardClaimed = true;
+        }
+
+        public UUID partyQuestInstanceId() {
+            return this.partyQuestInstanceId;
+        }
+
+        public void linkPartyQuest(UUID instanceId) {
+            this.partyQuestInstanceId = instanceId;
+        }
+
         public String issuerName() {
             return this.issuerName;
         }
@@ -706,6 +749,9 @@ public class VillagerQuestSavedData extends SavedData {
             this.expiredGameTime = 0L;
             this.visitedTarget = false;
             this.hasProof = false;
+            this.pendingPartyReward = false;
+            this.partyRewardClaimed = false;
+            this.partyQuestInstanceId = null;
             this.consumedReason = "";
             this.currentStage = "started";
             this.issuerVillageKey = "";

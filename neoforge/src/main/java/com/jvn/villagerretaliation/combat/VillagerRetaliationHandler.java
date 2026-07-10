@@ -11,6 +11,9 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.party.PartyRecord;
+import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
@@ -157,6 +160,9 @@ public final class VillagerRetaliationHandler {
                 || event.getNewDamage() <= 0.0F) {
             return;
         }
+
+        VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getEntity(), event.getSource())
+                .ifPresent(attacker -> rallyPartyVillagers(event.getEntity(), attacker));
 
         if (!(event.getEntity() instanceof Villager villager)) {
             return;
@@ -539,6 +545,7 @@ public final class VillagerRetaliationHandler {
                 || !villager.isAlive()
                 || !target.isAlive()
                 || villager == target
+                || PartyService.areInSameParty(villager, target)
                 || !villager.canAttack(target)) {
             return false;
         }
@@ -548,6 +555,10 @@ public final class VillagerRetaliationHandler {
 
     private static void anger(Villager villager, LivingEntity attacker, boolean allowForcedDialogue, boolean announceRetaliation) {
         if (villager.isBaby()) {
+            return;
+        }
+        if (PartyService.areInSameParty(villager, attacker)) {
+            clearAnger(villager);
             return;
         }
         if (attacker instanceof Creeper creeper) {
@@ -745,8 +756,35 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean shouldRetaliateAgainstAttacker(Villager villager, LivingEntity attacker) {
+        if (villager != null && PartyService.areInSameParty(villager, attacker)) {
+            return false;
+        }
         return VillagerRetaliationConfig.VILLAGERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
                 || !isHostileMobAttacker(villager, attacker);
+    }
+
+    private static void rallyPartyVillagers(Entity protectedMember, LivingEntity attacker) {
+        if (!(protectedMember.level() instanceof ServerLevel level)
+                || protectedMember == attacker
+                || PartyService.areInSameParty(protectedMember, attacker)) {
+            return;
+        }
+        PartyRecord party = PartyService.getPartyForEntity(protectedMember).orElse(null);
+        if (party == null) {
+            return;
+        }
+        for (PartyVillagerRecord member : party.villagers()) {
+            Entity entity = level.getEntity(member.villagerId());
+            if (!(entity instanceof Villager villager)
+                    || villager == protectedMember
+                    || villager.isBaby()
+                    || !villager.isAlive()
+                    || !canWitnessRetaliationEvent(villager, protectedMember)
+                    || !shouldRetaliateAgainstAttacker(villager, attacker)) {
+                continue;
+            }
+            anger(villager, attacker);
+        }
     }
 
     private static boolean isHiredHunter(ServerLevel level, Villager villager) {
@@ -982,6 +1020,9 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean shouldAggroFromWitness(Villager witness, LivingEntity attacker, boolean witnessedVillagerKill) {
+        if (PartyService.areInSameParty(witness, attacker)) {
+            return false;
+        }
         if (!(attacker instanceof Player player)) {
             return true;
         }

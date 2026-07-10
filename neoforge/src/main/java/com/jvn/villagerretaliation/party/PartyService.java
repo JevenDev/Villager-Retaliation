@@ -235,7 +235,7 @@ public final class PartyService {
         return party == null ? null : data.removeVillager(party, villagerId);
     }
 
-    static void markChanged(ServerLevel level) {
+    public static void markChanged(ServerLevel level) {
         partyData(level).changed();
     }
 
