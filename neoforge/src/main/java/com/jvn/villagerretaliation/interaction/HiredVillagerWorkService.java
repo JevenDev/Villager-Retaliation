@@ -1322,8 +1322,7 @@ public final class HiredVillagerWorkService {
                 HiredMiningMode next = current.next();
                 state.putString(HiredMiningMode.STATE_TAG, next.serializedName());
                 HiredWorkSession session = HiredWorkSession.active(level, villager);
-                HiredWorkPlan.clear(session.context());
-                session.context().setProgressTicks(0);
+                MiningWorker.resetForModeChange(level, villager, session.context(), next);
                 setStatus(state, "interaction.work.status.mining_orders", Map.of("mode", next.label()));
             }
             case HUNTING -> {
@@ -1648,6 +1647,14 @@ public final class HiredVillagerWorkService {
         boolean capped = requested.horizontalRadius() > area.horizontalRadius()
                 || requested.verticalRadius() > area.verticalRadius();
         area.save(state);
+        if (role == HiredVillagerRole.MINING) {
+            HiredWorkSession session = HiredWorkSession.active(level, villager);
+            MiningWorker.resetForWorkAreaChange(
+                    level,
+                    villager,
+                    session.context(),
+                    HiredMiningMode.fromState(state));
+        }
         setStatus(state, capped
                 ? "interaction.work.status.custom_box_capped"
                 : "interaction.work.status.custom_box", Map.of("dimensions", dimensions(area)));
@@ -1671,6 +1678,14 @@ public final class HiredVillagerWorkService {
                 ? current.verticalRadius()
                 : HiredVillagerRoleSettings.defaultVerticalRadius(role, maxRadius);
         HiredWorkArea.fromCenter(center, horizontalRadius, verticalRadius, true).clampedTo(maxRadius).save(state);
+        if (role == HiredVillagerRole.MINING) {
+            HiredWorkSession session = HiredWorkSession.active(level, villager);
+            MiningWorker.resetForWorkAreaChange(
+                    level,
+                    villager,
+                    session.context(),
+                    HiredMiningMode.fromState(state));
+        }
         setStatus(state, villagerCenter
                 ? "interaction.work.status.center_reset_to_villager"
                 : "interaction.work.status.center_set_here", Map.of("range", workArea(state, villager).rangeDescription()));

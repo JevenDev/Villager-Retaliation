@@ -11,6 +11,11 @@ final class MiningWorkerState {
     static final String EXCAVATION_SCAN_CURSOR_TAG = "MiningExcavationScanCursor";
 
     private static final String MINING_STATE_TAG = "MiningState";
+    private static final String STATE_VERSION_TAG = "MiningStateVersion";
+    private static final String STATE_MODE_TAG = "MiningStateMode";
+    private static final String STATE_WORK_MIN_TAG = "MiningStateWorkMin";
+    private static final String STATE_WORK_MAX_TAG = "MiningStateWorkMax";
+    private static final int STATE_VERSION = 2;
     private static final String LAST_MINED_BLOCK_POS_TAG = "LastMinedBlockPos";
     private static final String MINING_ANCHOR_POS_TAG = "MiningAnchorPos";
     private static final String MINING_ANCHOR_EXPIRES_GAME_TIME_TAG = "MiningAnchorExpiresGameTime";
@@ -31,7 +36,78 @@ final class MiningWorkerState {
     }
 
     static void set(HiredWorkContext context, Phase phase) {
-        context.state().putString(MINING_STATE_TAG, phase.id);
+        context.state().putString(MINING_STATE_TAG, (phase == null ? Phase.FIND_TARGET : phase).id);
+    }
+
+    static Phase phase(HiredWorkContext context) {
+        return Phase.byId(context.state().getString(MINING_STATE_TAG));
+    }
+
+    static Change synchronize(HiredWorkContext context, HiredMiningMode mode) {
+        if (context == null || mode == null || !context.hasWorkArea()) {
+            return Change.NONE;
+        }
+        boolean initialized = context.state().contains(STATE_VERSION_TAG)
+                && context.state().contains(STATE_MODE_TAG)
+                && context.state().contains(STATE_WORK_MIN_TAG)
+                && context.state().contains(STATE_WORK_MAX_TAG);
+        if (!initialized) {
+            rememberConfiguration(context, mode);
+            if (!context.state().contains(MINING_STATE_TAG)) {
+                set(context, Phase.FIND_TARGET);
+            }
+            return Change.NONE;
+        }
+
+        boolean areaChanged = context.state().getLong(STATE_WORK_MIN_TAG) != context.workMin().asLong()
+                || context.state().getLong(STATE_WORK_MAX_TAG) != context.workMax().asLong();
+        boolean modeChanged = !mode.serializedName().equals(context.state().getString(STATE_MODE_TAG));
+        boolean versionChanged = context.state().getInt(STATE_VERSION_TAG) != STATE_VERSION;
+        if (!areaChanged && !modeChanged && !versionChanged) {
+            return Change.NONE;
+        }
+        resetTransient(context);
+        MiningHazardManager.reset(context, areaChanged);
+        if (areaChanged) {
+            MiningExcavationShaft.clear(context);
+        }
+        rememberConfiguration(context, mode);
+        return areaChanged ? Change.WORK_AREA_CHANGED : Change.MODE_CHANGED;
+    }
+
+    static void resetForModeChange(HiredWorkContext context, HiredMiningMode mode) {
+        resetTransient(context);
+        MiningHazardManager.reset(context, false);
+        rememberConfiguration(context, mode);
+    }
+
+    static void resetForWorkAreaChange(HiredWorkContext context, HiredMiningMode mode) {
+        resetTransient(context);
+        MiningHazardManager.reset(context, true);
+        MiningExcavationShaft.clear(context);
+        rememberConfiguration(context, mode);
+    }
+
+    private static void resetTransient(HiredWorkContext context) {
+        context.state().remove(LAST_MINED_BLOCK_POS_TAG);
+        context.state().remove(LAST_BREAK_PROGRESS_GAME_TIME_TAG);
+        context.state().remove(NEXT_FULL_SCAN_GAME_TIME_TAG);
+        context.state().remove(EXCAVATION_SCAN_CURSOR_TAG);
+        clearMiningAnchor(context);
+        clearExcavationLayerCache(context);
+        set(context, Phase.FIND_TARGET);
+    }
+
+    private static void rememberConfiguration(HiredWorkContext context, HiredMiningMode mode) {
+        context.state().putInt(STATE_VERSION_TAG, STATE_VERSION);
+        context.state().putString(STATE_MODE_TAG, mode.serializedName());
+        if (context.hasWorkArea()) {
+            context.state().putLong(STATE_WORK_MIN_TAG, context.workMin().asLong());
+            context.state().putLong(STATE_WORK_MAX_TAG, context.workMax().asLong());
+        } else {
+            context.state().remove(STATE_WORK_MIN_TAG);
+            context.state().remove(STATE_WORK_MAX_TAG);
+        }
     }
 
     static void rememberLastMined(HiredWorkContext context, BlockPos pos) {
@@ -134,6 +210,29 @@ final class MiningWorkerState {
 
         Phase(String id) {
             this.id = id;
+        }
+
+        String id() {
+            return this.id;
+        }
+
+        static Phase byId(String id) {
+            for (Phase phase : values()) {
+                if (phase.id.equals(id)) {
+                    return phase;
+                }
+            }
+            return FIND_TARGET;
+        }
+    }
+
+    enum Change {
+        NONE,
+        MODE_CHANGED,
+        WORK_AREA_CHANGED;
+
+        boolean changed() {
+            return this != NONE;
         }
     }
 }

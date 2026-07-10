@@ -54,6 +54,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -2675,6 +2676,133 @@ public final class VillagerWorkerGameTests {
                 "miner should remove the assigned floor only after securing the drop");
         helper.assertTrue(level.getBlockState(helper.absolutePos(guardRel)).is(Blocks.COBBLESTONE),
                 "miner should leave a solid fall guard below the bottom of the assigned excavation");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 500)
+    public static void miningWorkerResumesPersistedWaterHazardPlan(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerPersistedWater");
+        BlockPos targetRel = new BlockPos(2, 1, 3);
+        BlockPos firstWaterRel = targetRel.east();
+        BlockPos secondWaterRel = firstWaterRel.east();
+        BlockPos thirdWaterRel = secondWaterRel.east();
+        Villager villager = spawnVillager(helper, targetRel.above());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+        setBlock(helper, firstWaterRel, Blocks.WATER.defaultBlockState());
+        setBlock(helper, secondWaterRel, Blocks.WATER.defaultBlockState());
+        setBlock(helper, thirdWaterRel, Blocks.WATER.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, thirdWaterRel, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.COBBLESTONE, 12));
+
+        MiningWorker firstWorkerInstance = new MiningWorker();
+        firstWorkerInstance.tick(level, villager, hirer, context);
+        helper.assertTrue(state.contains("MiningHazardPlanKind")
+                        && state.getLongArray("MiningHazardPlanPositions").length >= 2,
+                "bounded water remediation should persist its remaining plan in worker state");
+
+        MiningWorker resumedWorkerInstance = new MiningWorker();
+        runWorkerUntil(helper, resumedWorkerInstance, level, villager, hirer, context, 400, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir()
+                        && level.getBlockState(helper.absolutePos(firstWaterRel)).isAir()
+                        && level.getBlockState(helper.absolutePos(secondWaterRel)).isAir()
+                        && level.getBlockState(helper.absolutePos(thirdWaterRel)).isAir());
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                "reconstructed mining worker should finish the original excavation target");
+        helper.assertTrue(level.getFluidState(helper.absolutePos(firstWaterRel)).isEmpty()
+                        && level.getFluidState(helper.absolutePos(secondWaterRel)).isEmpty()
+                        && level.getFluidState(helper.absolutePos(thirdWaterRel)).isEmpty(),
+                "reconstructed mining worker should resume and finish the persisted water drain");
+        helper.assertFalse(state.contains("MiningHazardPlanKind"),
+                "completed persisted hazard plan should be removed from worker state");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 360)
+    public static void miningWorkerSealsUnboundedWaterAtExcavationFace(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerWaterSeal");
+        BlockPos targetRel = new BlockPos(2, 1, 3);
+        BlockPos sealRel = targetRel.east();
+        BlockPos remoteWaterRel = targetRel.east(4);
+        Villager villager = spawnVillager(helper, targetRel.above());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+        for (int dx = 1; dx <= 4; dx++) {
+            setBlock(helper, targetRel.east(dx), Blocks.WATER.defaultBlockState());
+        }
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, targetRel, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.COBBLESTONE, 4));
+        MiningWorker worker = new MiningWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 280, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir());
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                "miner should excavate after isolating the external water body");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(sealRel)).is(Blocks.COBBLESTONE),
+                "miner should seal the water face adjacent to the excavation");
+        helper.assertTrue(level.getFluidState(helper.absolutePos(sealRel)).isEmpty(),
+                "water seal should not retain fluid in the barrier cell");
+        helper.assertTrue(level.getFluidState(helper.absolutePos(remoteWaterRel)).is(FluidTags.WATER),
+                "sealing should leave the remote unbounded water body intact");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80)
+    public static void miningConfigurationResetClearsOnlyScopedInfrastructureState(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 0);
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        BlockPos targetRel = new BlockPos(2, 1, 2);
+        BlockPos target = helper.absolutePos(targetRel);
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        state.putString("MiningHazardPlanKind", "water");
+        state.putLongArray("MiningHazardPlanPositions", new long[] {target.asLong()});
+        state.putLongArray("MiningPermanentHazardBarriers", new long[] {target.asLong()});
+        state.putInt("ExcavationLadderX", target.getX());
+        state.putInt("ExcavationLadderZ", target.getZ());
+        state.putString("ExcavationLadderFacing", Direction.NORTH.getName());
+        state.putLong("ActiveWorkBlockPos", target.asLong());
+        HiredWorkContext context = context(helper, villager, state, targetRel, targetRel, true);
+
+        MiningWorker.resetForModeChange(level, villager, context, HiredMiningMode.EXPOSED_ORES);
+        helper.assertFalse(state.contains("MiningHazardPlanKind"),
+                "mode change should discard an in-progress hazard plan");
+        helper.assertTrue(state.getLongArray("MiningPermanentHazardBarriers").length == 1,
+                "mode change should preserve permanent safety barriers for the same work area");
+        helper.assertTrue(state.contains("ExcavationLadderX"),
+                "mode change should preserve the shaft selected for the same work area");
+        helper.assertFalse(state.contains("ActiveWorkBlockPos"),
+                "mode change should clear the stale active mining target");
+        helper.assertValueEqual(MiningWorker.phase(context), "find_target",
+                "mode change should reset the typed mining phase");
+
+        MiningWorker.resetForWorkAreaChange(level, villager, context, HiredMiningMode.EXPOSED_ORES);
+        helper.assertValueEqual(state.getLongArray("MiningPermanentHazardBarriers").length, 0,
+                "work-area change should discard barrier metadata from the previous area");
+        helper.assertFalse(state.contains("ExcavationLadderX")
+                        || state.contains("ExcavationLadderZ")
+                        || state.contains("ExcavationLadderFacing"),
+                "work-area change should discard the previous excavation shaft");
 
         villager.discard();
         helper.succeed();

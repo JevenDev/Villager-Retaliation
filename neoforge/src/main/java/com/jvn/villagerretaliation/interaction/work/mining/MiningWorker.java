@@ -52,6 +52,28 @@ public final class MiningWorker extends AbstractBlockWorker {
         return MiningExcavationSupport.returnTarget(level, villager, context);
     }
 
+    public static String phase(HiredWorkContext context) {
+        return MiningWorkerState.phase(context).id();
+    }
+
+    public static void resetForModeChange(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredMiningMode mode) {
+        MiningWorkerState.resetForModeChange(context, mode);
+        new MiningWorker().resetRuntimeState(level, villager, context);
+    }
+
+    public static void resetForWorkAreaChange(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredMiningMode mode) {
+        MiningWorkerState.resetForWorkAreaChange(context, mode);
+        new MiningWorker().resetRuntimeState(level, villager, context);
+    }
+
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (!context.hasWorkArea()) {
@@ -59,6 +81,10 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
 
         HiredMiningMode mode = HiredMiningMode.fromState(context.state());
+        MiningWorkerState.Change stateChange = MiningWorkerState.synchronize(context, mode);
+        if (stateChange.changed()) {
+            resetRuntimeState(level, villager, context);
+        }
         if (mode.excavatesArea()) {
             WorkResult supplyResult = MiningExcavationSupport.gatherSupplies(level, villager, context);
             if (supplyResult != null) {
@@ -320,6 +346,14 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             HiredMiningMode mode) {
         return this.targetPlanner.resolve(level, villager, context, mode);
+    }
+
+    private void resetRuntimeState(ServerLevel level, Villager villager, HiredWorkContext context) {
+        HiredWorkPlan.clear(context);
+        clearActiveBreakingTarget(level, context, villager);
+        VillagerTaskNavigationUtil.clearRuntimeState(villager);
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+        context.setProgressTicks(0);
     }
 
     HiredPathTarget activeWorkTargetForPlanner(

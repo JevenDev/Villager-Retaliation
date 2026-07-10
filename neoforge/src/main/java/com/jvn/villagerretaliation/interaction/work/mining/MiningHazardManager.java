@@ -58,6 +58,13 @@ final class MiningHazardManager {
     private MiningHazardManager() {
     }
 
+    static void reset(HiredWorkContext context, boolean clearPermanentBarriers) {
+        clearPlan(context);
+        if (clearPermanentBarriers) {
+            context.state().remove(PERMANENT_BARRIERS_TAG);
+        }
+    }
+
     static WorkResult tick(ServerLevel level, Villager villager, HiredWorkContext context) {
         prunePermanentBarriers(level, context);
         HazardPlan plan = loadPlan(context);

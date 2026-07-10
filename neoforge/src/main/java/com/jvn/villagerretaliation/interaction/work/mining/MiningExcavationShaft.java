@@ -237,6 +237,12 @@ final class MiningExcavationShaft {
                 : null;
     }
 
+    static void clear(HiredWorkContext context) {
+        context.state().remove(X_TAG);
+        context.state().remove(Z_TAG);
+        context.state().remove(FACING_TAG);
+    }
+
     static int topY(ServerLevel level, HiredWorkContext context) {
         Shaft stored = stored(context);
         if (stored != null) {
