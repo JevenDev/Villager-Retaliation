@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
@@ -109,6 +110,31 @@ public final class VillagerGameplayGameTests {
 
         HiredDebugPreviewService.setClipboardPreviewEnabled(player, false);
         HiredDebugPreviewService.clearRuntimeState();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hiredContractPaymentStaysConservedWhenEndedEarly(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrHireEscrow");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        int payment = 20;
+        int walletBefore = VillagerWalletService.getCurrentEmeralds(villager);
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 10, payment);
+        helper.assertValueEqual(
+                VillagerWalletService.getCurrentEmeralds(villager),
+                walletBefore,
+                "unearned hire payment should remain in escrow");
+
+        int refund = HiredVillagerContractService.endHireContract(level, villager, hirer);
+        int walletIncrease = VillagerWalletService.getCurrentEmeralds(villager) - walletBefore;
+        helper.assertValueEqual(
+                walletIncrease + refund,
+                payment,
+                "early cancellation should settle the original payment exactly once");
+
+        villager.discard();
         helper.succeed();
     }
 

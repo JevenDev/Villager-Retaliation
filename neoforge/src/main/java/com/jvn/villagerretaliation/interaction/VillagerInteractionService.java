@@ -1056,7 +1056,6 @@ public final class VillagerInteractionService {
         removeCurrency(player, cost);
         HiredVillagerContractService.startHireContract(level, villager, player, days, cost, hireRole);
         HiredVillagerWorkService.resetForNewContract(level, villager);
-        VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         VillagerRecruitmentService.sendHiredNotice(player, villager);
         sendVillagerNotice(
                 player,
@@ -1116,7 +1115,6 @@ public final class VillagerInteractionService {
             return true;
         }
         removeCurrency(player, cost);
-        VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         int remainingDays = HiredVillagerContractService.getRemainingHireDays(level, villager);
         sendVillagerNotice(
                 player,

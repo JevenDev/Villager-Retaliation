@@ -39,6 +39,8 @@ public final class HiredVillagerContractService {
     private static final String DURATION_DAYS_TAG = "DurationDays";
     private static final String DAILY_COST_TAG = "DailyCost";
     private static final String EMERALDS_PAID_TAG = "EmeraldsPaid";
+    private static final String EMERALDS_RELEASED_TAG = "EmeraldsReleased";
+    private static final String EMERALDS_REFUNDED_TAG = "EmeraldsRefunded";
     private static final String AUTO_PAYMENT_TAG = "AutoPayment";
     private static final String ONE_OFF_BUILDER_JOB_TAG = "OneOffBuilderJob";
     private static final String LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG = "LastAutoPaymentAttemptGameTime";
@@ -320,6 +322,8 @@ public final class HiredVillagerContractService {
         tag.putInt(DURATION_DAYS_TAG, safeDays);
         tag.putInt(DAILY_COST_TAG, Math.max(1, emeraldsPaid / safeDays));
         tag.putInt(EMERALDS_PAID_TAG, emeraldsPaid);
+        tag.putInt(EMERALDS_RELEASED_TAG, 0);
+        tag.putInt(EMERALDS_REFUNDED_TAG, 0);
         tag.putBoolean(AUTO_PAYMENT_TAG, false);
         tag.putBoolean(ONE_OFF_BUILDER_JOB_TAG, false);
         tag.putString(ROLE_TAG, safeRole.serializedName());
@@ -346,6 +350,8 @@ public final class HiredVillagerContractService {
         tag.putInt(DURATION_DAYS_TAG, 0);
         tag.putInt(DAILY_COST_TAG, 0);
         tag.putInt(EMERALDS_PAID_TAG, 0);
+        tag.putInt(EMERALDS_RELEASED_TAG, 0);
+        tag.putInt(EMERALDS_REFUNDED_TAG, 0);
         tag.putBoolean(AUTO_PAYMENT_TAG, false);
         tag.putBoolean(ONE_OFF_BUILDER_JOB_TAG, true);
         tag.putString(ROLE_TAG, HiredVillagerRole.BUILDER.serializedName());
@@ -386,6 +392,7 @@ public final class HiredVillagerContractService {
             return false;
         }
         CompoundTag tag = contract.get();
+        releaseEarnedHirePayment(level, villager, tag);
         long currentEnd = Math.max(level.getGameTime(), tag.getLong(END_GAME_TIME_TAG));
         tag.putLong(END_GAME_TIME_TAG, currentEnd + safeDays * DAY_TICKS);
         tag.putInt(DURATION_DAYS_TAG, tag.getInt(DURATION_DAYS_TAG) + safeDays);
@@ -405,7 +412,7 @@ public final class HiredVillagerContractService {
         }
         CompoundTag tag = activeContract.get();
         int refund = earlyEndRefund(level, tag);
-        finishContract(level, villager, tag, STATUS_ENDED, "Work stopped. Contract ended.", true);
+        finishContract(level, villager, tag, STATUS_ENDED, "Work stopped. Contract ended.", true, refund);
         return refund;
     }
 
@@ -482,6 +489,7 @@ public final class HiredVillagerContractService {
         if (isOneOffBuilderJob(tag)) {
             return;
         }
+        releaseEarnedHirePayment(level, villager, tag);
         if (isAwaitingAutoPayment(tag)) {
             handleAwaitingAutoPayment(level, villager, tag);
             return;
@@ -581,13 +589,13 @@ public final class HiredVillagerContractService {
         if (consumed < dailyCost) {
             return AutoPaymentResult.INSUFFICIENT_FUNDS;
         }
+        releaseEarnedHirePayment(level, villager, tag);
         extendActiveContract(level, tag, 1, dailyCost);
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
         tag.putLong(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG, level.getGameTime());
         tag.remove(AWAITING_AUTO_PAYMENT_START_GAME_TIME_TAG);
         HiredWorkerBrain.setState(HiredVillagerWorkService.state(villager), HiredWorkerTaskState.IDLE, null);
         setWorkStatus(villager, "Contract renewed from assigned payment box.");
-        VillagerWalletService.addCurrency(villager, dailyCost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
         villager.setPersistenceRequired();
         return AutoPaymentResult.SUCCESS;
     }
@@ -612,6 +620,18 @@ public final class HiredVillagerContractService {
             String contractStatus,
             String workStatus,
             boolean depositJobInventory) {
+        finishContract(level, villager, tag, contractStatus, workStatus, depositJobInventory, 0);
+    }
+
+    private static void finishContract(
+            ServerLevel level,
+            Villager villager,
+            CompoundTag tag,
+            String contractStatus,
+            String workStatus,
+            boolean depositJobInventory,
+            int refund) {
+        settleHirePaymentEscrow(level, villager, tag, refund);
         HiredVillagerRole role = roleFromContract(level, villager, tag);
         UUID contractId = ensureContractId(tag);
         finalizeBuilderJobForContractEnd(level, villager, tag, role);
@@ -759,16 +779,69 @@ public final class HiredVillagerContractService {
     }
 
     private static int earlyEndRefund(ServerLevel level, CompoundTag contract) {
-        long remainingTicks = Math.max(0L, contract.getLong(END_GAME_TIME_TAG) - level.getGameTime());
-        if (remainingTicks <= 0L) {
-            return 0;
-        }
-        int paid = Math.max(0, contract.getInt(EMERALDS_PAID_TAG));
-        int durationDays = Math.max(1, contract.getInt(DURATION_DAYS_TAG));
-        double averagePaidPerTick = paid / (durationDays * (double) DAY_TICKS);
-        double remainingPaidValue = averagePaidPerTick * remainingTicks;
+        int committedPayment = Math.max(releasedHirePayment(contract), accruedHirePayment(level, contract));
+        int remainingPaidValue = Math.max(0, escrowedHirePayment(contract) - committedPayment);
         int refundPercent = Mth.clamp(VillagerRetaliationConfig.HIRED_CONTRACT_EARLY_END_REFUND_PERCENT.get(), 0, 100);
         return (int) Math.floor(remainingPaidValue * refundPercent / 100.0D);
+    }
+
+    private static void releaseEarnedHirePayment(ServerLevel level, Villager villager, CompoundTag contract) {
+        if (isOneOffBuilderJob(contract)) {
+            return;
+        }
+        int released = releasedHirePayment(contract);
+        int earned = accruedHirePayment(level, contract);
+        releaseHirePayment(villager, contract, Math.max(0, earned - released));
+    }
+
+    private static void settleHirePaymentEscrow(
+            ServerLevel level,
+            Villager villager,
+            CompoundTag contract,
+            int refund) {
+        if (isOneOffBuilderJob(contract)) {
+            return;
+        }
+        releaseEarnedHirePayment(level, villager, contract);
+        int paid = escrowedHirePayment(contract);
+        int released = releasedHirePayment(contract);
+        int safeRefund = Mth.clamp(refund, 0, Math.max(0, paid - released));
+        releaseHirePayment(villager, contract, Math.max(0, paid - released - safeRefund));
+        contract.putInt(EMERALDS_REFUNDED_TAG, safeRefund);
+    }
+
+    private static int accruedHirePayment(ServerLevel level, CompoundTag contract) {
+        int paid = escrowedHirePayment(contract);
+        long start = contract.getLong(START_GAME_TIME_TAG);
+        long end = Math.max(start, contract.getLong(END_GAME_TIME_TAG));
+        long duration = end - start;
+        if (paid <= 0 || duration <= 0L) {
+            return paid;
+        }
+        long elapsed = Mth.clamp(level.getGameTime() - start, 0L, duration);
+        return Mth.clamp((int) Math.floor(paid * (elapsed / (double) duration)), 0, paid);
+    }
+
+    private static int escrowedHirePayment(CompoundTag contract) {
+        return Math.max(0, contract.getInt(EMERALDS_PAID_TAG));
+    }
+
+    private static int releasedHirePayment(CompoundTag contract) {
+        int paid = escrowedHirePayment(contract);
+        if (!contract.contains(EMERALDS_RELEASED_TAG, Tag.TAG_INT)) {
+            contract.putInt(EMERALDS_RELEASED_TAG, paid);
+            return paid;
+        }
+        return Mth.clamp(contract.getInt(EMERALDS_RELEASED_TAG), 0, paid);
+    }
+
+    private static void releaseHirePayment(Villager villager, CompoundTag contract, int amount) {
+        if (amount <= 0) {
+            return;
+        }
+        VillagerWalletService.addCurrency(villager, amount, VillagerWalletService.WalletSource.HIRE_PAYMENT);
+        contract.putInt(EMERALDS_RELEASED_TAG, releasedHirePayment(contract) + amount);
+        villager.setPersistenceRequired();
     }
 
     private static boolean isActive(CompoundTag tag) {
