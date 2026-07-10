@@ -622,19 +622,32 @@ public final class VillagerInteractionService {
                 || action == VillagerRecruitRequestPayload.Action.STAY_HERE
                 || action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
                 || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
+            if (HiredVillagerContractService.isHired(level, villager)) {
+                sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
+                return;
+            }
             String responseKey;
             if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
-                VillagerRecruitmentService.startFollowing(level, villager, player);
+                if (!VillagerRecruitmentService.startFollowing(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "interaction.follow_command_requires_owner");
+                    return;
+                }
                 responseKey = "interaction.follow_start";
             } else if (action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
                 if (!VillagerRecruitmentService.canCommandStayHere(level, villager, player)) {
                     sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
                     return;
                 }
-                VillagerRecruitmentService.stayHere(level, villager, player);
+                if (!VillagerRecruitmentService.stayHere(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "interaction.follow_command_requires_owner");
+                    return;
+                }
                 responseKey = "interaction.follow_hold_position";
             } else {
-                VillagerRecruitmentService.stopFollowing(level, villager, player);
+                if (!VillagerRecruitmentService.stopFollowing(level, villager, player)) {
+                    sendVillagerNotice(player, villager, "interaction.follow_command_requires_owner");
+                    return;
+                }
                 if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING) {
                     VillagerRecruitmentService.sendNoLongerFollowingNotice(player, villager);
                     responseKey = "interaction.follow_stop";

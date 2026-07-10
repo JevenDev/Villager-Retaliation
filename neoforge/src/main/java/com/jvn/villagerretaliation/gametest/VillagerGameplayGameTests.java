@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
@@ -134,6 +135,36 @@ public final class VillagerGameplayGameTests {
                 payment,
                 "early cancellation should settle the original payment exactly once");
 
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hiredContractsAndFollowCommandsDoNotOverwriteEachOther(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer followerOwner = fakePlayer(level, "VrFollowOwner");
+        ServerPlayer otherPlayer = fakePlayer(level, "VrFollowOther");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+
+        helper.assertTrue(
+                VillagerRecruitmentService.startFollowing(level, villager, followerOwner),
+                "uncommitted villager should accept a follow command");
+        helper.assertFalse(
+                VillagerRecruitmentService.stopFollowing(level, villager, otherPlayer),
+                "another player should not clear the owner's follow state");
+        helper.assertTrue(
+                VillagerRecruitmentService.isFollowing(villager, followerOwner),
+                "rejected stop command should preserve the original follower owner");
+
+        HiredVillagerContractService.startHireContract(level, villager, followerOwner, 1, 8);
+        helper.assertFalse(
+                VillagerRecruitmentService.isFollowingAnyPlayer(villager),
+                "hiring should clear the previous follow state");
+        helper.assertFalse(
+                VillagerRecruitmentService.startFollowing(level, villager, otherPlayer),
+                "a hired worker should reject new follow commands");
+
+        HiredVillagerContractService.endHireContract(level, villager, followerOwner);
         villager.discard();
         helper.succeed();
     }

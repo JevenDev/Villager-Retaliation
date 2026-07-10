@@ -119,30 +119,39 @@ public final class VillagerRecruitmentService {
                 && HiredVillagerContractService.isHired(level, villager);
     }
 
-    public static void startFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+    public static boolean startFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (!canTakeFollowCommand(villager, player)) {
+            return false;
+        }
         beginFollowing(level, villager, player);
         sendFollowingNotice(player, villager);
+        return true;
     }
 
-    public static void stayHere(ServerLevel level, Villager villager, ServerPlayer player) {
-        if (!canCommandStayHere(level, villager, player)) {
-            return;
+    public static boolean stayHere(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (!canCommandStayHere(level, villager, player) || !canTakeFollowCommand(villager, player)) {
+            return false;
         }
         beginStayingHere(level, villager, player);
         sendStayingHereNotice(player, villager);
+        return true;
     }
 
     public static void stopFollowing(Villager villager) {
         clearFollowTarget(villager);
     }
 
-    public static void stopFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+    public static boolean stopFollowing(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (!isFollowStateOwnedBy(villager, player)) {
+            return false;
+        }
         if (isFollowing(villager, player)) {
             String scenario = wasFollowerInjured(villager) ? "injured" : "safe";
             rememberRecruitmentMemory(level, villager, player, scenario);
             VillagerInteractionTracker.rememberRecruitmentFollowup(level, villager, player, scenario);
         }
         clearFollowTarget(villager);
+        return true;
     }
 
     public static void rememberFollowerDamage(Villager villager) {
@@ -266,11 +275,19 @@ public final class VillagerRecruitmentService {
         if (villager.level().isClientSide || !isFollowingAnyPlayer(villager)) {
             return;
         }
+        if (isHiredAnyPlayer(villager)) {
+            clearFollowTarget(villager);
+            return;
+        }
         suppressFollowerAiIfNeeded(villager);
     }
 
     public static void onVillagerTickPost(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level) || !villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
+            return;
+        }
+        if (HiredVillagerContractService.isHired(level, villager)) {
+            clearFollowTarget(villager);
             return;
         }
 
@@ -788,6 +805,15 @@ public final class VillagerRecruitmentService {
                 displayName(villager) + " is following you.",
                 VillagerReputationNoticeKind.VILLAGER_FOLLOWING
         );
+    }
+
+    private static boolean canTakeFollowCommand(Villager villager, ServerPlayer player) {
+        return !isHiredAnyPlayer(villager)
+                && followingPlayerId(villager).map(player.getUUID()::equals).orElse(true);
+    }
+
+    private static boolean isFollowStateOwnedBy(Villager villager, ServerPlayer player) {
+        return followingPlayerId(villager).filter(player.getUUID()::equals).isPresent();
     }
 
     private static void sendStayingHereNotice(ServerPlayer player, Villager villager) {

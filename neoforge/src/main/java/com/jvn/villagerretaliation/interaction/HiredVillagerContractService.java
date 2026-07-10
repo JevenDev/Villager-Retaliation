@@ -315,6 +315,7 @@ public final class HiredVillagerContractService {
         if (safeRole == null || !HiredVillagerRoles.availableContractRoles(level, villager).contains(safeRole)) {
             return;
         }
+        VillagerRecruitmentService.stopFollowing(villager);
         long startGameTime = level.getGameTime();
         CompoundTag tag = new CompoundTag();
         UUID contractId = UUID.randomUUID();
@@ -343,6 +344,7 @@ public final class HiredVillagerContractService {
         if (level == null || villager == null || villager.isBaby() || player == null) {
             return;
         }
+        VillagerRecruitmentService.stopFollowing(villager);
         long startGameTime = level.getGameTime();
         CompoundTag tag = new CompoundTag();
         UUID contractId = UUID.randomUUID();

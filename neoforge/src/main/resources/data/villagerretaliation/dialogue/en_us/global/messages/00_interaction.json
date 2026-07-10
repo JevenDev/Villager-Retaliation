@@ -90,6 +90,15 @@
       "id": "global.messages.00_interaction.messages.interaction.stay_stop.004"
     },
     {
+      "key": "interaction.follow_command_requires_owner",
+      "lines": [
+        "I am already following someone else's direction.",
+        "That command belongs to the person I agreed to follow.",
+        "I will only take that order from the one I am following."
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.follow_command_requires_owner.005"
+    },
+    {
       "key": "opening.return_after_absence",
       "lines": [
         "Been {days_since_seen} {day_or_days} since I saw you. What brings you <pulse>back</pulse>?",
