@@ -261,7 +261,7 @@ public final class HiredVillagerContractService {
     public static boolean toggleAutoPayment(ServerLevel level, Villager villager) {
         expireHireContractIfNeeded(level, villager);
         Optional<CompoundTag> activeContract = contract(villager)
-                .filter(HiredVillagerContractService::isActive)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
                 .filter(tag -> !isOneOffBuilderJob(tag));
         if (activeContract.isEmpty()) {
             return false;
@@ -275,7 +275,7 @@ public final class HiredVillagerContractService {
 
     public static void setAutoPaymentEnabled(Villager villager, boolean enabled) {
         contract(villager)
-                .filter(HiredVillagerContractService::isActive)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
                 .filter(tag -> !isOneOffBuilderJob(tag))
                 .ifPresent(tag -> {
                     tag.putBoolean(AUTO_PAYMENT_TAG, enabled);
@@ -398,7 +398,7 @@ public final class HiredVillagerContractService {
     public static int endHireContract(ServerLevel level, Villager villager, ServerPlayer player) {
         expireHireContractIfNeeded(level, villager);
         Optional<CompoundTag> activeContract = contract(villager)
-                .filter(HiredVillagerContractService::isActive)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
                 .filter(tag -> tag.hasUUID(HIRER_TAG) && tag.getUUID(HIRER_TAG).equals(player.getUUID()));
         if (activeContract.isEmpty()) {
             return 0;
