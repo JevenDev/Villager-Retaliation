@@ -421,7 +421,7 @@ public final class AssignedStorageService {
             Predicate<ItemStack> predicate,
             Predicate<BlockPos> positionFilter,
             StorageUse use) {
-        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        Predicate<ItemStack> safePredicate = withdrawalPredicate(villager, predicate);
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         BlockPos villagerPos = villager.blockPosition();
         return liveContainerCandidates(level, villager, use).stream()
@@ -441,7 +441,7 @@ public final class AssignedStorageService {
             Predicate<ItemStack> predicate,
             Predicate<BlockPos> positionFilter,
             StorageUse use) {
-        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        Predicate<ItemStack> safePredicate = withdrawalPredicate(villager, predicate);
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         BlockPos villagerPos = villager.blockPosition();
         return liveContainerCandidates(level, villager, use).stream()
@@ -559,7 +559,7 @@ public final class AssignedStorageService {
         if (count <= 0 || !(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
-        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        Predicate<ItemStack> safePredicate = withdrawalPredicate(villager, predicate);
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int remaining = count;
@@ -599,7 +599,7 @@ public final class AssignedStorageService {
         if (targetValue <= 0 || !(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
-        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        Predicate<ItemStack> safePredicate = withdrawalPredicate(villager, predicate);
         ToIntFunction<ItemStack> safeValue = value == null ? ignored -> 1 : value;
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
@@ -654,7 +654,7 @@ public final class AssignedStorageService {
         if (!(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
-        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        Predicate<ItemStack> safePredicate = withdrawalPredicate(villager, predicate);
         Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
         int count = 0;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager, use)) {
@@ -717,7 +717,7 @@ public final class AssignedStorageService {
                 || !(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
-        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        Predicate<ItemStack> safePredicate = withdrawalPredicate(villager, predicate);
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
         int movedTotal = 0;
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager, use)) {
@@ -759,7 +759,7 @@ public final class AssignedStorageService {
                 || !(villager.level() instanceof ServerLevel level)) {
             return 0;
         }
-        Predicate<ItemStack> safePredicate = predicate == null ? ignored -> true : predicate;
+        Predicate<ItemStack> safePredicate = withdrawalPredicate(villager, predicate);
         for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
             if (!candidate.matches(storagePos) || !candidate.isInInteractionRange(villager)) {
                 continue;
@@ -894,6 +894,13 @@ public final class AssignedStorageService {
             }
         }
         return false;
+    }
+
+    private static Predicate<ItemStack> withdrawalPredicate(
+            Villager villager,
+            Predicate<ItemStack> workerPredicate) {
+        Predicate<ItemStack> safeWorkerPredicate = workerPredicate == null ? ignored -> true : workerPredicate;
+        return stack -> safeWorkerPredicate.test(stack) && VillagerItemFilterService.mayWithdraw(villager, stack);
     }
 
     static List<VillagerInventoryOverflowService.ContainerCandidate> liveContainerCandidates(ServerLevel level, Villager villager) {
