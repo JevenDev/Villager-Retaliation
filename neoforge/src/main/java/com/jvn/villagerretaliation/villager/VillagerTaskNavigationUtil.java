@@ -61,6 +61,9 @@ public final class VillagerTaskNavigationUtil {
     private static final int LADDER_ESCAPE_VERTICAL_RADIUS = 24;
     private static final int LADDER_SEARCH_CACHE_TICKS = 20;
     private static final double LADDER_SEARCH_ORIGIN_REUSE_DISTANCE_SQR = 16.0D;
+    private static final double LADDER_ROUTE_PROGRESS_EPSILON_SQR = 0.10D;
+    private static final int LADDER_ROUTE_STALLED_CHECKS = 20;
+    private static final double LADDER_DIRECT_APPROACH_SPEED_LIMIT = 0.16D;
     private static final int SURFACE_ESCAPE_CHUNK_RADIUS = 0;
     private static final int SURFACE_ESCAPE_MIN_Y_GAIN = 3;
     private static final int SURFACE_ESCAPE_SURFACE_SCAN_DEPTH = 8;
@@ -667,26 +670,128 @@ public final class VillagerTaskNavigationUtil {
         if (!needsLadderRoute(villager, target)) {
             return false;
         }
-        BlockPos ladder = nearestLadder(level, villager, target);
-        if (ladder == null) {
+        VillagerLadderRoutePlanner.Route route = nearestLadderRoute(level, villager, target);
+        if (route == null) {
             return false;
         }
-        BlockPos approach = ladderApproach(level, villager, ladder);
-        if (approach == null) {
-            return false;
-        }
+        BlockPos ladder = route.entryRung();
+        BlockPos approach = route.approach();
         if (tryEnterLadderBlock(level, villager, ladder, target, speed)) {
+            return true;
+        }
+        if (route.directApproach() && villager.distanceToSqr(approach.getCenter()) <= 16.0D) {
+            steerDirectlyToLadderApproach(villager, approach, speed);
+            return true;
+        }
+        if (!villager.getNavigation().isDone()
+                && approach.equals(villager.getNavigation().getTargetPos())) {
             return true;
         }
         Path path = villager.getNavigation().createPath(approach, 0);
         if (path != null && path.canReach()) {
             return moveToHiredPath(villager, path, approach, speed, 0);
         }
-        if (villager.distanceToSqr(approach.getCenter()) <= 16.0D) {
-            villager.getMoveControl().setWantedPosition(approach.getX() + 0.5D, approach.getY(), approach.getZ() + 0.5D, speed);
+        return false;
+    }
+
+    public static boolean continueLadderRoute(
+            ServerLevel level,
+            Villager villager,
+            BlockPos target,
+            double speed) {
+        LadderSearch search = activeLadderSearch(level, villager, target);
+        if (search == null) {
+            return false;
+        }
+        double currentDistanceSqr = villager.distanceToSqr(search.route().approach().getCenter());
+        boolean madeProgress = currentDistanceSqr
+                < search.approachDistanceSqr() - LADDER_ROUTE_PROGRESS_EPSILON_SQR;
+        int progressChecks = madeProgress ? 0 : search.progressChecks() + 1;
+        VillagerLadderRoutePlanner.Route route = search.route();
+        if (!route.directApproach()
+                && progressChecks >= LADDER_ROUTE_STALLED_CHECKS
+                && currentDistanceSqr <= 16.0D
+                && Math.abs(route.approach().getY() - villager.blockPosition().getY()) <= 1) {
+            route = route.withDirectApproach();
+            progressChecks = 0;
+        }
+        LadderSearch updated = new LadderSearch(
+                search.origin(),
+                route,
+                search.targetPos(),
+                search.expiresGameTime(),
+                madeProgress ? currentDistanceSqr : search.approachDistanceSqr(),
+                search.stalledAttempts(),
+                progressChecks);
+        LADDER_SEARCHES.put(villager.getUUID(), updated);
+        if (tryEnterLadderBlock(level, villager, route.entryRung(), target, speed)) {
             return true;
         }
-        return false;
+        if (route.directApproach()) {
+            if (villager.distanceToSqr(route.approach().getCenter()) > 16.0D) {
+                return false;
+            }
+            steerDirectlyToLadderApproach(villager, route.approach(), speed);
+            return true;
+        }
+        return !villager.getNavigation().isDone()
+                && route.approach().equals(villager.getNavigation().getTargetPos());
+    }
+
+    private static LadderSearch activeLadderSearch(ServerLevel level, Villager villager, BlockPos target) {
+        if (level == null || villager == null || target == null) {
+            return null;
+        }
+        LadderSearch search = LADDER_SEARCHES.get(villager.getUUID());
+        if (search == null
+                || search.expiresGameTime() <= level.getGameTime()
+                || search.targetPos() != target.asLong()
+                || search.route() == null
+                || !VillagerLadderRoutePlanner.remainsUsable(level, villager, target, search.route())) {
+            return null;
+        }
+        return search;
+    }
+
+    private static void steerDirectlyToLadderApproach(Villager villager, BlockPos approach, double speed) {
+        villager.getNavigation().stop();
+        villager.getMoveControl().setWantedPosition(
+                approach.getX() + 0.5D,
+                approach.getY(),
+                approach.getZ() + 0.5D,
+                speed);
+        setHiredWalkTarget(villager, approach, speed, 0);
+        double dx = approach.getX() + 0.5D - villager.getX();
+        double dz = approach.getZ() + 0.5D - villager.getZ();
+        Vec3 motion = villager.getDeltaMovement();
+        villager.setDeltaMovement(
+                Math.clamp(dx * 0.16D + motion.x * 0.15D,
+                        -LADDER_DIRECT_APPROACH_SPEED_LIMIT,
+                        LADDER_DIRECT_APPROACH_SPEED_LIMIT),
+                motion.y,
+                Math.clamp(dz * 0.16D + motion.z * 0.15D,
+                        -LADDER_DIRECT_APPROACH_SPEED_LIMIT,
+                        LADDER_DIRECT_APPROACH_SPEED_LIMIT));
+    }
+
+    public static String ladderRouteDebug(ServerLevel level, Villager villager, BlockPos target) {
+        VillagerLadderRoutePlanner.Route route = VillagerLadderRoutePlanner.findBest(
+                level,
+                villager,
+                target,
+                LADDER_ESCAPE_SEARCH_RADIUS,
+                LADDER_ESCAPE_VERTICAL_RADIUS);
+        if (route == null) {
+            return "none";
+        }
+        return "rung=" + route.entryRung()
+                + ", approach=" + route.approach()
+                + ", bottom=" + route.bottom()
+                + ", top=" + route.top()
+                + ", dismount=" + route.dismount()
+                + ", up=" + route.climbingUp()
+                + ", direct=" + route.directApproach()
+                + ", score=" + route.score();
     }
 
     public static boolean moveTowardHighestSafePositionInLoadedChunk(ServerLevel level, Villager villager, BlockPos target, double speed) {
@@ -1024,7 +1129,10 @@ public final class VillagerTaskNavigationUtil {
         return null;
     }
 
-    private static BlockPos nearestLadder(ServerLevel level, Villager villager, BlockPos target) {
+    private static VillagerLadderRoutePlanner.Route nearestLadderRoute(
+            ServerLevel level,
+            Villager villager,
+            BlockPos target) {
         UUID villagerId = villager.getUUID();
         BlockPos origin = villager.blockPosition();
         LadderSearch cached = LADDER_SEARCHES.get(villagerId);
@@ -1032,29 +1140,37 @@ public final class VillagerTaskNavigationUtil {
                 && cached.expiresGameTime() > level.getGameTime()
                 && cached.targetPos() == target.asLong()
                 && cached.origin().distSqr(origin) <= LADDER_SEARCH_ORIGIN_REUSE_DISTANCE_SQR
-                && (cached.ladder() == null || isUsefulLadderRoute(level, villager, cached.ladder(), target))) {
-            return cached.ladder();
+                && (cached.route() == null
+                || VillagerLadderRoutePlanner.remainsUsable(level, villager, target, cached.route()))) {
+            return cached.route();
         }
-        BlockPos best = null;
-        double bestScore = Double.MAX_VALUE;
-        for (BlockPos rawPos : BlockPos.betweenClosed(
-                origin.offset(-LADDER_ESCAPE_SEARCH_RADIUS, -LADDER_ESCAPE_VERTICAL_RADIUS, -LADDER_ESCAPE_SEARCH_RADIUS),
-                origin.offset(LADDER_ESCAPE_SEARCH_RADIUS, LADDER_ESCAPE_VERTICAL_RADIUS, LADDER_ESCAPE_SEARCH_RADIUS))) {
-            BlockPos pos = rawPos.immutable();
-            if (!isLoadedLadder(level, pos)) {
-                continue;
-            }
-            double score = ladderRouteScore(level, villager, pos, target);
-            if (score < bestScore) {
-                bestScore = score;
-                best = pos;
-            }
+        boolean failedToApproach = cached != null
+                && cached.targetPos() == target.asLong()
+                && cached.route() != null
+                && VillagerLadderRoutePlanner.remainsUsable(level, villager, target, cached.route())
+                && villager.distanceToSqr(cached.route().approach().getCenter())
+                >= cached.approachDistanceSqr() - LADDER_ROUTE_PROGRESS_EPSILON_SQR;
+        int stalledAttempts = failedToApproach ? cached.stalledAttempts() + 1 : 0;
+        VillagerLadderRoutePlanner.Route best = VillagerLadderRoutePlanner.findBest(
+                level,
+                villager,
+                target,
+                LADDER_ESCAPE_SEARCH_RADIUS,
+                LADDER_ESCAPE_VERTICAL_RADIUS);
+        if (best != null
+                && stalledAttempts > 0
+                && Math.abs(best.approach().getY() - origin.getY()) <= 1
+                && horizontalDistanceSqr(best.approach(), origin) <= 16.0D) {
+            best = best.withDirectApproach();
         }
         LADDER_SEARCHES.put(villagerId, new LadderSearch(
                 origin.immutable(),
-                best == null ? null : best.immutable(),
+                best,
                 target.asLong(),
-                level.getGameTime() + LADDER_SEARCH_CACHE_TICKS));
+                level.getGameTime() + LADDER_SEARCH_CACHE_TICKS,
+                best == null ? Double.POSITIVE_INFINITY : villager.distanceToSqr(best.approach().getCenter()),
+                stalledAttempts,
+                0));
         return best;
     }
 
@@ -1155,40 +1271,6 @@ public final class VillagerTaskNavigationUtil {
             bottom = bottom.below();
         }
         return bottom;
-    }
-
-    private static BlockPos ladderApproach(ServerLevel level, Villager villager, BlockPos ladder) {
-        BlockPos best = null;
-        double bestDistance = Double.MAX_VALUE;
-        for (Direction direction : Direction.Plane.HORIZONTAL) {
-            BlockPos pos = ladder.relative(direction);
-            if (!isWalkable(level, pos)) {
-                continue;
-            }
-            double distance = villager.distanceToSqr(pos.getCenter());
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                best = pos;
-            }
-        }
-        if (best != null) {
-            return best;
-        }
-        if (isWalkable(level, ladder)) {
-            return ladder;
-        }
-        for (BlockPos rawPos : BlockPos.betweenClosed(ladder.offset(-1, -1, -1), ladder.offset(1, 1, 1))) {
-            BlockPos pos = rawPos.immutable();
-            if (!isWalkable(level, pos)) {
-                continue;
-            }
-            double distance = villager.distanceToSqr(pos.getCenter());
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                best = pos;
-            }
-        }
-        return best;
     }
 
     private static List<SurfaceEscapeTarget> highestSafeSurfaceTargets(ServerLevel level, Villager villager, BlockPos target) {
@@ -1334,7 +1416,14 @@ public final class VillagerTaskNavigationUtil {
     private record RecentLadderDismount(BlockPos bottom, BlockPos top, BlockPos dismount, long expiresGameTime) {
     }
 
-    private record LadderSearch(BlockPos origin, BlockPos ladder, long targetPos, long expiresGameTime) {
+    private record LadderSearch(
+            BlockPos origin,
+            VillagerLadderRoutePlanner.Route route,
+            long targetPos,
+            long expiresGameTime,
+            double approachDistanceSqr,
+            int stalledAttempts,
+            int progressChecks) {
     }
 
     private record SurfaceEscapeTarget(BlockPos pos, double score) {

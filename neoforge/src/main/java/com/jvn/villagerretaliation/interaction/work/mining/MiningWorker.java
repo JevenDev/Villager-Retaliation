@@ -444,6 +444,10 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredPathMemory.clearNavigationProgress(villager);
             return null;
         }
+        if (mode.excavatesArea() && VillagerTaskNavigationUtil.continueLadderRoute(level, villager, target, speed)) {
+            setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, target);
+            return WorkResult.progressed("interaction.work.status.returning_by_ladder");
+        }
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         if (!villager.getNavigation().isDone() && target.equals(navigationTarget)) {
             if (HiredPathMemory.isNavigationBlocked(level, villager, target, villager.distanceToSqr(target.getCenter()))) {
@@ -1177,6 +1181,10 @@ public final class MiningWorker extends AbstractBlockWorker {
         boolean allowSurfaceEscape = canUseExcavationSurfaceEscape(level, context);
         if (canStartMining(level, villager, context, target, mode)) {
             holdWorkPosition(villager, target);
+            return true;
+        }
+        if (MiningExcavationSupport.shouldUseLadderFallback(context, villager, target)
+                && VillagerTaskNavigationUtil.continueLadderRoute(level, villager, target.approachPos(), speed)) {
             return true;
         }
         if (shouldEscapeUpBeforeMining(villager, target)

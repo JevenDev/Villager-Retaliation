@@ -2301,6 +2301,39 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 320)
+    public static void ladderNavigationChoosesReachableRungWhenBottomEntryIsBlocked(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        for (int y = 1; y <= 5; y++) {
+            setBlock(helper, new BlockPos(2, y, 1), Blocks.STONE.defaultBlockState());
+            setBlock(
+                    helper,
+                    new BlockPos(2, y, 2),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+        }
+
+        // The closest bottom rung has no valid standing floor. A one-block step provides
+        // a reachable entry beside the second rung and a platform provides a top dismount.
+        setBlock(helper, new BlockPos(4, 0, 2), Blocks.COBBLESTONE.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 1, 2), Blocks.COBBLESTONE.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 5, 2), Blocks.COBBLESTONE.defaultBlockState());
+        Villager villager = spawnVillager(helper, new BlockPos(4, 1, 2));
+        BlockPos target = helper.absolutePos(new BlockPos(3, 6, 2));
+
+        for (int tick = 0; tick < 220 && !villager.blockPosition().equals(target); tick++) {
+            VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target, 0.55D);
+            VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+            level.tickNonPassenger(villager);
+        }
+        helper.assertTrue(villager.blockPosition().equals(target),
+                "column-level ladder planning should reach the safe top dismount; pos="
+                        + villager.blockPosition() + ", precise=(" + villager.getX() + "," + villager.getY() + ","
+                        + villager.getZ() + "), nav=" + villager.getNavigation().getTargetPos()
+                        + ", route=" + VillagerTaskNavigationUtil.ladderRouteDebug(level, villager, target));
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 420)
     public static void miningWorkerDepositsAndReturnsToLowerExcavationByLadder(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 6, 3);
@@ -4154,6 +4187,10 @@ public final class VillagerWorkerGameTests {
                     + ", nav=" + navTarget
                     + ", active=" + activeTarget
                     + ", approach=" + activeApproach
+                    + ", ladderRoute=" + VillagerTaskNavigationUtil.ladderRouteDebug(
+                    level,
+                    villager,
+                    activeApproach == null ? context.workCenter() : activeApproach)
                     + debug);
         }
     }
