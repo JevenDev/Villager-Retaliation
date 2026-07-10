@@ -2545,6 +2545,108 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 240)
+    public static void miningWorkerPlugsLavaBeforeExcavatingAdjacentBlock(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerLavaPlug");
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+        BlockPos lavaRel = targetRel.east();
+        Villager villager = spawnVillager(helper, targetRel.above());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+        setBlock(helper, lavaRel, Blocks.LAVA.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, targetRel, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.COBBLESTONE, 4));
+        MiningWorker worker = new MiningWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 160, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir());
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                "miner should excavate the target after containing the lava");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(lavaRel)).is(Blocks.COBBLESTONE),
+                "miner should replace the exposed lava cell with a solid plug");
+        helper.assertTrue(level.getFluidState(helper.absolutePos(lavaRel)).isEmpty(),
+                "lava plug should leave no fluid in the exposed cell");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 500)
+    public static void miningWorkerDrainsBoundedWaterPocketWithTemporaryFill(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerWaterDrain");
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+        BlockPos firstWaterRel = targetRel.east();
+        BlockPos secondWaterRel = firstWaterRel.east();
+        Villager villager = spawnVillager(helper, targetRel.above());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+        setBlock(helper, firstWaterRel, Blocks.WATER.defaultBlockState());
+        setBlock(helper, secondWaterRel, Blocks.WATER.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, secondWaterRel, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.COBBLESTONE, 8));
+        MiningWorker worker = new MiningWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 400, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir()
+                        && level.getBlockState(helper.absolutePos(firstWaterRel)).isAir()
+                        && level.getBlockState(helper.absolutePos(secondWaterRel)).isAir());
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                "miner should clear the original stone after draining water");
+        helper.assertTrue(level.getFluidState(helper.absolutePos(firstWaterRel)).isEmpty(),
+                "first bounded water source should be drained");
+        helper.assertTrue(level.getFluidState(helper.absolutePos(secondWaterRel)).isEmpty(),
+                "second bounded water source should be drained");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(firstWaterRel)).isAir()
+                        && level.getBlockState(helper.absolutePos(secondWaterRel)).isAir(),
+                "temporary water-displacement blocks should be excavated after the pocket is dry");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void miningWorkerBuildsFallGuardBeforeRemovingFloor(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerFallGuard");
+        BlockPos targetRel = new BlockPos(3, 2, 3);
+        BlockPos guardRel = targetRel.below();
+        Villager villager = spawnVillager(helper, targetRel.above());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+        setBlock(helper, guardRel, Blocks.AIR.defaultBlockState());
+        setBlock(helper, targetRel.west(), Blocks.BEDROCK.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        HiredWorkContext context = context(helper, villager, state, targetRel, targetRel, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.COBBLESTONE, 4));
+        MiningWorker worker = new MiningWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 220, () ->
+                level.getBlockState(helper.absolutePos(targetRel)).isAir());
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                "miner should remove the assigned floor only after securing the drop");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(guardRel)).is(Blocks.COBBLESTONE),
+                "miner should leave a solid fall guard below the bottom of the assigned excavation");
+
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
     public static void sharedRouteNavigatorApproachesNonStandableContainerNode(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 5, 1);

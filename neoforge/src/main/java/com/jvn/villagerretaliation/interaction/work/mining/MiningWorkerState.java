@@ -119,6 +119,9 @@ final class MiningWorkerState {
     enum Phase {
         FIND_TARGET("find_target"),
         GATHER_SUPPLIES("gather_supplies"),
+        ASSESS_HAZARDS("assess_hazards"),
+        GATHER_HAZARD_BLOCKS("gather_hazard_blocks"),
+        REMEDIATE_HAZARD("remediate_hazard"),
         PATH_TO_TARGET("path_to_target"),
         MINE_TARGET("mine_target"),
         DEPOSIT_OUTPUT("deposit_output"),

@@ -394,7 +394,7 @@ public final class MiningExcavationSupport {
         if (currentLayerY <= context.workMin().getY()) {
             return false;
         }
-        if ((MiningBlockRules.isMineableExcavationBlock(level, shaftPos)
+        if ((MiningBlockRules.isMineableExcavationBlock(level, context, shaftPos)
                 || isMineableLadderShaftBlock(level, shaftPos))
                 && !MiningBlockRules.hasAdjacentExcavationFluid(level, shaftPos)) {
             return false;

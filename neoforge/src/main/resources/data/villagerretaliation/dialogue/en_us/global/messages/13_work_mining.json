@@ -728,6 +728,149 @@
         "That part is done: The assigned excavation is finished. I do not see another block to clear."
       ],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.completed_excavation.default.043"
+    },
+    {
+      "key": "interaction.work.mining.hazard.sealed_uncontainable",
+      "lines": [
+        "That pocket cannot be drained safely, so I am leaving a sealed barrier around it.",
+        "I found an externally fed hazard. I sealed the face instead of opening it into the excavation.",
+        "That block is staying behind as part of the safety seal."
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.sealed_uncontainable.044"
+    },
+    {
+      "key": "interaction.work.mining.hazard.unreachable",
+      "lines": [
+        "I found a hazard, but I cannot reach a safe position to contain it.",
+        "The dangerous face is out of safe placement reach.",
+        "I need another safe approach before I can secure that hazard."
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.unreachable.045"
+    },
+    {
+      "key": "interaction.work.mining.hazard.missing_fill_blocks",
+      "lines": [
+        "I need solid, non-falling blocks to contain the hazard.",
+        "Bring me sturdy filler blocks before I open that face.",
+        "I will not continue into that hazard without blocks for a plug."
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.missing_fill_blocks.046"
+    },
+    {
+      "key": "interaction.work.mining.hazard.inventory_full",
+      "lines": [
+        "My packs have no room for the blocks needed to contain the hazard.",
+        "I need inventory space before I can collect safety fill.",
+        "There is no room to carry the hazard-control blocks."
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.inventory_full.047"
+    },
+    {
+      "key": "interaction.work.mining.hazard.gathering_fill_blocks",
+      "lines": [
+        "I am collecting sturdy blocks to contain a mining hazard.",
+        "I found a dangerous pocket and am fetching blocks for the seal.",
+        "I am going to storage for hazard-control blocks."
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.gathering_fill_blocks.048"
+    },
+    {
+      "key": "interaction.work.mining.hazard.gathered_fill_blocks",
+      "lines": [
+        "I have the blocks for the hazard and am returning to the excavation.",
+        "The safety fill is loaded. I am heading back to the dangerous face.",
+        "I collected sturdy fill blocks and can continue containment."
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.gathered_fill_blocks.049"
+    },
+    {
+      "key": "interaction.work.mining.hazard.storage_unreachable",
+      "lines": [
+        "I cannot reach the storage holding the hazard-control blocks.",
+        "The filler-block storage path is blocked.",
+        "I found suitable safety blocks, but I cannot get to their storage."
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.storage_unreachable.050"
+    },
+    {
+      "key": "interaction.work.mining.hazard.moving_to_lava",
+      "lines": ["I am taking a safe position to plug the lava face."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.moving_to_lava.051"
+    },
+    {
+      "key": "interaction.work.mining.hazard.moving_to_water",
+      "lines": ["I am taking a safe position to block and drain the water."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.moving_to_water.052"
+    },
+    {
+      "key": "interaction.work.mining.hazard.moving_to_fall",
+      "lines": ["I am moving into position to reinforce the floor below that drop."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.moving_to_fall.053"
+    },
+    {
+      "key": "interaction.work.mining.hazard.checking_lava",
+      "lines": ["I am checking the next cell in the lava-containment plan."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.checking_lava.054"
+    },
+    {
+      "key": "interaction.work.mining.hazard.checking_water",
+      "lines": ["I am checking the next cell in the water-drain plan."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.checking_water.055"
+    },
+    {
+      "key": "interaction.work.mining.hazard.checking_fall",
+      "lines": ["I am checking the reinforced floor before mining above it."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.checking_fall.056"
+    },
+    {
+      "key": "interaction.work.mining.hazard.plugged_lava",
+      "lines": ["I placed another permanent block in the lava seal."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.plugged_lava.057"
+    },
+    {
+      "key": "interaction.work.mining.hazard.plugged_water",
+      "lines": ["I placed another permanent block against the externally fed water."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.plugged_water.058"
+    },
+    {
+      "key": "interaction.work.mining.hazard.filling_lava",
+      "lines": ["I am displacing the bounded lava pocket with solid blocks."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.filling_lava.059"
+    },
+    {
+      "key": "interaction.work.mining.hazard.filling_water",
+      "lines": ["I am displacing the bounded water pocket with temporary blocks."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.filling_water.060"
+    },
+    {
+      "key": "interaction.work.mining.hazard.placed_fall_guard",
+      "lines": ["I reinforced the floor below the excavation before opening it."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.placed_fall_guard.061"
+    },
+    {
+      "key": "interaction.work.mining.hazard.completed_fall_guard",
+      "lines": ["The drop is guarded. I can continue from a safe side position."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.completed_fall_guard.062"
+    },
+    {
+      "key": "interaction.work.mining.hazard.sealed_lava",
+      "lines": ["The externally fed lava face is sealed and will remain in place."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.sealed_lava.063"
+    },
+    {
+      "key": "interaction.work.mining.hazard.sealed_water",
+      "lines": ["The externally fed water face is sealed and will remain in place."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.sealed_water.064"
+    },
+    {
+      "key": "interaction.work.mining.hazard.drained_lava",
+      "lines": ["The bounded lava pocket is displaced and safe to excavate."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.drained_lava.065"
+    },
+    {
+      "key": "interaction.work.mining.hazard.drained_water",
+      "lines": ["The bounded water pocket is drained. I can now remove the temporary fill."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.drained_water.066"
     }
   ]
 }

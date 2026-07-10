@@ -324,7 +324,8 @@ public final class ClipboardWorkforceService {
             return !noStorage
                     && !materialStorageUnreachable
                     && brain.taskState() == HiredWorkerTaskState.WAITING_FOR_MATERIALS
-                    && lower(brain.failureReason()).contains("missing_ladders");
+                    && (lower(brain.failureReason()).contains("missing_ladders")
+                    || lower(brain.failureReason()).contains("missing_hazard_fill_blocks"));
         }
         if (role != HiredVillagerRole.BUILDER || noStorage || materialStorageUnreachable) {
             return false;
@@ -345,7 +346,8 @@ public final class ClipboardWorkforceService {
             case COURIER -> failure.contains("courier_input_unreachable")
                     || failure.contains("courier_output_unreachable");
             case BUILDER -> failure.contains("builder_material_storage_unreachable");
-            case MINING -> failure.contains("mining_support_storage_path_failed");
+            case MINING -> failure.contains("mining_support_storage_path_failed")
+                    || failure.contains("hazard_fill_storage_unreachable");
             default -> false;
         };
     }
@@ -363,6 +365,7 @@ public final class ClipboardWorkforceService {
             case BUILDER -> failure.contains("builder_material_inventory_full")
                     || failure.contains("builder_material_output_slot_full")
                     || failure.contains("builder_material_output_storage_unreachable");
+            case MINING -> failure.contains("hazard_fill_inventory_full");
             default -> false;
         };
     }
@@ -557,12 +560,28 @@ public final class ClipboardWorkforceService {
             boolean missingMaterials,
             boolean materialStorageUnreachable) {
         String reason = lower(brain.failureReason());
+        if (reason.contains("hazard_fill_storage_unreachable")) {
+            BlockPos storagePos = diagnosticStoragePos(brain);
+            return storagePos == null
+                    ? "Assigned storage contains sturdy hazard-control blocks, but the miner cannot path to it."
+                    : "Assigned storage at " + HiredWorkerBrain.formatPos(storagePos)
+                            + " contains hazard-control blocks, but the miner cannot path to it.";
+        }
         if (materialStorageUnreachable) {
             BlockPos storagePos = diagnosticStoragePos(brain);
             return limitDiagnostic(storagePos == null
                     ? "Assigned storage contains excavation supports, but the miner cannot path to that container."
                     : "Assigned storage at " + HiredWorkerBrain.formatPos(storagePos)
                             + " contains excavation supports, but the miner cannot path to it.");
+        }
+        if (reason.contains("missing_hazard_fill_blocks")) {
+            return "Miner needs sturdy non-falling blocks in job supplies or reachable assigned storage to contain lava, water, or a drop.";
+        }
+        if (reason.contains("hazard_fill_inventory_full")) {
+            return "Miner has no inventory room for the sturdy blocks needed to contain a hazard.";
+        }
+        if (reason.contains("hazard_placement_unreachable") || reason.contains("hazard_chunk_unloaded")) {
+            return "Miner found a dangerous excavation face but cannot reach a safe position to contain it.";
         }
         if (missingMaterials || reason.contains("missing_ladders")) {
             return "Miner needs ladders in job supplies or reachable assigned storage before digging lower excavation layers.";

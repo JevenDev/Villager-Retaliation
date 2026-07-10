@@ -42,6 +42,14 @@ public final class MiningBlockRules {
                 && isExposed(level, pos);
     }
 
+    public static boolean isMineableExcavationBlock(
+            ServerLevel level,
+            HiredWorkContext context,
+            BlockPos pos) {
+        return !MiningHazardManager.isProtectedBarrier(context, pos)
+                && isMineableExcavationBlock(level, pos);
+    }
+
     public static boolean isCurrentExcavationLayer(ServerLevel level, HiredWorkContext context, BlockPos pos) {
         Integer layerY = currentExcavationLayer(level, context);
         return layerY != null && pos.getY() == layerY;
@@ -56,8 +64,7 @@ public final class MiningBlockRules {
             for (int x = context.workMin().getX(); x <= context.workMax().getX(); x++) {
                 for (int z = context.workMin().getZ(); z <= context.workMax().getZ(); z++) {
                     pos.set(x, y, z);
-                    if (isMineableExcavationBlock(level, pos)
-                            && !hasAdjacentExcavationFluid(level, pos)) {
+                    if (isMineableExcavationBlock(level, context, pos)) {
                         MiningWorkerState.rememberExcavationLayer(level, context, y);
                         return y;
                     }
