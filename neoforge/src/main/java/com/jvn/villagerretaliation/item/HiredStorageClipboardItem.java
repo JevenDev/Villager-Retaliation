@@ -386,9 +386,6 @@ public final class HiredStorageClipboardItem extends Item {
         if (assigned > 0) {
             clearSelection(stack);
             syncClipboardStack(player);
-            if (assignedByPurpose.containsKey(AssignedStorageService.PAYMENT_PURPOSE)) {
-                HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
-            }
         }
         return Optional.of(assignmentSummaryMessage(assigned, alreadyAssigned, invalid, assignedByPurpose));
     }
