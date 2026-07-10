@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
+import com.jvn.villagerretaliation.recipe.VillagerRetaliationRecipes;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.trade.VillagerSkillTradeEvents;
@@ -41,6 +42,7 @@ public class VillagerRetaliation {
         VillagerRetaliationEntityTypes.register(modEventBus);
         VillagerRetaliationMenus.register(modEventBus);
         VillagerRetaliationItems.register(modEventBus);
+        VillagerRetaliationRecipes.register(modEventBus);
         VillagerRetaliationCreativeTabs.register(modEventBus);
         VillagerRetaliationDebugItems.register(modEventBus);
         ToucanEventBuses.on(modEventBus)

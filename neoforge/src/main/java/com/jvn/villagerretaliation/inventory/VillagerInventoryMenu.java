@@ -310,7 +310,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private void addJobSlots() {
         for (int slot = 0; slot < this.villagerSlotCount; slot++) {
             if (slot == HiredJobInventory.FILTER_SLOT) {
-                addSlot(new JobFilterSlot(this.villagerInventory, slot, jobSlotX(slot), jobSlotY(slot)));
+                addSlot(new JobFilterSlot(this.villagerInventory, slot, jobSlotX(slot), jobSlotY(slot), this.villager));
             } else {
                 addSlot(new JobInventorySlot(
                         this.villagerInventory,
@@ -629,8 +629,11 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     }
 
     private static final class JobFilterSlot extends Slot {
-        private JobFilterSlot(Container container, int slot, int x, int y) {
+        private final Villager villager;
+
+        private JobFilterSlot(Container container, int slot, int x, int y, Villager villager) {
             super(container, slot, x, y);
+            this.villager = villager;
         }
 
         @Override
@@ -641,6 +644,17 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         @Override
         public int getMaxStackSize() {
             return 1;
+        }
+
+        @Override
+        public boolean mayPickup(Player player) {
+            return !(player instanceof ServerPlayer serverPlayer)
+                    || this.villager != null
+                    && this.villager.level() instanceof ServerLevel level
+                    && com.jvn.villagerretaliation.interaction.HiredVillagerContractService.canAccessJobInventory(
+                            level,
+                            this.villager,
+                            serverPlayer);
         }
 
         @Override

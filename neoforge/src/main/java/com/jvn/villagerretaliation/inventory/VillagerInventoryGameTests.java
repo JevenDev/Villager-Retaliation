@@ -1,5 +1,10 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
+import com.jvn.villagerretaliation.item.VillagerItemFilterData;
+import com.jvn.villagerretaliation.item.VillagerItemFilterItem;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.recipe.VillagerItemFilterCopyRecipe;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.mojang.authlib.GameProfile;
 import java.lang.reflect.Method;
@@ -11,6 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -18,6 +24,7 @@ import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -34,6 +41,8 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -55,6 +64,198 @@ public final class VillagerInventoryGameTests {
     }
 
     private VillagerInventoryGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerItemFilterMatchesIdentityAndStacksByConfiguration(GameTestHelper helper) {
+        ItemStack allowlist = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        helper.assertTrue(VillagerItemFilterData.setEntry(allowlist, 0, new ItemStack(Items.IRON_PICKAXE)),
+                "first allowlist entry should be stored");
+        helper.assertFalse(VillagerItemFilterData.setEntry(allowlist, 1, new ItemStack(Items.IRON_PICKAXE)),
+                "duplicate item identities should be rejected");
+
+        ItemStack damagedPickaxe = new ItemStack(Items.IRON_PICKAXE);
+        damagedPickaxe.setDamageValue(100);
+        damagedPickaxe.set(DataComponents.CUSTOM_NAME, Component.literal("Different components"));
+        helper.assertTrue(VillagerItemFilterData.matches(allowlist, damagedPickaxe),
+                "allowlist should ignore damage, names, and other components");
+        helper.assertFalse(VillagerItemFilterData.matches(allowlist, new ItemStack(Items.DIRT)),
+                "allowlist should reject unlisted items");
+
+        ItemStack denylist = allowlist.copy();
+        VillagerItemFilterData.setMode(denylist, VillagerItemFilterData.Mode.DENYLIST);
+        helper.assertFalse(VillagerItemFilterData.matches(denylist, damagedPickaxe),
+                "denylist should reject listed items");
+        helper.assertTrue(VillagerItemFilterData.matches(denylist, new ItemStack(Items.DIRT)),
+                "denylist should permit unlisted items");
+
+        ItemStack emptyAllowlist = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        helper.assertFalse(VillagerItemFilterData.matches(emptyAllowlist, new ItemStack(Items.DIRT)),
+                "empty allowlist should permit nothing");
+        ItemStack emptyDenylist = emptyAllowlist.copy();
+        VillagerItemFilterData.setMode(emptyDenylist, VillagerItemFilterData.Mode.DENYLIST);
+        helper.assertTrue(VillagerItemFilterData.matches(emptyDenylist, new ItemStack(Items.DIRT)),
+                "empty denylist should permit everything");
+
+        ItemStack identical = allowlist.copyWithCount(64);
+        helper.assertTrue(ItemStack.isSameItemSameComponents(allowlist, identical),
+                "identically configured filters should stack");
+        helper.assertFalse(ItemStack.isSameItemSameComponents(allowlist, denylist),
+                "different filter modes should prevent stacking");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerItemFilterPersistsWithoutJoiningJobAutomation(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 4, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.COBBLESTONE));
+        VillagerItemFilterService.replaceFilter(villager, filter);
+
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        helper.assertValueEqual(inventory.getContainerSize(), 34, "job inventory should append exactly one slot");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.FILTER_SLOT).is(VillagerRetaliationItems.ITEM_FILTER.get()),
+                "dedicated filter slot should contain the assigned copy");
+        helper.assertFalse(inventory.isSupplySlot(HiredJobInventory.FILTER_SLOT),
+                "filter slot should not be a supply slot");
+        helper.assertFalse(inventory.isOutputSlot(HiredJobInventory.FILTER_SLOT),
+                "filter slot should not be an output slot");
+        helper.assertValueEqual(inventory.consumeSupply(VillagerRetaliationItems::isItemFilter, 1), 0,
+                "job automation should never consume the dedicated filter");
+        inventory.insertSupply(new ItemStack(Items.DIRT, 64));
+        helper.assertTrue(inventory.getItem(HiredJobInventory.FILTER_SLOT).is(VillagerRetaliationItems.ITEM_FILTER.get()),
+                "supply insertion should skip the dedicated filter slot");
+
+        HiredJobInventory.clearRuntimeState(villager);
+        HiredJobInventory reloaded = HiredJobInventory.getJobInventory(villager);
+        helper.assertTrue(VillagerItemFilterData.entry(
+                        reloaded.getItem(HiredJobInventory.FILTER_SLOT), 0).is(Items.COBBLESTONE),
+                "filter data should survive save and reload");
+
+        Villager legacyVillager = spawnVillager(helper, new BlockPos(3, 2, 1));
+        NonNullList<ItemStack> legacyItems = NonNullList.withSize(33, ItemStack.EMPTY);
+        legacyItems.set(32, new ItemStack(Items.GOLD_INGOT, 7));
+        CompoundTag legacyTag = ContainerHelper.saveAllItems(
+                new CompoundTag(), legacyItems, true, helper.getLevel().registryAccess());
+        legacyVillager.getPersistentData().put("VillagerRetaliationJobInventory", legacyTag);
+        HiredJobInventory.clearRuntimeState(legacyVillager);
+        HiredJobInventory legacyLoaded = HiredJobInventory.getJobInventory(legacyVillager);
+        helper.assertValueEqual(legacyLoaded.getItem(32).getCount(), 7,
+                "legacy slot 32 should retain its saved contents");
+        helper.assertTrue(legacyLoaded.getItem(HiredJobInventory.FILTER_SLOT).isEmpty(),
+                "legacy 33-slot data should load with an empty appended filter slot");
+
+        ServerPlayer outsider = fakePlayer(helper.getLevel(), "VrFilterOutsider");
+        VillagerInventoryMenu unauthorizedMenu = new VillagerInventoryMenu(
+                98, outsider.getInventory(), villager, VillagerInventoryMenu.ViewMode.JOB, false, false);
+        helper.assertFalse(unauthorizedMenu.getSlot(HiredJobInventory.FILTER_SLOT).mayPickup(outsider),
+                "a non-hirer should not be able to remove the assigned filter");
+        outsider.getInventory().setItem(outsider.getInventory().selected, filter.copy());
+        VillagerItemFilterItem.handleModeChange(outsider, 9999, -1);
+        helper.assertTrue(VillagerItemFilterData.mode(outsider.getMainHandItem()) == VillagerItemFilterData.Mode.ALLOWLIST,
+                "invalid menu-slot requests should not mutate a filter");
+        unauthorizedMenu.removed(outsider);
+
+        villager.discard();
+        legacyVillager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerItemFilterCoversStoragePreflightAndWithdrawalPaths(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrFilterStorage");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        BlockPos inputRel = new BlockPos(3, 2, 1);
+        BlockPos paymentRel = new BlockPos(3, 2, 3);
+        BlockPos inputPos = helper.absolutePos(inputRel);
+        BlockPos paymentPos = helper.absolutePos(paymentRel);
+        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, paymentRel, VillagerRetaliationBlocks.PAYMENT_BOX.get().defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, inputPos);
+        AssignedStorageService.removeAssignedContainer(level, paymentPos);
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), inputPos)),
+                AssignedStorageService.GENERAL_PURPOSE).assigned(), 1, "input storage assignment");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), paymentPos)),
+                AssignedStorageService.PAYMENT_PURPOSE).assigned(), 1, "payment storage assignment");
+
+        Container input = container(level, inputPos);
+        Container payment = container(level, paymentPos);
+        input.setItem(0, new ItemStack(Items.COBBLESTONE, 4));
+        input.setItem(1, new ItemStack(Items.DIRT, 3));
+        payment.setItem(0, new ItemStack(Items.DIRT, 3));
+        helper.assertValueEqual(AssignedStorageService.countItems(villager, ignored -> true), 7,
+                "missing villager filter should preserve prior counting behavior");
+
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.COBBLESTONE));
+        VillagerItemFilterService.replaceFilter(villager, filter);
+        helper.assertValueEqual(AssignedStorageService.countItems(villager, ignored -> true), 4,
+                "filtered counts should exclude disallowed items");
+        helper.assertValueEqual(AssignedStorageService.countItems(villager, stack -> stack.is(Items.DIRT)), 0,
+                "existing worker predicates should remain combined with the filter");
+        helper.assertTrue(AssignedStorageService.nearestAssignedStoragePosContaining(
+                        level, villager, stack -> stack.is(Items.DIRT)) == null,
+                "search should not navigate to a container for disallowed items");
+        helper.assertTrue(inputPos.equals(AssignedStorageService.nearestAssignedStoragePosContaining(
+                        level, villager, stack -> stack.is(Items.COBBLESTONE))),
+                "search should still locate allowed items");
+
+        int transferred = AssignedStorageService.transferItemsAtAssignedStorage(
+                villager, inputPos, ignored -> true, 1, offered -> ItemStack.EMPTY);
+        helper.assertValueEqual(transferred, 1, "transfer should move an allowed item");
+        helper.assertValueEqual(AssignedStorageService.consumeItems(villager, ignored -> true, 10), 3,
+                "consumption should remove the remaining allowed items only");
+        helper.assertValueEqual(countItem(input, Items.DIRT), 3,
+                "disallowed input items should remain untouched");
+
+        helper.assertValueEqual(AssignedStorageService.countPaymentItems(villager, stack -> stack.is(Items.DIRT)), 3,
+                "payment counts should ignore the villager item filter");
+        helper.assertValueEqual(AssignedStorageService.consumePaymentItems(
+                        villager, stack -> stack.is(Items.DIRT), 1), 1,
+                "payment consumption should ignore the villager item filter");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerItemFilterCopyRecipeCopiesOnlyConfiguration(GameTestHelper helper) {
+        ItemStack configured = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(configured, 0, new ItemStack(Items.COBBLESTONE));
+        VillagerItemFilterData.setEntry(configured, 8, new ItemStack(Items.IRON_INGOT));
+        VillagerItemFilterData.setMode(configured, VillagerItemFilterData.Mode.DENYLIST);
+        configured.set(DataComponents.CUSTOM_NAME, Component.literal("Do not copy this"));
+        ItemStack empty = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        CraftingInput input = CraftingInput.of(2, 1, List.of(empty, configured));
+        VillagerItemFilterCopyRecipe recipe = new VillagerItemFilterCopyRecipe(CraftingBookCategory.MISC);
+
+        helper.assertTrue(recipe.matches(input, helper.getLevel()),
+                "configured and default filters should match in either order");
+        ItemStack result = recipe.assemble(input, helper.getLevel().registryAccess());
+        helper.assertValueEqual(result.getCount(), 2, "copy recipe should produce two filters");
+        helper.assertTrue(VillagerItemFilterData.mode(result) == VillagerItemFilterData.Mode.DENYLIST,
+                "copy recipe should preserve mode");
+        helper.assertTrue(VillagerItemFilterData.entry(result, 0).is(Items.COBBLESTONE)
+                        && VillagerItemFilterData.entry(result, 8).is(Items.IRON_INGOT),
+                "copy recipe should preserve all ghost entries");
+        helper.assertFalse(result.has(DataComponents.CUSTOM_NAME),
+                "copy recipe should not copy unrelated components");
+        helper.assertFalse(recipe.matches(CraftingInput.of(2, 1, List.of(empty, empty.copy())), helper.getLevel()),
+                "two default filters should not match");
+        helper.assertFalse(recipe.matches(CraftingInput.of(
+                        2, 1, List.of(configured, new ItemStack(Items.PAPER))), helper.getLevel()),
+                "unrelated ingredients should invalidate the recipe");
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
