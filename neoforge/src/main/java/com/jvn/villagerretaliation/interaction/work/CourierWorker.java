@@ -14,8 +14,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.pathfinder.Path;
 
 public final class CourierWorker implements HiredRoleWorker {
     private static final String PHASE_TAG = "CourierPhase";
@@ -25,7 +23,6 @@ public final class CourierWorker implements HiredRoleWorker {
     private static final String PHASE_OUTBOUND = "outbound";
     private static final String PHASE_DELIVER = "deliver";
     private static final String PHASE_RETURN = "return";
-    private static final int MAX_ITEMS_PER_TRIP = 64;
     private static final double MOVE_SPEED = 0.5D;
     private static final double ROUTE_ARRIVAL_DISTANCE_SQR = 4.0D;
 
@@ -47,35 +44,33 @@ public final class CourierWorker implements HiredRoleWorker {
         String phase = phase(context);
         if (context.inventory().hasOutputItems() && PHASE_PICKUP.equals(phase)) {
             setPhase(context, PHASE_OUTBOUND);
+            context.state().putInt(ROUTE_INDEX_TAG, 0);
             phase = PHASE_OUTBOUND;
-        } else if (!context.inventory().hasOutputItems()
-                && (PHASE_OUTBOUND.equals(phase) || PHASE_DELIVER.equals(phase))) {
-            setPhase(context, PHASE_RETURN);
+        } else if (!context.inventory().hasOutputItems() && PHASE_DELIVER.equals(phase)) {
+            beginReturn(context, route);
             phase = PHASE_RETURN;
         }
 
         return switch (phase) {
             case PHASE_OUTBOUND -> traverseRoute(level, villager, context, route, true);
-            case PHASE_DELIVER -> deliver(level, villager, context);
+            case PHASE_DELIVER -> deliver(level, villager, context, route);
             case PHASE_RETURN -> traverseRoute(level, villager, context, route, false);
             default -> pickup(level, villager, context);
         };
     }
 
     private WorkResult pickup(ServerLevel level, Villager villager, HiredWorkContext context) {
-        if (!hasPurpose(level, villager, AssignedStorageService.INPUT_PURPOSE)) {
+        Set<BlockPos> inputs = purposePositions(level, villager, AssignedStorageService.INPUT_PURPOSE);
+        if (inputs.isEmpty()) {
             HiredWorkerBrain.setFailure(context, "courier_missing_input_storage", level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE, null);
             return WorkResult.idle("interaction.work.courier.missing_input_storage");
         }
+
         BlockPos input = storedTarget(context);
-        if (input == null) {
-            Set<BlockPos> inputPositions = purposePositions(level, villager, AssignedStorageService.INPUT_PURPOSE);
+        if (input == null || !inputs.contains(input)) {
             input = AssignedStorageService.nearestAssignedInputStoragePosContaining(
-                    level,
-                    villager,
-                    stack -> !stack.isEmpty(),
-                    inputPositions::contains);
+                    level, villager, stack -> !stack.isEmpty(), inputs::contains);
             if (input == null) {
                 HiredWorkerBrain.setFailure(context, "courier_input_empty", level.getGameTime() + 100L);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, null);
@@ -87,6 +82,7 @@ public final class CourierWorker implements HiredRoleWorker {
         HiredStorageNavigationGoal.Result movement = HiredStorageNavigationGoal.moveToStorageTarget(
                 level, context, villager, input, MOVE_SPEED);
         if (movement == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.setStorageTarget(context, input);
             HiredWorkerBrain.clearFailure(context);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_STORAGE, input);
             return WorkResult.progressed("interaction.work.courier.moving_to_input");
@@ -98,12 +94,7 @@ public final class CourierWorker implements HiredRoleWorker {
             return WorkResult.idle("interaction.work.courier.input_unreachable");
         }
 
-        int moved = AssignedStorageService.transferItemsAtAssignedStorage(
-                villager,
-                input,
-                stack -> !stack.isEmpty(),
-                MAX_ITEMS_PER_TRIP,
-                context.inventory()::insertOutput);
+        int moved = collectInput(villager, context, input);
         clearStoredTarget(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);
         if (moved <= 0) {
@@ -111,10 +102,11 @@ public final class CourierWorker implements HiredRoleWorker {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, input);
             return WorkResult.idle("interaction.work.courier.input_empty");
         }
+
         setPhase(context, PHASE_OUTBOUND);
         context.state().putInt(ROUTE_INDEX_TAG, 0);
         HiredWorkerBrain.clearFailure(context);
-        HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, input);
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, input);
         return WorkResult.progressed(
                 "interaction.work.courier.collected_items",
                 Map.of("count", Integer.toString(moved)));
@@ -127,23 +119,37 @@ public final class CourierWorker implements HiredRoleWorker {
             HiredRoute route,
             boolean outbound) {
         int lastIndex = route.nodes().size() - 1;
-        int fallback = outbound ? 0 : lastIndex;
         int index = context.state().contains(ROUTE_INDEX_TAG, Tag.TAG_INT)
                 ? Math.clamp(context.state().getInt(ROUTE_INDEX_TAG), 0, lastIndex)
-                : fallback;
+                : outbound ? 0 : lastIndex;
         BlockPos node = route.nodes().get(index);
-        RouteMovement movement = moveToRouteNode(level, villager, context, node);
-        if (movement == RouteMovement.FAILED) {
+        HiredRouteNavigator.NodeMovement movement = HiredRouteNavigator.moveToRouteNode(
+                level, villager, node, MOVE_SPEED);
+        if (movement == HiredRouteNavigator.NodeMovement.FAILED) {
             HiredWorkerBrain.setFailure(context, "courier_route_unreachable", level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.FAILED_COOLDOWN, node);
             return WorkResult.idle("interaction.work.courier.route_unreachable");
         }
-        if (movement == RouteMovement.MOVING) {
+        if (movement == HiredRouteNavigator.NodeMovement.MOVING) {
             HiredWorkerBrain.clearFailure(context);
-            HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_TARGET, node);
+            HiredWorkerBrain.setState(
+                    context,
+                    outbound ? HiredWorkerTaskState.MOVING_TO_TARGET : HiredWorkerTaskState.RETURNING_TO_WORK_AREA,
+                    node);
             return WorkResult.progressed(outbound
                     ? "interaction.work.courier.following_route_outbound"
                     : "interaction.work.courier.following_route_return");
+        }
+
+        if (outbound) {
+            int moved = collectInputsAtNode(level, villager, context, node);
+            if (moved > 0) {
+                HiredWorkerBrain.clearFailure(context);
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, node);
+                return WorkResult.progressed(
+                        "interaction.work.courier.collected_items",
+                        Map.of("count", Integer.toString(moved)));
+            }
         }
 
         boolean finished = outbound ? index >= lastIndex : index <= 0;
@@ -153,23 +159,35 @@ public final class CourierWorker implements HiredRoleWorker {
                     ? "interaction.work.courier.following_route_outbound"
                     : "interaction.work.courier.following_route_return");
         }
+
         context.state().remove(ROUTE_INDEX_TAG);
-        setPhase(context, outbound ? PHASE_DELIVER : PHASE_PICKUP);
+        if (outbound) {
+            if (context.inventory().hasOutputItems()) {
+                setPhase(context, PHASE_DELIVER);
+            } else {
+                beginReturn(context, route);
+            }
+        } else {
+            setPhase(context, PHASE_PICKUP);
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, route.first());
+        }
         return WorkResult.progressed(outbound
                 ? "interaction.work.courier.route_complete_outbound"
                 : "interaction.work.courier.route_complete_return");
     }
 
-    private WorkResult deliver(ServerLevel level, Villager villager, HiredWorkContext context) {
-        if (!hasPurpose(level, villager, AssignedStorageService.OUTPUT_PURPOSE)) {
+    private WorkResult deliver(ServerLevel level, Villager villager, HiredWorkContext context, HiredRoute route) {
+        Set<BlockPos> outputs = purposePositions(level, villager, AssignedStorageService.OUTPUT_PURPOSE);
+        if (outputs.isEmpty()) {
             HiredWorkerBrain.setFailure(context, "courier_missing_output_storage", level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE, null);
             return WorkResult.idle("interaction.work.courier.missing_output_storage");
         }
+
         BlockPos output = storedTarget(context);
-        if (output == null) {
-            Set<BlockPos> outputPositions = purposePositions(level, villager, AssignedStorageService.OUTPUT_PURPOSE);
-            output = AssignedStorageService.nearestAssignedOutputStoragePos(level, villager, outputPositions::contains);
+        if (output == null || !outputs.contains(output)) {
+            output = AssignedStorageService.nearestAssignedOutputStoragePos(level, villager, outputs::contains);
             if (output == null) {
                 HiredWorkerBrain.setFailure(context, "courier_output_unavailable", level.getGameTime() + 100L);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE, null);
@@ -181,6 +199,7 @@ public final class CourierWorker implements HiredRoleWorker {
         HiredStorageNavigationGoal.Result movement = HiredStorageNavigationGoal.moveToStorageTarget(
                 level, context, villager, output, MOVE_SPEED);
         if (movement == HiredStorageNavigationGoal.Result.MOVING) {
+            HiredWorkerBrain.setStorageTarget(context, output);
             HiredWorkerBrain.clearFailure(context);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_STORAGE, output);
             return WorkResult.progressed("interaction.work.courier.moving_to_output");
@@ -192,69 +211,65 @@ public final class CourierWorker implements HiredRoleWorker {
             return WorkResult.idle("interaction.work.courier.output_unreachable");
         }
 
-        boolean deposited = context.inventory().depositOutputToAssignedStorageAt(output);
-        if (!deposited) {
+        while (context.inventory().hasOutputItems()
+                && context.inventory().depositOutputToAssignedStorageAt(output)) {
+        }
+        if (context.inventory().hasOutputItems()) {
             HiredWorkerBrain.setFailure(context, "courier_output_full", level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_STORAGE_FULL, output);
             return WorkResult.idle("interaction.work.courier.output_full");
         }
-        if (context.inventory().hasOutputItems()) {
-            HiredWorkerBrain.setState(context, HiredWorkerTaskState.DEPOSITING, output);
-            return WorkResult.progressed("interaction.work.courier.depositing_items");
-        }
 
         clearStoredTarget(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);
-        setPhase(context, PHASE_RETURN);
-        context.state().putInt(ROUTE_INDEX_TAG, Math.max(0, context.route().nodes().size() - 1));
+        beginReturn(context, route);
         HiredWorkerBrain.clearFailure(context);
-        HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, output);
-        return WorkResult.completed("interaction.work.courier.delivered_items");
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, route.last());
+        return WorkResult.progressed("interaction.work.courier.delivered_items");
     }
 
-    private static RouteMovement moveToRouteNode(
+    private static int collectInputsAtNode(
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
-            BlockPos target) {
-        double distanceSqr = villager.blockPosition().distSqr(target);
-        if (distanceSqr <= ROUTE_ARRIVAL_DISTANCE_SQR) {
-            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
-            HiredPathMemory.clearNavigationProgress(villager);
-            return RouteMovement.ARRIVED;
-        }
-        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
-        if (!villager.getNavigation().isDone() && target.equals(navigationTarget)) {
-            if (HiredPathMemory.observeNavigationProgress(level, villager, target, distanceSqr)) {
-                return RouteMovement.MOVING;
+            BlockPos node) {
+        int moved = 0;
+        for (BlockPos input : purposePositions(level, villager, AssignedStorageService.INPUT_PURPOSE)) {
+            if (input.distSqr(node) > ROUTE_ARRIVAL_DISTANCE_SQR) {
+                continue;
             }
-            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
-            HiredPathMemory.clearNavigationProgress(villager);
+            moved += collectInput(villager, context, input);
+            if (!context.inventory().hasOutputSpace()) {
+                break;
+            }
         }
-        Path path = HiredPathMemory.createPath(level, villager, target, 1);
-        if (path == null || !path.canReach()
-                || !VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target, MOVE_SPEED, 1)) {
-            return RouteMovement.FAILED;
-        }
-        HiredPathMemory.rememberNavigationProgress(level, villager, target, distanceSqr);
-        return RouteMovement.MOVING;
+        return moved;
     }
 
-    private static boolean hasPurpose(ServerLevel level, Villager villager, String purpose) {
-        for (AssignedContainerRecord record : AssignedStorageService.assignedStorage(level, villager)) {
-            String normalized = AssignedStorageService.normalizePurpose(record.purpose());
-            if (purpose.equals(normalized)) {
-                return true;
-            }
+    private static int collectInput(Villager villager, HiredWorkContext context, BlockPos input) {
+        if (!context.inventory().hasOutputSpace()) {
+            return 0;
         }
-        return false;
+        return AssignedStorageService.transferItemsAtAssignedStorage(
+                villager,
+                input,
+                stack -> !stack.isEmpty(),
+                Integer.MAX_VALUE,
+                context.inventory()::insertOutput);
     }
 
     private static Set<BlockPos> purposePositions(ServerLevel level, Villager villager, String purpose) {
         return AssignedStorageService.assignedStorage(level, villager).stream()
+                .filter(record -> record.dimension().equals(level.dimension()))
                 .filter(record -> purpose.equals(AssignedStorageService.normalizePurpose(record.purpose())))
+                .filter(record -> AssignedStorageService.isValidContainerForPurpose(level, record.pos(), purpose))
                 .map(AssignedContainerRecord::pos)
                 .collect(Collectors.toSet());
+    }
+
+    private static void beginReturn(HiredWorkContext context, HiredRoute route) {
+        setPhase(context, PHASE_RETURN);
+        context.state().putInt(ROUTE_INDEX_TAG, route.loop() ? 0 : route.nodes().size() - 1);
     }
 
     private static String phase(HiredWorkContext context) {
@@ -265,6 +280,7 @@ public final class CourierWorker implements HiredRoleWorker {
     private static void setPhase(HiredWorkContext context, String phase) {
         context.state().putString(PHASE_TAG, phase);
         clearStoredTarget(context);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
     }
 
     private static BlockPos storedTarget(HiredWorkContext context) {
@@ -286,11 +302,7 @@ public final class CourierWorker implements HiredRoleWorker {
         state.remove(PHASE_TAG);
         state.remove(STORAGE_TARGET_TAG);
         state.remove(ROUTE_INDEX_TAG);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
     }
 
-    private enum RouteMovement {
-        MOVING,
-        ARRIVED,
-        FAILED
-    }
 }

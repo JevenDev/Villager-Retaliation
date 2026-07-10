@@ -2,6 +2,9 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -31,39 +34,28 @@ public final class HiredRouteNavigator {
         int nodeIndex = routeNodeIndex(state, route);
         BlockPos target = route.nodes().get(nodeIndex);
         double distanceSqr = villager.blockPosition().distSqr(target);
-        if (distanceSqr <= ARRIVAL_DISTANCE_SQR) {
+        long gameTime = level.getGameTime();
+        if (distanceSqr > ARRIVAL_DISTANCE_SQR
+                && gameTime < state.getLong(ROUTE_RETRY_AFTER_GAME_TIME_TAG)) {
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target);
+            return true;
+        }
+
+        NodeMovement movement = moveToRouteNode(level, villager, target, speed);
+        if (movement == NodeMovement.ARRIVED) {
             nodeIndex = advanceRouteNode(state, route, nodeIndex);
             target = route.nodes().get(nodeIndex);
-            distanceSqr = villager.blockPosition().distSqr(target);
-            if (route.nodes().size() == 1 && distanceSqr <= ARRIVAL_DISTANCE_SQR) {
+            if (route.nodes().size() == 1) {
                 VillagerTaskNavigationUtil.stopHiredNavigation(villager);
                 HiredWorkerBrain.clearFailure(context);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target);
                 return true;
             }
-        }
-
-        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
-        if (!villager.getNavigation().isDone() && target.equals(navigationTarget)) {
-            if (HiredPathMemory.observeNavigationProgress(level, villager, target, distanceSqr)) {
-                HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target);
-                return true;
-            }
-            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
-            rememberPathFailure(level, villager, context, route, nodeIndex, target);
+            HiredWorkerBrain.clearFailure(context);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target);
             return true;
         }
-
-        long gameTime = level.getGameTime();
-        if (gameTime < state.getLong(ROUTE_RETRY_AFTER_GAME_TIME_TAG)) {
-            HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target);
-            return true;
-        }
-
-        Path path = HiredPathMemory.createPath(level, villager, target, CLOSE_ENOUGH_DISTANCE);
-        if (path != null
-                && path.canReach()
-                && VillagerTaskNavigationUtil.moveToHiredPath(villager, path, target, speed, CLOSE_ENOUGH_DISTANCE)) {
+        if (movement == NodeMovement.MOVING) {
             clearPathFailure(state);
             HiredWorkerBrain.clearFailure(context);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_TARGET, target);
@@ -72,6 +64,84 @@ public final class HiredRouteNavigator {
 
         rememberPathFailure(level, villager, context, route, nodeIndex, target);
         return true;
+    }
+
+    public static NodeMovement moveToRouteNode(
+            ServerLevel level,
+            Villager villager,
+            BlockPos target,
+            double speed) {
+        double distanceSqr = villager.blockPosition().distSqr(target);
+        if (distanceSqr <= ARRIVAL_DISTANCE_SQR) {
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            HiredPathMemory.clearNavigationProgress(villager);
+            return NodeMovement.ARRIVED;
+        }
+
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        if (!villager.getNavigation().isDone()
+                && navigationTarget != null
+                && navigationTarget.distSqr(target) <= ARRIVAL_DISTANCE_SQR) {
+            if (HiredPathMemory.observeNavigationProgress(level, villager, target, distanceSqr)) {
+                return NodeMovement.MOVING;
+            }
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            HiredPathMemory.clearNavigationProgress(villager);
+        }
+
+        Path path;
+        BlockPos walkTarget;
+        boolean targetIsStandable = HiredMoveToBlockFaceJob.isValidApproachPosition(level, target);
+        if (targetIsStandable) {
+            walkTarget = target;
+            path = HiredPathMemory.createPath(level, villager, target, CLOSE_ENOUGH_DISTANCE);
+        } else {
+            RouteApproach approach = nearestReachableApproach(level, villager, target);
+            if (approach == null) {
+                return NodeMovement.FAILED;
+            }
+            walkTarget = approach.pos();
+            path = approach.path();
+        }
+
+        if (path == null || !path.canReach()
+                || !VillagerTaskNavigationUtil.moveToHiredPath(
+                        villager,
+                        path,
+                        walkTarget,
+                        speed,
+                        targetIsStandable ? CLOSE_ENOUGH_DISTANCE : 0)) {
+            return NodeMovement.FAILED;
+        }
+        HiredPathMemory.rememberNavigationProgress(level, villager, target, distanceSqr);
+        return NodeMovement.MOVING;
+    }
+
+    private static RouteApproach nearestReachableApproach(
+            ServerLevel level,
+            Villager villager,
+            BlockPos target) {
+        List<BlockPos> candidates = new ArrayList<>();
+        for (BlockPos rawCandidate : BlockPos.betweenClosed(
+                target.offset(-2, -2, -2),
+                target.offset(2, 2, 2))) {
+            BlockPos candidate = rawCandidate.immutable();
+            if (!candidate.equals(target)
+                    && candidate.distSqr(target) <= ARRIVAL_DISTANCE_SQR
+                    && HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)) {
+                candidates.add(candidate);
+            }
+        }
+        candidates.sort(Comparator
+                .comparingDouble((BlockPos candidate) -> target.distSqr(candidate))
+                .thenComparingDouble(candidate -> villager.distanceToSqr(candidate.getCenter())));
+        for (BlockPos candidate : candidates) {
+            Path path = HiredPathMemory.createPath(level, villager, candidate, 0);
+            if (path != null && path.canReach()) {
+                return new RouteApproach(candidate, path);
+            }
+        }
+        return null;
     }
 
     public static void clearProgress(CompoundTag state) {
@@ -159,5 +229,14 @@ public final class HiredRouteNavigator {
     private static void clearPathFailure(CompoundTag state) {
         state.remove(ROUTE_RETRY_AFTER_GAME_TIME_TAG);
         state.remove(ROUTE_FAILED_PATH_COUNT_TAG);
+    }
+
+    public enum NodeMovement {
+        MOVING,
+        ARRIVED,
+        FAILED
+    }
+
+    private record RouteApproach(BlockPos pos, Path path) {
     }
 }

@@ -2385,14 +2385,43 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void sharedRouteNavigatorApproachesNonStandableContainerNode(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        tickVillager(level, villager, 20);
+        BlockPos nodeRel = new BlockPos(5, 2, 2);
+        BlockPos node = helper.absolutePos(nodeRel);
+        setBlock(helper, nodeRel, Blocks.CHEST.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(helper, villager, state, List.of(nodeRel));
+        for (int tick = 0; tick < 100 && villager.blockPosition().distSqr(node) > 4.0D; tick++) {
+            HiredRouteNavigator.maintainRoute(level, villager, context, 0.5D);
+            level.tickNonPassenger(villager);
+        }
+
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertTrue(villager.blockPosition().distSqr(node) <= 4.0D,
+                "shared route navigation should reach a valid block beside a non-standable node; pos="
+                        + villager.blockPosition() + ", nav=" + villager.getNavigation().getTargetPos()
+                        + ", state=" + snapshot.taskState() + ", failure=" + snapshot.failureReason());
+        helper.assertFalse(villager.blockPosition().equals(node),
+                "shared route navigation should not try to stand inside a container node");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void courierMovesInputToOutputAlongAssignedRoute(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 5, 1);
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = fakePlayer(level, "VrCourierRoute");
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
-        BlockPos inputRel = new BlockPos(2, 2, 2);
-        BlockPos outputRel = new BlockPos(6, 2, 2);
+        BlockPos inputRel = new BlockPos(4, 2, 2);
+        BlockPos outputRel = new BlockPos(7, 2, 2);
         BlockPos input = helper.absolutePos(inputRel);
         BlockPos output = helper.absolutePos(outputRel);
         setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
@@ -2417,22 +2446,98 @@ public final class VillagerWorkerGameTests {
                 helper,
                 villager,
                 state,
-                List.of(new BlockPos(3, 2, 2), new BlockPos(5, 2, 2)));
+                List.of(inputRel, outputRel));
         CourierWorker worker = new CourierWorker();
 
-        WorkResult pickup = worker.tick(level, villager, hirer, context);
-        helper.assertTrue(pickup.progressed(), "courier should collect the input load");
-        helper.assertValueEqual(countItem(container(level, input), Items.COBBLESTONE), 0, "courier should remove input items once");
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 160, () ->
+                countItem(container(level, output), Items.COBBLESTONE) == 20
+                        && "pickup".equals(state.getString("CourierPhase")));
 
-        moveVillagerToBlock(villager, helper.absolutePos(new BlockPos(3, 2, 2)));
-        worker.tick(level, villager, hirer, context);
-        moveVillagerToBlock(villager, helper.absolutePos(new BlockPos(5, 2, 2)));
-        worker.tick(level, villager, hirer, context);
-        WorkResult delivery = worker.tick(level, villager, hirer, context);
-
-        helper.assertTrue(delivery.completed(), "courier delivery should complete at output storage");
+        helper.assertValueEqual(countItem(container(level, input), Items.COBBLESTONE), 0,
+                "courier should collect all eligible input items into its job inventory");
         helper.assertValueEqual(countItem(container(level, output), Items.COBBLESTONE), 20, "courier output item count");
         helper.assertValueEqual(countInventoryItem(context.inventory(), Items.COBBLESTONE), 0, "courier should retain no duplicate cargo");
+        helper.assertValueEqual(state.getString("CourierPhase"), "pickup",
+                "courier should return to the route start before waiting for the next load");
+        helper.assertTrue(villager.blockPosition().distSqr(context.route().first()) <= 4.0D,
+                "courier should physically return to the beginning of its route");
+        helper.assertFalse(villager.blockPosition().equals(input),
+                "courier should stand beside a container route node instead of trying to occupy it");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void courierHandlesContainerRouteNodesAndRepeatsMultipleInputLoop(GameTestHelper helper) {
+        buildFloor(helper, 0, 12, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierMultiInput");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        BlockPos firstInputRel = new BlockPos(2, 2, 2);
+        BlockPos secondInputRel = new BlockPos(6, 2, 2);
+        BlockPos outputRel = new BlockPos(10, 2, 2);
+        BlockPos firstInput = helper.absolutePos(firstInputRel);
+        BlockPos secondInput = helper.absolutePos(secondInputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, firstInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, secondInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, firstInput);
+        AssignedStorageService.removeAssignedContainer(level, secondInput);
+        AssignedStorageService.removeAssignedContainer(level, output);
+        container(level, firstInput).setItem(0, new ItemStack(Items.COBBLESTONE, 20));
+        container(level, secondInput).setItem(0, new ItemStack(Items.DIRT, 13));
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), firstInput),
+                        new AssignedStorageService.StoragePosition(level.dimension(), secondInput)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "courier multi-input assignment");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "courier output assignment");
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(firstInputRel, secondInputRel, outputRel));
+        CourierWorker worker = new CourierWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 240, () ->
+                countItem(container(level, output), Items.COBBLESTONE) == 20
+                        && countItem(container(level, output), Items.DIRT) == 13
+                        && "pickup".equals(state.getString("CourierPhase")));
+
+        helper.assertValueEqual(countItem(container(level, firstInput), Items.COBBLESTONE), 0,
+                "courier should empty the first route input");
+        helper.assertValueEqual(countItem(container(level, secondInput), Items.DIRT), 0,
+                "courier should visit the second input container route node");
+
+        container(level, firstInput).setItem(0, new ItemStack(Items.COBBLESTONE, 7));
+        container(level, secondInput).setItem(0, new ItemStack(Items.DIRT, 5));
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 240, () ->
+                countItem(container(level, output), Items.COBBLESTONE) == 27
+                        && countItem(container(level, output), Items.DIRT) == 18
+                        && "pickup".equals(state.getString("CourierPhase")));
+
+        helper.assertValueEqual(countItem(container(level, output), Items.COBBLESTONE), 27,
+                "courier should repeat the route for newly added first-input items");
+        helper.assertValueEqual(countItem(container(level, output), Items.DIRT), 18,
+                "courier should repeat the route for newly added later-input items");
+        helper.assertFalse(context.inventory().hasOutputItems(),
+                "courier should deposit every carried stack before returning");
+        helper.assertTrue(villager.blockPosition().distSqr(context.route().first()) <= 4.0D,
+                "courier should await the next load at the route beginning");
+        helper.assertFalse(villager.blockPosition().equals(firstInput),
+                "courier should use a valid adjacent standing block for the first container node");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         villager.discard();
