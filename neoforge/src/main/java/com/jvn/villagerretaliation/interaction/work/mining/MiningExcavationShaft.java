@@ -301,8 +301,8 @@ final class MiningExcavationShaft {
                 BlockPos pos = candidate.at(y);
                 BlockState ladder = candidate.ladderState();
                 if (level.getBlockState(pos).is(Blocks.LADDER)
-                        || MiningExcavationSupport.canPlaceSupportBlock(level, pos, ladder)
-                        || MiningExcavationSupport.canPrepareSupportBacking(level, context, pos, ladder)) {
+                        || MiningSupportManager.canPlace(level, pos, ladder)
+                        || MiningSupportManager.canPrepareBacking(level, context, pos, ladder)) {
                     if (storeSelected) {
                         store(context, candidate);
                     }
@@ -405,8 +405,8 @@ final class MiningExcavationShaft {
         }
         BlockState current = level.getBlockState(ladder);
         if (!current.is(Blocks.LADDER)
-                && !MiningExcavationSupport.canPlaceSupportBlock(level, ladder, shaft.ladderState())
-                && !MiningExcavationSupport.canPrepareSupportBacking(level, context, ladder, shaft.ladderState())) {
+                && !MiningSupportManager.canPlace(level, ladder, shaft.ladderState())
+                && !MiningSupportManager.canPrepareBacking(level, context, ladder, shaft.ladderState())) {
             return false;
         }
         for (Direction direction : Direction.Plane.HORIZONTAL) {
