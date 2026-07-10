@@ -376,6 +376,21 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void permanentlyDiscardedVillagerIsRemovedWithoutWaitingForContractExpiry(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        UUID leader = UUID.randomUUID();
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader, now);
+        PartySavedData.get(level).addVillager(party, villagerRecord(villager.getUUID(), leader, 0, now));
+        villager.discard();
+        helper.assertTrue(PartyService.getPartyForVillager(level, villager.getUUID()).isEmpty(),
+                "permanent entity removal must free the party slot immediately");
+        PartyService.deleteParty(level, party.id());
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void partyRelationshipsProtectAlliesAndKeepNearbyPartiesSeparate(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer firstLeader = fakePlayer(level, uniqueName("party_ally_first"));

@@ -78,7 +78,9 @@ public final class PartyInventoryOverlay {
         lines.add(Component.translatable("villagerretaliation.party.roster.title", roster.leaderName(), total));
         lines.add(Component.translatable("villagerretaliation.party.roster.players", roster.players().size()));
         for (PartyRosterSyncPayload.PlayerEntry player : roster.players()) {
-            if (player.leader()) {
+            if (player.leader() && !player.online()) {
+                lines.add(Component.translatable("villagerretaliation.party.roster.player_leader_offline", player.name()));
+            } else if (player.leader()) {
                 lines.add(Component.translatable("villagerretaliation.party.roster.player_leader", player.name()));
             } else if (!player.online()) {
                 lines.add(Component.translatable("villagerretaliation.party.roster.player_offline", player.name()));
@@ -88,6 +90,9 @@ public final class PartyInventoryOverlay {
         }
         lines.add(Component.translatable("villagerretaliation.party.roster.villagers", roster.villagers().size()));
         for (PartyRosterSyncPayload.VillagerEntry villager : roster.villagers()) {
+            Component name = villager.name().isBlank()
+                    ? Component.translatable("entity.minecraft.villager")
+                    : Component.literal(villager.name());
             Component profession = villager.professionKey().isBlank()
                     ? Component.translatable("villagerretaliation.gui.profession.unemployed")
                     : Component.translatable(villager.professionKey());
@@ -98,7 +103,7 @@ public final class PartyInventoryOverlay {
                             : "villagerretaliation.party.state.following");
             lines.add(Component.translatable(
                     "villagerretaliation.party.roster.villager",
-                    villager.name(),
+                    name,
                     profession,
                     state));
         }

@@ -163,6 +163,12 @@ public final class PartySharedQuestRecord {
         this.completed = true;
     }
 
+    public boolean settled() {
+        return this.completed
+                && this.enrollments.values().stream()
+                .allMatch(enrollment -> !enrollment.pendingStart() && enrollment.rewardClaimed());
+    }
+
     CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putUUID(TAG_INSTANCE, this.instanceId);

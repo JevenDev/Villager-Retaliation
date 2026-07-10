@@ -1452,6 +1452,7 @@
   "villagerretaliation.party.roster.title": "%s's Party %s/8",
   "villagerretaliation.party.roster.players": "Players %s/4",
   "villagerretaliation.party.roster.player_leader": "%s [Leader]",
+  "villagerretaliation.party.roster.player_leader_offline": "%s [Leader, Offline]",
   "villagerretaliation.party.roster.player_offline": "%s [Offline]",
   "villagerretaliation.party.roster.villagers": "Villagers %s/4",
   "villagerretaliation.party.roster.villager": "%s - %s - %s",
@@ -1511,5 +1512,6 @@
   "villagerretaliation.party.error.insufficient_emeralds": "You do not have enough emeralds.",
   "villagerretaliation.party.error.contract_inactive": "This party contract is no longer active.",
   "villagerretaliation.party.error.contract_maximum": "This contract cannot be extended any further.",
+  "villagerretaliation.party.error.job_inventory_denied": "Job inventory access denied.",
   "villagerretaliation.party.error.use_follow_or_stay": "Recruited villagers must be set to either Follow or Stay."
 }

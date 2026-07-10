@@ -2462,6 +2462,10 @@ public final class VillagerQuestService {
             return;
         }
         com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = sharedOptional.get();
+        com.jvn.villagerretaliation.party.PartyRecord party =
+                com.jvn.villagerretaliation.party.PartyService
+                        .getPartyForPlayer(completingContext.level(), completingContext.player().getUUID())
+                        .orElse(null);
         shared.markCompleted();
         com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment completingEnrollment =
                 shared.enrollment(completingContext.player().getUUID());
@@ -2504,6 +2508,9 @@ public final class VillagerQuestService {
             DialogueContext context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
             finishLinkedPartyReward(context, definition, progress, enrollment);
         }
+        if (party != null && shared.settled()) {
+            party.removeSharedQuest(shared.instanceId());
+        }
         data.setDirty();
         com.jvn.villagerretaliation.party.PartyService.markChanged(completingContext.level());
     }
@@ -2513,8 +2520,15 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress,
             com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment enrollment) {
-        if (progress.partyRewardClaimed()
-                || enrollment != null && enrollment.rewardClaimed()) {
+        if (progress.partyRewardClaimed()) {
+            if (enrollment != null && !enrollment.rewardClaimed()) {
+                enrollment.markRewardClaimed();
+            }
+            return;
+        }
+        if (enrollment != null && enrollment.rewardClaimed()) {
+            progress.markPartyRewardClaimed();
+            VillagerQuestSavedData.get(context.level()).setDirty();
             return;
         }
         // Persist the claim before invoking reward actions so repeated packets or reconnects
@@ -2553,18 +2567,21 @@ public final class VillagerQuestService {
                     || !provider.isAlive()) {
                 continue;
             }
+            com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = null;
             com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment enrollment = null;
             if (party != null && progress.partyQuestInstanceId() != null) {
-                enrollment = party.sharedQuests().stream()
-                        .filter(shared -> shared.instanceId().equals(progress.partyQuestInstanceId()))
-                        .map(shared -> shared.enrollment(player.getUUID()))
-                        .filter(java.util.Objects::nonNull)
+                shared = party.sharedQuests().stream()
+                        .filter(candidate -> candidate.instanceId().equals(progress.partyQuestInstanceId()))
                         .findFirst()
                         .orElse(null);
+                enrollment = shared == null ? null : shared.enrollment(player.getUUID());
             }
             DialogueContext context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, provider);
             finishLinkedPartyReward(context, definition, progress, enrollment);
-            if (enrollment != null) {
+            if (shared != null && shared.settled()) {
+                party.removeSharedQuest(shared.instanceId());
+            }
+            if (enrollment != null || shared != null) {
                 com.jvn.villagerretaliation.party.PartyService.markChanged(player.serverLevel());
             }
         }
@@ -4459,7 +4476,7 @@ public final class VillagerQuestService {
                             .getPartyForPlayer(context.level(), context.player().getUUID())
                             .orElse(null);
             if (party != null) {
-                syncSharedQuestAfterEvent(context.level(), party, shared.get(), definition);
+                syncSharedQuestAfterEvent(context.level(), shared.get(), definition);
                 com.jvn.villagerretaliation.party.PartyService.markChanged(context.level());
             }
             return ItemHandInResult.SUCCESS;
@@ -6807,7 +6824,7 @@ public final class VillagerQuestService {
                 continue;
             }
             changed = true;
-            syncSharedQuestAfterEvent(level, party, shared, definition);
+            syncSharedQuestAfterEvent(level, shared, definition);
         }
         if (changed) {
             VillagerQuestSavedData.get(level).setDirty();
@@ -6818,7 +6835,6 @@ public final class VillagerQuestService {
 
     private static void syncSharedQuestAfterEvent(
             ServerLevel level,
-            com.jvn.villagerretaliation.party.PartyRecord party,
             com.jvn.villagerretaliation.party.PartySharedQuestRecord shared,
             QuestDefinition definition) {
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
@@ -6858,7 +6874,6 @@ public final class VillagerQuestService {
             dispatchQuestTriggers(player, definition, progress, QuestDefinition.TriggerEvent.PROGRESS);
             sendTrackerSync(player, true);
         }
-        com.jvn.villagerretaliation.party.PartySyncService.syncParty(level.getServer(), party.id());
     }
 
     public static void onBlockBroken(ServerLevel level, ServerPlayer player, BlockPos pos, BlockState state) {

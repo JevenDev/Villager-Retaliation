@@ -227,6 +227,7 @@ public final class PartyRecord {
             sharedQuest.retainEnrollments(currentPlayers);
         }
         this.sharedQuests.removeIf(sharedQuest -> sharedQuest.enrollments().isEmpty()
+                || sharedQuest.settled()
                 || !questInstances.add(sharedQuest.instanceId()));
     }
 }

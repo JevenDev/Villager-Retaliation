@@ -623,6 +623,12 @@ public final class VillagerInteractionService {
         boolean canAdministerPartyContract = ownsPartyContract && isPartyAdministrationAction(action);
         boolean canOpenJobInventory = action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
                 && com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(level, villager, player);
+        if (action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
+                && recruitedParty != null
+                && !canOpenJobInventory) {
+            player.sendSystemMessage(Component.translatable("villagerretaliation.party.error.job_inventory_denied"));
+            return;
+        }
         if (!VillagerRecruitmentService.canRecruit(level, villager, player)
                 && !canAdministerContract
                 && !canAdministerPartyContract

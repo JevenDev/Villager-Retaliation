@@ -267,6 +267,19 @@ public final class PartyVillagerContractService {
         }
     }
 
+    public static void onVillagerPermanentlyRemoved(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+        PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        if (party == null || PartyService.removeVillager(level, villager.getUUID()) == null) {
+            return;
+        }
+        cleanupEntity(villager);
+        closeJobInventories(level.getServer(), villager.getId());
+        PartySyncService.syncParty(level.getServer(), party.id());
+    }
+
     public static void onVillagerDeath(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level)) {
             return;

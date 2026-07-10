@@ -98,7 +98,7 @@ public final class PartySyncService {
             Villager loaded = findLoadedVillager(server, record.villagerId());
             villagers.add(new PartyRosterSyncPayload.VillagerEntry(
                     record.villagerId(),
-                    record.cachedName().isBlank() ? "Villager" : record.cachedName(),
+                    record.cachedName(),
                     record.cachedProfession(),
                     record.commandMode(),
                     loaded != null && loaded.isAlive() && !record.villagerId().equals(unavailableVillagerId),

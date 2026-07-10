@@ -650,7 +650,12 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
-            PartyVillagerContractService.onVillagerUnloaded(villager);
+            Entity.RemovalReason reason = villager.getRemovalReason();
+            if (reason == Entity.RemovalReason.DISCARDED || reason == Entity.RemovalReason.KILLED) {
+                PartyVillagerContractService.onVillagerPermanentlyRemoved(villager);
+            } else {
+                PartyVillagerContractService.onVillagerUnloaded(villager);
+            }
         }
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);

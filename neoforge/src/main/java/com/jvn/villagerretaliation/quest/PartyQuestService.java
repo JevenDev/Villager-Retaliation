@@ -154,7 +154,7 @@ public final class PartyQuestService {
             }
             shared.removeEnrollment(playerId);
             changed = true;
-            if (shared.enrollments().isEmpty()) {
+            if (shared.enrollments().isEmpty() || shared.settled()) {
                 emptyInstances.add(shared.instanceId());
             }
         }
@@ -198,7 +198,7 @@ public final class PartyQuestService {
                 }
             }
             shared.removeEnrollment(playerId);
-            if (shared.enrollments().isEmpty()) {
+            if (shared.enrollments().isEmpty() || shared.settled()) {
                 party.removeSharedQuest(shared.instanceId());
             }
             PartyService.markChanged(level);

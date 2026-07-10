@@ -7,6 +7,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.Villager;
 
 public final class PartyService {
     public static final int MAX_PLAYERS = 4;
@@ -33,9 +34,12 @@ public final class PartyService {
         if (entity == null || !(entity.level() instanceof ServerLevel level)) {
             return Optional.empty();
         }
-        return entity instanceof ServerPlayer
-                ? getPartyForPlayer(level, entity.getUUID())
-                : getPartyForVillager(level, entity.getUUID());
+        if (entity instanceof ServerPlayer) {
+            return getPartyForPlayer(level, entity.getUUID());
+        }
+        return entity instanceof Villager
+                ? getPartyForVillager(level, entity.getUUID())
+                : Optional.empty();
     }
 
     public static boolean areInSameParty(Entity first, Entity second) {
