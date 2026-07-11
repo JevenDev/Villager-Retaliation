@@ -60,10 +60,17 @@ final class MiningSupportManager {
             }
             return null;
         }
-        if (!moveToTarget(level, villager, context, target, worker, 0.55D)) {
+        SupportMovement movement = moveToTarget(level, villager, context, target, worker, 0.55D);
+        if (movement == SupportMovement.MOVING) {
             MiningWorkerState.set(context, MiningWorkerState.Phase.PATH_TO_TARGET);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_TARGET, placement.pos());
             return WorkResult.progressed("interaction.work.mining.support.moving");
+        }
+        if (movement == SupportMovement.FAILED) {
+            MiningWorkerState.set(context, MiningWorkerState.Phase.PATH_TO_TARGET);
+            HiredWorkerBrain.setFailure(context, "mining_support_unreachable", level.getGameTime() + 100L);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.FAILED_COOLDOWN, placement.pos());
+            return WorkResult.idle("interaction.work.mining.support.unreachable");
         }
         if (!place(level, context, placement)) {
             return null;
@@ -255,7 +262,7 @@ final class MiningSupportManager {
         return approach == null ? null : new HiredPathTarget(placement.pos(), approach, hitPos);
     }
 
-    private static boolean moveToTarget(
+    private static SupportMovement moveToTarget(
             ServerLevel level,
             Villager villager,
             HiredWorkContext context,
@@ -264,7 +271,7 @@ final class MiningSupportManager {
             double speed) {
         if (canReach(level, villager, target.blockPos())) {
             worker.holdWorkPosition(villager, target);
-            return true;
+            return SupportMovement.READY;
         }
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         if (!villager.getNavigation().isDone() && target.approachPos().equals(navigationTarget)) {
@@ -275,9 +282,11 @@ final class MiningSupportManager {
                     villager.distanceToSqr(target.approachPos().getCenter()))) {
                 VillagerTaskNavigationUtil.stopHiredNavigation(villager);
                 HiredPathMemory.clearNavigationProgress(villager);
-                return moveByLadder(level, villager, context, target, speed);
+                return moveByLadder(level, villager, context, target, speed)
+                        ? SupportMovement.MOVING
+                        : SupportMovement.FAILED;
             }
-            return false;
+            return SupportMovement.MOVING;
         }
         Path path = HiredPathMemory.createPath(level, villager, target.approachPos(), 0);
         if (path != null
@@ -289,12 +298,13 @@ final class MiningSupportManager {
                         villager,
                         target.approachPos(),
                         villager.distanceToSqr(target.approachPos().getCenter()));
+                return SupportMovement.MOVING;
             }
-            return false;
         }
         HiredPathMemory.clearNavigationProgress(villager);
-        moveByLadder(level, villager, context, target, speed);
-        return false;
+        return moveByLadder(level, villager, context, target, speed)
+                ? SupportMovement.MOVING
+                : SupportMovement.FAILED;
     }
 
     private static boolean moveByLadder(
@@ -331,10 +341,18 @@ final class MiningSupportManager {
         if (!preparePlacement(level, context, placement.pos(), placement.state())) {
             return false;
         }
+        ItemStack supply = context.inventory().findSupply(placement.type()::matchesSupply);
+        if (supply.isEmpty()) {
+            return false;
+        }
+        ItemStack consumed = supply.copyWithCount(1);
         if (context.inventory().consumeSupply(placement.type()::matchesSupply, 1) <= 0) {
             return false;
         }
-        level.setBlock(placement.pos(), placement.state(), Block.UPDATE_ALL);
+        if (!level.setBlock(placement.pos(), placement.state(), Block.UPDATE_ALL)) {
+            context.inventory().insertSupply(consumed);
+            return false;
+        }
         HiredPathMemory.onBlockChanged(level, placement.pos());
         MiningWorkerState.clearExcavationLayerCache(context);
         return true;
@@ -362,7 +380,10 @@ final class MiningSupportManager {
         if (!(backingStack.getItem() instanceof BlockItem blockItem)) {
             return false;
         }
-        level.setBlock(backingPos, blockItem.getBlock().defaultBlockState(), Block.UPDATE_ALL);
+        if (!level.setBlock(backingPos, blockItem.getBlock().defaultBlockState(), Block.UPDATE_ALL)) {
+            context.inventory().insertOutput(backingStack);
+            return false;
+        }
         HiredPathMemory.onBlockChanged(level, backingPos);
         MiningWorkerState.clearExcavationLayerCache(context);
         return canPlace(level, pos, state);
@@ -427,6 +448,12 @@ final class MiningSupportManager {
     private static boolean isTorchLayer(HiredWorkContext context, int y) {
         return y < context.workMax().getY()
                 && Math.floorMod(context.workMax().getY() - y, TORCH_LAYER_INTERVAL) == 0;
+    }
+
+    private enum SupportMovement {
+        READY,
+        MOVING,
+        FAILED
     }
 
     private static List<TorchPlacement> torchPlacements(HiredWorkContext context, int y) {

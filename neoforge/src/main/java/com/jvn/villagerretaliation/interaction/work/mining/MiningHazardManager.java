@@ -309,8 +309,8 @@ final class MiningHazardManager {
             return WorkResult.idle("interaction.work.mining.hazard.unreachable");
         }
 
-        ItemStack consumed = consumeFillBlock(context, fillPredicate);
-        if (!(consumed.getItem() instanceof BlockItem blockItem)) {
+        ConsumedFill consumed = consumeFillBlock(context, fillPredicate);
+        if (!(consumed.stack().getItem() instanceof BlockItem blockItem)) {
             return WorkResult.idle("interaction.work.mining.hazard.missing_fill_blocks");
         }
         BlockState fillState = blockItem.getBlock().defaultBlockState();
@@ -328,7 +328,12 @@ final class MiningHazardManager {
         if (!villager.swinging) {
             villager.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
         }
-        level.setBlock(target, fillState, Block.UPDATE_ALL);
+        if (!level.setBlock(target, fillState, Block.UPDATE_ALL)) {
+            refundFillBlock(context, consumed);
+            HiredWorkerBrain.setFailure(context, "hazard_placement_rejected", level.getGameTime() + 20L);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target);
+            return WorkResult.idle("interaction.work.mining.hazard.unreachable");
+        }
         HiredPathMemory.onBlockChanged(level, target);
         MiningWorkerState.clearExcavationLayerCache(context);
         MiningWorkerState.set(context, MiningWorkerState.Phase.REMEDIATE_HAZARD);
@@ -506,17 +511,30 @@ final class MiningHazardManager {
                 || !context.inventory().findSupply(predicate).isEmpty();
     }
 
-    private static ItemStack consumeFillBlock(HiredWorkContext context, Predicate<ItemStack> predicate) {
+    private static ConsumedFill consumeFillBlock(HiredWorkContext context, Predicate<ItemStack> predicate) {
         ItemStack output = context.inventory().consumeOutput(predicate, 1);
         if (!output.isEmpty()) {
-            return output;
+            return new ConsumedFill(output, true);
         }
         ItemStack supply = context.inventory().findSupply(predicate);
         if (supply.isEmpty()) {
-            return ItemStack.EMPTY;
+            return ConsumedFill.EMPTY;
         }
         ItemStack consumed = supply.copyWithCount(1);
-        return context.inventory().consumeSupply(predicate, 1) > 0 ? consumed : ItemStack.EMPTY;
+        return context.inventory().consumeSupply(predicate, 1) > 0
+                ? new ConsumedFill(consumed, false)
+                : ConsumedFill.EMPTY;
+    }
+
+    private static void refundFillBlock(HiredWorkContext context, ConsumedFill consumed) {
+        if (consumed.stack().isEmpty()) {
+            return;
+        }
+        if (consumed.fromOutput()) {
+            context.inventory().insertOutput(consumed.stack());
+        } else {
+            context.inventory().insertSupply(consumed.stack());
+        }
     }
 
     private static boolean isSafeFillStack(ServerLevel level, BlockPos pos, ItemStack stack) {
@@ -653,6 +671,10 @@ final class MiningHazardManager {
     }
 
     private record HazardPlan(HazardKind kind, List<BlockPos> positions, int index, boolean permanent) {
+    }
+
+    private record ConsumedFill(ItemStack stack, boolean fromOutput) {
+        private static final ConsumedFill EMPTY = new ConsumedFill(ItemStack.EMPTY, false);
     }
 
     private enum PlacementMovement {
