@@ -2428,6 +2428,13 @@ public final class VillagerInteractionService {
             }
             return InteractionResult.FAIL;
         }
+        if (villager.level() instanceof ServerLevel level
+                && com.jvn.villagerretaliation.party.PartyVillagerContractService.isActivePartyVillager(level, villager)) {
+            if (sendFailureMessage) {
+                sendVillagerNotice(player, villager, "interaction.party.trade_unavailable");
+            }
+            return InteractionResult.FAIL;
+        }
         if (villager.isBaby()) {
             if (sendFailureMessage) {
                 sendVillagerNotice(player, villager, "interaction.child_refuse_trade");

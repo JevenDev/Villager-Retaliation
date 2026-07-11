@@ -2,9 +2,12 @@ package com.jvn.villagerretaliation.party;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
@@ -32,6 +35,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -184,6 +188,7 @@ public final class PartyGameTests {
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         UUID partyId = null;
         try {
+            int walletBeforeRecruitment = VillagerWalletService.getCurrentEmeralds(villager);
             leader.getInventory().add(new ItemStack(Items.EMERALD, 31));
             PartyVillagerContractService.ContractResult insufficient =
                     PartyVillagerContractService.recruit(leader, villager);
@@ -193,6 +198,8 @@ public final class PartyGameTests {
                     "failed recruitment must not create a party");
             helper.assertTrue(PartyService.getPartyForVillager(level, villager.getUUID()).isEmpty(),
                     "failed recruitment must not add the villager");
+            helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBeforeRecruitment,
+                    "failed recruitment must not credit the villager wallet");
 
             leader.getInventory().add(new ItemStack(Items.EMERALD));
             PartyVillagerContractService.ContractResult recruited =
@@ -206,6 +213,10 @@ public final class PartyGameTests {
             helper.assertValueEqual(record.contractEndGameTime() - record.contractStartGameTime(),
                     VillagerContractTime.DAY_TICKS, "one paid contract day");
             helper.assertValueEqual(record.emeraldsPaid(), 32, "per-villager prepaid amount");
+            helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBeforeRecruitment + 32,
+                    "initial party payment must credit the villager wallet");
+            helper.assertValueEqual(VillagerInteractionService.openTrading(leader, villager, false), InteractionResult.FAIL,
+                    "party villagers must not trade even with their leader");
 
             PartySavedData.get(level).addPlayer(party, member.getUUID());
             helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, leader),
@@ -228,6 +239,7 @@ public final class PartyGameTests {
 
             leader.getInventory().add(new ItemStack(Items.EMERALD, 96));
             long beforeExtension = record.contractEndGameTime();
+            int walletBeforeExtension = VillagerWalletService.getCurrentEmeralds(villager);
             PartyVillagerContractService.ContractResult extension =
                     PartyVillagerContractService.extend(leader, villager, 3);
             helper.assertTrue(extension.success(), "three-day extension should succeed");
@@ -235,6 +247,8 @@ public final class PartyGameTests {
             helper.assertValueEqual(record.contractEndGameTime(), beforeExtension + 3L * VillagerContractTime.DAY_TICKS,
                     "exact three-day duration extension");
             helper.assertValueEqual(VillagerCurrencyPayment.count(leader), 0, "successful extension payment");
+            helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBeforeExtension + 96,
+                    "party extension payment must credit the villager wallet");
 
             leader.getInventory().add(new ItemStack(Items.EMERALD, 64));
             long beforeFailedExtension = record.contractEndGameTime();
@@ -273,7 +287,11 @@ public final class PartyGameTests {
         movePlayer(helper, player, new BlockPos(1, 2, 2));
         player.getInventory().add(new ItemStack(Items.EMERALD, 64));
         try {
-            VillagerReputationManager.setReputation(level, villager, player.getUUID(), -20);
+            VillagerReputationManager.setReputation(
+                    level,
+                    villager,
+                    player.getUUID(),
+                    VillagerRetaliationConfig.SUSPICIOUS_THRESHOLD.get());
             PartyVillagerContractService.ContractResult suspicious =
                     PartyVillagerContractService.recruit(player, villager);
             helper.assertFalse(suspicious.success(), "suspicious villagers must reject party recruitment");

@@ -151,6 +151,9 @@ public final class VillagerInteractionScreenOpener {
         boolean partyVillagerAuthorized = partyVillager != null
                 && villagerParty.leaderId().equals(player.getUUID())
                 && partyVillager.recruiterId().equals(player.getUUID());
+        boolean partyVillagerPartyMember = villagerParty != null
+                && playerParty != null
+                && villagerParty.id().equals(playerParty.id());
         boolean partyRecruitAvailable = partyVillager == null
                 && !hiredAnyPlayer
                 && VillagerRecruitmentService.canRecruit(level, villager, player)
@@ -186,6 +189,7 @@ public final class VillagerInteractionScreenOpener {
                 HiredVillagerContractService.getRemainingHireDays(level, villager),
                 partyVillager != null,
                 partyVillagerAuthorized,
+                partyVillagerPartyMember,
                 partyRecruitAvailable,
                 partyRemainingDays,
                 VillagerWalletService.getVendorCurrencyAvailable(villager),

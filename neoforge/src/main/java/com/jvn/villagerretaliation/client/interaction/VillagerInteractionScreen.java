@@ -156,7 +156,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int PROFILE_CONTAINER_HEIGHT = 120;
     private static final int INTERACTION_BUTTON_SIZE = 28;
     private static final int INTERACTION_BUTTON_GAP = 1;
-    private static final int INTERACTION_BUTTON_ROW_LEFT_INSET = 0;
     private static final int INTERACTION_BUTTON_HIGHLIGHT_COLOR = 0x40FFFFFF;
     private static final int INTERACTION_BUTTON_DISABLED_HIGHLIGHT_COLOR = 0x28FFFFFF;
     private static final int INTERACTION_BUTTON_HIGHLIGHT_INSET = 2;
@@ -255,6 +254,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int hiredRemainingDays;
     private final boolean recruitedPartyVillager;
     private final boolean partyVillagerAuthorized;
+    private final boolean partyVillagerPartyMember;
     private final boolean partyRecruitAvailable;
     private int partyRemainingDays;
     private final int walletEmeralds;
@@ -376,6 +376,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             int hiredRemainingDays,
             boolean recruitedPartyVillager,
             boolean partyVillagerAuthorized,
+            boolean partyVillagerPartyMember,
             boolean partyRecruitAvailable,
             int partyRemainingDays,
             int walletEmeralds,
@@ -430,6 +431,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.hiredRemainingDays = Math.max(0, hiredRemainingDays);
         this.recruitedPartyVillager = recruitedPartyVillager;
         this.partyVillagerAuthorized = partyVillagerAuthorized;
+        this.partyVillagerPartyMember = partyVillagerPartyMember;
         this.partyRecruitAvailable = partyRecruitAvailable;
         this.partyRemainingDays = Math.max(0, partyRemainingDays);
         this.walletEmeralds = Math.max(0, walletEmeralds);
@@ -1000,14 +1002,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addRootOptions() {
         addOption("root.talk", this::openTalkPage);
-        if (hasQuestOptions()) {
+        if (hasQuestOptions() && (!this.recruitedPartyVillager || !this.partyVillagerPartyMember)) {
             addOption("root.adventures", this::openAdventuresPage);
         }
         if (!this.baby) {
             addOption("root.profile", this::openProfilePage);
             addOption("root.skills", this::openSkillsPage);
             this.options.add(DialogueOption.enabled(familyButtonText(), this::openFamilyPage));
-            addOption("root.trade", this::requestTrade);
+            if (!this.recruitedPartyVillager) {
+                addOption("root.trade", this::requestTrade);
+            }
             if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
                 addOption("root.gift", this::openGiftPage);
             }
@@ -1016,7 +1020,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
             this.options.add(DialogueOption.enabled(translate(
                     this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager
-                            ? "root.job"
+                            ? this.recruitedPartyVillager ? "root.party" : "root.job"
                             : "root.recruit"), this::openRecruitPage));
             if (this.relationships.hasRelationships()) {
                 addOption("root.relationships", this::openRelationshipPage);
@@ -1059,7 +1063,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 return;
             }
             addOption("party.about_contract", this::openContractPage);
-            addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
+            addOption("party.inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
             if (this.stayingHere) {
                 addOption("party.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
             } else {
@@ -2724,7 +2728,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int top = interactionMenuButtonTop();
         for (int index = 0; index < buttons.size(); index++) {
             InteractionMenuButton button = buttons.get(index);
-            int left = interactionMenuButtonLeft(index);
+            int left = interactionMenuButtonLeft(index, buttons.size());
             graphics.blit(
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_TEXTURE,
                     left,
@@ -2819,18 +2823,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 translate("interaction_button.talk.description"),
                 this::openTalkPage,
                 true));
-        buttons.add(new InteractionMenuButton(
-                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TRADE_TEXTURE,
-                translate("root.trade"),
-                translate("interaction_button.trade.description"),
-                this::requestTrade,
-                true));
-        buttons.add(new InteractionMenuButton(
-                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
-                translate("root.adventures"),
-                translate("interaction_button.adventures.description"),
-                this::openAdventuresPage,
-                true));
+        if (!this.recruitedPartyVillager) {
+            buttons.add(new InteractionMenuButton(
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TRADE_TEXTURE,
+                    translate("root.trade"),
+                    translate("interaction_button.trade.description"),
+                    this::requestTrade,
+                    true));
+        }
+        if (!this.recruitedPartyVillager || !this.partyVillagerPartyMember) {
+            buttons.add(new InteractionMenuButton(
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
+                    translate("root.adventures"),
+                    translate("interaction_button.adventures.description"),
+                    this::openAdventuresPage,
+                    true));
+        }
         buttons.add(new InteractionMenuButton(
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_PROFILE_TEXTURE,
                 translate("root.profile"),
@@ -2847,10 +2855,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         buttons.add(new InteractionMenuButton(
                 VillagerRetaliationClientAssets.PARTY_RECRUITMENT_PLACEHOLDER_ICON,
-                translate(this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager ? "root.job" : "interaction_button.hire_job"),
-                translate(this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager
-                        ? "interaction_button.job.description"
-                        : "interaction_button.hire_job.description"),
+                translate(this.recruitedPartyVillager
+                        ? "root.party"
+                        : this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "interaction_button.hire_job"),
+                translate(this.recruitedPartyVillager
+                        ? "interaction_button.party.description"
+                        : this.hiredByPlayer || this.hiredByOtherPlayer
+                                ? "interaction_button.job.description"
+                                : "interaction_button.hire_job.description"),
                 this::openRecruitPage,
                 true));
         buttons.add(new InteractionMenuButton(
@@ -3712,7 +3724,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int interactionMenuButtonLeft(int index) {
-        return interactionContainerLeft() + INTERACTION_BUTTON_ROW_LEFT_INSET + index * (INTERACTION_BUTTON_SIZE + INTERACTION_BUTTON_GAP);
+        return interactionMenuButtonLeft(index, interactionMenuButtons().size());
+    }
+
+    private int interactionMenuButtonLeft(int index, int buttonCount) {
+        int rowWidth = buttonCount * INTERACTION_BUTTON_SIZE
+                + Math.max(0, buttonCount - 1) * INTERACTION_BUTTON_GAP;
+        int rowLeft = interactionContainerLeft() + (INTERACTION_CONTAINER_WIDTH - rowWidth) / 2;
+        return rowLeft + index * (INTERACTION_BUTTON_SIZE + INTERACTION_BUTTON_GAP);
     }
 
     private int interactionMenuButtonAt(double mouseX, double mouseY) {
@@ -3726,7 +3745,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         int buttonCount = interactionMenuButtons().size();
         for (int index = 0; index < buttonCount; index++) {
-            int left = interactionMenuButtonLeft(index);
+            int left = interactionMenuButtonLeft(index, buttonCount);
             int right = left + INTERACTION_BUTTON_SIZE;
             if (mouseX >= left && mouseX < right) {
                 return index;

@@ -312,6 +312,22 @@
         "I must keep my job inventory closed to everyone except my recruiter."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.error.job_inventory_denied.018"
+    },
+    {
+      "key": "interaction.party.trade_unavailable",
+      "lines": [
+        "I cannot trade while I am serving in a party.",
+        "My party duties come first. I am not available to trade.",
+        "I have set my trading work aside for as long as this party contract lasts.",
+        "No trades for now. I am committed to traveling with my party.",
+        "I cannot manage a market stall while serving under a party agreement.",
+        "My goods are not for trade while I remain part of a party.",
+        "The party has my time and attention. Trading must wait.",
+        "I am traveling under contract, not working as a merchant right now.",
+        "Until my place in the party ends, I cannot offer any trades.",
+        "You will have to find another merchant. My party contract prevents me from trading."
+      ],
+      "id": "global.messages.10_party_contracts.messages.interaction.party.trade_unavailable.019"
     }
   ]
 }
