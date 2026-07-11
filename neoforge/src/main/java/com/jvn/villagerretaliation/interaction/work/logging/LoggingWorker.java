@@ -49,6 +49,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.pathfinder.Path;
@@ -2105,11 +2106,63 @@ public final class LoggingWorker extends AbstractBlockWorker {
             BlockPos origin,
             Set<ResourceLocation> filters) {
         BlockPos root = treeSearchRoot(level, origin, filters);
-        List<BlockPos> logs = connectedLogs(level, root, filters, true);
+        List<BlockPos> logs = retainOriginTreeComponents(level, root, connectedLogs(level, root, filters, true), filters);
         if (!isLikelyNaturalTree(level, logs)) {
             return List.of();
         }
         return orderedTreeLogs(logs);
+    }
+
+    /**
+     * Leaf canopies commonly touch, especially in dense forests. Keep leaf-attached branch
+     * components, but do not use those leaves as a bridge into another grounded trunk.
+     */
+    private static List<BlockPos> retainOriginTreeComponents(
+            ServerLevel level,
+            BlockPos root,
+            List<BlockPos> logs,
+            Set<ResourceLocation> filters) {
+        if (logs.isEmpty()) {
+            return logs;
+        }
+
+        Set<Long> allLogs = new HashSet<>();
+        for (BlockPos log : logs) {
+            allLogs.add(log.asLong());
+        }
+        Set<Long> originComponent = new HashSet<>();
+        for (BlockPos log : connectedLogs(level, root, filters)) {
+            originComponent.add(log.asLong());
+        }
+
+        List<BlockPos> retained = new ArrayList<>();
+        Set<Long> visited = new HashSet<>();
+        for (BlockPos seed : logs) {
+            if (!visited.add(seed.asLong())) {
+                continue;
+            }
+            List<BlockPos> component = new ArrayList<>();
+            Queue<BlockPos> queue = new ArrayDeque<>();
+            queue.add(seed);
+            boolean belongsToOrigin = false;
+            while (!queue.isEmpty()) {
+                BlockPos current = queue.remove();
+                component.add(current);
+                belongsToOrigin |= originComponent.contains(current.asLong());
+                for (BlockPos rawNeighbor : BlockPos.betweenClosed(current.offset(-1, -1, -1), current.offset(1, 1, 1))) {
+                    BlockPos neighbor = rawNeighbor.immutable();
+                    if (!neighbor.equals(current)
+                            && allLogs.contains(neighbor.asLong())
+                            && visited.add(neighbor.asLong())) {
+                        queue.add(neighbor);
+                    }
+                }
+            }
+            if (belongsToOrigin || !hasRootedLog(level, component)) {
+                retained.addAll(component);
+            }
+        }
+        return retained;
     }
 
     private static List<BlockPos> connectedLogs(
@@ -2328,7 +2381,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private static boolean isNaturalTreeBase(BlockState state) {
-        return state.is(BlockTags.DIRT);
+        return state.is(BlockTags.DIRT)
+                || state.is(Blocks.MANGROVE_ROOTS)
+                || state.is(Blocks.MUDDY_MANGROVE_ROOTS);
     }
 
     private record LeafBridgeNode(BlockPos pos, int distance) {

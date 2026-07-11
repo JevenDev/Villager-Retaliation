@@ -3947,6 +3947,87 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void loggingWorkerKeepsLeafConnectedSameSpeciesTreesSeparate(GameTestHelper helper) {
+        buildFloor(helper, 0, 10, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerLoggingSameSpecies");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        BlockPos firstRootRel = new BlockPos(4, 2, 3);
+        BlockPos secondRootRel = new BlockPos(7, 2, 3);
+        setBlock(helper, firstRootRel.below(), Blocks.DIRT.defaultBlockState());
+        setBlock(helper, secondRootRel.below(), Blocks.DIRT.defaultBlockState());
+        for (int y = 2; y <= 4; y++) {
+            setBlock(helper, new BlockPos(4, y, 3), Blocks.OAK_LOG.defaultBlockState());
+            setBlock(helper, new BlockPos(7, y, 3), Blocks.OAK_LOG.defaultBlockState());
+        }
+
+        BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false);
+        for (BlockPos rel : List.of(
+                new BlockPos(4, 5, 3),
+                new BlockPos(3, 5, 3),
+                new BlockPos(5, 5, 3),
+                new BlockPos(4, 5, 2),
+                new BlockPos(4, 5, 4),
+                new BlockPos(7, 5, 3),
+                new BlockPos(6, 5, 3),
+                new BlockPos(8, 5, 3),
+                new BlockPos(7, 5, 2),
+                new BlockPos(7, 5, 4))) {
+            setBlock(helper, rel, leaves);
+        }
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(9, 6, 5), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
+        LoggingWorker worker = new LoggingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 160, () ->
+                !level.getBlockState(helper.absolutePos(firstRootRel)).is(BlockTags.OAK_LOGS));
+
+        helper.assertFalse(level.getBlockState(helper.absolutePos(firstRootRel)).is(BlockTags.OAK_LOGS), "logger should harvest the nearer oak tree");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(secondRootRel)).is(BlockTags.OAK_LOGS), "a separately rooted oak sharing the canopy should remain for its own harvest");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void loggingWorkerRecognizesMangroveRootsAsNaturalTreeBases(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerLoggingMangrove");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        BlockPos rootLogRel = new BlockPos(4, 2, 3);
+        setBlock(helper, rootLogRel.below(), Blocks.MANGROVE_ROOTS.defaultBlockState());
+        for (int y = 2; y <= 4; y++) {
+            setBlock(helper, new BlockPos(4, y, 3), Blocks.MANGROVE_LOG.defaultBlockState());
+        }
+        BlockState leaves = Blocks.MANGROVE_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false);
+        for (BlockPos rel : List.of(
+                new BlockPos(4, 5, 3),
+                new BlockPos(3, 5, 3),
+                new BlockPos(5, 5, 3),
+                new BlockPos(4, 5, 2),
+                new BlockPos(4, 5, 4))) {
+            setBlock(helper, rel, leaves);
+        }
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(7, 6, 5), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
+        LoggingWorker worker = new LoggingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 160, () ->
+                !level.getBlockState(helper.absolutePos(rootLogRel)).is(BlockTags.MANGROVE_LOGS));
+
+        helper.assertFalse(level.getBlockState(helper.absolutePos(rootLogRel)).is(BlockTags.MANGROVE_LOGS), "logger should recognize and harvest a mangrove trunk rooted above mangrove roots");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.MANGROVE_LOG)), "mangrove drops should be stored as output");
+
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void hiredAiSuppressionStartsOnlyForActiveWorkAndClearsAfterDisableOrContractEnd(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 1);
