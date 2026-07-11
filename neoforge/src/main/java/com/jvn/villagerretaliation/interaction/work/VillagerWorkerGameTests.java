@@ -2335,6 +2335,38 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void ladderNavigationRejectsBlockedDirectEntryCorner(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        for (int y = 1; y <= 5; y++) {
+            setBlock(helper, new BlockPos(2, y, 1), Blocks.STONE.defaultBlockState());
+            setBlock(
+                    helper,
+                    new BlockPos(2, y, 2),
+                    Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+        }
+
+        setBlock(helper, new BlockPos(3, 0, 2), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(4, 0, 3), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(4, 1, 2), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(4, 2, 2), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 5, 2), Blocks.STONE.defaultBlockState());
+
+        Villager villager = spawnVillager(helper, new BlockPos(4, 1, 3));
+        BlockPos target = helper.absolutePos(new BlockPos(3, 6, 2));
+
+        helper.assertValueEqual(
+                VillagerTaskNavigationUtil.ladderRouteDebug(level, villager, target),
+                "none",
+                "blocked diagonal corner should not be treated as a direct ladder entry");
+        helper.assertFalse(
+                VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, target, 0.55D),
+                "ladder navigation should fail cleanly instead of steering into a blocking corner");
+
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 420)
     public static void miningWorkerDepositsAndReturnsToLowerExcavationByLadder(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 6, 3);

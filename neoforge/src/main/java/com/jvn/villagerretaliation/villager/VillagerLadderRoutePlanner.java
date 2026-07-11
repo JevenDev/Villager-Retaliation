@@ -69,7 +69,7 @@ final class VillagerLadderRoutePlanner {
             double dx = villager.getX() - (route.approach().getX() + 0.5D);
             double dz = villager.getZ() - (route.approach().getZ() + 0.5D);
             if (dx * dx + dz * dz > RECOVERY_DIRECT_ENTRY_HORIZONTAL_SQR
-                    || Math.abs(route.approach().getY() - villager.blockPosition().getY()) > 1) {
+                    || !hasClearDirectApproach(level, villager, route.approach())) {
                 return false;
             }
         }
@@ -181,7 +181,7 @@ final class VillagerLadderRoutePlanner {
         double dx = villager.getX() - (approach.getX() + 0.5D);
         double dz = villager.getZ() - (approach.getZ() + 0.5D);
         boolean directlyReachable = dx * dx + dz * dz <= DIRECT_ENTRY_HORIZONTAL_SQR
-                && Math.abs(approach.getY() - villager.blockPosition().getY()) <= 1;
+                && hasClearDirectApproach(level, villager, approach);
         if (!usablePath && !directlyReachable) {
             return null;
         }
@@ -192,6 +192,26 @@ final class VillagerLadderRoutePlanner {
                 approach.immutable(),
                 !usablePath,
                 distance + verticalCost + pathCost);
+    }
+
+    static boolean hasClearDirectApproach(ServerLevel level, Villager villager, BlockPos approach) {
+        if (level == null
+                || villager == null
+                || approach == null
+                || !isWalkable(level, approach)
+                || approach.getY() != villager.blockPosition().getY()) {
+            return false;
+        }
+        double dx = approach.getX() + 0.5D - villager.getX();
+        double dz = approach.getZ() + 0.5D - villager.getZ();
+        if (dx * dx + dz * dz > RECOVERY_DIRECT_ENTRY_HORIZONTAL_SQR) {
+            return false;
+        }
+        return level.noCollision(
+                villager,
+                villager.getBoundingBox()
+                        .expandTowards(dx, 0.0D, dz)
+                        .deflate(0.05D));
     }
 
     private static boolean pathUsesEntryColumn(ServerLevel level, Path path, BlockPos rung) {

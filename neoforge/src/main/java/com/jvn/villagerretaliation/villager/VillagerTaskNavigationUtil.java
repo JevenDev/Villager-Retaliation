@@ -763,7 +763,7 @@ public final class VillagerTaskNavigationUtil {
         if (!route.directApproach()
                 && progressChecks >= LADDER_ROUTE_STALLED_CHECKS
                 && currentDistanceSqr <= 16.0D
-                && Math.abs(route.approach().getY() - villager.blockPosition().getY()) <= 1) {
+                && VillagerLadderRoutePlanner.hasClearDirectApproach(level, villager, route.approach())) {
             route = route.withDirectApproach();
             progressChecks = 0;
         }
@@ -1211,8 +1211,8 @@ public final class VillagerTaskNavigationUtil {
                 LADDER_ESCAPE_VERTICAL_RADIUS);
         if (best != null
                 && stalledAttempts > 0
-                && Math.abs(best.approach().getY() - origin.getY()) <= 1
-                && horizontalDistanceSqr(best.approach(), origin) <= 16.0D) {
+                && horizontalDistanceSqr(best.approach(), origin) <= 16.0D
+                && VillagerLadderRoutePlanner.hasClearDirectApproach(level, villager, best.approach())) {
             best = best.withDirectApproach();
         }
         LADDER_SEARCHES.put(villagerId, new LadderSearch(
