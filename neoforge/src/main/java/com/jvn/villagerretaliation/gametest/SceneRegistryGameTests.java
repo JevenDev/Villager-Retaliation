@@ -60,7 +60,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @GameTestHolder
 @PrefixGameTestTemplate(false)
 public final class SceneRegistryGameTests {
-    private static final String EMPTY_TEMPLATE = "villagerretaliation:empty";
+    private static final String EMPTY_TEMPLATE = "empty";
 
     private SceneRegistryGameTests() {
     }
