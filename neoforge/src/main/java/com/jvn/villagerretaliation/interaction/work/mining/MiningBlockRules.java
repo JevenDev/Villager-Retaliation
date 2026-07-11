@@ -156,7 +156,7 @@ public final class MiningBlockRules {
                 continue;
             }
             BlockState neighbor = level.getBlockState(pos.relative(direction));
-            if (neighbor.isAir() || neighbor.liquid()) {
+            if (neighbor.isAir() || neighbor.liquid() || isExcavationSupportBlock(neighbor)) {
                 return true;
             }
         }

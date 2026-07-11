@@ -2302,6 +2302,26 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void miningRulesTreatLadderFaceAsExposedForShaftExtension(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos targetRel = new BlockPos(3, 1, 3);
+        for (Direction direction : Direction.values()) {
+            setBlock(helper, targetRel.relative(direction), Blocks.STONE.defaultBlockState());
+        }
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+        setBlock(helper, targetRel.above().north(), Blocks.STONE.defaultBlockState());
+        setBlock(
+                helper,
+                targetRel.above(),
+                Blocks.LADDER.defaultBlockState().setValue(LadderBlock.FACING, Direction.SOUTH));
+
+        helper.assertTrue(
+                MiningBlockRules.isMineableExcavationBlock(level, helper.absolutePos(targetRel)),
+                "the next shaft block should remain mineable through an existing ladder face");
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 320)
     public static void ladderNavigationChoosesReachableRungWhenBottomEntryIsBlocked(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
@@ -4557,6 +4577,9 @@ public final class VillagerWorkerGameTests {
                 + ", failure=" + snapshot.failureReason()
                 + ", scan=" + snapshot.lastTargetScanResult()
                 + ", status=" + session.state().getString("Status")
+                + ", progress=" + session.context().progressTicks()
+                + ", progressTime=" + session.state().getLong("LastMiningBreakProgressGameTime")
+                + ", now=" + level.getGameTime()
                 + ", layer=" + MiningBlockRules.currentExcavationLayer(level, session.context())
                 + ", pos=" + villager.blockPosition()
                 + ", precise=(" + String.format(java.util.Locale.ROOT, "%.2f", villager.getX())

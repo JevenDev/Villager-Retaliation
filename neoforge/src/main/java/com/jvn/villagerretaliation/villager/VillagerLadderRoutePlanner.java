@@ -198,8 +198,11 @@ final class VillagerLadderRoutePlanner {
         if (level == null
                 || villager == null
                 || approach == null
-                || !isWalkable(level, approach)
-                || approach.getY() != villager.blockPosition().getY()) {
+                || !isWalkable(level, approach)) {
+            return false;
+        }
+        int verticalDelta = approach.getY() - villager.blockPosition().getY();
+        if (Math.abs(verticalDelta) > 1) {
             return false;
         }
         double dx = approach.getX() + 0.5D - villager.getX();
@@ -210,6 +213,7 @@ final class VillagerLadderRoutePlanner {
         return level.noCollision(
                 villager,
                 villager.getBoundingBox()
+                        .move(0.0D, verticalDelta, 0.0D)
                         .expandTowards(dx, 0.0D, dz)
                         .deflate(0.05D));
     }
