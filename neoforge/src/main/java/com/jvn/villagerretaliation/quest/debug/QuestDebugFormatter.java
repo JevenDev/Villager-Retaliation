@@ -1,7 +1,8 @@
 package com.jvn.villagerretaliation.quest.debug;
 
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -130,6 +131,17 @@ public final class QuestDebugFormatter {
                 + " latest_replacement=" + latest.newProviderId()
                 + " latest_reason=" + latest.reason()
                 + " latest_time=" + latest.gameTime();
+    }
+
+    public static String pendingLifecycleEventsLine(VillagerQuestSavedData.QuestProgress progress) {
+        if (progress == null || progress.pendingLifecycleEvents().isEmpty()) {
+            return "pending_lifecycle_events entries=0";
+        }
+        return "pending_lifecycle_events entries=" + progress.pendingLifecycleEvents().size()
+                + " events=" + progress.pendingLifecycleEvents().stream()
+                        .map(QuestTriggerRegistry::canonicalEventId)
+                        .sorted()
+                        .toList();
     }
 
     public static String targetDefinitionLine(QuestDefinition.Target target) {

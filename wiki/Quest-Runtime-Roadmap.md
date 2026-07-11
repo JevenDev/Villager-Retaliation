@@ -11,6 +11,7 @@ The Quest Runtime Foundation makes lifecycle changes explicit, versioned, and re
 
 ## Resumable scenes
 
+- Treat the foundation's persisted, one-shot lifecycle-event replay as the minimum recovery layer; scene resumption must build on it without broadening an event into an untracked multi-step workflow.
 - Represent scene work as persisted, idempotent steps with stable step IDs.
 - Resume safely after save/reload, chunk unload, disconnect, or actor replacement.
 - Separate dialogue, movement, waits, encounter gates, and completion markers so a repeated tick cannot replay a completed side effect.

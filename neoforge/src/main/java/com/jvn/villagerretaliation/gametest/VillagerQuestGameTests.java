@@ -3389,6 +3389,18 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(migrated.data().getString("Marker"), "keep", "migration discarded readable data");
         helper.assertFalse(unversioned.contains("DataVersion"), "migration mutated its input");
 
+        CompoundTag versionOne = new CompoundTag();
+        versionOne.putInt("DataVersion", 1);
+        versionOne.putString("Marker", "version_one");
+        QuestSaveMigrations.MigrationResult upgraded = QuestSaveMigrations.migrate(
+                versionOne,
+                VillagerQuestSavedData.CURRENT_DATA_VERSION);
+        helper.assertValueEqual(upgraded.sourceVersion(), 1, "version-one source version");
+        helper.assertValueEqual(upgraded.targetVersion(), VillagerQuestSavedData.CURRENT_DATA_VERSION,
+                "version-one target version");
+        helper.assertValueEqual(upgraded.data().getString("Marker"), "version_one",
+                "version-one migration discarded readable data");
+
         CompoundTag future = new CompoundTag();
         future.putInt("DataVersion", VillagerQuestSavedData.CURRENT_DATA_VERSION + 10);
         future.putString("Marker", "future");
@@ -3678,13 +3690,24 @@ public final class VillagerQuestGameTests {
                     player, compiled.id().toString(), QuestTrackerRequestPayload.Action.ABANDON);
             helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.ABANDONED,
                     "journal abandonment required a live provider");
-
             helper.assertTrue(
-                    VillagerQuestService.debugStartQuest(player, replacement, compiled.id(), true).started(),
-                    "provider recovery quest did not restart");
+                    progress.pendingLifecycleEvents().contains(QuestDefinition.TriggerEvent.ABANDONED),
+                    "offline abandonment did not queue its lifecycle event");
+            QuestScopeKey questScope = QuestScopeKey.quest(player.getUUID(), compiled.id());
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).counter(questScope, "abandon_replays"), 0,
+                    "offline abandonment ran a provider-bound hook early");
+
             UUID missingId = UUID.fromString("00000000-0000-0000-0000-000000000499");
             progress.setIssuer(missingId, "Missing Farmer", "minecraft:farmer", 2,
                     Level.OVERWORLD, new BlockPos(20, 64, 20), "village:missing");
+            CompoundTag pendingSave = VillagerQuestSavedData.get(level).save(new CompoundTag(), level.registryAccess());
+            VillagerQuestSavedData.QuestProgress loadedPending = VillagerQuestSavedData
+                    .load(pendingSave, level.registryAccess()).get(player.getUUID(), compiled.id());
+            helper.assertTrue(
+                    loadedPending.pendingLifecycleEvents().contains(QuestDefinition.TriggerEvent.ABANDONED),
+                    "deferred lifecycle event did not reload");
+
             VillagerQuestService.ProviderRebindResult rejected = VillagerQuestService.debugRebindQuest(
                     player, incompatible, compiled.id());
             helper.assertFalse(rejected.rebound(), "incompatible provider rebind was accepted");
@@ -3693,10 +3716,22 @@ public final class VillagerQuestGameTests {
             VillagerQuestService.ProviderRebindResult rebound = VillagerQuestService.debugRebindQuest(
                     player, replacement, compiled.id());
             helper.assertTrue(rebound.rebound(), "compatible provider rebind failed: " + rebound.message());
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.ABANDONED,
+                    "rebind reopened the terminal quest");
             helper.assertValueEqual(progress.startedVillagerId(), replacement.getUUID(), "replacement provider id");
             helper.assertValueEqual(progress.providerRebindHistory().size(), 1, "provider rebind history count");
             helper.assertValueEqual(progress.providerRebindHistory().getFirst().previousProviderId(), missingId,
                     "provider rebind lost previous UUID");
+            helper.assertFalse(progress.hasPendingLifecycleEvents(), "replayed lifecycle event remained queued");
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).counter(questScope, "abandon_replays"), 1,
+                    "deferred abandonment hook did not replay exactly once");
+            VillagerQuestService.ProviderRebindResult duplicate = VillagerQuestService.debugRebindQuest(
+                    player, replacement, compiled.id());
+            helper.assertFalse(duplicate.rebound(), "live replacement accepted a duplicate rebind");
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).counter(questScope, "abandon_replays"), 1,
+                    "resolved lifecycle hook replayed twice");
 
             CompoundTag saved = VillagerQuestSavedData.get(level).save(new CompoundTag(), level.registryAccess());
             VillagerQuestSavedData.QuestProgress loaded = VillagerQuestSavedData
@@ -3706,6 +3741,65 @@ public final class VillagerQuestGameTests {
             VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
             replacement.discard();
             incompatible.discard();
+            VillagerQuestResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void deferredLifecycleEventReplaysWhenOriginalProviderReturns(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ResourceLocation location = VillagerRetaliation.id("quests/provider_return_replay.json");
+        CompiledQuest compiled = compileQuestFixture(
+                location, providerRecoveryQuestV2Fixture("provider_return_replay", true));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager provider = spawnVillager(helper, new BlockPos(2, 2, 2));
+        provider.setVillagerData(provider.getVillagerData().setProfession(VillagerProfession.FARMER).setLevel(2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled));
+            helper.assertTrue(
+                    VillagerQuestService.debugStartQuest(player, provider, compiled.id(), true).started(),
+                    "provider return quest did not start");
+            VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(level)
+                    .get(player.getUUID(), compiled.id());
+            UUID providerId = provider.getUUID();
+            progress.setIssuer(
+                    UUID.fromString("00000000-0000-0000-0000-000000000498"),
+                    "Temporarily Missing Farmer",
+                    "minecraft:farmer",
+                    2,
+                    Level.OVERWORLD,
+                    provider.blockPosition(),
+                    "village:temporarily_missing");
+            helper.assertTrue(
+                    VillagerQuestService.abandonQuestFromJournal(player, compiled.id()),
+                    "offline abandonment failed");
+            helper.assertTrue(progress.hasPendingLifecycleEvents(), "offline hook was not deferred");
+
+            progress.setIssuer(
+                    providerId,
+                    "Returned Farmer",
+                    "minecraft:farmer",
+                    2,
+                    Level.OVERWORLD,
+                    provider.blockPosition(),
+                    "village:returning");
+            player.tickCount = 0;
+            VillagerQuestService.onPlayerTick(player);
+            QuestScopeKey questScope = QuestScopeKey.quest(player.getUUID(), compiled.id());
+            helper.assertFalse(progress.hasPendingLifecycleEvents(), "provider return left lifecycle work queued");
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).counter(questScope, "abandon_replays"), 1,
+                    "provider return did not replay the deferred hook");
+            VillagerQuestService.onPlayerTick(player);
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).counter(questScope, "abandon_replays"), 1,
+                    "provider return replayed the hook twice");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            provider.discard();
             VillagerQuestResources.clearCache();
         }
         helper.succeed();
@@ -5702,6 +5796,7 @@ public final class VillagerQuestGameTests {
                   "metadata":{"title":"Provider Recovery","questline":"tests"},
                   "provider":{"type":"villagerretaliation:villager","filters":{"professions":["minecraft:farmer"]}},
                   "availability":{"repeatable":true,"max_starts":4,"locked_to_villager":true},
+                  "lifecycle":{"on_abandon":{"actions":[{"type":"counter","scope":"quest","key":"abandon_replays","amount":1}]}},
                   "entry_stage":"start",
                   "stages":[{"id":"start","objectives":[]}]
                 }

@@ -8,8 +8,10 @@ import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import com.jvn.villagerretaliation.util.NbtDataUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -26,7 +28,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 1;
+    public static final int CURRENT_DATA_VERSION = 2;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String DATA_NAME = "villagerretaliation_quests";
     private static final String TAG_ENTRIES = "Entries";
@@ -74,6 +76,7 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_NEXT_STAGE = "NextStage";
     private static final String TAG_GAME_TIME = "GameTime";
     private static final String TAG_PROVIDER_REBIND_HISTORY = "ProviderRebindHistory";
+    private static final String TAG_PENDING_LIFECYCLE_EVENTS = "PendingLifecycleEvents";
     private static final String TAG_PREVIOUS_PROVIDER = "PreviousProvider";
     private static final String TAG_NEW_PROVIDER = "NewProvider";
     private static final String TAG_REASON = "Reason";
@@ -525,6 +528,7 @@ public class VillagerQuestSavedData extends SavedData {
         private final List<ChoiceHistoryEntry> choiceHistory = new ArrayList<>();
         private final List<CompletionHistoryEntry> completionHistory = new ArrayList<>();
         private final List<ProviderRebindHistoryEntry> providerRebindHistory = new ArrayList<>();
+        private final Set<QuestDefinition.TriggerEvent> pendingLifecycleEvents = new LinkedHashSet<>();
 
         private static QuestProgress load(CompoundTag tag) {
             QuestProgress progress = new QuestProgress();
@@ -597,6 +601,12 @@ public class VillagerQuestSavedData extends SavedData {
                     if (rawRebind instanceof CompoundTag rebindTag) {
                         progress.providerRebindHistory.add(ProviderRebindHistoryEntry.load(rebindTag));
                     }
+                }
+            }
+            for (String eventId : NbtDataUtil.readStringSet(tag, TAG_PENDING_LIFECYCLE_EVENTS)) {
+                QuestDefinition.TriggerEvent event = QuestDefinition.TriggerEvent.bySerializedName(eventId);
+                if (isDeferredLifecycleEvent(event)) {
+                    progress.pendingLifecycleEvents.add(event);
                 }
             }
             NbtDataUtil.readResourceLocation(tag, TAG_ISSUER_DIMENSION)
@@ -696,6 +706,10 @@ public class VillagerQuestSavedData extends SavedData {
                 ListTag historyTag = new ListTag();
                 this.providerRebindHistory.stream().map(ProviderRebindHistoryEntry::save).forEach(historyTag::add);
                 tag.put(TAG_PROVIDER_REBIND_HISTORY, historyTag);
+            }
+            if (!this.pendingLifecycleEvents.isEmpty()) {
+                tag.put(TAG_PENDING_LIFECYCLE_EVENTS, NbtDataUtil.stringList(
+                        this.pendingLifecycleEvents.stream().map(QuestTriggerRegistry::canonicalEventId).toList()));
             }
             if (this.targetDimension != null) {
                 NbtDataUtil.putResourceLocation(tag, TAG_TARGET_DIMENSION, this.targetDimension.location());
@@ -838,6 +852,22 @@ public class VillagerQuestSavedData extends SavedData {
             return List.copyOf(this.providerRebindHistory);
         }
 
+        public Set<QuestDefinition.TriggerEvent> pendingLifecycleEvents() {
+            return Set.copyOf(this.pendingLifecycleEvents);
+        }
+
+        public boolean hasPendingLifecycleEvents() {
+            return !this.pendingLifecycleEvents.isEmpty();
+        }
+
+        public boolean deferLifecycleEvent(QuestDefinition.TriggerEvent event) {
+            return isDeferredLifecycleEvent(event) && this.pendingLifecycleEvents.add(event);
+        }
+
+        public boolean resolveLifecycleEvent(QuestDefinition.TriggerEvent event) {
+            return event != null && this.pendingLifecycleEvents.remove(event);
+        }
+
         public int abandonCount() {
             return this.abandonCount;
         }
@@ -870,7 +900,15 @@ public class VillagerQuestSavedData extends SavedData {
             this.completedObjectives.clear();
             this.objectiveCounters.clear();
             this.choiceHistory.clear();
+            this.pendingLifecycleEvents.clear();
             this.startCount++;
+        }
+
+        private static boolean isDeferredLifecycleEvent(QuestDefinition.TriggerEvent event) {
+            return event == QuestDefinition.TriggerEvent.COMPLETED
+                    || event == QuestDefinition.TriggerEvent.FAILED
+                    || event == QuestDefinition.TriggerEvent.ABANDONED
+                    || event == QuestDefinition.TriggerEvent.EXPIRED;
         }
 
         public void setIssuer(

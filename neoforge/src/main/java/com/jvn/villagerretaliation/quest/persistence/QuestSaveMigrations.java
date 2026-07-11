@@ -29,6 +29,9 @@ public final class QuestSaveMigrations {
     private static int migrateOne(CompoundTag data, int version) {
         return switch (version) {
             case 0 -> 1;
+            // Version 2 adds the optional per-progress PendingLifecycleEvents list.
+            // Existing entries require no rewrite; absence means there is no deferred work.
+            case 1 -> 2;
             default -> throw new IllegalStateException("No quest save migration from version " + version);
         };
     }

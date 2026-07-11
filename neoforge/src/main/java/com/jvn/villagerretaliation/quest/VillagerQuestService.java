@@ -1173,6 +1173,16 @@ public final class VillagerQuestService {
 
         boolean changed = false;
         boolean progressNotice = false;
+        for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.progress(player.getUUID())) {
+            VillagerQuestSavedData.QuestProgress progress = entry.getValue();
+            if (!progress.hasPendingLifecycleEvents()) {
+                continue;
+            }
+            QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
+            if (definition != null) {
+                changed |= resumePendingLifecycleEvents(player, definition, progress);
+            }
+        }
         for (Map.Entry<ResourceLocation, VillagerQuestSavedData.QuestProgress> entry : data.activeProgress(player.getUUID())) {
             QuestDefinition definition = VillagerQuestResources.quest(level.getServer(), entry.getKey()).orElse(null);
             if (definition == null) {
@@ -1296,6 +1306,9 @@ public final class VillagerQuestService {
             }
 
             QuestLifecycleService.expire(entry.questId(), entry.progress(), gameTime, false);
+            if (definition != null) {
+                deferLifecycleEvent(level, definition, entry.progress(), QuestDefinition.TriggerEvent.EXPIRED);
+            }
             changed = true;
             data.removeTrackedQuest(entry.playerId(), entry.questId());
 
@@ -1374,6 +1387,8 @@ public final class VillagerQuestService {
         boolean consume = definition.rules().consumeOnAbandonment()
                 || definition.rules().abandonment() == QuestDefinition.AbandonmentMode.REMOVE_FOREVER;
         QuestLifecycleService.abandon(definition.id(), progress, level.getGameTime(), consume);
+        boolean deferred = deferLifecycleEvent(
+                level, definition, progress, QuestDefinition.TriggerEvent.ABANDONED);
         com.jvn.villagerretaliation.party.PartyService.getPartyForPlayer(level, player.getUUID())
                 .ifPresent(party -> PartyQuestService.detachQuest(level, party, player.getUUID(), definition.id()));
         markQuestLifecycleFact(level, player, definition, QUEST_ABANDONED_FACT, "abandoned");
@@ -1381,7 +1396,7 @@ public final class VillagerQuestService {
         data.setDirty();
         sendQuestProgressNotification(player, definition, progress, "quest.abandoned", "Quest abandoned: {quest}");
         QuestDebugTraceService.recordIfEnabled(player, QuestDebugTraceService.EventType.TRIGGER, definition.id(),
-                "journal_abandon provider=missing lifecycle_dispatch=deferred_context_actions");
+                "journal_abandon provider=missing lifecycle_dispatch=" + (deferred ? "queued" : "no_hook"));
         return true;
     }
 
@@ -1396,8 +1411,10 @@ public final class VillagerQuestService {
         QuestDefinition definition = compiled == null ? null : compiled.asQuestDefinition();
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), questId);
-        if (definition == null || progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
-            return new ProviderRebindResult(false, "Quest is missing or is not active.",
+        boolean resumableTerminal = progress != null && progress.hasPendingLifecycleEvents();
+        if (definition == null || progress == null
+                || (progress.state() != VillagerQuestSavedData.QuestState.ACTIVE && !resumableTerminal)) {
+            return new ProviderRebindResult(false, "Quest is missing, inactive, or has no deferred lifecycle work.",
                     progress == null ? null : progress.startedVillagerId(), replacement.getUUID());
         }
         UUID previousId = progress.startedVillagerId();
@@ -1418,12 +1435,17 @@ public final class VillagerQuestService {
                     previousId, replacement.getUUID());
         }
         progress.rebindProvider(binding, level.getGameTime(), "operator_rebind");
+        int pendingBeforeReplay = progress.pendingLifecycleEvents().size();
+        resumePendingLifecycleEvents(context, compiled, progress);
         data.setDirty();
         QuestDebugTraceService.record(player, QuestDebugTraceService.EventType.PROVIDER, questId,
                 "rebind result=accepted previous=" + previousId + " replacement=" + replacement.getUUID());
         sendTrackerSync(player, true, true);
         return new ProviderRebindResult(true,
-                "Rebound quest " + questId + " from " + previousId + " to " + replacement.getUUID() + ".",
+                "Rebound quest " + questId + " from " + previousId + " to " + replacement.getUUID() + "."
+                        + (pendingBeforeReplay > 0
+                                ? " Replayed " + pendingBeforeReplay + " deferred lifecycle event(s)."
+                                : ""),
                 previousId,
                 replacement.getUUID());
     }
@@ -1533,6 +1555,7 @@ public final class VillagerQuestService {
             lines.add(QuestDebugFormatter.timesLine(progress));
             lines.add(QuestDebugFormatter.choiceHistoryLine(progress));
             lines.add(QuestDebugFormatter.providerRebindHistoryLine(progress));
+            lines.add(QuestDebugFormatter.pendingLifecycleEventsLine(progress));
         }
         if (definition.target().hasStructureTarget()) {
             lines.add(QuestDebugFormatter.targetDefinitionLine(definition.target()));
@@ -3772,6 +3795,9 @@ public final class VillagerQuestService {
         }
         if (context != null) {
             dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.EXPIRED);
+        } else {
+            deferLifecycleEvent(
+                    player.serverLevel(), definition, progress, QuestDefinition.TriggerEvent.EXPIRED);
         }
         return true;
     }
@@ -4977,6 +5003,63 @@ public final class VillagerQuestService {
         }
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
         return dispatchQuestTriggers(context, compiled, progress, event);
+    }
+
+    private static boolean deferLifecycleEvent(
+            ServerLevel level,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress,
+            QuestDefinition.TriggerEvent event) {
+        if (level == null || definition == null || progress == null || event == null) {
+            return false;
+        }
+        CompiledQuest compiled = VillagerQuestResources.compiledQuest(level.getServer(), definition.id()).orElse(null);
+        return compiled != null
+                && compiled.triggerIndex().hasEvent(event)
+                && progress.deferLifecycleEvent(event);
+    }
+
+    private static boolean resumePendingLifecycleEvents(
+            ServerPlayer player,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        Villager provider = startedVillager(level, progress);
+        if (provider == null || !provider.isAlive()) {
+            return false;
+        }
+        CompiledQuest compiled = VillagerQuestResources.compiledQuest(level.getServer(), definition.id()).orElse(null);
+        if (compiled == null) {
+            return false;
+        }
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, provider);
+        return resumePendingLifecycleEvents(context, compiled, progress);
+    }
+
+    private static boolean resumePendingLifecycleEvents(
+            DialogueContext context,
+            CompiledQuest compiled,
+            VillagerQuestSavedData.QuestProgress progress) {
+        if (context == null || compiled == null || progress == null || !progress.hasPendingLifecycleEvents()) {
+            return false;
+        }
+        boolean resolved = false;
+        for (QuestDefinition.TriggerEvent event : List.copyOf(progress.pendingLifecycleEvents())) {
+            boolean stillAuthored = compiled.triggerIndex().hasEvent(event);
+            if (stillAuthored) {
+                dispatchQuestTriggers(context, compiled, progress, event);
+            }
+            if (progress.resolveLifecycleEvent(event)) {
+                resolved = true;
+                QuestDebugTraceService.recordIfEnabled(
+                        context.player(), QuestDebugTraceService.EventType.TRIGGER, compiled.id(),
+                        "resume deferred_event=" + QuestTriggerRegistry.canonicalEventId(event)
+                                + " result=" + (stillAuthored ? "dispatched" : "removed_no_longer_authored"));
+            }
+        }
+        return resolved;
     }
 
     private static boolean dispatchQuestTriggers(

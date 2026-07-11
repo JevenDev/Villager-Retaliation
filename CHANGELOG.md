@@ -20,6 +20,7 @@
 
 ### Fixed
 
+- Fixed provider-bound abandonment and expiration hooks being lost when their issuing villager was unavailable. Deferred lifecycle events now survive saves and replay once after provider return or an audited compatible rebind.
 - Fixed Bread Delivery, Village Lanterns, and Trial Chamber Recall allowing repeat turn-ins without consuming their required items.
 - Fixed End City Survey lacking a parent link to Lost Civilization.
 - Fixed the dialogue validator rejecting the live work-status placeholders `{cap}` and `{types}`.

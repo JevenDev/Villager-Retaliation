@@ -251,7 +251,7 @@ Failed quests can restart only when `repeatable` is true. `max_starts`, `max_com
 
 ## Missing Providers And Rebind
 
-Active progress remains in the journal using the saved provider name, profession, location, and UUID when the live villager is gone. The journal's **Abandon quest** action works without the live provider. Turning in through another matching provider is allowed only with `cross_villager_compatible: true`; the runtime never chooses a nearby villager automatically.
+Active progress remains in the journal using the saved provider name, profession, location, and UUID when the live villager is gone. The journal's **Abandon quest** action works without the live provider. If abandonment or expiration has an authored lifecycle hook, the runtime persists that event instead of dropping its provider-bound actions. It replays the event once when the original provider is live again, or immediately after an operator supplies a compatible replacement. Turning in through another matching provider is allowed only with `cross_villager_compatible: true`; the runtime never chooses a nearby villager automatically.
 
 Operators can explicitly repair a missing binding with:
 
@@ -259,7 +259,7 @@ Operators can explicitly repair a missing binding with:
 /villagerretaliation quest debug rebind <quest_id> <provider_name>
 ```
 
-The command refuses a rebind while the current provider is live, verifies the provider type and authored filters, retains the previous snapshot in save history, and reports the accepted or rejected audit result.
+The command refuses a rebind while the current provider is live, verifies the provider type and authored filters, retains the previous snapshot in save history, and reports the accepted or rejected audit result. A terminal quest can be rebound only while it has deferred lifecycle work; the rebind consumes that work after one dispatch without reopening the quest. The debug inspector lists pending lifecycle events alongside provider history.
 
 ## Branch Example
 
