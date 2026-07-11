@@ -102,6 +102,8 @@ public final class QuestDebugFormatter {
                 + " completed=" + progress.completedGameTime()
                 + " abandoned=" + progress.abandonedGameTime()
                 + " expired=" + progress.expiredGameTime()
+                + " failed=" + progress.failedGameTime()
+                + " failure_reason=" + blankAs(progress.failureReason(), "none")
                 + " consumed_reason=" + blankAs(progress.consumedReason(), "none");
     }
 

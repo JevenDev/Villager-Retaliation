@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.mojang.logging.LogUtils;
+import com.jvn.villagerretaliation.quest.persistence.QuestSaveMigrations;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -14,8 +16,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
+import org.slf4j.Logger;
 
 public class VillagerQuestFacts extends SavedData {
+    public static final int CURRENT_DATA_VERSION = 1;
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final String DATA_NAME = "villagerretaliation_quest_facts";
     private static final String TAG_ENTRIES = "Entries";
     private static final String TAG_SCOPE = "Scope";
@@ -35,6 +40,12 @@ public class VillagerQuestFacts extends SavedData {
     }
 
     public static VillagerQuestFacts load(CompoundTag tag, HolderLookup.Provider provider) {
+        QuestSaveMigrations.MigrationResult migration = QuestSaveMigrations.migrate(tag, CURRENT_DATA_VERSION);
+        tag = migration.data();
+        if (migration.futureVersion()) {
+            LOGGER.warn("Quest facts DataVersion {} is newer than supported version {}; preserving readable fields",
+                    migration.sourceVersion(), CURRENT_DATA_VERSION);
+        }
         VillagerQuestFacts data = new VillagerQuestFacts();
         ListTag entriesTag = tag.getList(TAG_ENTRIES, Tag.TAG_COMPOUND);
         for (Tag rawEntry : entriesTag) {
@@ -55,6 +66,7 @@ public class VillagerQuestFacts extends SavedData {
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+        tag.putInt(QuestSaveMigrations.DATA_VERSION_TAG, CURRENT_DATA_VERSION);
         ListTag entriesTag = new ListTag();
         for (Map.Entry<String, FactBucket> entry : this.factsByScope.entrySet()) {
             if (entry.getKey().isBlank() || entry.getValue().isEmpty()) {

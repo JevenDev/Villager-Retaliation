@@ -658,6 +658,7 @@ public record QuestDefinition(
         PROGRESS,
         STAGE_CHANGED,
         COMPLETED,
+        FAILED,
         ABANDONED,
         EXPIRED;
 

@@ -114,6 +114,7 @@ public record DialogueQuestAction(ResourceLocation questId, Action action) {
                 case START -> START;
                 case REMIND -> REMIND;
                 case TURN_IN -> TURN_IN;
+                case FAIL -> NONE;
                 case ABANDON -> ABANDON;
                 case BLOCK -> BLOCK;
                 case NONE -> NONE;

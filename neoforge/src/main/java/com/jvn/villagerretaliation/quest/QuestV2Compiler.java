@@ -412,7 +412,7 @@ public final class QuestV2Compiler {
                 triggers,
                 triggerSources,
                 "on_fail",
-                QuestDefinition.TriggerEvent.ABANDONED);
+                QuestDefinition.TriggerEvent.FAILED);
     }
 
     private static void appendLifecycleTrigger(
@@ -560,8 +560,11 @@ public final class QuestV2Compiler {
         if (transition.complete()) {
             return List.of(questAction(questId, "turn_in"));
         }
-        if (transition.abandon() || transition.fail()) {
+        if (transition.abandon()) {
             return List.of(questAction(questId, "abandon"));
+        }
+        if (transition.fail()) {
+            return List.of(questAction(questId, "fail"));
         }
         return List.of();
     }

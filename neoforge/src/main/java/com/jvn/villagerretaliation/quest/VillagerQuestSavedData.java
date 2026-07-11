@@ -1,5 +1,8 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.mojang.logging.LogUtils;
+import com.jvn.villagerretaliation.quest.persistence.QuestSaveMigrations;
+import com.jvn.villagerretaliation.quest.runtime.QuestStateMachine;
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import com.jvn.villagerretaliation.util.NbtDataUtil;
 import java.util.ArrayList;
@@ -19,8 +22,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
+import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData {
+    public static final int CURRENT_DATA_VERSION = 1;
+    private static final Logger LOGGER = LogUtils.getLogger();
     private static final String DATA_NAME = "villagerretaliation_quests";
     private static final String TAG_ENTRIES = "Entries";
     private static final String TAG_TRACKED_QUESTS = "TrackedQuests";
@@ -34,6 +40,8 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_COMPLETION_INDEX = "CompletionIndex";
     private static final String TAG_ABANDONED_TIME = "AbandonedGameTime";
     private static final String TAG_EXPIRED_TIME = "ExpiredGameTime";
+    private static final String TAG_FAILED_TIME = "FailedGameTime";
+    private static final String TAG_FAILURE_REASON = "FailureReason";
     private static final String TAG_VISITED_TARGET = "VisitedTarget";
     private static final String TAG_HAS_PROOF = "HasProof";
     private static final String TAG_PENDING_PARTY_REWARD = "PendingPartyReward";
@@ -76,6 +84,12 @@ public class VillagerQuestSavedData extends SavedData {
     }
 
     public static VillagerQuestSavedData load(CompoundTag tag, HolderLookup.Provider provider) {
+        QuestSaveMigrations.MigrationResult migration = QuestSaveMigrations.migrate(tag, CURRENT_DATA_VERSION);
+        tag = migration.data();
+        if (migration.futureVersion()) {
+            LOGGER.warn("Quest save DataVersion {} is newer than supported version {}; preserving readable fields",
+                    migration.sourceVersion(), CURRENT_DATA_VERSION);
+        }
         VillagerQuestSavedData data = new VillagerQuestSavedData();
         ListTag entriesTag = tag.getList(TAG_ENTRIES, Tag.TAG_COMPOUND);
         for (Tag rawEntry : entriesTag) {
@@ -110,6 +124,7 @@ public class VillagerQuestSavedData extends SavedData {
 
     @Override
     public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+        tag.putInt(QuestSaveMigrations.DATA_VERSION_TAG, CURRENT_DATA_VERSION);
         ListTag entriesTag = new ListTag();
         for (Map.Entry<UUID, Map<ResourceLocation, QuestProgress>> playerEntry : this.entries.entrySet()) {
             for (Map.Entry<ResourceLocation, QuestProgress> questEntry : playerEntry.getValue().entrySet()) {
@@ -312,6 +327,7 @@ public class VillagerQuestSavedData extends SavedData {
         NOT_STARTED,
         ACTIVE,
         COMPLETED,
+        FAILED,
         ABANDONED,
         EXPIRED,
         CONSUMED;
@@ -423,6 +439,8 @@ public class VillagerQuestSavedData extends SavedData {
         private long completedGameTime;
         private long abandonedGameTime;
         private long expiredGameTime;
+        private long failedGameTime;
+        private String failureReason = "";
         private boolean visitedTarget;
         private boolean hasProof;
         private boolean pendingPartyReward;
@@ -458,6 +476,8 @@ public class VillagerQuestSavedData extends SavedData {
             progress.completedGameTime = tag.getLong(TAG_COMPLETED_TIME);
             progress.abandonedGameTime = tag.getLong(TAG_ABANDONED_TIME);
             progress.expiredGameTime = tag.getLong(TAG_EXPIRED_TIME);
+            progress.failedGameTime = tag.getLong(TAG_FAILED_TIME);
+            progress.failureReason = QuestStateMachine.normalizeCode(tag.getString(TAG_FAILURE_REASON), "");
             progress.visitedTarget = tag.getBoolean(TAG_VISITED_TARGET);
             progress.hasProof = tag.getBoolean(TAG_HAS_PROOF);
             progress.pendingPartyReward = tag.getBoolean(TAG_PENDING_PARTY_REWARD);
@@ -531,6 +551,10 @@ public class VillagerQuestSavedData extends SavedData {
             tag.putLong(TAG_COMPLETED_TIME, this.completedGameTime);
             tag.putLong(TAG_ABANDONED_TIME, this.abandonedGameTime);
             tag.putLong(TAG_EXPIRED_TIME, this.expiredGameTime);
+            tag.putLong(TAG_FAILED_TIME, this.failedGameTime);
+            if (!this.failureReason.isBlank()) {
+                tag.putString(TAG_FAILURE_REASON, this.failureReason);
+            }
             tag.putBoolean(TAG_VISITED_TARGET, this.visitedTarget);
             tag.putBoolean(TAG_HAS_PROOF, this.hasProof);
             tag.putBoolean(TAG_PENDING_PARTY_REWARD, this.pendingPartyReward);
@@ -632,6 +656,14 @@ public class VillagerQuestSavedData extends SavedData {
             return this.expiredGameTime;
         }
 
+        public long failedGameTime() {
+            return this.failedGameTime;
+        }
+
+        public String failureReason() {
+            return this.failureReason;
+        }
+
         public boolean visitedTarget() {
             return this.visitedTarget;
         }
@@ -710,6 +742,7 @@ public class VillagerQuestSavedData extends SavedData {
             return switch (this.state) {
                 case ACTIVE -> "started";
                 case COMPLETED -> "completed";
+                case FAILED -> "failed";
                 case ABANDONED -> "abandoned";
                 case EXPIRED -> "expired";
                 case CONSUMED -> "branch_lock".equals(this.consumedReason) ? "branch_locked" : "consumed";
@@ -747,6 +780,8 @@ public class VillagerQuestSavedData extends SavedData {
             this.completedGameTime = 0L;
             this.abandonedGameTime = 0L;
             this.expiredGameTime = 0L;
+            this.failedGameTime = 0L;
+            this.failureReason = "";
             this.visitedTarget = false;
             this.hasProof = false;
             this.pendingPartyReward = false;
@@ -845,6 +880,21 @@ public class VillagerQuestSavedData extends SavedData {
             this.objectiveCounters.clear();
             this.consumedReason = consume ? "abandonment" : "";
             this.currentStage = "abandoned";
+        }
+
+        public void fail(long gameTime, String reason) {
+            this.state = QuestState.FAILED;
+            this.failedGameTime = gameTime;
+            this.failureReason = QuestStateMachine.normalizeCode(reason, "unspecified_failure");
+            this.visitedTarget = false;
+            this.hasProof = false;
+            this.targetDimension = null;
+            this.targetPos = null;
+            this.targetObjectiveId = "";
+            this.completedObjectives.clear();
+            this.objectiveCounters.clear();
+            this.consumedReason = "";
+            this.currentStage = "failed";
         }
 
         public void expire(long gameTime, boolean consume) {

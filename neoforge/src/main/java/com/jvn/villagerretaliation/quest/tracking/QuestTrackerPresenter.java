@@ -200,6 +200,7 @@ public final class QuestTrackerPresenter {
             case "abandoned" -> "Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} to pick this back up.";
             case "abandoned_cooldown" -> "Available later. Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z}.";
             case "expired" -> "Expired. Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} if this can be restarted.";
+            case "failed" -> "Failed. Review the quest details before restarting.";
             case "completed" -> "Completed.";
             case "branch_locked" -> "Closed by another choice.";
             case "consumed" -> "Unavailable.";
@@ -214,7 +215,7 @@ public final class QuestTrackerPresenter {
 
     public static float fallbackProgress(String stepKey) {
         return switch (stepKey) {
-            case "inactive", "abandoned", "abandoned_cooldown", "expired", "branch_locked", "consumed", "not_started" -> 0.0F;
+            case "inactive", "failed", "abandoned", "abandoned_cooldown", "expired", "branch_locked", "consumed", "not_started" -> 0.0F;
             case "proof" -> 0.66F;
             case "return", "completed" -> 1.0F;
             default -> 0.25F;

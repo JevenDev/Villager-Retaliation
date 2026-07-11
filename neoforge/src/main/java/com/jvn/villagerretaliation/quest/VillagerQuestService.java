@@ -128,6 +128,8 @@ public final class VillagerQuestService {
             ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_completed");
     private static final ResourceLocation QUEST_ABANDONED_FACT =
             ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_abandoned");
+    private static final ResourceLocation QUEST_FAILED_FACT =
+            ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_failed");
     private static final ResourceLocation QUEST_EXPIRED_FACT =
             ResourceLocation.fromNamespaceAndPath(VillagerRetaliation.MOD_ID, "quest_expired");
     private static final ResourceLocation QUEST_OBJECTIVE_COMPLETED_FACT =
@@ -963,6 +965,7 @@ public final class VillagerQuestService {
             case START -> startQuest(context, definition);
             case REMIND -> remindQuest(context, definition);
             case TURN_IN -> turnInQuest(context, definition);
+            case FAIL -> failQuest(context, definition, "explicit_fail");
             case ABANDON -> abandonQuest(context, definition);
             case BLOCK -> blockQuest(context, definition);
             case NONE -> result("none", "quest_no_action", "", Map.of());
@@ -1040,7 +1043,8 @@ public final class VillagerQuestService {
         boolean changed = switch (transition.target()) {
             case STAGE -> changeQuestStage(context, definition, progress, transition.targetStage(), true, true);
             case COMPLETE -> transitionTerminalAction(context, definition, progress, VillagerActionDefinition.QuestAction.TURN_IN);
-            case ABANDON, FAIL -> transitionTerminalAction(context, definition, progress, VillagerActionDefinition.QuestAction.ABANDON);
+            case ABANDON -> transitionTerminalAction(context, definition, progress, VillagerActionDefinition.QuestAction.ABANDON);
+            case FAIL -> transitionTerminalAction(context, definition, progress, VillagerActionDefinition.QuestAction.FAIL);
             case NONE -> false;
         };
         if (!changed) {
@@ -3125,6 +3129,9 @@ public final class VillagerQuestService {
             case "abandoned", "dropped" -> progress != null && progress.state() == VillagerQuestSavedData.QuestState.ABANDONED
                     ? ConditionMatch.MET
                     : ConditionMatch.UNMET;
+            case "failed", "failure" -> progress != null && progress.state() == VillagerQuestSavedData.QuestState.FAILED
+                    ? ConditionMatch.MET
+                    : ConditionMatch.UNMET;
             case "expired", "timed_out", "time_out" -> progress != null && progress.state() == VillagerQuestSavedData.QuestState.EXPIRED
                     ? ConditionMatch.MET
                     : ConditionMatch.UNMET;
@@ -3725,6 +3732,9 @@ public final class VillagerQuestService {
         if (progress.state() == VillagerQuestSavedData.QuestState.EXPIRED) {
             return "expired";
         }
+        if (progress.state() == VillagerQuestSavedData.QuestState.FAILED && !definition.rules().repeatable()) {
+            return "failed";
+        }
         if (completionCooldownActive(context, definition, progress)) {
             return "completion_cooldown";
         }
@@ -3859,6 +3869,7 @@ public final class VillagerQuestService {
         boolean ready = activeConditionsMet && isReadyToTurnIn(context, definition, progress);
         boolean notStarted = progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED;
         boolean abandoned = progress != null && progress.state() == VillagerQuestSavedData.QuestState.ABANDONED;
+        boolean failed = progress != null && progress.state() == VillagerQuestSavedData.QuestState.FAILED;
         boolean expired = progress != null && progress.state() == VillagerQuestSavedData.QuestState.EXPIRED;
         boolean consumed = progress != null && progress.state() == VillagerQuestSavedData.QuestState.CONSUMED;
         boolean branchLocked = branchLocked(progress);
@@ -3872,6 +3883,7 @@ public final class VillagerQuestService {
             case "ready", "turn_in", "turnin", "completeable", "completable" -> ready;
             case "completed", "complete" -> completed;
             case "abandoned", "dropped" -> abandoned;
+            case "failed", "failure" -> failed;
             case "expired", "timed_out", "time_out" -> expired;
             case "consumed", "removed", "removed_forever" -> consumed;
             case "branch_locked", "branch_blocked", "blocked_branch" -> branchLocked;
@@ -4127,6 +4139,38 @@ public final class VillagerQuestService {
 
     private static void onObjectiveEvent(ServerLevel level, ServerPlayer player, QuestObjectiveEvent event) {
         onObjectiveEvent(level, player, event, Set.of());
+    }
+
+    private static QuestActionOutcome failQuest(
+            DialogueContext context,
+            QuestDefinition definition,
+            String reason) {
+        VillagerQuestSavedData data = VillagerQuestSavedData.get(context.level());
+        VillagerQuestSavedData.QuestProgress progress = data.get(context.player().getUUID(), definition.id());
+        if (progress == null || progress.state() != VillagerQuestSavedData.QuestState.ACTIVE) {
+            return result("unavailable", lineId(definition, "unavailable"), "That quest is not active.",
+                    replacements(context, definition, progress));
+        }
+
+        QuestLifecycleService.fail(definition.id(), progress, context.level().getGameTime(), reason);
+        com.jvn.villagerretaliation.party.PartyService
+                .getPartyForPlayer(context.level(), context.player().getUUID())
+                .ifPresent(party -> PartyQuestService.detachQuest(
+                        context.level(), party, context.player().getUUID(), definition.id()));
+        markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_FAILED_FACT, "failed");
+        data.setDirty();
+        clearTrackedQuestIf(data, context.player(), definition.id());
+        sendQuestNotification(context, "quest.failed", definition, progress, "Quest failed: {quest}");
+        if (dispatchQuestTriggers(context, definition, progress, QuestDefinition.TriggerEvent.FAILED)) {
+            data.setDirty();
+        }
+        sendTrackerSync(context.player(), true);
+        return result(
+                "failed",
+                lineId(definition, "failed"),
+                resolveGlobalText(context.player(), "quest.dialogue.failed", "That journey has failed.",
+                        replacements(context, definition, progress)),
+                replacements(context, definition, progress));
     }
 
     private static void onObjectiveEvent(
@@ -5530,6 +5574,7 @@ public final class VillagerQuestService {
         }
         return switch (progress.state()) {
             case ACTIVE -> true;
+            case FAILED -> true;
             case ABANDONED -> definition.rules().abandonment() != QuestDefinition.AbandonmentMode.REMOVE_FOREVER
                     && !definition.rules().consumeOnAbandonment();
             case EXPIRED -> definition.rules().expiration().allowRepickup();
@@ -6220,6 +6265,7 @@ public final class VillagerQuestService {
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
         return switch (progress.state()) {
+            case FAILED -> "failed";
             case ABANDONED -> definition.rules().abandonment() == QuestDefinition.AbandonmentMode.COOLDOWN
                     && !cooldownElapsed(
                             player.level().getGameTime(),
@@ -6737,6 +6783,7 @@ public final class VillagerQuestService {
                 yield resolveGlobalText(player, "quest.tracker.status.abandoned", "Abandoned - return to restart", replacements);
             }
             case EXPIRED -> resolveGlobalText(player, "quest.tracker.status.expired", "Expired", replacements);
+            case FAILED -> resolveGlobalText(player, "quest.tracker.status.failed", "Failed", replacements);
             case COMPLETED -> resolveGlobalText(player, "quest.tracker.status.completed", "Completed", replacements);
             case CONSUMED -> branchLocked(progress)
                     ? resolveGlobalText(player, "quest.tracker.status.branch_locked", "Closed by another choice", replacements)

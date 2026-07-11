@@ -495,6 +495,7 @@ public record VillagerActionDefinition(
         START,
         REMIND,
         TURN_IN,
+        FAIL,
         ABANDON,
         BLOCK;
 
@@ -504,6 +505,7 @@ public record VillagerActionDefinition(
                 case "start", "accept", "begin" -> START;
                 case "remind", "reminder", "details" -> REMIND;
                 case "turn_in", "turnin", "complete", "claim" -> TURN_IN;
+                case "fail", "failed" -> FAIL;
                 case "abandon", "drop", "cancel", "remove" -> ABANDON;
                 case "block", "lock", "consume", "close", "close_branch", "branch_lock" -> BLOCK;
                 default -> NONE;
