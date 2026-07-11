@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.quest.PartyQuestService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.mojang.authlib.GameProfile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -259,6 +260,35 @@ public final class PartyGameTests {
             if (partyId != null) {
                 PartyService.deleteParty(level, partyId);
             }
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyRecruitmentRequiresNeutralOrHigherReputation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, uniqueName("party_reputation_gate"));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        player.getInventory().add(new ItemStack(Items.EMERALD, 64));
+        try {
+            VillagerReputationManager.setReputation(level, villager, player.getUUID(), -20);
+            PartyVillagerContractService.ContractResult suspicious =
+                    PartyVillagerContractService.recruit(player, villager);
+            helper.assertFalse(suspicious.success(), "suspicious villagers must reject party recruitment");
+            helper.assertValueEqual(VillagerCurrencyPayment.count(player), 64,
+                    "rejected recruitment must not remove emeralds");
+            helper.assertTrue(PartyService.getPartyForVillager(level, villager.getUUID()).isEmpty(),
+                    "rejected recruitment must not add the villager");
+
+            VillagerReputationManager.setReputation(level, villager, player.getUUID(), 0);
+            PartyVillagerContractService.ContractResult neutral =
+                    PartyVillagerContractService.recruit(player, villager);
+            helper.assertTrue(neutral.success(), "neutral villagers must remain eligible for party recruitment");
+        } finally {
+            PartyService.getPartyForVillager(level, villager.getUUID())
+                    .ifPresent(party -> PartyService.deleteParty(level, party.id()));
             villager.discard();
         }
         helper.succeed();

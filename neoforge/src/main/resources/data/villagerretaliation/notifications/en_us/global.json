@@ -109,6 +109,18 @@
       "color": "#FFAA55"
     },
     {
+      "trigger": "party.villager_recruited",
+      "text": "{villager} joined your party.",
+      "kind": "villager_following",
+      "color": "#55FFAA"
+    },
+    {
+      "trigger": "party.villager_dismissed",
+      "text": "{villager} left your party.",
+      "kind": "villager_dismissed",
+      "color": "#FFD166"
+    },
+    {
       "trigger": "recruitment.follower_death",
       "text": "{villager} died while following you.",
       "kind": "villager_death",

@@ -47,6 +47,7 @@ import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeRank;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.client.reputation.VillagerReputationNotificationOverlay;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillRank;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
@@ -634,6 +635,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         renderInteractionStatTooltips(graphics, mouseX, interactionMouseY);
         graphics.pose().popPose();
         VillagerClientUiUtil.popGuiLayer(graphics);
+        VillagerReputationNotificationOverlay.renderAboveInteractionMenu(graphics, partialTick);
     }
 
     @Override

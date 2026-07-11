@@ -120,8 +120,20 @@ public final class VillagerReputationNotificationOverlay {
         }
 
         GuiGraphics graphics = event.getGuiGraphics();
-        Font font = minecraft.font;
         float partialTick = minecraft.isPaused() ? 0.0F : event.getPartialTick().getGameTimeDeltaPartialTick(true);
+        renderEntries(graphics, minecraft, partialTick);
+    }
+
+    public static void renderAboveInteractionMenu(GuiGraphics graphics, float partialTick) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.options.hideGui || ACTIVE_ENTRIES.isEmpty()) {
+            return;
+        }
+        renderEntries(graphics, minecraft, minecraft.isPaused() ? 0.0F : partialTick);
+    }
+
+    private static void renderEntries(GuiGraphics graphics, Minecraft minecraft, float partialTick) {
+        Font font = minecraft.font;
         int index = 0;
         int screenWidth = minecraft.getWindow().getGuiScaledWidth();
         int screenHeight = minecraft.getWindow().getGuiScaledHeight();

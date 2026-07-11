@@ -153,6 +153,7 @@ public final class VillagerInteractionScreenOpener {
                 && partyVillager.recruiterId().equals(player.getUUID());
         boolean partyRecruitAvailable = partyVillager == null
                 && !hiredAnyPlayer
+                && VillagerRecruitmentService.canRecruit(level, villager, player)
                 && (playerParty == null
                 || playerParty.leaderId().equals(player.getUUID())
                 && playerParty.villagers().size() < PartyService.MAX_VILLAGERS);
