@@ -1034,6 +1034,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.recruitedPartyVillager && !this.partyVillagerAuthorized) {
             return;
         }
+        if (this.recruitedPartyVillager) {
+            addOption(this.stayingHere ? "party.follow_me" : "party.stay_here", () -> requestRecruit(
+                    this.stayingHere
+                            ? VillagerRecruitRequestPayload.Action.FOLLOW
+                            : VillagerRecruitRequestPayload.Action.STAY_HERE));
+            return;
+        }
         if (this.followingPlayer) {
             addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
             if (canCommandStayHere()) {
@@ -2873,8 +2880,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                         : "interaction_button.inventory.locked_description"),
                 this::requestInventory,
                 inventoryAvailable));
-        buttons.add(followInteractionButton());
-        buttons.add(stayInteractionButton(stayAvailable));
+        if (this.recruitedPartyVillager) {
+            buttons.add(this.stayingHere ? followInteractionButton() : stayInteractionButton(stayAvailable));
+        } else {
+            buttons.add(followInteractionButton());
+            buttons.add(stayInteractionButton(stayAvailable));
+        }
         return buttons;
     }
 
@@ -4221,7 +4232,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean canRequestVillagerInventory() {
-        return this.reputationLevel != null
+        return this.hiredByPlayer
+                || this.recruitedPartyVillager && this.partyVillagerAuthorized
+                || this.reputationLevel != null
                 && this.reputationLevel.trustRank() >= VillagerReputationLevel.REVERED.trustRank();
     }
 

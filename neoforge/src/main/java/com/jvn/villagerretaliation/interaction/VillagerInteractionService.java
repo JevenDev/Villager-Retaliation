@@ -546,15 +546,14 @@ public final class VillagerInteractionService {
         }
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
-        ServerLevel level = contextTarget.level();
-        if (!VillagerInventoryAccess.canAccess(level, villager, player)) {
+        if (!VillagerInventoryAccess.canOpenPreferred(contextTarget.level(), villager, player)) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
 
         focusVillagerOnPlayer(villager, player);
         VillagerConversationService.endForPlayer(player, true);
-        VillagerInventoryAccess.open(player, villager);
+        VillagerInventoryAccess.openPreferred(player, villager);
     }
 
     public static void handleJobInventoryRequest(ServerPlayer player, int entityId, boolean jobInventory) {
@@ -582,7 +581,7 @@ public final class VillagerInteractionService {
         if (player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerInventoryMenu menu
                 && menu.villagerEntityId() == entityId) {
             menu.switchViewMode(jobInventory
-                    ? com.jvn.villagerretaliation.inventory.VillagerInventoryMenu.ViewMode.JOB
+                    ? menu.workInventoryViewMode()
                     : com.jvn.villagerretaliation.inventory.VillagerInventoryMenu.ViewMode.PERSONAL);
             menu.broadcastFullState();
             return;

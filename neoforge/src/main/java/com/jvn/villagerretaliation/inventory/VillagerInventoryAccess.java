@@ -36,6 +36,25 @@ public final class VillagerInventoryAccess {
         return true;
     }
 
+    public static boolean openPreferred(ServerPlayer player, Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        VillagerInventoryMenu.ViewMode viewMode = preferredViewMode(level, villager, player);
+        boolean personalInventoryAccess = canAccess(level, villager, player);
+        boolean jobInventoryAccess = VillagerJobInventoryAuthorization.canAccess(level, villager, player);
+        if (viewMode == VillagerInventoryMenu.ViewMode.PERSONAL && !personalInventoryAccess) {
+            return false;
+        }
+        open(player, villager, viewMode, personalInventoryAccess, jobInventoryAccess);
+        return true;
+    }
+
+    public static boolean canOpenPreferred(ServerLevel level, Villager villager, ServerPlayer player) {
+        return preferredViewMode(level, villager, player).isWorkInventory()
+                || canAccess(level, villager, player);
+    }
+
     public static boolean openJobInventory(ServerPlayer player, Villager villager) {
         if (!(villager.level() instanceof ServerLevel level)
                 || !com.jvn.villagerretaliation.interaction.VillagerInteractionService.canUseInteractionSystem(player, villager)
@@ -47,16 +66,40 @@ public final class VillagerInventoryAccess {
         return true;
     }
 
+    static VillagerInventoryMenu.ViewMode preferredViewMode(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player) {
+        if (VillagerJobInventoryAuthorization.activeContractId(level, villager).isPresent()
+                && VillagerJobInventoryAuthorization.canAccess(level, villager, player)) {
+            return com.jvn.villagerretaliation.party.PartyVillagerContractService.isActivePartyVillager(level, villager)
+                    ? VillagerInventoryMenu.ViewMode.PARTY
+                    : VillagerInventoryMenu.ViewMode.JOB;
+        }
+        return VillagerInventoryMenu.ViewMode.PERSONAL;
+    }
+
     private static void open(
             ServerPlayer player,
             Villager villager,
             VillagerInventoryMenu.ViewMode viewMode,
             boolean personalInventoryAccess,
             boolean jobInventoryAccess) {
+        VillagerInventoryMenu.ViewMode workInventoryViewMode =
+                com.jvn.villagerretaliation.party.PartyVillagerContractService.isActivePartyVillager(
+                        player.serverLevel(),
+                        villager)
+                        ? VillagerInventoryMenu.ViewMode.PARTY
+                        : VillagerInventoryMenu.ViewMode.JOB;
+        VillagerInventoryMenu.ViewMode resolvedViewMode = viewMode.isWorkInventory()
+                ? workInventoryViewMode
+                : viewMode;
         Component title = Component.translatable(
-                viewMode == VillagerInventoryMenu.ViewMode.JOB
-                        ? "container.villagerretaliation.job_inventory"
-                        : "container.villagerretaliation.villager_inventory",
+                resolvedViewMode == VillagerInventoryMenu.ViewMode.PARTY
+                        ? "container.villagerretaliation.party_inventory"
+                        : resolvedViewMode == VillagerInventoryMenu.ViewMode.JOB
+                                ? "container.villagerretaliation.job_inventory"
+                                : "container.villagerretaliation.villager_inventory",
                 VillagerPresetNameRegistry.resolveDisplayName(villager)
         );
         player.openMenu(
@@ -65,13 +108,14 @@ public final class VillagerInventoryAccess {
                                 containerId,
                                 inventory,
                                 villager,
-                                viewMode,
+                                resolvedViewMode,
                                 personalInventoryAccess,
                                 jobInventoryAccess),
                         title),
                 buffer -> {
                     buffer.writeVarInt(villager.getId());
-                    buffer.writeEnum(viewMode);
+                    buffer.writeEnum(resolvedViewMode);
+                    buffer.writeEnum(workInventoryViewMode);
                     buffer.writeBoolean(personalInventoryAccess);
                     buffer.writeBoolean(jobInventoryAccess);
                 }

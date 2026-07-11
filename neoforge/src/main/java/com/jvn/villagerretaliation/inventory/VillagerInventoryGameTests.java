@@ -68,6 +68,32 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void inventoryButtonPrefersActiveHiredJobInventory(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrPreferredJobInventory");
+        ServerPlayer outsider = fakePlayer(level, "VrPreferredPersonalInventory");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+
+        helper.assertValueEqual(
+                VillagerInventoryAccess.preferredViewMode(level, villager, hirer),
+                VillagerInventoryMenu.ViewMode.PERSONAL,
+                "unhired villagers should open their personal inventory first");
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        helper.assertValueEqual(
+                VillagerInventoryAccess.preferredViewMode(level, villager, hirer),
+                VillagerInventoryMenu.ViewMode.JOB,
+                "the hirer should open the active job inventory first");
+        helper.assertValueEqual(
+                VillagerInventoryAccess.preferredViewMode(level, villager, outsider),
+                VillagerInventoryMenu.ViewMode.PERSONAL,
+                "other players must not be routed into the hired job inventory");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void villagerItemFilterMatchesIdentityAndStacksByConfiguration(GameTestHelper helper) {
         ItemStack allowlist = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
         helper.assertTrue(VillagerItemFilterData.setEntry(allowlist, 0, new ItemStack(Items.IRON_PICKAXE)),

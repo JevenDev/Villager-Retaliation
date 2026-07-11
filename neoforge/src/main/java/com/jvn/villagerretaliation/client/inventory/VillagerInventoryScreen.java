@@ -53,23 +53,25 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         super.init();
         Component tabLabel = Component.translatable(this.menu.isJobInventory()
                 ? "gui.villagerretaliation.inventory.personal_tab"
-                : "gui.villagerretaliation.inventory.job_tab");
+                : this.menu.workInventoryViewMode() == VillagerInventoryMenu.ViewMode.PARTY
+                        ? "gui.villagerretaliation.inventory.party_tab"
+                        : "gui.villagerretaliation.inventory.job_tab");
         Button tabButton = Button.builder(tabLabel, button -> {
                     VillagerInventoryMenu.ViewMode nextMode = this.menu.isJobInventory()
                             ? VillagerInventoryMenu.ViewMode.PERSONAL
-                            : VillagerInventoryMenu.ViewMode.JOB;
+                            : this.menu.workInventoryViewMode();
                     if (nextMode == VillagerInventoryMenu.ViewMode.PERSONAL
                             && !this.menu.canSwitchToPersonalInventory()) {
                         return;
                     }
-                    if (nextMode == VillagerInventoryMenu.ViewMode.JOB
+                    if (nextMode.isWorkInventory()
                             && !this.menu.canSwitchToJobInventory()) {
                         return;
                     }
                     this.menu.switchViewMode(nextMode);
                     refreshForModeSwitch();
                     PacketDistributor.sendToServer(
-                            new VillagerJobInventoryRequestPayload(this.menu.villagerEntityId(), nextMode == VillagerInventoryMenu.ViewMode.JOB));
+                            new VillagerJobInventoryRequestPayload(this.menu.villagerEntityId(), nextMode.isWorkInventory()));
                 })
                 .bounds(this.leftPos + 116, this.topPos + 8, 52, 18)
                 .build();
@@ -91,9 +93,11 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         graphics.blit(
-                this.menu.isJobInventory()
-                        ? VillagerRetaliationClientAssets.VILLAGER_JOB_INVENTORY_TEXTURE
-                        : VillagerRetaliationClientAssets.VILLAGER_INVENTORY_TEXTURE,
+                this.menu.isPartyInventory()
+                        ? VillagerRetaliationClientAssets.VILLAGER_PARTY_INVENTORY_TEXTURE
+                        : this.menu.isJobInventory()
+                                ? VillagerRetaliationClientAssets.VILLAGER_JOB_INVENTORY_TEXTURE
+                                : VillagerRetaliationClientAssets.VILLAGER_INVENTORY_TEXTURE,
                 this.leftPos,
                 this.topPos,
                 0,

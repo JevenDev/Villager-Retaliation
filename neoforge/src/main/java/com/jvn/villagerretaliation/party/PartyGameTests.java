@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
@@ -217,6 +218,20 @@ public final class PartyGameTests {
                     "initial party payment must credit the villager wallet");
             helper.assertValueEqual(VillagerInteractionService.openTrading(leader, villager, false), InteractionResult.FAIL,
                     "party villagers must not trade even with their leader");
+            VillagerInventoryMenu partyInventoryMenu = new VillagerInventoryMenu(
+                    1,
+                    leader.getInventory(),
+                    villager,
+                    VillagerInventoryMenu.ViewMode.JOB,
+                    true,
+                    true);
+            helper.assertValueEqual(partyInventoryMenu.viewMode(), VillagerInventoryMenu.ViewMode.PARTY,
+                    "active party contracts must select the party inventory view");
+            helper.assertValueEqual(partyInventoryMenu.workInventoryViewMode(), VillagerInventoryMenu.ViewMode.PARTY,
+                    "personal-to-work tab switching must retain party mode");
+            helper.assertTrue(partyInventoryMenu.getSlot(HiredJobInventory.FILTER_SLOT).container == leader.getInventory(),
+                    "party inventory must omit the job filter slot");
+            partyInventoryMenu.removed(leader);
 
             PartySavedData.get(level).addPlayer(party, member.getUUID());
             helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, leader),
