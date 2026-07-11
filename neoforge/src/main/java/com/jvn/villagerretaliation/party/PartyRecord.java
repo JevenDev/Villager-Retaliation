@@ -18,6 +18,9 @@ public final class PartyRecord {
     private static final String TAG_PLAYER = "Player";
     private static final String TAG_VILLAGERS = "Villagers";
     private static final String TAG_SHARED_QUESTS = "SharedQuests";
+    private static final String TAG_ATTACK_WITH_PARTY = "AttackWithParty";
+    private static final String TAG_DEFEND_PARTY = "DefendParty";
+    private static final String TAG_SHARED_VILLAGER_INVENTORIES = "SharedVillagerInventories";
 
     private final UUID id;
     private final UUID leaderId;
@@ -25,9 +28,12 @@ public final class PartyRecord {
     private final List<UUID> playerIds;
     private final List<PartyVillagerRecord> villagers;
     private final List<PartySharedQuestRecord> sharedQuests;
+    private boolean attackWithParty;
+    private boolean defendParty;
+    private boolean sharedVillagerInventories;
 
     PartyRecord(UUID id, UUID leaderId, long createdGameTime) {
-        this(id, leaderId, createdGameTime, new ArrayList<>(List.of(leaderId)), new ArrayList<>(), new ArrayList<>());
+        this(id, leaderId, createdGameTime, new ArrayList<>(List.of(leaderId)), new ArrayList<>(), new ArrayList<>(), true, true, true);
     }
 
     private PartyRecord(
@@ -36,13 +42,19 @@ public final class PartyRecord {
             long createdGameTime,
             List<UUID> playerIds,
             List<PartyVillagerRecord> villagers,
-            List<PartySharedQuestRecord> sharedQuests) {
+            List<PartySharedQuestRecord> sharedQuests,
+            boolean attackWithParty,
+            boolean defendParty,
+            boolean sharedVillagerInventories) {
         this.id = id;
         this.leaderId = leaderId;
         this.createdGameTime = Math.max(0L, createdGameTime);
         this.playerIds = playerIds;
         this.villagers = villagers;
         this.sharedQuests = sharedQuests;
+        this.attackWithParty = attackWithParty;
+        this.defendParty = defendParty;
+        this.sharedVillagerInventories = sharedVillagerInventories;
         normalizePlayers();
     }
 
@@ -68,6 +80,30 @@ public final class PartyRecord {
 
     public List<PartySharedQuestRecord> sharedQuests() {
         return Collections.unmodifiableList(this.sharedQuests);
+    }
+
+    public boolean attackWithParty() {
+        return this.attackWithParty;
+    }
+
+    public boolean defendParty() {
+        return this.defendParty;
+    }
+
+    public boolean sharedVillagerInventories() {
+        return this.sharedVillagerInventories;
+    }
+
+    void setAttackWithParty(boolean enabled) {
+        this.attackWithParty = enabled;
+    }
+
+    void setDefendParty(boolean enabled) {
+        this.defendParty = enabled;
+    }
+
+    void setSharedVillagerInventories(boolean enabled) {
+        this.sharedVillagerInventories = enabled;
     }
 
     public void addSharedQuest(PartySharedQuestRecord sharedQuest) {
@@ -162,6 +198,9 @@ public final class PartyRecord {
             sharedQuestsTag.add(sharedQuest.save());
         }
         tag.put(TAG_SHARED_QUESTS, sharedQuestsTag);
+        tag.putBoolean(TAG_ATTACK_WITH_PARTY, this.attackWithParty);
+        tag.putBoolean(TAG_DEFEND_PARTY, this.defendParty);
+        tag.putBoolean(TAG_SHARED_VILLAGER_INVENTORIES, this.sharedVillagerInventories);
         return tag;
     }
 
@@ -202,7 +241,10 @@ public final class PartyRecord {
                 tag.getLong(TAG_CREATED_GAME_TIME),
                 players,
                 villagers,
-                sharedQuests);
+                sharedQuests,
+                !tag.contains(TAG_ATTACK_WITH_PARTY) || tag.getBoolean(TAG_ATTACK_WITH_PARTY),
+                !tag.contains(TAG_DEFEND_PARTY) || tag.getBoolean(TAG_DEFEND_PARTY),
+                !tag.contains(TAG_SHARED_VILLAGER_INVENTORIES) || tag.getBoolean(TAG_SHARED_VILLAGER_INVENTORIES));
     }
 
     private void normalizePlayers() {

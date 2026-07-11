@@ -5,13 +5,17 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record PartyActionRequestPayload(Action action, UUID targetId, UUID invitationId) implements CustomPacketPayload {
+public record PartyActionRequestPayload(Action action, UUID targetId, UUID invitationId, boolean enabled) implements CustomPacketPayload {
     public static final Type<PartyActionRequestPayload> TYPE = VillagerPayloads.type("party_action_request");
     public static final StreamCodec<RegistryFriendlyByteBuf, PartyActionRequestPayload> STREAM_CODEC =
             VillagerPayloads.codec(PartyActionRequestPayload::encode, PartyActionRequestPayload::decode);
 
     public PartyActionRequestPayload(Action action) {
-        this(action, null, null);
+        this(action, null, null, false);
+    }
+
+    public PartyActionRequestPayload(Action action, UUID targetId, UUID invitationId) {
+        this(action, targetId, invitationId, false);
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, PartyActionRequestPayload payload) {
@@ -24,13 +28,14 @@ public record PartyActionRequestPayload(Action action, UUID targetId, UUID invit
         if (payload.invitationId() != null) {
             buffer.writeUUID(payload.invitationId());
         }
+        buffer.writeBoolean(payload.enabled());
     }
 
     private static PartyActionRequestPayload decode(RegistryFriendlyByteBuf buffer) {
         Action action = buffer.readEnum(Action.class);
         UUID targetId = buffer.readBoolean() ? buffer.readUUID() : null;
         UUID invitationId = buffer.readBoolean() ? buffer.readUUID() : null;
-        return new PartyActionRequestPayload(action, targetId, invitationId);
+        return new PartyActionRequestPayload(action, targetId, invitationId, buffer.readBoolean());
     }
 
     @Override
@@ -44,6 +49,9 @@ public record PartyActionRequestPayload(Action action, UUID targetId, UUID invit
         DECLINE_INVITATION,
         LEAVE_PARTY,
         REMOVE_PLAYER,
-        DISBAND_PARTY
+        DISBAND_PARTY,
+        SET_ATTACK_WITH_PARTY,
+        SET_DEFEND_PARTY,
+        SET_SHARED_VILLAGER_INVENTORIES
     }
 }

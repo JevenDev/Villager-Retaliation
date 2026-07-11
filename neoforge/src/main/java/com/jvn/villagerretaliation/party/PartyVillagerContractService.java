@@ -120,8 +120,8 @@ public final class PartyVillagerContractService {
         }
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
-        if (!isAuthorizedLeader(player, party, record)) {
-            return ContractResult.failure("villagerretaliation.party.error.leader_only");
+        if (!isAuthorizedPartyMember(player, party, record)) {
+            return ContractResult.failure("villagerretaliation.party.error.not_in_party");
         }
         long now = level.getServer().overworld().getGameTime();
         if (VillagerContractTime.isExpired(now, record.contractEndGameTime())) {
@@ -196,7 +196,7 @@ public final class PartyVillagerContractService {
         }
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
-        if (!isAuthorizedLeader(player, party, record)) {
+        if (!isAuthorizedInventoryUser(player, party, record)) {
             return false;
         }
         long now = level.getServer().overworld().getGameTime();
@@ -368,6 +368,18 @@ public final class PartyVillagerContractService {
                 && party.leaderId().equals(player.getUUID())
                 && record.recruiterId().equals(player.getUUID())
                 && party.playerIds().contains(player.getUUID());
+    }
+
+    private static boolean isAuthorizedPartyMember(ServerPlayer player, PartyRecord party, PartyVillagerRecord record) {
+        return player != null
+                && party != null
+                && record != null
+                && party.playerIds().contains(player.getUUID());
+    }
+
+    private static boolean isAuthorizedInventoryUser(ServerPlayer player, PartyRecord party, PartyVillagerRecord record) {
+        return isAuthorizedPartyMember(player, party, record)
+                && (party.leaderId().equals(player.getUUID()) || party.sharedVillagerInventories());
     }
 
     private static void expire(MinecraftServer server, PartyRecord party, PartyVillagerRecord record) {

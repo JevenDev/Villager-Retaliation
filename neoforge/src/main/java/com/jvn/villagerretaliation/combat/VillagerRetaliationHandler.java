@@ -122,6 +122,15 @@ public final class VillagerRetaliationHandler {
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        LivingEntity damaged = event.getEntity();
+        Optional<LivingEntity> resolvedAttacker =
+                VillagerRetaliationVillagerCombatUtil.resolveAttacker(damaged, event.getSource());
+        if (resolvedAttacker.filter(Villager.class::isInstance)
+                .filter(attacker -> PartyService.areInSameParty(attacker, damaged))
+                .isPresent()) {
+            event.setAmount(0.0F);
+            return;
+        }
         if (!(event.getEntity() instanceof Villager villager)) {
             return;
         }
@@ -162,7 +171,10 @@ public final class VillagerRetaliationHandler {
         }
 
         VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getEntity(), event.getSource())
-                .ifPresent(attacker -> rallyPartyVillagers(event.getEntity(), attacker));
+                .ifPresent(attacker -> {
+                    rallyPartyVillagers(event.getEntity(), attacker, false);
+                    rallyPartyVillagers(attacker, event.getEntity(), true);
+                });
 
         if (!(event.getEntity() instanceof Villager villager)) {
             return;
@@ -763,27 +775,29 @@ public final class VillagerRetaliationHandler {
                 || !isHostileMobAttacker(villager, attacker);
     }
 
-    private static void rallyPartyVillagers(Entity protectedMember, LivingEntity attacker) {
-        if (!(protectedMember.level() instanceof ServerLevel level)
-                || protectedMember == attacker
-                || PartyService.areInSameParty(protectedMember, attacker)) {
+    private static void rallyPartyVillagers(Entity partyMember, LivingEntity target, boolean attackingWithParty) {
+        if (!(partyMember.level() instanceof ServerLevel level)
+                || partyMember == target
+                || PartyService.areInSameParty(partyMember, target)) {
             return;
         }
-        PartyRecord party = PartyService.getPartyForEntity(protectedMember).orElse(null);
-        if (party == null) {
+        PartyRecord party = PartyService.getPartyForEntity(partyMember).orElse(null);
+        if (party == null
+                || (attackingWithParty && !party.attackWithParty())
+                || (!attackingWithParty && !party.defendParty())) {
             return;
         }
         for (PartyVillagerRecord member : party.villagers()) {
             Entity entity = level.getEntity(member.villagerId());
             if (!(entity instanceof Villager villager)
-                    || villager == protectedMember
+                    || villager == partyMember
                     || villager.isBaby()
                     || !villager.isAlive()
-                    || !canWitnessRetaliationEvent(villager, protectedMember)
-                    || !shouldRetaliateAgainstAttacker(villager, attacker)) {
+                    || !canWitnessRetaliationEvent(villager, partyMember)
+                    || !shouldRetaliateAgainstAttacker(villager, target)) {
                 continue;
             }
-            anger(villager, attacker);
+            anger(villager, target);
         }
     }
 

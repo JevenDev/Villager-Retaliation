@@ -5,6 +5,7 @@ import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.toucanlib.client.ToucanScrollbars;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.party.PartyRosterClient;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.reputation.VillagerReputationIconSet;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
@@ -1065,18 +1066,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addRecruitOptions() {
         if (this.recruitedPartyVillager) {
-            if (!this.partyVillagerAuthorized) {
+            if (!this.partyVillagerPartyMember) {
                 addPassiveOption("party.leader_only");
                 return;
             }
             addOption("party.about_contract", this::openContractPage);
-            addOption("party.inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
-            if (this.stayingHere) {
-                addOption("party.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
-            } else {
-                addOption("party.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
+            if (canRequestPartyVillagerInventory()) {
+                addOption("party.inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
             }
-            addOption("party.dismiss", this::openPartyDismissConfirmationPage);
+            if (this.partyVillagerAuthorized) {
+                if (this.stayingHere) {
+                    addOption("party.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
+                } else {
+                    addOption("party.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
+                }
+                addOption("party.dismiss", this::openPartyDismissConfirmationPage);
+            }
             return;
         }
         if (this.partyRecruitAvailable) {
@@ -4233,9 +4238,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private boolean canRequestVillagerInventory() {
         return this.hiredByPlayer
-                || this.recruitedPartyVillager && this.partyVillagerAuthorized
+                || canRequestPartyVillagerInventory()
                 || this.reputationLevel != null
                 && this.reputationLevel.trustRank() >= VillagerReputationLevel.REVERED.trustRank();
+    }
+
+    private boolean canRequestPartyVillagerInventory() {
+        return this.recruitedPartyVillager
+                && this.partyVillagerPartyMember
+                && (this.partyVillagerAuthorized || PartyRosterClient.roster().sharedVillagerInventories());
     }
 
     private ItemStack clipboardStack() {

@@ -68,6 +68,9 @@ public final class PartyGameTests {
 
         PartySavedData data = new PartySavedData();
         PartyRecord party = data.createParty(leader, now);
+        party.setAttackWithParty(false);
+        party.setDefendParty(false);
+        party.setSharedVillagerInventories(false);
         helper.assertTrue(data.addPlayer(party, second), "second player should join");
         helper.assertTrue(data.addPlayer(party, third), "third player should join");
         helper.assertTrue(data.addPlayer(party, fourth), "fourth player should join");
@@ -108,7 +111,10 @@ public final class PartyGameTests {
         PartyRecord restored = loaded.party(party.id()).orElseThrow(
                 () -> new GameTestAssertException("serialized party did not load"));
 
-        helper.assertValueEqual(saved.getInt("Version"), 2, "party serialization version");
+        helper.assertValueEqual(saved.getInt("Version"), 3, "party serialization version");
+        helper.assertFalse(restored.attackWithParty(), "attack-with-party policy persistence");
+        helper.assertFalse(restored.defendParty(), "defend-party policy persistence");
+        helper.assertFalse(restored.sharedVillagerInventories(), "shared-inventory policy persistence");
         helper.assertValueEqual(restored.playerIds(), List.of(leader, second, third, fourth),
                 "player roster order with leader first");
         helper.assertValueEqual(restored.villagers().stream().map(PartyVillagerRecord::villagerId).toList(), villagers,
@@ -236,10 +242,20 @@ public final class PartyGameTests {
             PartySavedData.get(level).addPlayer(party, member.getUUID());
             helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, leader),
                     "leader job-inventory access");
-            helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
-                    "ordinary party member job-inventory denial");
+            helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
+                    "party members share villager inventories by default");
             helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, outsider),
                     "unrelated player job-inventory denial");
+            helper.assertTrue(PartyService.setPolicies(leader, null, null, false).success(),
+                    "leader should disable shared villager inventories");
+            helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, member),
+                    "disabled sharing denies ordinary party members");
+            helper.assertTrue(PartyVillagerContractService.canAccessJobInventory(level, villager, leader),
+                    "inventory sharing policy never locks out the leader");
+            helper.assertTrue(PartyService.setPolicies(leader, null, null, true).success(),
+                    "leader should restore shared villager inventories");
+            helper.assertFalse(PartyService.setPolicies(member, false, false, false).success(),
+                    "ordinary members cannot change party policies");
             helper.assertFalse(PartyVillagerContractService.setStaying(member, villager).success(),
                     "non-leader follow/stay command denial");
 
@@ -264,6 +280,20 @@ public final class PartyGameTests {
             helper.assertValueEqual(VillagerCurrencyPayment.count(leader), 0, "successful extension payment");
             helper.assertValueEqual(VillagerWalletService.getCurrentEmeralds(villager), walletBeforeExtension + 96,
                     "party extension payment must credit the villager wallet");
+
+            member.getInventory().add(new ItemStack(Items.EMERALD, 32));
+            long beforeMemberExtension = record.contractEndGameTime();
+            helper.assertTrue(PartyVillagerContractService.extend(member, villager, 1).success(),
+                    "ordinary party members may prolong villager contracts");
+            helper.assertValueEqual(record.contractEndGameTime(), beforeMemberExtension + VillagerContractTime.DAY_TICKS,
+                    "member-paid contract extension duration");
+            helper.assertValueEqual(VillagerCurrencyPayment.count(member), 0,
+                    "member-paid extension consumes the member's emeralds");
+            outsider.getInventory().add(new ItemStack(Items.EMERALD, 32));
+            helper.assertFalse(PartyVillagerContractService.extend(outsider, villager, 1).success(),
+                    "unrelated players cannot prolong party contracts");
+            helper.assertValueEqual(VillagerCurrencyPayment.count(outsider), 32,
+                    "rejected outsider extension does not consume emeralds");
 
             leader.getInventory().add(new ItemStack(Items.EMERALD, 64));
             long beforeFailedExtension = record.contractEndGameTime();

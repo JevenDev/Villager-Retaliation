@@ -20,8 +20,20 @@ final class PartyManagementScreen extends Screen {
     protected void init() {
         PartyRosterSyncPayload roster = PartyRosterClient.roster();
         int centerX = this.width / 2;
-        int y = Math.max(36, this.height / 2 - 70);
+        int y = 30;
         if (roster.active() && roster.recipientLeader()) {
+            y = addPolicyButton(centerX, y,
+                    PartyActionRequestPayload.Action.SET_ATTACK_WITH_PARTY,
+                    "villagerretaliation.party.manage.attack_with_party",
+                    roster.attackWithParty());
+            y = addPolicyButton(centerX, y,
+                    PartyActionRequestPayload.Action.SET_DEFEND_PARTY,
+                    "villagerretaliation.party.manage.defend_party",
+                    roster.defendParty());
+            y = addPolicyButton(centerX, y,
+                    PartyActionRequestPayload.Action.SET_SHARED_VILLAGER_INVENTORIES,
+                    "villagerretaliation.party.manage.shared_inventories",
+                    roster.sharedVillagerInventories());
             for (PartyRosterSyncPayload.PlayerEntry player : roster.players()) {
                 if (player.leader()) {
                     continue;
@@ -72,5 +84,31 @@ final class PartyManagementScreen extends Screen {
                 || action == PartyActionRequestPayload.Action.DISBAND_PARTY) {
             onClose();
         }
+    }
+
+    private int addPolicyButton(
+            int centerX,
+            int y,
+            PartyActionRequestPayload.Action action,
+            String labelKey,
+            boolean enabled) {
+        boolean[] current = {enabled};
+        addRenderableWidget(Button.builder(
+                policyLabel(labelKey, enabled),
+                button -> {
+                    current[0] = !current[0];
+                    button.setMessage(policyLabel(labelKey, current[0]));
+                    PacketDistributor.sendToServer(new PartyActionRequestPayload(action, null, null, current[0]));
+                })
+                .bounds(centerX - 100, y, 200, 20)
+                .build());
+        return y + 24;
+    }
+
+    private static Component policyLabel(String labelKey, boolean enabled) {
+        return Component.translatable(
+                "villagerretaliation.party.manage.setting",
+                Component.translatable(labelKey),
+                Component.translatable(enabled ? "options.on" : "options.off"));
     }
 }

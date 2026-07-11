@@ -109,6 +109,9 @@ public final class PartySyncService {
                 party.id(),
                 profileName(server, party.leaderId()),
                 recipient.getUUID().equals(party.leaderId()),
+                party.attackWithParty(),
+                party.defendParty(),
+                party.sharedVillagerInventories(),
                 List.copyOf(players),
                 List.copyOf(villagers));
     }

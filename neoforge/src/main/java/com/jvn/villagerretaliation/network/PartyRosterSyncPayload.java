@@ -13,6 +13,9 @@ public record PartyRosterSyncPayload(
         UUID partyId,
         String leaderName,
         boolean recipientLeader,
+        boolean attackWithParty,
+        boolean defendParty,
+        boolean sharedVillagerInventories,
         List<PlayerEntry> players,
         List<VillagerEntry> villagers) implements CustomPacketPayload {
     private static final int MAX_PLAYERS = 4;
@@ -24,7 +27,7 @@ public record PartyRosterSyncPayload(
             VillagerPayloads.codec(PartyRosterSyncPayload::encode, PartyRosterSyncPayload::decode);
 
     public static PartyRosterSyncPayload empty() {
-        return new PartyRosterSyncPayload(false, null, "", false, List.of(), List.of());
+        return new PartyRosterSyncPayload(false, null, "", false, true, true, true, List.of(), List.of());
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, PartyRosterSyncPayload payload) {
@@ -35,6 +38,9 @@ public record PartyRosterSyncPayload(
         buffer.writeUUID(payload.partyId());
         buffer.writeUtf(payload.leaderName(), MAX_NAME_LENGTH);
         buffer.writeBoolean(payload.recipientLeader());
+        buffer.writeBoolean(payload.attackWithParty());
+        buffer.writeBoolean(payload.defendParty());
+        buffer.writeBoolean(payload.sharedVillagerInventories());
         buffer.writeVarInt(Math.min(MAX_PLAYERS, payload.players().size()));
         for (int i = 0; i < Math.min(MAX_PLAYERS, payload.players().size()); i++) {
             PlayerEntry player = payload.players().get(i);
@@ -62,6 +68,9 @@ public record PartyRosterSyncPayload(
         UUID partyId = buffer.readUUID();
         String leaderName = buffer.readUtf(MAX_NAME_LENGTH);
         boolean recipientLeader = buffer.readBoolean();
+        boolean attackWithParty = buffer.readBoolean();
+        boolean defendParty = buffer.readBoolean();
+        boolean sharedVillagerInventories = buffer.readBoolean();
         int playerCount = VillagerPayloads.readCollectionSize(buffer, MAX_PLAYERS, "party players");
         List<PlayerEntry> players = new ArrayList<>(playerCount);
         for (int i = 0; i < playerCount; i++) {
@@ -82,7 +91,9 @@ public record PartyRosterSyncPayload(
                     buffer.readBoolean(),
                     buffer.readVarInt()));
         }
-        return new PartyRosterSyncPayload(true, partyId, leaderName, recipientLeader, List.copyOf(players), List.copyOf(villagers));
+        return new PartyRosterSyncPayload(true, partyId, leaderName, recipientLeader,
+                attackWithParty, defendParty, sharedVillagerInventories,
+                List.copyOf(players), List.copyOf(villagers));
     }
 
     @Override

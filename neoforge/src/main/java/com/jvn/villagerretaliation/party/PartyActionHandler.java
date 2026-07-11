@@ -65,7 +65,24 @@ public final class PartyActionHandler {
             case LEAVE_PARTY -> leaveParty(player);
             case REMOVE_PLAYER -> removePlayer(player, payload.targetId());
             case DISBAND_PARTY -> disband(player);
+            case SET_ATTACK_WITH_PARTY -> setPolicies(player, payload.enabled(), null, null);
+            case SET_DEFEND_PARTY -> setPolicies(player, null, payload.enabled(), null);
+            case SET_SHARED_VILLAGER_INVENTORIES -> setPolicies(player, null, null, payload.enabled());
         }
+    }
+
+    private static void setPolicies(
+            ServerPlayer leader,
+            Boolean attackWithParty,
+            Boolean defendParty,
+            Boolean sharedVillagerInventories) {
+        PartyService.PartyResult result = PartyService.setPolicies(
+                leader, attackWithParty, defendParty, sharedVillagerInventories);
+        if (!result.success()) {
+            notice(leader, result.messageKey());
+            return;
+        }
+        PartySyncService.syncParty(leader.getServer(), result.partyId());
     }
 
     private static void sendInvitation(ServerPlayer inviter, UUID targetId) {

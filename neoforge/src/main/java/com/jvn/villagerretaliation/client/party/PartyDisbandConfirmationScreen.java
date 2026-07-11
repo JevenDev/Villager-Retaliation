@@ -32,6 +32,7 @@ final class PartyDisbandConfirmationScreen extends Screen {
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics, mouseX, mouseY, partialTick);
+        super.render(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 45, 0xFFFFFF);
         graphics.drawCenteredString(this.font,
                 Component.translatable("villagerretaliation.party.disband.confirmation.players"),
@@ -42,7 +43,6 @@ final class PartyDisbandConfirmationScreen extends Screen {
         graphics.drawCenteredString(this.font,
                 Component.translatable("villagerretaliation.party.disband.confirmation.refund"),
                 this.width / 2, this.height / 2 + 6, 0xCC7777);
-        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     @Override

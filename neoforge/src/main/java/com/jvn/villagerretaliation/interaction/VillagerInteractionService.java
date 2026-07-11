@@ -619,8 +619,12 @@ public final class VillagerInteractionService {
                 && partyVillager != null
                 && recruitedParty.leaderId().equals(player.getUUID())
                 && partyVillager.recruiterId().equals(player.getUUID());
+        boolean belongsToPartyContract = recruitedParty != null
+                && partyVillager != null
+                && recruitedParty.playerIds().contains(player.getUUID());
         boolean canAdministerContract = ownsContract && isContractAdministrationAction(action);
-        boolean canAdministerPartyContract = ownsPartyContract && isPartyAdministrationAction(action);
+        boolean canAdministerPartyContract = (ownsPartyContract && isPartyAdministrationAction(action))
+                || (belongsToPartyContract && isPartyContractMemberAction(action));
         boolean canOpenJobInventory = action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
                 && com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(level, villager, player);
         if (action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
@@ -896,6 +900,19 @@ public final class VillagerInteractionService {
                  PROMPT_PARTY_DISMISS_CONFIRMATION,
                  DECLINE_PARTY_DISMISS_CONFIRMATION,
                  PARTY_DISMISS -> true;
+            default -> false;
+        };
+    }
+
+    private static boolean isPartyContractMemberAction(VillagerRecruitRequestPayload.Action action) {
+        return switch (action) {
+            case EXTEND_ONE_DAY,
+                 EXTEND_THREE_DAYS,
+                 EXTEND_FIVE_DAYS,
+                 EXTEND_SEVEN_DAYS,
+                 EXTEND_FIFTEEN_DAYS,
+                 EXTEND_THIRTY_DAYS,
+                 VIEW_CONTRACT -> true;
             default -> false;
         };
     }

@@ -51,6 +51,32 @@ public final class PartyService {
                 && getPartyForEntity(second).map(party -> party.id().equals(firstParty.get().id())).orElse(false);
     }
 
+    public static PartyResult setPolicies(
+            ServerPlayer leader,
+            Boolean attackWithParty,
+            Boolean defendParty,
+            Boolean sharedVillagerInventories) {
+        if (leader == null) {
+            return PartyResult.failure("villagerretaliation.party.error.not_in_party");
+        }
+        PartySavedData data = partyData(leader.serverLevel());
+        PartyRecord party = data.partyForPlayer(leader.getUUID()).orElse(null);
+        if (party == null || !party.leaderId().equals(leader.getUUID())) {
+            return PartyResult.failure("villagerretaliation.party.error.leader_only");
+        }
+        if (attackWithParty != null) {
+            party.setAttackWithParty(attackWithParty);
+        }
+        if (defendParty != null) {
+            party.setDefendParty(defendParty);
+        }
+        if (sharedVillagerInventories != null) {
+            party.setSharedVillagerInventories(sharedVillagerInventories);
+        }
+        data.changed();
+        return PartyResult.success("villagerretaliation.party.settings_updated", party.id(), null);
+    }
+
     public static boolean isPartyPlayer(ServerLevel level, UUID playerId) {
         return getPartyForPlayer(level, playerId).isPresent();
     }
