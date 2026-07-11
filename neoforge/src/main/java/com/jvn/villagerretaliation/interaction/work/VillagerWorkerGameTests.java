@@ -2939,6 +2939,44 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void miningWorkerReplansPersistedShaftWithImpossibleGap(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerBlockedShaft");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        BlockPos blockedShaftRel = new BlockPos(2, 2, 2);
+        BlockPos recoveredShaftRel = new BlockPos(4, 2, 2);
+        BlockPos recoveredBackingRel = new BlockPos(4, 2, 1);
+        setBlock(helper, blockedShaftRel, Blocks.BEDROCK.defaultBlockState());
+        setBlock(helper, recoveredShaftRel, Blocks.AIR.defaultBlockState());
+        setBlock(helper, recoveredBackingRel, Blocks.STONE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        BlockPos blockedShaft = helper.absolutePos(blockedShaftRel);
+        state.putInt("ExcavationLadderX", blockedShaft.getX());
+        state.putInt("ExcavationLadderZ", blockedShaft.getZ());
+        state.putString("ExcavationLadderFacing", Direction.SOUTH.getName());
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(2, 1, 2), new BlockPos(4, 2, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.LADDER, 8));
+
+        WorkResult result = new MiningWorker().tick(level, villager, hirer, context);
+        BlockPos recoveredShaft = helper.absolutePos(recoveredShaftRel);
+
+        helper.assertValueEqual(result.status(), "interaction.work.mining.support.placed_ladder", "blocked shaft recovery status");
+        helper.assertTrue(level.getBlockState(blockedShaft).is(Blocks.BEDROCK),
+                "shaft recovery should not alter an impossible obstruction");
+        helper.assertTrue(level.getBlockState(recoveredShaft).is(Blocks.LADDER),
+                "miner should move the shaft to a fully viable column");
+        helper.assertValueEqual(state.getInt("ExcavationLadderX"), recoveredShaft.getX(), "replanned shaft x");
+        helper.assertValueEqual(state.getInt("ExcavationLadderZ"), recoveredShaft.getZ(), "replanned shaft z");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
     public static void sharedRouteNavigatorApproachesNonStandableContainerNode(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 5, 1);
         ServerLevel level = helper.getLevel();

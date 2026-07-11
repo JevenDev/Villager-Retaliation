@@ -296,27 +296,55 @@ final class MiningExcavationShaft {
             Villager villager,
             HiredWorkContext context,
             int lowestOpenY,
-            boolean storeSelected) {
+        boolean storeSelected) {
         Shaft stored = stored(context);
-        if (stored != null) {
+        if (stored != null && hasViableRoute(level, context, stored, lowestOpenY, true)) {
             return stored;
         }
+        if (stored != null) {
+            clear(context);
+        }
         for (Shaft candidate : candidatesByTop(level, villager, context)) {
-            int topY = topY(level, context, candidate);
-            for (int y = topY; y >= lowestOpenY; y--) {
-                BlockPos pos = candidate.at(y);
-                BlockState ladder = candidate.ladderState();
-                if (level.getBlockState(pos).is(Blocks.LADDER)
-                        || MiningSupportManager.canPlace(level, pos, ladder)
-                        || MiningSupportManager.canPrepareBacking(level, context, pos, ladder)) {
-                    if (storeSelected) {
-                        store(context, candidate);
-                    }
-                    return candidate;
-                }
+            if (!hasViableRoute(level, context, candidate, lowestOpenY, false)) {
+                continue;
             }
+            if (storeSelected) {
+                store(context, candidate);
+            }
+            return candidate;
         }
         return null;
+    }
+
+    private static boolean hasViableRoute(
+            ServerLevel level,
+            HiredWorkContext context,
+            Shaft shaft,
+            int lowestOpenY,
+            boolean preserveOnUnloadedChunk) {
+        int routeFloorY = Math.clamp(lowestOpenY, context.workMin().getY(), context.workMax().getY());
+        int topY = topY(level, context, shaft);
+        for (int y = topY; y >= routeFloorY; y--) {
+            BlockPos pos = shaft.at(y);
+            if (!level.hasChunkAt(pos)) {
+                if (preserveOnUnloadedChunk) {
+                    continue;
+                }
+                return false;
+            }
+            BlockState state = level.getBlockState(pos);
+            if (state.is(Blocks.LADDER)
+                    || MiningSupportManager.canEventuallyPlace(level, context, pos, shaft.ladderState())) {
+                continue;
+            }
+            if (y == routeFloorY
+                    && isMineableShaftBlock(level, pos)
+                    && !MiningBlockRules.hasAdjacentExcavationFluid(level, pos)) {
+                continue;
+            }
+            return false;
+        }
+        return true;
     }
 
     private static int deepestOpenY(ServerLevel level, HiredWorkContext context) {

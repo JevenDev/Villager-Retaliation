@@ -148,6 +148,10 @@ final class MiningSupportManager {
         return need != null && hasInventoryBacking(level, context, need);
     }
 
+    static boolean canEventuallyPlace(ServerLevel level, HiredWorkContext context, BlockPos pos, BlockState state) {
+        return canPlace(level, pos, state) || backingNeed(level, context, pos, state) != null;
+    }
+
     private static Placement nextPlacement(
             ServerLevel level,
             Villager villager,
