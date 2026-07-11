@@ -63,6 +63,7 @@ public final class QuestV2Compiler {
         addTarget(root, resource);
         addRules(root, resource);
         addTracker(root, resource);
+        putString(root, "entry_stage", resource.entryStage());
 
         Map<String, QuestSourcePointer> objectiveSources = new LinkedHashMap<>();
         Map<String, QuestSourcePointer> stageSources = new LinkedHashMap<>();
@@ -136,9 +137,22 @@ public final class QuestV2Compiler {
 
     private static void addQuestIdentity(JsonObject root, QuestV2Resource resource) {
         putString(root, "questline", metadataString(resource, "questline"));
+        String authoredParent = metadataString(resource, "parent");
+        List<ResourceLocation> prerequisites = resource.availability().prerequisites();
         putString(root, "parent", firstNonBlank(
-                metadataString(resource, "parent"),
-                firstResourceLocationString(resource.availability().data(), "prerequisites")));
+                authoredParent,
+                prerequisites.isEmpty() ? "" : prerequisites.getFirst().toString()));
+        JsonArray prerequisiteIds = new JsonArray();
+        if (prerequisites.isEmpty()) {
+            if (!authoredParent.isBlank()) {
+                prerequisiteIds.add(authoredParent);
+            }
+        } else {
+            prerequisites.forEach(prerequisite -> prerequisiteIds.add(prerequisite.toString()));
+        }
+        if (!prerequisiteIds.isEmpty()) {
+            root.add("prerequisites", prerequisiteIds);
+        }
         JsonArray tags = stringArray(resource.metadata().get("tags"));
         if (tags.size() > 0) {
             root.add("tags", tags);
@@ -663,6 +677,8 @@ public final class QuestV2Compiler {
                         definition.metadata()),
                 new CompiledQuestProvider(definition.offer()),
                 definition.target(),
+                definition.entryStage(),
+                definition.prerequisites(),
                 definition.rules(),
                 new CompiledQuestUi(definition.tracker(), definition.dialogue(), definition.links()),
                 objectives,

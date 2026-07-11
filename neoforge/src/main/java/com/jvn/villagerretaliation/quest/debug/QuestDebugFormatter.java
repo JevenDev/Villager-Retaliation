@@ -25,6 +25,7 @@ public final class QuestDebugFormatter {
         return "identity questline=" + blankAs(definition.questline(), "none")
                 + " tags=" + stringSet(definition.tags())
                 + " parent=" + parentState
+                + " prerequisites=" + definition.prerequisites()
                 + " objectives=" + definition.objectives().size()
                 + " triggers=" + definition.triggers().size();
     }

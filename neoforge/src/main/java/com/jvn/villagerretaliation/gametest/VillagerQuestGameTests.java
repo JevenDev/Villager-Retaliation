@@ -61,6 +61,7 @@ import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderType;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
+import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
@@ -1214,12 +1215,14 @@ public final class VillagerQuestGameTests {
                 "",
                 Set.of("test"),
                 null,
+                List.of(),
                 true,
                 null,
                 QuestDefinition.Target.EMPTY,
                 List.of(defeatZombie, bringBones),
                 QuestDefinition.Rules.DEFAULT,
                 QuestDefinition.Tracker.EMPTY,
+                "",
                 Map.of("started", started, "return", returnStage),
                 List.of(),
                 QuestDefinition.Rewards.EMPTY,
@@ -1878,6 +1881,76 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(dispatch.trace().matchedTriggers(), 1, "bounded v2 progress matches");
         DatapackDiagnostics.clear();
 
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2EntryStageRemainsAuthoritativeWhenStartedStageExists(GameTestHelper helper) {
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_entry_stage_contract.json");
+        JsonObject root = validQuestV2Fixture();
+        root.addProperty("id", "villagerretaliation:v2_entry_stage_contract");
+        root.addProperty("entry_stage", "prologue");
+        JsonArray stages = new JsonArray();
+        stages.add(JsonParser.parseString("""
+                {"id":"prologue","objectives":[],"next":"started"}
+                """).getAsJsonObject());
+        stages.add(JsonParser.parseString("""
+                {"id":"started","objectives":[]}
+                """).getAsJsonObject());
+        root.add("stages", stages);
+
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root)
+                .orElseThrow(() -> new GameTestAssertException("entry-stage fixture envelope did not parse"));
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException("entry-stage fixture did not parse"));
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
+                .orElseThrow(() -> new GameTestAssertException("entry-stage fixture did not compile"));
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+
+        helper.assertValueEqual(parsed.entryStage(), "prologue", "parsed authored entry stage");
+        helper.assertValueEqual(compiled.entryStage(), "prologue", "compiled authored entry stage");
+        QuestLifecycleService.initializeStage(compiled, progress, 20L);
+        helper.assertValueEqual(progress.currentStage(), "prologue", "runtime authored entry stage");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2PreservesEveryOrderedPrerequisite(GameTestHelper helper) {
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_prerequisite_contract.json");
+        JsonObject root = validQuestV2Fixture();
+        root.addProperty("id", "villagerretaliation:v2_prerequisite_contract");
+        JsonArray prerequisites = new JsonArray();
+        prerequisites.add("villagerretaliation:first");
+        prerequisites.add("villagerretaliation:second");
+        prerequisites.add("villagerretaliation:third");
+        root.getAsJsonObject("availability").add("prerequisites", prerequisites);
+        List<ResourceLocation> expected = List.of(
+                VillagerRetaliation.id("first"),
+                VillagerRetaliation.id("second"),
+                VillagerRetaliation.id("third"));
+
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root)
+                .orElseThrow(() -> new GameTestAssertException("prerequisite fixture envelope did not parse"));
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException("prerequisite fixture did not parse"));
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
+                .orElseThrow(() -> new GameTestAssertException("prerequisite fixture did not compile"));
+
+        helper.assertValueEqual(parsed.availability().prerequisites(), expected, "parsed prerequisites");
+        helper.assertValueEqual(compiled.prerequisites(), expected, "compiled prerequisites");
+        helper.assertValueEqual(compiled.asQuestDefinition().prerequisites(), expected, "runtime prerequisites");
+        List<QuestTrackerSyncPayload.Prerequisite> presented = QuestTrackerPresenter.prerequisites(
+                null,
+                compiled.asQuestDefinition(),
+                ResourceLocation::toString,
+                id -> id.equals(expected.getFirst()));
+        helper.assertValueEqual(
+                presented.stream().map(QuestTrackerSyncPayload.Prerequisite::questId).toList(),
+                expected.stream().map(ResourceLocation::toString).toList(),
+                "presented prerequisite order");
+        helper.assertTrue(presented.getFirst().met(), "first prerequisite should be met");
+        helper.assertFalse(presented.get(1).met(), "second prerequisite should remain locked");
+        helper.assertFalse(presented.get(2).met(), "third prerequisite should remain locked");
         helper.succeed();
     }
 
@@ -4096,12 +4169,14 @@ public final class VillagerQuestGameTests {
                 "",
                 Set.of("test"),
                 null,
+                List.of(),
                 true,
                 null,
                 QuestDefinition.Target.EMPTY,
                 List.of(objective),
                 QuestDefinition.Rules.DEFAULT,
                 QuestDefinition.Tracker.EMPTY,
+                "",
                 Map.of("started", started, "done", done),
                 List.of(),
                 QuestDefinition.Rewards.EMPTY,
@@ -4137,12 +4212,14 @@ public final class VillagerQuestGameTests {
                 "",
                 Set.of("test"),
                 null,
+                List.of(),
                 true,
                 null,
                 QuestDefinition.Target.EMPTY,
                 List.of(),
                 QuestDefinition.Rules.DEFAULT,
                 QuestDefinition.Tracker.EMPTY,
+                "",
                 Map.of(),
                 triggers,
                 QuestDefinition.Rewards.EMPTY,
@@ -4173,12 +4250,14 @@ public final class VillagerQuestGameTests {
                 definition.questline(),
                 definition.tags(),
                 definition.parent(),
+                definition.prerequisites(),
                 definition.showLockedAdventureHint(),
                 definition.offer(),
                 definition.target(),
                 definition.objectives(),
                 definition.rules(),
                 definition.tracker(),
+                definition.entryStage(),
                 definition.stages(),
                 triggers,
                 definition.rewards(),
@@ -4194,6 +4273,8 @@ public final class VillagerQuestGameTests {
                 compiled.metadata(),
                 compiled.provider(),
                 compiled.target(),
+                compiled.entryStage(),
+                compiled.prerequisites(),
                 compiled.rules(),
                 compiled.ui(),
                 compiled.objectives(),

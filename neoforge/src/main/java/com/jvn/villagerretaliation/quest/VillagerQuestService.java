@@ -496,7 +496,7 @@ public final class VillagerQuestService {
             DialogueContext context,
             QuestDefinition definition,
             VillagerQuestSavedData.QuestProgress progress) {
-        return definition.parent() != null
+        return !definition.prerequisites().isEmpty()
                 && (progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED)
                 && !parentCompleted(context, definition);
     }
@@ -2713,19 +2713,25 @@ public final class VillagerQuestService {
     }
 
     private static boolean parentCompleted(DialogueContext context, QuestDefinition definition) {
-        if (definition.parent() == null) {
+        if (definition.prerequisites().isEmpty()) {
             return true;
         }
         if (context == null) {
             return false;
         }
-        QuestDefinition parent = VillagerQuestResources.quest(context.level().getServer(), definition.parent()).orElse(null);
-        if (parent == null) {
-            return false;
+        for (ResourceLocation prerequisiteId : definition.prerequisites()) {
+            QuestDefinition prerequisite = VillagerQuestResources.quest(
+                    context.level().getServer(), prerequisiteId).orElse(null);
+            if (prerequisite == null) {
+                return false;
+            }
+            VillagerQuestSavedData.QuestProgress prerequisiteProgress =
+                    VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), prerequisite.id());
+            if (!matchesState(context, prerequisite, prerequisiteProgress, "completed")) {
+                return false;
+            }
         }
-        VillagerQuestSavedData.QuestProgress parentProgress =
-                VillagerQuestSavedData.get(context.level()).get(context.player().getUUID(), parent.id());
-        return matchesState(context, parent, parentProgress, "completed");
+        return true;
     }
 
     private static boolean withinCompletionLimit(

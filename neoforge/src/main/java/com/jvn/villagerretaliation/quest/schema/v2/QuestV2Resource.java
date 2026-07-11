@@ -58,12 +58,14 @@ public record QuestV2Resource(
 
     public record Availability(
             List<JsonObject> conditions,
+            List<ResourceLocation> prerequisites,
             JsonObject data
     ) {
-        public static final Availability EMPTY = new Availability(List.of(), new JsonObject());
+        public static final Availability EMPTY = new Availability(List.of(), List.of(), new JsonObject());
 
         public Availability {
             conditions = copyObjects(conditions);
+            prerequisites = prerequisites == null ? List.of() : List.copyOf(prerequisites);
             data = copy(data);
         }
     }

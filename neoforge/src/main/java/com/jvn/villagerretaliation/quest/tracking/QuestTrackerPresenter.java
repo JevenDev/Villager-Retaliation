@@ -432,24 +432,27 @@ public final class QuestTrackerPresenter {
             QuestDefinition definition,
             Function<ResourceLocation, String> questTitleLabeler,
             Function<ResourceLocation, Boolean> completionLookup) {
-        if (definition == null || definition.parent() == null) {
+        if (definition == null || definition.prerequisites().isEmpty()) {
             return List.of();
         }
-        ResourceLocation parent = definition.parent();
-        String parentTitle = questTitleLabeler == null ? parent.toString() : questTitleLabeler.apply(parent);
-        if (parentTitle == null || parentTitle.isBlank()) {
-            parentTitle = parent.toString();
+        List<QuestTrackerSyncPayload.Prerequisite> presented = new ArrayList<>();
+        for (ResourceLocation prerequisite : definition.prerequisites()) {
+            String title = questTitleLabeler == null ? prerequisite.toString() : questTitleLabeler.apply(prerequisite);
+            if (title == null || title.isBlank()) {
+                title = prerequisite.toString();
+            }
+            Map<String, String> values = new LinkedHashMap<>();
+            values.put("parent_quest", title);
+            values.put("parent_quest_id", prerequisite.toString());
+            boolean met = completionLookup != null && Boolean.TRUE.equals(completionLookup.apply(prerequisite));
+            String fallback = met ? "Completed {parent_quest}" : "Complete {parent_quest}";
+            String key = met ? "quest.tracker.prerequisite.parent_complete" : "quest.tracker.prerequisite.parent";
+            presented.add(new QuestTrackerSyncPayload.Prerequisite(
+                    prerequisite.toString(),
+                    resolveGlobalText(player, key, fallback, values),
+                    met));
         }
-        Map<String, String> values = new LinkedHashMap<>();
-        values.put("parent_quest", parentTitle);
-        values.put("parent_quest_id", parent.toString());
-        boolean met = completionLookup != null && Boolean.TRUE.equals(completionLookup.apply(parent));
-        String fallback = met ? "Completed {parent_quest}" : "Complete {parent_quest}";
-        String key = met ? "quest.tracker.prerequisite.parent_complete" : "quest.tracker.prerequisite.parent";
-        return List.of(new QuestTrackerSyncPayload.Prerequisite(
-                parent.toString(),
-                resolveGlobalText(player, key, fallback, values),
-                met));
+        return List.copyOf(presented);
     }
 
     private static void addQuestItem(

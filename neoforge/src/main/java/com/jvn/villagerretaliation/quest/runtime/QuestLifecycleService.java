@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.quest.runtime;
 
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import net.minecraft.resources.ResourceLocation;
@@ -46,9 +47,26 @@ public final class QuestLifecycleService {
         return setStage(definition, progress, stage, gameTime, true);
     }
 
+    public static StageTransition initializeStage(
+            CompiledQuest quest,
+            VillagerQuestSavedData.QuestProgress progress,
+            long gameTime) {
+        if (quest == null) {
+            return StageTransition.skipped(progress == null ? "" : progress.currentStage());
+        }
+        String stage = initialStage(quest.asQuestDefinition());
+        if (stage.isBlank()) {
+            return StageTransition.skipped(progress == null ? "" : progress.currentStage());
+        }
+        return setStage(quest.asQuestDefinition(), progress, stage, gameTime, true);
+    }
+
     public static String initialStage(QuestDefinition definition) {
         if (definition == null || definition.stages().isEmpty()) {
             return "";
+        }
+        if (!definition.entryStage().isBlank() && definition.stages().containsKey(definition.entryStage())) {
+            return definition.entryStage();
         }
         if (definition.stages().containsKey("started")) {
             return "started";
