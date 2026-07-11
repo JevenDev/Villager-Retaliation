@@ -120,6 +120,18 @@ public final class QuestDebugFormatter {
                 + " latest_time=" + latest.gameTime();
     }
 
+    public static String providerRebindHistoryLine(VillagerQuestSavedData.QuestProgress progress) {
+        if (progress == null || progress.providerRebindHistory().isEmpty()) {
+            return "provider_rebind_history entries=0";
+        }
+        VillagerQuestSavedData.ProviderRebindHistoryEntry latest = progress.providerRebindHistory().getLast();
+        return "provider_rebind_history entries=" + progress.providerRebindHistory().size()
+                + " latest_previous=" + latest.previousProviderId()
+                + " latest_replacement=" + latest.newProviderId()
+                + " latest_reason=" + latest.reason()
+                + " latest_time=" + latest.gameTime();
+    }
+
     public static String targetDefinitionLine(QuestDefinition.Target target) {
         return "target_definition structure=" + target.structure()
                 + " dimension=" + dimension(target.dimension())

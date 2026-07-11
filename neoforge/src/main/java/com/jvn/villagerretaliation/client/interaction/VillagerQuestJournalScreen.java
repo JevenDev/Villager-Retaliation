@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings;
 import com.jvn.villagerretaliation.client.quest.VillagerQuestTrackerOverlay;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
+import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -22,6 +23,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public final class VillagerQuestJournalScreen extends Screen {
@@ -86,6 +88,7 @@ public final class VillagerQuestJournalScreen extends Screen {
     private static final int DETAILS_QUEST_STEP_ICON_LEFT_PADDING = 0;
     private static final int DETAILS_QUEST_STEP_TEXT_GAP = 5;
     private static final int DETAILS_PAGE_LABEL_GAP = 2;
+    private static final int DETAILS_ABANDON_HEIGHT = 12;
 
     private static final int TEXT_COLOR = 0xFF000000;
     private static final int TITLE_COLOR = 0xFF000000;
@@ -238,6 +241,20 @@ public final class VillagerQuestJournalScreen extends Screen {
         }
 
         if (tryBeginOptionScrollbarDrag(mouseX, journalMouseY)) {
+            return true;
+        }
+
+        QuestTrackerSyncPayload.Entry selected = selectedEntry();
+        if (canAbandon(selected) && isPointInside(
+                mouseX,
+                journalMouseY,
+                detailsLeft(),
+                detailsTop() + DETAILS_HEIGHT - DETAILS_ABANDON_HEIGHT,
+                detailsLeft() + DETAILS_WIDTH,
+                detailsTop() + DETAILS_HEIGHT)) {
+            PacketDistributor.sendToServer(new QuestTrackerRequestPayload(
+                    selected.questId(), QuestTrackerRequestPayload.Action.ABANDON));
+            playBookSound(0.78F);
             return true;
         }
 
@@ -724,7 +741,7 @@ public final class VillagerQuestJournalScreen extends Screen {
         int bottom = top + DETAILS_HEIGHT;
         List<QuestDetailLine> detailLines = buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP);
         int contentHeight = detailContentHeight(detailLines);
-        int viewportHeight = detailsPageViewportHeight();
+        int viewportHeight = detailsPageViewportHeight(selected);
         int maskBottom = top + viewportHeight;
         boolean paged = contentHeight > viewportHeight;
         List<Integer> pageStarts = detailPageStarts(detailLines, viewportHeight);
@@ -748,6 +765,17 @@ public final class VillagerQuestJournalScreen extends Screen {
 
         if (paged) {
             renderDetailsPageLabel(graphics, left, maskBottom + DETAILS_PAGE_LABEL_GAP, this.detailsPage + 1, pageCount);
+        }
+        if (canAbandon(selected)) {
+            Component label = Component.literal("Abandon quest");
+            int actionTop = top + DETAILS_HEIGHT - DETAILS_ABANDON_HEIGHT + 2;
+            graphics.drawString(
+                    this.font,
+                    label,
+                    left + Math.round((DETAILS_WIDTH - this.font.width(label)) / 2.0F),
+                    actionTop,
+                    0xFF8A1F1F,
+                    false);
         }
     }
 
@@ -1336,12 +1364,16 @@ public final class VillagerQuestJournalScreen extends Screen {
     private int detailsPageCount(QuestTrackerSyncPayload.Entry selected) {
         return detailPageStarts(
                         buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP),
-                        detailsPageViewportHeight())
+                        detailsPageViewportHeight(selected))
                 .size();
     }
 
-    private static int detailsPageViewportHeight() {
-        return Math.max(1, DETAILS_HEIGHT);
+    private static int detailsPageViewportHeight(QuestTrackerSyncPayload.Entry selected) {
+        return Math.max(1, DETAILS_HEIGHT - (canAbandon(selected) ? DETAILS_ABANDON_HEIGHT : 0));
+    }
+
+    private static boolean canAbandon(QuestTrackerSyncPayload.Entry entry) {
+        return entry != null && "active".equalsIgnoreCase(entry.state());
     }
 
     private static int indexOfQuestId(List<QuestTrackerSyncPayload.Entry> visibleEntries, String questId) {

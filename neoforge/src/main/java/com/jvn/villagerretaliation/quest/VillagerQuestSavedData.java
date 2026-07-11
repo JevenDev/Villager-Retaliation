@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.quest;
 import com.mojang.logging.LogUtils;
 import com.jvn.villagerretaliation.quest.persistence.QuestSaveMigrations;
 import com.jvn.villagerretaliation.quest.runtime.QuestStateMachine;
+import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import com.jvn.villagerretaliation.util.NbtDataUtil;
 import java.util.ArrayList;
@@ -72,6 +73,10 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_PRIOR_STAGE = "PriorStage";
     private static final String TAG_NEXT_STAGE = "NextStage";
     private static final String TAG_GAME_TIME = "GameTime";
+    private static final String TAG_PROVIDER_REBIND_HISTORY = "ProviderRebindHistory";
+    private static final String TAG_PREVIOUS_PROVIDER = "PreviousProvider";
+    private static final String TAG_NEW_PROVIDER = "NewProvider";
+    private static final String TAG_REASON = "Reason";
 
     private final Map<UUID, Map<ResourceLocation, QuestProgress>> entries = new HashMap<>();
     private final Map<UUID, List<ResourceLocation>> trackedQuests = new HashMap<>();
@@ -432,6 +437,60 @@ public class VillagerQuestSavedData extends SavedData {
         }
     }
 
+    public record ProviderRebindHistoryEntry(
+            UUID previousProviderId,
+            UUID newProviderId,
+            String previousName,
+            String previousProfession,
+            int previousLevel,
+            ResourceKey<Level> previousDimension,
+            BlockPos previousPos,
+            String previousVillageKey,
+            long gameTime,
+            String reason) {
+        public ProviderRebindHistoryEntry {
+            previousName = previousName == null ? "" : previousName;
+            previousProfession = previousProfession == null ? "" : previousProfession;
+            previousLevel = Math.max(0, previousLevel);
+            previousPos = previousPos == null ? null : previousPos.immutable();
+            previousVillageKey = previousVillageKey == null ? "" : previousVillageKey;
+            reason = QuestStateMachine.normalizeCode(reason, "operator_rebind");
+        }
+
+        private static ProviderRebindHistoryEntry load(CompoundTag tag) {
+            ResourceKey<Level> dimension = NbtDataUtil.readResourceLocation(tag, TAG_ISSUER_DIMENSION)
+                    .map(id -> ResourceKey.create(Registries.DIMENSION, id)).orElse(null);
+            return new ProviderRebindHistoryEntry(
+                    tag.hasUUID(TAG_PREVIOUS_PROVIDER) ? tag.getUUID(TAG_PREVIOUS_PROVIDER) : null,
+                    tag.hasUUID(TAG_NEW_PROVIDER) ? tag.getUUID(TAG_NEW_PROVIDER) : null,
+                    tag.getString(TAG_ISSUER_NAME),
+                    tag.getString(TAG_ISSUER_PROFESSION),
+                    tag.getInt(TAG_ISSUER_LEVEL),
+                    dimension,
+                    NbtDataUtil.readBlockPos(tag, TAG_ISSUER_POS).orElse(null),
+                    tag.getString(TAG_ISSUER_VILLAGE_KEY),
+                    tag.getLong(TAG_GAME_TIME),
+                    tag.getString(TAG_REASON));
+        }
+
+        private CompoundTag save() {
+            CompoundTag tag = new CompoundTag();
+            if (this.previousProviderId != null) tag.putUUID(TAG_PREVIOUS_PROVIDER, this.previousProviderId);
+            if (this.newProviderId != null) tag.putUUID(TAG_NEW_PROVIDER, this.newProviderId);
+            if (!this.previousName.isBlank()) tag.putString(TAG_ISSUER_NAME, this.previousName);
+            if (!this.previousProfession.isBlank()) tag.putString(TAG_ISSUER_PROFESSION, this.previousProfession);
+            tag.putInt(TAG_ISSUER_LEVEL, this.previousLevel);
+            if (this.previousDimension != null) {
+                NbtDataUtil.putResourceLocation(tag, TAG_ISSUER_DIMENSION, this.previousDimension.location());
+            }
+            NbtDataUtil.putBlockPos(tag, TAG_ISSUER_POS, this.previousPos);
+            if (!this.previousVillageKey.isBlank()) tag.putString(TAG_ISSUER_VILLAGE_KEY, this.previousVillageKey);
+            tag.putLong(TAG_GAME_TIME, this.gameTime);
+            tag.putString(TAG_REASON, this.reason);
+            return tag;
+        }
+    }
+
     public static class QuestProgress {
         private QuestState state = QuestState.NOT_STARTED;
         private UUID startedVillagerId;
@@ -465,6 +524,7 @@ public class VillagerQuestSavedData extends SavedData {
         private final Map<String, Long> triggerTimes = new HashMap<>();
         private final List<ChoiceHistoryEntry> choiceHistory = new ArrayList<>();
         private final List<CompletionHistoryEntry> completionHistory = new ArrayList<>();
+        private final List<ProviderRebindHistoryEntry> providerRebindHistory = new ArrayList<>();
 
         private static QuestProgress load(CompoundTag tag) {
             QuestProgress progress = new QuestProgress();
@@ -529,6 +589,13 @@ public class VillagerQuestSavedData extends SavedData {
                 for (Tag rawCompletion : historyTag) {
                     if (rawCompletion instanceof CompoundTag completionTag) {
                         progress.completionHistory.add(CompletionHistoryEntry.load(completionTag));
+                    }
+                }
+            }
+            if (tag.contains(TAG_PROVIDER_REBIND_HISTORY, Tag.TAG_LIST)) {
+                for (Tag rawRebind : tag.getList(TAG_PROVIDER_REBIND_HISTORY, Tag.TAG_COMPOUND)) {
+                    if (rawRebind instanceof CompoundTag rebindTag) {
+                        progress.providerRebindHistory.add(ProviderRebindHistoryEntry.load(rebindTag));
                     }
                 }
             }
@@ -624,6 +691,11 @@ public class VillagerQuestSavedData extends SavedData {
                     historyTag.add(entry.save());
                 }
                 tag.put(TAG_COMPLETION_HISTORY, historyTag);
+            }
+            if (!this.providerRebindHistory.isEmpty()) {
+                ListTag historyTag = new ListTag();
+                this.providerRebindHistory.stream().map(ProviderRebindHistoryEntry::save).forEach(historyTag::add);
+                tag.put(TAG_PROVIDER_REBIND_HISTORY, historyTag);
             }
             if (this.targetDimension != null) {
                 NbtDataUtil.putResourceLocation(tag, TAG_TARGET_DIMENSION, this.targetDimension.location());
@@ -762,6 +834,10 @@ public class VillagerQuestSavedData extends SavedData {
             return List.copyOf(this.completionHistory);
         }
 
+        public List<ProviderRebindHistoryEntry> providerRebindHistory() {
+            return List.copyOf(this.providerRebindHistory);
+        }
+
         public int abandonCount() {
             return this.abandonCount;
         }
@@ -814,6 +890,31 @@ public class VillagerQuestSavedData extends SavedData {
             this.issuerDimension = dimension;
             this.issuerPos = pos == null ? null : pos.immutable();
             this.issuerVillageKey = villageKey == null ? "" : villageKey;
+        }
+
+        public void rebindProvider(QuestProviderBinding binding, long gameTime, String reason) {
+            if (binding == null || binding.providerId() == null) {
+                throw new IllegalArgumentException("provider binding must have an id");
+            }
+            this.providerRebindHistory.add(new ProviderRebindHistoryEntry(
+                    this.startedVillagerId,
+                    binding.providerId(),
+                    this.issuerName,
+                    this.issuerProfession,
+                    this.issuerLevel,
+                    this.issuerDimension,
+                    this.issuerPos,
+                    this.issuerVillageKey,
+                    gameTime,
+                    reason));
+            setIssuer(
+                    binding.providerId(),
+                    binding.displayName(),
+                    binding.professionId() == null ? "" : binding.professionId().toString(),
+                    binding.level(),
+                    binding.dimension(),
+                    binding.pos(),
+                    binding.villageKey());
         }
 
         private boolean replaceIssuerVillageKey(String sourceKey, String targetKey) {

@@ -431,6 +431,12 @@ public final class VillagerRetaliationCommands {
                         .then(literal("inspect")
                                 .then(questIdArgument()
                                         .executes(VillagerRetaliationCommands::inspectQuestDebug)))
+                        .then(literal("rebind")
+                                .then(questIdArgument()
+                                        .then(providerNameArgument()
+                                                .executes(context -> rebindQuestDebug(
+                                                        context,
+                                                        DEFAULT_DEBUG_PROVIDER_RADIUS)))))
                         .then(literal("why_available")
                                 .then(questIdArgument()
                                         .then(providerNameArgument()
@@ -909,6 +915,35 @@ public final class VillagerRetaliationCommands {
                 player,
                 quest.questId());
         if (!result.removed()) {
+            source.sendFailure(Component.literal(result.message()));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal(result.message()), true);
+        return 1;
+    }
+
+    private static int rebindQuestDebug(CommandContext<CommandSourceStack> context, double radius) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This command must be run by a player near the replacement provider."));
+            return 0;
+        }
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+        ProviderResolution provider = resolveQuestDebugProvider(
+                player,
+                StringArgumentType.getString(context, "provider_name"),
+                debugProviderRadius(radius));
+        if (!provider.error().isBlank()) {
+            source.sendFailure(Component.literal(provider.error()));
+            return 0;
+        }
+        VillagerQuestService.ProviderRebindResult result =
+                VillagerQuestService.debugRebindQuest(player, provider.provider(), quest.questId());
+        if (!result.rebound()) {
             source.sendFailure(Component.literal(result.message()));
             return 0;
         }

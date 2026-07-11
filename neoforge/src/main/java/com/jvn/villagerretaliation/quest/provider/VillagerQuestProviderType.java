@@ -60,7 +60,9 @@ public final class VillagerQuestProviderType implements QuestProviderType {
         return context != null
                 && context.providerBinding()
                         .filter(binding -> ID.equals(binding.providerType()))
-                        .map(binding -> binding.matchesProviderId(progress.startedVillagerId()))
+                        .map(binding -> binding.matchesProviderId(progress.startedVillagerId())
+                                || definition.rules().crossVillagerCompatible()
+                                        && matchesProviderRequirements(binding, definition.offer()))
                         .orElse(false);
     }
 

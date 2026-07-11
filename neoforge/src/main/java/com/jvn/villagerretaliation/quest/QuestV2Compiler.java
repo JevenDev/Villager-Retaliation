@@ -51,7 +51,7 @@ public final class QuestV2Compiler {
                     Set.of(resource.id().toString()));
             return Optional.empty();
         }
-        return Optional.of(compileDefinition(definition, source, canonical));
+        return Optional.of(compileDefinition(definition, resource.provider().type(), source, canonical));
     }
 
     private static CanonicalQuestJson canonicalize(QuestV2Resource resource, QuestSourcePointer source) {
@@ -656,6 +656,7 @@ public final class QuestV2Compiler {
 
     private static CompiledQuest compileDefinition(
             QuestDefinition definition,
+            ResourceLocation providerType,
             QuestSourcePointer source,
             CanonicalQuestJson canonical) {
         List<CompiledQuestObjective> objectives = compileObjectives(definition, canonical.objectiveSources(), source);
@@ -678,7 +679,7 @@ public final class QuestV2Compiler {
                         definition.tags(),
                         definition.parent(),
                         definition.metadata()),
-                new CompiledQuestProvider(definition.offer()),
+                new CompiledQuestProvider(providerType, definition.offer()),
                 definition.target(),
                 definition.entryStage(),
                 definition.prerequisites(),
