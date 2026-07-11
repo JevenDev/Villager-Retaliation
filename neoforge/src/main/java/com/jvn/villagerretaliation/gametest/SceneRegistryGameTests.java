@@ -344,8 +344,7 @@ public final class SceneRegistryGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void branchChoiceRemainsStableAfterReload(GameTestHelper helper) {
-        BuiltinSceneStepExecutors.register();ServerPlayer player=helper.makeMockServerPlayerInLevel();Villager villager=EntityType.VILLAGER.create(helper.getLevel());
-        helper.assertTrue(villager!=null&&helper.getLevel().addFreshEntity(villager),"villager should spawn for branch context");
+        BuiltinSceneStepExecutors.register();ServerPlayer player=helper.makeMockServerPlayerInLevel();Villager villager=spawnVillager(helper,1,1);
         JsonObject json=JsonParser.parseString("""
                 {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:branch_reload","entry_step":"choice","actors":[
                  {"alias":"player","type":"villagerretaliation:player","binding_source":"owner_player"},
@@ -369,8 +368,7 @@ public final class SceneRegistryGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void dialogueReceiptPreventsReloadSpam(GameTestHelper helper) {
-        BuiltinSceneStepExecutors.register();ServerPlayer player=helper.makeMockServerPlayerInLevel();Villager villager=EntityType.VILLAGER.create(helper.getLevel());
-        helper.assertTrue(villager!=null&&helper.getLevel().addFreshEntity(villager),"villager should spawn for dialogue context");
+        BuiltinSceneStepExecutors.register();ServerPlayer player=helper.makeMockServerPlayerInLevel();Villager villager=spawnVillager(helper,1,1);
         JsonObject json=JsonParser.parseString("""
                 {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:dialogue_reload","entry_step":"speak","actors":[
                  {"alias":"guide","type":"villagerretaliation:villager","binding_source":"quest_provider"}],"steps":[
@@ -424,7 +422,7 @@ public final class SceneRegistryGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void operatorRepairAuditsWithoutErasingHistoryOrReceipts(GameTestHelper helper) {
-        ServerPlayer player=helper.makeMockServerPlayerInLevel();Villager first=EntityType.VILLAGER.create(helper.getLevel());Villager second=EntityType.VILLAGER.create(helper.getLevel());helper.assertTrue(first!=null&&second!=null,"villagers should create");helper.getLevel().addFreshEntity(first);helper.getLevel().addFreshEntity(second);
+        ServerPlayer player=helper.makeMockServerPlayerInLevel();Villager first=spawnVillager(helper,1,1);Villager second=spawnVillager(helper,2,1);
         JsonObject json=validScene();json.getAsJsonArray("actors").get(0).getAsJsonObject().addProperty("replacement_policy","operator_rebindable");var definition=compiledScene(json);SceneResources.installTestScenes(helper.getLevel().getServer(),List.of(definition));SceneSavedData data=SceneSavedData.get(helper.getLevel());
         SceneActorBinding binding=SceneActorBinding.entity("guide",VillagerRetaliation.id("villager"),first.getUUID(),VillagerRetaliation.id("villager"),helper.getLevel().dimension().location(),first.blockPosition(),"First",true);SceneInstance scene=data.start(definition,"operator/"+UUID.randomUUID(),new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,player.getUUID(),null,null,""),null,Set.of(player.getUUID()),Map.of("guide",binding),0L).instance();scene.linkQuest(VillagerRetaliation.id("operator_test_quest"));scene.prepareReceipt("existing_reward",SceneOperationReceipt.Kind.EXPERIENCE_GRANT,1L).completed(1L,"already granted");
         var rebound=SceneOperatorService.rebind(helper.getLevel(),scene.id(),"guide",second,"repair binding","TestOperator");helper.assertTrue(rebound.success()&&scene.actorBindings().get("guide").replacementHistory().size()==1,"operator should rebind and retain replacement history");helper.assertTrue(scene.receipts().containsKey("existing_reward"),"operator repair must not erase receipts");
@@ -437,6 +435,15 @@ public final class SceneRegistryGameTests {
                 JsonObject::deepCopy, value -> List.of(), (value, context) -> value, String::valueOf,
                 RecoveryMode.NATURALLY_IDEMPOTENT,
                 new ToolingMetadata(path, path, Map.of("type", "object"), true), ClientSync.NONE);
+    }
+
+    private static Villager spawnVillager(GameTestHelper helper, int x, int z) {
+        Villager villager = EntityType.VILLAGER.create(helper.getLevel());
+        helper.assertTrue(villager != null, "villager should create");
+        BlockPos position = helper.absolutePos(new BlockPos(x, 1, z));
+        villager.moveTo(position.getX() + 0.5D, position.getY(), position.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(villager), "villager should spawn in the test structure");
+        return villager;
     }
 
     private static SceneActorDeclaration actor(String alias, ReplacementPolicy policy) {
