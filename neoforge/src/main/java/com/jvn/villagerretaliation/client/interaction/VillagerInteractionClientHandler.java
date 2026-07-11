@@ -62,6 +62,14 @@ public final class VillagerInteractionClientHandler {
 
     public static void open(OpenVillagerInteractionPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
+        if (!(minecraft.screen instanceof VillagerInteractionSessionScreen)) {
+            VillagerChatEffectRenderer.startDisappearFade();
+        }
+        openNow(payload);
+    }
+
+    private static void openNow(OpenVillagerInteractionPayload payload) {
+        Minecraft minecraft = Minecraft.getInstance();
         Entity entity = minecraft.level == null ? null : minecraft.level.getEntity(payload.entityId());
         String villagerName = resolveVillagerName(payload.villagerNameKey(), payload.villagerNameFallback());
         String professionName = resolveProfessionName(entity, payload.professionName(), payload.baby());
@@ -71,7 +79,8 @@ public final class VillagerInteractionClientHandler {
                 payload.entityId(),
                 entity == null ? new UUID(0L, 0L) : entity.getUUID(),
                 payload.villagerNameKey(),
-                villagerName
+                villagerName,
+                payload.hiredByPlayer() || payload.hiredByOtherPlayer()
         ));
         ClientVillagerConversationState.rememberSpeakerLabel(
                 payload.entityId(),
@@ -85,9 +94,6 @@ public final class VillagerInteractionClientHandler {
         boolean replacingInteractionScreen = previousInteractionScreen != null;
         boolean replacingSameVillager = previousInteractionScreen != null
                 && previousInteractionScreen.matchesVillager(payload.entityId());
-        if (!replacingInteractionScreen) {
-            VillagerInteractionChatVisibility.hidePreviousVillagerMessages(minecraft);
-        }
         if (previousInteractionScreen != null) {
             previousInteractionScreen.replaceFromServer();
         }

@@ -94,6 +94,8 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean showVillagerNameTags = true;
 
+        public VillagerStatDisplayMode villagerStatDisplayMode = VillagerStatDisplayMode.PARTY_ONLY;
+
         public boolean villagerReputationHoverTooltipRequiresEmerald = true;
 
         public boolean showTradeGuiReputationIcon = true;

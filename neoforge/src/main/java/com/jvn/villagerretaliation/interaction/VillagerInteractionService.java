@@ -933,7 +933,10 @@ public final class VillagerInteractionService {
                             ? com.jvn.villagerretaliation.party.PartyVillagerContractService.setFollowing(player, villager)
                             : com.jvn.villagerretaliation.party.PartyVillagerContractService.setStaying(player, villager);
             sendPartyContractResult(player, villager, result);
-            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            if (result.success()) {
+                trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), ""));
+                VillagerConversationService.endForPlayer(player, false);
+            }
             return true;
         }
         int extensionDays = switch (action) {

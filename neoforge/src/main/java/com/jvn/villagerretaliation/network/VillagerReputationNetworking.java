@@ -11,13 +11,14 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.toucanlib.neoforge.network.ToucanNetwork;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "38";
+    private static final String PROTOCOL_VERSION = "39";
 
     private VillagerReputationNetworking() {
     }
@@ -464,7 +465,8 @@ public final class VillagerReputationNetworking {
 
     public static void sendServerConfig(ServerPlayer player) {
         trySendToPlayer(player, new ServerConfigSyncPayload(
-                VillagerRetaliationConfig.SHOW_VILLAGER_NAME_TAGS.get()
+                VillagerRetaliationConfig.SHOW_VILLAGER_NAME_TAGS.get(),
+                VillagerRetaliationConfig.VILLAGER_STAT_DISPLAY_MODE.get()
         ));
         sendBuilderStructureCatalog(player);
     }
@@ -491,33 +493,37 @@ public final class VillagerReputationNetworking {
     }
 
     public static void sendName(ServerPlayer player, Entity villager) {
+        VillagerNameSyncPayload payload = namePayload(villager);
+        if (payload != null) {
+            trySendToPlayer(player, payload);
+        }
+    }
+
+    public static void syncNameToTracking(Entity villager) {
+        VillagerNameSyncPayload payload = namePayload(villager);
+        if (payload != null) {
+            PacketDistributor.sendToPlayersTrackingEntity(villager, payload);
+        }
+    }
+
+    private static VillagerNameSyncPayload namePayload(Entity villager) {
         if (!VillagerPresetNameRegistry.isVillagerForm(villager)) {
-            return;
+            return null;
         }
-        if (villager.hasCustomName() && villager.getCustomName() != null) {
-            String customName = villager.getCustomName().getString().trim();
-            if (!customName.isBlank()) {
-                trySendToPlayer(player, new VillagerNameSyncPayload(
-                        villager.getId(),
-                        villager.getUUID(),
-                        "",
-                        customName
-                ));
-            }
-            return;
+        String name = villager.hasCustomName() && villager.getCustomName() != null
+                ? villager.getCustomName().getString().trim()
+                : VillagerPresetNameRegistry.resolvePresetName(villager);
+        if (name.isBlank()) {
+            return null;
         }
+        return new VillagerNameSyncPayload(
+                villager.getId(), villager.getUUID(), "", name, isHiredVillager(villager));
+    }
 
-        String presetName = VillagerPresetNameRegistry.resolvePresetName(villager);
-        if (presetName.isBlank()) {
-            return;
-        }
-
-        trySendToPlayer(player, new VillagerNameSyncPayload(
-                villager.getId(),
-                villager.getUUID(),
-                "",
-                presetName
-        ));
+    private static boolean isHiredVillager(Entity entity) {
+        return entity instanceof net.minecraft.world.entity.npc.Villager villager
+                && villager.level() instanceof ServerLevel level
+                && com.jvn.villagerretaliation.interaction.HiredVillagerContractService.isHired(level, villager);
     }
 
     public static void sendTierNotice(ServerPlayer player, String text) {

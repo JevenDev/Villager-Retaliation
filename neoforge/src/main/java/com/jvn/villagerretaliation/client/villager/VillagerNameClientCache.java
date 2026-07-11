@@ -23,7 +23,8 @@ public final class VillagerNameClientCache {
             BY_ENTITY_ID.remove(payload.entityId());
             return;
         }
-        BY_ENTITY_ID.put(payload.entityId(), new DisplayEntry(payload.villagerId(), payload.nameKey(), payload.fallbackName()));
+        BY_ENTITY_ID.put(payload.entityId(), new DisplayEntry(
+                payload.villagerId(), payload.nameKey(), payload.fallbackName(), payload.hired()));
     }
 
     public static Optional<Component> displayName(int entityId) {
@@ -37,6 +38,11 @@ public final class VillagerNameClientCache {
         return entry.fallbackName().isBlank()
                 ? Optional.empty()
                 : Optional.of(Component.literal(entry.fallbackName()));
+    }
+
+    public static boolean isHired(int entityId) {
+        DisplayEntry entry = BY_ENTITY_ID.get(entityId);
+        return entry != null && entry.hired();
     }
 
     public static void pruneMissing() {
@@ -64,6 +70,6 @@ public final class VillagerNameClientCache {
         nextPruneGameTime = 0L;
     }
 
-    private record DisplayEntry(UUID villagerId, String nameKey, String fallbackName) {
+    private record DisplayEntry(UUID villagerId, String nameKey, String fallbackName, boolean hired) {
     }
 }

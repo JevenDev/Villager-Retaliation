@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import net.minecraft.client.Minecraft;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -10,23 +9,22 @@ public final class VillagerInteractionHudHider {
     }
 
     public static void onRenderGuiPre(RenderGuiEvent.Pre event) {
-        if (Minecraft.getInstance().screen instanceof VillagerInteractionSessionScreen) {
-            event.setCanceled(true);
-        }
+        event.getGuiGraphics().setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     public static void onRenderGuiLayerPre(RenderGuiLayerEvent.Pre event) {
-        if (Minecraft.getInstance().screen instanceof VillagerInteractionSessionScreen) {
-            event.setCanceled(true);
+        if (VanillaGuiLayers.CAMERA_OVERLAYS.equals(event.getName())) {
+            event.getGuiGraphics().setColor(1.0F, 1.0F, 1.0F, 1.0F);
             return;
         }
 
-        if (VanillaGuiLayers.CHAT.equals(event.getName())) {
-            Minecraft minecraft = Minecraft.getInstance();
-            if (minecraft.screen instanceof VillagerInteractionScreen) {
-                event.setCanceled(true);
-                return;
-            }
+        float alpha = VillagerInteractionVisibilityFade.alpha();
+        if (alpha <= 0.001F) {
+            event.setCanceled(true);
+            return;
+        }
+        if (alpha < 0.999F) {
+            event.getGuiGraphics().setColor(1.0F, 1.0F, 1.0F, alpha);
         }
 
         if (!ClientVillagerConversationState.active()) {
@@ -39,13 +37,10 @@ public final class VillagerInteractionHudHider {
     }
 
     public static void onRenderGuiLayerPost(RenderGuiLayerEvent.Post event) {
-        if (!VanillaGuiLayers.SAVING_INDICATOR.equals(event.getName())) {
-            return;
-        }
+        event.getGuiGraphics().setColor(1.0F, 1.0F, 1.0F, 1.0F);
+    }
 
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.screen instanceof VillagerInteractionScreen) {
-            return;
-        }
+    public static void onRenderGuiPost(RenderGuiEvent.Post event) {
+        event.getGuiGraphics().setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
 }

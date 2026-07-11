@@ -15,22 +15,24 @@ public final class VillagerChatEffectRenderer {
     private static final int MESSAGE_INDENT = 4;
     private static final int BOTTOM_MARGIN = 40;
     private static final int CHAT_X_OFFSET = 4;
-    private static final long CHAT_REAPPEAR_FADE_MILLIS = 260L;
     static final int STATIC_EFFECT_TEXT_COLOR = VillagerStyledTextRenderer.STATIC_EFFECT_TEXT_COLOR;
-    private static long reappearFadeStartMillis = -1L;
 
     private VillagerChatEffectRenderer() {
     }
 
     public static void startReappearFade() {
-        reappearFadeStartMillis = net.minecraft.Util.getMillis();
+        VillagerInteractionVisibilityFade.fadeIn();
+    }
+
+    public static void startDisappearFade() {
+        VillagerInteractionVisibilityFade.fadeOut();
     }
 
     public static boolean shouldHijack(Minecraft minecraft) {
         return minecraft != null
                 && minecraft.gui != null
                 && minecraft.gui.getChat() != null
-                && (VillagerAnimatedChatText.hasTrackedEffects() || reappearFadeActive());
+                && VillagerAnimatedChatText.hasTrackedEffects();
     }
 
     public static void render(GuiGraphics graphics, Minecraft minecraft) {
@@ -46,7 +48,7 @@ public final class VillagerChatEffectRenderer {
         int screenHeight = graphics.guiHeight();
         double opacity = minecraft.options.chatOpacity().get() * 0.9F + 0.1F;
         double backgroundOpacity = minecraft.options.textBackgroundOpacity().get();
-        double fadeAlpha = reappearFadeAlpha();
+        double fadeAlpha = 1.0D;
         double lineSpacing = minecraft.options.chatLineSpacing().get();
         int lineHeight = chat.getLineHeight();
         int textYAdjust = (int) Math.round(-8.0 * (lineSpacing + 1.0) + 4.0 * lineSpacing);
@@ -114,25 +116,6 @@ public final class VillagerChatEffectRenderer {
         }
 
         graphics.pose().popPose();
-    }
-
-    private static boolean reappearFadeActive() {
-        return reappearFadeStartMillis >= 0L && net.minecraft.Util.getMillis() - reappearFadeStartMillis < CHAT_REAPPEAR_FADE_MILLIS;
-    }
-
-    private static double reappearFadeAlpha() {
-        if (reappearFadeStartMillis < 0L) {
-            return 1.0D;
-        }
-        double progress = Mth.clamp(
-                (double) (net.minecraft.Util.getMillis() - reappearFadeStartMillis) / CHAT_REAPPEAR_FADE_MILLIS,
-                0.0D,
-                1.0D);
-        if (progress >= 1.0D) {
-            reappearFadeStartMillis = -1L;
-            return 1.0D;
-        }
-        return progress * progress * (3.0D - 2.0D * progress);
     }
 
     private static void consumeScrolledLines(

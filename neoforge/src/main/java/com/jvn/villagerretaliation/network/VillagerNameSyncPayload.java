@@ -5,7 +5,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record VillagerNameSyncPayload(int entityId, UUID villagerId, String nameKey, String fallbackName)
+public record VillagerNameSyncPayload(int entityId, UUID villagerId, String nameKey, String fallbackName, boolean hired)
         implements CustomPacketPayload {
     private static final int NAME_KEY_LENGTH = 256;
     private static final int FALLBACK_NAME_LENGTH = 128;
@@ -18,6 +18,7 @@ public record VillagerNameSyncPayload(int entityId, UUID villagerId, String name
         buffer.writeUUID(payload.villagerId());
         buffer.writeUtf(payload.nameKey(), NAME_KEY_LENGTH);
         buffer.writeUtf(payload.fallbackName(), FALLBACK_NAME_LENGTH);
+        buffer.writeBoolean(payload.hired());
     }
 
     private static VillagerNameSyncPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -25,7 +26,8 @@ public record VillagerNameSyncPayload(int entityId, UUID villagerId, String name
                 buffer.readVarInt(),
                 buffer.readUUID(),
                 buffer.readUtf(NAME_KEY_LENGTH),
-                buffer.readUtf(FALLBACK_NAME_LENGTH)
+                buffer.readUtf(FALLBACK_NAME_LENGTH),
+                buffer.readBoolean()
         );
     }
 

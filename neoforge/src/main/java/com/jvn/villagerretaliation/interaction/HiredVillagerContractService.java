@@ -337,6 +337,7 @@ public final class HiredVillagerContractService {
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
         villager.setPersistenceRequired();
         HiredVillagerIndex.update(level, villager);
+        com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);
     }
 
     public static void startOneOffBuilderJob(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -365,6 +366,7 @@ public final class HiredVillagerContractService {
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
         villager.setPersistenceRequired();
         HiredVillagerIndex.update(level, villager);
+        com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);
     }
 
     public static boolean isOneOffBuilderJob(ServerLevel level, Villager villager) {
@@ -652,6 +654,7 @@ public final class HiredVillagerContractService {
         VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
         villager.setPersistenceRequired();
         HiredVillagerIndex.remove(villager);
+        com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);
     }
 
     private static void finalizeBuilderJobForContractEnd(

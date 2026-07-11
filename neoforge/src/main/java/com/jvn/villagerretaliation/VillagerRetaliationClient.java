@@ -22,6 +22,7 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagKeyMappings::register);
         com.jvn.villagerretaliation.client.item.VillagerFishingRodItemProperties.register();
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerStatNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerReputationDebugOverlay::onRenderNameTag);
@@ -47,6 +48,7 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionHudHider::onRenderGuiPre);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionHudHider::onRenderGuiPost);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionHudHider::onRenderGuiLayerPre);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerInteractionHudHider::onRenderGuiLayerPost);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerChatTextFormatter::onClientChatReceived);
