@@ -2,6 +2,7 @@
   "use strict";
 
   const model = window.QuestBuilderModel;
+  const zipUtils = window.QuestBuilderZip;
   const STORAGE_KEY = "villager-retaliation.quest-builder.project.v1";
   const BACKUP_KEY = `${STORAGE_KEY}.backup`;
   const MAX_HISTORY = 80;
@@ -91,6 +92,13 @@
     return quest?.stages?.find((stage) => stage.id === selectedStageId) || quest?.stages?.[0] || null;
   }
 
+  function issuesForQuest(quest) {
+    const questIndex = project.quests.indexOf(quest);
+    return model.validateProject(project, registryMetadata)
+      .filter((issue) => issue.questIndex === questIndex)
+      .map(({ questIndex: ignoredIndex, questId: ignoredId, ...issue }) => issue);
+  }
+
   function ensureSelection() {
     project = model.normalizeProject(project);
     const quest = currentQuest();
@@ -178,7 +186,7 @@
     renderNavigation();
     renderStageShortcuts();
     const quest = currentQuest();
-    const issues = model.validateQuest(quest, registryMetadata);
+    const issues = issuesForQuest(quest);
     if (activeView === "setup") renderSetup(quest, issues);
     else if (activeView === "stages") renderStages(quest, issues);
     else if (activeView === "dialogue") renderDialogue(quest, issues);
@@ -197,7 +205,7 @@
 
   function renderQuestList() {
     els.questList.innerHTML = project.quests.map((quest) => {
-      const issues = model.validateQuest(quest, registryMetadata);
+      const issues = issuesForQuest(quest);
       const summary = model.summarizeIssues(issues);
       const health = summary.error ? `<span class="quest-health has-errors" title="${summary.error} error${summary.error === 1 ? "" : "s"}">${summary.error}</span>` : `<span class="quest-health is-valid" title="No errors">✓</span>`;
       return `<button type="button" data-select-quest="${escapeHtml(quest.id)}" class="${quest === currentQuest() ? "is-active" : ""}">
@@ -349,7 +357,7 @@
     if (objective.type === "structure_visit") return field({ ...shared, label: "Structure id", value: objective.structure || "", objectiveField: "structure", path: `${path}/structure`, placeholder: "minecraft:village_plains" });
     if (objective.type === "memory_event") return field({ ...shared, label: "Memory event", value: objective.event || "", objectiveField: "event", placeholder: "player_helped_villager" });
     if (objective.type === "reputation") return numberField({ ...shared, label: "Minimum reputation", value: objective.min ?? 0, objectiveField: "min" });
-    if (objective.type === "choice") return field({ ...shared, label: "Choice id", value: objective.choice || "", objectiveField: "choice", placeholder: "help_path" });
+    if (objective.type === "choice") return `${field({ ...shared, label: "Choice fact key", value: objective.key || "", objectiveField: "key", placeholder: "help_path" })}${field({ ...shared, label: "Allowed values", value: (objective.values || []).join(", "), objectiveField: "values", dataType: "list", placeholder: "supplies, defense" })}`;
     if (objective.type === "fact") return `${field({ ...shared, label: "Fact key", value: objective.key || "", objectiveField: "key", placeholder: "progress" })}${field({ ...shared, label: "Expected value", value: objective.value ?? "", objectiveField: "value", placeholder: "1" })}`;
     if (objective.type === "location_visit") return `${numberField({ ...shared, label: "X", value: objective.x ?? 0, objectiveField: "x", className: "span-3" })}${numberField({ ...shared, label: "Y", value: objective.y ?? 64, objectiveField: "y", className: "span-3" })}${numberField({ ...shared, label: "Z", value: objective.z ?? 0, objectiveField: "z", className: "span-3" })}${numberField({ ...shared, label: "Radius", value: objective.radius ?? 8, objectiveField: "radius", className: "span-3", min: 1 })}`;
     if (objective.type === "condition") return textareaField({ ...shared, label: "Conditions JSON", value: JSON.stringify(objective.conditions || [], null, 2), objectiveField: "conditions", dataType: "json", className: "full" });
@@ -840,12 +848,47 @@
   }
 
   function downloadText(value, name, type = "application/json") {
-    const url = URL.createObjectURL(new Blob([value], { type }));
+    downloadBlob(new Blob([value], { type }), name);
+  }
+
+  function downloadBlob(blob, name) {
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = name;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  function createDatapackFiles() {
+    const files = {
+      "pack.mcmeta": JSON.stringify({
+        pack: {
+          pack_format: 34,
+          description: project.name || "Villager Retaliation quest pack"
+        },
+        villagerretaliation: {
+          pack_version: "1.0.0-beta.12"
+        }
+      }, null, 2) + "\n"
+    };
+    for (const quest of project.quests) {
+      const path = model.questFilePath(quest);
+      if (Object.hasOwn(files, path)) throw new Error(`Two quests export to ${path}. Give them different ids.`);
+      files[path] = JSON.stringify(model.stripBuilderFields(quest), null, 2) + "\n";
+    }
+    return files;
+  }
+
+  function exportDatapack() {
+    try {
+      const bytes = zipUtils.createZip(createDatapackFiles());
+      downloadBlob(new Blob([bytes], { type: "application/zip" }), `${model.slugify(project.name, "quest_pack")}.zip`);
+      closeModals();
+      showToast(`Exported ${project.quests.length} quest${project.quests.length === 1 ? "" : "s"} as a datapack.`);
+    } catch (error) {
+      showToast(error.message, true);
+    }
   }
 
   function openConfirmation(title, message, actionLabel, callback) {
@@ -1007,7 +1050,7 @@
   window.addEventListener("resize", () => { if (activeView === "stages") window.requestAnimationFrame(drawGraphLines); });
 
   function renderExportDialog() {
-    const allIssues = project.quests.flatMap((quest) => model.validateQuest(quest, registryMetadata).map((issue) => ({ ...issue, quest })));
+    const allIssues = model.validateProject(project, registryMetadata);
     const errors = allIssues.filter((issue) => issue.severity === "error");
     els.exportDialogContent.innerHTML = `${errors.length ? `<div class="status-strip error"><i data-lucide="circle-x"></i><div><strong>${errors.length} blocking error${errors.length === 1 ? "" : "s"}</strong><span>Fix the errors before exporting a datapack. Individual JSON files remain available for troubleshooting.</span></div></div>` : `<div class="status-strip valid"><i data-lucide="circle-check"></i><div><strong>Project is ready</strong><span>All ${project.quests.length} quest${project.quests.length === 1 ? "" : "s"} pass browser validation.</span></div></div>`}
       <div class="export-option"><div><strong>Current quest JSON</strong><p>Download ${escapeHtml(model.questFilePath(currentQuest()))}.</p></div><button class="button button-secondary" type="button" data-export="quest"><i data-lucide="file-json"></i>Download</button></div>
@@ -1022,7 +1065,7 @@
     if (!button) return;
     if (button.dataset.export === "quest") downloadText(JSON.stringify(model.stripBuilderFields(currentQuest()), null, 2) + "\n", model.questFilePath(currentQuest()).split("/").at(-1));
     if (button.dataset.export === "project") downloadText(JSON.stringify(project, null, 2) + "\n", `${model.slugify(project.name, "quest_project")}.vr-quests.json`);
-    if (button.dataset.export === "datapack") showToast("Datapack packaging will be enabled after final validation.");
+    if (button.dataset.export === "datapack") exportDatapack();
   });
 
   async function importFiles(files) {
@@ -1032,10 +1075,18 @@
     const failures = [];
     for (const file of files) {
       try {
-        const parsed = JSON.parse(await file.text());
-        if (parsed?.version && Array.isArray(parsed.quests)) imported.push(...parsed.quests);
-        else if (parsed?.schema === model.SCHEMA_ID) imported.push(parsed);
-        else throw new Error("This is not a Quest v2 file or Quest Builder project backup.");
+        if (/\.zip$/i.test(file.name)) {
+          const packFiles = await zipUtils.readZip(new Uint8Array(await file.arrayBuffer()));
+          const questFiles = zipUtils.decodeJsonFiles(packFiles, (path) => /^data\/[a-z0-9_.-]+\/quests\/.+\.json$/i.test(path));
+          const quests = questFiles.map((entry) => entry.value).filter((value) => value?.schema === model.SCHEMA_ID);
+          if (!quests.length) throw new Error("No Quest v2 files were found under data/<namespace>/quests.");
+          imported.push(...quests);
+        } else {
+          const parsed = JSON.parse(await file.text());
+          if (parsed?.version && Array.isArray(parsed.quests)) imported.push(...parsed.quests);
+          else if (parsed?.schema === model.SCHEMA_ID) imported.push(parsed);
+          else throw new Error("This is not a Quest v2 file or Quest Builder project backup.");
+        }
       } catch (error) { failures.push(`${file.name}: ${error.message}`); }
     }
     if (imported.length) {

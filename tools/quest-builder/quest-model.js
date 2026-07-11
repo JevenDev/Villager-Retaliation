@@ -10,6 +10,18 @@
   const STAGE_ID = /^(?!__generated)(?!vr\$)[A-Za-z0-9_.:-]+$/;
   const STORAGE_VERSION = 1;
   const SEVERITY_ORDER = { error: 0, warning: 1, info: 2 };
+  const ALLOWED_FIELDS = {
+    quest: new Set(["schema", "id", "metadata", "provider", "availability", "lifecycle", "dialogue", "target", "entry_stage", "stages", "events", "rewards", "ui", "external_scenes"]),
+    metadata: new Set(["title", "description", "title_key", "description_key", "questline", "tags", "parent", "show_locked_adventure_hint", "author", "version"]),
+    provider: new Set(["type", "required_capabilities", "capabilities", "filters", "data"]),
+    availability: new Set(["conditions", "active", "cooldown", "cooldown_ticks", "cooldown_days", "cooldown_seconds", "completion_cooldown", "completion_cooldown_ticks", "completion_cooldown_days", "completion_cooldown_seconds", "exclusive_group", "repeatable", "max_starts", "max_completions", "completion_scope", "scope", "abandonment", "abandonment_cooldown", "abandonment_cooldown_ticks", "abandonment_cooldown_days", "abandonment_cooldown_seconds", "consume_on_completion", "consume_on_abandonment", "locked_to_villager", "cross_villager_compatible", "prerequisites"]),
+    stage: new Set(["id", "title", "title_key", "description", "description_key", "objectives", "complete_when", "next", "dialogue", "scenes", "responses", "events", "on_enter", "on_exit", "entry_actions", "exit_actions", "rewards", "ui", "metadata"]),
+    objective: new Set(["id", "type", "optional", "count", "consume", "tracker", "conditions", "target", "targets", "structure", "dimension", "location", "radius", "search_radius", "discovery_radius", "item", "items", "item_tag", "item_tags", "entity", "entities", "entity_tag", "entity_tags", "block", "blocks", "block_tag", "block_tags", "memory", "memory_tag", "memory_tags", "gift_reaction", "gift_reactions", "reputation_level", "reputation_levels", "min", "max", "scope", "quest", "quest_id", "tag", "tags", "key", "value", "values", "stage", "stages", "choices", "metadata", "ui", "x", "y", "z", "pos", "pieces", "event", "events", "memory_event", "memory_events", "reaction", "reactions", "level", "levels", "min_reputation", "max_reputation", "fact", "variable", "counter", "custom_data", "nbt"]),
+    dialogue: new Set(["scene", "scene_ref", "external", "external_scene", "external_entry", "label", "request", "show_for_babies", "order", "text", "text_key", "lines", "responses", "conditions", "actions", "metadata"]),
+    response: new Set(["id", "label", "label_key", "text", "text_key", "lines", "conditions", "actions", "transition", "next", "stage", "scene", "response", "complete", "abandon", "fail", "request", "order", "metadata"]),
+    rewards: new Set(["actions", "experience", "reputation", "gossip_reputation", "loot_table", "memory_event"]),
+    ui: new Set(["title", "title_key", "description", "description_key", "tracker_text", "tracker_text_key", "show_progress", "progress", "placeholders", "icon", "color", "priority", "hidden"])
+  };
 
   const OBJECTIVE_LABELS = {
     item_check: "Collect items",
@@ -82,7 +94,7 @@
     if (type === "memory_event") Object.assign(objective, { event: "player_helped_villager", count: 1 });
     if (type === "trade") objective.count = 1;
     if (type === "reputation") objective.min = 10;
-    if (type === "choice") objective.choice = "accept";
+    if (type === "choice") Object.assign(objective, { key: "choice", values: ["accept"] });
     if (type === "fact") Object.assign(objective, { key: "progress", value: 1 });
     if (type === "condition") objective.conditions = [{ type: "reputation", min: 0 }];
     return objective;
@@ -154,7 +166,7 @@
     quest.metadata.description = "Let the player choose how to help the village.";
     quest.ui.title = quest.metadata.title;
     const choice = createStage("choose_a_path", { title: "Choose a Path", objectiveType: "choice" });
-    choice.objectives[0] = { id: "choose_help", type: "choice", choice: "help_path", tracker: { text: "Choose how you will help.", complete_text: "A path has been chosen.", show_progress: false } };
+    choice.objectives[0] = { id: "choose_help", type: "choice", key: "help_path", values: ["supplies", "defense"], tracker: { text: "Choose how you will help.", complete_text: "A path has been chosen.", show_progress: false } };
     choice.complete_when = ["choose_help"];
     choice.dialogue.offer = {
       label: quest.metadata.title,
@@ -282,6 +294,12 @@
       issue("error", "quest.invalid", "$", "Quest data must be a JSON object.", "Import a Quest v2 JSON file or start from a template.");
       return issues;
     }
+    validateUnknownFields(quest, ALLOWED_FIELDS.quest, "", "quest", issue);
+    validateUnknownFields(quest.metadata, ALLOWED_FIELDS.metadata, "/metadata", "quest metadata", issue);
+    validateUnknownFields(quest.provider, ALLOWED_FIELDS.provider, "/provider", "provider", issue);
+    validateUnknownFields(quest.availability, ALLOWED_FIELDS.availability, "/availability", "availability", issue);
+    validateUnknownFields(quest.rewards, ALLOWED_FIELDS.rewards, "/rewards", "rewards", issue);
+    validateUnknownFields(quest.ui, ALLOWED_FIELDS.ui, "/ui", "quest UI", issue);
     if (quest.schema !== SCHEMA_ID) issue("error", "quest.schema", "/schema", `Schema must be ${SCHEMA_ID}.`, "Set the schema field to the supported Quest v2 id.");
     if (!RESOURCE_LOCATION.test(String(quest.id || ""))) issue("error", "quest.id", "/id", "Quest id must be a namespaced resource location.", "Use lowercase text such as my_pack:first_steps.");
     if (!quest.provider || typeof quest.provider !== "object") issue("error", "provider.missing", "/provider", "A quest provider is required.", "Choose the Villager provider in Quest setup.");
@@ -302,11 +320,15 @@
     const triggerRegistry = registrySet(registries, "triggers");
     stages.forEach((stage, stageIndex) => {
       const base = `/stages/${stageIndex}`;
+      validateUnknownFields(stage, ALLOWED_FIELDS.stage, base, "stage", issue);
+      validateUnknownFields(stage?.rewards, ALLOWED_FIELDS.rewards, `${base}/rewards`, "stage rewards", issue);
+      validateUnknownFields(stage?.ui, ALLOWED_FIELDS.ui, `${base}/ui`, "stage UI", issue);
       if (!stage?.id) issue("error", "stage.id.missing", `${base}/id`, `Stage ${stageIndex + 1} needs an id.`, "Use a short id such as gather_supplies.");
       else if (!STAGE_ID.test(stage.id)) issue("error", "stage.id.invalid", `${base}/id`, `Stage id “${stage.id}” contains unsupported characters.`, "Use letters, numbers, dots, underscores, colons, or hyphens.");
       if (!Array.isArray(stage?.objectives)) issue("error", "objectives.missing", `${base}/objectives`, `Stage “${stage?.id || stageIndex + 1}” needs an objectives array.`, "Use an empty list for a return-only stage.");
       (stage?.objectives || []).forEach((objective, objectiveIndex) => {
         const path = `${base}/objectives/${objectiveIndex}`;
+        validateUnknownFields(objective, ALLOWED_FIELDS.objective, path, "objective", issue);
         if (!objective?.id) issue("error", "objective.id.missing", `${path}/id`, "Objective needs an id.", "Use a unique id such as bring_bread.");
         else if (objectiveIds.has(objective.id)) issue("error", "objective.id.duplicate", `${path}/id`, `Objective id “${objective.id}” is duplicated.`, "Objective ids must be unique across the quest.");
         else objectiveIds.add(objective.id);
@@ -354,6 +376,9 @@
     if (["item_check", "gift", "mob_kill", "block_break", "block_place", "trade"].includes(objective?.type) && (!Number.isInteger(Number(objective.count)) || Number(objective.count) < 1)) {
       issue("error", "objective.count", `${path}/count`, `Objective “${objective.id || "untitled"}” needs a count of at least 1.`, "Enter a whole number.");
     }
+    if (objective?.type === "choice" && !objective.key && !(Array.isArray(objective.values) && objective.values.length)) {
+      issue("error", "objective.choice", path, `Choice objective “${objective.id || "untitled"}” needs a fact key or allowed values.`, "Set a key such as route and list the response values players may choose.");
+    }
   }
 
   function validateDialogue(stage, base, stageSet, issue) {
@@ -363,10 +388,12 @@
         issue("error", "dialogue.invalid", path, `Dialogue slot “${slotName}” must be an object.`, "Edit or remove the invalid slot.");
         continue;
       }
+      validateUnknownFields(slot, ALLOWED_FIELDS.dialogue, path, "dialogue slot", issue);
       const hasContent = Boolean(slot.text || slot.text_key || (Array.isArray(slot.lines) && slot.lines.some(Boolean)) || slot.external || slot.external_scene || slot.scene || slot.scene_ref);
       if (!hasContent) issue("warning", "dialogue.empty", path, `Dialogue slot “${slotName}” has no lines or scene reference.`, "Add what the villager should say.");
       const responseIds = new Set();
       for (const [index, response] of (slot.responses || []).entries()) {
+        validateUnknownFields(response, ALLOWED_FIELDS.response, `${path}/responses/${index}`, "dialogue response", issue);
         if (!response.id) issue("error", "response.id.missing", `${path}/responses/${index}/id`, "Dialogue response needs an id.", "Use an id such as accept or decline.");
         else if (responseIds.has(response.id)) issue("error", "response.id.duplicate", `${path}/responses/${index}/id`, `Response id “${response.id}” is duplicated in this dialogue slot.`, "Give each response a unique id.");
         else responseIds.add(response.id);
@@ -375,6 +402,15 @@
         if ((response.stage || response.next || response.scene) && response.actions?.some((action) => action.type === "quest_transition" || action.transition || action.stage || action.next)) {
           issue("warning", "response.transition.conflict", `${path}/responses/${index}`, `Response “${response.id || index + 1}” has two transition sources.`, "Keep either the direct destination or the transition action.");
         }
+      }
+    }
+  }
+
+  function validateUnknownFields(value, allowed, path, label, issue) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return;
+    for (const key of Object.keys(value)) {
+      if (!key.startsWith("__") && !allowed.has(key)) {
+        issue("error", `${label.replaceAll(" ", ".")}.field.unsupported`, `${path}/${key}`, `${label.charAt(0).toUpperCase() + label.slice(1)} field “${key}” is not supported by Quest v2.`, "Remove the field or move its data to a supported field.");
       }
     }
   }
@@ -416,6 +452,29 @@
     }, { error: 0, warning: 0, info: 0 });
   }
 
+  function validateProject(project, registries = {}) {
+    const quests = Array.isArray(project?.quests) ? project.quests : [];
+    const issues = quests.flatMap((quest, questIndex) => validateQuest(quest, registries).map((issue) => ({
+      ...issue,
+      questIndex,
+      questId: quest?.id || ""
+    })));
+    const paths = quests.map(questFilePath);
+    paths.forEach((path, questIndex) => {
+      if (paths.indexOf(path) === questIndex) return;
+      issues.push({
+        severity: "error",
+        code: "project.path.duplicate",
+        path: "/id",
+        message: `More than one quest exports to ${path}.`,
+        hint: "Give every quest a unique namespaced id.",
+        questIndex,
+        questId: quests[questIndex]?.id || ""
+      });
+    });
+    return issues.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || a.questIndex - b.questIndex || a.path.localeCompare(b.path));
+  }
+
   function stripBuilderFields(value) {
     if (Array.isArray(value)) return value.map(stripBuilderFields);
     if (value && typeof value === "object") {
@@ -449,6 +508,7 @@
     removeStage,
     reachableStages,
     validateQuest,
+    validateProject,
     summarizeIssues,
     stripBuilderFields
   };

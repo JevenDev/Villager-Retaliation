@@ -79,11 +79,20 @@ function testProjectRecovery() {
   assert.equal(project.selectedQuestId, project.quests[0].id);
 }
 
+function testDuplicateProjectPaths() {
+  const first = model.createLinearQuest("same_pack");
+  const second = model.createLinearQuest("same_pack");
+  const issues = model.validateProject({ quests: [first, second] }, registryMetadata);
+  assert(codes(issues).includes("project.path.duplicate"));
+  assert.equal(issues.find((issue) => issue.code === "project.path.duplicate").questIndex, 1);
+}
+
 testLinearTemplate();
 testBranchingTemplate();
 testRenameReferences();
 testRemoveReferences();
 testActionableValidation();
 testProjectRecovery();
+testDuplicateProjectPaths();
 
 console.log("Quest builder model tests passed.");
