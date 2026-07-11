@@ -111,7 +111,7 @@ Villagers also remember when they last saw you. Return after enough in-game days
 
 ### Quests
 
-Villagers can offer built-in quests through conversation. The player wiki currently covers 50 built-in quests, including the connected Cartographer's Atlas, Hearthbound, Field Medicine, Workshop Oaths, Courier Roads, and Last Ember questlines, plus tagged quest groups such as Dangerous Commissions, Lost Civilization, Old Roads, Village Defense, and Village Supply.
+Villagers can offer built-in quests through conversation. The player wiki currently covers 85 built-in quests, including 33 repeatable requests and the connected Cartographer's Atlas, Green Thumb, Deep Delvers, Redstone Works, Nether Routes, End Survey, Hearthbound, Field Medicine, Workshop Oaths, Courier Roads, and Last Ember questlines. Green Thumb, Deep Delvers, Redstone Works, Nether Routes, and End Survey each split into two choice-gated endings.
 
 Quest flow is meant to feel natural:
 

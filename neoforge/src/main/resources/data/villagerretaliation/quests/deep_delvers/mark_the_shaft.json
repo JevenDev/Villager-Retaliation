@@ -1,0 +1,548 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "villagerretaliation:mark_the_shaft",
+  "metadata": {
+    "title": "Mark the Shaft",
+    "description": "Choose rails or timber braces for the new village mine.",
+    "questline": "deep_delvers",
+    "parent": "villagerretaliation:below_the_bell",
+    "tags": [
+      "group.deep_delvers",
+      "branching"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:toolsmith",
+        "minecraft:armorer"
+      ],
+      "min_villager_level": "journeyman",
+      "skills": {
+        "mining": {
+          "min": 25
+        },
+        "smithing": {
+          "min": 20
+        }
+      }
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_starts": 1,
+    "max_completions": 1,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "locked_to_villager": true,
+    "cross_villager_compatible": false
+  },
+  "entry_stage": "choose",
+  "stages": [
+    {
+      "id": "choose",
+      "objectives": [
+        {
+          "id": "choose_route",
+          "type": "choice",
+          "key": "choice",
+          "values": [
+            "rail",
+            "timber"
+          ],
+          "tracker": {
+            "text": "Choose the route with the quest giver.",
+            "complete_text": "Route chosen: {objective_choice_value}.",
+            "show_progress": true,
+            "progress": 0.2
+          }
+        }
+      ],
+      "complete_when": [
+        "choose_route"
+      ],
+      "dialogue": {
+        "offer": {
+          "label": "Mark the Shaft",
+          "request": "question",
+          "order": -22,
+          "show_for_babies": false,
+          "lines": [
+            "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
+            "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+          ],
+          "responses": [
+            {
+              "id": "rail",
+              "label": "Lay the rails",
+              "text": "Rails, then. Give every slope a level thought before you set iron on it.",
+              "actions": [
+                {
+                  "type": "set_variable",
+                  "scope": "quest",
+                  "key": "choice",
+                  "value": "rail"
+                },
+                {
+                  "type": "notification",
+                  "trigger": "quest.updated",
+                  "text": "You chose rails for the village mine."
+                }
+              ],
+              "transition": {
+                "stage": "rail_work"
+              }
+            },
+            {
+              "id": "timber",
+              "label": "Brace the roof",
+              "text": "Timber, then. A slower mine is still better than a buried one.",
+              "actions": [
+                {
+                  "type": "set_variable",
+                  "scope": "quest",
+                  "key": "choice",
+                  "value": "timber"
+                },
+                {
+                  "type": "notification",
+                  "trigger": "quest.updated",
+                  "text": "You chose timber braces for the village mine."
+                }
+              ],
+              "transition": {
+                "stage": "timber_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": "Not yet.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Mark the Shaft",
+          "request": "question",
+          "order": -22,
+          "show_for_babies": false,
+          "lines": [
+            "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
+            "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the choice.",
+              "scene": "reminder_details",
+              "order": -10
+            },
+            {
+              "id": "rail",
+              "label": "Lay the rails",
+              "text": "Rails, then. Give every slope a level thought before you set iron on it.",
+              "actions": [
+                {
+                  "type": "set_variable",
+                  "scope": "quest",
+                  "key": "choice",
+                  "value": "rail"
+                },
+                {
+                  "type": "notification",
+                  "trigger": "quest.updated",
+                  "text": "You chose rails for the village mine."
+                }
+              ],
+              "transition": {
+                "stage": "rail_work"
+              }
+            },
+            {
+              "id": "timber",
+              "label": "Brace the roof",
+              "text": "Timber, then. A slower mine is still better than a buried one.",
+              "actions": [
+                {
+                  "type": "set_variable",
+                  "scope": "quest",
+                  "key": "choice",
+                  "value": "timber"
+                },
+                {
+                  "type": "notification",
+                  "trigger": "quest.updated",
+                  "text": "You chose timber braces for the village mine."
+                }
+              ],
+              "transition": {
+                "stage": "timber_work"
+              }
+            },
+            {
+              "id": "decline",
+              "label": "Not yet.",
+              "scene": "decline"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "The shaft can carry ore on rails, or hold its roof with heavy timber. We cannot afford both yet.",
+                  "Rails make distance cheap. Braces make bad stone less frightening. Choose what this mine needs first."
+                ],
+                "unavailable": [
+                  "That choice is not open right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "An unmarked shaft is only a hole with ambitions."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Choose a route.",
+        "show_progress": true,
+        "progress": 0.2
+      }
+    },
+    {
+      "id": "rail_work",
+      "objectives": [
+        {
+          "id": "lay_rails",
+          "type": "block_place",
+          "block": "minecraft:rail",
+          "count": 24,
+          "tracker": {
+            "text": "Place 24 rails in the mine.",
+            "complete_text": "The first rail line is laid.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_minecart",
+          "type": "item_check",
+          "item": "minecraft:minecart",
+          "count": 1,
+          "consume": false,
+          "tracker": {
+            "text": "Bring 1 minecart for the line.",
+            "complete_text": "The minecart is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "complete_when": [
+        "lay_rails",
+        "bring_minecart"
+      ],
+      "next": "rail_return",
+      "dialogue": {
+        "reminder": {
+          "label": "About Mark the Shaft",
+          "request": "question",
+          "order": -22,
+          "show_for_babies": false,
+          "lines": [
+            "Lay twenty-four rails and bring a minecart to test the line.",
+            "Rails, then. Give every slope a level thought before you set iron on it."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the route.",
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Lay twenty-four rails and bring a minecart to test the line.",
+                  "Rails, then. Give every slope a level thought before you set iron on it."
+                ],
+                "unavailable": [
+                  "That route is not active right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Keep to the route you chose."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Lay twenty-four rails and bring a minecart to test the line.",
+        "show_progress": true,
+        "progress": 0.75
+      }
+    },
+    {
+      "id": "rail_return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Mark the Shaft",
+          "request": "question",
+          "order": -22,
+          "show_for_babies": false,
+          "lines": [
+            "The cart rolls cleanly from the face to the daylight.",
+            "The first mine road is open. The deeper work will follow iron."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Finish this route.",
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_route",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "The first mine road is open. The deeper work will follow iron.",
+                  "The cart rolls cleanly from the face to the daylight."
+                ],
+                "missing_objectives": [
+                  "Lay twenty-four rails and bring a minecart to test the line."
+                ],
+                "missing_proof": [
+                  "Bring the route proof here before we close the map."
+                ],
+                "unavailable": [
+                  "That route cannot be closed right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "The route stays open until you are ready."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    },
+    {
+      "id": "timber_work",
+      "objectives": [
+        {
+          "id": "place_braces",
+          "type": "block_place",
+          "blocks": [
+            "minecraft:oak_log",
+            "minecraft:spruce_log"
+          ],
+          "count": 16,
+          "tracker": {
+            "text": "Place 16 logs as mine braces.",
+            "complete_text": "The first braces are set.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_lanterns",
+          "type": "item_check",
+          "item": "minecraft:lantern",
+          "count": 4,
+          "tracker": {
+            "text": "Bring 4 lanterns for the braced shaft.",
+            "complete_text": "The lanterns are ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "complete_when": [
+        "place_braces",
+        "bring_lanterns"
+      ],
+      "next": "timber_return",
+      "dialogue": {
+        "reminder": {
+          "label": "About Mark the Shaft",
+          "request": "question",
+          "order": -22,
+          "show_for_babies": false,
+          "lines": [
+            "Set sixteen log braces and hang four lanterns through the first stretch.",
+            "Timber, then. A slower mine is still better than a buried one."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the route.",
+              "scene": "reminder_details"
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Set sixteen log braces and hang four lanterns through the first stretch.",
+                  "Timber, then. A slower mine is still better than a buried one."
+                ],
+                "unavailable": [
+                  "That route is not active right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Keep to the route you chose."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Set sixteen log braces and hang four lanterns through the first stretch.",
+        "show_progress": true,
+        "progress": 0.75
+      }
+    },
+    {
+      "id": "timber_return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Mark the Shaft",
+          "request": "question",
+          "order": -22,
+          "show_for_babies": false,
+          "lines": [
+            "The roof is quiet and the braces are straight. That is the sound we wanted.",
+            "The first mine road is safe. The deeper work will follow timber."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Finish this route.",
+              "scene": "complete_route"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "leave"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_route",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "The first mine road is safe. The deeper work will follow timber.",
+                  "The roof is quiet and the braces are straight. That is the sound we wanted."
+                ],
+                "missing_objectives": [
+                  "Set sixteen log braces and hang four lanterns through the first stretch."
+                ],
+                "missing_proof": [
+                  "Bring the route proof here before we close the map."
+                ],
+                "unavailable": [
+                  "That route cannot be closed right now."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "The route stays open until you are ready."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 210,
+    "reputation": 14,
+    "gossip_reputation": 6,
+    "loot_table": "villagerretaliation:quest/mark_the_shaft",
+    "memory_event": "player_completed_quest"
+  },
+  "ui": {
+    "title": "Mark the Shaft",
+    "icon": "minecraft:minecart",
+    "color": "#B884E8"
+  }
+}

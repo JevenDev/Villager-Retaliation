@@ -148,7 +148,7 @@
                   "Defeat 3 zombies and bring 6 rotten flesh samples for the night ward."
                 ],
                 "unavailable": [
-                  "The ward is not counting that stage right now."
+                  "The sickroom is not ready for that work right now."
                 ]
               }
             }
@@ -241,7 +241,7 @@
                   "Bring 1 golden apple and 8 sugar for the night ward chest."
                 ],
                 "unavailable": [
-                  "The ward is not counting that stage right now."
+                  "The stronger medicine can wait until the sickroom is clear."
                 ]
               }
             }
@@ -298,7 +298,7 @@
                   "Good. I hope the ward gathers dust. Preparing for pain does not mean inviting it in."
                 ],
                 "missing_objectives": [
-                  "The ward still needs something. Check the tracker before we lock the chest."
+                  "The ward still needs its patrol cleared or its apple and sugar before we lock the chest."
                 ],
                 "missing_proof": [
                   "Bring the ward supplies here so I can set them aside."

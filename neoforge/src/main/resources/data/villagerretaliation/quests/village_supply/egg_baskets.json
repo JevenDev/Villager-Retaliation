@@ -4,8 +4,6 @@
   "metadata": {
     "title": "Egg Baskets",
     "description": "Bring eggs so the kitchens can stretch breakfast and broth.",
-    "title_key": "quest.village_supply.egg_baskets.title",
-    "description_key": "quest.village_supply.egg_baskets.description",
     "questline": "village_supply",
     "tags": [
       "group.village_supply"
@@ -30,19 +28,19 @@
     }
   },
   "availability": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 1,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
+    "repeatable": true,
     "max_starts": 0,
-    "repeatable": true
+    "max_completions": 0,
+    "completion_cooldown_days": 1,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "locked_to_villager": true,
+    "cross_villager_compatible": true
   },
-  "entry_stage": "collect",
+  "entry_stage": "work",
   "stages": [
     {
-      "id": "collect",
+      "id": "work",
       "objectives": [
         {
           "id": "bring_eggs",
@@ -67,34 +65,22 @@
         "offer": {
           "label": "Egg Baskets",
           "request": "question",
-          "show_for_babies": false,
           "order": -20,
+          "show_for_babies": false,
           "lines": [
-            "We are shorter on eggs than we are on patience.",
-            "That usually ends with breakfast becoming a rumor.",
-            "The village could use help with 12 eggs for Egg Baskets.",
-            "Egg Baskets is simple work, but simple work still feeds the day.",
-            "We need 12 eggs, and I would rather ask before the shortage becomes loud.",
-            "If you have room in your pack, Egg Baskets would help.",
-            "The count is not dramatic yet, which is when it is worth fixing.",
-            "A little help with Egg Baskets would settle more than one worry.",
-            "I have a request for 12 eggs, if you are willing.",
-            "This village runs better when requests like Egg Baskets do not wait too long.",
-            "The stores are asking for 12 eggs in their quiet way.",
-            "I could use a steady hand for Egg Baskets.",
-            "Bring 12 eggs, and the village will feel the difference.",
-            "Nothing glorious here, just useful work that matters.",
-            "Egg Baskets needs doing before it becomes everyone's problem."
+            "The hens are busy arguing and the kitchen has nothing to show for it.",
+            "Bring 12 eggs for the village kitchen, and the shelves will look less worried.",
+            "Bring 12 eggs for the village kitchen. I will make the reward worth the trouble."
           ],
           "responses": [
             {
               "id": "accept",
-              "label": "I can fill the egg baskets",
+              "label": "I can do that.",
               "scene": "start_quest"
             },
             {
               "id": "decline",
-              "label": "Another time",
+              "label": "Not right now.",
               "scene": "decline"
             }
           ]
@@ -102,42 +88,30 @@
         "reminder": {
           "label": "About Egg Baskets",
           "request": "question",
-          "show_for_babies": false,
           "order": -20,
+          "show_for_babies": false,
           "lines": [
-            "Egg Baskets is still open. I can repeat the details, or close my notes if you are done.",
-            "Egg Baskets is still open. I can repeat the work or close the note if you are done.",
-            "Egg Baskets is active. Do you need the details again?",
-            "We still have Egg Baskets on the slate.",
-            "The request is open, and I can remind you what it needs.",
-            "Egg Baskets has not been closed yet.",
-            "I can go over Egg Baskets again, or we can put it aside.",
-            "You still have Egg Baskets in hand.",
-            "The note is open. What do you need from me?",
-            "Egg Baskets is waiting on the rest of the count.",
-            "I can repeat the request or close it if you are done.",
-            "We can talk details, abandon the work, or leave it alone.",
-            "The village is still expecting Egg Baskets.",
-            "Your part in Egg Baskets is not finished yet.",
-            "Say the word and I will remind you what Egg Baskets needs."
+            "Bring 12 eggs for the village kitchen",
+            "Bring 12 eggs for the village kitchen.",
+            "Bring 12 eggs for the village kitchen, and the shelves will look less worried."
           ],
           "responses": [
             {
               "id": "details",
-              "label": "Remind me what to do",
+              "label": "Repeat the work.",
               "scene": "reminder_details",
               "order": 0
             },
             {
               "id": "abandon",
-              "label": "Abandon quest",
+              "label": "Put this aside.",
               "scene": "abandon_confirm",
               "order": 90
             },
             {
-              "id": "never_mind",
-              "label": "Never mind",
-              "scene": "active_cancel",
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
               "order": 100
             }
           ]
@@ -145,174 +119,31 @@
       },
       "scenes": [
         {
-          "id": "abandon_cancel",
-          "lines": [
-            "Good. The pans will stay hopeful a little longer.",
-            "Good. We will keep Egg Baskets open a while longer.",
-            "Then the request stays active.",
-            "Fine. Keep Egg Baskets in your hands for now.",
-            "Good. I will leave the note where it is.",
-            "Then we keep counting on you for this one.",
-            "The work stays open.",
-            "Egg Baskets remains on your list.",
-            "Good. Bring it back when you are ready.",
-            "I will keep the tally under your name.",
-            "Then nothing changes for Egg Baskets.",
-            "Good. The village will wait a little longer.",
-            "Keep the request and finish it when you can.",
-            "I will not close the note yet.",
-            "Then Egg Baskets stays alive."
-          ]
-        },
-        {
-          "id": "abandon_confirm",
-          "lines": [
-            "Put Egg Baskets aside for now?",
-            "Are you sure you want to step away from Egg Baskets?",
-            "Close your part in Egg Baskets for now?",
-            "Should I mark Egg Baskets abandoned?",
-            "Do you want me to take your name off this request?",
-            "Set the note for Egg Baskets aside?",
-            "Are you done with Egg Baskets for now?",
-            "Should I stop counting on you for this one?",
-            "Do you want to leave Egg Baskets unfinished?",
-            "Put the work down and walk away?",
-            "Should I close this attempt?",
-            "Are you sure Egg Baskets can wait without you?",
-            "Do you want the request removed from your list?",
-            "Shall I fold this note away?",
-            "One last check. Are you abandoning Egg Baskets?"
-          ],
-          "responses": [
-            {
-              "id": "confirm",
-              "label": "Abandon quest",
-              "scene": "abandon_quest"
-            },
-            {
-              "id": "cancel",
-              "label": "Keep the quest",
-              "scene": "abandon_cancel"
-            }
-          ]
-        },
-        {
-          "id": "abandon_quest",
+          "id": "start_quest",
           "actions": [
             {
               "type": "quest",
-              "action": "abandon",
+              "action": "start",
               "lines": {
-                "abandoned": [
-                  "I will set the egg baskets aside. Return if the kitchen still needs them.",
-                  "I will set Egg Baskets aside. Come back if the village still needs it.",
-                  "Egg Baskets is off your hands for now.",
-                  "I will clear the note and stop counting on you for this one.",
-                  "The request is set aside.",
-                  "I will mark Egg Baskets abandoned for now.",
-                  "Then we will leave Egg Baskets alone.",
-                  "I will put the tally away.",
-                  "The village will manage without this run for now.",
-                  "I will stop holding that work under your name.",
-                  "Egg Baskets is no longer active for you.",
-                  "I will take your name off the request.",
-                  "The note comes down for now.",
-                  "That closes your part in Egg Baskets for the moment.",
-                  "I will make the record clean again."
+                "started": [
+                  "Bring 12 eggs for the village kitchen. Keep the full count together on the road back.",
+                  "Bring 12 eggs for the village kitchen.",
+                  "Good. I will keep a place clear for what you bring back."
                 ],
-                "abandoned_cooldown": [
-                  "I will pause the egg count for now. Let the kitchen settle before asking again.",
-                  "I will pause Egg Baskets for now. Give the village a little time before asking again.",
-                  "Egg Baskets is set aside until the count settles.",
-                  "I will cool the request for a while.",
-                  "The village needs time before reopening Egg Baskets.",
-                  "I will mark this paused, not forgotten.",
-                  "Let the stores settle before we talk about Egg Baskets again.",
-                  "I will put the note away until the cooldown passes.",
-                  "Come back after the village has had time to reset.",
-                  "Egg Baskets can wait until the next proper opening.",
-                  "I will close this attempt and let the request breathe.",
-                  "The slate needs a little quiet before this comes back.",
-                  "I will pause the tally for now.",
-                  "Give this one time before you ask again.",
-                  "The request will not reopen immediately."
+                "already_completed": [
+                  "Egg Baskets is already settled for now.",
+                  "That work has already been counted."
                 ],
-                "abandoned_forever": [
-                  "Then the egg request is closed for good.",
-                  "Then Egg Baskets is closed for good.",
-                  "I will not reopen Egg Baskets.",
-                  "That request is finished permanently.",
-                  "Egg Baskets leaves the board for good.",
-                  "Then this note is gone, not paused.",
-                  "I will mark Egg Baskets as permanently closed.",
-                  "No one will ask you for this request again.",
-                  "That closes the matter completely.",
-                  "The village will not bring this one back to you.",
-                  "Egg Baskets is ended, not waiting.",
-                  "I will put a final mark on the record.",
-                  "This request is done beyond rechecking.",
-                  "Then we leave Egg Baskets in the past.",
-                  "I will close the book on that one."
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
                 ],
                 "unavailable": [
-                  "There is no egg count here for me to close.",
-                  "Egg Baskets is not available from here right now.",
-                  "That request is not in your hands right now.",
-                  "I cannot offer Egg Baskets at the moment.",
-                  "Egg Baskets is closed to new help for now.",
-                  "This is not ready for you right now.",
-                  "The village is not accepting that work at the moment.",
-                  "No open note for Egg Baskets is waiting here.",
-                  "Try again later if Egg Baskets comes back around.",
-                  "I cannot move that request today.",
-                  "Egg Baskets needs different timing.",
-                  "The work exists, but not for this moment.",
-                  "I do not have authority to open that now.",
-                  "The request is out of reach for now.",
-                  "There is nothing for me to hand you on Egg Baskets."
+                  "Egg Baskets is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
                 ]
               }
             }
-          ]
-        },
-        {
-          "id": "active_cancel",
-          "lines": [
-            "Then keep the shells uncracked until you are ready.",
-            "Then keep Egg Baskets close until you are ready.",
-            "All right. We will leave Egg Baskets open.",
-            "Keep the request and come back when you need the details.",
-            "Then I will leave the note alone.",
-            "No change, then. Egg Baskets stays with you.",
-            "Good. Finish it when the count is ready.",
-            "The work waits where it is.",
-            "Then we do nothing more for now.",
-            "Keep going when you are ready.",
-            "Egg Baskets remains open.",
-            "I will keep the tally active.",
-            "Come back when you want to settle it.",
-            "Then hold onto the work a little longer.",
-            "The village will wait for the full count."
-          ]
-        },
-        {
-          "id": "decline",
-          "lines": [
-            "Then I will keep negotiating with empty pans.",
-            "Another time, then. I will keep Egg Baskets in mind.",
-            "Fair enough. The request can wait a little longer.",
-            "Then I will keep the note nearby.",
-            "No trouble. Someone will ask again if it still matters.",
-            "The village will manage for now.",
-            "Then we leave Egg Baskets on the board.",
-            "All right. I will not press you on it.",
-            "Maybe later, if the need is still there.",
-            "I will keep counting without your help for now.",
-            "Then the request waits for another willing pair of hands.",
-            "Fine. Better a clear no than a forgotten promise.",
-            "The work is not going anywhere quickly.",
-            "Then I will ask again when the village needs it.",
-            "No harm. Egg Baskets can wait."
           ]
         },
         {
@@ -322,246 +153,49 @@
               "type": "quest",
               "action": "remind",
               "lines": {
-                "inactive": [
-                  "The kitchen has no active egg count at the moment.",
-                  "Egg Baskets is quiet right now.",
-                  "The village is not counting Egg Baskets at the moment.",
-                  "That request is not open right now.",
-                  "Egg Baskets is waiting on better timing.",
-                  "I cannot move Egg Baskets forward just now.",
-                  "The conditions for Egg Baskets are not ready.",
-                  "The note for Egg Baskets is closed for the moment.",
-                  "No one is taking that request right now.",
-                  "Egg Baskets needs to wait a little longer.",
-                  "This is not the right moment for Egg Baskets.",
-                  "The work is real, but it is not open right now.",
-                  "I have no active count for Egg Baskets at the moment.",
-                  "Egg Baskets is between openings right now.",
-                  "The village is not ready to accept that help yet."
-                ],
                 "reminder": [
-                  "Egg Baskets: I still need the eggs. Bring the full count back to me.",
-                  "For Egg Baskets, I still need 12 eggs.",
-                  "Egg Baskets is still asking for 12 eggs.",
-                  "Bring 12 eggs back when the count is ready.",
-                  "The tracker has the details for Egg Baskets.",
-                  "Keep Egg Baskets in mind and bring 12 eggs.",
-                  "The village is still waiting on 12 eggs.",
-                  "No rush in the words, but the count still matters.",
-                  "Bring the full amount back to me when you have it.",
-                  "Egg Baskets is still open.",
-                  "Follow the tracker for Egg Baskets and bring back 12 eggs.",
-                  "You are looking for 12 eggs for this request.",
-                  "The note says 12 eggs, and the note is not wrong today.",
-                  "Finish the count and return here when you can.",
-                  "This is simple work only if it gets done."
+                  "Bring 12 eggs for the village kitchen",
+                  "Bring 12 eggs for the village kitchen.",
+                  "Bring 12 eggs for the village kitchen, and the shelves will look less worried."
                 ],
                 "unavailable": [
-                  "That egg-basket request is not in your hands right now.",
-                  "Egg Baskets is not available from here right now.",
-                  "That request is not in your hands right now.",
-                  "I cannot offer Egg Baskets at the moment.",
-                  "Egg Baskets is closed to new help for now.",
-                  "This is not ready for you right now.",
-                  "The village is not accepting that work at the moment.",
-                  "No open note for Egg Baskets is waiting here.",
-                  "Try again later if Egg Baskets comes back around.",
-                  "I cannot move that request today.",
-                  "Egg Baskets needs different timing.",
-                  "The work exists, but not for this moment.",
-                  "I do not have authority to open that now.",
-                  "The request is out of reach for now.",
-                  "There is nothing for me to hand you on Egg Baskets."
+                  "Egg Baskets is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
                 ]
               }
             }
           ]
         },
         {
-          "id": "start_quest",
-          "actions": [
-            {
-              "type": "quest",
-              "action": "start",
-              "lines": {
-                "already_completed": [
-                  "The egg baskets are already settled.",
-                  "Egg Baskets is already settled on my side.",
-                  "We have already closed Egg Baskets.",
-                  "Egg Baskets does not need another tally right now.",
-                  "That work is already counted and put away.",
-                  "Egg Baskets is finished for now.",
-                  "The village has already marked Egg Baskets complete.",
-                  "I have no open note for Egg Baskets anymore.",
-                  "Egg Baskets has already been handled.",
-                  "That request is already off the board.",
-                  "We are not reopening Egg Baskets right now.",
-                  "Egg Baskets is done enough for today.",
-                  "The record for Egg Baskets is already clean.",
-                  "There is no fresh work left in Egg Baskets.",
-                  "That one is already squared away."
-                ],
-                "locate_failed": [
-                  "Egg Baskets cannot be posted from here right now.",
-                  "I cannot post Egg Baskets from here right now.",
-                  "Egg Baskets is not finding a proper place to start.",
-                  "No good posting point is ready for Egg Baskets.",
-                  "The village cannot place that request from here.",
-                  "Egg Baskets needs a better lead before I send you out.",
-                  "I cannot get a clean mark for Egg Baskets today.",
-                  "The request is real, but the place is not lining up.",
-                  "Something about this spot will not let Egg Baskets start.",
-                  "I need a clearer posting before I can offer Egg Baskets.",
-                  "The work is not anchoring here right now.",
-                  "I cannot set the note for Egg Baskets from this place.",
-                  "The village has no clean place to send you for that.",
-                  "Egg Baskets is refusing to settle onto the slate.",
-                  "The route for Egg Baskets is not clear enough yet."
-                ],
-                "started": [
-                  "Egg Baskets is yours now. Bring the eggs back when the count is ready.",
-                  "Egg Baskets is yours now. Bring 12 eggs when the count is ready.",
-                  "I am putting Egg Baskets in your hands.",
-                  "Take the note for Egg Baskets and bring back 12 eggs.",
-                  "Good. The village will be waiting for 12 eggs.",
-                  "Then we will count on you for Egg Baskets.",
-                  "Bring 12 eggs, and we can call this useful work.",
-                  "Egg Baskets starts now. Keep the tracker close.",
-                  "Head out for Egg Baskets and return with 12 eggs.",
-                  "The request is open, and your name is on it now.",
-                  "I will mark you down for Egg Baskets.",
-                  "Bring the full count back when you have it.",
-                  "You have the work now. Do it cleanly and come back safe.",
-                  "Egg Baskets points. Bring 12 eggs.",
-                  "That settles the posting. Now we need 12 eggs."
-                ],
-                "unavailable": [
-                  "The kitchen is not asking you for eggs right now.",
-                  "Egg Baskets is not available from here right now.",
-                  "That request is not in your hands right now.",
-                  "I cannot offer Egg Baskets at the moment.",
-                  "Egg Baskets is closed to new help for now.",
-                  "This is not ready for you right now.",
-                  "The village is not accepting that work at the moment.",
-                  "No open note for Egg Baskets is waiting here.",
-                  "Try again later if Egg Baskets comes back around.",
-                  "I cannot move that request today.",
-                  "Egg Baskets needs different timing.",
-                  "The work exists, but not for this moment.",
-                  "I do not have authority to open that now.",
-                  "The request is out of reach for now.",
-                  "There is nothing for me to hand you on Egg Baskets."
-                ]
-              }
-            }
-          ]
-        }
-      ],
-      "ui": {
-        "tracker_text": "Bring 12 eggs for the kitchen baskets.",
-        "tracker_text_key": "quest.village_supply.egg_baskets.tracker.proof.text",
-        "show_progress": true,
-        "progress": 0.7
-      }
-    },
-    {
-      "id": "return",
-      "objectives": [],
-      "dialogue": {
-        "turn_in": {
-          "label": "About Egg Baskets",
-          "request": "question",
-          "show_for_babies": false,
-          "order": -20,
+          "id": "decline",
           "lines": [
-            "If you have the eggs, we can settle Egg Baskets.",
-            "If you have what Egg Baskets needs, we can settle it now.",
-            "Ready to show me the delivery for Egg Baskets?",
-            "Bring it here and I will check the count.",
-            "If the full count is in your pack, we can close the note.",
-            "Let me see whether Egg Baskets is ready to finish.",
-            "If you brought 12 eggs, this should be quick.",
-            "We can close Egg Baskets if the goods are here.",
-            "Show me what you brought and I will count it properly.",
-            "If the request is complete, I can pay you now.",
-            "Ready to finish Egg Baskets?",
-            "Set the delivery here and we will see where the tally stands.",
-            "If you have the supplies, the note can come down.",
-            "Let us check the pack and close the matter if we can.",
-            "If Egg Baskets is complete, I am ready to mark it."
-          ],
-          "responses": [
-            {
-              "id": "complete",
-              "label": "Show what I brought",
-              "scene": "complete_quest",
-              "order": 0
-            },
-            {
-              "id": "abandon",
-              "label": "Abandon quest",
-              "scene": "abandon_confirm",
-              "order": 90
-            },
-            {
-              "id": "never_mind",
-              "label": "Never mind",
-              "scene": "turn_in_wait",
-              "order": 100
-            }
+            "All right. The empty shelf will keep asking in its own way.",
+            "Another pair of hands may take it, or you may ask again later."
           ]
-        }
-      },
-      "scenes": [
+        },
         {
-          "id": "abandon_cancel",
+          "id": "leave",
           "lines": [
-            "Good. The pans will stay hopeful a little longer.",
-            "Good. We will keep Egg Baskets open a while longer.",
-            "Then the request stays active.",
-            "Fine. Keep Egg Baskets in your hands for now.",
-            "Good. I will leave the note where it is.",
-            "Then we keep counting on you for this one.",
-            "The work stays open.",
-            "Egg Baskets remains on your list.",
-            "Good. Bring it back when you are ready.",
-            "I will keep the tally under your name.",
-            "Then nothing changes for Egg Baskets.",
-            "Good. The village will wait a little longer.",
-            "Keep the request and finish it when you can.",
-            "I will not close the note yet.",
-            "Then Egg Baskets stays alive."
+            "Bring 12 eggs for the village kitchen",
+            "Come back when the work is ready to count."
           ]
         },
         {
           "id": "abandon_confirm",
           "lines": [
-            "Put Egg Baskets aside for now?",
-            "Are you sure you want to step away from Egg Baskets?",
-            "Close your part in Egg Baskets for now?",
-            "Should I mark Egg Baskets abandoned?",
-            "Do you want me to take your name off this request?",
-            "Set the note for Egg Baskets aside?",
-            "Are you done with Egg Baskets for now?",
-            "Should I stop counting on you for this one?",
-            "Do you want to leave Egg Baskets unfinished?",
-            "Put the work down and walk away?",
-            "Should I close this attempt?",
-            "Are you sure Egg Baskets can wait without you?",
-            "Do you want the request removed from your list?",
-            "Shall I fold this note away?",
-            "One last check. Are you abandoning Egg Baskets?"
+            "Put Egg Baskets aside?",
+            "I can take your name off the work if you are sure."
           ],
           "responses": [
             {
               "id": "confirm",
-              "label": "Abandon quest",
+              "label": "Put it aside.",
               "scene": "abandon_quest"
             },
             {
               "id": "cancel",
-              "label": "Keep the quest",
-              "scene": "abandon_cancel"
+              "label": "Keep it open.",
+              "scene": "leave"
             }
           ]
         },
@@ -573,77 +207,57 @@
               "action": "abandon",
               "lines": {
                 "abandoned": [
-                  "I will set the egg baskets aside. Return if the kitchen still needs them.",
-                  "I will set Egg Baskets aside. Come back if the village still needs it.",
-                  "Egg Baskets is off your hands for now.",
-                  "I will clear the note and stop counting on you for this one.",
-                  "The request is set aside.",
-                  "I will mark Egg Baskets abandoned for now.",
-                  "Then we will leave Egg Baskets alone.",
-                  "I will put the tally away.",
-                  "The village will manage without this run for now.",
-                  "I will stop holding that work under your name.",
-                  "Egg Baskets is no longer active for you.",
-                  "I will take your name off the request.",
-                  "The note comes down for now.",
-                  "That closes your part in Egg Baskets for the moment.",
-                  "I will make the record clean again."
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
                 ],
                 "abandoned_cooldown": [
-                  "I will pause the egg count for now. Let the kitchen settle before asking again.",
-                  "I will pause Egg Baskets for now. Give the village a little time before asking again.",
-                  "Egg Baskets is set aside until the count settles.",
-                  "I will cool the request for a while.",
-                  "The village needs time before reopening Egg Baskets.",
-                  "I will mark this paused, not forgotten.",
-                  "Let the stores settle before we talk about Egg Baskets again.",
-                  "I will put the note away until the cooldown passes.",
-                  "Come back after the village has had time to reset.",
-                  "Egg Baskets can wait until the next proper opening.",
-                  "I will close this attempt and let the request breathe.",
-                  "The slate needs a little quiet before this comes back.",
-                  "I will pause the tally for now.",
-                  "Give this one time before you ask again.",
-                  "The request will not reopen immediately."
-                ],
-                "abandoned_forever": [
-                  "Then the egg request is closed for good.",
-                  "Then Egg Baskets is closed for good.",
-                  "I will not reopen Egg Baskets.",
-                  "That request is finished permanently.",
-                  "Egg Baskets leaves the board for good.",
-                  "Then this note is gone, not paused.",
-                  "I will mark Egg Baskets as permanently closed.",
-                  "No one will ask you for this request again.",
-                  "That closes the matter completely.",
-                  "The village will not bring this one back to you.",
-                  "Egg Baskets is ended, not waiting.",
-                  "I will put a final mark on the record.",
-                  "This request is done beyond rechecking.",
-                  "Then we leave Egg Baskets in the past.",
-                  "I will close the book on that one."
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
                 ],
                 "unavailable": [
-                  "There is no egg count here for me to close.",
-                  "Egg Baskets is not available from here right now.",
-                  "That request is not in your hands right now.",
-                  "I cannot offer Egg Baskets at the moment.",
-                  "Egg Baskets is closed to new help for now.",
-                  "This is not ready for you right now.",
-                  "The village is not accepting that work at the moment.",
-                  "No open note for Egg Baskets is waiting here.",
-                  "Try again later if Egg Baskets comes back around.",
-                  "I cannot move that request today.",
-                  "Egg Baskets needs different timing.",
-                  "The work exists, but not for this moment.",
-                  "I do not have authority to open that now.",
-                  "The request is out of reach for now.",
-                  "There is nothing for me to hand you on Egg Baskets."
+                  "Egg Baskets is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
                 ]
               }
             }
           ]
-        },
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 12 eggs for the village kitchen.",
+        "show_progress": true,
+        "progress": 0.75
+      }
+    },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Egg Baskets",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Not one cracked on the road. The cook will call that a small miracle.",
+            "The count is right, and none of it will sit idle for long.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
         {
           "id": "complete_quest",
           "actions": [
@@ -652,106 +266,25 @@
               "action": "turn_in",
               "lines": {
                 "completed": [
-                  "Egg Baskets is complete. The village can use this, and you have earned the reward.",
-                  "That settles Egg Baskets. The village will put this to use.",
-                  "Egg Baskets is complete, and the help is appreciated.",
-                  "Good. I can close Egg Baskets with a clean mark.",
-                  "This will help more than it looks like it should.",
-                  "The count is right. Take your reward with my thanks.",
-                  "That is enough to close the request.",
-                  "Well done. Egg Baskets is finished.",
-                  "The village can use this before the day is out.",
-                  "I will mark Egg Baskets complete.",
-                  "Good work. The note comes down now.",
-                  "That is the kind of help people remember at supper.",
-                  "Everything is here. Egg Baskets is settled.",
-                  "The village needed this, and you brought it.",
-                  "A full count makes a calmer room."
-                ],
-                "inactive": [
-                  "The kitchen is not accepting eggs right now.",
-                  "Egg Baskets is quiet right now.",
-                  "The village is not counting Egg Baskets at the moment.",
-                  "That request is not open right now.",
-                  "Egg Baskets is waiting on better timing.",
-                  "I cannot move Egg Baskets forward just now.",
-                  "The conditions for Egg Baskets are not ready.",
-                  "The note for Egg Baskets is closed for the moment.",
-                  "No one is taking that request right now.",
-                  "Egg Baskets needs to wait a little longer.",
-                  "This is not the right moment for Egg Baskets.",
-                  "The work is real, but it is not open right now.",
-                  "I have no active count for Egg Baskets at the moment.",
-                  "Egg Baskets is between openings right now.",
-                  "The village is not ready to accept that help yet."
+                  "Not one cracked on the road. The cook will call that a small miracle.",
+                  "The count is right, and none of it will sit idle for long.",
+                  "That settles it. The village will make good use of this."
                 ],
                 "missing_objectives": [
-                  "Egg Baskets is still short. The tracker has the exact count.",
-                  "Check the tracker before we close Egg Baskets.",
-                  "The work is not complete yet.",
-                  "There is still one part of Egg Baskets missing.",
-                  "Bring the rest and I can settle the note.",
-                  "The village cannot use half a finished request.",
-                  "The tally says there is more to do.",
-                  "You are not empty handed, but this is not complete yet.",
-                  "The last pieces still matter.",
-                  "I need the whole request finished before I close it.",
-                  "The tracker knows what the note still needs.",
-                  "Keep going. Egg Baskets is not ready to turn in yet.",
-                  "The work is close enough to see, not close enough to sign.",
-                  "Bring the missing part back when you have it.",
-                  "The request still has work left in it."
-                ],
-                "missing_proof": [
-                  "Egg Baskets still needs the eggs in your pack before I can close it.",
-                  "I still need 12 eggs before I can close Egg Baskets.",
-                  "Bring 12 eggs, then we can settle Egg Baskets.",
-                  "Egg Baskets needs the proof in your pack first.",
-                  "I cannot close Egg Baskets until I see 12 eggs.",
-                  "The reward waits until 12 eggs is here.",
-                  "Show me 12 eggs and we can finish this properly.",
-                  "The village needs the goods before the note comes down.",
-                  "You are close, but 12 eggs still needs to be here.",
-                  "I need the actual proof before I mark Egg Baskets done.",
-                  "Come back with 12 eggs and we can close the count.",
-                  "The request is not finished without 12 eggs.",
-                  "Egg Baskets still needs something I can hold and count.",
-                  "I need the delivery in hand before this is settled.",
-                  "Bring the proof back and I will close Egg Baskets."
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
                 ],
                 "missing_target": [
-                  "Egg Baskets is not at the right count yet; bring the rest before turning it in.",
-                  "Egg Baskets is still short. The tracker has the exact count.",
-                  "Something is missing for Egg Baskets, so check the tracker and bring the rest.",
-                  "The count is not complete yet.",
-                  "We need the full amount before Egg Baskets can close.",
-                  "The village is still waiting on the rest of it.",
-                  "Egg Baskets needs every part before I can sign it off.",
-                  "The work is close, but close does not fill a shelf.",
-                  "Bring the rest and we can finish Egg Baskets.",
-                  "The tally still has an empty line in it.",
-                  "I cannot call Egg Baskets complete while the count is short.",
-                  "The tracker will show what is still missing.",
-                  "There is still more to gather for Egg Baskets.",
-                  "The full delivery matters here.",
-                  "Not quite enough yet, but you are on the right road."
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
                 ],
                 "unavailable": [
-                  "This egg count is not ready to close yet.",
-                  "Egg Baskets is not available from here right now.",
-                  "That request is not in your hands right now.",
-                  "I cannot offer Egg Baskets at the moment.",
-                  "Egg Baskets is closed to new help for now.",
-                  "This is not ready for you right now.",
-                  "The village is not accepting that work at the moment.",
-                  "No open note for Egg Baskets is waiting here.",
-                  "Try again later if Egg Baskets comes back around.",
-                  "I cannot move that request today.",
-                  "Egg Baskets needs different timing.",
-                  "The work exists, but not for this moment.",
-                  "I do not have authority to open that now.",
-                  "The request is out of reach for now.",
-                  "There is nothing for me to hand you on Egg Baskets."
+                  "Egg Baskets is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
                 ]
               }
             }
@@ -760,27 +293,13 @@
         {
           "id": "turn_in_wait",
           "lines": [
-            "Keep the eggs safe, then bring them back when you are ready.",
-            "Hold onto the supplies for Egg Baskets until you are ready to finish.",
-            "Then bring it back when you want the note closed.",
-            "Keep the delivery safe until we count it.",
-            "No hurry in the words, but do not lose the goods.",
-            "Come back when you are ready to settle Egg Baskets.",
-            "I will wait to close the tally.",
-            "Keep the count together and return when you can.",
-            "The request stays open until you turn it in.",
-            "Bring everything back when you are ready for the reward.",
-            "Then we will leave Egg Baskets unfinished for the moment.",
-            "Keep it close. Lost supplies do not help anyone.",
-            "Return when you want this properly counted.",
-            "The tally can wait a little longer.",
-            "I will not close the note until you say so."
+            "Bring 12 eggs for the village kitchen",
+            "Come back when the work is ready to count."
           ]
         }
       ],
       "ui": {
-        "tracker_text": "Return to the quest giver with the eggs.",
-        "tracker_text_key": "quest.village_supply.egg_baskets.tracker.return.text",
+        "tracker_text": "Return to the quest giver.",
         "show_progress": true,
         "progress": 1
       }
@@ -795,6 +314,7 @@
   },
   "ui": {
     "title": "Egg Baskets",
-    "title_key": "quest.village_supply.egg_baskets.tracker.title"
+    "icon": "minecraft:egg",
+    "color": "#8BA6B8"
   }
 }

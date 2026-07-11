@@ -149,7 +149,7 @@
                   "Bring 12 bread and 12 baked potatoes for the shared table."
                 ],
                 "unavailable": [
-                  "The table is not counting that stage right now."
+                  "The supper table is not ready for that work right now."
                 ]
               }
             }
@@ -243,7 +243,7 @@
                   "Bring 8 cookies and carry 1 milk bucket for the shared table."
                 ],
                 "unavailable": [
-                  "The table is not counting that stage right now."
+                  "The sweets can wait until the bread and potatoes are ready."
                 ]
               }
             }
@@ -300,7 +300,7 @@
                   "Good. A shared table does not solve every trouble, but it makes fewer people face trouble hungry."
                 ],
                 "missing_objectives": [
-                  "The table is still short. Check the tracker before we call people in."
+                  "The table still needs bread, potatoes, cookies, or milk before we call people in."
                 ],
                 "missing_proof": [
                   "Bring the food here before we set the table."

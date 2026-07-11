@@ -149,7 +149,7 @@
                   "Defeat 3 endermen and bring 3 eyes of ender for the gate lesson."
                 ],
                 "unavailable": [
-                  "The gate lesson is not counting that stage right now."
+                  "The gate lesson is not open right now."
                 ]
               }
             }
@@ -229,7 +229,7 @@
                   "Bring 1 ender chest to seal the Last Ember notes."
                 ],
                 "unavailable": [
-                  "The gate lesson is not counting that stage right now."
+                  "The steady-hands lesson can wait until the eyes are ready."
                 ]
               }
             }

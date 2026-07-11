@@ -150,7 +150,7 @@
                   "Bring 8 iron ingots and 12 coal for the forge tally."
                 ],
                 "unavailable": [
-                  "The forge is not counting that stage right now."
+                  "The forge is not ready for that work right now."
                 ]
               }
             }
@@ -230,7 +230,7 @@
                   "Bring 1 grindstone to finish the workshop order."
                 ],
                 "unavailable": [
-                  "The forge is not counting that stage right now."
+                  "The grindstone can wait until the iron and coal are ready."
                 ]
               }
             }
@@ -287,7 +287,7 @@
                   "Good. Tools made from this stock should fail less loudly. Ideally, not at all."
                 ],
                 "missing_objectives": [
-                  "The forge tally is still short. Check the tracker before I close it."
+                  "The forge tally still needs its iron, coal, or grindstone before I close it."
                 ],
                 "missing_proof": [
                   "Bring the forge stock here before I enter the tally."

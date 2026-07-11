@@ -239,7 +239,7 @@
                   "Bring 6 bowls and 6 cooked cod for the first shared meal."
                 ],
                 "unavailable": [
-                  "The hearth is not counting that stage right now."
+                  "The bowls can wait until the first fire is ready."
                 ]
               }
             }
@@ -296,7 +296,7 @@
                   "There. The first fire is not much to look at yet, but people will stand closer to it than they admit."
                 ],
                 "missing_objectives": [
-                  "The hearth is still missing something. Check the tracker before we light it."
+                  "The hearth still needs its campfire, charcoal, bowls, or cooked fish before we light it."
                 ],
                 "missing_proof": [
                   "Bring the hearth supplies here before we set anything down."

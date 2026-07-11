@@ -1,75 +1,309 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:watch_arrows",
-  "display": {
+  "metadata": {
+    "title": "Watch Arrows",
     "description": "Bring arrows so the village watch can answer trouble before it reaches the doors.",
-    "title": "Watch Arrows",
-    "title_key": "quest.village_defense.watch_arrows.title",
-    "description_key": "quest.village_defense.watch_arrows.description"
+    "questline": "village_defense",
+    "tags": [
+      "group.village_defense"
+    ]
   },
-  "tags": [
-    "group.village_defense"
-  ],
-  "offer": {
-    "min_villager_level": "apprentice",
-    "professions": [
-      "minecraft:fletcher"
-    ],
-    "skills": {
-      "archery": {
-        "min": 10
-      },
-      "guarding": {
-        "min": 6
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "apprentice",
+      "professions": [
+        "minecraft:fletcher"
+      ],
+      "skills": {
+        "archery": {
+          "min": 10
+        },
+        "guarding": {
+          "min": 6
+        }
       }
     }
   },
-  "objectives": [
-    {
-      "count": 16,
-      "id": "bring_arrows",
-      "item": "minecraft:arrow",
-      "tracker": {
-        "complete_text": "The watch arrows are bundled.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 16 arrows for the village watch.",
-        "text_key": "quest.village_defense.watch_arrows.objective.bring_arrows.text",
-        "complete_text_key": "quest.village_defense.watch_arrows.objective.bring_arrows.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 2,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
+  "availability": {
+    "repeatable": true,
     "max_starts": 0,
-    "repeatable": true
+    "max_completions": 0,
+    "completion_cooldown_days": 2,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "locked_to_villager": true,
+    "cross_villager_compatible": true
   },
-  "tracker": {
-    "metadata": {
-      "source": "Watch Arrows"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 16 arrows for the village watch.",
-        "text_key": "quest.village_defense.watch_arrows.tracker.proof.text"
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "count": 16,
+          "id": "bring_arrows",
+          "item": "minecraft:arrow",
+          "tracker": {
+            "complete_text": "The watch arrows are bundled.",
+            "progress": 0.7,
+            "show_progress": true,
+            "text": "Bring 16 arrows for the village watch.",
+            "text_key": "quest.village_defense.watch_arrows.objective.bring_arrows.text",
+            "complete_text_key": "quest.village_defense.watch_arrows.objective.bring_arrows.complete_text"
+          },
+          "type": "item_check"
+        }
+      ],
+      "complete_when": [
+        "bring_arrows"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Watch Arrows",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The watch has bows and too many empty quivers. Sixteen arrows would put some distance between trouble and our doors.",
+            "A pillager is easier to answer from the wall than from the wheat field.",
+            "Bring 16 arrows for the village watch. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Watch Arrows",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The watch still needs sixteen arrows before the next bad omen wanders close.",
+            "Bring 16 arrows for the village watch.",
+            "A pillager is easier to answer from the wall than from the wheat field."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
       },
-      "return": {
-        "progress": 1,
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Good. Straight shafts, sharp points, and no bent fletching.",
+                  "Bring 16 arrows for the village watch.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Watch Arrows is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Watch Arrows is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "The watch still needs sixteen arrows before the next bad omen wanders close.",
+                  "Bring 16 arrows for the village watch.",
+                  "A pillager is easier to answer from the wall than from the wheat field."
+                ],
+                "unavailable": [
+                  "Watch Arrows is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "Then the watch will make every shot count.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "The watch still needs sixteen arrows before the next bad omen wanders close.",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Watch Arrows aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Watch Arrows is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 16 arrows for the village watch.",
         "show_progress": true,
-        "text": "Return to the quest giver with the arrow.",
-        "text_key": "quest.village_defense.watch_arrows.tracker.return.text"
+        "progress": 0.75
       }
     },
-    "title": "Watch Arrows",
-    "title_key": "quest.village_defense.watch_arrows.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Watch Arrows",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "These will reach trouble before trouble reaches the bell.",
+            "Full quivers make for a quieter night. Well done.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "These will reach trouble before trouble reaches the bell.",
+                  "Full quivers make for a quieter night. Well done.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Watch Arrows is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "The watch still needs sixteen arrows before the next bad omen wanders close.",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
   "rewards": {
     "experience": 90,
     "gossip_reputation": 4,
@@ -77,168 +311,9 @@
     "memory_event": "player_completed_quest",
     "reputation": 7
   },
-  "dialogue": {
-    "already_completed": [
-      "Watch Arrows is already settled.",
-      "Watch Arrows is already settled on my side.",
-      "We have already closed Watch Arrows.",
-      "Watch Arrows does not need another tally right now.",
-      "That work is already counted and put away.",
-      "Watch Arrows is finished for now.",
-      "The village has already marked Watch Arrows complete.",
-      "I have no open note for Watch Arrows anymore.",
-      "Watch Arrows has already been handled.",
-      "That request is already off the board.",
-      "We are not reopening Watch Arrows right now.",
-      "Watch Arrows is done enough for today.",
-      "The record for Watch Arrows is already clean.",
-      "There is no fresh work left in Watch Arrows.",
-      "That one is already squared away."
-    ],
-    "inactive": [
-      "The watch is not counting arrows right now.",
-      "Watch Arrows is quiet right now.",
-      "The village is not counting Watch Arrows at the moment.",
-      "That request is not open right now.",
-      "Watch Arrows is waiting on better timing.",
-      "I cannot move Watch Arrows forward just now.",
-      "The conditions for Watch Arrows are not ready.",
-      "The note for Watch Arrows is closed for the moment.",
-      "No one is taking that request right now.",
-      "Watch Arrows needs to wait a little longer.",
-      "This is not the right moment for Watch Arrows.",
-      "The work is real, but it is not open right now.",
-      "I have no active count for Watch Arrows at the moment.",
-      "Watch Arrows is between openings right now.",
-      "The village is not ready to accept that help yet."
-    ],
-    "locate_failed": [
-      "No watch post is ready for another arrow request.",
-      "I cannot post Watch Arrows from here right now.",
-      "Watch Arrows is not finding a proper place to start.",
-      "No good posting point is ready for Watch Arrows.",
-      "The village cannot place that request from here.",
-      "Watch Arrows needs a better lead before I send you out.",
-      "I cannot get a clean mark for Watch Arrows today.",
-      "The request is real, but the place is not lining up.",
-      "Something about this spot will not let Watch Arrows start.",
-      "I need a clearer posting before I can offer Watch Arrows.",
-      "The work is not anchoring here right now.",
-      "I cannot set the note for Watch Arrows from this place.",
-      "The village has no clean place to send you for that.",
-      "Watch Arrows is refusing to settle onto the slate.",
-      "The route for Watch Arrows is not clear enough yet."
-    ],
-    "missing_proof": [
-      "Bring the arrows before I restock the watch.",
-      "I still need 16 arrows before I can close Watch Arrows.",
-      "Bring 16 arrows, then we can settle Watch Arrows.",
-      "Watch Arrows needs the proof in your pack first.",
-      "I cannot close Watch Arrows until I see 16 arrows.",
-      "The reward waits until 16 arrows is here.",
-      "Show me 16 arrows and we can finish this properly.",
-      "The village needs the goods before the note comes down.",
-      "You are close, but 16 arrows still needs to be here.",
-      "I need the actual proof before I mark Watch Arrows done.",
-      "Come back with 16 arrows and we can close the count.",
-      "The request is not finished without 16 arrows.",
-      "Watch Arrows still needs something I can hold and count.",
-      "I need the delivery in hand before this is settled.",
-      "Bring the proof back and I will close Watch Arrows."
-    ],
-    "missing_target": [
-      "The watch still needs 16 arrows.",
-      "Watch Arrows is still short. The tracker has the exact count.",
-      "Something is missing for Watch Arrows, so check the tracker and bring the rest.",
-      "The count is not complete yet.",
-      "We need the full amount before Watch Arrows can close.",
-      "The village is still waiting on the rest of it.",
-      "Watch Arrows needs every part before I can sign it off.",
-      "The work is close, but close does not fill a shelf.",
-      "Bring the rest and we can finish Watch Arrows.",
-      "The tally still has an empty line in it.",
-      "I cannot call Watch Arrows complete while the count is short.",
-      "The tracker will show what is still missing.",
-      "There is still more to gather for Watch Arrows.",
-      "The full delivery matters here.",
-      "Not quite enough yet, but you are on the right road."
-    ],
-    "reminder": [
-      "Sixteen arrows for the watch. Straight shafts, sharp points, no speeches needed.",
-      "For Watch Arrows, I still need 16 arrows.",
-      "Watch Arrows is still asking for 16 arrows.",
-      "Bring 16 arrows back when the count is ready.",
-      "The tracker has the details for Watch Arrows.",
-      "Keep Watch Arrows in mind and bring 16 arrows.",
-      "The village is still waiting on 16 arrows.",
-      "No rush in the words, but the count still matters.",
-      "Bring the full amount back to me when you have it.",
-      "Watch Arrows is still open.",
-      "Follow the tracker for Watch Arrows and bring back 16 arrows.",
-      "You are looking for 16 arrows for this request.",
-      "The note says 16 arrows, and the note is not wrong today.",
-      "Finish the count and return here when you can.",
-      "This is simple work only if it gets done."
-    ],
-    "start": [
-      "Bring 16 arrows. The watch sleeps better when the quiver has weight.",
-      "Watch Arrows is yours now. Bring 16 arrows when the count is ready.",
-      "I am putting Watch Arrows in your hands.",
-      "Take the note for Watch Arrows and bring back 16 arrows.",
-      "Good. The village will be waiting for 16 arrows.",
-      "Then we will count on you for Watch Arrows.",
-      "Bring 16 arrows, and we can call this useful work.",
-      "Watch Arrows starts now. Keep the tracker close.",
-      "Head out for Watch Arrows and return with 16 arrows.",
-      "The request is open, and your name is on it now.",
-      "I will mark you down for Watch Arrows.",
-      "Bring the full count back when you have it.",
-      "You have the work now. Do it cleanly and come back safe.",
-      "Watch Arrows points. Bring 16 arrows.",
-      "That settles the posting. Now we need 16 arrows."
-    ],
-    "turn_in": [
-      "Good. That is a little distance between danger and the doors.",
-      "That settles Watch Arrows. The village will put this to use.",
-      "Watch Arrows is complete, and the help is appreciated.",
-      "Good. I can close Watch Arrows with a clean mark.",
-      "This will help more than it looks like it should.",
-      "The count is right. Take your reward with my thanks.",
-      "That is enough to close the request.",
-      "Well done. Watch Arrows is finished.",
-      "The village can use this before the day is out.",
-      "I will mark Watch Arrows complete.",
-      "Good work. The note comes down now.",
-      "That is the kind of help people remember at supper.",
-      "Everything is here. Watch Arrows is settled.",
-      "The village needed this, and you brought it.",
-      "A full count makes a calmer room."
-    ],
-    "unavailable": [
-      "The arrow request is closed for now.",
-      "Watch Arrows is not available from here right now.",
-      "That request is not in your hands right now.",
-      "I cannot offer Watch Arrows at the moment.",
-      "Watch Arrows is closed to new help for now.",
-      "This is not ready for you right now.",
-      "The village is not accepting that work at the moment.",
-      "No open note for Watch Arrows is waiting here.",
-      "Try again later if Watch Arrows comes back around.",
-      "I cannot move that request today.",
-      "Watch Arrows needs different timing.",
-      "The work exists, but not for this moment.",
-      "I do not have authority to open that now.",
-      "The request is out of reach for now.",
-      "There is nothing for me to hand you on Watch Arrows."
-    ],
-    "start_key": "quest.village_defense.watch_arrows.dialogue.start",
-    "reminder_key": "quest.village_defense.watch_arrows.dialogue.reminder",
-    "turn_in_key": "quest.village_defense.watch_arrows.dialogue.turn_in",
-    "already_completed_key": "quest.village_defense.watch_arrows.dialogue.already_completed",
-    "unavailable_key": "quest.village_defense.watch_arrows.dialogue.unavailable",
-    "inactive_key": "quest.village_defense.watch_arrows.dialogue.inactive",
-    "missing_target_key": "quest.village_defense.watch_arrows.dialogue.missing_target",
-    "missing_proof_key": "quest.village_defense.watch_arrows.dialogue.missing_proof",
-    "locate_failed_key": "quest.village_defense.watch_arrows.dialogue.locate_failed"
+  "ui": {
+    "title": "Watch Arrows",
+    "icon": "minecraft:arrow",
+    "color": "#8BA6B8"
   }
 }

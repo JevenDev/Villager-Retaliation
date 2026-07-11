@@ -2,7 +2,7 @@
   "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:ink_in_the_dark_roof",
   "metadata": {
-    "title": "Ink in the Dark Roof",
+    "title": "Dark Roof Ink",
     "description": "Follow the dark roof horizon to a Woodland Mansion and return with its stolen records.",
     "questline": "cartographers_atlas",
     "tags": [
@@ -341,7 +341,7 @@
     "reputation": 17
   },
   "ui": {
-    "title": "Ink in the Dark Roof",
+    "title": "Dark Roof Ink",
     "title_key": "quest.cartographers_atlas.ink_in_the_dark_roof.tracker.title"
   }
 }

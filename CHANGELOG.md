@@ -1,5 +1,28 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Added 15 repeatable village commissions spanning early, mid, and late game, with distinct gathering, trading, building, mining, combat, structure-survey, Nether, End, Ancient City, and Wither objectives.
+- Added five four-quest branching questlines: Green Thumb, Deep Delvers, Redstone Works, Nether Routes, and End Survey. Each line records a player choice, provides two playable stage routes, and unlocks a different fact-gated finale.
+- Added dedicated built-in quest-content validation for title length, repeatable dialogue variation, hand-in consumption, cooldowns, loot references, parent graphs, stage reachability, objective predicates, terminal turn-ins, choice routes, branch children, and expansion objective uniqueness.
+
+### Changed
+
+- Rewrote the remaining built-in v1 quests as self-contained quest module v2 resources while keeping their stable quest IDs, rewards, provider requirements, completion triggers, and saved quest identity.
+- Replaced repeated template dialogue with concise, Minecraft-specific offer, acceptance, reminder, decline, abandonment, and turn-in variations.
+- Rebalanced Trial Chamber Recall to consume its Trial Key and Breeze Rod, reduced its excessive repeat payout, and made every structure/proof requirement explicit in the quest stages.
+- Rebalanced Gilded Debt so completing the village's agreement grants positive gossip instead of an unexplained penalty.
+- Renamed overlong or awkward display titles to Stronghold Eye, Dark Roof Ink, Lost Civilization, and Choose the Horizon. All built-in quest titles now use one to four words.
+- Expanded the built-in catalog from 50 to 85 quests and regenerated the player-wiki quest data.
+
+### Fixed
+
+- Fixed Bread Delivery, Village Lanterns, and Trial Chamber Recall allowing repeat turn-ins without consuming their required items.
+- Fixed End City Survey lacking a parent link to Lost Civilization.
+- Fixed the dialogue validator rejecting the live work-status placeholders `{cap}` and `{types}`.
+
 ## 1.0.0-beta.13 - 2026-06-21
 
 The Hired Help update turns recruitment into a full hired-worker system with contracts, job roles, assigned storage, work areas, payment boxes, wallets, and workforce management, while also expanding quests, dialogue authoring, villager AI, UI, and pack-development tooling.

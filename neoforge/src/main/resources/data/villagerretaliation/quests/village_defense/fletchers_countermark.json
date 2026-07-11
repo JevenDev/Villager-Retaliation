@@ -1,96 +1,341 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:fletchers_countermark",
-  "display": {
-    "description": "Scout a Pillager Outpost and return with a crossbow as proof of the threat.",
+  "metadata": {
     "title": "Fletcher's Countermark",
-    "title_key": "quest.village_defense.fletchers_countermark.title",
-    "description_key": "quest.village_defense.fletchers_countermark.description"
+    "description": "Scout a Pillager Outpost and return with a crossbow as proof of the threat.",
+    "questline": "village_defense",
+    "tags": [
+      "group.village_defense"
+    ]
   },
-  "tags": [
-    "group.village_defense"
-  ],
-  "offer": {
-    "min_villager_level": "journeyman",
-    "professions": [
-      "minecraft:fletcher"
-    ],
-    "skills": {
-      "archery": {
-        "min": 35
-      },
-      "guarding": {
-        "min": 20
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:fletcher"
+      ],
+      "min_villager_level": "journeyman",
+      "skills": {
+        "archery": {
+          "min": 35
+        },
+        "guarding": {
+          "min": 20
+        }
       }
     }
   },
-  "target": {
-    "discovery_radius": 96,
-    "proof_item": "minecraft:crossbow",
-    "search_radius": 192,
-    "structure": "minecraft:pillager_outpost"
-  },
-  "objectives": [
-    {
-      "count": 24,
-      "id": "bring_arrows",
-      "item": "minecraft:arrow",
-      "tracker": {
-        "complete_text": "The arrow bundle is ready.",
-        "progress": 0.8,
-        "show_progress": true,
-        "text": "Bring 24 arrows to restock the watch after the scout.",
-        "text_key": "quest.village_defense.fletchers_countermark.objective.bring_arrows.text",
-        "complete_text_key": "quest.village_defense.fletchers_countermark.objective.bring_arrows.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
+  "availability": {
+    "repeatable": false,
+    "max_starts": 0,
+    "max_completions": 1,
     "abandonment": "cooldown",
     "abandonment_cooldown_days": 1,
     "consume_on_completion": true,
-    "cross_villager_compatible": false,
     "locked_to_villager": true,
-    "max_completions": 1,
-    "max_starts": 0,
-    "repeatable": false
+    "cross_villager_compatible": false
   },
-  "tracker": {
-    "metadata": {
-      "source": "Fletcher's Countermark"
-    },
-    "steps": {
-      "bring_arrows": {
-        "progress": 0.8,
-        "show_progress": true,
-        "text": "Bundle 24 arrows for the village watch.",
-        "text_key": "quest.village_defense.fletchers_countermark.tracker.bring_arrows.text"
-      },
-      "proof": {
-        "progress": 0.66,
-        "show_progress": true,
-        "text": "Bring back a crossbow and 24 arrows.",
-        "text_key": "quest.village_defense.fletchers_countermark.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the outpost proof.",
-        "text_key": "quest.village_defense.fletchers_countermark.tracker.return.text"
-      },
-      "travel": {
-        "metadata": {
-          "hint": "{distance} blocks {direction}"
+  "target": {
+    "structure": "minecraft:pillager_outpost",
+    "dimension": "minecraft:overworld",
+    "search_radius": 384,
+    "discovery_radius": 96
+  },
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "id": "visit_outpost",
+          "type": "structure_visit",
+          "structure": "minecraft:pillager_outpost",
+          "search_radius": 384,
+          "discovery_radius": 96,
+          "tracker": {
+            "text": "Reach the marked Pillager Outpost.",
+            "complete_text": "The outpost has been scouted.",
+            "show_progress": true,
+            "progress": 0.75
+          }
         },
-        "progress": 0.25,
+        {
+          "id": "carry_crossbow",
+          "type": "item_check",
+          "item": "minecraft:crossbow",
+          "count": 1,
+          "consume": false,
+          "tracker": {
+            "text": "Carry 1 pillager crossbow as proof.",
+            "complete_text": "The crossbow proof is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_arrows",
+          "type": "item_check",
+          "item": "minecraft:arrow",
+          "count": 24,
+          "tracker": {
+            "text": "Bring 24 arrows to restock the watch.",
+            "complete_text": "The arrow bundle is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "complete_when": [
+        "visit_outpost",
+        "carry_crossbow",
+        "bring_arrows"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Fletcher's Countermark",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Pillager arrows carry a cut on the shaft that tells one patrol from another.",
+            "Scout the outpost, bring back a marked crossbow, and restock the watch before its owners follow.",
+            "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Fletcher's Countermark",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The outpost mark, one pillager crossbow in hand, and twenty-four arrows for the watch.",
+            "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows.",
+            "Scout the outpost, bring back a marked crossbow, and restock the watch before its owners follow."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Look before you shoot. A scout who clears the tower may still miss the patrol behind it.",
+                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Fletcher's Countermark is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Fletcher's Countermark is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "The outpost mark, one pillager crossbow in hand, and twenty-four arrows for the watch.",
+                  "Reach the marked Pillager Outpost and return with a crossbow and 24 arrows.",
+                  "Scout the outpost, bring back a marked crossbow, and restock the watch before its owners follow."
+                ],
+                "unavailable": [
+                  "Fletcher's Countermark is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "Then do not wear a bright shield near the outpost road.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "The outpost mark, one pillager crossbow in hand, and twenty-four arrows for the watch.",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Fletcher's Countermark aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Fletcher's Countermark is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Scout the Pillager Outpost and return with a crossbow and 24 arrows.",
         "show_progress": true,
-        "text": "Scout the outpost near {target_x}, {target_z}.",
-        "text_key": "quest.village_defense.fletchers_countermark.tracker.travel.text"
+        "progress": 0.75
       }
     },
-    "title": "Fletcher's Countermark",
-    "title_key": "quest.village_defense.fletchers_countermark.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Fletcher's Countermark",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The countermark matches the patrol, and the watch has arrows ready for it.",
+            "Now we know which banner is moving toward us and how to answer it.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "The countermark matches the patrol, and the watch has arrows ready for it.",
+                  "Now we know which banner is moving toward us and how to answer it.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Fletcher's Countermark is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "The outpost mark, one pillager crossbow in hand, and twenty-four arrows for the watch.",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
   "rewards": {
     "experience": 220,
     "gossip_reputation": 7,
@@ -98,42 +343,9 @@
     "memory_event": "player_completed_quest",
     "reputation": 15
   },
-  "dialogue": {
-    "already_completed": [
-      "Fletcher's Countermark is already settled."
-    ],
-    "inactive": [
-      "The conditions for this quest are not right at the moment."
-    ],
-    "locate_failed": [
-      "I cannot pin the outpost from here. The mark may be old, or worse, moving."
-    ],
-    "missing_proof": [
-      "Bring a crossbow from the threat. I want weight, not rumor."
-    ],
-    "missing_target": [
-      "A crossbow can come from many hands. I need you to scout the outpost itself."
-    ],
-    "reminder": [
-      "Outpost near {target_x}, {target_z}. Crossbow for proof, 24 arrows so we answer properly."
-    ],
-    "start": [
-      "The outpost lies {direction}, about {distance} blocks, near {target_x}, {target_z}. Bring a crossbow and 24 arrows."
-    ],
-    "turn_in": [
-      "That is enough proof. The village will know where to point its fear, and its arrows."
-    ],
-    "unavailable": [
-      "You are not the scout I need for this yet."
-    ],
-    "start_key": "quest.village_defense.fletchers_countermark.dialogue.start",
-    "reminder_key": "quest.village_defense.fletchers_countermark.dialogue.reminder",
-    "turn_in_key": "quest.village_defense.fletchers_countermark.dialogue.turn_in",
-    "already_completed_key": "quest.village_defense.fletchers_countermark.dialogue.already_completed",
-    "unavailable_key": "quest.village_defense.fletchers_countermark.dialogue.unavailable",
-    "inactive_key": "quest.village_defense.fletchers_countermark.dialogue.inactive",
-    "missing_target_key": "quest.village_defense.fletchers_countermark.dialogue.missing_target",
-    "missing_proof_key": "quest.village_defense.fletchers_countermark.dialogue.missing_proof",
-    "locate_failed_key": "quest.village_defense.fletchers_countermark.dialogue.locate_failed"
+  "ui": {
+    "title": "Fletcher's Countermark",
+    "icon": "minecraft:crossbow",
+    "color": "#8BA6B8"
   }
 }

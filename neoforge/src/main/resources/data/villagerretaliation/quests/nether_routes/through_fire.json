@@ -1,0 +1,343 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "villagerretaliation:through_fire",
+  "metadata": {
+    "title": "Through Fire",
+    "description": "Prepare the supplies for a permanent village route through the Nether.",
+    "questline": "nether_routes",
+    "tags": [
+      "group.nether_routes"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:cartographer",
+        "minecraft:cleric"
+      ],
+      "min_villager_level": "expert",
+      "skills": {
+        "cartography": {
+          "min": 34
+        },
+        "survival": {
+          "min": 32
+        }
+      }
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_starts": 1,
+    "max_completions": 1,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "locked_to_villager": true,
+    "cross_villager_compatible": false
+  },
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "id": "bring_obsidian",
+          "type": "item_check",
+          "item": "minecraft:obsidian",
+          "count": 10,
+          "tracker": {
+            "text": "Bring 10 obsidian for a route portal.",
+            "complete_text": "The portal obsidian is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_fire_charges",
+          "type": "item_check",
+          "item": "minecraft:fire_charge",
+          "count": 2,
+          "tracker": {
+            "text": "Bring 2 fire charges.",
+            "complete_text": "The fire charges are ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_magma_cream",
+          "type": "item_check",
+          "item": "minecraft:magma_cream",
+          "count": 4,
+          "tracker": {
+            "text": "Bring 4 magma cream for fire resistance.",
+            "complete_text": "The magma cream is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "complete_when": [
+        "bring_obsidian",
+        "bring_fire_charges",
+        "bring_magma_cream"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Through Fire",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "One portal is an escape. A marked portal with supplies can become a road.",
+            "Bring the frame, a way to light it, and enough magma cream to survive the first mistake.",
+            "Bring 10 obsidian, 2 fire charges, and 4 magma cream. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Through Fire",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Ten obsidian, two fire charges, four magma cream for the route chest.",
+            "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
+            "Bring the frame, a way to light it, and enough magma cream to survive the first mistake."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Count the obsidian twice. A nine-block portal is only a heavy doorway to nowhere.",
+                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Through Fire is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Through Fire is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Ten obsidian, two fire charges, four magma cream for the route chest.",
+                  "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
+                  "Bring the frame, a way to light it, and enough magma cream to survive the first mistake."
+                ],
+                "unavailable": [
+                  "Through Fire is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "The Nether will not cool while we think.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Ten obsidian, two fire charges, four magma cream for the route chest.",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Through Fire aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Through Fire is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 10 obsidian, 2 fire charges, and 4 magma cream.",
+        "show_progress": true,
+        "progress": 0.75
+      }
+    },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Through Fire",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The frame is complete and the fire supplies are sealed. The road can cross worlds.",
+            "We have a doorway. Next we decide where the hot road leads.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "The frame is complete and the fire supplies are sealed. The road can cross worlds.",
+                  "We have a doorway. Next we decide where the hot road leads.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Through Fire is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "Ten obsidian, two fire charges, four magma cream for the route chest.",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 260,
+    "reputation": 16,
+    "gossip_reputation": 7,
+    "loot_table": "villagerretaliation:quest/through_fire",
+    "memory_event": "player_completed_quest"
+  },
+  "ui": {
+    "title": "Through Fire",
+    "icon": "minecraft:obsidian",
+    "color": "#8BA6B8"
+  }
+}

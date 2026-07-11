@@ -2,7 +2,7 @@
   "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:eye_of_the_last_room",
   "metadata": {
-    "title": "Eye of the Last Room",
+    "title": "Stronghold Eye",
     "description": "Follow the atlas to a Stronghold and return with Ender Eye bearings.",
     "questline": "cartographers_atlas",
     "tags": [
@@ -88,7 +88,7 @@
       "next": "return",
       "dialogue": {
         "offer": {
-          "label": "Eye of the Last Room",
+          "label": "Stronghold Eye",
           "request": "question",
           "order": -24,
           "show_for_babies": false,
@@ -272,7 +272,7 @@
     "reputation": 28
   },
   "ui": {
-    "title": "Eye of the Last Room",
+    "title": "Stronghold Eye",
     "title_key": "quest.cartographers_atlas.eye_of_the_last_room.tracker.title"
   }
 }

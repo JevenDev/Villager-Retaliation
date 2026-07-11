@@ -796,7 +796,7 @@
       "id": "quest.lost_civilization.tales_of_a_lost_civilization.title",
       "key": "quest.lost_civilization.tales_of_a_lost_civilization.title",
       "lines": [
-        "Tales of a Lost Civilization"
+        "Lost Civilization"
       ]
     },
     {
@@ -817,7 +817,7 @@
       "id": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.title",
       "key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.title",
       "lines": [
-        "Tales of a Lost Civilization"
+        "Lost Civilization"
       ]
     },
     {
@@ -3407,7 +3407,7 @@
       "id": "quest.cartographers_atlas.choose_the_horizon.title",
       "key": "quest.cartographers_atlas.choose_the_horizon.title",
       "lines": [
-        "Choose The Horizon"
+        "Choose the Horizon"
       ]
     },
     {
@@ -3421,7 +3421,7 @@
       "id": "quest.cartographers_atlas.choose_the_horizon.tracker.title",
       "key": "quest.cartographers_atlas.choose_the_horizon.tracker.title",
       "lines": [
-        "Choose The Horizon"
+        "Choose the Horizon"
       ]
     },
     {
@@ -3449,7 +3449,7 @@
       "id": "quest.cartographers_atlas.eye_of_the_last_room.title",
       "key": "quest.cartographers_atlas.eye_of_the_last_room.title",
       "lines": [
-        "Eye of the Last Room"
+        "Stronghold Eye"
       ]
     },
     {
@@ -3463,7 +3463,7 @@
       "id": "quest.cartographers_atlas.eye_of_the_last_room.tracker.title",
       "key": "quest.cartographers_atlas.eye_of_the_last_room.tracker.title",
       "lines": [
-        "Eye of the Last Room"
+        "Stronghold Eye"
       ]
     },
     {
@@ -3512,7 +3512,7 @@
       "id": "quest.cartographers_atlas.ink_in_the_dark_roof.title",
       "key": "quest.cartographers_atlas.ink_in_the_dark_roof.title",
       "lines": [
-        "Ink in the Dark Roof"
+        "Dark Roof Ink"
       ]
     },
     {
@@ -3526,7 +3526,7 @@
       "id": "quest.cartographers_atlas.ink_in_the_dark_roof.tracker.title",
       "key": "quest.cartographers_atlas.ink_in_the_dark_roof.tracker.title",
       "lines": [
-        "Ink in the Dark Roof"
+        "Dark Roof Ink"
       ]
     },
     {

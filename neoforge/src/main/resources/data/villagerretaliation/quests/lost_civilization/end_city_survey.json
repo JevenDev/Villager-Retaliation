@@ -1,97 +1,344 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:end_city_survey",
-  "display": {
-    "description": "Reach an End City and bring back a Shulker Shell with a Chorus Flower sample.",
+  "metadata": {
     "title": "End City Survey",
-    "title_key": "quest.lost_civilization.end_city_survey.title",
-    "description_key": "quest.lost_civilization.end_city_survey.description"
+    "description": "Reach an End City and bring back a Shulker Shell with a Chorus Flower sample.",
+    "questline": "lost_civilization",
+    "parent": "villagerretaliation:tales_of_a_lost_civilization",
+    "tags": [
+      "group.lost_civilization"
+    ]
   },
-  "tags": [
-    "group.lost_civilization"
-  ],
-  "offer": {
-    "min_villager_level": "master",
-    "professions": [
-      "minecraft:cartographer",
-      "minecraft:librarian"
-    ],
-    "skills": {
-      "cartography": {
-        "min": 80
-      },
-      "scholarship": {
-        "min": 65
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:cartographer",
+        "minecraft:librarian"
+      ],
+      "min_villager_level": "master",
+      "skills": {
+        "cartography": {
+          "min": 80
+        },
+        "scholarship": {
+          "min": 65
+        }
       }
     }
   },
-  "target": {
-    "discovery_radius": 192,
-    "proof_item": "minecraft:shulker_shell",
-    "search_radius": 384,
-    "structure": "minecraft:end_city"
-  },
-  "objectives": [
-    {
-      "count": 1,
-      "id": "bring_chorus_flower",
-      "item": "minecraft:chorus_flower",
-      "tracker": {
-        "complete_text": "The Chorus Flower sample is intact.",
-        "progress": 0.88,
-        "show_progress": true,
-        "text": "Bring 1 Chorus Flower as a living sample.",
-        "text_key": "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.text",
-        "complete_text_key": "quest.lost_civilization.end_city_survey.objective.bring_chorus_flower.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
+  "availability": {
+    "repeatable": false,
+    "max_starts": 0,
+    "max_completions": 1,
     "abandonment": "cooldown",
     "abandonment_cooldown_days": 3,
     "consume_on_completion": true,
-    "cross_villager_compatible": false,
     "locked_to_villager": true,
-    "max_completions": 1,
-    "max_starts": 0,
-    "repeatable": false
+    "cross_villager_compatible": false
   },
-  "tracker": {
-    "metadata": {
-      "source": "End City Survey"
-    },
-    "steps": {
-      "bring_chorus_flower": {
-        "progress": 0.88,
-        "show_progress": true,
-        "text": "Keep 1 Chorus Flower sample intact.",
-        "text_key": "quest.lost_civilization.end_city_survey.tracker.bring_chorus_flower.text"
-      },
-      "proof": {
-        "progress": 0.66,
-        "show_progress": true,
-        "text": "Bring a Shulker Shell and 1 Chorus Flower.",
-        "text_key": "quest.lost_civilization.end_city_survey.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with proof from the End City.",
-        "text_key": "quest.lost_civilization.end_city_survey.tracker.return.text"
-      },
-      "travel": {
-        "metadata": {
-          "hint": "{distance} blocks {direction}"
+  "target": {
+    "structure": "minecraft:end_city",
+    "dimension": "minecraft:the_end",
+    "search_radius": 768,
+    "discovery_radius": 192
+  },
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "id": "visit_city",
+          "type": "structure_visit",
+          "structure": "minecraft:end_city",
+          "dimension": "minecraft:the_end",
+          "search_radius": 768,
+          "discovery_radius": 192,
+          "tracker": {
+            "text": "Reach the marked End City.",
+            "complete_text": "The End City has been surveyed.",
+            "show_progress": true,
+            "progress": 0.75
+          }
         },
-        "progress": 0.25,
+        {
+          "id": "carry_shell",
+          "type": "item_check",
+          "item": "minecraft:shulker_shell",
+          "count": 1,
+          "consume": false,
+          "tracker": {
+            "text": "Carry 1 shulker shell as proof.",
+            "complete_text": "The shulker shell is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_flower",
+          "type": "item_check",
+          "item": "minecraft:chorus_flower",
+          "count": 1,
+          "tracker": {
+            "text": "Bring 1 Chorus Flower as a living sample.",
+            "complete_text": "The Chorus Flower is intact.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "complete_when": [
+        "visit_city",
+        "carry_shell",
+        "bring_flower"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "End City Survey",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The Ancient City records point beyond the dragon island, toward towers drawn without a ground line.",
+            "Find an End City and bring back both a shulker shell and something still growing there.",
+            "Reach the marked End City and return with a shulker shell and 1 Chorus Flower. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About End City Survey",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
+            "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
+            "Find an End City and bring back both a shulker shell and something still growing there."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Take pearls, slow falling, and one clear memory of where the gateway was.",
+                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "End City Survey is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "End City Survey is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
+                  "Reach the marked End City and return with a shulker shell and 1 Chorus Flower.",
+                  "Find an End City and bring back both a shulker shell and something still growing there."
+                ],
+                "unavailable": [
+                  "End City Survey is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "The End is not going anywhere. Its islands barely know how.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put End City Survey aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "End City Survey is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Survey the End City and return with a shulker shell and Chorus Flower.",
         "show_progress": true,
-        "text": "Reach the End City near {target_x}, {target_z}.",
-        "text_key": "quest.lost_civilization.end_city_survey.tracker.travel.text"
+        "progress": 0.75
       }
     },
-    "title": "End City Survey",
-    "title_key": "quest.lost_civilization.end_city_survey.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About End City Survey",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "A shell from the towers and a flower from the stone. The old record was telling the truth.",
+            "The lost civilization has a second city now, and this one still touches the sky.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "A shell from the towers and a flower from the stone. The old record was telling the truth.",
+                  "The lost civilization has a second city now, and this one still touches the sky.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "End City Survey is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "The End City bearing, a shulker shell in hand, and one living Chorus Flower.",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
   "rewards": {
     "experience": 720,
     "gossip_reputation": 20,
@@ -99,42 +346,9 @@
     "memory_event": "player_completed_quest",
     "reputation": 36
   },
-  "dialogue": {
-    "already_completed": [
-      "End City Survey is already settled."
-    ],
-    "inactive": [
-      "The conditions for this quest are not right at the moment."
-    ],
-    "locate_failed": [
-      "The End will not give me a steady mark today. Even maps know when to hesitate."
-    ],
-    "missing_proof": [
-      "Bring a Shulker Shell. The city has to leave a hard signature."
-    ],
-    "missing_target": [
-      "A shell alone is not a survey. Reach the End City itself."
-    ],
-    "reminder": [
-      "End City near {target_x}, {target_z}. Shulker Shell for proof, Chorus Flower for study. Try not to let the void edit the report."
-    ],
-    "start": [
-      "The city mark is {direction}, about {distance} blocks from here, near {target_x}, {target_z}. Bring a Shulker Shell and one Chorus Flower."
-    ],
-    "turn_in": [
-      "A shell and a Chorus Flower. The village has heard stories. Now it has evidence. Your name will travel farther than the road."
-    ],
-    "unavailable": [
-      "This survey waits for someone the village can trust with impossible directions."
-    ],
-    "start_key": "quest.lost_civilization.end_city_survey.dialogue.start",
-    "reminder_key": "quest.lost_civilization.end_city_survey.dialogue.reminder",
-    "turn_in_key": "quest.lost_civilization.end_city_survey.dialogue.turn_in",
-    "already_completed_key": "quest.lost_civilization.end_city_survey.dialogue.already_completed",
-    "unavailable_key": "quest.lost_civilization.end_city_survey.dialogue.unavailable",
-    "inactive_key": "quest.lost_civilization.end_city_survey.dialogue.inactive",
-    "missing_target_key": "quest.lost_civilization.end_city_survey.dialogue.missing_target",
-    "missing_proof_key": "quest.lost_civilization.end_city_survey.dialogue.missing_proof",
-    "locate_failed_key": "quest.lost_civilization.end_city_survey.dialogue.locate_failed"
+  "ui": {
+    "title": "End City Survey",
+    "icon": "minecraft:chorus_flower",
+    "color": "#8BA6B8"
   }
 }

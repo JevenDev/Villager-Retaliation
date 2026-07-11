@@ -27,7 +27,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:empty_map"
+          "name": "minecraft:map"
         }
       ]
     }

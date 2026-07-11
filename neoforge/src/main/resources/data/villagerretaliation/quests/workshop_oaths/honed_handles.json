@@ -146,7 +146,7 @@
                   "Bring 24 sticks and 8 string for workshop handles and lashings."
                 ],
                 "unavailable": [
-                  "The workshop is not counting that stage right now."
+                  "The workshop is not ready for that work right now."
                 ]
               }
             }
@@ -155,7 +155,7 @@
         {
           "id": "decline",
           "lines": [
-            "Then I will keep sanding split handles and pretending that counts as inventory."
+            "Then I will keep sanding split handles and pretending the pile is getting smaller."
           ]
         },
         {
@@ -239,7 +239,7 @@
                   "Bring 6 flint and 4 copper ingots for workshop edges and fittings."
                 ],
                 "unavailable": [
-                  "The workshop is not counting that stage right now."
+                  "The edge fittings can wait until the grips are ready."
                 ]
               }
             }
@@ -296,7 +296,7 @@
                   "Good. The next tool that holds together will owe you more than the person swinging it knows."
                 ],
                 "missing_objectives": [
-                  "The workshop order is still short. Check the tracker before we close it."
+                  "The workshop order still needs its handles, bindings, flint, or copper fittings."
                 ],
                 "missing_proof": [
                   "Bring the workshop stock here before I mark it in the ledger."

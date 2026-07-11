@@ -2,7 +2,7 @@
   "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:choose_the_horizon",
   "metadata": {
-    "title": "Choose The Horizon",
+    "title": "Choose the Horizon",
     "description": "Set the completed atlas toward the drowned coast or the dark roof road.",
     "questline": "cartographers_atlas",
     "tags": [
@@ -75,7 +75,7 @@
       ],
       "dialogue": {
         "offer": {
-          "label": "Choose The Horizon",
+          "label": "Choose the Horizon",
           "request": "question",
           "order": -24,
           "show_for_babies": false,
@@ -144,7 +144,7 @@
           ]
         },
         "reminder": {
-          "label": "About The Horizon",
+          "label": "About the Horizon",
           "request": "question",
           "order": -24,
           "show_for_babies": false,
@@ -253,7 +253,7 @@
       "next": "coast_chosen",
       "dialogue": {
         "reminder": {
-          "label": "About The Horizon",
+          "label": "About the Horizon",
           "request": "question",
           "order": -24,
           "show_for_babies": false,
@@ -357,7 +357,7 @@
       "next": "dark_roof_chosen",
       "dialogue": {
         "reminder": {
-          "label": "About The Horizon",
+          "label": "About the Horizon",
           "request": "question",
           "order": -24,
           "show_for_babies": false,
@@ -416,7 +416,7 @@
       "objectives": [],
       "dialogue": {
         "turn_in": {
-          "label": "About The Horizon",
+          "label": "About the Horizon",
           "request": "question",
           "order": -24,
           "show_for_babies": false,
@@ -480,7 +480,7 @@
       "objectives": [],
       "dialogue": {
         "turn_in": {
-          "label": "About The Horizon",
+          "label": "About the Horizon",
           "request": "question",
           "order": -24,
           "show_for_babies": false,
@@ -548,7 +548,7 @@
     "reputation": 20
   },
   "ui": {
-    "title": "Choose The Horizon",
+    "title": "Choose the Horizon",
     "title_key": "quest.cartographers_atlas.choose_the_horizon.tracker.title"
   }
 }

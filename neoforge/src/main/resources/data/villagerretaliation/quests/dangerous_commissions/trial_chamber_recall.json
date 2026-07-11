@@ -1,267 +1,352 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:trial_chamber_recall",
-  "display": {
-    "description": "Survey a Trial Chamber and return with a Trial Key and Breeze Rod.",
+  "metadata": {
     "title": "Trial Chamber Recall",
-    "title_key": "quest.dangerous_commissions.trial_chamber_recall.title",
-    "description_key": "quest.dangerous_commissions.trial_chamber_recall.description"
+    "description": "Survey a Trial Chamber and return with a Trial Key and Breeze Rod.",
+    "questline": "dangerous_commissions",
+    "tags": [
+      "group.dangerous_commissions"
+    ]
   },
-  "tags": [
-    "group.dangerous_commissions"
-  ],
-  "offer": {
-    "min_villager_level": "expert",
-    "professions": [
-      "minecraft:armorer",
-      "minecraft:toolsmith"
-    ],
-    "skills": {
-      "guarding": {
-        "min": 55
-      },
-      "smithing": {
-        "min": 45
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "expert",
+      "professions": [
+        "minecraft:armorer",
+        "minecraft:toolsmith"
+      ],
+      "skills": {
+        "guarding": {
+          "min": 55
+        },
+        "smithing": {
+          "min": 45
+        }
       }
     }
   },
-  "target": {
-    "discovery_radius": 160,
-    "proof_item": "minecraft:trial_key",
-    "search_radius": 256,
-    "structure": "minecraft:trial_chambers"
-  },
-  "objectives": [
-    {
-      "count": 1,
-      "id": "bring_breeze_rod",
-      "item": "minecraft:breeze_rod",
-      "tracker": {
-        "complete_text": "The chamber hazard has been proven.",
-        "progress": 0.84,
-        "show_progress": true,
-        "text": "Bring 1 breeze rod from the chamber.",
-        "text_key": "quest.dangerous_commissions.trial_chamber_recall.objective.bring_breeze_rod.text",
-        "complete_text_key": "quest.dangerous_commissions.trial_chamber_recall.objective.bring_breeze_rod.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
+  "availability": {
+    "repeatable": true,
+    "max_starts": 0,
+    "max_completions": 0,
+    "completion_cooldown_days": 7,
     "abandonment": "cooldown",
     "abandonment_cooldown_days": 1,
-    "completion_cooldown_days": 7,
-    "consume_on_completion": false,
-    "cross_villager_compatible": false,
+    "consume_on_completion": true,
     "locked_to_villager": true,
-    "max_completions": 0,
-    "max_starts": 0,
-    "repeatable": true
+    "cross_villager_compatible": false
   },
-  "tracker": {
-    "metadata": {
-      "source": "Trial Chamber Recall"
-    },
-    "steps": {
-      "bring_breeze_rod": {
-        "progress": 0.84,
-        "show_progress": true,
-        "text": "Recover 1 Breeze Rod from the chamber.",
-        "text_key": "quest.dangerous_commissions.trial_chamber_recall.tracker.bring_breeze_rod.text"
-      },
-      "proof": {
-        "progress": 0.66,
-        "show_progress": true,
-        "text": "Bring back a Trial Key and Breeze Rod.",
-        "text_key": "quest.dangerous_commissions.trial_chamber_recall.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the Trial Chamber proof.",
-        "text_key": "quest.dangerous_commissions.trial_chamber_recall.tracker.return.text"
-      },
-      "travel": {
-        "metadata": {
-          "hint": "{distance} blocks {direction}"
+  "target": {
+    "structure": "minecraft:trial_chambers",
+    "dimension": "minecraft:overworld",
+    "search_radius": 320,
+    "discovery_radius": 160
+  },
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "id": "enter_chamber",
+          "type": "structure_visit",
+          "structure": "minecraft:trial_chambers",
+          "search_radius": 320,
+          "discovery_radius": 160,
+          "tracker": {
+            "text": "Enter the marked Trial Chamber.",
+            "complete_text": "The chamber has been surveyed.",
+            "show_progress": true,
+            "progress": 0.75
+          }
         },
-        "progress": 0.25,
+        {
+          "id": "bring_trial_key",
+          "type": "item_check",
+          "item": "minecraft:trial_key",
+          "count": 1,
+          "tracker": {
+            "text": "Bring back 1 Trial Key.",
+            "complete_text": "The Trial Key is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_breeze_rod",
+          "type": "item_check",
+          "item": "minecraft:breeze_rod",
+          "count": 1,
+          "tracker": {
+            "text": "Bring back 1 Breeze Rod.",
+            "complete_text": "The Breeze Rod is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "complete_when": [
+        "enter_chamber",
+        "bring_trial_key",
+        "bring_breeze_rod"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Trial Chamber Recall",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "A Trial Chamber has started humming under the stone again. I need someone to learn what woke up down there.",
+            "Bring back a Trial Key and a Breeze Rod so we know the vaults and wind traps are real.",
+            "Enter the marked Trial Chamber, then return with a Trial Key and Breeze Rod. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Trial Chamber Recall",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The chamber itself matters as much as the proof. Step inside before you turn back.",
+            "Enter the marked Trial Chamber, then return with a Trial Key and Breeze Rod.",
+            "Bring back a Trial Key and a Breeze Rod so we know the vaults and wind traps are real."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "The mark is set. Listen for copper, tuff, and anything that sounds like wind where wind should not be.",
+                  "Enter the marked Trial Chamber, then return with a Trial Key and Breeze Rod.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Trial Chamber Recall is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Trial Chamber Recall is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "The chamber itself matters as much as the proof. Step inside before you turn back.",
+                  "Enter the marked Trial Chamber, then return with a Trial Key and Breeze Rod.",
+                  "Bring back a Trial Key and a Breeze Rod so we know the vaults and wind traps are real."
+                ],
+                "unavailable": [
+                  "Trial Chamber Recall is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "Wise enough. Trial spawners do not care how brave a story sounds.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "The chamber itself matters as much as the proof. Step inside before you turn back.",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Trial Chamber Recall aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Trial Chamber Recall is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Survey a Trial Chamber and return with a Trial Key and Breeze Rod.",
         "show_progress": true,
-        "text": "Enter the Trial Chamber near {target_x}, {target_z}.",
-        "text_key": "quest.dangerous_commissions.trial_chamber_recall.tracker.travel.text"
+        "progress": 0.75
       }
     },
-    "title": "Trial Chamber Recall",
-    "title_key": "quest.dangerous_commissions.trial_chamber_recall.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Trial Chamber Recall",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Key, rod, and a true chamber mark. That is a report I can trust.",
+            "You came back with the chamber's own wind in your pack. Take what we promised.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Key, rod, and a true chamber mark. That is a report I can trust.",
+                  "You came back with the chamber's own wind in your pack. Take what we promised.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Trial Chamber Recall is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "The chamber itself matters as much as the proof. Step inside before you turn back.",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
   "rewards": {
-    "experience": 380,
-    "gossip_reputation": 11,
+    "experience": 320,
+    "reputation": 18,
+    "gossip_reputation": 8,
     "loot_table": "villagerretaliation:quest/trial_chamber_recall",
-    "memory_event": "player_completed_quest",
-    "reputation": 21
+    "memory_event": "player_completed_quest"
   },
-  "dialogue": {
-    "already_completed": [
-      "Trial Chamber Recall is already settled.",
-      "Trial Chamber Recall is already settled on my side.",
-      "We have already closed Trial Chamber Recall.",
-      "Trial Chamber Recall does not need another tally right now.",
-      "That work is already counted and put away.",
-      "Trial Chamber Recall is finished for now.",
-      "The village has already marked Trial Chamber Recall complete.",
-      "I have no open note for Trial Chamber Recall anymore.",
-      "Trial Chamber Recall has already been handled.",
-      "That request is already off the board.",
-      "We are not reopening Trial Chamber Recall right now.",
-      "Trial Chamber Recall is done enough for today.",
-      "The record for Trial Chamber Recall is already clean.",
-      "There is no fresh work left in Trial Chamber Recall.",
-      "That one is already squared away."
-    ],
-    "inactive": [
-      "The conditions for this quest are not right at the moment.",
-      "Trial Chamber Recall is quiet right now.",
-      "The village is not counting Trial Chamber Recall at the moment.",
-      "That request is not open right now.",
-      "Trial Chamber Recall is waiting on better timing.",
-      "I cannot move Trial Chamber Recall forward just now.",
-      "The conditions for Trial Chamber Recall are not ready.",
-      "The note for Trial Chamber Recall is closed for the moment.",
-      "No one is taking that request right now.",
-      "Trial Chamber Recall needs to wait a little longer.",
-      "This is not the right moment for Trial Chamber Recall.",
-      "The work is real, but it is not open right now.",
-      "I have no active count for Trial Chamber Recall at the moment.",
-      "Trial Chamber Recall is between openings right now.",
-      "The village is not ready to accept that help yet."
-    ],
-    "locate_failed": [
-      "No chamber answers the map today. Maybe that is mercy.",
-      "I cannot post Trial Chamber Recall from here right now.",
-      "Trial Chamber Recall is not finding a proper place to start.",
-      "No good posting point is ready for Trial Chamber Recall.",
-      "The village cannot place that request from here.",
-      "Trial Chamber Recall needs a better lead before I send you out.",
-      "I cannot get a clean mark for Trial Chamber Recall today.",
-      "The request is real, but the place is not lining up.",
-      "Something about this spot will not let Trial Chamber Recall start.",
-      "I need a clearer posting before I can offer Trial Chamber Recall.",
-      "The work is not anchoring here right now.",
-      "I cannot set the note for Trial Chamber Recall from this place.",
-      "The village has no clean place to send you for that.",
-      "Trial Chamber Recall is refusing to settle onto the slate.",
-      "The route for Trial Chamber Recall is not clear enough yet."
-    ],
-    "missing_proof": [
-      "Bring a Trial Key. It is the chamber admitting you were there.",
-      "I still need a Trial Key and one Breeze Rod before I can close Trial Chamber Recall.",
-      "Bring a Trial Key and one Breeze Rod, then we can settle Trial Chamber Recall.",
-      "Trial Chamber Recall needs the proof in your pack first.",
-      "I cannot close Trial Chamber Recall until I see a Trial Key and one Breeze Rod.",
-      "The reward waits until a Trial Key and one Breeze Rod is here.",
-      "Show me a Trial Key and one Breeze Rod and we can finish this properly.",
-      "The village needs the goods before the note comes down.",
-      "You are close, but a Trial Key and one Breeze Rod still needs to be here.",
-      "I need the actual proof before I mark Trial Chamber Recall done.",
-      "Come back with a Trial Key and one Breeze Rod and we can close the count.",
-      "The request is not finished without a Trial Key and one Breeze Rod.",
-      "Trial Chamber Recall still needs something I can hold and count.",
-      "I need the delivery in hand before this is settled.",
-      "Bring the proof back and I will close Trial Chamber Recall."
-    ],
-    "missing_target": [
-      "The items matter after you set foot in the chamber itself.",
-      "Trial Chamber Recall is still short. The tracker has the exact count.",
-      "Something is missing for Trial Chamber Recall, so check the tracker and bring the rest.",
-      "The count is not complete yet.",
-      "We need the full amount before Trial Chamber Recall can close.",
-      "The village is still waiting on the rest of it.",
-      "Trial Chamber Recall needs every part before I can sign it off.",
-      "The work is close, but close does not fill a shelf.",
-      "Bring the rest and we can finish Trial Chamber Recall.",
-      "The tally still has an empty line in it.",
-      "I cannot call Trial Chamber Recall complete while the count is short.",
-      "The tracker will show what is still missing.",
-      "There is still more to gather for Trial Chamber Recall.",
-      "The full delivery matters here.",
-      "Not quite enough yet, but you are on the right road."
-    ],
-    "reminder": [
-      "Trial Chamber near {target_x}, {target_z}. Key, Breeze Rod, return alive enough to explain both.",
-      "For Trial Chamber Recall, I still need a Trial Key and one Breeze Rod.",
-      "Trial Chamber Recall is still asking for a Trial Key and one Breeze Rod.",
-      "Bring a Trial Key and one Breeze Rod back when the count is ready.",
-      "The tracker has the details for Trial Chamber Recall.",
-      "Keep Trial Chamber Recall in mind and bring a Trial Key and one Breeze Rod.",
-      "The village is still waiting on a Trial Key and one Breeze Rod.",
-      "No rush in the words, but the count still matters.",
-      "Bring the full amount back to me when you have it.",
-      "Trial Chamber Recall is still open near {target_x}, {target_z}.",
-      "Follow the tracker for Trial Chamber Recall and bring back a Trial Key and one Breeze Rod.",
-      "You are looking for a Trial Key and one Breeze Rod for this request.",
-      "The note says a Trial Key and one Breeze Rod, and the note is not wrong today.",
-      "Finish the count and return here when you can.",
-      "This is simple work only if it gets done."
-    ],
-    "start": [
-      "The chamber is {direction}, roughly {distance} blocks from here, near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod.",
-      "Trial Chamber Recall is yours now. Bring a Trial Key and one Breeze Rod when the count is ready.",
-      "I am putting Trial Chamber Recall in your hands.",
-      "Take the note for Trial Chamber Recall and bring back a Trial Key and one Breeze Rod.",
-      "Good. The village will be waiting for a Trial Key and one Breeze Rod.",
-      "Then we will count on you for Trial Chamber Recall.",
-      "Bring a Trial Key and one Breeze Rod, and we can call this useful work.",
-      "Trial Chamber Recall starts now. Keep the tracker close.",
-      "Head out for Trial Chamber Recall and return with a Trial Key and one Breeze Rod.",
-      "The request is open, and your name is on it now.",
-      "I will mark you down for Trial Chamber Recall.",
-      "Bring the full count back when you have it.",
-      "You have the work now. Do it cleanly and come back safe.",
-      "Trial Chamber Recall points {direction}, roughly {distance} blocks from here near {target_x}, {target_z}. Bring a Trial Key and one Breeze Rod.",
-      "That settles the posting. Now we need a Trial Key and one Breeze Rod."
-    ],
-    "turn_in": [
-      "A key and a Breeze Rod. Good. That chamber can stay mysterious, but not unmeasured.",
-      "That settles Trial Chamber Recall. The village will put this to use.",
-      "Trial Chamber Recall is complete, and the help is appreciated.",
-      "Good. I can close Trial Chamber Recall with a clean mark.",
-      "This will help more than it looks like it should.",
-      "The count is right. Take your reward with my thanks.",
-      "That is enough to close the request.",
-      "Well done. Trial Chamber Recall is finished.",
-      "The village can use this before the day is out.",
-      "I will mark Trial Chamber Recall complete.",
-      "Good work. The note comes down now.",
-      "That is the kind of help people remember at supper.",
-      "Everything is here. Trial Chamber Recall is settled.",
-      "The village needed this, and you brought it.",
-      "A full count makes a calmer room."
-    ],
-    "unavailable": [
-      "This request needs a better equipped ally.",
-      "Trial Chamber Recall is not available from here right now.",
-      "That request is not in your hands right now.",
-      "I cannot offer Trial Chamber Recall at the moment.",
-      "Trial Chamber Recall is closed to new help for now.",
-      "This is not ready for you right now.",
-      "The village is not accepting that work at the moment.",
-      "No open note for Trial Chamber Recall is waiting here.",
-      "Try again later if Trial Chamber Recall comes back around.",
-      "I cannot move that request today.",
-      "Trial Chamber Recall needs different timing.",
-      "The work exists, but not for this moment.",
-      "I do not have authority to open that now.",
-      "The request is out of reach for now.",
-      "There is nothing for me to hand you on Trial Chamber Recall."
-    ],
-    "start_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.start",
-    "reminder_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.reminder",
-    "turn_in_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.turn_in",
-    "already_completed_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.already_completed",
-    "unavailable_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.unavailable",
-    "inactive_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.inactive",
-    "missing_target_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.missing_target",
-    "missing_proof_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.missing_proof",
-    "locate_failed_key": "quest.dangerous_commissions.trial_chamber_recall.dialogue.locate_failed"
+  "ui": {
+    "title": "Trial Chamber Recall",
+    "icon": "minecraft:trial_key",
+    "color": "#8BA6B8"
   }
 }

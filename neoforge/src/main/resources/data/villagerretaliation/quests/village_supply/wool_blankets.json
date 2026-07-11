@@ -1,76 +1,310 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:wool_blankets",
-  "display": {
+  "metadata": {
+    "title": "Wool Blankets",
     "description": "Bring wool for clean bedding and warm wraps.",
-    "title": "Wool Blankets",
-    "title_key": "quest.village_supply.wool_blankets.title",
-    "description_key": "quest.village_supply.wool_blankets.description"
+    "questline": "village_supply",
+    "tags": [
+      "group.village_supply"
+    ]
   },
-  "tags": [
-    "group.village_supply"
-  ],
-  "offer": {
-    "min_villager_level": "novice",
-    "professions": [
-      "minecraft:shepherd",
-      "minecraft:cleric"
-    ],
-    "skills": {
-      "animal_handling": {
-        "min": 6
-      },
-      "medicine": {
-        "min": 4
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "novice",
+      "professions": [
+        "minecraft:shepherd",
+        "minecraft:cleric"
+      ],
+      "skills": {
+        "animal_handling": {
+          "min": 6
+        },
+        "medicine": {
+          "min": 4
+        }
       }
     }
   },
-  "objectives": [
-    {
-      "count": 12,
-      "id": "bring_wool",
-      "item": "minecraft:white_wool",
-      "tracker": {
-        "complete_text": "The wool bundles are clean and ready.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 12 white wool for sickbeds.",
-        "text_key": "quest.village_supply.wool_blankets.objective.bring_wool.text",
-        "complete_text_key": "quest.village_supply.wool_blankets.objective.bring_wool.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 1,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
+  "availability": {
+    "repeatable": true,
     "max_starts": 0,
-    "repeatable": true
+    "max_completions": 0,
+    "completion_cooldown_days": 1,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "locked_to_villager": true,
+    "cross_villager_compatible": true
   },
-  "tracker": {
-    "metadata": {
-      "source": "Wool Blankets"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 12 white wool for sickbeds.",
-        "text_key": "quest.village_supply.wool_blankets.tracker.proof.text"
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "count": 12,
+          "id": "bring_wool",
+          "item": "minecraft:white_wool",
+          "tracker": {
+            "complete_text": "The wool bundles are clean and ready.",
+            "progress": 0.7,
+            "show_progress": true,
+            "text": "Bring 12 white wool for sickbeds.",
+            "text_key": "quest.village_supply.wool_blankets.objective.bring_wool.text",
+            "complete_text_key": "quest.village_supply.wool_blankets.objective.bring_wool.complete_text"
+          },
+          "type": "item_check"
+        }
+      ],
+      "complete_when": [
+        "bring_wool"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Wool Blankets",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Beds are meant to stop the cold, not merely give it somewhere to sit.",
+            "Bring 12 white wool for warm blankets, and the shelves will look less worried.",
+            "Bring 12 white wool for warm blankets. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Wool Blankets",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Bring 12 white wool for warm blankets",
+            "Bring 12 white wool for warm blankets.",
+            "Bring 12 white wool for warm blankets, and the shelves will look less worried."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
       },
-      "return": {
-        "progress": 1,
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Bring 12 white wool for warm blankets. Keep the full count together on the road back.",
+                  "Bring 12 white wool for warm blankets.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Wool Blankets is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Wool Blankets is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Bring 12 white wool for warm blankets",
+                  "Bring 12 white wool for warm blankets.",
+                  "Bring 12 white wool for warm blankets, and the shelves will look less worried."
+                ],
+                "unavailable": [
+                  "Wool Blankets is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "All right. The empty shelf will keep asking in its own way.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Bring 12 white wool for warm blankets",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Wool Blankets aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Wool Blankets is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 12 white wool for warm blankets.",
         "show_progress": true,
-        "text": "Return to the quest giver with the white wool.",
-        "text_key": "quest.village_supply.wool_blankets.tracker.return.text"
+        "progress": 0.75
       }
     },
-    "title": "Wool Blankets",
-    "title_key": "quest.village_supply.wool_blankets.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Wool Blankets",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Soft, clean wool. No villager should shiver under a roof now.",
+            "The count is right, and none of it will sit idle for long.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Soft, clean wool. No villager should shiver under a roof now.",
+                  "The count is right, and none of it will sit idle for long.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Wool Blankets is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "Bring 12 white wool for warm blankets",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
   "rewards": {
     "experience": 60,
     "gossip_reputation": 3,
@@ -78,168 +312,9 @@
     "memory_event": "player_completed_quest",
     "reputation": 5
   },
-  "dialogue": {
-    "already_completed": [
-      "Wool Blankets is already settled.",
-      "Wool Blankets is already settled on my side.",
-      "We have already closed Wool Blankets.",
-      "Wool Blankets does not need another tally right now.",
-      "That work is already counted and put away.",
-      "Wool Blankets is finished for now.",
-      "The village has already marked Wool Blankets complete.",
-      "I have no open note for Wool Blankets anymore.",
-      "Wool Blankets has already been handled.",
-      "That request is already off the board.",
-      "We are not reopening Wool Blankets right now.",
-      "Wool Blankets is done enough for today.",
-      "The record for Wool Blankets is already clean.",
-      "There is no fresh work left in Wool Blankets.",
-      "That one is already squared away."
-    ],
-    "inactive": [
-      "The bedding request is not open right now.",
-      "Wool Blankets is quiet right now.",
-      "The village is not counting Wool Blankets at the moment.",
-      "That request is not open right now.",
-      "Wool Blankets is waiting on better timing.",
-      "I cannot move Wool Blankets forward just now.",
-      "The conditions for Wool Blankets are not ready.",
-      "The note for Wool Blankets is closed for the moment.",
-      "No one is taking that request right now.",
-      "Wool Blankets needs to wait a little longer.",
-      "This is not the right moment for Wool Blankets.",
-      "The work is real, but it is not open right now.",
-      "I have no active count for Wool Blankets at the moment.",
-      "Wool Blankets is between openings right now.",
-      "The village is not ready to accept that help yet."
-    ],
-    "locate_failed": [
-      "No sickbed list is ready for a wool request yet.",
-      "I cannot post Wool Blankets from here right now.",
-      "Wool Blankets is not finding a proper place to start.",
-      "No good posting point is ready for Wool Blankets.",
-      "The village cannot place that request from here.",
-      "Wool Blankets needs a better lead before I send you out.",
-      "I cannot get a clean mark for Wool Blankets today.",
-      "The request is real, but the place is not lining up.",
-      "Something about this spot will not let Wool Blankets start.",
-      "I need a clearer posting before I can offer Wool Blankets.",
-      "The work is not anchoring here right now.",
-      "I cannot set the note for Wool Blankets from this place.",
-      "The village has no clean place to send you for that.",
-      "Wool Blankets is refusing to settle onto the slate.",
-      "The route for Wool Blankets is not clear enough yet."
-    ],
-    "missing_proof": [
-      "Bring the white wool before I mark the beds supplied.",
-      "I still need 12 white wool before I can close Wool Blankets.",
-      "Bring 12 white wool, then we can settle Wool Blankets.",
-      "Wool Blankets needs the proof in your pack first.",
-      "I cannot close Wool Blankets until I see 12 white wool.",
-      "The reward waits until 12 white wool is here.",
-      "Show me 12 white wool and we can finish this properly.",
-      "The village needs the goods before the note comes down.",
-      "You are close, but 12 white wool still needs to be here.",
-      "I need the actual proof before I mark Wool Blankets done.",
-      "Come back with 12 white wool and we can close the count.",
-      "The request is not finished without 12 white wool.",
-      "Wool Blankets still needs something I can hold and count.",
-      "I need the delivery in hand before this is settled.",
-      "Bring the proof back and I will close Wool Blankets."
-    ],
-    "missing_target": [
-      "The sickbeds still need 12 white wool.",
-      "Wool Blankets is still short. The tracker has the exact count.",
-      "Something is missing for Wool Blankets, so check the tracker and bring the rest.",
-      "The count is not complete yet.",
-      "We need the full amount before Wool Blankets can close.",
-      "The village is still waiting on the rest of it.",
-      "Wool Blankets needs every part before I can sign it off.",
-      "The work is close, but close does not fill a shelf.",
-      "Bring the rest and we can finish Wool Blankets.",
-      "The tally still has an empty line in it.",
-      "I cannot call Wool Blankets complete while the count is short.",
-      "The tracker will show what is still missing.",
-      "There is still more to gather for Wool Blankets.",
-      "The full delivery matters here.",
-      "Not quite enough yet, but you are on the right road."
-    ],
-    "reminder": [
-      "Twelve white wool for the sickbeds. Soft, clean, and preferably not argued over by sheep.",
-      "For Wool Blankets, I still need 12 white wool.",
-      "Wool Blankets is still asking for 12 white wool.",
-      "Bring 12 white wool back when the count is ready.",
-      "The tracker has the details for Wool Blankets.",
-      "Keep Wool Blankets in mind and bring 12 white wool.",
-      "The village is still waiting on 12 white wool.",
-      "No rush in the words, but the count still matters.",
-      "Bring the full amount back to me when you have it.",
-      "Wool Blankets is still open.",
-      "Follow the tracker for Wool Blankets and bring back 12 white wool.",
-      "You are looking for 12 white wool for this request.",
-      "The note says 12 white wool, and the note is not wrong today.",
-      "Finish the count and return here when you can.",
-      "This is simple work only if it gets done."
-    ],
-    "start": [
-      "Bring 12 white wool. Clean bedding does more healing than people admit.",
-      "Wool Blankets is yours now. Bring 12 white wool when the count is ready.",
-      "I am putting Wool Blankets in your hands.",
-      "Take the note for Wool Blankets and bring back 12 white wool.",
-      "Good. The village will be waiting for 12 white wool.",
-      "Then we will count on you for Wool Blankets.",
-      "Bring 12 white wool, and we can call this useful work.",
-      "Wool Blankets starts now. Keep the tracker close.",
-      "Head out for Wool Blankets and return with 12 white wool.",
-      "The request is open, and your name is on it now.",
-      "I will mark you down for Wool Blankets.",
-      "Bring the full count back when you have it.",
-      "You have the work now. Do it cleanly and come back safe.",
-      "Wool Blankets points. Bring 12 white wool.",
-      "That settles the posting. Now we need 12 white wool."
-    ],
-    "turn_in": [
-      "Good. That is comfort with corners folded in.",
-      "That settles Wool Blankets. The village will put this to use.",
-      "Wool Blankets is complete, and the help is appreciated.",
-      "Good. I can close Wool Blankets with a clean mark.",
-      "This will help more than it looks like it should.",
-      "The count is right. Take your reward with my thanks.",
-      "That is enough to close the request.",
-      "Well done. Wool Blankets is finished.",
-      "The village can use this before the day is out.",
-      "I will mark Wool Blankets complete.",
-      "Good work. The note comes down now.",
-      "That is the kind of help people remember at supper.",
-      "Everything is here. Wool Blankets is settled.",
-      "The village needed this, and you brought it.",
-      "A full count makes a calmer room."
-    ],
-    "unavailable": [
-      "The wool blanket request is closed for now.",
-      "Wool Blankets is not available from here right now.",
-      "That request is not in your hands right now.",
-      "I cannot offer Wool Blankets at the moment.",
-      "Wool Blankets is closed to new help for now.",
-      "This is not ready for you right now.",
-      "The village is not accepting that work at the moment.",
-      "No open note for Wool Blankets is waiting here.",
-      "Try again later if Wool Blankets comes back around.",
-      "I cannot move that request today.",
-      "Wool Blankets needs different timing.",
-      "The work exists, but not for this moment.",
-      "I do not have authority to open that now.",
-      "The request is out of reach for now.",
-      "There is nothing for me to hand you on Wool Blankets."
-    ],
-    "start_key": "quest.village_supply.wool_blankets.dialogue.start",
-    "reminder_key": "quest.village_supply.wool_blankets.dialogue.reminder",
-    "turn_in_key": "quest.village_supply.wool_blankets.dialogue.turn_in",
-    "already_completed_key": "quest.village_supply.wool_blankets.dialogue.already_completed",
-    "unavailable_key": "quest.village_supply.wool_blankets.dialogue.unavailable",
-    "inactive_key": "quest.village_supply.wool_blankets.dialogue.inactive",
-    "missing_target_key": "quest.village_supply.wool_blankets.dialogue.missing_target",
-    "missing_proof_key": "quest.village_supply.wool_blankets.dialogue.missing_proof",
-    "locate_failed_key": "quest.village_supply.wool_blankets.dialogue.locate_failed"
+  "ui": {
+    "title": "Wool Blankets",
+    "icon": "minecraft:white_wool",
+    "color": "#8BA6B8"
   }
 }

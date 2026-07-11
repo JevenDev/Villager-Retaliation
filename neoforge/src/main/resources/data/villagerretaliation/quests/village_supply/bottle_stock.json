@@ -1,76 +1,310 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:bottle_stock",
-  "display": {
+  "metadata": {
+    "title": "Bottle Stock",
     "description": "Bring glass bottles for tonics, inks, and careful measuring.",
-    "title": "Bottle Stock",
-    "title_key": "quest.village_supply.bottle_stock.title",
-    "description_key": "quest.village_supply.bottle_stock.description"
+    "questline": "village_supply",
+    "tags": [
+      "group.village_supply"
+    ]
   },
-  "tags": [
-    "group.village_supply"
-  ],
-  "offer": {
-    "min_villager_level": "novice",
-    "professions": [
-      "minecraft:cleric",
-      "minecraft:librarian"
-    ],
-    "skills": {
-      "medicine": {
-        "min": 5
-      },
-      "scholarship": {
-        "min": 5
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "novice",
+      "professions": [
+        "minecraft:cleric",
+        "minecraft:librarian"
+      ],
+      "skills": {
+        "medicine": {
+          "min": 5
+        },
+        "scholarship": {
+          "min": 5
+        }
       }
     }
   },
-  "objectives": [
-    {
-      "count": 12,
-      "id": "bring_bottles",
-      "item": "minecraft:glass_bottle",
-      "tracker": {
-        "complete_text": "The bottle shelf is stocked and ready.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 12 glass bottles for the shelf.",
-        "text_key": "quest.village_supply.bottle_stock.objective.bring_bottles.text",
-        "complete_text_key": "quest.village_supply.bottle_stock.objective.bring_bottles.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 1,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
+  "availability": {
+    "repeatable": true,
     "max_starts": 0,
-    "repeatable": true
+    "max_completions": 0,
+    "completion_cooldown_days": 1,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "locked_to_villager": true,
+    "cross_villager_compatible": true
   },
-  "tracker": {
-    "metadata": {
-      "source": "Bottle Stock"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 12 glass bottles for the shelf.",
-        "text_key": "quest.village_supply.bottle_stock.tracker.proof.text"
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "count": 12,
+          "id": "bring_bottles",
+          "item": "minecraft:glass_bottle",
+          "tracker": {
+            "complete_text": "The bottle shelf is stocked and ready.",
+            "progress": 0.7,
+            "show_progress": true,
+            "text": "Bring 12 glass bottles for the shelf.",
+            "text_key": "quest.village_supply.bottle_stock.objective.bring_bottles.text",
+            "complete_text_key": "quest.village_supply.bottle_stock.objective.bring_bottles.complete_text"
+          },
+          "type": "item_check"
+        }
+      ],
+      "complete_when": [
+        "bring_bottles"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Bottle Stock",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "A cleric with an empty bottle shelf is only waving at the brewing stand.",
+            "Bring 12 glass bottles for the brewing stand, and the shelves will look less worried.",
+            "Bring 12 glass bottles for the brewing stand. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Bottle Stock",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Bring 12 glass bottles for the brewing stand",
+            "Bring 12 glass bottles for the brewing stand.",
+            "Bring 12 glass bottles for the brewing stand, and the shelves will look less worried."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
       },
-      "return": {
-        "progress": 1,
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Bring 12 glass bottles for the brewing stand. Keep the full count together on the road back.",
+                  "Bring 12 glass bottles for the brewing stand.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Bottle Stock is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Bottle Stock is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Bring 12 glass bottles for the brewing stand",
+                  "Bring 12 glass bottles for the brewing stand.",
+                  "Bring 12 glass bottles for the brewing stand, and the shelves will look less worried."
+                ],
+                "unavailable": [
+                  "Bottle Stock is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "All right. The empty shelf will keep asking in its own way.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Bring 12 glass bottles for the brewing stand",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Bottle Stock aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Bottle Stock is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 12 glass bottles for the brewing stand.",
         "show_progress": true,
-        "text": "Return to the quest giver with the glass bottles.",
-        "text_key": "quest.village_supply.bottle_stock.tracker.return.text"
+        "progress": 0.75
       }
     },
-    "title": "Bottle Stock",
-    "title_key": "quest.village_supply.bottle_stock.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Bottle Stock",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Clear glass and no cracks. The brewing stand can work again.",
+            "The count is right, and none of it will sit idle for long.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Clear glass and no cracks. The brewing stand can work again.",
+                  "The count is right, and none of it will sit idle for long.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Bottle Stock is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "Bring 12 glass bottles for the brewing stand",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
   "rewards": {
     "experience": 55,
     "gossip_reputation": 2,
@@ -78,168 +312,9 @@
     "memory_event": "player_completed_quest",
     "reputation": 4
   },
-  "dialogue": {
-    "already_completed": [
-      "Bottle Stock is already settled.",
-      "Bottle Stock is already settled on my side.",
-      "We have already closed Bottle Stock.",
-      "Bottle Stock does not need another tally right now.",
-      "That work is already counted and put away.",
-      "Bottle Stock is finished for now.",
-      "The village has already marked Bottle Stock complete.",
-      "I have no open note for Bottle Stock anymore.",
-      "Bottle Stock has already been handled.",
-      "That request is already off the board.",
-      "We are not reopening Bottle Stock right now.",
-      "Bottle Stock is done enough for today.",
-      "The record for Bottle Stock is already clean.",
-      "There is no fresh work left in Bottle Stock.",
-      "That one is already squared away."
-    ],
-    "inactive": [
-      "The apothecary shelf is not taking bottles right now.",
-      "Bottle Stock is quiet right now.",
-      "The village is not counting Bottle Stock at the moment.",
-      "That request is not open right now.",
-      "Bottle Stock is waiting on better timing.",
-      "I cannot move Bottle Stock forward just now.",
-      "The conditions for Bottle Stock are not ready.",
-      "The note for Bottle Stock is closed for the moment.",
-      "No one is taking that request right now.",
-      "Bottle Stock needs to wait a little longer.",
-      "This is not the right moment for Bottle Stock.",
-      "The work is real, but it is not open right now.",
-      "I have no active count for Bottle Stock at the moment.",
-      "Bottle Stock is between openings right now.",
-      "The village is not ready to accept that help yet."
-    ],
-    "locate_failed": [
-      "No shelf count is ready for another bottle request yet.",
-      "I cannot post Bottle Stock from here right now.",
-      "Bottle Stock is not finding a proper place to start.",
-      "No good posting point is ready for Bottle Stock.",
-      "The village cannot place that request from here.",
-      "Bottle Stock needs a better lead before I send you out.",
-      "I cannot get a clean mark for Bottle Stock today.",
-      "The request is real, but the place is not lining up.",
-      "Something about this spot will not let Bottle Stock start.",
-      "I need a clearer posting before I can offer Bottle Stock.",
-      "The work is not anchoring here right now.",
-      "I cannot set the note for Bottle Stock from this place.",
-      "The village has no clean place to send you for that.",
-      "Bottle Stock is refusing to settle onto the slate.",
-      "The route for Bottle Stock is not clear enough yet."
-    ],
-    "missing_proof": [
-      "Bring the bottles before I restock the shelf.",
-      "I still need 12 glass bottles before I can close Bottle Stock.",
-      "Bring 12 glass bottles, then we can settle Bottle Stock.",
-      "Bottle Stock needs the proof in your pack first.",
-      "I cannot close Bottle Stock until I see 12 glass bottles.",
-      "The reward waits until 12 glass bottles is here.",
-      "Show me 12 glass bottles and we can finish this properly.",
-      "The village needs the goods before the note comes down.",
-      "You are close, but 12 glass bottles still needs to be here.",
-      "I need the actual proof before I mark Bottle Stock done.",
-      "Come back with 12 glass bottles and we can close the count.",
-      "The request is not finished without 12 glass bottles.",
-      "Bottle Stock still needs something I can hold and count.",
-      "I need the delivery in hand before this is settled.",
-      "Bring the proof back and I will close Bottle Stock."
-    ],
-    "missing_target": [
-      "The shelf still needs 12 glass bottles.",
-      "Bottle Stock is still short. The tracker has the exact count.",
-      "Something is missing for Bottle Stock, so check the tracker and bring the rest.",
-      "The count is not complete yet.",
-      "We need the full amount before Bottle Stock can close.",
-      "The village is still waiting on the rest of it.",
-      "Bottle Stock needs every part before I can sign it off.",
-      "The work is close, but close does not fill a shelf.",
-      "Bring the rest and we can finish Bottle Stock.",
-      "The tally still has an empty line in it.",
-      "I cannot call Bottle Stock complete while the count is short.",
-      "The tracker will show what is still missing.",
-      "There is still more to gather for Bottle Stock.",
-      "The full delivery matters here.",
-      "Not quite enough yet, but you are on the right road."
-    ],
-    "reminder": [
-      "Twelve glass bottles. It is hard to keep remedies organized when they keep being liquid-shaped.",
-      "For Bottle Stock, I still need 12 glass bottles.",
-      "Bottle Stock is still asking for 12 glass bottles.",
-      "Bring 12 glass bottles back when the count is ready.",
-      "The tracker has the details for Bottle Stock.",
-      "Keep Bottle Stock in mind and bring 12 glass bottles.",
-      "The village is still waiting on 12 glass bottles.",
-      "No rush in the words, but the count still matters.",
-      "Bring the full amount back to me when you have it.",
-      "Bottle Stock is still open.",
-      "Follow the tracker for Bottle Stock and bring back 12 glass bottles.",
-      "You are looking for 12 glass bottles for this request.",
-      "The note says 12 glass bottles, and the note is not wrong today.",
-      "Finish the count and return here when you can.",
-      "This is simple work only if it gets done."
-    ],
-    "start": [
-      "Bring 12 glass bottles. I can manage without drama; I would prefer not to manage without containers.",
-      "Bottle Stock is yours now. Bring 12 glass bottles when the count is ready.",
-      "I am putting Bottle Stock in your hands.",
-      "Take the note for Bottle Stock and bring back 12 glass bottles.",
-      "Good. The village will be waiting for 12 glass bottles.",
-      "Then we will count on you for Bottle Stock.",
-      "Bring 12 glass bottles, and we can call this useful work.",
-      "Bottle Stock starts now. Keep the tracker close.",
-      "Head out for Bottle Stock and return with 12 glass bottles.",
-      "The request is open, and your name is on it now.",
-      "I will mark you down for Bottle Stock.",
-      "Bring the full count back when you have it.",
-      "You have the work now. Do it cleanly and come back safe.",
-      "Bottle Stock points. Bring 12 glass bottles.",
-      "That settles the posting. Now we need 12 glass bottles."
-    ],
-    "turn_in": [
-      "Good. Empty bottles are only boring until the village runs out of them.",
-      "That settles Bottle Stock. The village will put this to use.",
-      "Bottle Stock is complete, and the help is appreciated.",
-      "Good. I can close Bottle Stock with a clean mark.",
-      "This will help more than it looks like it should.",
-      "The count is right. Take your reward with my thanks.",
-      "That is enough to close the request.",
-      "Well done. Bottle Stock is finished.",
-      "The village can use this before the day is out.",
-      "I will mark Bottle Stock complete.",
-      "Good work. The note comes down now.",
-      "That is the kind of help people remember at supper.",
-      "Everything is here. Bottle Stock is settled.",
-      "The village needed this, and you brought it.",
-      "A full count makes a calmer room."
-    ],
-    "unavailable": [
-      "The bottle request is closed for now.",
-      "Bottle Stock is not available from here right now.",
-      "That request is not in your hands right now.",
-      "I cannot offer Bottle Stock at the moment.",
-      "Bottle Stock is closed to new help for now.",
-      "This is not ready for you right now.",
-      "The village is not accepting that work at the moment.",
-      "No open note for Bottle Stock is waiting here.",
-      "Try again later if Bottle Stock comes back around.",
-      "I cannot move that request today.",
-      "Bottle Stock needs different timing.",
-      "The work exists, but not for this moment.",
-      "I do not have authority to open that now.",
-      "The request is out of reach for now.",
-      "There is nothing for me to hand you on Bottle Stock."
-    ],
-    "start_key": "quest.village_supply.bottle_stock.dialogue.start",
-    "reminder_key": "quest.village_supply.bottle_stock.dialogue.reminder",
-    "turn_in_key": "quest.village_supply.bottle_stock.dialogue.turn_in",
-    "already_completed_key": "quest.village_supply.bottle_stock.dialogue.already_completed",
-    "unavailable_key": "quest.village_supply.bottle_stock.dialogue.unavailable",
-    "inactive_key": "quest.village_supply.bottle_stock.dialogue.inactive",
-    "missing_target_key": "quest.village_supply.bottle_stock.dialogue.missing_target",
-    "missing_proof_key": "quest.village_supply.bottle_stock.dialogue.missing_proof",
-    "locate_failed_key": "quest.village_supply.bottle_stock.dialogue.locate_failed"
+  "ui": {
+    "title": "Bottle Stock",
+    "icon": "minecraft:glass_bottle",
+    "color": "#8BA6B8"
   }
 }

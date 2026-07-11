@@ -146,7 +146,7 @@
                   "Bring 4 leather and 12 paper for the courier route."
                 ],
                 "unavailable": [
-                  "The courier route is not counting that stage right now."
+                  "The courier packet is not ready for that work right now."
                 ]
               }
             }
@@ -240,7 +240,7 @@
                   "Bring 3 honeycomb and carry 1 compass for the courier route."
                 ],
                 "unavailable": [
-                  "The courier route is not counting that stage right now."
+                  "The letters cannot be sealed until the satchel is finished."
                 ]
               }
             }
@@ -297,7 +297,7 @@
                   "Good. A proper route is a quiet bridge. You helped build one."
                 ],
                 "missing_objectives": [
-                  "The courier route is still missing something. Check the tracker."
+                  "The courier packet still needs leather, paper, honeycomb, or its compass."
                 ],
                 "missing_proof": [
                   "Bring the route supplies here before I seal the packet."

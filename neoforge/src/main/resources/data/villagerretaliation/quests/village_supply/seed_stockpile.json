@@ -1,72 +1,306 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:seed_stockpile",
-  "display": {
+  "metadata": {
+    "title": "Seed Stockpile",
     "description": "Bring seed grain so the village can replant without touching winter stores.",
-    "title": "Seed Stockpile",
-    "title_key": "quest.village_supply.seed_stockpile.title",
-    "description_key": "quest.village_supply.seed_stockpile.description"
+    "questline": "village_supply",
+    "tags": [
+      "group.village_supply"
+    ]
   },
-  "tags": [
-    "group.village_supply"
-  ],
-  "offer": {
-    "min_villager_level": "novice",
-    "professions": [
-      "minecraft:farmer"
-    ],
-    "skills": {
-      "farming": {
-        "min": 5
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "novice",
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": {
+        "farming": {
+          "min": 5
+        }
       }
     }
   },
-  "objectives": [
-    {
-      "count": 32,
-      "id": "bring_seeds",
-      "item": "minecraft:wheat_seeds",
-      "tracker": {
-        "complete_text": "The seed sacks are tied and ready.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 32 wheat seeds for the reserve.",
-        "text_key": "quest.village_supply.seed_stockpile.objective.bring_seeds.text",
-        "complete_text_key": "quest.village_supply.seed_stockpile.objective.bring_seeds.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 1,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
+  "availability": {
+    "repeatable": true,
     "max_starts": 0,
-    "repeatable": true
+    "max_completions": 0,
+    "completion_cooldown_days": 1,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "locked_to_villager": true,
+    "cross_villager_compatible": true
   },
-  "tracker": {
-    "metadata": {
-      "source": "Seed Stockpile"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 32 wheat seeds for the reserve.",
-        "text_key": "quest.village_supply.seed_stockpile.tracker.proof.text"
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "count": 32,
+          "id": "bring_seeds",
+          "item": "minecraft:wheat_seeds",
+          "tracker": {
+            "complete_text": "The seed sacks are tied and ready.",
+            "progress": 0.7,
+            "show_progress": true,
+            "text": "Bring 32 wheat seeds for the reserve.",
+            "text_key": "quest.village_supply.seed_stockpile.objective.bring_seeds.text",
+            "complete_text_key": "quest.village_supply.seed_stockpile.objective.bring_seeds.complete_text"
+          },
+          "type": "item_check"
+        }
+      ],
+      "complete_when": [
+        "bring_seeds"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Seed Stockpile",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "A village that eats every seed has chosen a very short future.",
+            "Bring 32 wheat seeds for the next planting, and the shelves will look less worried.",
+            "Bring 32 wheat seeds for the next planting. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Seed Stockpile",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Bring 32 wheat seeds for the next planting",
+            "Bring 32 wheat seeds for the next planting.",
+            "Bring 32 wheat seeds for the next planting, and the shelves will look less worried."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
       },
-      "return": {
-        "progress": 1,
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Bring 32 wheat seeds for the next planting. Keep the full count together on the road back.",
+                  "Bring 32 wheat seeds for the next planting.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Seed Stockpile is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Seed Stockpile is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Bring 32 wheat seeds for the next planting",
+                  "Bring 32 wheat seeds for the next planting.",
+                  "Bring 32 wheat seeds for the next planting, and the shelves will look less worried."
+                ],
+                "unavailable": [
+                  "Seed Stockpile is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "All right. The empty shelf will keep asking in its own way.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Bring 32 wheat seeds for the next planting",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Seed Stockpile aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Seed Stockpile is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 32 wheat seeds for the next planting.",
         "show_progress": true,
-        "text": "Return to the quest giver with the wheat seeds.",
-        "text_key": "quest.village_supply.seed_stockpile.tracker.return.text"
+        "progress": 0.75
       }
     },
-    "title": "Seed Stockpile",
-    "title_key": "quest.village_supply.seed_stockpile.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Seed Stockpile",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Enough for a new field. The next harvest starts in this sack.",
+            "The count is right, and none of it will sit idle for long.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Enough for a new field. The next harvest starts in this sack.",
+                  "The count is right, and none of it will sit idle for long.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Seed Stockpile is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "Bring 32 wheat seeds for the next planting",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
   "rewards": {
     "experience": 45,
     "gossip_reputation": 2,
@@ -74,168 +308,9 @@
     "memory_event": "player_completed_quest",
     "reputation": 4
   },
-  "dialogue": {
-    "already_completed": [
-      "Seed Stockpile is already settled.",
-      "Seed Stockpile is already settled on my side.",
-      "We have already closed Seed Stockpile.",
-      "Seed Stockpile does not need another tally right now.",
-      "That work is already counted and put away.",
-      "Seed Stockpile is finished for now.",
-      "The village has already marked Seed Stockpile complete.",
-      "I have no open note for Seed Stockpile anymore.",
-      "Seed Stockpile has already been handled.",
-      "That request is already off the board.",
-      "We are not reopening Seed Stockpile right now.",
-      "Seed Stockpile is done enough for today.",
-      "The record for Seed Stockpile is already clean.",
-      "There is no fresh work left in Seed Stockpile.",
-      "That one is already squared away."
-    ],
-    "inactive": [
-      "The seed reserve is not open for counting right now.",
-      "Seed Stockpile is quiet right now.",
-      "The village is not counting Seed Stockpile at the moment.",
-      "That request is not open right now.",
-      "Seed Stockpile is waiting on better timing.",
-      "I cannot move Seed Stockpile forward just now.",
-      "The conditions for Seed Stockpile are not ready.",
-      "The note for Seed Stockpile is closed for the moment.",
-      "No one is taking that request right now.",
-      "Seed Stockpile needs to wait a little longer.",
-      "This is not the right moment for Seed Stockpile.",
-      "The work is real, but it is not open right now.",
-      "I have no active count for Seed Stockpile at the moment.",
-      "Seed Stockpile is between openings right now.",
-      "The village is not ready to accept that help yet."
-    ],
-    "locate_failed": [
-      "The reserve ledger is not ready for another seed request.",
-      "I cannot post Seed Stockpile from here right now.",
-      "Seed Stockpile is not finding a proper place to start.",
-      "No good posting point is ready for Seed Stockpile.",
-      "The village cannot place that request from here.",
-      "Seed Stockpile needs a better lead before I send you out.",
-      "I cannot get a clean mark for Seed Stockpile today.",
-      "The request is real, but the place is not lining up.",
-      "Something about this spot will not let Seed Stockpile start.",
-      "I need a clearer posting before I can offer Seed Stockpile.",
-      "The work is not anchoring here right now.",
-      "I cannot set the note for Seed Stockpile from this place.",
-      "The village has no clean place to send you for that.",
-      "Seed Stockpile is refusing to settle onto the slate.",
-      "The route for Seed Stockpile is not clear enough yet."
-    ],
-    "missing_proof": [
-      "Show me the wheat seeds before I mark the reserve full.",
-      "I still need 32 wheat seeds before I can close Seed Stockpile.",
-      "Bring 32 wheat seeds, then we can settle Seed Stockpile.",
-      "Seed Stockpile needs the proof in your pack first.",
-      "I cannot close Seed Stockpile until I see 32 wheat seeds.",
-      "The reward waits until 32 wheat seeds is here.",
-      "Show me 32 wheat seeds and we can finish this properly.",
-      "The village needs the goods before the note comes down.",
-      "You are close, but 32 wheat seeds still needs to be here.",
-      "I need the actual proof before I mark Seed Stockpile done.",
-      "Come back with 32 wheat seeds and we can close the count.",
-      "The request is not finished without 32 wheat seeds.",
-      "Seed Stockpile still needs something I can hold and count.",
-      "I need the delivery in hand before this is settled.",
-      "Bring the proof back and I will close Seed Stockpile."
-    ],
-    "missing_target": [
-      "The reserve still needs the full 32 wheat seeds.",
-      "Seed Stockpile is still short. The tracker has the exact count.",
-      "Something is missing for Seed Stockpile, so check the tracker and bring the rest.",
-      "The count is not complete yet.",
-      "We need the full amount before Seed Stockpile can close.",
-      "The village is still waiting on the rest of it.",
-      "Seed Stockpile needs every part before I can sign it off.",
-      "The work is close, but close does not fill a shelf.",
-      "Bring the rest and we can finish Seed Stockpile.",
-      "The tally still has an empty line in it.",
-      "I cannot call Seed Stockpile complete while the count is short.",
-      "The tracker will show what is still missing.",
-      "There is still more to gather for Seed Stockpile.",
-      "The full delivery matters here.",
-      "Not quite enough yet, but you are on the right road."
-    ],
-    "reminder": [
-      "Thirty-two wheat seeds for the reserve. Small things become bread if we keep them safe.",
-      "For Seed Stockpile, I still need 32 wheat seeds.",
-      "Seed Stockpile is still asking for 32 wheat seeds.",
-      "Bring 32 wheat seeds back when the count is ready.",
-      "The tracker has the details for Seed Stockpile.",
-      "Keep Seed Stockpile in mind and bring 32 wheat seeds.",
-      "The village is still waiting on 32 wheat seeds.",
-      "No rush in the words, but the count still matters.",
-      "Bring the full amount back to me when you have it.",
-      "Seed Stockpile is still open.",
-      "Follow the tracker for Seed Stockpile and bring back 32 wheat seeds.",
-      "You are looking for 32 wheat seeds for this request.",
-      "The note says 32 wheat seeds, and the note is not wrong today.",
-      "Finish the count and return here when you can.",
-      "This is simple work only if it gets done."
-    ],
-    "start": [
-      "Bring me 32 wheat seeds. It is humble work, which is why everyone notices when it is missing.",
-      "Seed Stockpile is yours now. Bring 32 wheat seeds when the count is ready.",
-      "I am putting Seed Stockpile in your hands.",
-      "Take the note for Seed Stockpile and bring back 32 wheat seeds.",
-      "Good. The village will be waiting for 32 wheat seeds.",
-      "Then we will count on you for Seed Stockpile.",
-      "Bring 32 wheat seeds, and we can call this useful work.",
-      "Seed Stockpile starts now. Keep the tracker close.",
-      "Head out for Seed Stockpile and return with 32 wheat seeds.",
-      "The request is open, and your name is on it now.",
-      "I will mark you down for Seed Stockpile.",
-      "Bring the full count back when you have it.",
-      "You have the work now. Do it cleanly and come back safe.",
-      "Seed Stockpile points. Bring 32 wheat seeds.",
-      "That settles the posting. Now we need 32 wheat seeds."
-    ],
-    "turn_in": [
-      "Good. That is tomorrow's field in a sack. Take this for your trouble.",
-      "That settles Seed Stockpile. The village will put this to use.",
-      "Seed Stockpile is complete, and the help is appreciated.",
-      "Good. I can close Seed Stockpile with a clean mark.",
-      "This will help more than it looks like it should.",
-      "The count is right. Take your reward with my thanks.",
-      "That is enough to close the request.",
-      "Well done. Seed Stockpile is finished.",
-      "The village can use this before the day is out.",
-      "I will mark Seed Stockpile complete.",
-      "Good work. The note comes down now.",
-      "That is the kind of help people remember at supper.",
-      "Everything is here. Seed Stockpile is settled.",
-      "The village needed this, and you brought it.",
-      "A full count makes a calmer room."
-    ],
-    "unavailable": [
-      "The seed bin is not asking for help right now.",
-      "Seed Stockpile is not available from here right now.",
-      "That request is not in your hands right now.",
-      "I cannot offer Seed Stockpile at the moment.",
-      "Seed Stockpile is closed to new help for now.",
-      "This is not ready for you right now.",
-      "The village is not accepting that work at the moment.",
-      "No open note for Seed Stockpile is waiting here.",
-      "Try again later if Seed Stockpile comes back around.",
-      "I cannot move that request today.",
-      "Seed Stockpile needs different timing.",
-      "The work exists, but not for this moment.",
-      "I do not have authority to open that now.",
-      "The request is out of reach for now.",
-      "There is nothing for me to hand you on Seed Stockpile."
-    ],
-    "start_key": "quest.village_supply.seed_stockpile.dialogue.start",
-    "reminder_key": "quest.village_supply.seed_stockpile.dialogue.reminder",
-    "turn_in_key": "quest.village_supply.seed_stockpile.dialogue.turn_in",
-    "already_completed_key": "quest.village_supply.seed_stockpile.dialogue.already_completed",
-    "unavailable_key": "quest.village_supply.seed_stockpile.dialogue.unavailable",
-    "inactive_key": "quest.village_supply.seed_stockpile.dialogue.inactive",
-    "missing_target_key": "quest.village_supply.seed_stockpile.dialogue.missing_target",
-    "missing_proof_key": "quest.village_supply.seed_stockpile.dialogue.missing_proof",
-    "locate_failed_key": "quest.village_supply.seed_stockpile.dialogue.locate_failed"
+  "ui": {
+    "title": "Seed Stockpile",
+    "icon": "minecraft:wheat_seeds",
+    "color": "#8BA6B8"
   }
 }

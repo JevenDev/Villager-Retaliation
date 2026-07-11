@@ -149,7 +149,7 @@
                   "Defeat 3 blazes and bring 2 blaze rods for the Nether candle."
                 ],
                 "unavailable": [
-                  "The Nether candle is not counting that stage right now."
+                  "The Nether candle lesson is not open right now."
                 ]
               }
             }
@@ -242,7 +242,7 @@
                   "Bring 4 blaze powder and 8 glowstone dust for the Nether candle."
                 ],
                 "unavailable": [
-                  "The Nether candle is not counting that stage right now."
+                  "The bottled flame can wait until the blaze work is done."
                 ]
               }
             }

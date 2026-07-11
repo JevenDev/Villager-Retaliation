@@ -1,90 +1,321 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:standing_watch",
-  "display": {
+  "metadata": {
+    "title": "Standing Watch",
     "description": "Stand watch and help defend the village from a real threat.",
-    "title": "Standing Watch",
-    "title_key": "quest.village_defense.standing_watch.title",
-    "description_key": "quest.village_defense.standing_watch.description"
+    "questline": "village_defense",
+    "parent": "villagerretaliation:watch_arrows",
+    "tags": [
+      "group.village_defense"
+    ]
   },
-  "tags": [
-    "group.village_defense"
-  ],
-  "parent": "villagerretaliation:watch_arrows",
-  "offer": {
-    "min_villager_level": "apprentice",
-    "professions": [
-      "minecraft:fletcher",
-      "minecraft:weaponsmith",
-      "minecraft:armorer"
-    ],
-    "skills": {
-      "guarding": {
-        "min": 10
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:fletcher",
+        "minecraft:weaponsmith",
+        "minecraft:armorer"
+      ],
+      "min_villager_level": "apprentice",
+      "skills": {
+        "guarding": {
+          "min": 10
+        }
       }
     }
   },
-  "objectives": [
-    {
-      "count": 1,
-      "id": "defend_village",
-      "memory": "player_defended_village",
-      "tracker": {
-        "complete_text": "The village saw you defend it.",
-        "progress": 0.85,
-        "show_progress": true,
-        "text": "Defend the village from a real threat.",
-        "text_key": "quest.village_defense.standing_watch.objective.defend_village.text",
-        "complete_text_key": "quest.village_defense.standing_watch.objective.defend_village.complete_text"
-      },
-      "type": "memory_event"
-    }
-  ],
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_scope": "player",
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": false,
-    "max_completions": 1,
+  "availability": {
+    "repeatable": false,
     "max_starts": 0,
-    "repeatable": false
+    "max_completions": 1,
+    "completion_scope": "player",
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "locked_to_villager": false,
+    "cross_villager_compatible": true
   },
-  "tracker": {
-    "metadata": {
-      "source": "Standing Watch"
-    },
-    "steps": {
-      "event": {
-        "progress": 0.85,
-        "show_progress": true,
-        "text": "Defend the village from a real threat.",
-        "text_key": "quest.village_defense.standing_watch.tracker.event.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver after defending the village.",
-        "text_key": "quest.village_defense.standing_watch.tracker.return.text"
-      }
-    },
-    "title": "Standing Watch",
-    "title_key": "quest.village_defense.standing_watch.tracker.title"
-  },
-  "triggers": [
+  "events": [
     {
       "id": "record_village_defender",
       "event": "completed",
+      "repeatable": false,
       "actions": [
         {
           "type": "set_tag",
           "scope": "player",
           "tag": "villagerretaliation:village_defender"
-        },
-        {
-          "type": "set_stage",
-          "stage": "village_defender"
         }
       ]
+    }
+  ],
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "count": 1,
+          "id": "defend_village",
+          "memory": "player_defended_village",
+          "tracker": {
+            "complete_text": "The village saw you defend it.",
+            "progress": 0.85,
+            "show_progress": true,
+            "text": "Defend the village from a real threat.",
+            "text_key": "quest.village_defense.standing_watch.objective.defend_village.text",
+            "complete_text_key": "quest.village_defense.standing_watch.objective.defend_village.complete_text"
+          },
+          "type": "memory_event"
+        }
+      ],
+      "complete_when": [
+        "defend_village"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Standing Watch",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Arrows help, but a village also needs someone who stands when the bell begins.",
+            "Defend this village from a real threat. The villagers will know whether you did.",
+            "Defend the village from a real threat. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Standing Watch",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Stand with the village when a real threat reaches its homes.",
+            "Defend the village from a real threat.",
+            "Defend this village from a real threat. The villagers will know whether you did."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Stay near the bell when danger comes. A scattered defense is only several lonely fights.",
+                  "Defend the village from a real threat.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Standing Watch is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Standing Watch is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Stand with the village when a real threat reaches its homes.",
+                  "Defend the village from a real threat.",
+                  "Defend this village from a real threat. The villagers will know whether you did."
+                ],
+                "unavailable": [
+                  "Standing Watch is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "Then keep your shield close. Trouble rarely sends an appointment.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Stand with the village when a real threat reaches its homes.",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Standing Watch aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Standing Watch is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Defend the village from a real threat.",
+        "show_progress": true,
+        "progress": 0.75
+      }
+    },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Standing Watch",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The village saw where you stood. No token could prove it better.",
+            "You held the line while doors were closing behind you. That earns trust.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "The village saw where you stood. No token could prove it better.",
+                  "You held the line while doors were closing behind you. That earns trust.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Standing Watch is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "Stand with the village when a real threat reaches its homes.",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
     }
   ],
   "rewards": {
@@ -94,42 +325,9 @@
     "memory_event": "player_completed_quest",
     "reputation": 12
   },
-  "dialogue": {
-    "already_completed": [
-      "Standing Watch is already settled."
-    ],
-    "inactive": [
-      "The watch is not calling for proof right now."
-    ],
-    "locate_failed": [
-      "There is no watch post to mark on a map. Stay close enough to answer trouble."
-    ],
-    "missing_proof": [
-      "Words do not hold a gate. Stand with us when danger reaches the village."
-    ],
-    "missing_target": [
-      "The village still needs to see you answer a real threat."
-    ],
-    "reminder": [
-      "Stay near the village. If danger comes, answer it before it reaches the doors."
-    ],
-    "start": [
-      "Arrows help. Nerves help more. Stand watch with us, and if danger comes, answer it."
-    ],
-    "turn_in": [
-      "You stood when it mattered. The watch will remember that."
-    ],
-    "unavailable": [
-      "The watch is not ready to ask this of you."
-    ],
-    "start_key": "quest.village_defense.standing_watch.dialogue.start",
-    "reminder_key": "quest.village_defense.standing_watch.dialogue.reminder",
-    "turn_in_key": "quest.village_defense.standing_watch.dialogue.turn_in",
-    "already_completed_key": "quest.village_defense.standing_watch.dialogue.already_completed",
-    "unavailable_key": "quest.village_defense.standing_watch.dialogue.unavailable",
-    "inactive_key": "quest.village_defense.standing_watch.dialogue.inactive",
-    "missing_target_key": "quest.village_defense.standing_watch.dialogue.missing_target",
-    "missing_proof_key": "quest.village_defense.standing_watch.dialogue.missing_proof",
-    "locate_failed_key": "quest.village_defense.standing_watch.dialogue.locate_failed"
+  "ui": {
+    "title": "Standing Watch",
+    "icon": "minecraft:shield",
+    "color": "#8BA6B8"
   }
 }

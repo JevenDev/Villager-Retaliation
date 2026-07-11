@@ -103,6 +103,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -114,6 +116,7 @@ import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.loot.LootTable;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -138,11 +141,22 @@ public final class VillagerQuestGameTests {
             VillagerActionDefinition.Kind.FORCED_DIALOGUE);
     private static final Map<String, Integer> EXPECTED_QUESTLINE_COUNTS = orderedMap(
             Map.entry("cartographers_atlas", 11),
+            Map.entry("courier_roads", 2),
             Map.entry("dangerous_commissions", 4),
+            Map.entry("deep_delvers", 4),
+            Map.entry("end_survey", 4),
+            Map.entry("field_medicine", 2),
+            Map.entry("green_thumb", 4),
+            Map.entry("hearthbound", 2),
+            Map.entry("last_ember", 4),
             Map.entry("lost_civilization", 2),
+            Map.entry("nether_routes", 4),
             Map.entry("old_roads", 2),
+            Map.entry("redstone_works", 4),
+            Map.entry("village_commissions", 15),
             Map.entry("village_defense", 3),
-            Map.entry("village_supply", 16));
+            Map.entry("village_supply", 16),
+            Map.entry("workshop_oaths", 2));
     private static final int EXPECTED_QUEST_COUNT = EXPECTED_QUESTLINE_COUNTS.values().stream()
             .mapToInt(Integer::intValue)
             .sum();
@@ -247,8 +261,8 @@ public final class VillagerQuestGameTests {
                     authoredIdsByResource.put(entry.getKey(), authoredId);
                 });
         helper.assertValueEqual(authoredIdsByResource.size(), EXPECTED_QUEST_COUNT, "built-in quest resource count");
-        helper.assertFalse(v1Ids.isEmpty(), "built-in compatibility catalog no longer contains v1 quests");
-        helper.assertFalse(v2Ids.isEmpty(), "built-in compatibility catalog no longer contains v2 quests");
+        helper.assertTrue(v1Ids.isEmpty(), "built-in catalog still contains legacy v1 quests");
+        helper.assertValueEqual(v2Ids.size(), EXPECTED_QUEST_COUNT, "built-in v2 quest count");
         assertContainsAll(
                 helper,
                 v2Ids,
@@ -334,6 +348,7 @@ public final class VillagerQuestGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questDefinitionsCoverAuthoredFeatures(GameTestHelper helper) {
+        MinecraftServer server = helper.getLevel().getServer();
         List<QuestDefinition> quests = quests(helper);
         EnumSet<QuestDefinition.ObjectiveType> objectiveTypes = EnumSet.noneOf(QuestDefinition.ObjectiveType.class);
         EnumSet<QuestDefinition.TriggerEvent> triggerEvents = EnumSet.noneOf(QuestDefinition.TriggerEvent.class);
@@ -345,7 +360,6 @@ public final class VillagerQuestGameTests {
         int repeatable = 0;
         int oneShot = 0;
         int positiveGossip = 0;
-        int negativeGossip = 0;
 
         for (QuestDefinition quest : quests) {
             QuestDefinition.Rewards rewards = quest.rewards();
@@ -355,10 +369,12 @@ public final class VillagerQuestGameTests {
             helper.assertTrue(rewards.lootTable() != null, quest.id() + " has no loot-table reward");
             helper.assertTrue(rewards.memoryEvent() != null, quest.id() + " has no memory-event reward");
             assertResourceExists(helper, quest.id(), rewards.lootTable(), "loot_table");
+            ResourceKey<LootTable> rewardLootKey = ResourceKey.create(Registries.LOOT_TABLE, rewards.lootTable());
+            helper.assertTrue(
+                    server.reloadableRegistries().getLootTable(rewardLootKey) != LootTable.EMPTY,
+                    quest.id() + " reward loot table did not load: " + rewards.lootTable());
             if (rewards.gossipReputation() > 0) {
                 positiveGossip++;
-            } else {
-                negativeGossip++;
             }
 
             if (quest.target().hasStructureTarget()) {
@@ -411,7 +427,6 @@ public final class VillagerQuestGameTests {
                 QuestDefinition.TriggerEvent.COMPLETED), "trigger events");
         assertContainsAll(helper, actionKinds, Set.of(
                 VillagerActionDefinition.Kind.SET_TAG,
-                VillagerActionDefinition.Kind.SET_VARIABLE,
                 VillagerActionDefinition.Kind.NOTIFICATION,
                 VillagerActionDefinition.Kind.TRACKER,
                 VillagerActionDefinition.Kind.FORCED_DIALOGUE), "trigger action kinds");
@@ -425,7 +440,6 @@ public final class VillagerQuestGameTests {
         helper.assertTrue(repeatable > 0, "No repeatable quests loaded");
         helper.assertTrue(oneShot > 0, "No one-shot quests loaded");
         helper.assertTrue(positiveGossip > 0, "No positive gossip rewards loaded");
-        helper.assertTrue(negativeGossip > 0, "No negative gossip rewards loaded");
 
         helper.succeed();
     }
@@ -1542,10 +1556,14 @@ public final class VillagerQuestGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questResourceIndexesFindObjectiveAndTriggerFeatures(GameTestHelper helper) {
         MinecraftServer server = helper.getLevel().getServer();
-        helper.assertValueEqual(
-                VillagerQuestResources.questIdsWithObjective(server, QuestDefinition.ObjectiveType.MOB_KILL).size(),
-                5,
-                "mob-kill quest index size");
+        Set<ResourceLocation> mobKillQuests = VillagerQuestResources
+                .questIdsWithObjective(server, QuestDefinition.ObjectiveType.MOB_KILL);
+        helper.assertValueEqual(mobKillQuests.size(), 21, "mob-kill quest index size");
+        assertContainsAll(helper, mobKillQuests, Set.of(
+                VillagerRetaliation.id("beacon_polish"),
+                VillagerRetaliation.id("ender_freight"),
+                VillagerRetaliation.id("fortress_line"),
+                VillagerRetaliation.id("timber_brace")), "expanded mob-kill quest ids");
         helper.assertTrue(
                 VillagerQuestResources.memoryEventQuestIds(server, VillagerRetaliation.id("player_defended_village"))
                         .contains(VillagerRetaliation.id("roads_that_remember")),
@@ -1618,8 +1636,8 @@ public final class VillagerQuestGameTests {
             }
         }
         helper.assertValueEqual(compiled.size(), EXPECTED_QUEST_COUNT, "compiled compatibility quest count");
-        helper.assertTrue(v1 > 0, "compiled catalog lost v1 quests");
-        helper.assertTrue(v2 >= 4, "compiled catalog lost migrated v2 quests");
+        helper.assertValueEqual(v1, 0, "compiled catalog still contains v1 quests");
+        helper.assertValueEqual(v2, EXPECTED_QUEST_COUNT, "compiled v2 quest count");
         helper.assertTrue(triggerCount > 0, "compiled catalog lost quest triggers");
         helper.assertTrue(continuousTriggerCount > 0, "compiled catalog lost continuous trigger throttles");
 
@@ -2488,7 +2506,7 @@ public final class VillagerQuestGameTests {
         QuestDefinition quest = compiled.asQuestDefinition();
 
         helper.assertValueEqual(compiled.schemaVersion(), QuestSchemaVersion.V2, "egg baskets schema version");
-        assertEggBasketsLegacySemantics(helper, quest, legacyEggBasketsQuestV1Fixture());
+        assertEggBasketsV2Semantics(helper, quest);
         helper.assertTrue(
                 VillagerQuestResources.questDialogueCatalog(helper.getLevel().getServer()).hasGeneratedQuestDialogue(questId),
                 "egg baskets did not compile generated v2 dialogue");
@@ -2496,7 +2514,7 @@ public final class VillagerQuestGameTests {
                 .tree(helper.getLevel().getServer(), LOCALE, QuestDialogueCompiler.treeId(questId))
                 .orElseThrow(() -> new GameTestAssertException("egg baskets generated dialogue tree missing"));
         DialogueTreeDefinition.Entry offerEntry = generatedTree
-                .entry("stage.collect.offer")
+                .entry("stage.work.offer")
                 .orElseThrow(() -> new GameTestAssertException("egg baskets generated offer entry missing"));
         helper.assertValueEqual(offerEntry.label(), "Egg Baskets", "egg baskets generated offer label");
         helper.assertValueEqual(offerEntry.order(), -20, "egg baskets generated offer order");
@@ -2507,7 +2525,7 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(readyEntry.label(), "About Egg Baskets", "egg baskets generated ready label");
         helper.assertValueEqual(readyEntry.order(), -20, "egg baskets generated ready order");
         DialogueTreeDefinition.Node reminderNode = generatedTree
-                .node("stage.collect.slot.reminder")
+                .node("stage.work.slot.reminder")
                 .orElseThrow(() -> new GameTestAssertException("egg baskets generated reminder node missing"));
         helper.assertValueEqual(
                 reminderNode.responses().stream().map(DialogueTreeDefinition.Response::order).toList(),
@@ -2548,7 +2566,7 @@ public final class VillagerQuestGameTests {
             assertHasDialogueOption(
                     helper,
                     context,
-                    DialogueTreeService.entryOptionId(QuestDialogueCompiler.treeId(questId), "stage.collect.offer"),
+                    DialogueTreeService.entryOptionId(QuestDialogueCompiler.treeId(questId), "stage.work.offer"),
                     "generated egg baskets offer");
             assertMissingDialogueOption(
                     helper,
@@ -3478,6 +3496,55 @@ public final class VillagerQuestGameTests {
         VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(level).getOrCreate(playerId, questId);
         progress.complete(level.getGameTime(), false);
         VillagerQuestSavedData.get(level).setDirty();
+    }
+
+    private static void assertEggBasketsV2Semantics(GameTestHelper helper, QuestDefinition quest) {
+        helper.assertValueEqual(quest.id(), VillagerRetaliation.id("egg_baskets"), "egg baskets id");
+        helper.assertValueEqual(quest.title(), "Egg Baskets", "egg baskets title");
+        helper.assertValueEqual(
+                quest.description(),
+                "Bring eggs so the kitchens can stretch breakfast and broth.",
+                "egg baskets description");
+        helper.assertValueEqual(quest.questline(), "village_supply", "egg baskets questline");
+        helper.assertValueEqual(quest.tags(), Set.of("group.village_supply"), "egg baskets tags");
+
+        helper.assertValueEqual(
+                quest.offer().professions(),
+                Set.of(VillagerProfession.FARMER, VillagerProfession.BUTCHER),
+                "egg baskets offer professions");
+        helper.assertValueEqual(quest.offer().minVillagerLevel(), 1, "egg baskets offer level");
+        helper.assertValueEqual(
+                quest.offer().minSkills(),
+                Map.of(VillagerSkill.ANIMAL_HANDLING, 5, VillagerSkill.COOKING, 4),
+                "egg baskets offer skills");
+
+        QuestDefinition.Objective objective = quest.objectives().getFirst();
+        helper.assertTrue(objective.id().endsWith(".bring_eggs"), "egg baskets objective id");
+        helper.assertValueEqual(objective.type(), QuestDefinition.ObjectiveType.ITEM_CHECK, "egg baskets objective type");
+        helper.assertValueEqual(objective.item(), ResourceLocation.fromNamespaceAndPath("minecraft", "egg"), "egg baskets item");
+        helper.assertValueEqual(objective.count(), 12, "egg baskets count");
+        helper.assertTrue(objective.tracker().hasAnyDisplay(), "egg baskets objective tracker");
+
+        helper.assertValueEqual(new ArrayList<>(quest.stages().keySet()), List.of("work", "return"), "egg baskets stages");
+        QuestDefinition.Stage workStage = quest.stages().get("work");
+        helper.assertValueEqual(workStage.objectives(), List.of(objective.id()), "egg baskets work objectives");
+        helper.assertValueEqual(workStage.completeWhen().getFirst().objective(), objective.id(), "egg baskets work predicate");
+        helper.assertValueEqual(workStage.next(), "return", "egg baskets work next stage");
+
+        helper.assertTrue(quest.rules().repeatable(), "egg baskets repeatable");
+        helper.assertValueEqual(quest.rules().maxStarts(), 0, "egg baskets max starts");
+        helper.assertValueEqual(quest.rules().maxCompletions(), 0, "egg baskets max completions");
+        helper.assertValueEqual(quest.rules().completionCooldownTicks(), 24000L, "egg baskets completion cooldown");
+        helper.assertValueEqual(quest.rules().abandonment(), QuestDefinition.AbandonmentMode.ALLOW_REPICKUP, "egg baskets abandonment");
+        helper.assertTrue(quest.rules().consumeOnCompletion(), "egg baskets consume on completion");
+        helper.assertTrue(quest.rules().lockedToVillager(), "egg baskets issuer lock");
+        helper.assertTrue(quest.rules().crossVillagerCompatible(), "egg baskets cross-villager compatibility");
+
+        helper.assertValueEqual(quest.rewards().experience(), 45, "egg baskets reward xp");
+        helper.assertValueEqual(quest.rewards().reputation(), 4, "egg baskets reward reputation");
+        helper.assertValueEqual(quest.rewards().gossipReputation(), 2, "egg baskets reward gossip");
+        helper.assertValueEqual(quest.rewards().lootTable(), VillagerRetaliation.id("quest/egg_baskets"), "egg baskets reward loot");
+        helper.assertValueEqual(quest.rewards().memoryEvent(), VillagerRetaliation.id("player_completed_quest"), "egg baskets reward memory event");
     }
 
     private static void assertEggBasketsLegacySemantics(

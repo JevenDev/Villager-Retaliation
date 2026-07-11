@@ -1,0 +1,353 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "villagerretaliation:bastion_line",
+  "metadata": {
+    "title": "Broken Gold",
+    "description": "Secure the bastion branch and build durable blackstone route marks.",
+    "questline": "nether_routes",
+    "parent": "villagerretaliation:choose_a_road",
+    "tags": [
+      "group.nether_routes"
+    ]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:armorer",
+        "minecraft:cartographer"
+      ],
+      "min_villager_level": "master",
+      "skills": {
+        "guarding": {
+          "min": 46
+        },
+        "cartography": {
+          "min": 44
+        }
+      }
+    }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_starts": 1,
+    "max_completions": 1,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "locked_to_villager": true,
+    "cross_villager_compatible": false,
+    "conditions": [
+      {
+        "type": "quest_fact",
+        "scope": "quest",
+        "quest": "villagerretaliation:choose_a_road",
+        "key": "choice",
+        "value": "bastion"
+      }
+    ]
+  },
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "id": "clear_brutes",
+          "type": "mob_kill",
+          "entity": "minecraft:piglin_brute",
+          "count": 3,
+          "tracker": {
+            "text": "Defeat 3 Piglin Brutes along the route.",
+            "complete_text": "The bastion patrol is cleared.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_blackstone",
+          "type": "item_check",
+          "item": "minecraft:blackstone",
+          "count": 32,
+          "tracker": {
+            "text": "Bring 32 blackstone for route markers.",
+            "complete_text": "The blackstone markers are ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_gold",
+          "type": "item_check",
+          "item": "minecraft:gold_block",
+          "count": 2,
+          "tracker": {
+            "text": "Bring 2 gold blocks for safe-route caches.",
+            "complete_text": "The gold blocks are ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "complete_when": [
+        "clear_brutes",
+        "bring_blackstone",
+        "bring_gold"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Broken Gold",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The bastion bearing is true, but the brutes treat every marker as a challenge.",
+            "Clear the route, set blackstone marks, and stock gold where stranded travelers can barter.",
+            "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Broken Gold",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Three brutes, thirty-two blackstone, two gold blocks for the caches.",
+            "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
+            "Clear the route, set blackstone marks, and stock gold where stranded travelers can barter."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Wear one piece of gold. It will not impress the brutes, but everyone else may pause.",
+                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Broken Gold is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Broken Gold is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Three brutes, thirty-two blackstone, two gold blocks for the caches.",
+                  "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
+                  "Clear the route, set blackstone marks, and stock gold where stranded travelers can barter."
+                ],
+                "unavailable": [
+                  "Broken Gold is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "Then the bastion keeps its walls and its opinions.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Three brutes, thirty-two blackstone, two gold blocks for the caches.",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Broken Gold aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Broken Gold is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Defeat 3 Piglin Brutes and bring 32 blackstone and 2 gold blocks.",
+        "show_progress": true,
+        "progress": 0.75
+      }
+    },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Broken Gold",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The bastion line is marked, stocked, and expensive enough to be respected.",
+            "A road through broken gold now leads back to the village.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "The bastion line is marked, stocked, and expensive enough to be respected.",
+                  "A road through broken gold now leads back to the village.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Broken Gold is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "Three brutes, thirty-two blackstone, two gold blocks for the caches.",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
+  "rewards": {
+    "experience": 490,
+    "reputation": 26,
+    "gossip_reputation": 10,
+    "loot_table": "villagerretaliation:quest/bastion_line",
+    "memory_event": "player_completed_quest"
+  },
+  "ui": {
+    "title": "Broken Gold",
+    "icon": "minecraft:gilded_blackstone",
+    "color": "#8BA6B8"
+  }
+}

@@ -1,76 +1,310 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:ink_supply",
-  "display": {
+  "metadata": {
+    "title": "Ink Supply",
     "description": "Bring ink so ledgers, maps, and warning notices remain legible.",
-    "title": "Ink Supply",
-    "title_key": "quest.village_supply.ink_supply.title",
-    "description_key": "quest.village_supply.ink_supply.description"
+    "questline": "village_supply",
+    "tags": [
+      "group.village_supply"
+    ]
   },
-  "tags": [
-    "group.village_supply"
-  ],
-  "offer": {
-    "min_villager_level": "apprentice",
-    "professions": [
-      "minecraft:librarian",
-      "minecraft:cartographer"
-    ],
-    "skills": {
-      "scholarship": {
-        "min": 12
-      },
-      "cartography": {
-        "min": 8
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "apprentice",
+      "professions": [
+        "minecraft:librarian",
+        "minecraft:cartographer"
+      ],
+      "skills": {
+        "scholarship": {
+          "min": 12
+        },
+        "cartography": {
+          "min": 8
+        }
       }
     }
   },
-  "objectives": [
-    {
-      "count": 6,
-      "id": "bring_ink",
-      "item": "minecraft:ink_sac",
-      "tracker": {
-        "complete_text": "The ink is ready for the desk.",
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 6 ink sacs for the ledger.",
-        "text_key": "quest.village_supply.ink_supply.objective.bring_ink.text",
-        "complete_text_key": "quest.village_supply.ink_supply.objective.bring_ink.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
-    "abandonment": "allow_repickup",
-    "completion_cooldown_days": 2,
-    "consume_on_completion": true,
-    "cross_villager_compatible": true,
-    "locked_to_villager": true,
-    "max_completions": 0,
+  "availability": {
+    "repeatable": true,
     "max_starts": 0,
-    "repeatable": true
+    "max_completions": 0,
+    "completion_cooldown_days": 2,
+    "abandonment": "allow_repickup",
+    "consume_on_completion": true,
+    "locked_to_villager": true,
+    "cross_villager_compatible": true
   },
-  "tracker": {
-    "metadata": {
-      "source": "Ink Supply"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 6 ink sacs for the ledger.",
-        "text_key": "quest.village_supply.ink_supply.tracker.proof.text"
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "count": 6,
+          "id": "bring_ink",
+          "item": "minecraft:ink_sac",
+          "tracker": {
+            "complete_text": "The ink is ready for the desk.",
+            "progress": 0.7,
+            "show_progress": true,
+            "text": "Bring 6 ink sacs for the ledger.",
+            "text_key": "quest.village_supply.ink_supply.objective.bring_ink.text",
+            "complete_text_key": "quest.village_supply.ink_supply.objective.bring_ink.complete_text"
+          },
+          "type": "item_check"
+        }
+      ],
+      "complete_when": [
+        "bring_ink"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Ink Supply",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The cartographer is scratching pale lines and pretending they count as roads.",
+            "Bring 6 ink sacs for maps and ledgers, and the shelves will look less worried.",
+            "Bring 6 ink sacs for maps and ledgers. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Ink Supply",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Bring 6 ink sacs for maps and ledgers",
+            "Bring 6 ink sacs for maps and ledgers.",
+            "Bring 6 ink sacs for maps and ledgers, and the shelves will look less worried."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
       },
-      "return": {
-        "progress": 1,
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Bring 6 ink sacs for maps and ledgers. Keep the full count together on the road back.",
+                  "Bring 6 ink sacs for maps and ledgers.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Ink Supply is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Ink Supply is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Bring 6 ink sacs for maps and ledgers",
+                  "Bring 6 ink sacs for maps and ledgers.",
+                  "Bring 6 ink sacs for maps and ledgers, and the shelves will look less worried."
+                ],
+                "unavailable": [
+                  "Ink Supply is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "All right. The empty shelf will keep asking in its own way.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Bring 6 ink sacs for maps and ledgers",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Ink Supply aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Ink Supply is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 6 ink sacs for maps and ledgers.",
         "show_progress": true,
-        "text": "Return to the quest giver with the ink sac.",
-        "text_key": "quest.village_supply.ink_supply.tracker.return.text"
+        "progress": 0.75
       }
     },
-    "title": "Ink Supply",
-    "title_key": "quest.village_supply.ink_supply.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Ink Supply",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Dark ink at last. Now the maps can stop whispering.",
+            "The count is right, and none of it will sit idle for long.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "Dark ink at last. Now the maps can stop whispering.",
+                  "The count is right, and none of it will sit idle for long.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Ink Supply is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "Bring 6 ink sacs for maps and ledgers",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
   "rewards": {
     "experience": 95,
     "gossip_reputation": 3,
@@ -78,168 +312,9 @@
     "memory_event": "player_completed_quest",
     "reputation": 7
   },
-  "dialogue": {
-    "already_completed": [
-      "Ink Supply is already settled.",
-      "Ink Supply is already settled on my side.",
-      "We have already closed Ink Supply.",
-      "Ink Supply does not need another tally right now.",
-      "That work is already counted and put away.",
-      "Ink Supply is finished for now.",
-      "The village has already marked Ink Supply complete.",
-      "I have no open note for Ink Supply anymore.",
-      "Ink Supply has already been handled.",
-      "That request is already off the board.",
-      "We are not reopening Ink Supply right now.",
-      "Ink Supply is done enough for today.",
-      "The record for Ink Supply is already clean.",
-      "There is no fresh work left in Ink Supply.",
-      "That one is already squared away."
-    ],
-    "inactive": [
-      "The ledger desk is not taking ink right now.",
-      "Ink Supply is quiet right now.",
-      "The village is not counting Ink Supply at the moment.",
-      "That request is not open right now.",
-      "Ink Supply is waiting on better timing.",
-      "I cannot move Ink Supply forward just now.",
-      "The conditions for Ink Supply are not ready.",
-      "The note for Ink Supply is closed for the moment.",
-      "No one is taking that request right now.",
-      "Ink Supply needs to wait a little longer.",
-      "This is not the right moment for Ink Supply.",
-      "The work is real, but it is not open right now.",
-      "I have no active count for Ink Supply at the moment.",
-      "Ink Supply is between openings right now.",
-      "The village is not ready to accept that help yet."
-    ],
-    "locate_failed": [
-      "No ledger note is ready for an ink request yet.",
-      "I cannot post Ink Supply from here right now.",
-      "Ink Supply is not finding a proper place to start.",
-      "No good posting point is ready for Ink Supply.",
-      "The village cannot place that request from here.",
-      "Ink Supply needs a better lead before I send you out.",
-      "I cannot get a clean mark for Ink Supply today.",
-      "The request is real, but the place is not lining up.",
-      "Something about this spot will not let Ink Supply start.",
-      "I need a clearer posting before I can offer Ink Supply.",
-      "The work is not anchoring here right now.",
-      "I cannot set the note for Ink Supply from this place.",
-      "The village has no clean place to send you for that.",
-      "Ink Supply is refusing to settle onto the slate.",
-      "The route for Ink Supply is not clear enough yet."
-    ],
-    "missing_proof": [
-      "Bring the ink sacs before I refill the desk.",
-      "I still need 6 ink sacs before I can close Ink Supply.",
-      "Bring 6 ink sacs, then we can settle Ink Supply.",
-      "Ink Supply needs the proof in your pack first.",
-      "I cannot close Ink Supply until I see 6 ink sacs.",
-      "The reward waits until 6 ink sacs is here.",
-      "Show me 6 ink sacs and we can finish this properly.",
-      "The village needs the goods before the note comes down.",
-      "You are close, but 6 ink sacs still needs to be here.",
-      "I need the actual proof before I mark Ink Supply done.",
-      "Come back with 6 ink sacs and we can close the count.",
-      "The request is not finished without 6 ink sacs.",
-      "Ink Supply still needs something I can hold and count.",
-      "I need the delivery in hand before this is settled.",
-      "Bring the proof back and I will close Ink Supply."
-    ],
-    "missing_target": [
-      "The ledger still needs 6 ink sacs.",
-      "Ink Supply is still short. The tracker has the exact count.",
-      "Something is missing for Ink Supply, so check the tracker and bring the rest.",
-      "The count is not complete yet.",
-      "We need the full amount before Ink Supply can close.",
-      "The village is still waiting on the rest of it.",
-      "Ink Supply needs every part before I can sign it off.",
-      "The work is close, but close does not fill a shelf.",
-      "Bring the rest and we can finish Ink Supply.",
-      "The tally still has an empty line in it.",
-      "I cannot call Ink Supply complete while the count is short.",
-      "The tracker will show what is still missing.",
-      "There is still more to gather for Ink Supply.",
-      "The full delivery matters here.",
-      "Not quite enough yet, but you are on the right road."
-    ],
-    "reminder": [
-      "Six ink sacs for the ledger. The village prefers its debts and warnings visible.",
-      "For Ink Supply, I still need 6 ink sacs.",
-      "Ink Supply is still asking for 6 ink sacs.",
-      "Bring 6 ink sacs back when the count is ready.",
-      "The tracker has the details for Ink Supply.",
-      "Keep Ink Supply in mind and bring 6 ink sacs.",
-      "The village is still waiting on 6 ink sacs.",
-      "No rush in the words, but the count still matters.",
-      "Bring the full amount back to me when you have it.",
-      "Ink Supply is still open.",
-      "Follow the tracker for Ink Supply and bring back 6 ink sacs.",
-      "You are looking for 6 ink sacs for this request.",
-      "The note says 6 ink sacs, and the note is not wrong today.",
-      "Finish the count and return here when you can.",
-      "This is simple work only if it gets done."
-    ],
-    "start": [
-      "Bring 6 ink sacs. A ledger written in faded gray is just a future argument.",
-      "Ink Supply is yours now. Bring 6 ink sacs when the count is ready.",
-      "I am putting Ink Supply in your hands.",
-      "Take the note for Ink Supply and bring back 6 ink sacs.",
-      "Good. The village will be waiting for 6 ink sacs.",
-      "Then we will count on you for Ink Supply.",
-      "Bring 6 ink sacs, and we can call this useful work.",
-      "Ink Supply starts now. Keep the tracker close.",
-      "Head out for Ink Supply and return with 6 ink sacs.",
-      "The request is open, and your name is on it now.",
-      "I will mark you down for Ink Supply.",
-      "Bring the full count back when you have it.",
-      "You have the work now. Do it cleanly and come back safe.",
-      "Ink Supply points. Bring 6 ink sacs.",
-      "That settles the posting. Now we need 6 ink sacs."
-    ],
-    "turn_in": [
-      "Dark ink. Excellent. Now our mistakes can be preserved properly.",
-      "That settles Ink Supply. The village will put this to use.",
-      "Ink Supply is complete, and the help is appreciated.",
-      "Good. I can close Ink Supply with a clean mark.",
-      "This will help more than it looks like it should.",
-      "The count is right. Take your reward with my thanks.",
-      "That is enough to close the request.",
-      "Well done. Ink Supply is finished.",
-      "The village can use this before the day is out.",
-      "I will mark Ink Supply complete.",
-      "Good work. The note comes down now.",
-      "That is the kind of help people remember at supper.",
-      "Everything is here. Ink Supply is settled.",
-      "The village needed this, and you brought it.",
-      "A full count makes a calmer room."
-    ],
-    "unavailable": [
-      "The ink request is closed for now.",
-      "Ink Supply is not available from here right now.",
-      "That request is not in your hands right now.",
-      "I cannot offer Ink Supply at the moment.",
-      "Ink Supply is closed to new help for now.",
-      "This is not ready for you right now.",
-      "The village is not accepting that work at the moment.",
-      "No open note for Ink Supply is waiting here.",
-      "Try again later if Ink Supply comes back around.",
-      "I cannot move that request today.",
-      "Ink Supply needs different timing.",
-      "The work exists, but not for this moment.",
-      "I do not have authority to open that now.",
-      "The request is out of reach for now.",
-      "There is nothing for me to hand you on Ink Supply."
-    ],
-    "start_key": "quest.village_supply.ink_supply.dialogue.start",
-    "reminder_key": "quest.village_supply.ink_supply.dialogue.reminder",
-    "turn_in_key": "quest.village_supply.ink_supply.dialogue.turn_in",
-    "already_completed_key": "quest.village_supply.ink_supply.dialogue.already_completed",
-    "unavailable_key": "quest.village_supply.ink_supply.dialogue.unavailable",
-    "inactive_key": "quest.village_supply.ink_supply.dialogue.inactive",
-    "missing_target_key": "quest.village_supply.ink_supply.dialogue.missing_target",
-    "missing_proof_key": "quest.village_supply.ink_supply.dialogue.missing_proof",
-    "locate_failed_key": "quest.village_supply.ink_supply.dialogue.locate_failed"
+  "ui": {
+    "title": "Ink Supply",
+    "icon": "minecraft:ink_sac",
+    "color": "#8BA6B8"
   }
 }

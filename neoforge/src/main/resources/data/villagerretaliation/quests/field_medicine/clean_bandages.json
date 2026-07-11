@@ -146,7 +146,7 @@
                   "Bring 8 white wool and 6 string for clean bandages."
                 ],
                 "unavailable": [
-                  "The bandage kit is not counting that stage right now."
+                  "The bandage kit is not ready for that work right now."
                 ]
               }
             }
@@ -239,7 +239,7 @@
                   "Bring 2 honey bottles and 4 glass bottles for the field kit."
                 ],
                 "unavailable": [
-                  "The medicine kit is not counting that stage right now."
+                  "The jars can wait until the cloth and string are ready."
                 ]
               }
             }
@@ -296,7 +296,7 @@
                   "Good. No one will cheer for a stocked medicine kit, and that is how I prefer it."
                 ],
                 "missing_objectives": [
-                  "The kit is still short. Check the tracker before we seal it."
+                  "The kit still needs its cloth, string, honey, or clean bottles before we seal it."
                 ],
                 "missing_proof": [
                   "Bring the medical supplies here so I can count them cleanly."

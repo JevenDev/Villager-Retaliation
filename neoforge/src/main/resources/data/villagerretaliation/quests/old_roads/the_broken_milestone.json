@@ -1,96 +1,341 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:the_broken_milestone",
-  "display": {
-    "description": "Find nearby Trail Ruins and bring a brush and stone to restore the road marker.",
+  "metadata": {
     "title": "The Broken Milestone",
-    "title_key": "quest.old_roads.the_broken_milestone.title",
-    "description_key": "quest.old_roads.the_broken_milestone.description"
+    "description": "Find nearby Trail Ruins and bring a brush and stone to restore the road marker.",
+    "questline": "old_roads",
+    "tags": [
+      "group.old_roads"
+    ]
   },
-  "tags": [
-    "group.old_roads"
-  ],
-  "offer": {
-    "min_villager_level": "apprentice",
-    "professions": [
-      "minecraft:mason",
-      "minecraft:cartographer"
-    ],
-    "skills": {
-      "cartography": {
-        "min": 10
-      },
-      "masonry": {
-        "min": 18
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "professions": [
+        "minecraft:mason",
+        "minecraft:cartographer"
+      ],
+      "min_villager_level": "apprentice",
+      "skills": {
+        "cartography": {
+          "min": 10
+        },
+        "masonry": {
+          "min": 18
+        }
       }
     }
   },
-  "target": {
-    "discovery_radius": 96,
-    "proof_item": "minecraft:brush",
-    "search_radius": 160,
-    "structure": "minecraft:trail_ruins"
-  },
-  "objectives": [
-    {
-      "count": 12,
-      "id": "bring_smooth_stone",
-      "item": "minecraft:smooth_stone",
-      "tracker": {
-        "complete_text": "The replacement stone is ready.",
-        "progress": 0.78,
-        "show_progress": true,
-        "text": "Bring 12 smooth stone for the repaired marker.",
-        "text_key": "quest.old_roads.the_broken_milestone.objective.bring_smooth_stone.text",
-        "complete_text_key": "quest.old_roads.the_broken_milestone.objective.bring_smooth_stone.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
+  "availability": {
+    "repeatable": false,
+    "max_starts": 0,
+    "max_completions": 1,
     "abandonment": "allow_repickup",
     "consume_on_completion": true,
-    "cross_villager_compatible": false,
     "locked_to_villager": true,
-    "max_completions": 1,
-    "max_starts": 0,
-    "repeatable": false
+    "cross_villager_compatible": false
   },
-  "tracker": {
-    "metadata": {
-      "source": "Broken Milestone"
-    },
-    "steps": {
-      "bring_smooth_stone": {
-        "progress": 0.78,
-        "show_progress": true,
-        "text": "Gather 12 smooth stone for the repair.",
-        "text_key": "quest.old_roads.the_broken_milestone.tracker.bring_smooth_stone.text"
-      },
-      "proof": {
-        "progress": 0.66,
-        "show_progress": true,
-        "text": "Bring a brush and 12 smooth stone.",
-        "text_key": "quest.old_roads.the_broken_milestone.tracker.proof.text"
-      },
-      "return": {
-        "progress": 1,
-        "show_progress": true,
-        "text": "Return to the quest giver with the brush and stone.",
-        "text_key": "quest.old_roads.the_broken_milestone.tracker.return.text"
-      },
-      "travel": {
-        "metadata": {
-          "hint": "{distance} blocks {direction}"
+  "target": {
+    "structure": "minecraft:trail_ruins",
+    "dimension": "minecraft:overworld",
+    "search_radius": 320,
+    "discovery_radius": 96
+  },
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "id": "visit_ruins",
+          "type": "structure_visit",
+          "structure": "minecraft:trail_ruins",
+          "search_radius": 320,
+          "discovery_radius": 96,
+          "tracker": {
+            "text": "Reach the marked Trail Ruins.",
+            "complete_text": "The old road marker has been found.",
+            "show_progress": true,
+            "progress": 0.75
+          }
         },
-        "progress": 0.25,
+        {
+          "id": "carry_brush",
+          "type": "item_check",
+          "item": "minecraft:brush",
+          "count": 1,
+          "consume": false,
+          "tracker": {
+            "text": "Carry 1 brush for the buried marker.",
+            "complete_text": "The brush is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        },
+        {
+          "id": "bring_stone",
+          "type": "item_check",
+          "item": "minecraft:smooth_stone",
+          "count": 12,
+          "tracker": {
+            "text": "Bring 12 smooth stone for the repair.",
+            "complete_text": "The replacement stone is ready.",
+            "show_progress": true,
+            "progress": 0.75
+          }
+        }
+      ],
+      "complete_when": [
+        "visit_ruins",
+        "carry_brush",
+        "bring_stone"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "The Broken Milestone",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "An old milestone is buried near the trail ruins, broken where the road forgot its own name.",
+            "Brush the marker clear and bring smooth stone so we can raise it again.",
+            "Reach the marked Trail Ruins and return with a brush and 12 smooth stone. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About The Broken Milestone",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The trail-ruin mark, one brush, and twelve smooth stone for the milestone.",
+            "Reach the marked Trail Ruins and return with a brush and 12 smooth stone.",
+            "Brush the marker clear and bring smooth stone so we can raise it again."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Brush gently. Old roads leave smaller signs than new travelers expect.",
+                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "The Broken Milestone is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "The Broken Milestone is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "The trail-ruin mark, one brush, and twelve smooth stone for the milestone.",
+                  "Reach the marked Trail Ruins and return with a brush and 12 smooth stone.",
+                  "Brush the marker clear and bring smooth stone so we can raise it again."
+                ],
+                "unavailable": [
+                  "The Broken Milestone is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "The milestone has spent years underground. One more day will not offend it.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "The trail-ruin mark, one brush, and twelve smooth stone for the milestone.",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put The Broken Milestone aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "The Broken Milestone is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Find the Trail Ruins and return with a brush and 12 smooth stone.",
         "show_progress": true,
-        "text": "Reach the old road mark near {target_x}, {target_z}.",
-        "text_key": "quest.old_roads.the_broken_milestone.tracker.travel.text"
+        "progress": 0.75
       }
     },
-    "title": "The Broken Milestone",
-    "title_key": "quest.old_roads.the_broken_milestone.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About The Broken Milestone",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The old number is visible again. Someone once measured this road, and now we can too.",
+            "A broken marker stands again. The road has one memory back.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "The old number is visible again. Someone once measured this road, and now we can too.",
+                  "A broken marker stands again. The road has one memory back.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "The Broken Milestone is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "The trail-ruin mark, one brush, and twelve smooth stone for the milestone.",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
   "rewards": {
     "experience": 140,
     "gossip_reputation": 4,
@@ -98,42 +343,9 @@
     "memory_event": "player_completed_quest",
     "reputation": 11
   },
-  "dialogue": {
-    "already_completed": [
-      "The Broken Milestone is already settled."
-    ],
-    "inactive": [
-      "The conditions for this quest are not right at the moment."
-    ],
-    "locate_failed": [
-      "The road is too quiet today. I cannot find the broken marker from here."
-    ],
-    "missing_proof": [
-      "Bring a brush from the work. A clean story needs its dust on it."
-    ],
-    "missing_target": [
-      "The stone is useful, but I need you to reach the ruins near the marker first."
-    ],
-    "reminder": [
-      "Trail ruins near {target_x}, {target_z}. I need a brush for the old dust and 12 smooth stone for the new face."
-    ],
-    "start": [
-      "The old mark is about {distance} blocks {direction}, near {target_x}, {target_z}. Bring a brush and 12 smooth stone so we can set the route right."
-    ],
-    "turn_in": [
-      "Good. A repaired road is a quiet promise that someone can still come home."
-    ],
-    "unavailable": [
-      "That route is not ready for your hands yet."
-    ],
-    "start_key": "quest.old_roads.the_broken_milestone.dialogue.start",
-    "reminder_key": "quest.old_roads.the_broken_milestone.dialogue.reminder",
-    "turn_in_key": "quest.old_roads.the_broken_milestone.dialogue.turn_in",
-    "already_completed_key": "quest.old_roads.the_broken_milestone.dialogue.already_completed",
-    "unavailable_key": "quest.old_roads.the_broken_milestone.dialogue.unavailable",
-    "inactive_key": "quest.old_roads.the_broken_milestone.dialogue.inactive",
-    "missing_target_key": "quest.old_roads.the_broken_milestone.dialogue.missing_target",
-    "missing_proof_key": "quest.old_roads.the_broken_milestone.dialogue.missing_proof",
-    "locate_failed_key": "quest.old_roads.the_broken_milestone.dialogue.locate_failed"
+  "ui": {
+    "title": "The Broken Milestone",
+    "icon": "minecraft:brush",
+    "color": "#8BA6B8"
   }
 }

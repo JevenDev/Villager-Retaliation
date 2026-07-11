@@ -150,7 +150,7 @@
                   "Defeat 3 spiders and 2 skeletons along the night route."
                 ],
                 "unavailable": [
-                  "The night route is not counting that stage right now."
+                  "The night road is not ready for that work right now."
                 ]
               }
             }
@@ -243,7 +243,7 @@
                   "Bring 3 lanterns and 3 oak signs for the night road."
                 ],
                 "unavailable": [
-                  "The night route is not counting that stage right now."
+                  "The road markers can wait until the dangerous stretch is clear."
                 ]
               }
             }
@@ -300,7 +300,7 @@
                   "Good. The first night courier will still be nervous, but now nervous has lanterns to follow."
                 ],
                 "missing_objectives": [
-                  "The night road still needs work. Check the tracker before we call it proven."
+                  "The night road still needs its patrol cleared and its lanterns and signs placed."
                 ],
                 "missing_proof": [
                   "Bring the road markers here so the route can be written down."

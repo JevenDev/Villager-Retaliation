@@ -2,7 +2,7 @@
   "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:tales_of_a_lost_civilization",
   "metadata": {
-    "title": "Tales of a Lost Civilization",
+    "title": "Lost Civilization",
     "description": "Follow a cartographer's rumor to an Ancient City and return with an Echo Shard.",
     "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.title",
     "description_key": "quest.lost_civilization.tales_of_a_lost_civilization.description",
@@ -252,7 +252,7 @@
               "lines": {
                 "reminder": [
                   "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
-                  "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
+                  "Do not be fooled by the outer halls. I need the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
                   "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back."
                 ],
                 "unavailable": [
@@ -466,7 +466,7 @@
               "lines": {
                 "reminder": [
                   "The place was {direction}, roughly {distance} blocks away, near {target_x}, {target_z}. Reach the center of {target}, then bring me {proof_item}.",
-                  "Do not be fooled by the outer halls. The quest needs the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
+                  "Do not be fooled by the outer halls. I need the city center itself. My mark was near {target_x}, {target_z}, {direction} of here, and {proof_item} is the proof I need.",
                   "The old mark has not changed: {target_x}, {target_z}, about {distance} blocks {direction}. Center first, {proof_item} second, then come back."
                 ],
                 "unavailable": [
@@ -504,7 +504,7 @@
     "reputation": 22
   },
   "ui": {
-    "title": "Tales of a Lost Civilization",
+    "title": "Lost Civilization",
     "title_key": "quest.lost_civilization.tales_of_a_lost_civilization.tracker.title"
   }
 }

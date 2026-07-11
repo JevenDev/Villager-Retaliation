@@ -1,81 +1,308 @@
 {
+  "schema": "villagerretaliation:quest/v2",
   "id": "villagerretaliation:village_lanterns",
-  "display": {
-    "description": "Bring lanterns before the watch loses the edges of the village to darkness.",
+  "metadata": {
     "title": "Village Lanterns",
-    "title_key": "quest.village_supply.village_lanterns.title",
-    "description_key": "quest.village_supply.village_lanterns.description"
+    "description": "Bring lanterns before the watch loses the edges of the village to darkness.",
+    "questline": "village_supply",
+    "tags": [
+      "group.village_supply"
+    ]
   },
-  "tags": [
-    "group.village_supply"
-  ],
-  "offer": {
-    "min_villager_level": "apprentice",
-    "professions": [
-      "minecraft:cleric",
-      "minecraft:mason"
-    ],
-    "skills": {
-      "crafting": {
-        "min": 15
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": {
+      "min_villager_level": "apprentice",
+      "professions": [
+        "minecraft:cleric",
+        "minecraft:mason"
+      ],
+      "skills": {
+        "crafting": {
+          "min": 15
+        }
       }
     }
   },
-  "objectives": [
-    {
-      "count": 6,
-      "id": "bring_lanterns",
-      "item": "minecraft:lantern",
-      "tracker": {
-        "complete_text": "The lanterns are ready for hanging.",
-        "progress": 0.75,
-        "show_progress": true,
-        "text": "Bring 6 lanterns for the village watch.",
-        "text_key": "quest.village_supply.village_lanterns.objective.bring_lanterns.text",
-        "complete_text_key": "quest.village_supply.village_lanterns.objective.bring_lanterns.complete_text"
-      },
-      "type": "item_check"
-    }
-  ],
-  "rules": {
+  "availability": {
+    "repeatable": true,
+    "max_starts": 0,
+    "max_completions": 0,
+    "completion_cooldown_days": 3,
     "abandonment": "cooldown",
     "abandonment_cooldown_seconds": 600,
-    "completion_cooldown_days": 3,
-    "cross_villager_compatible": true,
-    "expiration": {
-      "after_days": 2,
-      "allow_repickup": true,
-      "consume": false,
-      "notification": "quest.expired",
-      "text": "Quest expired: {quest}",
-      "text_key": "quest.village_supply.village_lanterns.expiration.text"
-    },
+    "consume_on_completion": true,
     "locked_to_villager": true,
-    "max_completions": 0,
-    "max_starts": 0,
-    "repeatable": true
+    "cross_villager_compatible": true
   },
-  "tracker": {
-    "metadata": {
-      "source": "Village Lanterns"
-    },
-    "steps": {
-      "proof": {
-        "progress": 0.7,
-        "show_progress": true,
-        "text": "Bring 6 lanterns before the request goes stale.",
-        "text_key": "quest.village_supply.village_lanterns.tracker.proof.text"
+  "entry_stage": "work",
+  "stages": [
+    {
+      "id": "work",
+      "objectives": [
+        {
+          "count": 6,
+          "id": "bring_lanterns",
+          "item": "minecraft:lantern",
+          "tracker": {
+            "complete_text": "The lanterns are ready for hanging.",
+            "progress": 0.75,
+            "show_progress": true,
+            "text": "Bring 6 lanterns for the village watch.",
+            "text_key": "quest.village_supply.village_lanterns.objective.bring_lanterns.text",
+            "complete_text_key": "quest.village_supply.village_lanterns.objective.bring_lanterns.complete_text"
+          },
+          "type": "item_check"
+        }
+      ],
+      "complete_when": [
+        "bring_lanterns"
+      ],
+      "next": "return",
+      "dialogue": {
+        "offer": {
+          "label": "Village Lanterns",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "The paths fade before the houses do, and that is where trouble likes to walk.",
+            "Bring 6 lanterns for the village boundary, and the shelves will look less worried.",
+            "Bring 6 lanterns for the village boundary. I will make the reward worth the trouble."
+          ],
+          "responses": [
+            {
+              "id": "accept",
+              "label": "I can do that.",
+              "scene": "start_quest"
+            },
+            {
+              "id": "decline",
+              "label": "Not right now.",
+              "scene": "decline"
+            }
+          ]
+        },
+        "reminder": {
+          "label": "About Village Lanterns",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "Bring 6 lanterns for the village boundary",
+            "Bring 6 lanterns for the village boundary.",
+            "Bring 6 lanterns for the village boundary, and the shelves will look less worried."
+          ],
+          "responses": [
+            {
+              "id": "details",
+              "label": "Repeat the work.",
+              "scene": "reminder_details",
+              "order": 0
+            },
+            {
+              "id": "abandon",
+              "label": "Put this aside.",
+              "scene": "abandon_confirm",
+              "order": 90
+            },
+            {
+              "id": "leave",
+              "label": "I have it.",
+              "scene": "leave",
+              "order": 100
+            }
+          ]
+        }
       },
-      "return": {
-        "progress": 1,
+      "scenes": [
+        {
+          "id": "start_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "start",
+              "lines": {
+                "started": [
+                  "Bring 6 lanterns for the village boundary. Keep the full count together on the road back.",
+                  "Bring 6 lanterns for the village boundary.",
+                  "Good. I will keep a place clear for what you bring back."
+                ],
+                "already_completed": [
+                  "Village Lanterns is already settled for now.",
+                  "That work has already been counted."
+                ],
+                "locate_failed": [
+                  "I cannot find a trustworthy mark from here. Ask again when the road is clearer.",
+                  "The map will not settle on a safe destination today."
+                ],
+                "unavailable": [
+                  "Village Lanterns is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "reminder_details",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "remind",
+              "lines": {
+                "reminder": [
+                  "Bring 6 lanterns for the village boundary",
+                  "Bring 6 lanterns for the village boundary.",
+                  "Bring 6 lanterns for the village boundary, and the shelves will look less worried."
+                ],
+                "unavailable": [
+                  "Village Lanterns is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "decline",
+          "lines": [
+            "All right. The empty shelf will keep asking in its own way.",
+            "Another pair of hands may take it, or you may ask again later."
+          ]
+        },
+        {
+          "id": "leave",
+          "lines": [
+            "Bring 6 lanterns for the village boundary",
+            "Come back when the work is ready to count."
+          ]
+        },
+        {
+          "id": "abandon_confirm",
+          "lines": [
+            "Put Village Lanterns aside?",
+            "I can take your name off the work if you are sure."
+          ],
+          "responses": [
+            {
+              "id": "confirm",
+              "label": "Put it aside.",
+              "scene": "abandon_quest"
+            },
+            {
+              "id": "cancel",
+              "label": "Keep it open.",
+              "scene": "leave"
+            }
+          ]
+        },
+        {
+          "id": "abandon_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "abandon",
+              "lines": {
+                "abandoned": [
+                  "All right. I will clear your name from the work.",
+                  "The note is put away. You can ask again later."
+                ],
+                "abandoned_cooldown": [
+                  "I will put the note away for a while before posting it again.",
+                  "Let the work rest before you ask for it again."
+                ],
+                "unavailable": [
+                  "Village Lanterns is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Bring 6 lanterns for the village boundary.",
         "show_progress": true,
-        "text": "Return to the quest giver with the lanterns.",
-        "text_key": "quest.village_supply.village_lanterns.tracker.return.text"
+        "progress": 0.75
       }
     },
-    "title": "Village Lanterns",
-    "title_key": "quest.village_supply.village_lanterns.tracker.title"
-  },
+    {
+      "id": "return",
+      "objectives": [],
+      "dialogue": {
+        "turn_in": {
+          "label": "About Village Lanterns",
+          "request": "question",
+          "order": -20,
+          "show_for_babies": false,
+          "lines": [
+            "These will hold the edge of the village bright through the night.",
+            "The count is right, and none of it will sit idle for long.",
+            "Let me see the full work before I close the note."
+          ],
+          "responses": [
+            {
+              "id": "complete",
+              "label": "Hand over the work.",
+              "scene": "complete_quest"
+            },
+            {
+              "id": "leave",
+              "label": "Not yet.",
+              "scene": "turn_in_wait"
+            }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "complete_quest",
+          "actions": [
+            {
+              "type": "quest",
+              "action": "turn_in",
+              "lines": {
+                "completed": [
+                  "These will hold the edge of the village bright through the night.",
+                  "The count is right, and none of it will sit idle for long.",
+                  "That settles it. The village will make good use of this."
+                ],
+                "missing_objectives": [
+                  "Something is still missing. Check the journal before I close the note.",
+                  "The full work is not ready to count yet."
+                ],
+                "missing_target": [
+                  "The supplies need a true destination behind them.",
+                  "Reach the marked place before we call this finished."
+                ],
+                "missing_proof": [
+                  "Bring the proof with you before we settle this.",
+                  "I need the full hand-in here, not only the story."
+                ],
+                "unavailable": [
+                  "Village Lanterns is not open right now.",
+                  "The village is not ready to put that work in your hands yet."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "turn_in_wait",
+          "lines": [
+            "Bring 6 lanterns for the village boundary",
+            "Come back when the work is ready to count."
+          ]
+        }
+      ],
+      "ui": {
+        "tracker_text": "Return to the quest giver.",
+        "show_progress": true,
+        "progress": 1
+      }
+    }
+  ],
   "rewards": {
     "experience": 100,
     "gossip_reputation": 3,
@@ -83,168 +310,9 @@
     "memory_event": "player_completed_quest",
     "reputation": 8
   },
-  "dialogue": {
-    "already_completed": [
-      "Village Lanterns is already settled.",
-      "Village Lanterns is already settled on my side.",
-      "We have already closed Village Lanterns.",
-      "Village Lanterns does not need another tally right now.",
-      "That work is already counted and put away.",
-      "Village Lanterns is finished for now.",
-      "The village has already marked Village Lanterns complete.",
-      "I have no open note for Village Lanterns anymore.",
-      "Village Lanterns has already been handled.",
-      "That request is already off the board.",
-      "We are not reopening Village Lanterns right now.",
-      "Village Lanterns is done enough for today.",
-      "The record for Village Lanterns is already clean.",
-      "There is no fresh work left in Village Lanterns.",
-      "That one is already squared away."
-    ],
-    "inactive": [
-      "The watch is not posting a lantern request right now.",
-      "Village Lanterns is quiet right now.",
-      "The village is not counting Village Lanterns at the moment.",
-      "That request is not open right now.",
-      "Village Lanterns is waiting on better timing.",
-      "I cannot move Village Lanterns forward just now.",
-      "The conditions for Village Lanterns are not ready.",
-      "The note for Village Lanterns is closed for the moment.",
-      "No one is taking that request right now.",
-      "Village Lanterns needs to wait a little longer.",
-      "This is not the right moment for Village Lanterns.",
-      "The work is real, but it is not open right now.",
-      "I have no active count for Village Lanterns at the moment.",
-      "Village Lanterns is between openings right now.",
-      "The village is not ready to accept that help yet."
-    ],
-    "locate_failed": [
-      "The watch cannot place another lantern request from here.",
-      "I cannot post Village Lanterns from here right now.",
-      "Village Lanterns is not finding a proper place to start.",
-      "No good posting point is ready for Village Lanterns.",
-      "The village cannot place that request from here.",
-      "Village Lanterns needs a better lead before I send you out.",
-      "I cannot get a clean mark for Village Lanterns today.",
-      "The request is real, but the place is not lining up.",
-      "Something about this spot will not let Village Lanterns start.",
-      "I need a clearer posting before I can offer Village Lanterns.",
-      "The work is not anchoring here right now.",
-      "I cannot set the note for Village Lanterns from this place.",
-      "The village has no clean place to send you for that.",
-      "Village Lanterns is refusing to settle onto the slate.",
-      "The route for Village Lanterns is not clear enough yet."
-    ],
-    "missing_proof": [
-      "Bring the lanterns before we close this.",
-      "I still need 6 lanterns before I can close Village Lanterns.",
-      "Bring 6 lanterns, then we can settle Village Lanterns.",
-      "Village Lanterns needs the proof in your pack first.",
-      "I cannot close Village Lanterns until I see 6 lanterns.",
-      "The reward waits until 6 lanterns is here.",
-      "Show me 6 lanterns and we can finish this properly.",
-      "The village needs the goods before the note comes down.",
-      "You are close, but 6 lanterns still needs to be here.",
-      "I need the actual proof before I mark Village Lanterns done.",
-      "Come back with 6 lanterns and we can close the count.",
-      "The request is not finished without 6 lanterns.",
-      "Village Lanterns still needs something I can hold and count.",
-      "I need the delivery in hand before this is settled.",
-      "Bring the proof back and I will close Village Lanterns."
-    ],
-    "missing_target": [
-      "We still need all 6 lanterns for the watch.",
-      "Village Lanterns is still short. The tracker has the exact count.",
-      "Something is missing for Village Lanterns, so check the tracker and bring the rest.",
-      "The count is not complete yet.",
-      "We need the full amount before Village Lanterns can close.",
-      "The village is still waiting on the rest of it.",
-      "Village Lanterns needs every part before I can sign it off.",
-      "The work is close, but close does not fill a shelf.",
-      "Bring the rest and we can finish Village Lanterns.",
-      "The tally still has an empty line in it.",
-      "I cannot call Village Lanterns complete while the count is short.",
-      "The tracker will show what is still missing.",
-      "There is still more to gather for Village Lanterns.",
-      "The full delivery matters here.",
-      "Not quite enough yet, but you are on the right road."
-    ],
-    "reminder": [
-      "Six lanterns, and sooner is better. Darkness will not wait.",
-      "For Village Lanterns, I still need 6 lanterns.",
-      "Village Lanterns is still asking for 6 lanterns.",
-      "Bring 6 lanterns back when the count is ready.",
-      "The tracker has the details for Village Lanterns.",
-      "Keep Village Lanterns in mind and bring 6 lanterns.",
-      "The village is still waiting on 6 lanterns.",
-      "No rush in the words, but the count still matters.",
-      "Bring the full amount back to me when you have it.",
-      "Village Lanterns is still open.",
-      "Follow the tracker for Village Lanterns and bring back 6 lanterns.",
-      "You are looking for 6 lanterns for this request.",
-      "The note says 6 lanterns, and the note is not wrong today.",
-      "Finish the count and return here when you can.",
-      "This is simple work only if it gets done."
-    ],
-    "start": [
-      "Bring 6 lanterns soon; this request matters less after a couple of days.",
-      "Village Lanterns is yours now. Bring 6 lanterns when the count is ready.",
-      "I am putting Village Lanterns in your hands.",
-      "Take the note for Village Lanterns and bring back 6 lanterns.",
-      "Good. The village will be waiting for 6 lanterns.",
-      "Then we will count on you for Village Lanterns.",
-      "Bring 6 lanterns, and we can call this useful work.",
-      "Village Lanterns starts now. Keep the tracker close.",
-      "Head out for Village Lanterns and return with 6 lanterns.",
-      "The request is open, and your name is on it now.",
-      "I will mark you down for Village Lanterns.",
-      "Bring the full count back when you have it.",
-      "You have the work now. Do it cleanly and come back safe.",
-      "Village Lanterns points. Bring 6 lanterns.",
-      "That settles the posting. Now we need 6 lanterns."
-    ],
-    "turn_in": [
-      "That will hold the corners of the village a little brighter. Good work.",
-      "That settles Village Lanterns. The village will put this to use.",
-      "Village Lanterns is complete, and the help is appreciated.",
-      "Good. I can close Village Lanterns with a clean mark.",
-      "This will help more than it looks like it should.",
-      "The count is right. Take your reward with my thanks.",
-      "That is enough to close the request.",
-      "Well done. Village Lanterns is finished.",
-      "The village can use this before the day is out.",
-      "I will mark Village Lanterns complete.",
-      "Good work. The note comes down now.",
-      "That is the kind of help people remember at supper.",
-      "Everything is here. Village Lanterns is settled.",
-      "The village needed this, and you brought it.",
-      "A full count makes a calmer room."
-    ],
-    "unavailable": [
-      "The watch is not ready to post that request right now.",
-      "Village Lanterns is not available from here right now.",
-      "That request is not in your hands right now.",
-      "I cannot offer Village Lanterns at the moment.",
-      "Village Lanterns is closed to new help for now.",
-      "This is not ready for you right now.",
-      "The village is not accepting that work at the moment.",
-      "No open note for Village Lanterns is waiting here.",
-      "Try again later if Village Lanterns comes back around.",
-      "I cannot move that request today.",
-      "Village Lanterns needs different timing.",
-      "The work exists, but not for this moment.",
-      "I do not have authority to open that now.",
-      "The request is out of reach for now.",
-      "There is nothing for me to hand you on Village Lanterns."
-    ],
-    "start_key": "quest.village_supply.village_lanterns.dialogue.start",
-    "reminder_key": "quest.village_supply.village_lanterns.dialogue.reminder",
-    "turn_in_key": "quest.village_supply.village_lanterns.dialogue.turn_in",
-    "already_completed_key": "quest.village_supply.village_lanterns.dialogue.already_completed",
-    "unavailable_key": "quest.village_supply.village_lanterns.dialogue.unavailable",
-    "inactive_key": "quest.village_supply.village_lanterns.dialogue.inactive",
-    "missing_target_key": "quest.village_supply.village_lanterns.dialogue.missing_target",
-    "missing_proof_key": "quest.village_supply.village_lanterns.dialogue.missing_proof",
-    "locate_failed_key": "quest.village_supply.village_lanterns.dialogue.locate_failed"
+  "ui": {
+    "title": "Village Lanterns",
+    "icon": "minecraft:lantern",
+    "color": "#8BA6B8"
   }
 }
