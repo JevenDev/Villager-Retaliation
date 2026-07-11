@@ -274,11 +274,14 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
 
         context.setProgressTicks(0);
-        if (!storeMinedDrops(level, context, villager, target, tool, mode)) {
-            MiningWorkerState.set(context, MiningWorkerState.Phase.BLOCKED_OUTPUT_FULL);
-            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
-            return WorkResult.idle("interaction.work.mining.output_full_blocked");
+        if (!breakAndStoreMinedBlock(level, context, villager, target, tool, mode)) {
+            HiredWorkPlan.removeTarget(context, target.blockPos());
+            clearActiveBreakingTarget(level, context, villager);
+            MiningWorkerState.clearExcavationLayerCache(context);
+            MiningWorkerState.set(context, MiningWorkerState.Phase.FIND_TARGET);
+            HiredWorkerBrain.setLastTargetScanResult(context, "mining_target_changed");
+            setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
+            return WorkResult.progressed(miningStatusKey(mode, "target_changed"));
         }
         if (mode.excavatesArea()) {
             MiningWorkerState.clearExcavationLayerCache(context);
@@ -1034,22 +1037,17 @@ public final class MiningWorker extends AbstractBlockWorker {
                 && MiningHazardManager.isPermanentBarrier(context, target.below());
     }
 
-    private boolean storeMinedDrops(
+    private boolean breakAndStoreMinedBlock(
             ServerLevel level,
             HiredWorkContext context,
             Villager villager,
             HiredPathTarget target,
             ItemStack tool,
             HiredMiningMode mode) {
-        if (!mode.excavatesArea()) {
-            if (!canStartMining(level, villager, context, target, mode)) {
-                return false;
-            }
-            return storeDrops(level, context, villager, target, tool);
-        }
         if (!context.isInsideWorkArea(target.blockPos())
                 || !context.isLoaded(level, target.blockPos())
                 || !context.isLoaded(level, target.approachPos())
+                || !isStillValidMiningTarget(level, context, target.blockPos(), mode)
                 || !canStartMining(level, villager, context, target, mode)) {
             return false;
         }
@@ -1058,21 +1056,34 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (!context.canStoreOutputs(drops)) {
             return false;
         }
-        for (ItemStack drop : drops) {
-            if (!context.storeOutputAfterDepositIfFull(villager, drop).isEmpty()) {
-                return false;
-            }
-        }
         faceBlock(villager, target);
         swingWorkTool(villager);
+        if (!level.destroyBlock(target.blockPos(), false, villager)) {
+            return false;
+        }
+        for (ItemStack drop : drops) {
+            ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, drop);
+            if (!remainder.isEmpty()) {
+                Block.popResource(level, target.blockPos(), remainder);
+            }
+        }
         EnchantmentHelper.onHitBlock(level, tool, villager, villager, EquipmentSlot.MAINHAND, target.hitPos(), state, ignored -> {
         });
-        level.destroyBlock(target.blockPos(), false, villager);
         HiredPathMemory.onBlockChanged(level, target.blockPos());
         level.destroyBlockProgress(villager.getId(), target.blockPos(), -1);
         damageTool(context, villager, tool, level, state, target.blockPos());
         HiredPathMemory.rememberRecent(level, target.blockPos());
         return true;
+    }
+
+    private static boolean isStillValidMiningTarget(
+            ServerLevel level,
+            HiredWorkContext context,
+            BlockPos target,
+            HiredMiningMode mode) {
+        return mode.excavatesArea()
+                ? MiningBlockRules.isMineableExcavationBlock(level, context, target)
+                : MiningBlockRules.isMineableOre(level, target);
     }
 
     private boolean hasLineOfSightToTarget(ServerLevel level, Villager villager, HiredPathTarget target) {

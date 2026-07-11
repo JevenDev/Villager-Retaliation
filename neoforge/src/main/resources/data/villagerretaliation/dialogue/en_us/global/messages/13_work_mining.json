@@ -871,6 +871,25 @@
       "key": "interaction.work.mining.hazard.drained_water",
       "lines": ["The bounded water pocket is drained. I can now remove the temporary fill."],
       "id": "global.messages.13_work_mining.messages.interaction.work.mining.hazard.drained_water.066"
+    },
+    {
+      "key": "interaction.work.mining.support.unreachable",
+      "lines": [
+        "I cannot reach the position where the excavation support is needed.",
+        "The route to the next ladder or torch position is blocked.",
+        "I need a clear path before I can place the next mining support."
+      ],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.support.unreachable.067"
+    },
+    {
+      "key": "interaction.work.mining.target_changed.excavate_area",
+      "lines": ["The excavation face changed before I could finish. I am checking the area again."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.target_changed.excavate_area.068"
+    },
+    {
+      "key": "interaction.work.mining.target_changed.exposed_ores",
+      "lines": ["That ore changed before I could finish mining it. I am looking for another exposed block."],
+      "id": "global.messages.13_work_mining.messages.interaction.work.mining.target_changed.exposed_ores.069"
     }
   ]
 }
