@@ -1,5 +1,5 @@
 {
-  "format_version": 1,
+  "format_version": 2,
   "mod_id": "villagerretaliation",
   "generated_by": "com.jvn.villagerretaliation.quest.QuestRegistryMetadata",
   "registries": {
@@ -684,6 +684,1159 @@
           "villagerretaliation:saved_provider",
           "villagerretaliation:villager_provider"
         ]
+      }
+    ],
+    "actor_types": [
+      {
+        "id": "villagerretaliation:hostile_encounter_group",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/encounter"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/identity",
+          "villagerretaliation:capability/members"
+        ],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Hostile encounter group",
+        "description": "Built-in Hostile encounter group type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:living_entity",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/live_entity",
+          "villagerretaliation:capability/living",
+          "villagerretaliation:capability/pathfinding"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/display",
+          "villagerretaliation:capability/identity",
+          "villagerretaliation:capability/position"
+        ],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Living entity",
+        "description": "Built-in Living entity type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/live_entity",
+          "villagerretaliation:capability/player"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/identity"
+        ],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Player",
+        "description": "Built-in Player type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:position",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/position"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/position"
+        ],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Position",
+        "description": "Built-in Position type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:villager",
+        "aliases": [],
+        "live_capabilities": [
+          "villagerretaliation:capability/dialogue",
+          "villagerretaliation:capability/live_entity",
+          "villagerretaliation:capability/living",
+          "villagerretaliation:capability/pathfinding"
+        ],
+        "snapshot_capabilities": [
+          "villagerretaliation:capability/display",
+          "villagerretaliation:capability/identity",
+          "villagerretaliation:capability/position"
+        ],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Villager",
+        "description": "Built-in Villager type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      }
+    ],
+    "scene_steps": [
+      {
+        "id": "villagerretaliation:action_batch",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Action batch",
+        "description": "Built-in Action batch type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:cancel_encounter",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Cancel encounter",
+        "description": "Built-in Cancel encounter type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:cleanup_encounter",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Cleanup encounter",
+        "description": "Built-in Cleanup encounter type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:dialogue",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Dialogue",
+        "description": "Built-in Dialogue type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:face_actor",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Face actor",
+        "description": "Built-in Face actor type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:face_position",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Face position",
+        "description": "Built-in Face position type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:move_actor",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Move actor",
+        "description": "Built-in Move actor type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:quest_transition",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Quest transition",
+        "description": "Built-in Quest transition type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:scene_branch",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Scene branch",
+        "description": "Built-in Scene branch type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:scene_complete",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Scene complete",
+        "description": "Built-in Scene complete type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:scene_fail",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Scene fail",
+        "description": "Built-in Scene fail type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:start_encounter",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Start encounter",
+        "description": "Built-in Start encounter type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:wait_condition",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Wait condition",
+        "description": "Built-in Wait condition type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:wait_encounter",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Wait encounter",
+        "description": "Built-in Wait encounter type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:wait_ticks",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Wait ticks",
+        "description": "Built-in Wait ticks type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      }
+    ],
+    "encounter_templates": [
+      {
+        "id": "villagerretaliation:controlled",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "world_reconciled",
+        "client_sync": "participants",
+        "title": "Controlled",
+        "description": "Built-in Controlled type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      }
+    ],
+    "public_quest_providers": [
+      {
+        "id": "villagerretaliation:villager",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Villager",
+        "description": "Built-in Villager type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      }
+    ],
+    "public_quest_objectives": [
+      {
+        "id": "villagerretaliation:block_break",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Block break",
+        "description": "Built-in Block break type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:block_interact",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Block interact",
+        "description": "Built-in Block interact type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:block_place",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Block place",
+        "description": "Built-in Block place type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:choice",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Choice",
+        "description": "Built-in Choice type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:condition",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Condition",
+        "description": "Built-in Condition type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:fact",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Fact",
+        "description": "Built-in Fact type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:gift",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Gift",
+        "description": "Built-in Gift type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:item_check",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Item check",
+        "description": "Built-in Item check type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:location_visit",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Location visit",
+        "description": "Built-in Location visit type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:memory_event",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Memory event",
+        "description": "Built-in Memory event type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:mob_kill",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Mob kill",
+        "description": "Built-in Mob kill type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:reputation",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Reputation",
+        "description": "Built-in Reputation type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:structure_visit",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Structure visit",
+        "description": "Built-in Structure visit type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:trade",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Trade",
+        "description": "Built-in Trade type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      }
+    ],
+    "public_quest_actions": [
+      {
+        "id": "villagerretaliation:clear_tag",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Clear tag",
+        "description": "Built-in Clear tag type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:counter",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Counter",
+        "description": "Built-in Counter type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:experience",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Experience",
+        "description": "Built-in Experience type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:forced_dialogue",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Forced dialogue",
+        "description": "Built-in Forced dialogue type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:gossip",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Gossip",
+        "description": "Built-in Gossip type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:loot",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Loot",
+        "description": "Built-in Loot type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:memory",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Memory",
+        "description": "Built-in Memory type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:notification",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Notification",
+        "description": "Built-in Notification type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:quest",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Quest",
+        "description": "Built-in Quest type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:quest_transition",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Quest transition",
+        "description": "Built-in Quest transition type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:reputation",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Reputation",
+        "description": "Built-in Reputation type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:set_tag",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Set tag",
+        "description": "Built-in Set tag type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:set_variable",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Set variable",
+        "description": "Built-in Set variable type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:start_scene",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "receipt_required",
+        "client_sync": "owner",
+        "title": "Start scene",
+        "description": "Built-in Start scene type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:tracker",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "owner",
+        "title": "Tracker",
+        "description": "Built-in Tracker type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      }
+    ],
+    "public_quest_conditions": [
+      {
+        "id": "villagerretaliation:all",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "All",
+        "description": "Built-in All type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:any",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Any",
+        "description": "Built-in Any type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:family",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Family",
+        "description": "Built-in Family type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:memory",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Memory",
+        "description": "Built-in Memory type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:mood",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Mood",
+        "description": "Built-in Mood type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:not",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Not",
+        "description": "Built-in Not type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:quest",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Quest",
+        "description": "Built-in Quest type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:quest_fact",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Quest fact",
+        "description": "Built-in Quest fact type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:recruitment_memory",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Recruitment memory",
+        "description": "Built-in Recruitment memory type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:relationship",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Relationship",
+        "description": "Built-in Relationship type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:reputation",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Reputation",
+        "description": "Built-in Reputation type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:selected_choice",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Selected choice",
+        "description": "Built-in Selected choice type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:skill",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Skill",
+        "description": "Built-in Skill type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:social_attribute",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Social attribute",
+        "description": "Built-in Social attribute type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:stage_history",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Stage history",
+        "description": "Built-in Stage history type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:time",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Time",
+        "description": "Built-in Time type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:villager_age",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Villager age",
+        "description": "Built-in Villager age type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:villager_level",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Villager level",
+        "description": "Built-in Villager level type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:weather",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Weather",
+        "description": "Built-in Weather type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      }
+    ],
+    "public_quest_triggers": [
+      {
+        "id": "villagerretaliation:abandoned",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Abandoned",
+        "description": "Built-in Abandoned type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:completed",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Completed",
+        "description": "Built-in Completed type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:expired",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Expired",
+        "description": "Built-in Expired type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:failed",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Failed",
+        "description": "Built-in Failed type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:player_tick",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Player tick",
+        "description": "Built-in Player tick type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:progress",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Progress",
+        "description": "Built-in Progress type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:proximity",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Proximity",
+        "description": "Built-in Proximity type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:stage_changed",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Stage changed",
+        "description": "Built-in Stage changed type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
+      },
+      {
+        "id": "villagerretaliation:started",
+        "aliases": [],
+        "live_capabilities": [],
+        "snapshot_capabilities": [],
+        "recovery": "naturally_idempotent",
+        "client_sync": "none",
+        "title": "Started",
+        "description": "Built-in Started type.",
+        "browser_available": true,
+        "schema": {
+          "type": "object"
+        }
       }
     ]
   },

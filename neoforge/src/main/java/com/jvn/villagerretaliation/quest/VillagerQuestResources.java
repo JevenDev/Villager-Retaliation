@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
+
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEventKind;
 import com.google.gson.JsonElement;
@@ -247,6 +249,7 @@ public final class VillagerQuestResources {
     }
 
     private static CachedQuests loadCache(MinecraftServer server) {
+        VillagerRetaliationRegistries.freezeForDatapackCompilation();
         CachedQuests current = cachedQuests;
         if (current.server() == server) {
             return current;
