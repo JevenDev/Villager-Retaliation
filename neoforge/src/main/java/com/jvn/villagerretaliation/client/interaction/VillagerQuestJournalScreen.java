@@ -767,7 +767,7 @@ public final class VillagerQuestJournalScreen extends Screen {
             renderDetailsPageLabel(graphics, left, maskBottom + DETAILS_PAGE_LABEL_GAP, this.detailsPage + 1, pageCount);
         }
         if (canAbandon(selected)) {
-            Component label = Component.literal("Abandon quest");
+            Component label = Component.translatable(GUI_KEY_PREFIX + "abandon");
             int actionTop = top + DETAILS_HEIGHT - DETAILS_ABANDON_HEIGHT + 2;
             graphics.drawString(
                     this.font,

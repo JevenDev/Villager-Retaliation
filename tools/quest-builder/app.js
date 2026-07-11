@@ -266,6 +266,7 @@
         <h2>Availability</h2>
         <div class="form-grid">
           ${selectField({ label: "Entry stage", value: quest.entry_stage || "", field: "entry_stage", options: stageOptions, path: "/entry_stage", issues })}
+          ${field({ label: "Prerequisite quests", value: (availability.prerequisites || []).join(", "), field: "availability.prerequisites", dataType: "list", className: "span-8", placeholder: "my_pack:first_quest, my_pack:second_quest", help: "All listed quests must be completed. Order is preserved in the journal." })}
           ${numberField({ label: "Maximum completions", value: availability.max_completions ?? 1, field: "availability.max_completions", min: 0, help: "0 means unlimited when the quest is repeatable." })}
           ${checkboxField({ label: "Repeatable", detail: "Allow this quest to be completed more than once.", checked: Boolean(availability.repeatable), field: "availability.repeatable" })}
           ${checkboxField({ label: "Lock to villager", detail: "The same villager must receive the turn-in.", checked: availability.locked_to_villager !== false, field: "availability.locked_to_villager" })}
@@ -402,7 +403,7 @@
   }
 
   function renderResponse(quest, stageIndex, slotName, response, index, issues) {
-    const type = response.stage || response.next ? "stage" : response.scene ? "scene" : response.complete ? "complete" : response.abandon ? "abandon" : "none";
+    const type = response.stage || response.next ? "stage" : response.scene ? "scene" : response.complete ? "complete" : response.fail ? "fail" : response.abandon ? "abandon" : "none";
     const destination = response.stage || response.next || response.scene || "";
     const destinationControl = type === "stage"
       ? selectField({ label: "Destination", value: destination, responseField: "destination", responseIndex: index, options: [{ value: "", label: "Choose a stage" }, ...quest.stages.map((stage) => ({ value: stage.id, label: stage.title || model.titleFromId(stage.id) }))], bare: true })
@@ -413,7 +414,7 @@
       ${field({ label: "Response id", value: response.id || "", responseField: "id", responseIndex: index, bare: true, path: `/stages/${stageIndex}/dialogue/${slotName}/responses/${index}/id`, issues })}
       ${field({ label: "Player text", value: response.label || response.text || "", responseField: "label", responseIndex: index, bare: true, placeholder: "I can help." })}
       ${selectField({ label: "Outcome", value: type, responseField: "outcome", responseIndex: index, options: [
-        { value: "none", label: "No transition" }, { value: "stage", label: "Go to stage" }, { value: "scene", label: "Run scene" }, { value: "complete", label: "Complete quest" }, { value: "abandon", label: "Abandon quest" }
+        { value: "none", label: "No transition" }, { value: "stage", label: "Go to stage" }, { value: "scene", label: "Run scene" }, { value: "complete", label: "Complete quest" }, { value: "fail", label: "Fail quest" }, { value: "abandon", label: "Abandon quest" }
       ], bare: true })}
       ${destinationControl}
       <button class="icon-button remove-button" type="button" data-action="remove-response" data-response-index="${index}" aria-label="Remove response"><i data-lucide="trash-2"></i></button>
@@ -634,6 +635,7 @@
       if (value === "stage") response.stage = quest.stages.find((stage) => stage.id !== selectedStageId)?.id || "";
       if (value === "scene") response.scene = "scene_id";
       if (value === "complete") response.complete = true;
+      if (value === "fail") response.fail = true;
       if (value === "abandon") response.abandon = true;
       return;
     }

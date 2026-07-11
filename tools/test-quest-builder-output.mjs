@@ -10,9 +10,15 @@ const model = require("./quest-builder/quest-model.js");
 const workspace = await mkdtemp(path.join(os.tmpdir(), "vr-quest-builder-output-"));
 
 try {
+  const failureQuest = model.createLinearQuest("builder_test");
+  failureQuest.id = "builder_test:failure_contract";
+  failureQuest.stages[0].dialogue = {
+    reminder: { lines: ["Continue?"], responses: [{ id: "fail", label: "Stop here", fail: true }] }
+  };
   for (const [name, quest] of [
     ["linear", model.createLinearQuest("builder_test")],
-    ["branching", model.createBranchingQuest("builder_test")]
+    ["branching", model.createBranchingQuest("builder_test")],
+    ["failure", failureQuest]
   ]) {
     const file = path.join(workspace, `${name}.json`);
     await writeFile(file, JSON.stringify(quest, null, 2) + "\n", "utf8");

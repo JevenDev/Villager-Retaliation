@@ -645,6 +645,16 @@
         "default_cooldown_ticks": 0
       },
       {
+        "id": "failed",
+        "aliases": [
+          "fail",
+          "quest_failed"
+        ],
+        "event": "failed",
+        "continuous": false,
+        "default_cooldown_ticks": 0
+      },
+      {
         "id": "abandoned",
         "aliases": [
           "abandon",
@@ -834,6 +844,8 @@
         "completed",
         "expire",
         "expired",
+        "fail",
+        "failed",
         "near_provider",
         "nearby",
         "player",
@@ -843,6 +855,7 @@
         "quest_abandoned",
         "quest_completed",
         "quest_expired",
+        "quest_failed",
         "quest_progress",
         "quest_started",
         "stage",

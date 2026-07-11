@@ -87,6 +87,18 @@ function testDuplicateProjectPaths() {
   assert.equal(issues.find((issue) => issue.code === "project.path.duplicate").questIndex, 1);
 }
 
+function testFailureAndPrerequisiteContracts() {
+  const quest = model.createLinearQuest("contract_pack");
+  quest.availability.prerequisites = ["contract_pack:first", "contract_pack:second", "contract_pack:third"];
+  quest.stages[0].dialogue = { reminder: { lines: ["Continue?"], responses: [{ id: "fail", label: "Give up", fail: true }] } };
+  assert.deepEqual(model.validateQuest(quest, registryMetadata), []);
+  quest.availability.prerequisites.push("Bad prerequisite");
+  quest.stages[0].dialogue.reminder.responses[0].abandon = true;
+  const issueCodes = codes(model.validateQuest(quest, registryMetadata));
+  assert(issueCodes.includes("prerequisite.invalid"));
+  assert(issueCodes.includes("response.terminal.conflict"));
+}
+
 testLinearTemplate();
 testBranchingTemplate();
 testRenameReferences();
@@ -94,5 +106,6 @@ testRemoveReferences();
 testActionableValidation();
 testProjectRecovery();
 testDuplicateProjectPaths();
+testFailureAndPrerequisiteContracts();
 
 console.log("Quest builder model tests passed.");

@@ -1443,6 +1443,7 @@
   "villagerretaliation.gui.quest_journal.section.prerequisites": "Prerequisites",
   "villagerretaliation.gui.quest_journal.section.objectives": "Objectives",
   "villagerretaliation.gui.quest_journal.section.rewards": "Rewards",
+  "villagerretaliation.gui.quest_journal.abandon": "Abandon quest",
   "villagerretaliation.gui.quest_item_marker": "Quest item: %s",
   "villagerretaliation.gui.party.recruit": "Recruit to Party",
   "villagerretaliation.gui.party.recruit_confirm": "Recruit for 32 emeralds",

@@ -312,6 +312,11 @@
     if (!quest.entry_stage) issue("error", "entry.missing", "/entry_stage", "Choose where the quest begins.", "Set an entry stage in Quest setup.");
     else if (!stageSet.has(quest.entry_stage)) issue("error", "entry.unknown", "/entry_stage", `Entry stage “${quest.entry_stage}” does not exist.`, "Choose one of the stages in this quest.");
     for (const duplicate of new Set(duplicates)) issue("error", "stage.duplicate", "/stages", `Stage id “${duplicate}” is used more than once.`, "Give every stage a unique id.");
+    const prerequisites = Array.isArray(quest.availability?.prerequisites) ? quest.availability.prerequisites : [];
+    prerequisites.forEach((prerequisite, index) => {
+      if (!RESOURCE_LOCATION.test(String(prerequisite || ""))) issue("error", "prerequisite.invalid", `/availability/prerequisites/${index}`, `Prerequisite “${prerequisite}” is not a namespaced quest id.`, "Use lowercase namespace:path format.");
+      if (prerequisites.indexOf(prerequisite) !== index) issue("warning", "prerequisite.duplicate", `/availability/prerequisites/${index}`, `Prerequisite “${prerequisite}” is listed more than once.`, "Keep each prerequisite once, in the order it should appear.");
+    });
 
     const objectiveIds = new Set();
     const objectiveRegistry = registrySet(registries, "objectives");
@@ -402,6 +407,8 @@
         if ((response.stage || response.next || response.scene) && response.actions?.some((action) => action.type === "quest_transition" || action.transition || action.stage || action.next)) {
           issue("warning", "response.transition.conflict", `${path}/responses/${index}`, `Response “${response.id || index + 1}” has two transition sources.`, "Keep either the direct destination or the transition action.");
         }
+        const terminalOutcomes = [response.complete, response.abandon, response.fail].filter(Boolean).length;
+        if (terminalOutcomes > 1) issue("error", "response.terminal.conflict", `${path}/responses/${index}`, `Response “${response.id || index + 1}” mixes failure, abandonment, or completion.`, "Choose exactly one terminal outcome.");
       }
     }
   }

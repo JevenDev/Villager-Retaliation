@@ -3410,6 +3410,52 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questTerminalStatesRoundTripWithoutSemanticDrift(GameTestHelper helper) {
+        UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000451");
+        UUID providerId = UUID.fromString("00000000-0000-0000-0000-000000000452");
+        VillagerQuestSavedData data = new VillagerQuestSavedData();
+        Map<String, VillagerQuestSavedData.QuestState> expected = new LinkedHashMap<>();
+
+        VillagerQuestSavedData.QuestProgress completed = data.getOrCreate(playerId, VillagerRetaliation.id("terminal_completed"));
+        completed.start(providerId, Level.OVERWORLD, null, 1L);
+        QuestStateMachine.complete(completed, 10L, false);
+        expected.put("terminal_completed", VillagerQuestSavedData.QuestState.COMPLETED);
+
+        VillagerQuestSavedData.QuestProgress failed = data.getOrCreate(playerId, VillagerRetaliation.id("terminal_failed"));
+        failed.start(providerId, Level.OVERWORLD, null, 2L);
+        QuestStateMachine.fail(failed, 11L, "contract_failure");
+        expected.put("terminal_failed", VillagerQuestSavedData.QuestState.FAILED);
+
+        VillagerQuestSavedData.QuestProgress abandoned = data.getOrCreate(playerId, VillagerRetaliation.id("terminal_abandoned"));
+        abandoned.start(providerId, Level.OVERWORLD, null, 3L);
+        QuestStateMachine.abandon(abandoned, 12L, false);
+        expected.put("terminal_abandoned", VillagerQuestSavedData.QuestState.ABANDONED);
+
+        VillagerQuestSavedData.QuestProgress expired = data.getOrCreate(playerId, VillagerRetaliation.id("terminal_expired"));
+        expired.start(providerId, Level.OVERWORLD, null, 4L);
+        QuestStateMachine.expire(expired, 13L, false);
+        expected.put("terminal_expired", VillagerQuestSavedData.QuestState.EXPIRED);
+
+        VillagerQuestSavedData.QuestProgress consumed = data.getOrCreate(playerId, VillagerRetaliation.id("terminal_consumed"));
+        consumed.start(providerId, Level.OVERWORLD, null, 5L);
+        QuestStateMachine.consume(consumed, "branch_lock");
+        expected.put("terminal_consumed", VillagerQuestSavedData.QuestState.CONSUMED);
+
+        VillagerQuestSavedData loaded = VillagerQuestSavedData.load(
+                data.save(new CompoundTag(), helper.getLevel().registryAccess()),
+                helper.getLevel().registryAccess());
+        expected.forEach((path, state) -> helper.assertValueEqual(
+                loaded.get(playerId, VillagerRetaliation.id(path)).state(), state, path + " state after reload"));
+        helper.assertValueEqual(loaded.get(playerId, VillagerRetaliation.id("terminal_completed")).completionCount(), 1,
+                "completed terminal count");
+        helper.assertValueEqual(loaded.get(playerId, VillagerRetaliation.id("terminal_failed")).failureReason(),
+                "contract_failure", "failed terminal reason");
+        helper.assertValueEqual(loaded.get(playerId, VillagerRetaliation.id("terminal_abandoned")).abandonCount(), 1,
+                "abandoned terminal count");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questSavedDataLimitsTrackedQuestsToThree(GameTestHelper helper) {
         UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000301");
         ResourceLocation first = VillagerRetaliation.id("tracked_first");
