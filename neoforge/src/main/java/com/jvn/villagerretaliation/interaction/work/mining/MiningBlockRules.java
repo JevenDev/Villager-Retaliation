@@ -78,7 +78,7 @@ public final class MiningBlockRules {
     public static boolean hasAdjacentExcavationFluid(ServerLevel level, BlockPos pos) {
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = pos.relative(direction);
-            if (level.hasChunkAt(neighbor) && !level.getFluidState(neighbor).isEmpty()) {
+            if (!level.hasChunkAt(neighbor) || !level.getFluidState(neighbor).isEmpty()) {
                 return true;
             }
         }

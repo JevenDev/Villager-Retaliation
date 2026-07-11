@@ -311,10 +311,12 @@ final class MiningHazardManager {
 
         ConsumedFill consumed = consumeFillBlock(context, fillPredicate);
         if (!(consumed.stack().getItem() instanceof BlockItem blockItem)) {
+            refundFillBlock(context, consumed);
             return WorkResult.idle("interaction.work.mining.hazard.missing_fill_blocks");
         }
         BlockState fillState = blockItem.getBlock().defaultBlockState();
         if (!isSafeFillState(level, target, fillState) || !canReplaceWithFill(level, target)) {
+            refundFillBlock(context, consumed);
             return WorkResult.idle("interaction.work.mining.hazard.unreachable");
         }
 
@@ -640,10 +642,11 @@ final class MiningHazardManager {
         List<Long> retained = new ArrayList<>(packed.length);
         for (long value : packed) {
             BlockPos pos = BlockPos.of(value);
-            if (isWithinHazardScope(context, pos)
-                    && context.isLoaded(level, pos)
-                    && !level.getBlockState(pos).isAir()
-                    && level.getFluidState(pos).isEmpty()) {
+            if (!isWithinHazardScope(context, pos)) {
+                continue;
+            }
+            if (!context.isLoaded(level, pos)
+                    || (!level.getBlockState(pos).isAir() && level.getFluidState(pos).isEmpty())) {
                 retained.add(value);
             }
         }

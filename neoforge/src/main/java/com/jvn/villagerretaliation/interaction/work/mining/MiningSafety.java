@@ -87,7 +87,7 @@ public final class MiningSafety {
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = target.relative(direction);
             if (!level.hasChunkAt(neighbor)) {
-                continue;
+                return true;
             }
             FluidState fluid = level.getFluidState(neighbor);
             if (fluid.is(FluidTags.LAVA) || fluid.is(FluidTags.WATER)) {
@@ -135,7 +135,7 @@ public final class MiningSafety {
         for (Direction direction : Direction.Plane.HORIZONTAL) {
             BlockPos neighbor = pos.relative(direction);
             if (!level.hasChunkAt(neighbor)) {
-                continue;
+                return true;
             }
             if (level.getFluidState(neighbor).is(FluidTags.LAVA)
                     || isDamagingBlock(level.getBlockState(neighbor))) {

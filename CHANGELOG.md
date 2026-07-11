@@ -22,6 +22,8 @@
 - Fixed Bread Delivery, Village Lanterns, and Trial Chamber Recall allowing repeat turn-ins without consuming their required items.
 - Fixed End City Survey lacking a parent link to Lost Civilization.
 - Fixed the dialogue validator rejecting the live work-status placeholders `{cap}` and `{types}`.
+- Fixed miners forcing direct ladder entries through blocked corners, abandoning persisted shafts after impossible obstructions, and stalling while extending a shaft beneath an existing ladder.
+- Fixed excavation safety state around unloaded chunks so unknown fluid faces remain blocked and permanent hazard seals are not forgotten while their chunks are unavailable.
 
 ## 1.0.0-beta.13 - 2026-06-21
 
