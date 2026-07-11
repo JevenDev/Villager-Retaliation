@@ -49,7 +49,9 @@ public final class SceneRuntime {
         Map<String, SceneActorBinding> bindings = initialBindings(request.server(), scene, request.playerId(), request.providerId());
         SceneSavedData data = SceneSavedData.get(request.server().overworld());
         SceneSavedData.StartResult result = data.start(scene, request.operationId(), owner.owner(),
-                owner.owner().questInstanceId(), owner.participants(), bindings, request.server().overworld().getGameTime());
+                owner.owningQuestInstance(), owner.participants(), bindings, request.server().overworld().getGameTime());
+        result.instance().linkQuest(request.questId());
+        data.changed();
         scheduler(request.server()).enqueue(result.instance());
         return SceneLaunchService.LaunchResult.accepted(result.instance().id(), result.created());
     }
@@ -59,6 +61,7 @@ public final class SceneRuntime {
         SceneSavedData data = SceneSavedData.get(server.overworld());
         scheduler(server).tick(server, data, server.overworld().getGameTime());
     }
+    public static void wake(MinecraftServer server, SceneInstance instance) { if(server!=null&&instance!=null)scheduler(server).enqueue(instance); }
 
     public static void installProcessor(SceneScheduler.Processor implementation) {
         processor = implementation;
@@ -95,10 +98,10 @@ public final class SceneRuntime {
             case QUEST_INSTANCE -> {
                 if (player == null) yield null;
                 UUID quest = UUID.nameUUIDFromBytes((scene.id() + "|" + player).getBytes(StandardCharsets.UTF_8));
-                yield new OwnerAndParticipants(new SceneOwner(SceneResource.OwnershipMode.QUEST_INSTANCE, player, null, quest, ""), Set.of(player));
+                yield new OwnerAndParticipants(new SceneOwner(SceneResource.OwnershipMode.QUEST_INSTANCE, player, null, quest, ""), Set.of(player), quest);
             }
             case WORLD -> new OwnerAndParticipants(new SceneOwner(SceneResource.OwnershipMode.WORLD, null, null, null,
-                    request.server().overworld().dimension().location().toString()), player == null ? Set.of() : Set.of(player));
+                    request.server().overworld().dimension().location().toString()), player == null ? Set.of() : Set.of(player), null);
         };
     }
 
@@ -129,5 +132,7 @@ public final class SceneRuntime {
         return null;
     }
 
-    private record OwnerAndParticipants(SceneOwner owner, Set<UUID> participants) { }
+    private record OwnerAndParticipants(SceneOwner owner, Set<UUID> participants, UUID owningQuestInstance) {
+        private OwnerAndParticipants(SceneOwner owner, Set<UUID> participants) { this(owner, participants, null); }
+    }
 }

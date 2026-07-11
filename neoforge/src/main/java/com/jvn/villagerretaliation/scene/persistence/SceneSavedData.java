@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.scene.runtime.SceneOwner;
 import com.jvn.villagerretaliation.scene.runtime.SceneState;
 import com.jvn.villagerretaliation.scene.encounter.EncounterInstance;
 import com.jvn.villagerretaliation.scene.encounter.EncounterTemplate;
+import com.jvn.villagerretaliation.scene.runtime.SceneAuditEntry;
 import com.mojang.logging.LogUtils;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,6 +34,7 @@ public final class SceneSavedData extends SavedData {
     private final Map<String, UUID> byOperation = new LinkedHashMap<>();
     private final Map<UUID, EncounterInstance> encounters = new LinkedHashMap<>();
     private final Map<String, UUID> encounterOperations = new LinkedHashMap<>();
+    private final List<SceneAuditEntry> auditEntries = new ArrayList<>();
     private boolean futureVersion;
     private CompoundTag preservedFutureRoot;
 
@@ -61,6 +63,7 @@ public final class SceneSavedData extends SavedData {
             }
         }
         for(Tag raw:migration.data().getList("Encounters",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag encounterTag){try{EncounterInstance encounter=EncounterInstance.load(encounterTag);data.encounters.put(encounter.id(),encounter);data.encounterOperations.put(encounter.sceneId()+"|"+encounter.operationId(),encounter.id());}catch(RuntimeException exception){LOGGER.error("Could not read encounter instance",exception);}}
+        for(Tag raw:migration.data().getList("Audit",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag audit)data.auditEntries.add(SceneAuditEntry.load(audit));
         return data;
     }
 
@@ -74,6 +77,7 @@ public final class SceneSavedData extends SavedData {
                 .forEach(value -> values.add(value.save()));
         output.put("Instances", values);
         ListTag encounterTags=new ListTag();encounters.values().stream().sorted(Comparator.comparing(value->value.id().toString())).forEach(value->encounterTags.add(value.save()));output.put("Encounters",encounterTags);
+        ListTag audit=new ListTag();auditEntries.forEach(value->audit.add(value.save()));output.put("Audit",audit);
         return output;
     }
 
@@ -98,6 +102,7 @@ public final class SceneSavedData extends SavedData {
     public boolean futureVersion() { return futureVersion; }
     public EncounterStartResult startEncounter(EncounterTemplate template,SceneInstance scene,String operationId,ResourceLocation dimension,net.minecraft.core.BlockPos anchor,String difficulty){String key=scene.id()+"|"+operationId;UUID existing=encounterOperations.get(key);if(existing!=null)return new EncounterStartResult(encounters.get(existing),false);EncounterInstance encounter=new EncounterInstance(UUID.randomUUID(),template.id(),scene.id(),operationId,scene.owner().stableKey(),scene.participants(),dimension,anchor,Math.max(1,scene.participants().size()),difficulty,template.cleanupPolicy(),template.completionCondition(),template.scaledCount(Math.max(1,scene.participants().size())));encounters.put(encounter.id(),encounter);encounterOperations.put(key,encounter.id());setDirty();return new EncounterStartResult(encounter,true);}
     public Optional<EncounterInstance> encounter(UUID id){return Optional.ofNullable(encounters.get(id));}public List<EncounterInstance> encounters(){return List.copyOf(encounters.values());}
+    public void audit(SceneAuditEntry entry){auditEntries.add(entry);if(auditEntries.size()>2048)auditEntries.removeFirst();setDirty();}public List<SceneAuditEntry> auditEntries(){return List.copyOf(auditEntries);}
 
     private static String operationKey(SceneOwner owner, String operationId) {
         return owner.stableKey() + "|" + operationId;

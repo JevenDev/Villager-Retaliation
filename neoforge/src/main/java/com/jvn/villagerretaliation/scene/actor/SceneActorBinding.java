@@ -71,6 +71,11 @@ public record SceneActorBinding(
                 this.replacementHistory);
     }
 
+    public SceneActorBinding withState(BindingState next) {
+        return new SceneActorBinding(alias, actorType, targetIdentity, entityId, sourceType, lastDimension,
+                lastPosition, displaySnapshot, generation, next, replacementHistory);
+    }
+
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();
         tag.putString("Alias", this.alias);

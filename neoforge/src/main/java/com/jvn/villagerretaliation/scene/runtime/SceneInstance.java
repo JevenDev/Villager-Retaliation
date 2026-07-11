@@ -23,6 +23,7 @@ public final class SceneInstance {
     private final String operationId;
     private final SceneOwner owner;
     private final UUID owningQuestInstance;
+    private ResourceLocation owningQuestId;
     private final Set<UUID> participants;
     private SceneState state;
     private String currentStep;
@@ -73,6 +74,7 @@ public final class SceneInstance {
     public UUID id(){return id;} public ResourceLocation sceneId(){return sceneId;} public int definitionVersion(){return definitionVersion;}
     public String definitionHash(){return definitionHash;} public String operationId(){return operationId;} public SceneOwner owner(){return owner;}
     public UUID owningQuestInstance(){return owningQuestInstance;} public Set<UUID> participants(){return Set.copyOf(participants);}
+    public ResourceLocation owningQuestId(){return owningQuestId;} public void linkQuest(ResourceLocation id){if(owningQuestId==null)owningQuestId=id;}
     public SceneState state(){return state;} public String currentStep(){return currentStep;}
     public Map<String,SceneActorBinding> actorBindings(){return Map.copyOf(actorBindings);}
     public Map<String,SceneStepRecord> stepRecords(){return Map.copyOf(stepRecords);} public long startGameTime(){return startGameTime;}
@@ -99,6 +101,7 @@ public final class SceneInstance {
         CompoundTag tag=new CompoundTag(); tag.putUUID("InstanceId",id); tag.putString("SceneId",sceneId.toString());
         tag.putInt("DefinitionVersion",definitionVersion);tag.putString("DefinitionHash",definitionHash);tag.putString("OperationId",operationId);
         tag.put("Owner",saveOwner(owner)); if(owningQuestInstance!=null)tag.putUUID("OwningQuestInstance",owningQuestInstance);
+        if(owningQuestId!=null)tag.putString("OwningQuestId",owningQuestId.toString());
         ListTag people=new ListTag();participants.forEach(v->people.add(StringTag.valueOf(v.toString())));tag.put("Participants",people);
         tag.putString("State",state.name());tag.putString("CurrentStep",currentStep);tag.putLong("StartGameTime",startGameTime);
         tag.putLong("UpdateGameTime",updateGameTime);tag.putInt("RetryCount",retryCount);tag.putString("FailureCode",failureCode);
@@ -115,6 +118,7 @@ public final class SceneInstance {
         Set<UUID> people=new LinkedHashSet<>();for(Tag raw:tag.getList("Participants",Tag.TAG_STRING))try{people.add(UUID.fromString(raw.getAsString()));}catch(IllegalArgumentException ignored){}
         SceneInstance value=new SceneInstance(tag.getUUID("InstanceId"),ResourceLocation.parse(tag.getString("SceneId")),tag.getInt("DefinitionVersion"),tag.getString("DefinitionHash"),tag.getString("OperationId"),loadOwner(tag.getCompound("Owner")),tag.hasUUID("OwningQuestInstance")?tag.getUUID("OwningQuestInstance"):null,people,SceneState.byName(tag.getString("State")),tag.getString("CurrentStep"),bindings,records,tag.getLong("StartGameTime"),tag.getLong("UpdateGameTime"));
         value.retryCount=tag.getInt("RetryCount");value.failureCode=tag.getString("FailureCode");value.diagnostic=tag.getString("Diagnostic");
+        value.owningQuestId=ResourceLocation.tryParse(tag.getString("OwningQuestId"));
         try{value.cleanupStatus=CleanupStatus.valueOf(tag.getString("CleanupStatus"));}catch(IllegalArgumentException ignored){}
         try{value.completionResult=CompletionResult.valueOf(tag.getString("CompletionResult"));}catch(IllegalArgumentException ignored){}
         for(Tag raw:tag.getList("Receipts",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag receipt){var r=SceneOperationReceipt.load(receipt);value.receipts.put(r.operationId(),r);}

@@ -32,6 +32,8 @@ import com.jvn.villagerretaliation.scene.encounter.EncounterInstance;
 import com.jvn.villagerretaliation.scene.encounter.EncounterResources;
 import com.jvn.villagerretaliation.scene.encounter.EncounterService;
 import com.jvn.villagerretaliation.scene.encounter.EncounterTemplate;
+import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
+import com.jvn.villagerretaliation.scene.SceneOperatorService;
 import com.jvn.villagerretaliation.api.scene.SceneStepExecutors;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBindingService;
@@ -418,6 +420,16 @@ public final class SceneRegistryGameTests {
         EncounterInstance loaded=EncounterInstance.load(started.encounter().save());EncounterService.reconcileSpawn(helper.getLevel().getServer(),data,loaded,remove);helper.assertTrue(loaded.spawned().size()==owned&&!loaded.spawned().contains(unrelated.getUUID()),"reload reconciliation must not duplicate mobs or count unrelated nearby mobs");helper.assertTrue(loaded.partySize()==3&&loaded.expectedCount()==4,"party scaling inputs should remain stable after reload");
         EncounterService.cleanup(helper.getLevel().getServer(),data,started.encounter(),false);helper.assertTrue(started.encounter().state()==EncounterInstance.EncounterState.CLEANED,"abandonment cleanup should remove loaded owned survivors");
         var preserved=data.startEncounter(preserve,scene,"ambush/preserve",helper.getLevel().dimension().location(),anchor,"normal").encounter();EncounterService.reconcileSpawn(helper.getLevel().getServer(),data,preserved,preserve);UUID survivor=preserved.spawned().iterator().next();EncounterService.cleanup(helper.getLevel().getServer(),data,preserved,false);helper.assertTrue(preserved.state()==EncounterInstance.EncounterState.RELEASED&&helper.getLevel().getEntity(survivor)!=null,"preserve policy should release surviving mobs into the world");helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void operatorRepairAuditsWithoutErasingHistoryOrReceipts(GameTestHelper helper) {
+        ServerPlayer player=helper.makeMockServerPlayerInLevel();Villager first=EntityType.VILLAGER.create(helper.getLevel());Villager second=EntityType.VILLAGER.create(helper.getLevel());helper.assertTrue(first!=null&&second!=null,"villagers should create");helper.getLevel().addFreshEntity(first);helper.getLevel().addFreshEntity(second);
+        JsonObject json=validScene();json.getAsJsonArray("actors").get(0).getAsJsonObject().addProperty("replacement_policy","operator_rebindable");var definition=compiledScene(json);SceneResources.installTestScenes(helper.getLevel().getServer(),List.of(definition));SceneSavedData data=SceneSavedData.get(helper.getLevel());
+        SceneActorBinding binding=SceneActorBinding.entity("guide",VillagerRetaliation.id("villager"),first.getUUID(),VillagerRetaliation.id("villager"),helper.getLevel().dimension().location(),first.blockPosition(),"First",true);SceneInstance scene=data.start(definition,"operator/"+UUID.randomUUID(),new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,player.getUUID(),null,null,""),null,Set.of(player.getUUID()),Map.of("guide",binding),0L).instance();scene.linkQuest(VillagerRetaliation.id("operator_test_quest"));scene.prepareReceipt("existing_reward",SceneOperationReceipt.Kind.EXPERIENCE_GRANT,1L).completed(1L,"already granted");
+        var rebound=SceneOperatorService.rebind(helper.getLevel(),scene.id(),"guide",second,"repair binding","TestOperator");helper.assertTrue(rebound.success()&&scene.actorBindings().get("guide").replacementHistory().size()==1,"operator should rebind and retain replacement history");helper.assertTrue(scene.receipts().containsKey("existing_reward"),"operator repair must not erase receipts");
+        scene.block("manual_test","blocked",2L);var resumed=SceneOperatorService.resume(helper.getLevel(),scene.id(),"repair complete","TestOperator");helper.assertTrue(resumed.success()&&scene.state()==SceneState.RUNNING,"operator should resume repaired blocked scene");
+        SceneLifecycleIntegration.onQuestTerminal(helper.getLevel(),player.getUUID(),VillagerRetaliation.id("operator_test_quest"),"abandoned");helper.assertValueEqual(scene.state(),SceneState.CANCELLED,"quest abandonment scene state");helper.assertTrue(data.auditEntries().stream().filter(a->a.sceneId().equals(scene.id())).count()>=2&&scene.receipts().containsKey("existing_reward"),"operator mutations should append audit entries without deleting history");helper.succeed();
     }
 
     private static RuntimeTypeDescriptor descriptor(String path, Set<net.minecraft.resources.ResourceLocation> aliases) {

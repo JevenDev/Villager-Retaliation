@@ -140,7 +140,7 @@ public record VillagerActionDefinition(
 
         boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
-        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind.isQuestFact()) && !hasExplicitQuestId) {
+        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.START_SCENE || kind.isQuestFact()) && !hasExplicitQuestId) {
             questId = defaultQuestId;
         }
         QuestAction questAction = QuestAction.bySerializedName(

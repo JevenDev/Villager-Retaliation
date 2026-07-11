@@ -21,7 +21,7 @@ public final class SceneLaunchService {
             return LaunchResult.rejected("unknown compiled scene " + action.sceneId());
         }
         return launcher.launch(new LaunchRequest(context.level().getServer(), action.sceneId(), action.sceneOperationId(),
-                action.waitForScene(), context.player().getUUID(), context.villager().getUUID()));
+                action.waitForScene(), context.player().getUUID(), context.villager().getUUID(), action.questId()));
     }
 
     public static void install(Launcher implementation) {
@@ -36,7 +36,8 @@ public final class SceneLaunchService {
     }
 
     public record LaunchRequest(net.minecraft.server.MinecraftServer server, ResourceLocation sceneId,
-                                String operationId, boolean waitForResult, UUID playerId, UUID providerId) {
+                                String operationId, boolean waitForResult, UUID playerId, UUID providerId,
+                                ResourceLocation questId) {
     }
 
     public record LaunchResult(boolean accepted, boolean created, UUID instanceId, String diagnostic) {

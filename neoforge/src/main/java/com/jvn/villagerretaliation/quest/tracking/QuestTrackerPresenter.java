@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.scene.SceneJournalPresenter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,7 +30,8 @@ public final class QuestTrackerPresenter {
                 resolveText(input.player(), input.title(), input.replacements()),
                 resolveText(input.player(), new QuestDefinition.SelectedText(step.text(), step.textKey()), input.replacements()),
                 resolveText(input.player(), new QuestDefinition.SelectedText(definition.description(), definition.descriptionKey()), input.replacements()),
-                metadataText(input.player(), step.metadata(), input.replacements(), input.status(), input.issuer()),
+                appendSceneStatus(metadataText(input.player(), step.metadata(), input.replacements(), input.status(), input.issuer()),
+                        SceneJournalPresenter.status(input.player(), definition.id())),
                 Mth.clamp(input.progress(), 0.0F, 1.0F),
                 input.showProgress(),
                 input.state().name().toLowerCase(Locale.ROOT),
@@ -42,6 +44,11 @@ public final class QuestTrackerPresenter {
                 input.objectiveSteps(),
                 false,
                 false);
+    }
+
+    private static String appendSceneStatus(String metadata,String sceneStatus){
+        if(sceneStatus==null||sceneStatus.isBlank())return metadata;
+        return metadata==null||metadata.isBlank()?sceneStatus:metadata+" • "+sceneStatus;
     }
 
     public static String syncSignature(

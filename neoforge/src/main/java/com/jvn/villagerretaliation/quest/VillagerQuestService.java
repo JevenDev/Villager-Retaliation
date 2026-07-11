@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.quest.conditions.QuestAvailabilityService;
 import com.jvn.villagerretaliation.quest.runtime.QuestStageBranchOptionIds;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.quest.runtime.QuestActionSequenceRunner;
+import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
@@ -1306,6 +1307,7 @@ public final class VillagerQuestService {
             }
 
             QuestLifecycleService.expire(entry.questId(), entry.progress(), gameTime, false);
+            SceneLifecycleIntegration.onQuestTerminal(level, entry.playerId(), entry.questId(), "expired");
             if (definition != null) {
                 deferLifecycleEvent(level, definition, entry.progress(), QuestDefinition.TriggerEvent.EXPIRED);
             }
@@ -1387,6 +1389,7 @@ public final class VillagerQuestService {
         boolean consume = definition.rules().consumeOnAbandonment()
                 || definition.rules().abandonment() == QuestDefinition.AbandonmentMode.REMOVE_FOREVER;
         QuestLifecycleService.abandon(definition.id(), progress, level.getGameTime(), consume);
+        SceneLifecycleIntegration.onQuestTerminal(level, player.getUUID(), definition.id(), "abandoned");
         boolean deferred = deferLifecycleEvent(
                 level, definition, progress, QuestDefinition.TriggerEvent.ABANDONED);
         com.jvn.villagerretaliation.party.PartyService.getPartyForPlayer(level, player.getUUID())
@@ -2533,6 +2536,7 @@ public final class VillagerQuestService {
                 progress,
                 context.level().getGameTime(),
                 definition.rules().consumeOnCompletion());
+        SceneLifecycleIntegration.onQuestTerminal(context.level(), context.player().getUUID(), definition.id(), "completed");
         markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_COMPLETED_FACT, "completed");
         recordScopedCompletion(context, definition);
         lockBranchQuests(context, definition, QuestDefinition.BranchLockEvent.COMPLETED);
@@ -2605,6 +2609,7 @@ public final class VillagerQuestService {
                     progress,
                     completingContext.level().getGameTime(),
                     definition.rules().consumeOnCompletion());
+            SceneLifecycleIntegration.onQuestTerminal(completingContext.level(), enrollment.playerId(), definition.id(), "completed");
             ServerPlayer player = completingContext.level().getServer().getPlayerList().getPlayer(enrollment.playerId());
             Villager provider = findLoadedVillager(completingContext.level().getServer(), shared.sourceVillagerId());
             if (player == null || provider == null || player.serverLevel() != provider.level()) {
@@ -2711,6 +2716,7 @@ public final class VillagerQuestService {
         boolean consume = definition.rules().consumeOnAbandonment()
                 || definition.rules().abandonment() == QuestDefinition.AbandonmentMode.REMOVE_FOREVER;
         QuestLifecycleService.abandon(definition.id(), progress, context.level().getGameTime(), consume);
+        SceneLifecycleIntegration.onQuestTerminal(context.level(), context.player().getUUID(), definition.id(), "abandoned");
         com.jvn.villagerretaliation.party.PartyService
                 .getPartyForPlayer(context.level(), context.player().getUUID())
                 .ifPresent(party -> PartyQuestService.detachQuest(
@@ -3787,6 +3793,7 @@ public final class VillagerQuestService {
         }
 
         QuestLifecycleService.expire(definition.id(), progress, gameTime, expiration.consume());
+        SceneLifecycleIntegration.onQuestTerminal(player.serverLevel(), player.getUUID(), definition.id(), "expired");
         if (player.level() instanceof ServerLevel level) {
             markQuestLifecycleFact(level, player, definition, QUEST_EXPIRED_FACT, "expired");
         }
@@ -4259,6 +4266,7 @@ public final class VillagerQuestService {
         }
 
         QuestLifecycleService.fail(definition.id(), progress, context.level().getGameTime(), reason);
+        SceneLifecycleIntegration.onQuestTerminal(context.level(), context.player().getUUID(), definition.id(), "failed");
         com.jvn.villagerretaliation.party.PartyService
                 .getPartyForPlayer(context.level(), context.player().getUUID())
                 .ifPresent(party -> PartyQuestService.detachQuest(

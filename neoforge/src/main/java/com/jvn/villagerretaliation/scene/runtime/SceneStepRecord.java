@@ -54,6 +54,7 @@ public final class SceneStepRecord {
     public void putDurableValue(String key, String value) {
         if (key != null && !key.isBlank() && value != null) this.durableValues.put(key, value);
     }
+    public void resetForRetry() { this.status=StepExecutionStatus.PENDING;this.failureCode="";this.wakeTime=0L; }
 
     public CompoundTag save() {
         CompoundTag tag = new CompoundTag();

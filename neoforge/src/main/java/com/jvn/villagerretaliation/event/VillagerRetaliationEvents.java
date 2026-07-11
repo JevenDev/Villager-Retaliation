@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.scene.SceneRuntime;
 import com.jvn.villagerretaliation.scene.encounter.EncounterService;
+import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
@@ -118,6 +119,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            SceneLifecycleIntegration.onPlayerConnection(player);
             VillagerQuestService.clearRuntimeState(player);
             VillagerQuestService.attachPendingPartyQuests(player);
             VillagerReputationNetworking.sendServerConfig(player);
@@ -239,6 +241,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onLivingDeath(LivingDeathEvent event) {
         EncounterService.onDeath(event.getEntity());
+        SceneLifecycleIntegration.onActorDeath(event.getEntity());
         if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
             VillagerRetaliationVillagerCombatUtil.resolveAttacker(player, event.getSource())
                     .filter(AbstractVillager.class::isInstance)
@@ -341,6 +344,7 @@ public final class VillagerRetaliationEvents {
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         if (!event.getLevel().isClientSide()) {
             EncounterService.onEntityJoin(event.getEntity());
+            SceneLifecycleIntegration.onEntityReturn(event.getEntity());
         }
         VillagerNaturalJobArmor.onEntityJoinLevel(event);
         VillagerRetaliationHandler.onEntityJoinLevel(event);
