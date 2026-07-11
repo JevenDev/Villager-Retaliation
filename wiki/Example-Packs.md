@@ -1,5 +1,9 @@
 # Example Packs
 
+## Persistent cinematic gate ambush
+
+`example-packs/cinematic-gate-ambush/` is the complete beta.13 scene-orchestration example: two named villagers, player/party ownership, a recorded choice branch, movement, dialogue, a persisted wait, controlled encounter scaling and cleanup, quest completion/failure, and provider-unload recovery.
+
 The repo already includes a full starter datapack you can copy from:
 
 ```text

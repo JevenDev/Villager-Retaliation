@@ -1,0 +1,112 @@
+{
+  "schema": "villagerretaliation:quest/v2",
+  "id": "gate_story:gate_ambush",
+  "metadata": {
+    "title": "Ambush at the Gate",
+    "description": "Escort Captain Mara and Scout Tovin to defend the village gate.",
+    "questline": "gate_watch",
+    "tags": ["example", "persistent_scene"]
+  },
+  "provider": {
+    "type": "villagerretaliation:villager",
+    "filters": { "professions": ["minecraft:armorer"] }
+  },
+  "availability": {
+    "repeatable": false,
+    "max_completions": 1,
+    "locked_to_villager": true,
+    "cross_villager_compatible": true,
+    "abandonment": "allow_repickup"
+  },
+  "entry_stage": "briefing",
+  "stages": [
+    {
+      "id": "briefing",
+      "title": "Defend the gate",
+      "description": "Choose an approach and follow the watch to the gate.",
+      "objectives": [],
+      "dialogue": {
+        "offer": {
+          "label": "Ambush at the Gate",
+          "request": "question",
+          "lines": ["Tovin saw movement beyond the gate. How should we approach?"] ,
+          "responses": [
+            { "id": "decide", "label": "Discuss the approach.", "scene": "decision" }
+          ]
+        }
+      },
+      "scenes": [
+        {
+          "id": "decision",
+          "lines": ["Mara waits for your call."],
+          "responses": [
+            {
+              "id": "bold",
+              "label": "Move quickly and meet them at the gate.",
+              "scene": "bold_confirm",
+              "actions": [
+                { "type": "quest", "action": "start" }
+              ]
+            },
+            {
+              "id": "cautious",
+              "label": "Advance carefully and let Tovin scout.",
+              "scene": "cautious_confirm",
+              "actions": [
+                { "type": "quest", "action": "start" }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "bold_confirm",
+          "lines": ["Mara nods. The watch will advance at once."],
+          "responses": [
+            {
+              "id": "bold",
+              "label": "To the gate.",
+              "stage": "defending",
+              "actions": [
+                { "type": "start_scene", "scene": "gate_story:gate_ambush", "operation_id": "gate_ambush_v1", "wait_for_result": true }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "cautious_confirm",
+          "lines": ["Tovin slips ahead while Mara keeps the party together."],
+          "responses": [
+            {
+              "id": "cautious",
+              "label": "Advance carefully.",
+              "stage": "defending",
+              "actions": [
+                { "type": "start_scene", "scene": "gate_story:gate_ambush", "operation_id": "gate_ambush_v1", "wait_for_result": true }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "defending",
+      "title": "Hold the gate",
+      "description": "The persistent scene is coordinating the defense.",
+      "objectives": [],
+      "dialogue": {
+        "reminder": {
+          "lines": ["Stay with the watch. The scene journal shows what it is waiting for."]
+        },
+        "turn_in": {
+          "lines": ["The gate is safe. The scene will close this quest when cleanup is durable."]
+        }
+      }
+    }
+  ],
+  "ui": {
+    "title": "Ambush at the Gate",
+    "tracker_text": "Follow Captain Mara and Scout Tovin to the gate.",
+    "icon": "minecraft:iron_sword",
+    "color": "#9b4f3f"
+  }
+}

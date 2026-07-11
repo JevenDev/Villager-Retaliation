@@ -17,10 +17,13 @@ import com.jvn.villagerretaliation.scene.executor.EncounterStepExecutors;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -112,6 +115,7 @@ public final class SceneRuntime {
             UUID entityId = switch (actor.bindingSource()) {
                 case OWNER_PLAYER -> playerId;
                 case QUEST_PROVIDER -> providerId;
+                case UUID, PARTY_MEMBER -> parseUuid(actor.bindingReference());
                 default -> null;
             };
             Entity entity = findEntity(server, entityId);
@@ -120,9 +124,38 @@ public final class SceneRuntime {
                         actor.bindingSource() == SceneActorDeclaration.BindingSource.QUEST_PROVIDER
                                 ? VillagerRetaliation.id("villager") : actor.actorType(),
                         entity.level().dimension().location(), entity.blockPosition(), entity.getDisplayName().getString(), true));
+            } else if (entityId != null) {
+                result.put(actor.alias(), new SceneActorBinding(actor.alias(), actor.actorType(), entityId.toString(), entityId,
+                        actor.actorType(), null, null, Map.of(), 1L, SceneActorBinding.BindingState.MISSING, List.of()));
+            } else if (actor.bindingSource() == SceneActorDeclaration.BindingSource.MARKER) {
+                SceneActorBinding marker = markerBinding(actor);
+                if (marker != null) result.put(actor.alias(), marker);
+            } else if (actor.bindingSource() == SceneActorDeclaration.BindingSource.UNBOUND
+                    && actor.replacementPolicy() == SceneActorDeclaration.ReplacementPolicy.OPERATOR_REBINDABLE) {
+                result.put(actor.alias(), new SceneActorBinding(actor.alias(), actor.actorType(), "unbound:" + actor.alias(), null,
+                        actor.actorType(), null, null, actor.filters(), 1L, SceneActorBinding.BindingState.MISSING, List.of()));
             }
         }
         return Map.copyOf(result);
+    }
+
+    private static SceneActorBinding markerBinding(SceneActorDeclaration actor) {
+        ResourceLocation dimension = ResourceLocation.tryParse(actor.filters().getOrDefault("dimension", ""));
+        try {
+            if (dimension == null || !actor.filters().containsKey("x") || !actor.filters().containsKey("y") || !actor.filters().containsKey("z")) return null;
+            BlockPos position = new BlockPos(Integer.parseInt(actor.filters().get("x")), Integer.parseInt(actor.filters().get("y")),
+                    Integer.parseInt(actor.filters().get("z")));
+            String identity = actor.bindingReference().isBlank() ? dimension + "@" + position.toShortString() : actor.bindingReference();
+            return new SceneActorBinding(actor.alias(), actor.actorType(), identity, null, VillagerRetaliation.id("marker"),
+                    dimension, position, actor.filters(), 1L, SceneActorBinding.BindingState.SNAPSHOT, List.of());
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private static UUID parseUuid(String value) {
+        try { return value == null || value.isBlank() ? null : UUID.fromString(value); }
+        catch (IllegalArgumentException ignored) { return null; }
     }
 
     private static Entity findEntity(MinecraftServer server, UUID id) {

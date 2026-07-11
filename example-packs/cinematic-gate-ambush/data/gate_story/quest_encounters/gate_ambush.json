@@ -1,0 +1,16 @@
+{
+  "schema": "villagerretaliation:encounter/v1",
+  "id": "gate_story:gate_ambush",
+  "version": 1,
+  "controller": "villagerretaliation:controlled",
+  "members": [
+    { "entity": "minecraft:zombie", "count": 3 }
+  ],
+  "extra_per_player": 1,
+  "max_party_size": 4,
+  "placement_attempts": 16,
+  "spawn_radius": 8,
+  "respawn_policy": "missing_if_loaded",
+  "cleanup_policy": "remove_survivors",
+  "completion_condition": "all_defeated"
+}

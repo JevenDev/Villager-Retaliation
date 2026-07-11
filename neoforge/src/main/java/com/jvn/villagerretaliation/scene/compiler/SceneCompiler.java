@@ -31,6 +31,10 @@ public final class SceneCompiler {
     }
 
     public static CompileResult compile(SceneResource resource) {
+        return compile(resource, null);
+    }
+
+    public static CompileResult compile(SceneResource resource, Set<ResourceLocation> availableEncounterTemplates) {
         VillagerRetaliationRegistries.freezeForDatapackCompilation();
         List<SceneDiagnostic> diagnostics = new ArrayList<>();
         if (resource == null) return new CompileResult(null, List.of(error("scene.missing", "", "scene resource is missing")));
@@ -70,7 +74,7 @@ public final class SceneCompiler {
             for (String alias : step.actors()) if (!actors.containsKey(alias)) {
                 diagnostics.add(error("scene.step.actor", "steps." + step.id() + ".actors", "unknown actor alias " + alias));
             }
-            validateEncounterReference(step, diagnostics);
+            validateEncounterReference(step, availableEncounterTemplates, diagnostics);
             try {
                 Object parsed = descriptor.parser().parse(step.data());
                 for (String message : descriptor.validator().validate(parsed)) {
@@ -100,6 +104,14 @@ public final class SceneCompiler {
             if (!step.terminal() && step.transitions().isEmpty() && step.failureStep().isBlank()) {
                 diagnostics.add(error("scene.path.dead_end", "steps." + step.id(), "non-terminal step has no transition"));
             }
+            if (Set.of("wait_encounter", "cancel_encounter", "cleanup_encounter").contains(step.type().getPath())) {
+                String startId = string(step.parameters(), "encounter_step");
+                CompiledScene.CompiledStep start = steps.get(startId);
+                if (!startId.isBlank() && (start == null || !start.type().getPath().equals("start_encounter"))) {
+                    diagnostics.add(error("scene.encounter.start_step", "steps." + step.id() + ".data.encounter_step",
+                            "encounter_step must reference an existing start_encounter step"));
+                }
+            }
         }
 
         Set<String> reachable = reachable(resource.entryStep(), steps);
@@ -120,7 +132,8 @@ public final class SceneCompiler {
         return new CompileResult(compiled, List.copyOf(diagnostics));
     }
 
-    private static void validateEncounterReference(SceneResource.StepResource step, List<SceneDiagnostic> diagnostics) {
+    private static void validateEncounterReference(SceneResource.StepResource step,
+            Set<ResourceLocation> availableEncounterTemplates, List<SceneDiagnostic> diagnostics) {
         if (!Set.of("start_encounter", "wait_encounter", "cancel_encounter", "cleanup_encounter")
                 .contains(step.type().getPath())) return;
         String value = string(step.data(), "template", "encounter_template");
@@ -128,9 +141,15 @@ public final class SceneCompiler {
             ResourceLocation id = ResourceLocation.tryParse(value);
             if (id == null) diagnostics.add(error("scene.encounter.missing", "steps." + step.id() + ".data.template",
                     "start_encounter requires a namespaced encounter template"));
-            else if (VillagerRetaliationRegistries.ENCOUNTER_TEMPLATES.get(id).isEmpty()) {
+            else if (availableEncounterTemplates != null && !availableEncounterTemplates.contains(id)) {
                 diagnostics.add(error("scene.encounter.unknown", "steps." + step.id() + ".data.template",
                         "unknown encounter template " + id));
+            }
+        } else {
+            String encounterStep = string(step.data(), "encounter_step");
+            if (!encounterStep.isBlank() && encounterStep.equals(step.id())) {
+                diagnostics.add(error("scene.encounter.self_reference", "steps." + step.id() + ".data.encounter_step",
+                        "encounter_step must reference the stable id of a start_encounter step"));
             }
         }
     }

@@ -874,6 +874,8 @@ let unsavedShakeTimer = null;
 let exportIssueDialogResolve = null;
 let questRegistryMetadata = null;
 let questV2Schema = null;
+let sceneV1Schema = null;
+let encounterV1Schema = null;
 let questMetadataLoadStatus = "loading";
 
 const els = {
@@ -1032,19 +1034,25 @@ function renderIcons() {
 async function loadQuestAuthoringMetadata() {
   questMetadataLoadStatus = "loading";
   try {
-    const [metadataResponse, schemaResponse] = await Promise.all([
+    const [metadataResponse, schemaResponse, sceneSchemaResponse, encounterSchemaResponse] = await Promise.all([
       fetch("quest-registry-metadata.json", { cache: "no-store" }),
-      fetch("quest-v2.schema.json", { cache: "no-store" })
+      fetch("quest-v2.schema.json", { cache: "no-store" }),
+      fetch("scene-v1.schema.json", { cache: "no-store" }),
+      fetch("encounter-v1.schema.json", { cache: "no-store" })
     ]);
-    if (!metadataResponse.ok || !schemaResponse.ok) {
+    if (!metadataResponse.ok || !schemaResponse.ok || !sceneSchemaResponse.ok || !encounterSchemaResponse.ok) {
       throw new Error("Quest metadata fetch failed.");
     }
     questRegistryMetadata = await metadataResponse.json();
     questV2Schema = await schemaResponse.json();
+    sceneV1Schema = await sceneSchemaResponse.json();
+    encounterV1Schema = await encounterSchemaResponse.json();
     questMetadataLoadStatus = "ready";
   } catch {
     questRegistryMetadata = null;
     questV2Schema = null;
+    sceneV1Schema = null;
+    encounterV1Schema = null;
     questMetadataLoadStatus = "error";
   }
   invalidateCurrentViewSnapshot();
@@ -3516,6 +3524,60 @@ function questModuleIssueDetail(entry) {
   return null;
 }
 
+function sceneResourceIssueDetail(path, resource) {
+  const isScene = path.includes("/quest_scenes/");
+  const schema = isScene ? sceneV1Schema : encounterV1Schema;
+  const schemaId = isScene ? "villagerretaliation:scene/v1" : "villagerretaliation:encounter/v1";
+  const required = Array.isArray(schema?.required)
+    ? schema.required
+    : isScene ? ["schema", "id", "ownership", "entry_step", "actors", "steps"] : ["schema", "id", "members"];
+  if (!resource || typeof resource !== "object" || Array.isArray(resource)) {
+    return issueDetail(isScene ? "Scene resource" : "Encounter resource", "a JSON object", resource, "json-preview");
+  }
+  if (resource.schema !== schemaId) {
+    return issueDetail(isScene ? "Scene schema" : "Encounter schema", schemaId, resource.schema, "json-preview");
+  }
+  const missing = required.find((key) => resource[key] === undefined);
+  if (missing) return issueDetail(`${isScene ? "Scene" : "Encounter"} ${missing}`, "a required field", resource[missing], "json-preview");
+  if (!isValidResourceLocation(resource.id, { requireNamespace: true })) {
+    return issueDetail(`${isScene ? "Scene" : "Encounter"} id`, "a namespaced resource location", resource.id, "json-preview");
+  }
+  if (!isScene) {
+    if (!Array.isArray(resource.members) || resource.members.length === 0) {
+      return issueDetail("Encounter members", "at least one allowlisted entity member", resource.members, "json-preview");
+    }
+    const invalidMember = resource.members.find((member) => !isValidResourceLocation(member?.entity, { requireNamespace: true }) || !Number.isInteger(member?.count) || member.count < 1);
+    return invalidMember ? issueDetail("Encounter member", "a namespaced entity and positive integer count", invalidMember, "json-preview") : null;
+  }
+
+  const actors = Array.isArray(resource.actors) ? resource.actors : [];
+  const steps = Array.isArray(resource.steps) ? resource.steps : [];
+  const aliases = actors.map((actor) => actor?.alias).filter(Boolean);
+  const stepIds = steps.map((step) => step?.id).filter(Boolean);
+  const duplicateAlias = firstDuplicate(aliases);
+  if (duplicateAlias) return issueDetail("Scene actor aliases", "unique aliases", duplicateAlias, "json-preview");
+  const duplicateStep = firstDuplicate(stepIds);
+  if (duplicateStep) return issueDetail("Scene step ids", "unique stable ids", duplicateStep, "json-preview");
+  if (!stepIds.includes(resource.entry_step)) return issueDetail("Scene entry step", "one of the authored stable step ids", resource.entry_step, "json-preview");
+  const actorTypeIds = questRegistryIdSet("actor_types", { includeAliases: true });
+  const badActorType = metadataStatusReady() && actorTypeIds.size > 0
+    ? actors.find((actor) => actor?.type && !actorTypeIds.has(actor.type))?.type
+    : "";
+  if (badActorType) return issueDetail("Scene actor type", `a registered actor type`, badActorType, "json-preview");
+  const stepTypeIds = questRegistryIdSet("scene_steps", { includeAliases: true });
+  const badStepType = metadataStatusReady() && stepTypeIds.size > 0
+    ? steps.find((step) => step?.type && !stepTypeIds.has(step.type))?.type
+    : "";
+  if (badStepType) return issueDetail("Scene step type", "a registered scene step type", badStepType, "json-preview");
+  const references = steps.flatMap((step) => [step?.next, step?.failure_step, ...Object.values(step?.transitions || {})]).filter(Boolean);
+  const missingReference = references.find((id) => !stepIds.includes(id));
+  return missingReference ? issueDetail("Scene transition", "an existing stable step id", missingReference, "json-preview") : null;
+}
+
+function metadataStatusReady() {
+  return questMetadataLoadStatus === "ready";
+}
+
 function firstQuestRegistryMiss(module, registry, keys) {
   if (questMetadataLoadStatus !== "ready") return "";
   const allowed = questRegistryIdSet(registry, { includeAliases: true });
@@ -4812,6 +4874,20 @@ function validate() {
   }
   if (state.quests.v1Imports.length > 0) {
     addCheck(checks, "info", "Quest migration", `${state.quests.v1Imports.length} legacy quest import${state.quests.v1Imports.length === 1 ? "" : "s"} preserved with migration suggestions.`);
+  }
+
+  for (const [path, source] of Object.entries(state.extraFiles)) {
+    if (!/^data\/[^/]+\/(?:quest_scenes|quest_encounters)\/.+\.json$/.test(path)) continue;
+    let resource;
+    try {
+      resource = JSON.parse(source);
+    } catch {
+      addCheck(checks, "error", "Scene resource JSON", `${path} is not valid JSON.`, { paths: [path] });
+      continue;
+    }
+    const detail = sceneResourceIssueDetail(path, resource);
+    if (!detail) continue;
+    addCheck(checks, detail.severity || "error", path.includes("/quest_scenes/") ? "Scene resource" : "Encounter resource", detail.message, { paths: [path] });
   }
 
   for (const entry of state.notifications.notifications) {

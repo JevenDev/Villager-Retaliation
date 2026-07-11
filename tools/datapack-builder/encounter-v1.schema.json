@@ -1,0 +1,101 @@
+{
+  "type": "object",
+  "title": "Controlled encounter template v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jeven.dev/villager-retaliation/schema/encounter-v1.schema.json",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id",
+    "members"
+  ],
+  "properties": {
+    "schema": {
+      "const": "villagerretaliation:encounter/v1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "controller": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "enum": [
+        "villagerretaliation:controlled"
+      ]
+    },
+    "members": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Encounter member",
+        "additionalProperties": false,
+        "required": [
+          "entity"
+        ],
+        "properties": {
+          "entity": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          }
+        }
+      }
+    },
+    "extra_per_player": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "max_party_size": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "placement_attempts": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 64
+    },
+    "spawn_radius": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 32
+    },
+    "respawn_policy": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "never",
+        "missing_if_loaded",
+        "until_first_defeat"
+      ]
+    },
+    "cleanup_policy": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "remove_survivors",
+        "preserve_in_world"
+      ]
+    },
+    "completion_condition": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "all_defeated",
+        "all_gone"
+      ]
+    }
+  }
+}

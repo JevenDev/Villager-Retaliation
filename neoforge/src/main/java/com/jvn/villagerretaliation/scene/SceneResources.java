@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.scene;
 import com.jvn.villagerretaliation.scene.compiler.SceneCompiler;
 import com.jvn.villagerretaliation.scene.compiler.SceneDiagnostic;
 import com.jvn.villagerretaliation.scene.compiler.SceneParser;
+import com.jvn.villagerretaliation.scene.encounter.EncounterResources;
 import com.jvn.villagerretaliation.scene.model.CompiledScene;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import java.util.ArrayList;
@@ -11,6 +12,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 
@@ -56,13 +59,15 @@ public final class SceneResources {
             if (current.server() == server) return current;
             Map<ResourceLocation, CompiledScene> scenes = new LinkedHashMap<>();
             Map<ResourceLocation, List<SceneDiagnostic>> diagnostics = new LinkedHashMap<>();
+            Set<ResourceLocation> encounterTemplates = EncounterResources.templates(server).stream()
+                    .map(template -> template.id()).collect(Collectors.toUnmodifiableSet());
             for (DatapackResourceLoader.JsonResource resource : DatapackResourceLoader.jsonResources(server, RESOURCE_ROOT)) {
                 ResourceLocation source = resource.location();
                 var root = DatapackResourceLoader.readObject(source, "quest scene", resource.resource()).orElse(null);
                 SceneParser.ParseResult parsed = SceneParser.parse(source, root);
                 List<SceneDiagnostic> combined = new ArrayList<>(parsed.diagnostics());
                 if (parsed.resource() != null) {
-                    SceneCompiler.CompileResult compiled = SceneCompiler.compile(parsed.resource());
+                    SceneCompiler.CompileResult compiled = SceneCompiler.compile(parsed.resource(), encounterTemplates);
                     combined.addAll(compiled.diagnostics());
                     if (compiled.scene() != null) scenes.put(compiled.scene().id(), compiled.scene());
                     diagnostics.put(parsed.resource().id(), List.copyOf(combined));

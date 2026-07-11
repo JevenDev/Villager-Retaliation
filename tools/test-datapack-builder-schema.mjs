@@ -355,6 +355,33 @@ function testBackendPathNormalization(app) {
   assert(Object.hasOwn(questNamespaceRoot, "data/villagerretaliation/quests/example/errand.json"), "Namespace-root quest import was not lifted under data/.");
 }
 
+function testSceneResourceRoundTrip(app) {
+  app.state = app.createInitialState();
+  const scenePath = "data/storypack/quest_scenes/gate_ambush.json";
+  const encounterPath = "data/storypack/quest_encounters/gate_ambush.json";
+  const scene = {
+    schema: "villagerretaliation:scene/v1",
+    id: "storypack:gate_ambush",
+    ownership: "player",
+    entry_step: "wait",
+    actors: [],
+    steps: [{ id: "wait", type: "villagerretaliation:wait_ticks", data: { ticks: 20 }, next: "done" }, { id: "done", type: "villagerretaliation:scene_complete" }]
+  };
+  const encounter = {
+    schema: "villagerretaliation:encounter/v1",
+    id: "storypack:gate_ambush",
+    members: [{ entity: "minecraft:zombie", count: 3 }]
+  };
+  assert(app.ingestKnownJson(scenePath, JSON.stringify(scene)), "Scene resource import failed.");
+  assert(app.ingestKnownJson(encounterPath, JSON.stringify(encounter)), "Encounter resource import failed.");
+  assert(app.backend.importedKnownKind(app.state, scenePath) === "quest_scenes", "Scene resource kind was not detected.");
+  assert(app.backend.importedKnownKind(app.state, encounterPath) === "quest_encounters", "Encounter resource kind was not detected.");
+  const files = app.generatedFiles();
+  assert(JSON.stringify(jsonFile(files, scenePath)) === JSON.stringify(scene), "Scene resource changed during export.");
+  assert(JSON.stringify(jsonFile(files, encounterPath)) === JSON.stringify(encounter), "Encounter resource changed during export.");
+  assert(!app.applyEditedFile(scenePath, JSON.stringify({ ...scene, schema: "wrong" })), "Invalid scene schema edit was accepted.");
+}
+
 const app = createAppHarness();
 testTypedFolderOutput(app);
 testTypedImportAndProfessionDefaults(app);
@@ -366,5 +393,6 @@ testCheckedInTemplateMatchesBuilder(app);
 testAllSurfaceGeneration(app);
 testSurfaceImportsAndEdits(app);
 testBackendPathNormalization(app);
+testSceneResourceRoundTrip(app);
 
 console.log("Datapack builder schema/import smoke test passed.");
