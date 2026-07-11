@@ -1035,7 +1035,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 && (stack.is(Items.STICK)
                 || stack.is(Items.APPLE)
                 || stack.is(ItemTags.SAPLINGS)
-                || stack.is(Items.MANGROVE_PROPAGULE));
+                || stack.is(Items.MANGROVE_PROPAGULE)
+                || stack.is(Items.CRIMSON_FUNGUS)
+                || stack.is(Items.WARPED_FUNGUS));
     }
 
     private WorkResult tryBonemealSapling(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -1254,7 +1256,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private static boolean isSaplingBlock(ServerLevel level, BlockPos pos) {
-        return level.hasChunkAt(pos) && level.getBlockState(pos).is(BlockTags.SAPLINGS);
+        return level.hasChunkAt(pos) && isTreePlantingBlock(level.getBlockState(pos));
     }
 
     private static boolean isBonemealableSapling(ServerLevel level, BlockPos pos) {
@@ -1262,9 +1264,15 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return false;
         }
         BlockState state = level.getBlockState(pos);
-        return state.is(BlockTags.SAPLINGS)
+        return isTreePlantingBlock(state)
                 && state.getBlock() instanceof BonemealableBlock bonemealable
                 && bonemealable.isValidBonemealTarget(level, pos, state);
+    }
+
+    private static boolean isTreePlantingBlock(BlockState state) {
+        return state.is(BlockTags.SAPLINGS)
+                || state.is(Blocks.CRIMSON_FUNGUS)
+                || state.is(Blocks.WARPED_FUNGUS);
     }
 
     private static boolean hasBoneMealAvailable(Villager villager, HiredWorkContext context) {
@@ -1997,6 +2005,12 @@ public final class LoggingWorker extends AbstractBlockWorker {
         if (state.is(BlockTags.CHERRY_LOGS)) {
             return new ItemStack(Items.CHERRY_SAPLING);
         }
+        if (state.is(Blocks.CRIMSON_STEM) || state.is(Blocks.CRIMSON_HYPHAE)) {
+            return new ItemStack(Items.CRIMSON_FUNGUS);
+        }
+        if (state.is(Blocks.WARPED_STEM) || state.is(Blocks.WARPED_HYPHAE)) {
+            return new ItemStack(Items.WARPED_FUNGUS);
+        }
         return ItemStack.EMPTY;
     }
 
@@ -2363,9 +2377,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private static boolean isNaturalLeaf(BlockState state) {
-        return state.is(BlockTags.LEAVES)
+        return (state.is(BlockTags.LEAVES)
                 && (!state.hasProperty(BlockStateProperties.PERSISTENT)
-                || !state.getValue(BlockStateProperties.PERSISTENT));
+                || !state.getValue(BlockStateProperties.PERSISTENT)))
+                || state.is(Blocks.NETHER_WART_BLOCK)
+                || state.is(Blocks.WARPED_WART_BLOCK);
     }
 
     private static boolean hasRootedLog(ServerLevel level, List<BlockPos> logs) {
@@ -2383,7 +2399,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static boolean isNaturalTreeBase(BlockState state) {
         return state.is(BlockTags.DIRT)
                 || state.is(Blocks.MANGROVE_ROOTS)
-                || state.is(Blocks.MUDDY_MANGROVE_ROOTS);
+                || state.is(Blocks.MUDDY_MANGROVE_ROOTS)
+                || state.is(Blocks.CRIMSON_NYLIUM)
+                || state.is(Blocks.WARPED_NYLIUM);
     }
 
     private record LeafBridgeNode(BlockPos pos, int distance) {

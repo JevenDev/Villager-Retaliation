@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.work.logging.LoggingWorker;
+import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningWorker;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningHorizontalOptions;
@@ -4023,6 +4024,43 @@ public final class VillagerWorkerGameTests {
 
         helper.assertFalse(level.getBlockState(helper.absolutePos(rootLogRel)).is(BlockTags.MANGROVE_LOGS), "logger should recognize and harvest a mangrove trunk rooted above mangrove roots");
         helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.MANGROVE_LOG)), "mangrove drops should be stored as output");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void loggingWorkerHarvestsAndReplantsCrimsonFungi(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerLoggingCrimson");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        BlockPos rootStemRel = new BlockPos(4, 2, 3);
+        setBlock(helper, rootStemRel.below(), Blocks.CRIMSON_NYLIUM.defaultBlockState());
+        for (int y = 2; y <= 4; y++) {
+            setBlock(helper, new BlockPos(4, y, 3), Blocks.CRIMSON_STEM.defaultBlockState());
+        }
+        for (BlockPos rel : List.of(
+                new BlockPos(4, 5, 3),
+                new BlockPos(3, 5, 3),
+                new BlockPos(5, 5, 3),
+                new BlockPos(4, 5, 2),
+                new BlockPos(4, 5, 4))) {
+            setBlock(helper, rel, Blocks.NETHER_WART_BLOCK.defaultBlockState());
+        }
+
+        CompoundTag state = new CompoundTag();
+        state.putBoolean(HiredLoggingOptions.PLANT_SAPLINGS_TAG, true);
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(7, 6, 5), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
+        context.inventory().setItem(6, new ItemStack(Items.CRIMSON_FUNGUS));
+        LoggingWorker worker = new LoggingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 180, () ->
+                level.getBlockState(helper.absolutePos(rootStemRel)).is(Blocks.CRIMSON_FUNGUS));
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(rootStemRel)).is(Blocks.CRIMSON_FUNGUS), "logger should replant a harvested crimson fungus");
+        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.CRIMSON_STEM)), "crimson stem drops should be stored as output");
 
         villager.discard();
         helper.succeed();
