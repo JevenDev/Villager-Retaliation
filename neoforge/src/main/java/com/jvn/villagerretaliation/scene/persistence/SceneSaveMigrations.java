@@ -23,6 +23,9 @@ public final class SceneSaveMigrations {
                 }
                 data.putInt("SourceQuestDataVersion", QUEST_SAVE_BASE_VERSION);
                 version = 1;
+            } else if (version == 1) {
+                // Version 2 adds the structured Encounters list; absence means no owned encounters.
+                version = 2;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);

@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.scene.SceneResources;
 import com.jvn.villagerretaliation.scene.SceneRuntime;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
+import com.jvn.villagerretaliation.scene.encounter.EncounterResources;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.trade.SkillTradeResources;
@@ -52,6 +53,7 @@ public final class VillagerDataWarmup {
         DangerousStructureStoryResources.warm(server);
         VillagerQuestResources.warm(server);
         SceneResources.warm(server);
+        EncounterResources.warm(server);
         VillagerEventTriggerService.warm(server);
         VillagerPresetNameRegistry.warm(server);
         VillagerInteractionSavedData.get(server.overworld());
@@ -90,6 +92,7 @@ public final class VillagerDataWarmup {
         VillagerWorldTargetCache.clearCache();
         VillagerQuestResources.clearCache();
         SceneResources.clearCache();
+        EncounterResources.clearCache();
         VillagerEventTriggerService.clearCache();
         VillagerPresetNameRegistry.clearCache();
         VillageMembership.clearCache();

@@ -28,6 +28,10 @@ import com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt;
 import com.jvn.villagerretaliation.scene.runtime.SceneReceiptGuard;
 import com.jvn.villagerretaliation.scene.runtime.SceneRecoveryPolicy;
 import com.jvn.villagerretaliation.scene.executor.BuiltinSceneStepExecutors;
+import com.jvn.villagerretaliation.scene.encounter.EncounterInstance;
+import com.jvn.villagerretaliation.scene.encounter.EncounterResources;
+import com.jvn.villagerretaliation.scene.encounter.EncounterService;
+import com.jvn.villagerretaliation.scene.encounter.EncounterTemplate;
 import com.jvn.villagerretaliation.api.scene.SceneStepExecutors;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBindingService;
@@ -42,6 +46,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerPlayer;
@@ -217,7 +222,7 @@ public final class SceneRegistryGameTests {
         CompoundTag legacy = new CompoundTag();
         legacy.put("Scenes", new net.minecraft.nbt.ListTag());
         var migrated = SceneSaveMigrations.migrate(legacy, SceneSavedData.CURRENT_DATA_VERSION);
-        helper.assertTrue(migrated.targetVersion() == 1 && migrated.data().contains("Instances"),
+        helper.assertTrue(migrated.targetVersion() == 2 && migrated.data().contains("Instances"),
                 "legacy pre-release scene list should migrate explicitly from version zero");
         helper.succeed();
     }
@@ -395,6 +400,24 @@ public final class SceneRegistryGameTests {
         helper.getLevel().getChunk(target.getX()>>4,target.getZ()>>4);villager.moveTo(target.getX()+.5,target.getY(),target.getZ()+.5,0,0);SceneInstance loaded=SceneInstance.load(instance.save());
         var arrived=executor.reconcile(new SceneExecutionContext(helper.getLevel().getServer(),repository,loaded,definition,step,loaded.stepRecords().get("move"),2L,false));helper.assertValueEqual(arrived.outcome(),com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.APPLIED,"movement arrival after chunk return");
         villager.moveTo(start.getX()+.5,start.getY(),start.getZ()+.5,0,0);var timedOut=executor.reconcile(new SceneExecutionContext(helper.getLevel().getServer(),repository,instance,definition,step,record,41L,false));helper.assertValueEqual(timedOut.outcome(),com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.FAIL,"movement timeout failure transition");helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void encounterReloadOwnsOnlyItsMobsAndCleanupHonorsPolicy(GameTestHelper helper) {
+        EncounterTemplate remove=new EncounterTemplate(VillagerRetaliation.id("test_ambush"),1,VillagerRetaliation.id("controlled"),
+                List.of(new EncounterTemplate.Member(ResourceLocation.parse("minecraft:zombie"),2)),1,4,16,6,
+                EncounterTemplate.RespawnPolicy.NEVER,EncounterTemplate.CleanupPolicy.REMOVE_SURVIVORS,EncounterTemplate.CompletionCondition.ALL_DEFEATED);
+        EncounterTemplate preserve=new EncounterTemplate(VillagerRetaliation.id("test_world_ambush"),1,VillagerRetaliation.id("controlled"),
+                List.of(new EncounterTemplate.Member(ResourceLocation.parse("minecraft:zombie"),1)),0,4,16,6,
+                EncounterTemplate.RespawnPolicy.NEVER,EncounterTemplate.CleanupPolicy.PRESERVE_IN_WORLD,EncounterTemplate.CompletionCondition.ALL_DEFEATED);
+        EncounterResources.installTestTemplates(helper.getLevel().getServer(),List.of(remove,preserve));var definition=compiledValidScene();
+        UUID owner=UUID.randomUUID();Set<UUID> party=Set.of(owner,UUID.randomUUID(),UUID.randomUUID());SceneSavedData data=new SceneSavedData();SceneInstance scene=data.start(definition,"encounter_scene",new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,owner,null,null,""),null,party,Map.of(),0L).instance();BlockPos anchor=helper.absolutePos(new BlockPos(4,1,4));
+        var started=data.startEncounter(remove,scene,"ambush/start",helper.getLevel().dimension().location(),anchor,"normal");helper.assertTrue(started.created()&&!data.startEncounter(remove,scene,"ambush/start",helper.getLevel().dimension().location(),anchor,"normal").created(),"stable encounter operation should create one instance");
+        var spawn=EncounterService.reconcileSpawn(helper.getLevel().getServer(),data,started.encounter(),remove);helper.assertValueEqual(spawn.status(),EncounterService.Status.ACTIVE,"encounter spawn result");int owned=started.encounter().spawned().size();helper.assertTrue(owned==4,"party-size scaling should persist the deterministic expected count");
+        var unrelated=EntityType.ZOMBIE.create(helper.getLevel());helper.assertTrue(unrelated!=null,"unrelated zombie should create");unrelated.moveTo(anchor.getX()+.5,anchor.getY(),anchor.getZ()+.5,0,0);helper.getLevel().addFreshEntity(unrelated);
+        EncounterInstance loaded=EncounterInstance.load(started.encounter().save());EncounterService.reconcileSpawn(helper.getLevel().getServer(),data,loaded,remove);helper.assertTrue(loaded.spawned().size()==owned&&!loaded.spawned().contains(unrelated.getUUID()),"reload reconciliation must not duplicate mobs or count unrelated nearby mobs");helper.assertTrue(loaded.partySize()==3&&loaded.expectedCount()==4,"party scaling inputs should remain stable after reload");
+        EncounterService.cleanup(helper.getLevel().getServer(),data,started.encounter(),false);helper.assertTrue(started.encounter().state()==EncounterInstance.EncounterState.CLEANED,"abandonment cleanup should remove loaded owned survivors");
+        var preserved=data.startEncounter(preserve,scene,"ambush/preserve",helper.getLevel().dimension().location(),anchor,"normal").encounter();EncounterService.reconcileSpawn(helper.getLevel().getServer(),data,preserved,preserve);UUID survivor=preserved.spawned().iterator().next();EncounterService.cleanup(helper.getLevel().getServer(),data,preserved,false);helper.assertTrue(preserved.state()==EncounterInstance.EncounterState.RELEASED&&helper.getLevel().getEntity(survivor)!=null,"preserve policy should release surviving mobs into the world");helper.succeed();
     }
 
     private static RuntimeTypeDescriptor descriptor(String path, Set<net.minecraft.resources.ResourceLocation> aliases) {
