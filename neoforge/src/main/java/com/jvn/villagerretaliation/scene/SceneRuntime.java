@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
 import com.jvn.villagerretaliation.scene.runtime.SceneOwner;
 import com.jvn.villagerretaliation.scene.runtime.SceneScheduler;
+import com.jvn.villagerretaliation.scene.runtime.SceneStepEngine;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -29,6 +30,7 @@ public final class SceneRuntime {
     private SceneRuntime() { }
 
     public static void initialize(MinecraftServer server) {
+        installProcessor(SceneStepEngine::process);
         SceneLaunchService.install(SceneRuntime::launch);
         scheduler(server);
         SceneSavedData.get(server.overworld());
@@ -62,6 +64,7 @@ public final class SceneRuntime {
     public static void clearRuntimeState() {
         SCHEDULERS.clear();
         SceneLaunchService.install(null);
+        SceneStepEngine.clearRuntimeState();
     }
 
     private static SceneScheduler scheduler(MinecraftServer server) {

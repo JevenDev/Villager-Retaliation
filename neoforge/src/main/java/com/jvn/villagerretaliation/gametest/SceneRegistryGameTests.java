@@ -23,6 +23,10 @@ import com.jvn.villagerretaliation.scene.runtime.SceneOwner;
 import com.jvn.villagerretaliation.scene.runtime.SceneScheduler;
 import com.jvn.villagerretaliation.scene.runtime.SceneState;
 import com.jvn.villagerretaliation.scene.runtime.StepExecutionStatus;
+import com.jvn.villagerretaliation.scene.runtime.SceneExecutionContext;
+import com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt;
+import com.jvn.villagerretaliation.scene.runtime.SceneReceiptGuard;
+import com.jvn.villagerretaliation.scene.runtime.SceneRecoveryPolicy;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBindingService;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
@@ -248,6 +252,60 @@ public final class SceneRegistryGameTests {
         var incompatible = SceneCompiler.compile(SceneParser.parse(VillagerRetaliation.id("quest_scenes/test.json"), incompatibleJson).resource()).scene();
         helper.assertFalse(SceneDefinitionReconciler.reconcile(instance, incompatible).safe(),
                 "definition reload must block when an executed stable id changes type");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void operationReceiptsPreventDuplicateNonIdempotentEffects(GameTestHelper helper) {
+        var definition = compiledValidScene(); SceneSavedData data = new SceneSavedData(); UUID player = UUID.randomUUID();
+        SceneInstance instance = data.start(definition, "receipts",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,player,null,null,""),
+                null,Set.of(player),Map.of(),0L).instance();
+        var step=definition.steps().get(instance.currentStep());var record=instance.currentRecord(step.type());
+        int[] effects={0};
+        for(SceneOperationReceipt.Kind kind:List.of(SceneOperationReceipt.Kind.ITEM_GRANT,
+                SceneOperationReceipt.Kind.REPUTATION_CHANGE,SceneOperationReceipt.Kind.EXPERIENCE_GRANT,
+                SceneOperationReceipt.Kind.COUNTER_INCREMENT)){
+            SceneExecutionContext context=new SceneExecutionContext(helper.getLevel().getServer(),data,instance,definition,step,record,10L,true);
+            helper.assertValueEqual(SceneReceiptGuard.applyOnce(context,kind.name(),kind,()->effects[0]++,"semantic-test").status(),
+                    SceneReceiptGuard.Status.APPLIED,"first receipt application");
+            helper.assertValueEqual(SceneReceiptGuard.applyOnce(context,kind.name(),kind,()->effects[0]++,"semantic-test").status(),
+                    SceneReceiptGuard.Status.ALREADY_APPLIED,"repeated receipt application");
+        }
+        helper.assertTrue(effects[0]==4,"receipts should apply item, reputation, XP, and counter effects exactly once each");
+        SceneInstance loaded=SceneInstance.load(instance.save());
+        helper.assertTrue(loaded.receipts().size()==4&&loaded.receipts().values().stream().allMatch(r->r.state()==SceneOperationReceipt.ReceiptState.APPLIED),
+                "applied operation receipts should survive save/reload");
+        var loadedRecord=loaded.stepRecords().get(loaded.currentStep());
+        var loadedContext=new SceneExecutionContext(helper.getLevel().getServer(),data,loaded,definition,step,loadedRecord,12L,false);
+        SceneOperationReceipt ambiguous=loadedContext.prepareReceipt("ambiguous",SceneOperationReceipt.Kind.LOOT_GRANT);
+        helper.assertValueEqual(SceneReceiptGuard.applyOnce(loadedContext,"ambiguous",SceneOperationReceipt.Kind.LOOT_GRANT,()->effects[0]++,"").status(),
+                SceneReceiptGuard.Status.AMBIGUOUS_PREPARED,"ambiguous prepared receipt after reload");
+        helper.assertTrue(ambiguous.state()==SceneOperationReceipt.ReceiptState.PREPARED&&effects[0]==4,
+                "ambiguous recovery must block rather than duplicate an effect");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void everyIntermediateStepStateHasExplicitRecoveryDecision(GameTestHelper helper) {
+        helper.assertValueEqual(SceneRecoveryPolicy.decide(StepExecutionStatus.PENDING,
+                com.jvn.villagerretaliation.api.registry.ExtensionContracts.RecoveryMode.RECEIPT_REQUIRED,null,false),
+                SceneRecoveryPolicy.Decision.PREPARE,"pending recovery");
+        helper.assertValueEqual(SceneRecoveryPolicy.decide(StepExecutionStatus.PREPARED,
+                com.jvn.villagerretaliation.api.registry.ExtensionContracts.RecoveryMode.RECEIPT_REQUIRED,
+                SceneOperationReceipt.ReceiptState.PREPARED,false),SceneRecoveryPolicy.Decision.BLOCK,"ambiguous prepared recovery");
+        helper.assertValueEqual(SceneRecoveryPolicy.decide(StepExecutionStatus.PREPARED,
+                com.jvn.villagerretaliation.api.registry.ExtensionContracts.RecoveryMode.RECEIPT_REQUIRED,
+                SceneOperationReceipt.ReceiptState.APPLIED,false),SceneRecoveryPolicy.Decision.VERIFY,"prepared with applied receipt");
+        helper.assertValueEqual(SceneRecoveryPolicy.decide(StepExecutionStatus.RUNNING,
+                com.jvn.villagerretaliation.api.registry.ExtensionContracts.RecoveryMode.WORLD_RECONCILED,null,false),
+                SceneRecoveryPolicy.Decision.RECONCILE,"running world reconciliation");
+        helper.assertValueEqual(SceneRecoveryPolicy.decide(StepExecutionStatus.APPLIED,
+                com.jvn.villagerretaliation.api.registry.ExtensionContracts.RecoveryMode.RECEIPT_REQUIRED,null,false),
+                SceneRecoveryPolicy.Decision.VERIFY,"applied recovery");
+        helper.assertValueEqual(SceneRecoveryPolicy.decide(StepExecutionStatus.COMPLETED,
+                com.jvn.villagerretaliation.api.registry.ExtensionContracts.RecoveryMode.RECEIPT_REQUIRED,null,false),
+                SceneRecoveryPolicy.Decision.DONE,"completed recovery");
         helper.succeed();
     }
 

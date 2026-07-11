@@ -35,6 +35,7 @@ public final class SceneInstance {
     private String diagnostic = "";
     private CleanupStatus cleanupStatus = CleanupStatus.NOT_STARTED;
     private final List<PendingOperation> pendingOperations = new ArrayList<>();
+    private final Map<String, SceneOperationReceipt> receipts = new LinkedHashMap<>();
     private CompletionResult completionResult = CompletionResult.NONE;
 
     public SceneInstance(UUID id, CompiledScene definition, String operationId, SceneOwner owner, UUID owningQuestInstance,
@@ -79,6 +80,9 @@ public final class SceneInstance {
     public String failureCode(){return failureCode;} public String diagnostic(){return diagnostic;}
     public CleanupStatus cleanupStatus(){return cleanupStatus;} public List<PendingOperation> pendingOperations(){return List.copyOf(pendingOperations);}
     public CompletionResult completionResult(){return completionResult;}
+    public Map<String,SceneOperationReceipt> receipts(){return Map.copyOf(receipts);}
+    public SceneOperationReceipt prepareReceipt(String operationId,SceneOperationReceipt.Kind kind,long time){return receipts.computeIfAbsent(operationId,id->new SceneOperationReceipt(id,kind,time));}
+    public SceneOperationReceipt receipt(String operationId){return receipts.get(operationId);}
 
     public SceneStepRecord currentRecord(ResourceLocation type) { return stepRecords.computeIfAbsent(currentStep, id -> new SceneStepRecord(id, type)); }
     public void transition(SceneState next, long time) { state=next; updateGameTime=time; }
@@ -101,6 +105,7 @@ public final class SceneInstance {
         tag.putString("Diagnostic",diagnostic);tag.putString("CleanupStatus",cleanupStatus.name());tag.putString("CompletionResult",completionResult.name());
         ListTag bindings=new ListTag();actorBindings.values().forEach(v->bindings.add(v.save()));tag.put("ActorBindings",bindings);
         ListTag records=new ListTag();stepRecords.values().forEach(v->records.add(v.save()));tag.put("StepRecords",records);
+        ListTag receiptTags=new ListTag();receipts.values().forEach(v->receiptTags.add(v.save()));tag.put("Receipts",receiptTags);
         ListTag pending=new ListTag();pendingOperations.forEach(v->pending.add(v.save()));tag.put("PendingOperations",pending);return tag;
     }
 
@@ -112,6 +117,7 @@ public final class SceneInstance {
         value.retryCount=tag.getInt("RetryCount");value.failureCode=tag.getString("FailureCode");value.diagnostic=tag.getString("Diagnostic");
         try{value.cleanupStatus=CleanupStatus.valueOf(tag.getString("CleanupStatus"));}catch(IllegalArgumentException ignored){}
         try{value.completionResult=CompletionResult.valueOf(tag.getString("CompletionResult"));}catch(IllegalArgumentException ignored){}
+        for(Tag raw:tag.getList("Receipts",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag receipt){var r=SceneOperationReceipt.load(receipt);value.receipts.put(r.operationId(),r);}
         for(Tag raw:tag.getList("PendingOperations",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag operation)value.pendingOperations.add(PendingOperation.load(operation));return value;
     }
 
