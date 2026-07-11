@@ -897,6 +897,9 @@ public final class VillagerInteractionService {
                  OPEN_JOB_INVENTORY,
                  FOLLOW,
                  STAY_HERE,
+                 TOGGLE_PARTY_ATTACK_WITH_PARTY,
+                 TOGGLE_PARTY_DEFEND_PARTY,
+                 CYCLE_PARTY_DROP_COLLECTION,
                  PROMPT_PARTY_DISMISS_CONFIRMATION,
                  DECLINE_PARTY_DISMISS_CONFIRMATION,
                  PARTY_DISMISS -> true;
@@ -942,6 +945,24 @@ public final class VillagerInteractionService {
         }
         if (party == null || record == null) {
             return false;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.TOGGLE_PARTY_ATTACK_WITH_PARTY
+                || action == VillagerRecruitRequestPayload.Action.TOGGLE_PARTY_DEFEND_PARTY
+                || action == VillagerRecruitRequestPayload.Action.CYCLE_PARTY_DROP_COLLECTION) {
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result = switch (action) {
+                case TOGGLE_PARTY_ATTACK_WITH_PARTY ->
+                        com.jvn.villagerretaliation.party.PartyVillagerContractService.toggleAttackWithParty(player, villager);
+                case TOGGLE_PARTY_DEFEND_PARTY ->
+                        com.jvn.villagerretaliation.party.PartyVillagerContractService.toggleDefendParty(player, villager);
+                case CYCLE_PARTY_DROP_COLLECTION ->
+                        com.jvn.villagerretaliation.party.PartyVillagerContractService.cycleDropCollectionMode(player, villager);
+                default -> throw new IllegalStateException("Unexpected party villager setting action: " + action);
+            };
+            if (!result.success()) {
+                sendVillagerNotice(player, villager, "interaction.party.error.leader_only");
+            }
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return true;
         }
         if (action == VillagerRecruitRequestPayload.Action.FOLLOW
                 || action == VillagerRecruitRequestPayload.Action.STAY_HERE) {

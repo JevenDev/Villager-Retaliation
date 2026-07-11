@@ -98,22 +98,40 @@ public final class PartySyncService {
             Villager loaded = findLoadedVillager(server, record.villagerId());
             villagers.add(new PartyRosterSyncPayload.VillagerEntry(
                     record.villagerId(),
+                    loaded == null ? -1 : loaded.getId(),
                     record.cachedName(),
                     record.cachedProfession(),
                     record.commandMode(),
                     loaded != null && loaded.isAlive() && !record.villagerId().equals(unavailableVillagerId),
-                    record.remainingDays(now)));
+                    record.remainingDays(now),
+                    record.attackWithParty(),
+                    record.defendParty(),
+                    record.dropCollectionMode()));
         }
         return new PartyRosterSyncPayload(
                 true,
                 party.id(),
                 profileName(server, party.leaderId()),
                 recipient.getUUID().equals(party.leaderId()),
-                party.attackWithParty(),
-                party.defendParty(),
+                policyState(party, true),
+                policyState(party, false),
                 party.sharedVillagerInventories(),
                 List.copyOf(players),
                 List.copyOf(villagers));
+    }
+
+    static PartyPolicyState policyState(PartyRecord party, boolean attackPolicy) {
+        if (party.villagers().isEmpty()) {
+            return (attackPolicy ? party.attackWithParty() : party.defendParty())
+                    ? PartyPolicyState.ON
+                    : PartyPolicyState.OFF;
+        }
+        boolean first = attackPolicy
+                ? party.villagers().getFirst().attackWithParty()
+                : party.villagers().getFirst().defendParty();
+        boolean mixed = party.villagers().stream().anyMatch(villager ->
+                (attackPolicy ? villager.attackWithParty() : villager.defendParty()) != first);
+        return mixed ? PartyPolicyState.CUSTOM : first ? PartyPolicyState.ON : PartyPolicyState.OFF;
     }
 
     private static String profileName(MinecraftServer server, UUID playerId) {

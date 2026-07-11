@@ -35,6 +35,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
@@ -90,6 +91,14 @@ public final class PartyGameTests {
 
         PartyVillagerRecord staying = party.villager(villagers.get(1));
         staying.setStaying(Level.OVERWORLD.location(), new BlockPos(12, 65, -4));
+        PartyVillagerRecord customized = party.villager(villagers.getFirst());
+        customized.setAttackWithParty(true);
+        customized.setDefendParty(true);
+        customized.setDropCollectionMode(PartyDropCollectionMode.SLAIN_ENTITIES);
+        helper.assertValueEqual(PartySyncService.policyState(party, true), PartyPolicyState.CUSTOM,
+                "mixed per-villager attack policy should synchronize as custom");
+        helper.assertValueEqual(PartySyncService.policyState(party, false), PartyPolicyState.CUSTOM,
+                "mixed per-villager defense policy should synchronize as custom");
         PartySharedQuestRecord shared = new PartySharedQuestRecord(
                 VillagerRetaliation.id("party_persistence_fixture"),
                 villagers.getFirst(),
@@ -111,10 +120,17 @@ public final class PartyGameTests {
         PartyRecord restored = loaded.party(party.id()).orElseThrow(
                 () -> new GameTestAssertException("serialized party did not load"));
 
-        helper.assertValueEqual(saved.getInt("Version"), 3, "party serialization version");
+        helper.assertValueEqual(saved.getInt("Version"), 4, "party serialization version");
         helper.assertFalse(restored.attackWithParty(), "attack-with-party policy persistence");
         helper.assertFalse(restored.defendParty(), "defend-party policy persistence");
         helper.assertFalse(restored.sharedVillagerInventories(), "shared-inventory policy persistence");
+        helper.assertTrue(restored.villager(villagers.getFirst()).attackWithParty(),
+                "individual attack-with-party setting persistence");
+        helper.assertTrue(restored.villager(villagers.getFirst()).defendParty(),
+                "individual defend-party setting persistence");
+        helper.assertValueEqual(restored.villager(villagers.getFirst()).dropCollectionMode(),
+                PartyDropCollectionMode.SLAIN_ENTITIES,
+                "individual drop-collection setting persistence");
         helper.assertValueEqual(restored.playerIds(), List.of(leader, second, third, fourth),
                 "player roster order with leader first");
         helper.assertValueEqual(restored.villagers().stream().map(PartyVillagerRecord::villagerId).toList(), villagers,
@@ -258,6 +274,29 @@ public final class PartyGameTests {
                     "ordinary members cannot change party policies");
             helper.assertFalse(PartyVillagerContractService.setStaying(member, villager).success(),
                     "non-leader follow/stay command denial");
+            helper.assertTrue(PartyVillagerContractService.toggleAttackWithParty(leader, villager).success(),
+                    "leader may customize one villager's attack policy");
+            helper.assertFalse(record.attackWithParty(), "individual attack policy toggled off");
+            helper.assertFalse(PartyVillagerContractService.toggleDefendParty(member, villager).success(),
+                    "ordinary members cannot customize villager combat policies");
+            helper.assertTrue(PartyVillagerContractService.cycleDropCollectionMode(leader, villager).success(),
+                    "leader may configure individual drop collection");
+            helper.assertValueEqual(record.dropCollectionMode(), PartyDropCollectionMode.SLAIN_ENTITIES,
+                    "first drop collection mode is slain entities");
+            helper.assertTrue(PartyVillagerContractService.cycleDropCollectionMode(leader, villager).success(),
+                    "drop collection mode cycles again");
+            helper.assertValueEqual(record.dropCollectionMode(), PartyDropCollectionMode.ALL_DROPS,
+                    "second drop collection mode is all drops");
+            ItemEntity groundDrop = new ItemEntity(
+                    level, villager.getX(), villager.getY(), villager.getZ(), new ItemStack(Items.BONE, 2));
+            helper.assertTrue(PartyVillagerDropCollection.capturePickup(level, villager, groundDrop),
+                    "all-drops mode captures a nearby ground item");
+            helper.assertTrue(groundDrop.isRemoved(), "fully collected ground item is removed");
+            helper.assertTrue(HiredJobInventory.getJobInventory(villager).hasOutput(stack -> stack.is(Items.BONE)),
+                    "collected drops are routed to the party inventory output slots");
+            helper.assertTrue(PartyService.setPolicies(leader, true, null, null).success(),
+                    "global attack policy should bulk update villagers");
+            helper.assertTrue(record.attackWithParty(), "bulk attack policy overwrites individual setting");
 
             helper.assertTrue(PartyVillagerContractService.setStaying(leader, villager).success(),
                     "leader stay command");

@@ -23,6 +23,9 @@ public final class PartyVillagerRecord {
     private static final String TAG_NAME = "Name";
     private static final String TAG_PROFESSION = "Profession";
     private static final String TAG_LAST_DIMENSION = "LastDimension";
+    private static final String TAG_ATTACK_WITH_PARTY = "AttackWithParty";
+    private static final String TAG_DEFEND_PARTY = "DefendParty";
+    private static final String TAG_DROP_COLLECTION = "DropCollection";
 
     private final UUID villagerId;
     private final UUID recruiterId;
@@ -38,6 +41,9 @@ public final class PartyVillagerRecord {
     private String cachedName;
     private String cachedProfession;
     private ResourceLocation lastKnownDimension;
+    private boolean attackWithParty = true;
+    private boolean defendParty = true;
+    private PartyDropCollectionMode dropCollectionMode = PartyDropCollectionMode.OFF;
 
     PartyVillagerRecord(
             UUID villagerId,
@@ -126,6 +132,30 @@ public final class PartyVillagerRecord {
         return this.lastKnownDimension;
     }
 
+    public boolean attackWithParty() {
+        return this.attackWithParty;
+    }
+
+    public boolean defendParty() {
+        return this.defendParty;
+    }
+
+    public PartyDropCollectionMode dropCollectionMode() {
+        return this.dropCollectionMode;
+    }
+
+    void setAttackWithParty(boolean enabled) {
+        this.attackWithParty = enabled;
+    }
+
+    void setDefendParty(boolean enabled) {
+        this.defendParty = enabled;
+    }
+
+    void setDropCollectionMode(PartyDropCollectionMode mode) {
+        this.dropCollectionMode = mode == null ? PartyDropCollectionMode.OFF : mode;
+    }
+
     public int remainingDays(long gameTime) {
         return com.jvn.villagerretaliation.interaction.VillagerContractTime.remainingDays(
                 gameTime,
@@ -185,6 +215,9 @@ public final class PartyVillagerRecord {
         if (this.lastKnownDimension != null) {
             tag.putString(TAG_LAST_DIMENSION, this.lastKnownDimension.toString());
         }
+        tag.putBoolean(TAG_ATTACK_WITH_PARTY, this.attackWithParty);
+        tag.putBoolean(TAG_DEFEND_PARTY, this.defendParty);
+        tag.putString(TAG_DROP_COLLECTION, this.dropCollectionMode.name());
         return tag;
     }
 
@@ -201,7 +234,7 @@ public final class PartyVillagerRecord {
             stayDimension = null;
             stayPosition = null;
         }
-        return new PartyVillagerRecord(
+        PartyVillagerRecord record = new PartyVillagerRecord(
                 tag.getUUID(TAG_VILLAGER),
                 tag.getUUID(TAG_RECRUITER),
                 contractId,
@@ -217,6 +250,10 @@ public final class PartyVillagerRecord {
                 tag.getString(TAG_PROFESSION),
                 ResourceLocation.tryParse(tag.getString(TAG_LAST_DIMENSION))
         );
+        record.setAttackWithParty(!tag.contains(TAG_ATTACK_WITH_PARTY) || tag.getBoolean(TAG_ATTACK_WITH_PARTY));
+        record.setDefendParty(!tag.contains(TAG_DEFEND_PARTY) || tag.getBoolean(TAG_DEFEND_PARTY));
+        record.setDropCollectionMode(PartyDropCollectionMode.byName(tag.getString(TAG_DROP_COLLECTION)));
+        return record;
     }
 
     private static boolean hasStayPosition(CompoundTag tag) {

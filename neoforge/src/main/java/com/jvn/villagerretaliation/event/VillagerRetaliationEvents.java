@@ -199,6 +199,7 @@ public final class VillagerRetaliationEvents {
         } else if (event.getEntity() instanceof WanderingTrader wanderingTrader) {
             WanderingTraderLootHandler.addDrops(wanderingTrader, event);
         }
+        com.jvn.villagerretaliation.party.PartyVillagerDropCollection.markSlainEntityDrops(event);
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
@@ -336,6 +337,10 @@ public final class VillagerRetaliationEvents {
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         VillagerNaturalJobArmor.onEntityJoinLevel(event);
         VillagerRetaliationHandler.onEntityJoinLevel(event);
+        if (event.getEntity() instanceof net.minecraft.world.entity.item.ItemEntity itemEntity
+                && !event.getLevel().isClientSide()) {
+            com.jvn.villagerretaliation.party.PartyVillagerDropCollection.onItemEntityLoaded(itemEntity);
+        }
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
             PartyVillagerContractService.onVillagerLoaded(villager);
         }

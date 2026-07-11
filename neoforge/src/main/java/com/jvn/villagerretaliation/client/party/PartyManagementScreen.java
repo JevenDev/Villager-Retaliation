@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.party;
 
 import com.jvn.villagerretaliation.network.PartyActionRequestPayload;
 import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
+import com.jvn.villagerretaliation.party.PartyPolicyState;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -30,7 +31,7 @@ final class PartyManagementScreen extends Screen {
                     PartyActionRequestPayload.Action.SET_DEFEND_PARTY,
                     "villagerretaliation.party.manage.defend_party",
                     roster.defendParty());
-            y = addPolicyButton(centerX, y,
+            y = addBooleanPolicyButton(centerX, y,
                     PartyActionRequestPayload.Action.SET_SHARED_VILLAGER_INVENTORIES,
                     "villagerretaliation.party.manage.shared_inventories",
                     roster.sharedVillagerInventories());
@@ -91,24 +92,42 @@ final class PartyManagementScreen extends Screen {
             int y,
             PartyActionRequestPayload.Action action,
             String labelKey,
-            boolean enabled) {
-        boolean[] current = {enabled};
+            PartyPolicyState state) {
+        PartyPolicyState[] current = {state};
         addRenderableWidget(Button.builder(
-                policyLabel(labelKey, enabled),
+                policyLabel(labelKey, state),
                 button -> {
-                    current[0] = !current[0];
+                    boolean enabled = current[0] != PartyPolicyState.ON;
+                    current[0] = enabled ? PartyPolicyState.ON : PartyPolicyState.OFF;
                     button.setMessage(policyLabel(labelKey, current[0]));
-                    PacketDistributor.sendToServer(new PartyActionRequestPayload(action, null, null, current[0]));
+                    PacketDistributor.sendToServer(new PartyActionRequestPayload(action, null, null, enabled));
                 })
                 .bounds(centerX - 100, y, 200, 20)
                 .build());
         return y + 24;
     }
 
-    private static Component policyLabel(String labelKey, boolean enabled) {
+    private int addBooleanPolicyButton(
+            int centerX,
+            int y,
+            PartyActionRequestPayload.Action action,
+            String labelKey,
+            boolean enabled) {
+        return addPolicyButton(
+                centerX,
+                y,
+                action,
+                labelKey,
+                enabled ? PartyPolicyState.ON : PartyPolicyState.OFF);
+    }
+
+    private static Component policyLabel(String labelKey, PartyPolicyState state) {
+        Component value = state == PartyPolicyState.CUSTOM
+                ? Component.translatable("villagerretaliation.party.manage.custom")
+                : Component.translatable(state == PartyPolicyState.ON ? "options.on" : "options.off");
         return Component.translatable(
                 "villagerretaliation.party.manage.setting",
                 Component.translatable(labelKey),
-                Component.translatable(enabled ? "options.on" : "options.off"));
+                value);
     }
 }

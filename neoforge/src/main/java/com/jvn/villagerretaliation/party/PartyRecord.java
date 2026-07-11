@@ -96,10 +96,12 @@ public final class PartyRecord {
 
     void setAttackWithParty(boolean enabled) {
         this.attackWithParty = enabled;
+        this.villagers.forEach(villager -> villager.setAttackWithParty(enabled));
     }
 
     void setDefendParty(boolean enabled) {
         this.defendParty = enabled;
+        this.villagers.forEach(villager -> villager.setDefendParty(enabled));
     }
 
     void setSharedVillagerInventories(boolean enabled) {
@@ -140,6 +142,8 @@ public final class PartyRecord {
                 return false;
             }
         }
+        villager.setAttackWithParty(this.attackWithParty);
+        villager.setDefendParty(this.defendParty);
         this.villagers.add(villager);
         this.villagers.sort(java.util.Comparator.comparingInt(PartyVillagerRecord::recruitmentOrder));
         return true;

@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.client.reputation.VillagerReputationIconSet;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.party.PartyDropCollectionMode;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
@@ -35,6 +36,7 @@ import com.jvn.villagerretaliation.network.HiredFarmingOptionPayload;
 import com.jvn.villagerretaliation.network.HiredHuntingTargetPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingFilterPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingOptionPayload;
+import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
@@ -1075,6 +1077,28 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 addOption("party.inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
             }
             if (this.partyVillagerAuthorized) {
+                PartyRosterSyncPayload.VillagerEntry settings = partyVillagerSettings();
+                boolean attackWithParty = settings == null || settings.attackWithParty();
+                boolean defendParty = settings == null || settings.defendParty();
+                PartyDropCollectionMode dropMode = settings == null
+                        ? PartyDropCollectionMode.OFF
+                        : settings.dropCollectionMode();
+                addPartySettingOption(
+                        "party.attack_with_party",
+                        attackWithParty ? "party.setting.on" : "party.setting.off",
+                        VillagerRecruitRequestPayload.Action.TOGGLE_PARTY_ATTACK_WITH_PARTY);
+                addPartySettingOption(
+                        "party.defend_party",
+                        defendParty ? "party.setting.on" : "party.setting.off",
+                        VillagerRecruitRequestPayload.Action.TOGGLE_PARTY_DEFEND_PARTY);
+                addPartySettingOption(
+                        "party.collect_drops",
+                        switch (dropMode) {
+                            case OFF -> "party.drop_collection.off";
+                            case SLAIN_ENTITIES -> "party.drop_collection.slain_entities";
+                            case ALL_DROPS -> "party.drop_collection.all_drops";
+                        },
+                        VillagerRecruitRequestPayload.Action.CYCLE_PARTY_DROP_COLLECTION);
                 if (this.stayingHere) {
                     addOption("party.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
                 } else {
@@ -1792,6 +1816,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.pendingHireRole = null;
         requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT);
         openPage(DialoguePage.HIRE);
+    }
+
+    private void addPartySettingOption(
+            String labelKey,
+            String valueKey,
+            VillagerRecruitRequestPayload.Action action) {
+        this.options.add(DialogueOption.enabled(
+                translate("party.setting", translate(labelKey), translate(valueKey)),
+                () -> requestRecruit(action)));
     }
 
     private void openHireDurationPage() {
@@ -4247,6 +4280,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return this.recruitedPartyVillager
                 && this.partyVillagerPartyMember
                 && (this.partyVillagerAuthorized || PartyRosterClient.roster().sharedVillagerInventories());
+    }
+
+    private PartyRosterSyncPayload.VillagerEntry partyVillagerSettings() {
+        return PartyRosterClient.roster().villagers().stream()
+                .filter(villager -> villager.entityId() == this.villagerEntityId)
+                .findFirst()
+                .orElse(null);
     }
 
     private ItemStack clipboardStack() {

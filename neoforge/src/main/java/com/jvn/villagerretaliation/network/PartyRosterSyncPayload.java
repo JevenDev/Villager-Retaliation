@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.party.PartyCommandMode;
+import com.jvn.villagerretaliation.party.PartyDropCollectionMode;
+import com.jvn.villagerretaliation.party.PartyPolicyState;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -13,8 +15,8 @@ public record PartyRosterSyncPayload(
         UUID partyId,
         String leaderName,
         boolean recipientLeader,
-        boolean attackWithParty,
-        boolean defendParty,
+        PartyPolicyState attackWithParty,
+        PartyPolicyState defendParty,
         boolean sharedVillagerInventories,
         List<PlayerEntry> players,
         List<VillagerEntry> villagers) implements CustomPacketPayload {
@@ -27,7 +29,8 @@ public record PartyRosterSyncPayload(
             VillagerPayloads.codec(PartyRosterSyncPayload::encode, PartyRosterSyncPayload::decode);
 
     public static PartyRosterSyncPayload empty() {
-        return new PartyRosterSyncPayload(false, null, "", false, true, true, true, List.of(), List.of());
+        return new PartyRosterSyncPayload(false, null, "", false,
+                PartyPolicyState.ON, PartyPolicyState.ON, true, List.of(), List.of());
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, PartyRosterSyncPayload payload) {
@@ -38,8 +41,8 @@ public record PartyRosterSyncPayload(
         buffer.writeUUID(payload.partyId());
         buffer.writeUtf(payload.leaderName(), MAX_NAME_LENGTH);
         buffer.writeBoolean(payload.recipientLeader());
-        buffer.writeBoolean(payload.attackWithParty());
-        buffer.writeBoolean(payload.defendParty());
+        buffer.writeEnum(payload.attackWithParty());
+        buffer.writeEnum(payload.defendParty());
         buffer.writeBoolean(payload.sharedVillagerInventories());
         buffer.writeVarInt(Math.min(MAX_PLAYERS, payload.players().size()));
         for (int i = 0; i < Math.min(MAX_PLAYERS, payload.players().size()); i++) {
@@ -53,11 +56,15 @@ public record PartyRosterSyncPayload(
         for (int i = 0; i < Math.min(MAX_VILLAGERS, payload.villagers().size()); i++) {
             VillagerEntry villager = payload.villagers().get(i);
             buffer.writeUUID(villager.villagerId());
+            buffer.writeVarInt(villager.entityId());
             buffer.writeUtf(villager.name(), MAX_NAME_LENGTH);
             buffer.writeUtf(villager.professionKey(), MAX_PROFESSION_LENGTH);
             buffer.writeEnum(villager.commandMode());
             buffer.writeBoolean(villager.available());
             buffer.writeVarInt(villager.remainingDays());
+            buffer.writeBoolean(villager.attackWithParty());
+            buffer.writeBoolean(villager.defendParty());
+            buffer.writeEnum(villager.dropCollectionMode());
         }
     }
 
@@ -68,8 +75,8 @@ public record PartyRosterSyncPayload(
         UUID partyId = buffer.readUUID();
         String leaderName = buffer.readUtf(MAX_NAME_LENGTH);
         boolean recipientLeader = buffer.readBoolean();
-        boolean attackWithParty = buffer.readBoolean();
-        boolean defendParty = buffer.readBoolean();
+        PartyPolicyState attackWithParty = buffer.readEnum(PartyPolicyState.class);
+        PartyPolicyState defendParty = buffer.readEnum(PartyPolicyState.class);
         boolean sharedVillagerInventories = buffer.readBoolean();
         int playerCount = VillagerPayloads.readCollectionSize(buffer, MAX_PLAYERS, "party players");
         List<PlayerEntry> players = new ArrayList<>(playerCount);
@@ -85,11 +92,15 @@ public record PartyRosterSyncPayload(
         for (int i = 0; i < villagerCount; i++) {
             villagers.add(new VillagerEntry(
                     buffer.readUUID(),
+                    buffer.readVarInt(),
                     buffer.readUtf(MAX_NAME_LENGTH),
                     buffer.readUtf(MAX_PROFESSION_LENGTH),
                     buffer.readEnum(PartyCommandMode.class),
                     buffer.readBoolean(),
-                    buffer.readVarInt()));
+                    buffer.readVarInt(),
+                    buffer.readBoolean(),
+                    buffer.readBoolean(),
+                    buffer.readEnum(PartyDropCollectionMode.class)));
         }
         return new PartyRosterSyncPayload(true, partyId, leaderName, recipientLeader,
                 attackWithParty, defendParty, sharedVillagerInventories,
@@ -106,10 +117,14 @@ public record PartyRosterSyncPayload(
 
     public record VillagerEntry(
             UUID villagerId,
+            int entityId,
             String name,
             String professionKey,
             PartyCommandMode commandMode,
             boolean available,
-            int remainingDays) {
+            int remainingDays,
+            boolean attackWithParty,
+            boolean defendParty,
+            PartyDropCollectionMode dropCollectionMode) {
     }
 }

@@ -88,6 +88,10 @@ public final class PartyVillagerContractService {
                 professionTranslationKey(villager),
                 level.dimension().location()
         );
+        if (currentParty != null) {
+            record.setAttackWithParty(currentParty.attackWithParty());
+            record.setDefendParty(currentParty.defendParty());
+        }
 
         PartyService.PartyResult membership = PartyService.addVillager(level, player.getUUID(), record, now);
         if (!membership.success()) {
@@ -188,6 +192,33 @@ public final class PartyVillagerContractService {
         closeJobInventories(context.level().getServer(), villager.getId());
         PartySyncService.syncParty(context.level().getServer(), context.party().id());
         return ContractResult.success("villagerretaliation.party.villager_dismissed", context.party().id(), removed, 0, 0);
+    }
+
+    public static ContractResult toggleAttackWithParty(ServerPlayer player, Villager villager) {
+        PartyVillagerContext context = authorizedContext(player, villager);
+        if (context == null) {
+            return ContractResult.failure("villagerretaliation.party.error.leader_only");
+        }
+        context.record().setAttackWithParty(!context.record().attackWithParty());
+        return settingsChanged(context, "villagerretaliation.party.villager_settings_updated");
+    }
+
+    public static ContractResult toggleDefendParty(ServerPlayer player, Villager villager) {
+        PartyVillagerContext context = authorizedContext(player, villager);
+        if (context == null) {
+            return ContractResult.failure("villagerretaliation.party.error.leader_only");
+        }
+        context.record().setDefendParty(!context.record().defendParty());
+        return settingsChanged(context, "villagerretaliation.party.villager_settings_updated");
+    }
+
+    public static ContractResult cycleDropCollectionMode(ServerPlayer player, Villager villager) {
+        PartyVillagerContext context = authorizedContext(player, villager);
+        if (context == null) {
+            return ContractResult.failure("villagerretaliation.party.error.leader_only");
+        }
+        context.record().setDropCollectionMode(context.record().dropCollectionMode().next());
+        return settingsChanged(context, "villagerretaliation.party.villager_settings_updated");
     }
 
     public static boolean canAccessJobInventory(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -368,6 +399,12 @@ public final class PartyVillagerContractService {
                 && party.leaderId().equals(player.getUUID())
                 && record.recruiterId().equals(player.getUUID())
                 && party.playerIds().contains(player.getUUID());
+    }
+
+    private static ContractResult settingsChanged(PartyVillagerContext context, String messageKey) {
+        PartyService.markChanged(context.level());
+        PartySyncService.syncParty(context.level().getServer(), context.party().id());
+        return ContractResult.success(messageKey, context.party().id(), context.record(), 0, 0);
     }
 
     private static boolean isAuthorizedPartyMember(ServerPlayer player, PartyRecord party, PartyVillagerRecord record) {

@@ -782,12 +782,14 @@ public final class VillagerRetaliationHandler {
             return;
         }
         PartyRecord party = PartyService.getPartyForEntity(partyMember).orElse(null);
-        if (party == null
-                || (attackingWithParty && !party.attackWithParty())
-                || (!attackingWithParty && !party.defendParty())) {
+        if (party == null) {
             return;
         }
         for (PartyVillagerRecord member : party.villagers()) {
+            if ((attackingWithParty && !member.attackWithParty())
+                    || (!attackingWithParty && !member.defendParty())) {
+                continue;
+            }
             Entity entity = level.getEntity(member.villagerId());
             if (!(entity instanceof Villager villager)
                     || villager == partyMember
