@@ -14,6 +14,15 @@ import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.scene.compiler.SceneCompiler;
 import com.jvn.villagerretaliation.scene.compiler.SceneDiagnostic;
 import com.jvn.villagerretaliation.scene.compiler.SceneParser;
+import com.jvn.villagerretaliation.scene.SceneResources;
+import com.jvn.villagerretaliation.scene.persistence.SceneSaveMigrations;
+import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
+import com.jvn.villagerretaliation.scene.runtime.SceneDefinitionReconciler;
+import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
+import com.jvn.villagerretaliation.scene.runtime.SceneOwner;
+import com.jvn.villagerretaliation.scene.runtime.SceneScheduler;
+import com.jvn.villagerretaliation.scene.runtime.SceneState;
+import com.jvn.villagerretaliation.scene.runtime.StepExecutionStatus;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBindingService;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
@@ -26,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -176,6 +186,71 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void sceneInstanceSaveAndStableLaunchIndexRoundTrip(GameTestHelper helper) {
+        var definition = compiledValidScene();
+        SceneSavedData data = new SceneSavedData();
+        UUID ownerId = UUID.randomUUID();
+        SceneOwner owner = new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                ownerId, null, null, "");
+        SceneSavedData.StartResult first = data.start(definition, "quest/start/gate", owner, null, Set.of(ownerId), Map.of(), 100L);
+        SceneSavedData.StartResult repeated = data.start(definition, "quest/start/gate", owner, null, Set.of(ownerId), Map.of(), 101L);
+        helper.assertTrue(first.created() && !repeated.created() && first.instance().id().equals(repeated.instance().id()),
+                "same owner and stable operation id must reuse one scene instance");
+        var record = first.instance().currentRecord(definition.steps().get(definition.entryStep()).type());
+        record.status(StepExecutionStatus.PREPARED, 102L);
+        record.wakeTime(140L);
+        first.instance().transition(SceneState.WAITING, 102L);
+        SceneInstance loaded = SceneInstance.load(first.instance().save());
+        helper.assertTrue(loaded.id().equals(first.instance().id()) && loaded.state() == SceneState.WAITING
+                        && loaded.stepRecords().get("opening_wait").wakeTime() == 140L,
+                "scene instance should persist owner, state, current step, and execution record");
+        CompoundTag legacy = new CompoundTag();
+        legacy.put("Scenes", new net.minecraft.nbt.ListTag());
+        var migrated = SceneSaveMigrations.migrate(legacy, SceneSavedData.CURRENT_DATA_VERSION);
+        helper.assertTrue(migrated.targetVersion() == 1 && migrated.data().contains("Instances"),
+                "legacy pre-release scene list should migrate explicitly from version zero");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void schedulerBoundsWorkAndReconcilesStableDefinitions(GameTestHelper helper) {
+        var definition = compiledValidScene();
+        SceneResources.installTestScenes(helper.getLevel().getServer(), List.of(definition));
+        SceneSavedData data = new SceneSavedData();
+        for (int i = 0; i < 8; i++) {
+            UUID player = UUID.randomUUID();
+            data.start(definition, "operation/" + i,
+                    new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                            player, null, null, ""), null, Set.of(player), Map.of(), 0L);
+        }
+        Set<String> owners = new java.util.LinkedHashSet<>();
+        SceneScheduler scheduler = new SceneScheduler(3, (server, repository, instance, scene, time) -> {
+            owners.add(instance.owner().stableKey());
+            instance.transition(SceneState.RUNNING, time);
+            return SceneScheduler.ProcessResult.idle();
+        });
+        scheduler.rebuild(data, 0L);
+        var tick = scheduler.tick(helper.getLevel().getServer(), data, 1L);
+        helper.assertTrue(tick.workPerformed() == 3 && owners.size() == 3,
+                "scheduler must cap work and give distinct owners a fair turn");
+
+        SceneInstance instance = data.all().getFirst();
+        instance.currentRecord(definition.steps().get(instance.currentStep()).type()).status(StepExecutionStatus.COMPLETED, 2L);
+        JsonObject compatibleJson = validScene(); compatibleJson.addProperty("definition_version", 4);
+        compatibleJson.addProperty("metadata_note", "hash change");
+        var compatible = SceneCompiler.compile(SceneParser.parse(VillagerRetaliation.id("quest_scenes/test.json"), compatibleJson).resource()).scene();
+        helper.assertTrue(SceneDefinitionReconciler.reconcile(instance, compatible).safe(),
+                "definition reload should continue when stable executed ids and types remain compatible");
+        JsonObject incompatibleJson = validScene();
+        incompatibleJson.getAsJsonArray("steps").get(0).getAsJsonObject()
+                .addProperty("type", "villagerretaliation:wait_condition");
+        var incompatible = SceneCompiler.compile(SceneParser.parse(VillagerRetaliation.id("quest_scenes/test.json"), incompatibleJson).resource()).scene();
+        helper.assertFalse(SceneDefinitionReconciler.reconcile(instance, incompatible).safe(),
+                "definition reload must block when an executed stable id changes type");
+        helper.succeed();
+    }
+
     private static RuntimeTypeDescriptor descriptor(String path, Set<net.minecraft.resources.ResourceLocation> aliases) {
         return new RuntimeTypeDescriptor(VillagerRetaliation.id(path), aliases, Set.of(), Set.of(),
                 JsonObject::deepCopy, value -> List.of(), (value, context) -> value, String::valueOf,
@@ -207,6 +282,13 @@ public final class SceneRegistryGameTests {
                     "data":{"ticks":20},"next":"finish"},
                    {"id":"finish","type":"villagerretaliation:scene_complete"}]}
                 """).getAsJsonObject();
+    }
+
+    private static com.jvn.villagerretaliation.scene.model.CompiledScene compiledValidScene() {
+        SceneParser.ParseResult parsed = SceneParser.parse(VillagerRetaliation.id("quest_scenes/test.json"), validScene());
+        SceneCompiler.CompileResult compiled = SceneCompiler.compile(parsed.resource());
+        if (!compiled.valid()) throw new IllegalStateException(compiled.diagnostics().toString());
+        return compiled.scene();
     }
 
     private static void expectFailure(GameTestHelper helper, Runnable operation, String message) {

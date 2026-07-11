@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.scene.SceneRuntime;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
@@ -180,6 +181,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
         PartyVillagerContractService.onServerTick(event.getServer());
+        SceneRuntime.tick(event.getServer());
         if (!BUILDER_CATALOG_SYNC_DIRTY.compareAndSet(true, false)) {
             return;
         }
