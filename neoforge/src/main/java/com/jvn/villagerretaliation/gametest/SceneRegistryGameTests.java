@@ -9,9 +9,18 @@ import com.jvn.villagerretaliation.api.registry.ExtensionContracts.ToolingMetada
 import com.jvn.villagerretaliation.api.registry.FreezableExtensionRegistry;
 import com.jvn.villagerretaliation.api.registry.RuntimeTypeDescriptor;
 import com.jvn.villagerretaliation.quest.QuestRegistryMetadata;
+import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
+import com.jvn.villagerretaliation.scene.actor.SceneActorBindingService;
+import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
+import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration.BindingSource;
+import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration.DeathPolicy;
+import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration.MissingActorPolicy;
+import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration.ReplacementPolicy;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -53,11 +62,76 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void actorBindingRoundTripsIdentitySnapshotAndHistory(GameTestHelper helper) {
+        SceneActorDeclaration declaration = actor("guide", ReplacementPolicy.COMPATIBLE_REPLACEMENT);
+        SceneActorBinding first = binding("guide", "Ada", 1);
+        SceneActorBinding second = binding("guide", "Bea", 2);
+        SceneActorBindingService.RebindResult result = SceneActorBindingService.rebind(declaration, first, second,
+                SceneActorBindingService.RebindKind.COMPATIBLE, 91L, "provider_return_replacement", "");
+        helper.assertTrue(result.accepted() && result.changed(), "compatible binding should be replaced");
+        SceneActorBinding loaded = SceneActorBinding.load(result.binding().save());
+        helper.assertTrue(loaded.equals(result.binding()), "actor binding should round trip every durable field");
+        helper.assertTrue(loaded.generation() == 2L && loaded.replacementHistory().size() == 1,
+                "round-tripped binding should preserve generation and replacement history");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void fixedActorIsNeverSilentlyReplaced(GameTestHelper helper) {
+        SceneActorBinding first = binding("narrator", "Original", 1);
+        SceneActorBindingService.RebindResult result = SceneActorBindingService.rebind(
+                actor("narrator", ReplacementPolicy.FIXED), first, binding("narrator", "Nearby", 2),
+                SceneActorBindingService.RebindKind.COMPATIBLE, 20L, "nearby_candidate", "");
+        helper.assertFalse(result.accepted(), "fixed narrative actor must reject a nearby replacement");
+        helper.assertTrue(result.binding().equals(first) && result.binding().replacementHistory().isEmpty(),
+                "rejected replacement must preserve identity and history");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void compatibleReplacementRequiresMatchingActorType(GameTestHelper helper) {
+        SceneActorDeclaration declaration = actor("scout", ReplacementPolicy.COMPATIBLE_REPLACEMENT);
+        SceneActorBinding first = binding("scout", "Scout", 1);
+        SceneActorBinding wrongType = SceneActorBinding.entity("scout", VillagerRetaliation.id("player"), UUID.randomUUID(),
+                VillagerRetaliation.id("player"), VillagerRetaliation.id("overworld"), BlockPos.ZERO, "Player", true);
+        helper.assertFalse(SceneActorBindingService.rebind(declaration, first, wrongType,
+                        SceneActorBindingService.RebindKind.COMPATIBLE, 30L, "candidate", "").accepted(),
+                "compatible replacement must retain the authored actor type");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void operatorRebindAppendsAuditableHistory(GameTestHelper helper) {
+        SceneActorBindingService.RebindResult result = SceneActorBindingService.rebind(
+                actor("captain", ReplacementPolicy.OPERATOR_REBINDABLE), binding("captain", "Old Captain", 1),
+                binding("captain", "New Captain", 2), SceneActorBindingService.RebindKind.OPERATOR,
+                404L, "operator_repair", "ServerOwner");
+        helper.assertTrue(result.accepted() && result.changed(), "operator rebind should be accepted");
+        var history = result.binding().replacementHistory().getFirst();
+        helper.assertTrue(history.gameTime() == 404L && history.operatorIdentity().equals("ServerOwner")
+                        && history.reason().equals("operator_repair"),
+                "operator rebind should retain reason, time, and operator identity");
+        helper.succeed();
+    }
+
     private static RuntimeTypeDescriptor descriptor(String path, Set<net.minecraft.resources.ResourceLocation> aliases) {
         return new RuntimeTypeDescriptor(VillagerRetaliation.id(path), aliases, Set.of(), Set.of(),
                 JsonObject::deepCopy, value -> List.of(), (value, context) -> value, String::valueOf,
                 RecoveryMode.NATURALLY_IDEMPOTENT,
                 new ToolingMetadata(path, path, Map.of("type", "object"), true), ClientSync.NONE);
+    }
+
+    private static SceneActorDeclaration actor(String alias, ReplacementPolicy policy) {
+        return new SceneActorDeclaration(alias, VillagerRetaliation.id("villager"),
+                Set.of(VillagerRetaliation.id("capability/dialogue")), true, BindingSource.QUEST_PROVIDER, "issuer",
+                policy, MissingActorPolicy.BLOCK, DeathPolicy.APPLY_MISSING_POLICY, Map.of(), 200L);
+    }
+
+    private static SceneActorBinding binding(String alias, String name, int position) {
+        return SceneActorBinding.entity(alias, VillagerRetaliation.id("villager"), UUID.randomUUID(),
+                VillagerRetaliation.id("villager"), VillagerRetaliation.id("overworld"),
+                new BlockPos(position, 64, position), name, true);
     }
 
     private static void expectFailure(GameTestHelper helper, Runnable operation, String message) {
