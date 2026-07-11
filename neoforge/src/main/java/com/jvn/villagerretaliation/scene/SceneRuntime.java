@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
 import com.jvn.villagerretaliation.scene.runtime.SceneOwner;
 import com.jvn.villagerretaliation.scene.runtime.SceneScheduler;
 import com.jvn.villagerretaliation.scene.runtime.SceneStepEngine;
+import com.jvn.villagerretaliation.scene.executor.BuiltinSceneStepExecutors;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -30,6 +31,7 @@ public final class SceneRuntime {
     private SceneRuntime() { }
 
     public static void initialize(MinecraftServer server) {
+        BuiltinSceneStepExecutors.register();
         installProcessor(SceneStepEngine::process);
         SceneLaunchService.install(SceneRuntime::launch);
         scheduler(server);

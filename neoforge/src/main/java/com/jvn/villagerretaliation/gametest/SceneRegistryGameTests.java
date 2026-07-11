@@ -27,6 +27,8 @@ import com.jvn.villagerretaliation.scene.runtime.SceneExecutionContext;
 import com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt;
 import com.jvn.villagerretaliation.scene.runtime.SceneReceiptGuard;
 import com.jvn.villagerretaliation.scene.runtime.SceneRecoveryPolicy;
+import com.jvn.villagerretaliation.scene.executor.BuiltinSceneStepExecutors;
+import com.jvn.villagerretaliation.api.scene.SceneStepExecutors;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBindingService;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
@@ -42,6 +44,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -309,6 +314,89 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void waitTicksReloadUsesRemainingAbsoluteDeadline(GameTestHelper helper) {
+        BuiltinSceneStepExecutors.register();
+        JsonObject json=JsonParser.parseString("""
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:wait_reload","entry_step":"wait",
+                 "actors":[],"steps":[{"id":"wait","type":"villagerretaliation:wait_ticks","data":{"ticks":50},"next":"done"},
+                 {"id":"done","type":"villagerretaliation:scene_complete"}]}
+                """).getAsJsonObject();
+        var definition=compiledScene(json);SceneSavedData data=new SceneSavedData();UUID player=UUID.randomUUID();
+        SceneInstance instance=data.start(definition,"wait",new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,player,null,null,""),null,Set.of(player),Map.of(),100L).instance();
+        var step=definition.steps().get("wait");var record=instance.currentRecord(step.type());var executor=SceneStepExecutors.get(step.type()).orElseThrow();
+        executor.prepare(new SceneExecutionContext(helper.getLevel().getServer(),data,instance,definition,step,record,100L,true));
+        SceneInstance loaded=SceneInstance.load(instance.save());var loadedRecord=loaded.stepRecords().get("wait");
+        var waiting=executor.reconcile(new SceneExecutionContext(helper.getLevel().getServer(),data,loaded,definition,step,loadedRecord,120L,false));
+        helper.assertTrue(waiting.outcome()==com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.WAIT&&waiting.wakeTime()==150L,
+                "reloaded wait should keep the original wake time instead of restarting its full duration");
+        var complete=executor.reconcile(new SceneExecutionContext(helper.getLevel().getServer(),data,loaded,definition,step,loadedRecord,150L,false));
+        helper.assertValueEqual(complete.outcome(),com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.APPLIED,"wait completion at persisted deadline");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void branchChoiceRemainsStableAfterReload(GameTestHelper helper) {
+        BuiltinSceneStepExecutors.register();ServerPlayer player=helper.makeMockServerPlayerInLevel();Villager villager=EntityType.VILLAGER.create(helper.getLevel());
+        helper.assertTrue(villager!=null&&helper.getLevel().addFreshEntity(villager),"villager should spawn for branch context");
+        JsonObject json=JsonParser.parseString("""
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:branch_reload","entry_step":"choice","actors":[
+                 {"alias":"player","type":"villagerretaliation:player","binding_source":"owner_player"},
+                 {"alias":"guide","type":"villagerretaliation:villager","binding_source":"quest_provider"}],"steps":[
+                 {"id":"choice","type":"villagerretaliation:scene_branch","actors":["guide"],"data":{"branches":[{"transition":"left","conditions":[]}]},"transitions":{"left":"done","right":"failed"}},
+                 {"id":"done","type":"villagerretaliation:scene_complete"},{"id":"failed","type":"villagerretaliation:scene_fail"}]}
+                """).getAsJsonObject();
+        var definition=compiledScene(json);Map<String,SceneActorBinding> bindings=Map.of(
+                "player",SceneActorBinding.entity("player",VillagerRetaliation.id("player"),player.getUUID(),VillagerRetaliation.id("player"),helper.getLevel().dimension().location(),player.blockPosition(),player.getName().getString(),true),
+                "guide",SceneActorBinding.entity("guide",VillagerRetaliation.id("villager"),villager.getUUID(),VillagerRetaliation.id("villager"),helper.getLevel().dimension().location(),villager.blockPosition(),villager.getName().getString(),true));
+        SceneSavedData data=new SceneSavedData();SceneInstance instance=data.start(definition,"branch",new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,player.getUUID(),null,null,""),null,Set.of(player.getUUID()),bindings,0L).instance();
+        var step=definition.steps().get("choice");var record=instance.currentRecord(step.type());var executor=SceneStepExecutors.get(step.type()).orElseThrow();
+        var first=executor.apply(new SceneExecutionContext(helper.getLevel().getServer(),data,instance,definition,step,record,1L,true));
+        helper.assertValueEqual(first.outcome(),com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.APPLIED,"initial branch evaluation");
+        SceneInstance loaded=SceneInstance.load(instance.save());var loadedRecord=loaded.stepRecords().get("choice");
+        var replay=executor.apply(new SceneExecutionContext(helper.getLevel().getServer(),data,loaded,definition,step,loadedRecord,2L,false));
+        helper.assertTrue(replay.outcome()==com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.APPLIED
+                        &&loadedRecord.durableValues().get("chosen_transition").equals("left"),
+                "recorded branch should not be reevaluated after reload");helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dialogueReceiptPreventsReloadSpam(GameTestHelper helper) {
+        BuiltinSceneStepExecutors.register();ServerPlayer player=helper.makeMockServerPlayerInLevel();Villager villager=EntityType.VILLAGER.create(helper.getLevel());
+        helper.assertTrue(villager!=null&&helper.getLevel().addFreshEntity(villager),"villager should spawn for dialogue context");
+        JsonObject json=JsonParser.parseString("""
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:dialogue_reload","entry_step":"speak","actors":[
+                 {"alias":"guide","type":"villagerretaliation:villager","binding_source":"quest_provider"}],"steps":[
+                 {"id":"speak","type":"villagerretaliation:dialogue","actors":["guide"],"data":{"text":"Hold the gate!"},"next":"done"},
+                 {"id":"done","type":"villagerretaliation:scene_complete"}]}
+                """).getAsJsonObject();var definition=compiledScene(json);
+        var binding=SceneActorBinding.entity("guide",VillagerRetaliation.id("villager"),villager.getUUID(),VillagerRetaliation.id("villager"),helper.getLevel().dimension().location(),villager.blockPosition(),villager.getName().getString(),true);
+        SceneSavedData data=new SceneSavedData();SceneInstance instance=data.start(definition,"dialogue",new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,player.getUUID(),null,null,""),null,Set.of(player.getUUID()),Map.of("guide",binding),0L).instance();
+        var step=definition.steps().get("speak");var record=instance.currentRecord(step.type());var executor=SceneStepExecutors.get(step.type()).orElseThrow();
+        var first=executor.apply(new SceneExecutionContext(helper.getLevel().getServer(),data,instance,definition,step,record,1L,true));
+        SceneInstance loaded=SceneInstance.load(instance.save());var replay=executor.reconcile(new SceneExecutionContext(helper.getLevel().getServer(),data,loaded,definition,step,loaded.stepRecords().get("speak"),2L,false));
+        helper.assertTrue(first.outcome()==com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.APPLIED&&replay.outcome()==first.outcome()&&loaded.receipts().size()==1,
+                "dialogue reload should reuse the completed recipient receipt instead of delivering again");helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void movementWaitsForChunkThenReconcilesArrivalAndTimeout(GameTestHelper helper) {
+        BuiltinSceneStepExecutors.register();Villager villager=EntityType.VILLAGER.create(helper.getLevel());helper.assertTrue(villager!=null,"villager should create");
+        BlockPos start=helper.absolutePos(new BlockPos(1,1,1));villager.moveTo(start.getX()+.5,start.getY(),start.getZ()+.5,0,0);helper.assertTrue(helper.getLevel().addFreshEntity(villager),"villager should spawn");
+        BlockPos target=start.offset(1000,0,1000);JsonObject json=JsonParser.parseString("""
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:move_reload","entry_step":"move","actors":[
+                 {"alias":"guide","type":"villagerretaliation:villager","binding_source":"quest_provider","missing_actor_policy":"block"}],"steps":[
+                 {"id":"move","type":"villagerretaliation:move_actor","actors":["guide"],"data":{"timeout_ticks":40,"poll_ticks":2},"next":"done"},
+                 {"id":"done","type":"villagerretaliation:scene_complete"}]}
+                """).getAsJsonObject();JsonObject dataJson=json.getAsJsonArray("steps").get(0).getAsJsonObject().getAsJsonObject("data");dataJson.addProperty("x",target.getX());dataJson.addProperty("y",target.getY());dataJson.addProperty("z",target.getZ());
+        var definition=compiledScene(json);var binding=SceneActorBinding.entity("guide",VillagerRetaliation.id("villager"),villager.getUUID(),VillagerRetaliation.id("villager"),helper.getLevel().dimension().location(),villager.blockPosition(),"Guide",true);UUID owner=UUID.randomUUID();SceneSavedData repository=new SceneSavedData();SceneInstance instance=repository.start(definition,"move",new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,owner,null,null,""),null,Set.of(owner),Map.of("guide",binding),0L).instance();
+        var step=definition.steps().get("move");var record=instance.currentRecord(step.type());var executor=SceneStepExecutors.get(step.type()).orElseThrow();executor.prepare(new SceneExecutionContext(helper.getLevel().getServer(),repository,instance,definition,step,record,0L,true));
+        var unloaded=executor.apply(new SceneExecutionContext(helper.getLevel().getServer(),repository,instance,definition,step,record,1L,true));helper.assertValueEqual(unloaded.outcome(),com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.WAIT,"movement with unloaded destination chunk");
+        helper.getLevel().getChunk(target.getX()>>4,target.getZ()>>4);villager.moveTo(target.getX()+.5,target.getY(),target.getZ()+.5,0,0);SceneInstance loaded=SceneInstance.load(instance.save());
+        var arrived=executor.reconcile(new SceneExecutionContext(helper.getLevel().getServer(),repository,loaded,definition,step,loaded.stepRecords().get("move"),2L,false));helper.assertValueEqual(arrived.outcome(),com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.APPLIED,"movement arrival after chunk return");
+        villager.moveTo(start.getX()+.5,start.getY(),start.getZ()+.5,0,0);var timedOut=executor.reconcile(new SceneExecutionContext(helper.getLevel().getServer(),repository,instance,definition,step,record,41L,false));helper.assertValueEqual(timedOut.outcome(),com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.FAIL,"movement timeout failure transition");helper.succeed();
+    }
+
     private static RuntimeTypeDescriptor descriptor(String path, Set<net.minecraft.resources.ResourceLocation> aliases) {
         return new RuntimeTypeDescriptor(VillagerRetaliation.id(path), aliases, Set.of(), Set.of(),
                 JsonObject::deepCopy, value -> List.of(), (value, context) -> value, String::valueOf,
@@ -347,6 +435,11 @@ public final class SceneRegistryGameTests {
         SceneCompiler.CompileResult compiled = SceneCompiler.compile(parsed.resource());
         if (!compiled.valid()) throw new IllegalStateException(compiled.diagnostics().toString());
         return compiled.scene();
+    }
+
+    private static com.jvn.villagerretaliation.scene.model.CompiledScene compiledScene(JsonObject root) {
+        SceneCompiler.CompileResult compiled=SceneCompiler.compile(SceneParser.parse(VillagerRetaliation.id("quest_scenes/test.json"),root).resource());
+        if(!compiled.valid())throw new IllegalStateException(compiled.diagnostics().toString());return compiled.scene();
     }
 
     private static void expectFailure(GameTestHelper helper, Runnable operation, String message) {
