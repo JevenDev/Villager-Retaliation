@@ -4905,6 +4905,9 @@ public final class VillagerQuestService {
                 "",
                 Map.of(),
                 CompiledQuestTransition.EMPTY,
+                null,
+                "",
+                false,
                 false);
     }
 

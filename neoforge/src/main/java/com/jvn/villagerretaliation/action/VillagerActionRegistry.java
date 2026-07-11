@@ -84,6 +84,12 @@ public final class VillagerActionRegistry {
                     VillagerActionDefinition.Kind.COUNTER,
                     aliases("increment_counter", "add_counter"),
                     capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN,
+                            ActionCapability.PROVIDER_LIVE, ActionCapability.PROVIDER_SNAPSHOT)),
+            register(
+                    "start_scene",
+                    VillagerActionDefinition.Kind.START_SCENE,
+                    aliases("scene", "scene_start"),
+                    capabilities(ActionCapability.PLAYER_LIVE, ActionCapability.WORLD_KNOWN,
                             ActionCapability.PROVIDER_LIVE, ActionCapability.PROVIDER_SNAPSHOT))
     );
     private static final Map<String, ActionTypeDescriptor> BY_ALIAS = descriptorsByAlias();

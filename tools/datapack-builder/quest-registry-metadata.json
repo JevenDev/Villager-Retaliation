@@ -378,6 +378,20 @@
           "provider_snapshot",
           "world_known"
         ]
+      },
+      {
+        "id": "start_scene",
+        "aliases": [
+          "scene",
+          "scene_start"
+        ],
+        "kind": "start_scene",
+        "capabilities": [
+          "player_live",
+          "provider_live",
+          "provider_snapshot",
+          "world_known"
+        ]
       }
     ],
     "objectives": [
@@ -1921,11 +1935,14 @@
         "rep",
         "reputation",
         "response_transition",
+        "scene",
+        "scene_start",
         "set_fact",
         "set_stage",
         "set_tag",
         "set_variable",
         "stage",
+        "start_scene",
         "tag",
         "tracker",
         "unset_tag",

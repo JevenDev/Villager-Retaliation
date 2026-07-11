@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.gametest;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
 import com.jvn.villagerretaliation.api.registry.ExtensionContracts.ClientSync;
@@ -9,6 +10,10 @@ import com.jvn.villagerretaliation.api.registry.ExtensionContracts.ToolingMetada
 import com.jvn.villagerretaliation.api.registry.FreezableExtensionRegistry;
 import com.jvn.villagerretaliation.api.registry.RuntimeTypeDescriptor;
 import com.jvn.villagerretaliation.quest.QuestRegistryMetadata;
+import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.scene.compiler.SceneCompiler;
+import com.jvn.villagerretaliation.scene.compiler.SceneDiagnostic;
+import com.jvn.villagerretaliation.scene.compiler.SceneParser;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBindingService;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
@@ -115,6 +120,62 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void sceneCompilerKeepsExplicitEntryAndStableGraphIds(GameTestHelper helper) {
+        SceneParser.ParseResult parsed = SceneParser.parse(VillagerRetaliation.id("quest_scenes/test.json"), validScene());
+        helper.assertTrue(parsed.valid(), "valid scene resource should parse: " + parsed.diagnostics());
+        SceneCompiler.CompileResult compiled = SceneCompiler.compile(parsed.resource());
+        helper.assertTrue(compiled.valid(), "valid scene graph should compile: " + compiled.diagnostics());
+        helper.assertValueEqual(compiled.scene().entryStep(), "opening_wait", "authored scene entry step");
+        helper.assertTrue(compiled.scene().steps().containsKey("opening_wait")
+                        && compiled.scene().steps().containsKey("finish"),
+                "compiled graph should preserve explicitly authored stable ids");
+        helper.assertTrue(compiled.scene().definitionHash().length() == 64,
+                "compiled scene should carry a canonical SHA-256 definition hash");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void sceneCompilerRejectsDuplicateIdsAndImmediateCycles(GameTestHelper helper) {
+        JsonObject root = validScene();
+        root.getAsJsonArray("steps").add(root.getAsJsonArray("steps").get(0).deepCopy());
+        SceneParser.ParseResult duplicate = SceneParser.parse(VillagerRetaliation.id("quest_scenes/duplicate.json"), root);
+        helper.assertTrue(duplicate.diagnostics().stream().anyMatch(value -> value.code().equals("scene.step.duplicate")),
+                "duplicate stable step ids should be rejected structurally");
+
+        JsonObject cycle = JsonParser.parseString("""
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:cycle","entry_step":"a",
+                 "actors":[],"steps":[
+                   {"id":"a","type":"villagerretaliation:scene_branch","transitions":{"loop":"b"}},
+                   {"id":"b","type":"villagerretaliation:scene_branch","transitions":{"loop":"a"}},
+                   {"id":"done","type":"villagerretaliation:scene_complete"}]}
+                """).getAsJsonObject();
+        SceneCompiler.CompileResult compiled = SceneCompiler.compile(
+                SceneParser.parse(VillagerRetaliation.id("quest_scenes/cycle.json"), cycle).resource());
+        helper.assertTrue(compiled.diagnostics().stream().anyMatch(value -> value.code().equals("scene.cycle.immediate")),
+                "unbounded immediate graph cycles should be rejected");
+        helper.assertTrue(compiled.diagnostics().stream().anyMatch(value -> value.code().equals("scene.step.unreachable")
+                        && value.severity() == SceneDiagnostic.Severity.WARNING),
+                "unreachable graph nodes should be diagnosed");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questActionParsesStableSceneLaunchOperation(GameTestHelper helper) {
+        JsonObject wrapper = JsonParser.parseString("""
+                {"actions":[{"type":"start_scene","scene_id":"villagerretaliation:gate_ambush",
+                  "operation_id":"acceptance/gate_ambush","wait_for_result":true}]}
+                """).getAsJsonObject();
+        List<VillagerActionDefinition> actions = VillagerActionDefinition.readList(
+                VillagerRetaliation.id("quests/test.json"), "test", wrapper, VillagerRetaliation.id("test"));
+        helper.assertTrue(actions.size() == 1, "start_scene action should parse through the canonical action model");
+        VillagerActionDefinition action = actions.getFirst();
+        helper.assertValueEqual(action.kind(), VillagerActionDefinition.Kind.START_SCENE, "scene action kind");
+        helper.assertValueEqual(action.sceneOperationId(), "acceptance/gate_ambush", "stable scene operation id");
+        helper.assertTrue(action.waitForScene(), "scene action should retain wait_for_result");
+        helper.succeed();
+    }
+
     private static RuntimeTypeDescriptor descriptor(String path, Set<net.minecraft.resources.ResourceLocation> aliases) {
         return new RuntimeTypeDescriptor(VillagerRetaliation.id(path), aliases, Set.of(), Set.of(),
                 JsonObject::deepCopy, value -> List.of(), (value, context) -> value, String::valueOf,
@@ -132,6 +193,20 @@ public final class SceneRegistryGameTests {
         return SceneActorBinding.entity(alias, VillagerRetaliation.id("villager"), UUID.randomUUID(),
                 VillagerRetaliation.id("villager"), VillagerRetaliation.id("overworld"),
                 new BlockPos(position, 64, position), name, true);
+    }
+
+    private static JsonObject validScene() {
+        return JsonParser.parseString("""
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:gate_scene",
+                 "definition_version":3,"ownership":"player","entry_step":"opening_wait",
+                 "actors":[{"alias":"guide","type":"villagerretaliation:villager","required":true,
+                   "capabilities":["villagerretaliation:capability/dialogue"],"binding_source":"quest_provider",
+                   "replacement_policy":"fixed","missing_actor_policy":"block"}],
+                 "steps":[
+                   {"id":"opening_wait","type":"villagerretaliation:wait_ticks","actors":["guide"],
+                    "data":{"ticks":20},"next":"finish"},
+                   {"id":"finish","type":"villagerretaliation:scene_complete"}]}
+                """).getAsJsonObject();
     }
 
     private static void expectFailure(GameTestHelper helper, Runnable operation, String message) {

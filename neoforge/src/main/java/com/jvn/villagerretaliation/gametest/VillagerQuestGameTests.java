@@ -526,6 +526,9 @@ public final class VillagerQuestGameTests {
                 "",
                 Map.of(),
                 CompiledQuestTransition.EMPTY,
+                null,
+                "",
+                false,
                 false);
         ActionResult dryRun = VillagerActionRegistry.dryRun(null, notification, Map.of());
         helper.assertValueEqual(dryRun.status(), ActionStatus.SKIPPED, "dry run status");
