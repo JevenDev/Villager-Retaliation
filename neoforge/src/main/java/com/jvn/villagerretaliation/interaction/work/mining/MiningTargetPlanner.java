@@ -93,6 +93,15 @@ final class MiningTargetPlanner {
             HiredWorkerBrain.setLastTargetScanResult(context, "excavation_scan_in_progress");
             return null;
         }
+        if (HiredMiningMode.fromState(context.state()).excavatesHorizontally()
+                && !MiningHorizontalStairPlan.cleanup(context)
+                && MiningHorizontalStairPlan.hasRemainingSupport(level, context)) {
+            MiningHorizontalStairPlan.beginCleanup(context);
+            context.state().remove(MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG);
+            HiredWorkPlan.clear(context);
+            HiredWorkerBrain.setLastTargetScanResult(context, "horizontal_stair_cleanup");
+            return null;
+        }
         context.state().putLong(
                 MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG,
                 level.getGameTime() + MiningWorkerState.noTargetScanCooldownTicks());
@@ -105,12 +114,15 @@ final class MiningTargetPlanner {
             Villager villager,
             HiredWorkContext context,
             BlockPos pos) {
-        boolean neededShaftTarget = MiningExcavationSupport.isNeededLadderShaftTarget(level, context, pos);
+        HiredMiningMode mode = HiredMiningMode.fromState(context.state());
+        boolean horizontal = mode.excavatesHorizontally();
+        boolean neededShaftTarget = !horizontal && MiningExcavationSupport.isNeededLadderShaftTarget(level, context, pos);
         return context.isInsideWorkArea(pos)
+                && (!horizontal || !MiningHorizontalStairPlan.isReservedSupport(context, villager, pos))
                 && !this.worker.isTemporarilyAvoidedTargetForPlanner(level, villager, pos)
                 && (neededShaftTarget || MiningBlockRules.isMineableExcavationBlock(level, context, pos))
-                && MiningBlockRules.isCurrentExcavationLayer(level, context, pos)
-                && MiningExcavationSupport.canMineCurrentLayerTarget(level, context, pos)
+                && (horizontal || MiningBlockRules.isCurrentExcavationLayer(level, context, pos))
+                && (horizontal || MiningExcavationSupport.canMineCurrentLayerTarget(level, context, pos))
                 && !MiningBlockRules.hasAdjacentExcavationFluid(level, pos);
     }
 
@@ -417,6 +429,7 @@ final class MiningTargetPlanner {
             HiredWorkContext context,
             Iterable<BlockPos> targets) {
         BlockPos pathOrigin = villager.blockPosition().immutable();
+        boolean horizontal = HiredMiningMode.fromState(context.state()).excavatesHorizontally();
         Predicate<BlockPos> routeFilter = pos -> this.worker.isValidExcavationApproach(level, context, pos);
         Predicate<BlockPos> approachFilter = pos -> routeFilter.test(pos)
                 && this.worker.isValidExcavationWorkStance(level, context, pos)
@@ -442,7 +455,8 @@ final class MiningTargetPlanner {
                         level,
                         context,
                         target,
-                        approach))
+                        approach),
+                horizontal ? MiningWorker.HORIZONTAL_EXCAVATION_REACH : HiredMoveToBlockFaceJob.MAX_REACH)
                 .search()
                 .target();
     }
@@ -538,11 +552,12 @@ final class MiningTargetPlanner {
             ServerLevel level,
             HiredWorkContext context,
             BlockPos pos) {
-        boolean neededShaftTarget = MiningExcavationSupport.isNeededLadderShaftTarget(level, context, pos);
+        boolean horizontal = HiredMiningMode.fromState(context.state()).excavatesHorizontally();
+        boolean neededShaftTarget = !horizontal && MiningExcavationSupport.isNeededLadderShaftTarget(level, context, pos);
         return context.isInsideWorkArea(pos)
                 && (neededShaftTarget || MiningBlockRules.isMineableExcavationBlock(level, context, pos))
-                && MiningBlockRules.isCurrentExcavationLayer(level, context, pos)
-                && MiningExcavationSupport.canMineCurrentLayerTarget(level, context, pos)
+                && (horizontal || MiningBlockRules.isCurrentExcavationLayer(level, context, pos))
+                && (horizontal || MiningExcavationSupport.canMineCurrentLayerTarget(level, context, pos))
                 && !MiningBlockRules.hasAdjacentExcavationFluid(level, pos);
     }
 

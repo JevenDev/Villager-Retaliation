@@ -5,7 +5,8 @@ import net.minecraft.nbt.CompoundTag;
 
 public enum HiredMiningMode {
     EXPOSED_ORES("exposed_ores", "Exposed Ores"),
-    EXCAVATE_AREA("excavate_area", "Excavate Area");
+    HORIZONTAL_EXCAVATION("horizontal_excavation", "Horizontal Excavation"),
+    EXCAVATE_AREA("excavate_area", "Vertical Excavation");
 
     public static final String STATE_TAG = "MiningMode";
 
@@ -31,6 +32,14 @@ public enum HiredMiningMode {
     }
 
     public boolean excavatesArea() {
+        return this == HORIZONTAL_EXCAVATION || this == EXCAVATE_AREA;
+    }
+
+    public boolean excavatesHorizontally() {
+        return this == HORIZONTAL_EXCAVATION;
+    }
+
+    public boolean usesExcavationShaft() {
         return this == EXCAVATE_AREA;
     }
 

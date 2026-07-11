@@ -40,6 +40,9 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
     private final Predicate<BlockState> sightTransparent;
     private final BiPredicate<BlockPos, BlockPos> alternateApproachReachable;
     private final BiPredicate<BlockPos, BlockPos> targetApproachFilter;
+    private final double maxReach;
+    private final double maxReachSqr;
+    private final double bodyReachSqr;
 
     public HiredMoveToBlockFaceJob(ServerLevel level, Villager villager, Iterable<BlockPos> candidatePositions, int maxCandidates) {
         this(level, villager, candidatePositions, maxCandidates, ignored -> true);
@@ -111,6 +114,22 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             Predicate<BlockState> sightTransparent,
             BiPredicate<BlockPos, BlockPos> alternateApproachReachable,
             BiPredicate<BlockPos, BlockPos> targetApproachFilter) {
+        this(level, villager, candidatePositions, maxCandidates, targetFilter, approachFilter, pathFilter,
+                sightTransparent, alternateApproachReachable, targetApproachFilter, MAX_REACH);
+    }
+
+    public HiredMoveToBlockFaceJob(
+            ServerLevel level,
+            Villager villager,
+            Iterable<BlockPos> candidatePositions,
+            int maxCandidates,
+            Predicate<BlockPos> targetFilter,
+            Predicate<BlockPos> approachFilter,
+            Predicate<BlockPos> pathFilter,
+            Predicate<BlockState> sightTransparent,
+            BiPredicate<BlockPos, BlockPos> alternateApproachReachable,
+            BiPredicate<BlockPos, BlockPos> targetApproachFilter,
+            double maxReach) {
         super(level, villager, maxCandidates);
         this.candidatePositions = candidatePositions;
         this.targetFilter = targetFilter == null ? ignored -> true : targetFilter;
@@ -119,6 +138,9 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         this.sightTransparent = sightTransparent == null ? ignored -> false : sightTransparent;
         this.alternateApproachReachable = alternateApproachReachable == null ? (target, approach) -> false : alternateApproachReachable;
         this.targetApproachFilter = targetApproachFilter == null ? (target, approach) -> true : targetApproachFilter;
+        this.maxReach = Math.max(MAX_REACH, maxReach);
+        this.maxReachSqr = this.maxReach * this.maxReach;
+        this.bodyReachSqr = (this.maxReach + BODY_REACH_BUFFER) * (this.maxReach + BODY_REACH_BUFFER);
     }
 
     @Override
@@ -154,14 +176,17 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                 continue;
             }
             Vec3 hit = hitPosition(target, direction);
+            int approachRadius = this.maxReach > MAX_REACH
+                    ? (int) Math.ceil(this.maxReach - 1.0D)
+                    : FACE_APPROACH_RADIUS;
             for (BlockPos rawCandidate : BlockPos.betweenClosed(
-                    exposedNeighbor.offset(-FACE_APPROACH_RADIUS, -1, -FACE_APPROACH_RADIUS),
-                    exposedNeighbor.offset(FACE_APPROACH_RADIUS, 1, FACE_APPROACH_RADIUS))) {
+                    exposedNeighbor.offset(-approachRadius, -approachRadius, -approachRadius),
+                    exposedNeighbor.offset(approachRadius, approachRadius, approachRadius))) {
                 BlockPos approach = rawCandidate.immutable();
                 if (approach.equals(currentPos)
                         || !this.approachFilter.test(approach)
                         || !this.targetApproachFilter.test(target, approach)
-                        || !isAdjacentApproach(approach, target)
+                        || (this.maxReach <= MAX_REACH && !isAdjacentApproach(approach, target))
                         || !isValidApproachPosition(this.level, approach)) {
                     continue;
                 }
@@ -170,8 +195,8 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
                         approach.getY() + this.villager.getEyeHeight(),
                         approach.getZ() + 0.5D);
                 if (!hasLineOfSightToBlock(this.level, this.villager, eye, target, hit, this.sightTransparent)
-                        || eye.distanceToSqr(hit) > MAX_REACH_SQR
-                        || approach.getCenter().distanceToSqr(hit) > BODY_REACH_SQR) {
+                        || eye.distanceToSqr(hit) > this.maxReachSqr
+                        || approach.getCenter().distanceToSqr(hit) > this.bodyReachSqr) {
                     continue;
                 }
                 approaches.add(new ApproachCandidate(approach, hit, approachScore(approach, hit, target)));
@@ -237,7 +262,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
         if (!isLoaded(this.level, target)
                 || !this.approachFilter.test(currentPos)
                 || !this.targetApproachFilter.test(target, currentPos)
-                || !isAdjacentApproach(currentPos, target)) {
+                || (this.maxReach <= MAX_REACH && !isAdjacentApproach(currentPos, target))) {
             return null;
         }
         Vec3 hit = visibleHitPosition(this.level, this.villager, this.villager.getEyePosition(), target, this.sightTransparent);
@@ -245,7 +270,7 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             return null;
         }
         HiredPathTarget pathTarget = new HiredPathTarget(target.immutable(), currentPos, hit);
-        return canReachFromCurrentPosition(this.level, this.villager, pathTarget, this.sightTransparent) ? pathTarget : null;
+        return canReachFromCurrentPosition(this.level, this.villager, pathTarget, this.sightTransparent, this.maxReach) ? pathTarget : null;
     }
 
     private double approachScore(BlockPos approach, Vec3 hitPos, BlockPos target) {
@@ -270,10 +295,22 @@ public final class HiredMoveToBlockFaceJob extends HiredPathJob {
             Villager villager,
             HiredPathTarget target,
             Predicate<BlockState> sightTransparent) {
+        return canReachFromCurrentPosition(level, villager, target, sightTransparent, MAX_REACH);
+    }
+
+    public static boolean canReachFromCurrentPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredPathTarget target,
+            Predicate<BlockState> sightTransparent,
+            double maxReach) {
+        double safeReach = Math.max(MAX_REACH, maxReach);
+        double eyeReachSqr = safeReach * safeReach;
+        double bodyReachSqr = (safeReach + BODY_REACH_BUFFER) * (safeReach + BODY_REACH_BUFFER);
         Vec3 currentHit = visibleHitPosition(level, villager, villager.getEyePosition(), target.blockPos(), sightTransparent);
         if (currentHit != null) {
-            return villager.getEyePosition().distanceToSqr(currentHit) <= MAX_REACH_SQR
-                    && villager.position().distanceToSqr(currentHit) <= BODY_REACH_SQR;
+            return villager.getEyePosition().distanceToSqr(currentHit) <= eyeReachSqr
+                    && villager.position().distanceToSqr(currentHit) <= bodyReachSqr;
         }
         return isLoaded(level, target.blockPos())
                 && isLoaded(level, target.approachPos())

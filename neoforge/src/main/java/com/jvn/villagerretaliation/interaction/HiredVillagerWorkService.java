@@ -23,6 +23,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.logging.LoggingWorker;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningWorker;
+import com.jvn.villagerretaliation.interaction.work.mining.MiningHorizontalOptions;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.mood.VillagerMoodState;
@@ -438,7 +439,7 @@ public final class HiredVillagerWorkService {
 
     private static BlockPos excavationSurfaceEntryTarget(ServerLevel level, HiredWorkSession session, Villager villager) {
         if (session.role() != HiredVillagerRole.MINING
-                || !HiredMiningMode.fromState(session.state()).excavatesArea()) {
+                || !HiredMiningMode.fromState(session.state()).usesExcavationShaft()) {
             return null;
         }
         HiredWorkContext context = session.context();
@@ -450,7 +451,7 @@ public final class HiredVillagerWorkService {
 
     private static BlockPos excavationCompletionEntryTarget(ServerLevel level, HiredWorkSession session) {
         if (session.role() != HiredVillagerRole.MINING
-                || !HiredMiningMode.fromState(session.state()).excavatesArea()) {
+                || !HiredMiningMode.fromState(session.state()).usesExcavationShaft()) {
             return null;
         }
         return MiningWorker.excavationEntryTarget(level, session.context());
@@ -1408,6 +1409,17 @@ public final class HiredVillagerWorkService {
         sendStatusNotice(player, villager, state);
     }
 
+    public static void toggleHorizontalMiningFloorPatching(ServerPlayer player, ServerLevel level, Villager villager) {
+        CompoundTag state = state(villager);
+        initializeDefaults(state, villager);
+        boolean enabled = MiningHorizontalOptions.togglePatchFloor(state);
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        MiningWorker.resetForWorkAreaChange(level, villager, session.context(), HiredMiningMode.fromState(state));
+        setStatus(state, "interaction.work.status.mining_orders", Map.of(
+                "mode", "Horizontal floor patching " + (enabled ? "enabled" : "disabled")));
+        sendStatusNotice(player, villager, state);
+    }
+
     public static void toggleFarmingOption(ServerPlayer player, ServerLevel level, Villager villager, String optionId) {
         if (!canManageWork(level, villager, player)) {
             com.jvn.villagerretaliation.interaction.VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.work.manage.requires_hirer");
@@ -1748,6 +1760,7 @@ public final class HiredVillagerWorkService {
             state.putString(HiredHuntingMode.STATE_TAG, HiredHuntingMode.fromState(state).serializedName());
         }
         HiredHuntingTargets.initializeDefaults(state);
+        MiningHorizontalOptions.initializeDefaults(state);
         if (!state.contains("Status", Tag.TAG_STRING)) {
             setStatus(state, "interaction.work.status.waiting_tick");
         }

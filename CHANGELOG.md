@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added separate horizontal and vertical excavation orders for hired miners. Horizontal excavation uses five-block reach, cuts and later removes temporary access stairs for tall spaces, avoids ladder shafts, and can patch unsafe floors with mined or user-supplied blocks.
 - Added 15 repeatable village commissions spanning early, mid, and late game, with distinct gathering, trading, building, mining, combat, structure-survey, Nether, End, Ancient City, and Wither objectives.
 - Added five four-quest branching questlines: Green Thumb, Deep Delvers, Redstone Works, Nether Routes, and End Survey. Each line records a player choice, provides two playable stage routes, and unlocks a different fact-gated finale.
 - Added dedicated built-in quest-content validation for title length, repeatable dialogue variation, hand-in consumption, cooldowns, loot references, parent graphs, stage reachability, objective predicates, terminal turn-ins, choice routes, branch children, and expansion objective uniqueness.

@@ -45,7 +45,8 @@ public final class MiningExcavationSupport {
             HiredWorkContext context,
             Villager villager,
             HiredPathTarget target) {
-        return MiningExcavationShaft.shouldUseFallback(context, villager, target);
+        return !com.jvn.villagerretaliation.interaction.HiredMiningMode.fromState(context.state()).excavatesHorizontally()
+                && MiningExcavationShaft.shouldUseFallback(context, villager, target);
     }
 
     public static boolean hasCompleteLadderRouteToLayer(

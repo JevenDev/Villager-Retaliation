@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.interaction.work.logging.LoggingWorker;
 import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningWorker;
+import com.jvn.villagerretaliation.interaction.work.mining.MiningHorizontalOptions;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningExcavationSupport;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules;
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
@@ -2302,6 +2303,89 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 240)
+    public static void horizontalMiningExcavatesTwoHighTunnelWithoutLadders(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerHorizontalTunnel");
+        Villager villager = spawnVillager(helper, new BlockPos(4, 2, 3));
+        BlockPos lower = new BlockPos(3, 2, 3);
+        BlockPos upper = new BlockPos(3, 3, 3);
+        setBlock(helper, lower, Blocks.STONE.defaultBlockState());
+        setBlock(helper, upper, Blocks.STONE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.HORIZONTAL_EXCAVATION.serializedName());
+        HiredWorkContext context = context(helper, villager, state, lower, upper, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertSupply(new ItemStack(Items.LADDER, 8));
+        MiningWorker worker = new MiningWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 160, () ->
+                level.getBlockState(helper.absolutePos(lower)).isAir()
+                        && level.getBlockState(helper.absolutePos(upper)).isAir());
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(lower)).isAir(), "horizontal miner should clear the lower tunnel block");
+        helper.assertTrue(level.getBlockState(helper.absolutePos(upper)).isAir(), "horizontal miner should clear the upper tunnel block");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.LADDER), 8, "horizontal mining must not consume ladders");
+        helper.assertFalse(HiredWorkerBrain.snapshot(state, level.getGameTime()).failureReason().equals("missing_ladders"),
+                "horizontal mining must not request ladders");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void horizontalMiningPatchesFloorFromMinedOutputsByDefault(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerHorizontalFloor");
+        Villager villager = spawnVillager(helper, new BlockPos(4, 2, 3));
+        BlockPos hole = new BlockPos(3, 1, 3);
+        BlockPos workCell = new BlockPos(3, 2, 3);
+        setBlock(helper, hole, Blocks.AIR.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.HORIZONTAL_EXCAVATION.serializedName());
+        HiredWorkContext context = context(helper, villager, state, workCell, workCell, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertOutput(new ItemStack(Items.COBBLESTONE, 1));
+
+        WorkResult result = new MiningWorker().tick(level, villager, hirer, context);
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(hole)).is(Blocks.COBBLESTONE),
+                "horizontal floor holes should be patched with mined output blocks by default");
+        helper.assertTrue(result.status().contains("fall_guard"), "floor repair should report hazard remediation");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void horizontalMiningFloorPatchingCanBeDisabled(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerHorizontalFloorOff");
+        Villager villager = spawnVillager(helper, new BlockPos(4, 2, 3));
+        BlockPos hole = new BlockPos(3, 1, 3);
+        BlockPos workCell = new BlockPos(3, 2, 3);
+        setBlock(helper, hole, Blocks.AIR.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.HORIZONTAL_EXCAVATION.serializedName());
+        state.putBoolean(MiningHorizontalOptions.PATCH_FLOOR_TAG, false);
+        HiredWorkContext context = context(helper, villager, state, workCell, workCell, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.inventory().insertOutput(new ItemStack(Items.COBBLESTONE, 1));
+
+        new MiningWorker().tick(level, villager, hirer, context);
+
+        helper.assertTrue(level.getBlockState(helper.absolutePos(hole)).isAir(),
+                "disabled horizontal floor patching should leave floor holes unchanged");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.COBBLESTONE), 1,
+                "disabled floor patching should not consume fill blocks");
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void miningRulesTreatLadderFaceAsExposedForShaftExtension(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
@@ -4496,6 +4580,7 @@ public final class VillagerWorkerGameTests {
                     + " direct ticks; task=" + snapshot.taskState()
                     + ", failure=" + snapshot.failureReason()
                     + ", scan=" + snapshot.lastTargetScanResult()
+                    + ", progress=" + context.progressTicks()
                     + ", pos=" + villager.blockPosition()
                     + ", precise=(" + String.format(java.util.Locale.ROOT, "%.2f", villager.getX())
                     + "," + String.format(java.util.Locale.ROOT, "%.2f", villager.getY())

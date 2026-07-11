@@ -595,6 +595,7 @@
   "villagerretaliation.gui.recruit.work_config_combat": "Configure Combat",
   "villagerretaliation.gui.recruit.work_config_hunting": "Configure Hunting",
   "villagerretaliation.gui.recruit.work_config_mining": "Configure Mining",
+  "villagerretaliation.gui.recruit.work_horizontal_floor_patching": "Toggle Horizontal Floor Patching",
   "villagerretaliation.gui.recruit.work_config_logging": "Configure Logging",
   "villagerretaliation.gui.recruit.hunting_animals": "Hunt animals",
   "villagerretaliation.gui.recruit.hunting_hostiles": "Hunt hostiles",

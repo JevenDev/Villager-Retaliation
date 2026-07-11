@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work.mining;
 
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
+import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -25,15 +26,38 @@ final class MiningExcavationPlan {
         HorizontalAxis lineAxis = depthAxis == HorizontalAxis.X ? HorizontalAxis.Z : HorizontalAxis.X;
         boolean depthFromMin = startsFromMin(villager.blockPosition(), context, depthAxis);
         boolean lineFromMin = startsFromMin(villager.blockPosition(), context, lineAxis);
-        ordered.sort((left, right) -> compareLineOrder(
-                left,
-                right,
-                context,
-                depthAxis,
-                lineAxis,
-                depthFromMin,
-                lineFromMin,
-                villager.blockPosition()));
+        boolean horizontal = HiredMiningMode.fromState(context.state()).excavatesHorizontally();
+        if (horizontal && MiningHorizontalStairPlan.cleanup(context)) {
+            ordered.sort((left, right) -> {
+                boolean leftSupport = MiningHorizontalStairPlan.isSupport(context, left);
+                boolean rightSupport = MiningHorizontalStairPlan.isSupport(context, right);
+                if (leftSupport != rightSupport) {
+                    return leftSupport ? 1 : -1;
+                }
+                if (leftSupport) {
+                    int height = Integer.compare(right.getY(), left.getY());
+                    if (height != 0) {
+                        return height;
+                    }
+                    int leftDepth = orderedAxisCoordinate(left, context, depthAxis, depthFromMin);
+                    int rightDepth = orderedAxisCoordinate(right, context, depthAxis, depthFromMin);
+                    return Integer.compare(rightDepth, leftDepth);
+                }
+                return compareLineOrder(left, right, context, depthAxis, lineAxis,
+                        depthFromMin, lineFromMin, villager.blockPosition(), true);
+            });
+        } else {
+            ordered.sort((left, right) -> compareLineOrder(
+                    left,
+                    right,
+                    context,
+                    depthAxis,
+                    lineAxis,
+                    depthFromMin,
+                    lineFromMin,
+                    villager.blockPosition(),
+                    horizontal));
+        }
         if (ordered.size() > maxTargets) {
             return new ArrayList<>(ordered.subList(0, maxTargets));
         }
@@ -48,15 +72,20 @@ final class MiningExcavationPlan {
             HorizontalAxis lineAxis,
             boolean depthFromMin,
             boolean lineFromMin,
-            BlockPos villagerPos) {
-        int result = Integer.compare(context.workMax().getY() - left.getY(), context.workMax().getY() - right.getY());
+            BlockPos villagerPos,
+            boolean horizontal) {
+        int leftDepth = orderedAxisCoordinate(left, context, depthAxis, depthFromMin);
+        int rightDepth = orderedAxisCoordinate(right, context, depthAxis, depthFromMin);
+        int result = horizontal
+                ? Integer.compare(leftDepth, rightDepth)
+                : Integer.compare(context.workMax().getY() - left.getY(), context.workMax().getY() - right.getY());
         if (result != 0) {
             return result;
         }
 
-        int leftDepth = orderedAxisCoordinate(left, context, depthAxis, depthFromMin);
-        int rightDepth = orderedAxisCoordinate(right, context, depthAxis, depthFromMin);
-        result = Integer.compare(leftDepth, rightDepth);
+        result = horizontal
+                ? Integer.compare(left.getY(), right.getY())
+                : Integer.compare(leftDepth, rightDepth);
         if (result != 0) {
             return result;
         }

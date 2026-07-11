@@ -872,6 +872,7 @@ public final class VillagerInteractionService {
                  CONFIGURE_COMBAT,
                  CONFIGURE_HUNTING,
                  CONFIGURE_MINING,
+                 TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING,
                  CONFIGURE_LOGGING,
                  CONFIGURE_FARMING,
                  CONFIGURE_FISHING,
@@ -1516,6 +1517,7 @@ public final class VillagerInteractionService {
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_WORK_ENABLED
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS
+                || action == VillagerRecruitRequestPayload.Action.TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING
                 || action == VillagerRecruitRequestPayload.Action.STOP_BREWING
                 || action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD;
         if (!workAction) {
@@ -1534,6 +1536,7 @@ public final class VillagerInteractionService {
             case TOGGLE_WORK_ENABLED -> HiredVillagerWorkService.toggleEnabled(player, level, villager);
             case TOGGLE_USE_ASSIGNED_SUPPLIES -> HiredVillagerWorkService.toggleAssignedSupplies(player, level, villager);
             case TOGGLE_AUTO_DEPOSIT_OUTPUTS -> HiredVillagerWorkService.toggleAutoDeposit(player, level, villager);
+            case TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING -> HiredVillagerWorkService.toggleHorizontalMiningFloorPatching(player, level, villager);
             case STOP_BREWING -> stopBrewingOrder(player, level, villager);
             case STOP_BUILDER_BUILD -> cancelBuilderOrder(player, level, villager, HiredVillagerWorkService.state(villager));
             default -> HiredVillagerWorkService.configureRole(player, level, villager, configureRole);

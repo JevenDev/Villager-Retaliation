@@ -1278,6 +1278,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addOption("recruit.work_config_hunting", this::openHuntingOptionsPage);
         }
         addRoleWorkConfigOption(HiredVillagerRole.MINING, "recruit.work_config_mining", VillagerRecruitRequestPayload.Action.CONFIGURE_MINING);
+        if (isActiveHiredRole(HiredVillagerRole.MINING)) {
+            addOption("recruit.work_horizontal_floor_patching", () -> requestRecruit(
+                    VillagerRecruitRequestPayload.Action.TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING));
+        }
         if (isActiveHiredRole(HiredVillagerRole.LOGGING)) {
             addOption("recruit.work_config_logging", this::openLoggingFiltersPage);
         }

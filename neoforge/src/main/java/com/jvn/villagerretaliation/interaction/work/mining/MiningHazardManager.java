@@ -78,6 +78,45 @@ final class MiningHazardManager {
         return executePlan(level, villager, context, plan);
     }
 
+    static WorkResult tickHorizontalFloor(ServerLevel level, Villager villager, HiredWorkContext context) {
+        prunePermanentBarriers(level, context);
+        HazardPlan plan = loadPlan(context);
+        if (plan == null) {
+            plan = findHorizontalFloorPlan(level, villager, context);
+            if (plan == null) {
+                return null;
+            }
+            savePlan(context, plan);
+        }
+        return executePlan(level, villager, context, plan);
+    }
+
+    private static HazardPlan findHorizontalFloorPlan(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context) {
+        int floorY = context.workMin().getY() - 1;
+        List<BlockPos> holes = new ArrayList<>();
+        for (int x = context.workMin().getX(); x <= context.workMax().getX(); x++) {
+            for (int z = context.workMin().getZ(); z <= context.workMax().getZ(); z++) {
+                BlockPos floor = new BlockPos(x, floorY, z);
+                if (canReplaceWithFill(level, floor)) {
+                    holes.add(floor);
+                }
+            }
+        }
+        if (holes.isEmpty()) {
+            return null;
+        }
+        holes.sort(Comparator
+                .comparingInt((BlockPos pos) -> level.getFluidState(pos).is(FluidTags.LAVA) ? 0 : 1)
+                .thenComparingDouble(pos -> villager.distanceToSqr(pos.getCenter()))
+                .thenComparingLong(BlockPos::asLong));
+        BlockPos target = holes.getFirst();
+        HazardKind kind = level.getFluidState(target).is(FluidTags.LAVA) ? HazardKind.LAVA : HazardKind.FALL;
+        return new HazardPlan(kind, List.of(target), 0, true);
+    }
+
     static boolean isProtectedBarrier(HiredWorkContext context, BlockPos pos) {
         if (context == null || pos == null) {
             return false;

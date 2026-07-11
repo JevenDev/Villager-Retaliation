@@ -77,6 +77,7 @@ public record VillagerRecruitRequestPayload(int entityId, Action action, HiredVi
         CONFIGURE_COMBAT,
         CONFIGURE_HUNTING,
         CONFIGURE_MINING,
+        TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING,
         CONFIGURE_LOGGING,
         CONFIGURE_FARMING,
         CONFIGURE_FISHING,

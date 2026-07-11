@@ -35,6 +35,7 @@ import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
 public final class MiningWorker extends AbstractBlockWorker {
+    public static final double HORIZONTAL_EXCAVATION_REACH = 5.0D;
     private static final int MAX_PLANNED_MINING_TARGETS = 20;
     private static final int MAX_WORK_AREA_RETURN_PATH_ATTEMPTS = 24;
     private final MiningTargetPlanner targetPlanner = new MiningTargetPlanner(this);
@@ -62,6 +63,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             HiredMiningMode mode) {
         MiningWorkerState.resetForModeChange(context, mode);
+        MiningHorizontalStairPlan.reset(context);
         new MiningWorker().resetRuntimeState(level, villager, context);
     }
 
@@ -71,6 +73,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             HiredMiningMode mode) {
         MiningWorkerState.resetForWorkAreaChange(context, mode);
+        MiningHorizontalStairPlan.reset(context);
         new MiningWorker().resetRuntimeState(level, villager, context);
     }
 
@@ -85,7 +88,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (stateChange.changed()) {
             resetRuntimeState(level, villager, context);
         }
-        if (mode.excavatesArea()) {
+        if (mode.usesExcavationShaft()) {
             WorkResult supplyResult = MiningExcavationSupport.gatherSupplies(level, villager, context);
             if (supplyResult != null) {
                 return supplyResult;
@@ -99,7 +102,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (fullInventoryResult != null) {
             return fullInventoryResult;
         }
-        if (mode.excavatesArea()) {
+        if (mode.usesExcavationShaft()) {
             WorkResult supportResult = MiningExcavationSupport.maintain(level, villager, context, this);
             if (supportResult != null) {
                 return supportResult;
@@ -108,12 +111,24 @@ public final class MiningWorker extends AbstractBlockWorker {
             if (ladderRequirement != null) {
                 return ladderRequirement;
             }
+        }
+        if (mode.excavatesArea()) {
             MiningWorkerState.set(context, MiningWorkerState.Phase.ASSESS_HAZARDS);
-            WorkResult hazardResult = MiningHazardManager.tick(level, villager, context);
-            if (hazardResult != null) {
-                clearActiveBreakingTarget(level, context, villager);
-                HiredWorkPlan.clear(context);
-                return hazardResult;
+            if (mode.excavatesHorizontally() && MiningHorizontalOptions.patchFloor(context.state())) {
+                WorkResult floorResult = MiningHazardManager.tickHorizontalFloor(level, villager, context);
+                if (floorResult != null) {
+                    clearActiveBreakingTarget(level, context, villager);
+                    HiredWorkPlan.clear(context);
+                    return floorResult;
+                }
+            }
+            if (mode.usesExcavationShaft()) {
+                WorkResult hazardResult = MiningHazardManager.tick(level, villager, context);
+                if (hazardResult != null) {
+                    clearActiveBreakingTarget(level, context, villager);
+                    HiredWorkPlan.clear(context);
+                    return hazardResult;
+                }
             }
         }
         setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
@@ -363,6 +378,18 @@ public final class MiningWorker extends AbstractBlockWorker {
             ServerLevel level,
             HiredWorkContext context,
             Villager villager) {
+        if (HiredMiningMode.fromState(context.state()).excavatesHorizontally()) {
+            HiredPathTarget stored = storedWorkTarget(context.state());
+            if (stored != null
+                    && context.isInsideWorkArea(stored.blockPos())
+                    && isHorizontalExcavationPosition(context, stored.approachPos())
+                    && context.isLoaded(level, stored.blockPos())
+                    && context.isLoaded(level, stored.approachPos())
+                    && !isTemporarilyAvoidedTarget(level, villager, stored.blockPos())) {
+                return stored;
+            }
+            return null;
+        }
         return activeWorkTarget(level, context, villager);
     }
 
@@ -383,6 +410,21 @@ public final class MiningWorker extends AbstractBlockWorker {
             Villager villager,
             HiredPathTarget target) {
         return canMineFromCurrentPosition(level, villager, target);
+    }
+
+    private boolean canMineFromCurrentPosition(
+            ServerLevel level,
+            Villager villager,
+            HiredPathTarget target,
+            HiredMiningMode mode) {
+        return mode.excavatesHorizontally()
+                ? HiredMoveToBlockFaceJob.canReachFromCurrentPosition(
+                        level,
+                        villager,
+                        target,
+                        ignored -> false,
+                        HORIZONTAL_EXCAVATION_REACH)
+                : canMineFromCurrentPosition(level, villager, target);
     }
 
     private WorkResult depositFullInventoryBeforeMining(
@@ -416,7 +458,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                 villager,
                 tool);
         List<ItemStack> requiredCapacity = drops;
-        if (mode.excavatesArea()
+        if (mode.usesExcavationShaft()
                 && MiningExcavationSupport.needsLadderRouteOutputReserve(level, context, target.blockPos())) {
             requiredCapacity = new ArrayList<>(drops);
             requiredCapacity.add(new ItemStack(Items.DIRT));
@@ -474,12 +516,12 @@ public final class MiningWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, target);
             return WorkResult.idle("interaction.work.status.return_path_missing");
         }
-        if (mode.excavatesArea() && isAtExcavationReturnTarget(context, villager, target)) {
+        if (mode.usesExcavationShaft() && isAtExcavationReturnTarget(context, villager, target)) {
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             HiredPathMemory.clearNavigationProgress(villager);
             return null;
         }
-        if (mode.excavatesArea() && VillagerTaskNavigationUtil.continueLadderRoute(level, villager, target, speed)) {
+        if (mode.usesExcavationShaft() && VillagerTaskNavigationUtil.continueLadderRoute(level, villager, target, speed)) {
             setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, target);
             return WorkResult.progressed("interaction.work.status.returning_by_ladder");
         }
@@ -529,6 +571,10 @@ public final class MiningWorker extends AbstractBlockWorker {
             double speed) {
         if (context.isInsideWorkArea(villager.blockPosition())) {
             return returnToMiningWorkArea(level, villager, context, mode, speed);
+        }
+        if (mode.excavatesHorizontally()
+                && isHorizontalExcavationPosition(context, villager.blockPosition())) {
+            return null;
         }
 
         HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
@@ -604,8 +650,8 @@ public final class MiningWorker extends AbstractBlockWorker {
                     && !isUnsafeExcavationUnderfoot(level, context, target.blockPos(), target.approachPos())
                     && !isUnsafeExcavationUnderfoot(level, context, target.blockPos(), villager.blockPosition())
                     && isSafeMiningWorkTarget(level, villager, target)
-                    && hasLineOfSightToTarget(level, villager, target)
-                    && canMineFromCurrentPosition(level, villager, target);
+                    && (mode.excavatesHorizontally() || hasLineOfSightToTarget(level, villager, target))
+                    && canMineFromCurrentPosition(level, villager, target, mode);
         }
         return canWorkFromCurrentPosition(level, villager, context, target)
                 && isSafeMiningWorkTarget(level, villager, target)
@@ -631,7 +677,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         BlockPos pathOrigin = villager.blockPosition().immutable();
         Predicate<BlockPos> approachFilter = pos -> isValidExcavationApproach(level, context, pos);
         Predicate<BlockPos> pathFilter = pos -> approachFilter.test(pos) || pos.equals(pathOrigin);
-        boolean allowSurfaceEscape = canUseExcavationSurfaceEscape(level, context);
+        boolean allowSurfaceEscape = mode.usesExcavationShaft() && canUseExcavationSurfaceEscape(level, context);
         if (canStartMining(level, villager, context, target, mode)) {
             holdWorkPosition(villager, target);
             return true;
@@ -835,7 +881,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             HiredMiningMode mode) {
-        if (mode.excavatesArea()) {
+        if (mode.usesExcavationShaft()) {
             BlockPos surfaceTarget = excavationReturnTarget(level, villager, context);
             BlockPos ladderEntryTarget = MiningExcavationSupport.entryTarget(level, context);
             BlockPos descentTarget = MiningExcavationSupport.currentLayerDescentTarget(level, context);
@@ -963,6 +1009,9 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (pos == null || !context.isLoaded(level, pos)) {
             return false;
         }
+        if (HiredMiningMode.fromState(context.state()).excavatesHorizontally()) {
+            return isHorizontalExcavationPosition(context, pos);
+        }
         Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
         if (currentLayerY == null) {
             return context.isInsideWorkArea(pos);
@@ -976,6 +1025,9 @@ public final class MiningWorker extends AbstractBlockWorker {
     boolean isValidExcavationWorkStance(ServerLevel level, HiredWorkContext context, BlockPos pos) {
         if (!isValidExcavationApproach(level, context, pos)) {
             return false;
+        }
+        if (HiredMiningMode.fromState(context.state()).excavatesHorizontally()) {
+            return true;
         }
         Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
         if (currentLayerY == null || currentLayerY >= context.workMax().getY()) {
@@ -991,6 +1043,9 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             BlockPos current,
             BlockPos approach) {
+        if (HiredMiningMode.fromState(context.state()).excavatesHorizontally()) {
+            return true;
+        }
         Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
         if (currentLayerY == null || currentLayerY < context.workMax().getY()) {
             return true;
@@ -1019,6 +1074,15 @@ public final class MiningWorker extends AbstractBlockWorker {
             BlockPos target,
             BlockPos stance) {
         return MiningSafety.isUnsafeUnderfootTarget(level, target, stance);
+    }
+
+    private static boolean isHorizontalExcavationPosition(HiredWorkContext context, BlockPos pos) {
+        return pos.getY() >= context.workMin().getY()
+                && pos.getY() <= context.workMax().getY()
+                && pos.getX() >= context.workMin().getX() - 1
+                && pos.getX() <= context.workMax().getX() + 1
+                && pos.getZ() >= context.workMin().getZ() - 1
+                && pos.getZ() <= context.workMax().getZ() + 1;
     }
 
     static boolean isUnsafeExcavationUnderfoot(
@@ -1109,7 +1173,8 @@ public final class MiningWorker extends AbstractBlockWorker {
     }
 
     private static String miningStatusKey(HiredMiningMode mode, String status) {
-        return "interaction.work.mining." + status + "." + (mode.excavatesArea() ? "excavate_area" : "exposed_ores");
+        String suffix = mode.excavatesArea() ? "excavate_area" : "exposed_ores";
+        return "interaction.work.mining." + status + "." + suffix;
     }
 
     private static String excavationResultStatusKey(DepositResult depositResult, String status) {
