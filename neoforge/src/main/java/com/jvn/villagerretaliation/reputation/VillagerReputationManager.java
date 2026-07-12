@@ -6,7 +6,6 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
-import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -54,6 +53,10 @@ public final class VillagerReputationManager {
             return;
         }
         addReputation(level, receiver, playerId, amount, ReputationEventType.GOSSIP, receiver.blockPosition());
+    }
+
+    public static void addUnlawfulOrderReputation(ServerLevel level, Villager villager, UUID playerId, int amount) {
+        addReputation(level, villager, playerId, amount, ReputationEventType.UNLAWFUL_ORDER, villager.blockPosition());
     }
 
     public static void addTradeReputation(ServerLevel level, AbstractVillager villager, Player player) {
@@ -276,7 +279,7 @@ public final class VillagerReputationManager {
                 || eventType != ReputationEventType.WITNESSED_HIT && eventType != ReputationEventType.GOSSIP) {
             return false;
         }
-        return PartyService.arePlayerAndVillagerInSameParty(level, playerId, villager.getUUID());
+        return false;
     }
 
     private static void notifyQuestReputationChanged(

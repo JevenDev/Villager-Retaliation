@@ -13,5 +13,6 @@ public enum ReputationEventType {
     GIFT,
     HEAL,
     SAVE,
+    UNLAWFUL_ORDER,
     GOSSIP
 }
