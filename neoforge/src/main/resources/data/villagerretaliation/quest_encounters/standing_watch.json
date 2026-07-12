@@ -10,7 +10,13 @@
     },
     {
       "entity": "minecraft:pillager",
-      "count": 1
+      "count": 1,
+      "equipment": {
+        "mainhand": {
+          "item": "minecraft:crossbow",
+          "drop_chance": 0.0
+        }
+      }
     }
   ],
   "extra_per_player": 1,

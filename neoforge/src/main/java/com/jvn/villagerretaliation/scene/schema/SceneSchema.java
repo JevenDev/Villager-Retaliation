@@ -55,6 +55,12 @@ public final class SceneSchema {
         properties.add("max_party_size", integer(1));
         properties.add("placement_attempts", boundedInteger(1, 64));
         properties.add("spawn_radius", boundedInteger(1, 32));
+        properties.add("spawn_mode", enumValues(EncounterTemplate.SpawnMode.values()));
+        properties.add("wave_count", boundedInteger(1, 32));
+        properties.add("wave_interval_ticks", integer(0));
+        properties.add("wave_trigger", enumValues(EncounterTemplate.WaveTrigger.values()));
+        properties.add("boss_bar", bool());
+        properties.add("location_message", text());
         properties.add("respawn_policy", enumValues(EncounterTemplate.RespawnPolicy.values()));
         properties.add("cleanup_policy", enumValues(EncounterTemplate.CleanupPolicy.values()));
         properties.add("completion_condition", enumValues(EncounterTemplate.CompletionCondition.values()));
@@ -105,8 +111,41 @@ public final class SceneSchema {
         JsonObject properties = new JsonObject();
         properties.add("entity", resourceLocation());
         properties.add("count", boundedInteger(1, 64));
+        properties.add("equipment", equipment());
         member.add("properties", properties);
         return member;
+    }
+
+    private static JsonObject equipment() {
+        JsonObject equipment = object("Equipment by slot");
+        equipment.addProperty("additionalProperties", false);
+        JsonObject properties = new JsonObject();
+        for (String slot : new String[]{"mainhand", "offhand", "head", "chest", "legs", "feet", "body"}) {
+            properties.add(slot, gear());
+        }
+        equipment.add("properties", properties);
+        return equipment;
+    }
+
+    private static JsonObject gear() {
+        JsonObject gear = object("Equipped item");
+        gear.addProperty("additionalProperties", false);
+        gear.add("required", strings("item"));
+        JsonObject properties = new JsonObject();
+        properties.add("item", resourceLocation());
+        properties.add("count", boundedInteger(1, 99));
+        properties.add("enchantments", enchantments());
+        JsonObject chance = new JsonObject();chance.addProperty("type", "number");chance.addProperty("minimum", 0);chance.addProperty("maximum", 1);
+        properties.add("drop_chance", chance);
+        gear.add("properties", properties);
+        return gear;
+    }
+
+    private static JsonObject enchantments() {
+        JsonObject value = object("Enchantment levels");
+        value.add("propertyNames", resourceLocation());
+        value.add("additionalProperties", boundedInteger(1, 255));
+        return value;
     }
 
     private static JsonObject registeredIds(com.jvn.villagerretaliation.api.registry.FreezableExtensionRegistry<?> registry) {

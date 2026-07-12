@@ -1,5 +1,8 @@
 # Changelog
 
+- Added datapack-authored encounter equipment, enchantments, drop chances, and `group`, `near_player`, `fixed`, and persistent `raid_waves` spawn modes.
+- Added participant-only raid-wave boss bars, enabled by default and configurable with the encounter template's `boss_bar` field.
+
 ## Unreleased
 
 ### Added

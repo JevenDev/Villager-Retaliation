@@ -88,7 +88,22 @@ Movement never force-loads a chunk. It waits for the actor/destination chunk, re
   "id": "example:gate_ambush",
   "version": 1,
   "controller": "villagerretaliation:controlled",
-  "members": [{ "entity": "minecraft:zombie", "count": 3 }],
+  "members": [
+    { "entity": "minecraft:zombie", "count": 3 },
+    {
+      "entity": "minecraft:pillager",
+      "count": 1,
+      "equipment": {
+        "mainhand": {
+          "item": "minecraft:crossbow",
+          "enchantments": { "minecraft:quick_charge": 2 },
+          "drop_chance": 0.05
+        },
+        "head": { "item": "minecraft:iron_helmet" }
+      }
+    }
+  ],
+  "spawn_mode": "group",
   "extra_per_player": 1,
   "max_party_size": 4,
   "placement_attempts": 16,
@@ -100,6 +115,35 @@ Movement never force-loads a chunk. It waits for the actor/destination chunk, re
 ```
 
 Templates are allowlists, not command containers. Party-size and difficulty inputs are captured when the encounter starts. Owned entities carry durable encounter identity; reload reconciles UUIDs and tags before bounded safe-placement attempts. Unrelated nearby mobs never count. Cleanup removes, retains, or releases surviving owned mobs according to the template and scene policy.
+
+Every mob runs its normal vanilla spawn initialization first, so mobs such as pillagers receive their usual equipment. A member's optional `equipment` object then overrides individual `mainhand`, `offhand`, `head`, `chest`, `legs`, `feet`, or `body` slots. Each slot accepts `item`, optional `count`, an `enchantments` object mapping namespaced enchantment IDs to levels, and `drop_chance` from `0.0` to `1.0`.
+
+### Spawn modes
+
+| `spawn_mode` | Behavior |
+| --- | --- |
+| `group` | Spawns one raid-like group around the authored anchor. This is the backward-compatible default. |
+| `near_player` | Captures an online participant's current position when `start_encounter` runs and spawns within three blocks. An explicit anchor is not required. |
+| `fixed` | Spawns at the step's `dimension`, `x`, `y`, and `z` coordinates and tells participants where to go. |
+| `raid_waves` | Spawns `wave_count` copies of the scaled member group, retaining encounter ownership and progress across saves. |
+
+For `fixed`, customize the message with `location_message`; `{x}`, `{y}`, `{z}`, and `{dimension}` are replaced at runtime. If omitted, the player receives a default “Go to the encounter” coordinate message.
+
+For `raid_waves`, `wave_interval_ticks` controls the delay between waves. `wave_trigger` is `all_defeated` (the default raid-style behavior) or `timer`. A timer-triggered wave waits only for its interval; an all-defeated wave starts its interval after every mob in the previous wave has been defeated. Raid waves show a participant-only boss bar by default; set `"boss_bar": false` to disable it. The bar is restored after a reload and removed when the encounter ends or is cleaned up.
+
+```json
+{
+  "schema": "villagerretaliation:encounter/v1",
+  "id": "example:three_wave_raid",
+  "members": [{ "entity": "minecraft:pillager", "count": 3 }],
+  "spawn_mode": "raid_waves",
+  "wave_count": 3,
+  "wave_interval_ticks": 100,
+  "wave_trigger": "all_defeated",
+  "boss_bar": true,
+  "spawn_radius": 12
+}
+```
 
 ## Persistence and recovery
 
