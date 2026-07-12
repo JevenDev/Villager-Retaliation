@@ -108,6 +108,9 @@ public final class SceneSavedData extends SavedData {
         }
         if (existingId != null) {
             SceneInstance existing = instances.get(existingId);
+            if (existing != null && existing.mergeLaunchContext(participants, bindings)) {
+                setDirty();
+            }
             return new StartResult(existing, false, existingId);
         }
         SceneInstance instance = new SceneInstance(UUID.randomUUID(), scene, operationId, owner, owningQuestInstance,

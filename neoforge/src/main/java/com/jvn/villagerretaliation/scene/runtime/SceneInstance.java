@@ -100,6 +100,18 @@ public final class SceneInstance {
     public void cleanupStatus(CleanupStatus value){cleanupStatus=value;}
     public void reconcileDefinition(CompiledScene definition){definitionVersion=definition.definitionVersion();definitionHash=definition.definitionHash();}
     public void replaceBinding(String alias, SceneActorBinding binding){actorBindings.put(alias,binding);}
+    public boolean mergeLaunchContext(Set<UUID> additionalParticipants, Map<String, SceneActorBinding> additionalBindings) {
+        boolean changed = additionalParticipants != null && participants.addAll(additionalParticipants);
+        if (additionalBindings != null) {
+            for (Map.Entry<String, SceneActorBinding> entry : additionalBindings.entrySet()) {
+                if (!actorBindings.containsKey(entry.getKey())) {
+                    actorBindings.put(entry.getKey(), entry.getValue());
+                    changed = true;
+                }
+            }
+        }
+        return changed;
+    }
 
     public CompoundTag save() {
         CompoundTag tag=new CompoundTag(); tag.putUUID("InstanceId",id); tag.putString("SceneId",sceneId.toString());

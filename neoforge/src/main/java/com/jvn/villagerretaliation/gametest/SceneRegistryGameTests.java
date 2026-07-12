@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.api.registry.ExtensionContracts.ToolingMetada
 import com.jvn.villagerretaliation.api.registry.FreezableExtensionRegistry;
 import com.jvn.villagerretaliation.api.registry.RuntimeTypeDescriptor;
 import com.jvn.villagerretaliation.quest.QuestRegistryMetadata;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.scene.compiler.SceneCompiler;
 import com.jvn.villagerretaliation.scene.compiler.SceneDiagnostic;
@@ -688,6 +689,97 @@ public final class SceneRegistryGameTests {
         var rebound=SceneOperatorService.rebind(helper.getLevel(),scene.id(),"guide",second,"repair binding","TestOperator");helper.assertTrue(rebound.success()&&scene.actorBindings().get("guide").replacementHistory().size()==1,"operator should rebind and retain replacement history");helper.assertTrue(scene.receipts().containsKey("existing_reward"),"operator repair must not erase receipts");
         scene.block("manual_test","blocked",2L);var resumed=SceneOperatorService.resume(helper.getLevel(),scene.id(),"repair complete","TestOperator");helper.assertTrue(resumed.success()&&scene.state()==SceneState.RUNNING,"operator should resume repaired blocked scene");
         SceneLifecycleIntegration.onQuestTerminal(helper.getLevel(),player.getUUID(),VillagerRetaliation.id("operator_test_quest"),"abandoned");helper.assertValueEqual(scene.state(),SceneState.CANCELLED,"quest abandonment scene state");helper.assertTrue(data.auditEntries().stream().filter(a->a.sceneId().equals(scene.id())).count()>=2&&scene.receipts().containsKey("existing_reward"),"operator mutations should append audit entries without deleting history");helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questRunIdentityIsPlayerScopedStableAndRepeatable(GameTestHelper helper) {
+        ResourceLocation questId = VillagerRetaliation.id("repeatable_scene_quest");
+        UUID firstPlayer = UUID.randomUUID();
+        UUID secondPlayer = UUID.randomUUID();
+        VillagerQuestSavedData.QuestProgress first = new VillagerQuestSavedData.QuestProgress();
+        VillagerQuestSavedData.QuestProgress second = new VillagerQuestSavedData.QuestProgress();
+
+        first.start(null, null, null, 1L);
+        UUID firstRun = first.beginRun(firstPlayer, questId, null);
+        helper.assertValueEqual(first.beginRun(firstPlayer, questId, null), firstRun,
+                "duplicate start work in one active run must retain its run id");
+        second.start(null, null, null, 1L);
+        UUID unrelatedRun = second.beginRun(secondPlayer, questId, null);
+        helper.assertFalse(firstRun.equals(unrelatedRun),
+                "unrelated players on the same quest ordinal need globally distinct run ids");
+
+        first.start(null, null, null, 2L);
+        UUID repeatRun = first.beginRun(firstPlayer, questId, null);
+        helper.assertFalse(firstRun.equals(repeatRun), "a legitimate repeat must allocate a new run id");
+        helper.assertValueEqual(first.startCount(), 2, "duplicate identity allocation must not increment start count");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void sharedRunIdentityPrecedesScenesAndCannotBeReplaced(GameTestHelper helper) {
+        ResourceLocation questId = VillagerRetaliation.id("shared_scene_quest");
+        UUID sharedRun = UUID.randomUUID();
+        UUID firstPlayer = UUID.randomUUID();
+        UUID secondPlayer = UUID.randomUUID();
+        VillagerQuestSavedData.QuestProgress first = new VillagerQuestSavedData.QuestProgress();
+        VillagerQuestSavedData.QuestProgress second = new VillagerQuestSavedData.QuestProgress();
+
+        second.start(null, null, null, 1L);
+        second.beginRun(secondPlayer, questId, null);
+        second.start(null, null, null, 2L);
+        second.beginRun(secondPlayer, questId, null);
+        first.start(null, null, null, 3L);
+        second.start(null, null, null, 3L);
+        helper.assertValueEqual(first.beginRun(firstPlayer, questId, sharedRun), sharedRun,
+                "party leader must receive the shared identity before authored actions");
+        helper.assertValueEqual(second.beginRun(secondPlayer, questId, sharedRun), sharedRun,
+                "different personal start histories must converge on the shared identity");
+        helper.assertTrue(first.linkPartyQuest(sharedRun) && second.linkPartyQuest(sharedRun),
+                "linking the already definitive shared run should be idempotent");
+        helper.assertFalse(first.linkPartyQuest(UUID.randomUUID()),
+                "a party link must never replace an identity after scene launch could have occurred");
+        helper.assertValueEqual(first.questRunId(), sharedRun, "rejected relink must preserve the original run id");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questInstanceOperationsAreScopedToDefinitiveRun(GameTestHelper helper) {
+        var definition = compiledValidScene();
+        ResourceLocation questId = VillagerRetaliation.id("operation_scope_quest");
+        UUID firstPlayer = UUID.randomUUID();
+        UUID secondPlayer = UUID.randomUUID();
+        UUID firstRun = VillagerQuestSavedData.QuestProgress.deterministicRunId(firstPlayer, questId, 1);
+        UUID unrelatedRun = VillagerQuestSavedData.QuestProgress.deterministicRunId(secondPlayer, questId, 1);
+        SceneSavedData data = new SceneSavedData();
+        SceneOwner firstOwner = new SceneOwner(
+                com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.QUEST_INSTANCE,
+                firstPlayer, null, firstRun, "");
+        SceneOwner unrelatedOwner = new SceneOwner(
+                com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.QUEST_INSTANCE,
+                secondPlayer, null, unrelatedRun, "");
+
+        var first = data.start(definition, "stage/start", firstOwner, firstRun,
+                Set.of(firstPlayer), Map.of(), 1L, questId);
+        var duplicate = data.start(definition, "stage/start", firstOwner, firstRun,
+                Set.of(firstPlayer, secondPlayer), Map.of(), 2L, questId);
+        var unrelated = data.start(definition, "stage/start", unrelatedOwner, unrelatedRun,
+                Set.of(secondPlayer), Map.of(), 2L, questId);
+        UUID repeatRun = VillagerQuestSavedData.QuestProgress.deterministicRunId(firstPlayer, questId, 2);
+        var repeat = data.start(definition, "stage/start",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.QUEST_INSTANCE,
+                        firstPlayer, null, repeatRun, ""),
+                repeatRun, Set.of(firstPlayer), Map.of(), 3L, questId);
+
+        helper.assertTrue(first.created() && !duplicate.created()
+                        && duplicate.instanceId().equals(first.instanceId()),
+                "the same operation in one run must reuse one scene");
+        helper.assertTrue(unrelated.created() && !unrelated.instanceId().equals(first.instanceId()),
+                "unrelated players must not collide on QUEST_INSTANCE ownership");
+        helper.assertTrue(repeat.created() && !repeat.instanceId().equals(first.instanceId()),
+                "a repeatable quest run must create a new scene");
+        helper.assertTrue(first.instance().participants().contains(secondPlayer),
+                "reusing a shared scene must merge later valid participants");
+        helper.succeed();
     }
 
     private static RuntimeTypeDescriptor descriptor(String path, Set<net.minecraft.resources.ResourceLocation> aliases) {

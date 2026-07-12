@@ -114,8 +114,9 @@ public class VillagerQuestSavedData extends SavedData {
                 continue;
             }
             QuestProgress progress = QuestProgress.load(entryTag);
-            progress.ensureRunId(questId);
-            data.entries.computeIfAbsent(entryTag.getUUID(TAG_PLAYER), ignored -> new HashMap<>()).put(questId, progress);
+            UUID playerId = entryTag.getUUID(TAG_PLAYER);
+            progress.ensureRunId(playerId, questId);
+            data.entries.computeIfAbsent(playerId, ignored -> new HashMap<>()).put(questId, progress);
         }
         ListTag trackedTag = tag.getList(TAG_TRACKED_QUESTS, Tag.TAG_COMPOUND);
         for (Tag rawEntry : trackedTag) {
@@ -795,28 +796,43 @@ public class VillagerQuestSavedData extends SavedData {
             return this.questRunId;
         }
 
-        public UUID beginRun(ResourceLocation questId) {
-            if (questId == null) throw new IllegalArgumentException("quest run identity requires a quest id");
-            this.questRunId = deterministicRunId(questId, Math.max(1, this.startCount));
+        public UUID beginRun(UUID playerId, ResourceLocation questId, UUID sharedRunId) {
+            if (playerId == null || questId == null) {
+                throw new IllegalArgumentException("quest run identity requires a player and quest id");
+            }
+            UUID definitiveRunId = sharedRunId == null
+                    ? deterministicRunId(playerId, questId, Math.max(1, this.startCount))
+                    : sharedRunId;
+            if (this.questRunId != null && !this.questRunId.equals(definitiveRunId)) {
+                throw new IllegalStateException("quest run identity cannot change during an active run");
+            }
+            this.questRunId = definitiveRunId;
             return this.questRunId;
         }
 
-        private void ensureRunId(ResourceLocation questId) {
+        private void ensureRunId(UUID playerId, ResourceLocation questId) {
             if (this.questRunId == null && this.state == QuestState.ACTIVE) {
                 this.questRunId = this.partyQuestInstanceId != null
                         ? this.partyQuestInstanceId
-                        : deterministicRunId(questId, Math.max(1, this.startCount));
+                        : deterministicRunId(playerId, questId, Math.max(1, this.startCount));
             }
         }
 
-        public static UUID deterministicRunId(ResourceLocation questId, int runNumber) {
-            return UUID.nameUUIDFromBytes((questId + "|run|" + Math.max(1, runNumber))
+        public static UUID deterministicRunId(UUID playerId, ResourceLocation questId, int runNumber) {
+            if (playerId == null || questId == null) {
+                throw new IllegalArgumentException("quest run identity requires a player and quest id");
+            }
+            return UUID.nameUUIDFromBytes((playerId + "|quest|" + questId + "|run|" + Math.max(1, runNumber))
                     .getBytes(StandardCharsets.UTF_8));
         }
 
-        public void linkPartyQuest(UUID instanceId) {
+        public boolean linkPartyQuest(UUID instanceId) {
+            if (instanceId != null && this.questRunId != null && !instanceId.equals(this.questRunId)) {
+                return false;
+            }
             this.partyQuestInstanceId = instanceId;
-            if (instanceId != null) this.questRunId = instanceId;
+            if (instanceId != null && this.questRunId == null) this.questRunId = instanceId;
+            return true;
         }
 
         public String issuerName() {

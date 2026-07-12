@@ -2161,16 +2161,26 @@ public final class VillagerQuestService {
 
         VillagerQuestSavedData.QuestProgress started = data.getOrCreate(context.player().getUUID(), definition.id());
         QuestProviderBinding providerBinding = VillagerQuestProviderType.INSTANCE.bindingFromDialogueContext(context);
-        QuestLifecycleService.start(definition.id(), started, providerBinding, target, context.level().getGameTime());
+        PartyStartPlan partyStart = preparePartyStart(context, definition);
+        UUID definitiveRunId = partyStart == null ? null : partyStart.shared().instanceId();
+        QuestLifecycleService.start(definition.id(), started, providerBinding, target,
+                context.level().getGameTime(), context.player().getUUID(), definitiveRunId);
+        if (partyStart != null) {
+            partyStart.shared().enroll(context.player().getUUID(), false);
+            started.linkPartyQuest(definitiveRunId);
+            com.jvn.villagerretaliation.party.PartyService.markChanged(context.level());
+        }
         markContinuousTriggersUsed(started, context, definition);
         if (definition.target().hasProofItem() && hasRequiredProof(context.player(), definition)) {
             started.markHasProof();
         }
+        data.setDirty();
+        data.setTrackedQuest(context.player().getUUID(), definition.id());
+        shareStartedQuest(context, definition, started, partyStart);
         markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_STARTED_FACT, "started");
         initializeQuestStage(context, definition, started);
         lockBranchQuests(context, definition, QuestDefinition.BranchLockEvent.STARTED);
         data.setDirty();
-        data.setTrackedQuest(context.player().getUUID(), definition.id());
         if (target != null) {
             rememberQuestStoryHint(context, definition, target);
             maybeGiveQuestTargetMap(context, definition, target);
@@ -2180,7 +2190,6 @@ public final class VillagerQuestService {
             data.setDirty();
         }
         sendTrackerSync(context.player(), true);
-        shareStartedQuest(context, definition, started);
 
         return result(
                 "started",
@@ -2192,33 +2201,39 @@ public final class VillagerQuestService {
                 replacements(context, definition, started));
     }
 
-    private static void shareStartedQuest(
-            DialogueContext context,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress started) {
+    private static PartyStartPlan preparePartyStart(DialogueContext context, QuestDefinition definition) {
         if (!PartyQuestService.isShareable(definition)) {
-            return;
+            return null;
         }
         com.jvn.villagerretaliation.party.PartyRecord party =
                 com.jvn.villagerretaliation.party.PartyService
                         .getPartyForPlayer(context.level(), context.player().getUUID())
                         .orElse(null);
         if (party == null) {
+            return null;
+        }
+        Optional<com.jvn.villagerretaliation.party.PartySharedQuestRecord> existing =
+                PartyQuestService.findCompatible(party, definition, context.villager().getUUID());
+        com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = existing.orElseGet(
+                () -> PartyQuestService.getOrCreate(
+                        context.level(), party, definition, context.villager().getUUID()));
+        return new PartyStartPlan(party, shared, existing.isEmpty());
+    }
+
+    private static void shareStartedQuest(
+            DialogueContext context,
+            QuestDefinition definition,
+            VillagerQuestSavedData.QuestProgress started,
+            PartyStartPlan partyStart) {
+        if (partyStart == null) {
             return;
         }
-        Optional<com.jvn.villagerretaliation.party.PartySharedQuestRecord> existingShared =
-                PartyQuestService.findCompatible(party, definition, started.startedVillagerId());
-        com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = existingShared.orElseGet(
-                () -> PartyQuestService.getOrCreate(
-                        context.level(),
-                        party,
-                        definition,
-                        started.startedVillagerId()));
+        com.jvn.villagerretaliation.party.PartyRecord party = partyStart.party();
+        com.jvn.villagerretaliation.party.PartySharedQuestRecord shared = partyStart.shared();
         shared.enroll(context.player().getUUID(), false);
-        started.linkPartyQuest(shared.instanceId());
         PartyQuestService.mergePersonalProgress(shared, definition, started);
         PartyQuestService.syncPersonalProgress(shared, definition, started);
-        if (existingShared.isPresent()) {
+        if (!partyStart.created()) {
             syncSharedQuestEnrollmentSnapshots(context.level(), shared, definition);
             com.jvn.villagerretaliation.party.PartyService.markChanged(context.level());
             context.player().sendSystemMessage(Component.translatable("villagerretaliation.party.quest_shared"));
@@ -2259,8 +2274,14 @@ public final class VillagerQuestService {
         if (shared == null || shared.linked(context.player().getUUID())) {
             return;
         }
+        if (progress.questRunId() != null && !progress.questRunId().equals(shared.instanceId())) {
+            return;
+        }
         shared.enroll(context.player().getUUID(), false);
-        progress.linkPartyQuest(shared.instanceId());
+        if (!progress.linkPartyQuest(shared.instanceId())) {
+            shared.removeEnrollment(context.player().getUUID());
+            return;
+        }
         PartyQuestService.mergePersonalProgress(shared, definition, progress);
         syncSharedQuestEnrollmentSnapshots(context.level(), shared, definition);
         com.jvn.villagerretaliation.party.PartyService.markChanged(context.level());
@@ -2309,8 +2330,15 @@ public final class VillagerQuestService {
                 shared.removeEnrollment(member.getUUID());
                 return false;
             }
+            if (existing.questRunId() != null && !existing.questRunId().equals(shared.instanceId())) {
+                shared.removeEnrollment(member.getUUID());
+                return false;
+            }
             shared.enroll(member.getUUID(), false);
-            existing.linkPartyQuest(shared.instanceId());
+            if (!existing.linkPartyQuest(shared.instanceId())) {
+                shared.removeEnrollment(member.getUUID());
+                return false;
+            }
             PartyQuestService.mergePersonalProgress(shared, definition, existing);
             PartyQuestService.syncPersonalProgress(shared, definition, existing);
             data.setDirty();
@@ -2330,7 +2358,11 @@ public final class VillagerQuestService {
                         sourceProgress.targetDimension() == null ? level.dimension() : sourceProgress.targetDimension(),
                         sourceProgress.targetPos(),
                         sourceProgress.targetObjectiveId());
-        QuestLifecycleService.start(definition.id(), linked, providerBinding, target, level.getGameTime());
+        QuestLifecycleService.start(definition.id(), linked, providerBinding, target,
+                level.getGameTime(), member.getUUID(), shared.instanceId());
+        shared.enroll(member.getUUID(), false);
+        linked.linkPartyQuest(shared.instanceId());
+        data.setDirty();
         markContinuousTriggersUsed(linked, memberContext, definition);
         markQuestLifecycleFact(level, member, definition, QUEST_STARTED_FACT, "started");
         initializeQuestStage(memberContext, definition, linked);
@@ -2344,13 +2376,17 @@ public final class VillagerQuestService {
         if (dispatchQuestTriggers(memberContext, definition, linked, QuestDefinition.TriggerEvent.STARTED)) {
             data.setDirty();
         }
-        shared.enroll(member.getUUID(), false);
-        linked.linkPartyQuest(shared.instanceId());
         PartyQuestService.syncPersonalProgress(shared, definition, linked);
         data.setDirty();
         sendTrackerSync(member, true);
         member.sendSystemMessage(Component.translatable("villagerretaliation.party.quest_shared"));
         return true;
+    }
+
+    private record PartyStartPlan(
+            com.jvn.villagerretaliation.party.PartyRecord party,
+            com.jvn.villagerretaliation.party.PartySharedQuestRecord shared,
+            boolean created) {
     }
 
     public static void attachPendingPartyQuests(ServerPlayer player) {
