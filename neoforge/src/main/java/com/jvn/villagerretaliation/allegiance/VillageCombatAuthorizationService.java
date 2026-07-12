@@ -24,8 +24,7 @@ public final class VillageCombatAuthorizationService {
     public static boolean authorize(
             ServerLevel level,
             LivingEntity actor,
-            LivingEntity target,
-            AllegianceCombatContext context) {
+            LivingEntity target) {
         PartyRecord actorParty = PartyService.getPartyForEntity(actor).orElse(null);
         PartyRecord targetParty = PartyService.getPartyForEntity(target).orElse(null);
         if (actorParty == null || targetParty != null && actorParty.id().equals(targetParty.id())) {
@@ -33,7 +32,7 @@ public final class VillageCombatAuthorizationService {
         }
         long expires = level.getServer().overworld().getGameTime() + AUTHORIZATION_TTL_TICKS;
         AUTHORIZATIONS.put(new CombatPair(actor.getUUID(), target.getUUID()),
-                new Authorization(context, actorParty.id(), targetParty == null ? null : targetParty.id(), expires));
+                new Authorization(actorParty.id(), targetParty == null ? null : targetParty.id(), expires));
         return true;
     }
 
@@ -110,7 +109,6 @@ public final class VillageCombatAuthorizationService {
     }
 
     private record Authorization(
-            AllegianceCombatContext context,
             UUID actorPartyId,
             UUID targetPartyId,
             long expiresGameTime) {

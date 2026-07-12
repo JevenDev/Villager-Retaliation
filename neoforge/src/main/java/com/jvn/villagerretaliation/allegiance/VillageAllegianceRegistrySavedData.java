@@ -38,7 +38,6 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     private final Map<VillageAllegianceId, AllegianceRecord> records = new LinkedHashMap<>();
     private final Map<VillageAllegianceId, VillageAllegianceId> aliases = new LinkedHashMap<>();
-    private final Map<String, LinkedHashSet<VillageAllegianceId>> candidatesByScope = new LinkedHashMap<>();
     private final Map<VillageAllegianceId, Optional<VillageAllegianceId>> canonicalCache = new HashMap<>();
     private final Map<UUID, LinkedHashSet<VillageAllegianceId>> residentRecords = new HashMap<>();
 
@@ -105,24 +104,6 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                         new VillageAllegianceId(aliasTag.getUUID("Target")));
             }
         }
-        for (Tag raw : tag.getList("Scopes", Tag.TAG_COMPOUND)) {
-            if (!(raw instanceof CompoundTag scopeTag)) {
-                continue;
-            }
-            String scope = scopeTag.getString("Scope");
-            if (scope.isBlank()) {
-                continue;
-            }
-            LinkedHashSet<VillageAllegianceId> candidates = new LinkedHashSet<>();
-            for (Tag candidateRaw : scopeTag.getList("Candidates", Tag.TAG_COMPOUND)) {
-                if (candidateRaw instanceof CompoundTag candidateTag && candidateTag.hasUUID("Id")) {
-                    candidates.add(new VillageAllegianceId(candidateTag.getUUID("Id")));
-                }
-            }
-            if (!candidates.isEmpty()) {
-                data.candidatesByScope.put(scope, candidates);
-            }
-        }
         data.ensureNames();
         data.rebuildResidentIndex();
         return data;
@@ -169,20 +150,6 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             aliasTags.add(aliasTag);
         }
         tag.put("Aliases", aliasTags);
-        ListTag scopeTags = new ListTag();
-        for (Map.Entry<String, LinkedHashSet<VillageAllegianceId>> mapping : this.candidatesByScope.entrySet()) {
-            CompoundTag scopeTag = new CompoundTag();
-            scopeTag.putString("Scope", mapping.getKey());
-            ListTag candidateTags = new ListTag();
-            for (VillageAllegianceId id : mapping.getValue()) {
-                CompoundTag candidateTag = new CompoundTag();
-                candidateTag.putUUID("Id", id.value());
-                candidateTags.add(candidateTag);
-            }
-            scopeTag.put("Candidates", candidateTags);
-            scopeTags.add(scopeTag);
-        }
-        tag.put("Scopes", scopeTags);
         return tag;
     }
 
@@ -458,36 +425,6 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         return mergeCanonical(sourceCanonical.get(), targetCanonical.get());
     }
 
-    public void addScopeCandidate(String scope, VillageAllegianceId id) {
-        if (scope == null || scope.isBlank() || id == null) {
-            return;
-        }
-        if (this.candidatesByScope.computeIfAbsent(scope, ignored -> new LinkedHashSet<>()).add(id)) {
-            setDirty();
-        }
-    }
-
-    public List<VillageAllegianceId> candidates(String scope) {
-        LinkedHashSet<VillageAllegianceId> raw = this.candidatesByScope.get(scope);
-        if (raw == null) {
-            return List.of();
-        }
-        LinkedHashSet<VillageAllegianceId> result = new LinkedHashSet<>();
-        raw.forEach(id -> canonical(id).ifPresent(result::add));
-        return List.copyOf(result);
-    }
-
-    public Optional<VillageAllegianceId> uniqueCandidate(String scope) {
-        List<VillageAllegianceId> candidates = candidates(scope);
-        return candidates.size() == 1 ? Optional.of(candidates.getFirst()) : Optional.empty();
-    }
-
-    public Map<String, List<VillageAllegianceId>> scopeMappings() {
-        Map<String, List<VillageAllegianceId>> result = new LinkedHashMap<>();
-        this.candidatesByScope.forEach((scope, ids) -> result.put(scope, List.copyOf(ids)));
-        return Map.copyOf(result);
-    }
-
     public int aliasCount() {
         return this.aliases.size();
     }
@@ -526,11 +463,6 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
         this.aliases.put(source, target);
         this.canonicalCache.clear();
-        this.candidatesByScope.values().forEach(ids -> {
-            if (ids.remove(source)) {
-                ids.add(target);
-            }
-        });
         setDirty();
         return true;
     }

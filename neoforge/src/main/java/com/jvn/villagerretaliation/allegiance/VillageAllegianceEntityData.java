@@ -37,10 +37,6 @@ public final class VillageAllegianceEntityData {
         return Optional.of(readPayload(entity.getPersistentData().getCompound(ROOT_TAG), entity));
     }
 
-    public static VillageAllegianceData readOrUnknown(Entity entity) {
-        return read(entity).orElseGet(() -> conservativeUnknown(entity));
-    }
-
     public static void write(Entity entity, VillageAllegianceData data) {
         if (entity == null || data == null) {
             return;

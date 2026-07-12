@@ -90,7 +90,7 @@ public final class VillageAllegianceGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void registryAliasesScopesAndTombstonesRoundTrip(GameTestHelper helper) {
+    public static void registryAliasesAndTombstonesRoundTrip(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         VillageAllegianceRegistrySavedData registry = new VillageAllegianceRegistrySavedData();
         VillageAllegianceId first = registry.create(1L, level.dimension().location(), BlockPos.ZERO, "First");
@@ -101,21 +101,10 @@ public final class VillageAllegianceGameTests {
         helper.assertValueEqual(registry.canonical(first).orElseThrow(), third, "alias chain canonical id");
         helper.assertFalse(registry.merge(third, first), "alias cycle must be rejected");
         helper.assertTrue(registry.archive(first), "raw source record tombstone");
-        registry.addScopeCandidate("scope:a", first);
-        registry.addScopeCandidate("scope:b", second);
-        registry.addScopeCandidate("scope:ambiguous", first);
-        VillageAllegianceId fourth = registry.create(4L, level.dimension().location(), BlockPos.ZERO, "Fourth");
-        registry.addScopeCandidate("scope:ambiguous", fourth);
-
         CompoundTag saved = registry.save(new CompoundTag(), level.registryAccess());
         VillageAllegianceRegistrySavedData restored = VillageAllegianceRegistrySavedData.load(saved, level.registryAccess());
         helper.assertValueEqual(restored.canonical(first).orElseThrow(), third, "saved alias chain");
         helper.assertTrue(restored.record(first).orElseThrow().archived(), "tombstone persistence");
-        helper.assertValueEqual(restored.uniqueCandidate("scope:a").orElseThrow(), third,
-                "multiple scopes may resolve to one canonical allegiance");
-        helper.assertTrue(restored.uniqueCandidate("scope:ambiguous").isEmpty(),
-                "one scope may retain multiple candidates");
-
         VillageAllegianceId lateRecord = VillageAllegianceId.random();
         helper.assertTrue(restored.canonical(lateRecord).isEmpty(), "missing records resolve conservatively");
         restored.ensureRecord(lateRecord, 5L, level.dimension().location(), BlockPos.ZERO);
@@ -221,7 +210,7 @@ public final class VillageAllegianceGameTests {
         assign(level, target, targetHome, List.of());
         try {
             helper.assertTrue(VillageCombatAuthorizationService.authorize(
-                    level, actor, target, AllegianceCombatContext.PARTY_ATTACK),
+                    level, actor, target),
                     "a recruited foreign resident can target a villager without a party");
             float before = target.getHealth();
             helper.assertTrue(target.hurt(level.damageSources().mobAttack(actor), 2.0F),
@@ -238,7 +227,7 @@ public final class VillageAllegianceGameTests {
             VillageAllegianceEntityData.write(actor, VillageAllegianceData.unaffiliated(
                     AllegianceAssignmentSource.ADMIN, now, level.dimension().location(), actor.blockPosition()));
             helper.assertTrue(VillageCombatAuthorizationService.authorize(
-                    level, actor, target, AllegianceCombatContext.PARTY_ATTACK),
+                    level, actor, target),
                     "a recruited Wanderer can be authorized against any real village");
             target.invulnerableTime = 0;
             float beforeWandererHit = target.getHealth();
@@ -339,7 +328,7 @@ public final class VillageAllegianceGameTests {
                     AllegianceCombatDecision.Action.ALLOW,
                     "a foreign golem that lands hostility becomes a reactive defense target");
             helper.assertTrue(VillageCombatAuthorizationService.authorize(
-                    level, actor, resident, AllegianceCombatContext.PARTY_ATTACK),
+                    level, actor, resident),
                     "foreign resident receives party authorization");
             VillageCombatAuthorizationService.associateProjectile(projectile, actor, resident);
             helper.assertTrue(VillageCombatAuthorizationService.projectileAuthorized(projectile, actor, resident),

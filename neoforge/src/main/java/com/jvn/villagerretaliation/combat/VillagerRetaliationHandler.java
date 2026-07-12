@@ -857,7 +857,7 @@ public final class VillagerRetaliationHandler {
                 continue;
             }
             if (decision.action() == AllegianceCombatDecision.Action.ALLOW
-                    && !VillageCombatAuthorizationService.authorize(level, villager, target, context)) {
+                    && !VillageCombatAuthorizationService.authorize(level, villager, target)) {
                 continue;
             }
             anger(villager, target);

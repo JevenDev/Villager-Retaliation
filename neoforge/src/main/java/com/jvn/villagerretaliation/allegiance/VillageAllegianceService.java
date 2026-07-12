@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.allegiance;
 
-import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -253,8 +252,6 @@ public final class VillageAllegianceService {
         if (entity instanceof Villager villager) {
             registry.addOrUpdateResident(canonical, villager.getUUID(), !villager.isBaby(), level.getGameTime());
         }
-        registry.canonicalRecord(canonical).ifPresent(record -> registry.addScopeCandidate(
-                VillageScopeKeys.forPosition(record.originDimension(), record.originPosition()), canonical));
         migratedKnown++;
     }
 
