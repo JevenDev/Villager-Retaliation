@@ -86,7 +86,7 @@ public final class SceneRuntime {
         synchronized (SCHEDULERS) {
             return SCHEDULERS.computeIfAbsent(server, key -> {
                 SceneScheduler value = new SceneScheduler(SceneScheduler.DEFAULT_MAX_WORK_PER_TICK, processor);
-                value.rebuild(SceneSavedData.get(server.overworld()), server.overworld().getGameTime());
+                value.rebuild(server, SceneSavedData.get(server.overworld()), server.overworld().getGameTime());
                 return value;
             });
         }

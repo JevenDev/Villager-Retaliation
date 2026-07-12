@@ -29,7 +29,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public final class SceneSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 2;
+    public static final int CURRENT_DATA_VERSION = 3;
     private static final String DATA_NAME = "villagerretaliation_scenes";
     private static final Logger LOGGER = LogUtils.getLogger();
     private final Map<UUID, SceneInstance> instances = new LinkedHashMap<>();
@@ -65,8 +65,10 @@ public final class SceneSavedData extends SavedData {
                 data.byOperation.put(operationKey(instance), instance.id());
                 if (instance.cleanupStatus() == SceneInstance.CleanupStatus.RUNNING
                         || instance.cleanupStatus() == SceneInstance.CleanupStatus.BLOCKED) data.requestCleanup(instance);
-                if (!tag.hasUUID("QuestRunId") && !instance.state().terminal()) {
-                    data.legacyActiveOperations.put(legacyOperationKey(instance.owner(), instance.operationId()), instance.id());
+                if (instance.runIdentityKind() == SceneInstance.RunIdentityKind.LEGACY_OWNER
+                        && !instance.state().terminal()) {
+                    data.legacyActiveOperations.put(legacyOperationKey(instance.owner(), instance.owningQuestId(),
+                            instance.operationId()), instance.id());
                 }
             } catch (RuntimeException exception) {
                 LOGGER.error("Could not read scene instance; preserving the rest of the scene save", exception);
@@ -102,9 +104,12 @@ public final class SceneSavedData extends SavedData {
         String key = operationKey(scene.id(), owner, questId, owningQuestInstance, operationId);
         UUID existingId = byOperation.get(key);
         if (existingId == null) {
-            UUID legacyId = legacyActiveOperations.get(legacyOperationKey(owner, operationId));
+            UUID legacyId = legacyActiveOperations.get(legacyOperationKey(owner, questId, operationId));
             SceneInstance legacy = instances.get(legacyId);
-            if (legacy != null && legacy.sceneId().equals(scene.id()) && !legacy.state().terminal()) existingId = legacyId;
+            if (legacy != null && legacy.sceneId().equals(scene.id()) && !legacy.state().terminal()) {
+                existingId = legacyId;
+                byOperation.put(key, legacyId);
+            }
         }
         if (existingId != null) {
             SceneInstance existing = instances.get(existingId);
@@ -161,8 +166,12 @@ public final class SceneSavedData extends SavedData {
                 + (questRunId == null ? "-" : questRunId) + "|operation:" + operationId;
     }
 
-    private static String legacyOperationKey(SceneOwner owner, String operationId) {
-        return owner.stableKey() + "|" + operationId;
+    private static String legacyOperationKey(SceneOwner owner, ResourceLocation questId, String operationId) {
+        String ownerKey = owner.mode() == com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.QUEST_INSTANCE
+                && owner.playerId() != null
+                ? "quest-player:" + owner.playerId()
+                : owner.stableKey();
+        return ownerKey + "|quest:" + (questId == null ? "-" : questId) + "|operation:" + operationId;
     }
 
     public record StartResult(SceneInstance instance, boolean created, UUID instanceId) { }

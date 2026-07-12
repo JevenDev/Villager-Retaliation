@@ -23,6 +23,7 @@ import com.jvn.villagerretaliation.scene.runtime.SceneInstance;
 import com.jvn.villagerretaliation.scene.runtime.SceneOwner;
 import com.jvn.villagerretaliation.scene.runtime.SceneScheduler;
 import com.jvn.villagerretaliation.scene.runtime.SceneState;
+import com.jvn.villagerretaliation.scene.runtime.SceneStepEngine;
 import com.jvn.villagerretaliation.scene.runtime.StepExecutionStatus;
 import com.jvn.villagerretaliation.scene.runtime.SceneExecutionContext;
 import com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt;
@@ -226,8 +227,84 @@ public final class SceneRegistryGameTests {
         CompoundTag legacy = new CompoundTag();
         legacy.put("Scenes", new net.minecraft.nbt.ListTag());
         var migrated = SceneSaveMigrations.migrate(legacy, SceneSavedData.CURRENT_DATA_VERSION);
-        helper.assertTrue(migrated.targetVersion() == 2 && migrated.data().contains("Instances"),
+        helper.assertTrue(migrated.targetVersion() == SceneSavedData.CURRENT_DATA_VERSION
+                        && migrated.data().contains("Instances"),
                 "legacy pre-release scene list should migrate explicitly from version zero");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void legacyQuestInstanceAliasSurvivesRepeatedSaves(GameTestHelper helper) {
+        var definition = compiledValidScene();
+        ResourceLocation questId = VillagerRetaliation.id("legacy_scene_quest");
+        UUID playerId = UUID.randomUUID();
+        UUID legacyOwnerId = UUID.randomUUID();
+        SceneOwner legacyOwner = new SceneOwner(
+                com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.QUEST_INSTANCE,
+                playerId, null, legacyOwnerId, "");
+        SceneInstance legacy = new SceneSavedData().start(definition, "stage/open", legacyOwner,
+                legacyOwnerId, Set.of(playerId), Map.of(), 10L, questId).instance();
+        legacy.prepareReceipt("legacy_reward", SceneOperationReceipt.Kind.LOOT_GRANT, 11L)
+                .completed(11L, "already granted");
+        CompoundTag legacyTag = legacy.save();
+        legacyTag.remove("QuestRunId");
+        legacyTag.remove("RunIdentityKind");
+        CompoundTag root = new CompoundTag();
+        root.putInt(SceneSaveMigrations.DATA_VERSION, 2);
+        net.minecraft.nbt.ListTag instances = new net.minecraft.nbt.ListTag();
+        instances.add(legacyTag);
+        SceneInstance legacyPlayerScene = new SceneSavedData().start(definition, "player/open",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        playerId, null, null, ""),
+                null, Set.of(playerId), Map.of(), 10L, questId).instance();
+        CompoundTag legacyPlayerTag = legacyPlayerScene.save();
+        legacyPlayerTag.remove("QuestRunId");
+        legacyPlayerTag.remove("RunIdentityKind");
+        instances.add(legacyPlayerTag);
+        root.put("Instances", instances);
+
+        UUID definitiveRun = VillagerQuestSavedData.QuestProgress.deterministicRunId(playerId, questId, 1);
+        SceneOwner definitiveOwner = new SceneOwner(
+                com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.QUEST_INSTANCE,
+                playerId, null, definitiveRun, "");
+        SceneSavedData loaded = SceneSavedData.load(root, helper.getLevel().registryAccess());
+        var firstReuse = loaded.start(definition, "stage/open", definitiveOwner, definitiveRun,
+                Set.of(playerId), Map.of(), 20L, questId);
+        helper.assertTrue(!firstReuse.created() && firstReuse.instanceId().equals(legacy.id()),
+                "pre-run-id quest-instance scene must be reused after migration");
+        helper.assertTrue(firstReuse.instance().receipts().containsKey("legacy_reward")
+                        && firstReuse.instance().runIdentityKind() == SceneInstance.RunIdentityKind.LEGACY_OWNER,
+                "migration must preserve receipts and durable legacy identity kind");
+        var playerReuse = loaded.start(definition, "player/open",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        playerId, null, null, ""),
+                definitiveRun, Set.of(playerId), Map.of(), 20L, questId);
+        helper.assertTrue(!playerReuse.created() && playerReuse.instanceId().equals(legacyPlayerScene.id()),
+                "pre-run-id player-owned scene must also reuse its migrated operation alias");
+
+        for (int reload = 0; reload < 2; reload++) {
+            CompoundTag saved = loaded.save(new CompoundTag(), helper.getLevel().registryAccess());
+            loaded = SceneSavedData.load(saved, helper.getLevel().registryAccess());
+            var reused = loaded.start(definition, "stage/open", definitiveOwner, definitiveRun,
+                    Set.of(playerId), Map.of(), 30L + reload, questId);
+            helper.assertTrue(!reused.created() && reused.instanceId().equals(legacy.id()),
+                    "legacy operation alias must survive every save and reload");
+        }
+
+        loaded.get(legacy.id()).orElseThrow().complete(40L);
+        CompoundTag terminalSave = loaded.save(new CompoundTag(), helper.getLevel().registryAccess());
+        SceneSavedData afterTerminal = SceneSavedData.load(terminalSave, helper.getLevel().registryAccess());
+        UUID repeatRun = VillagerQuestSavedData.QuestProgress.deterministicRunId(playerId, questId, 2);
+        var repeat = afterTerminal.start(definition, "stage/open",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.QUEST_INSTANCE,
+                        playerId, null, repeatRun, ""),
+                repeatRun, Set.of(playerId), Map.of(), 50L, questId);
+        helper.assertTrue(repeat.created() && !repeat.instanceId().equals(legacy.id()),
+                "terminal legacy scenes must not block a legitimate repeat run");
+
+        var once = SceneSaveMigrations.migrate(root, SceneSavedData.CURRENT_DATA_VERSION);
+        var twice = SceneSaveMigrations.migrate(once.data(), SceneSavedData.CURRENT_DATA_VERSION);
+        helper.assertTrue(once.data().equals(twice.data()), "scene migration must be idempotent");
         helper.succeed();
     }
 
@@ -712,6 +789,79 @@ public final class SceneRegistryGameTests {
         UUID repeatRun = first.beginRun(firstPlayer, questId, null);
         helper.assertFalse(firstRun.equals(repeatRun), "a legitimate repeat must allocate a new run id");
         helper.assertValueEqual(first.startCount(), 2, "duplicate identity allocation must not increment start count");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void overallDeadlinePreemptsWaitAndSurvivesReload(GameTestHelper helper) {
+        BuiltinSceneStepExecutors.register();
+        JsonObject timedJson = validScene();
+        timedJson.addProperty("timeout_ticks", 10);
+        timedJson.addProperty("failure_policy", "fail_scene");
+        timedJson.getAsJsonArray("steps").get(0).getAsJsonObject()
+                .getAsJsonObject("data").addProperty("ticks", 100);
+        var definition = compiledScene(timedJson);
+        SceneResources.installTestScenes(helper.getLevel().getServer(), List.of(definition));
+        UUID playerId = UUID.randomUUID();
+        SceneSavedData data = new SceneSavedData();
+        SceneInstance waiting = data.start(definition, "deadline/wait",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        playerId, null, null, ""),
+                null, Set.of(playerId), Map.of(), 100L).instance();
+        SceneScheduler scheduler = new SceneScheduler(8, SceneStepEngine::process);
+        scheduler.rebuild(helper.getLevel().getServer(), data, 100L);
+        var initial = scheduler.tick(helper.getLevel().getServer(), data, 100L);
+        helper.assertTrue(waiting.state() == SceneState.WAITING && initial.sleeping() == 1,
+                "long wait should retain one bounded deadline wake");
+
+        SceneScheduler reloaded = new SceneScheduler(8, SceneStepEngine::process);
+        reloaded.rebuild(helper.getLevel().getServer(), data, 105L);
+        helper.assertTrue(reloaded.tick(helper.getLevel().getServer(), data, 109L).workPerformed() == 0,
+                "reload before the deadline must preserve the original absolute deadline");
+        var deadlineTick = reloaded.tick(helper.getLevel().getServer(), data, 110L);
+        helper.assertTrue(deadlineTick.workPerformed() == 1 && waiting.state() == SceneState.FAILED
+                        && waiting.deadlineHandled() && deadlineTick.sleeping() == 0,
+                "overall timeout must fire at its deadline instead of the later step wake");
+        helper.assertTrue(reloaded.tick(helper.getLevel().getServer(), data, 111L).workPerformed() == 0,
+                "a handled deadline must never repeatedly fire");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void blockedSceneKeepsItsOverallDeadlineWake(GameTestHelper helper) {
+        BuiltinSceneStepExecutors.register();
+        JsonObject timedJson = validScene();
+        timedJson.addProperty("timeout_ticks", 10);
+        timedJson.addProperty("failure_policy", "cancel_scene");
+        var definition = compiledScene(timedJson);
+        SceneResources.installTestScenes(helper.getLevel().getServer(), List.of(definition));
+        UUID playerId = UUID.randomUUID();
+        SceneSavedData data = new SceneSavedData();
+        SceneInstance blocked = data.start(definition, "deadline/blocked",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        playerId, null, null, ""),
+                null, Set.of(playerId), Map.of(), 200L).instance();
+        blocked.block("actor_missing", "required actor is unavailable", 201L);
+
+        SceneScheduler scheduler = new SceneScheduler(4, SceneStepEngine::process);
+        scheduler.rebuild(helper.getLevel().getServer(), data, 205L);
+        helper.assertTrue(scheduler.tick(helper.getLevel().getServer(), data, 209L).workPerformed() == 0,
+                "blocked scene must sleep without polling before its deadline");
+        var timeout = scheduler.tick(helper.getLevel().getServer(), data, 210L);
+        helper.assertTrue(timeout.workPerformed() == 1 && blocked.state() == SceneState.CANCELLED
+                        && blocked.deadlineHandled(),
+                "blocked scene must time out without an actor-return event");
+
+        SceneInstance overdue = data.start(definition, "deadline/overdue",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        UUID.randomUUID(), null, null, ""),
+                null, Set.of(), Map.of(), 300L).instance();
+        overdue.block("actor_missing", "required actor is unavailable", 301L);
+        SceneScheduler afterDeadlineReload = new SceneScheduler(4, SceneStepEngine::process);
+        afterDeadlineReload.rebuild(helper.getLevel().getServer(), data, 315L);
+        helper.assertTrue(afterDeadlineReload.tick(helper.getLevel().getServer(), data, 315L).workPerformed() == 1
+                        && overdue.state() == SceneState.CANCELLED,
+                "reload after an elapsed deadline must process the timeout exactly once");
         helper.succeed();
     }
 

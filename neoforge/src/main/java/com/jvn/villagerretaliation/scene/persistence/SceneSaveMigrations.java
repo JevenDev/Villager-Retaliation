@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.scene.persistence;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 
 /** Pure scene-save migrations. Version 0 covers pre-release quest-embedded scene lists. */
@@ -26,10 +27,24 @@ public final class SceneSaveMigrations {
             } else if (version == 1) {
                 // Version 2 adds the structured Encounters list; absence means no owned encounters.
                 version = 2;
+            } else if (version == 2) {
+                markRunIdentityKinds(data);
+                version = 3;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);
         return new Result(data, source, current, false);
+    }
+
+    private static void markRunIdentityKinds(CompoundTag data) {
+        ListTag instances = data.getList("Instances", Tag.TAG_COMPOUND);
+        for (Tag raw : instances) {
+            if (!(raw instanceof CompoundTag instance) || instance.contains("RunIdentityKind", Tag.TAG_STRING)) {
+                continue;
+            }
+            instance.putString("RunIdentityKind",
+                    instance.hasUUID("QuestRunId") ? "QUEST_RUN" : "LEGACY_OWNER");
+        }
     }
 
     public record Result(CompoundTag data, int sourceVersion, int targetVersion, boolean futureVersion) { }
