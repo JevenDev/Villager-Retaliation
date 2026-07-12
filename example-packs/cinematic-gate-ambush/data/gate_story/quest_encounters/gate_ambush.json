@@ -11,7 +11,17 @@
     },
     {
       "id": "last_straggler",
-      "members": [{ "entity": "minecraft:zombie", "count": 1 }],
+      "members": [{
+        "entity": "minecraft:zombie",
+        "count": 1,
+        "custom_name": "Gatebreaker",
+        "name_visible": true,
+        "health": 30,
+        "attack_damage": 6,
+        "boss": true,
+        "boss_bar_color": "red",
+        "boss_bar_overlay": "progress"
+      }],
       "delay_ticks": 40,
       "trigger": "all_defeated",
       "boss_bar_title": "Gate Ambush - Last Straggler"

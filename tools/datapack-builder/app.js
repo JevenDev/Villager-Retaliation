@@ -3551,6 +3551,22 @@ function sceneResourceIssueDetail(path, resource) {
     if (!Array.isArray(allMembers) || allMembers.length === 0) return issueDetail("Encounter members", "at least one allowlisted entity member", allMembers, "json-preview");
     const invalidMember = allMembers.find((member) => !isValidResourceLocation(member?.entity, { requireNamespace: true }) || (member.count !== undefined && (!Number.isInteger(member.count) || member.count < 1 || member.count > 64)));
     if (invalidMember) return issueDetail("Encounter member", "a namespaced entity and positive integer count", invalidMember, "json-preview");
+    const attributeBounds = { "minecraft:max_health": [1, 2048], "minecraft:movement_speed": [0, 4], "minecraft:attack_damage": [0, 2048], "minecraft:armor": [0, 30], "minecraft:knockback_resistance": [0, 1] };
+    const directAttributes = { health: "minecraft:max_health", movement_speed: "minecraft:movement_speed", attack_damage: "minecraft:attack_damage", armor: "minecraft:armor", knockback_resistance: "minecraft:knockback_resistance" };
+    for (const member of allMembers) {
+      if (member.custom_name !== undefined && (typeof member.custom_name !== "string" || member.custom_name.length < 1 || member.custom_name.length > 128)) return issueDetail("Encounter custom name", "1-128 characters", member.custom_name, "json-preview");
+      for (const key of ["name_visible", "glowing", "persistent", "boss"]) if (member[key] !== undefined && typeof member[key] !== "boolean") return issueDetail(`Encounter member ${key}`, "a boolean", member[key], "json-preview");
+      if (member.name_visible === true && !member.custom_name) return issueDetail("Encounter visible name", "custom_name when name_visible is true", member, "json-preview");
+      if ((member.boss_bar_color !== undefined || member.boss_bar_overlay !== undefined) && member.boss !== true) return issueDetail("Encounter boss presentation", "boss true", member, "json-preview");
+      if (member.boss_bar_color !== undefined && !["pink", "blue", "red", "green", "yellow", "purple", "white"].includes(member.boss_bar_color)) return issueDetail("Encounter boss-bar color", "a supported boss-bar color", member.boss_bar_color, "json-preview");
+      if (member.boss_bar_overlay !== undefined && !["progress", "notched_6", "notched_10", "notched_12", "notched_20"].includes(member.boss_bar_overlay)) return issueDetail("Encounter boss-bar overlay", "a supported boss-bar overlay", member.boss_bar_overlay, "json-preview");
+      const attributes = member.attributes === undefined ? {} : member.attributes;
+      if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) return issueDetail("Encounter attributes", "an allowlisted attribute object", attributes, "json-preview");
+      const unknownAttribute = Object.keys(attributes).find((id) => !Object.hasOwn(attributeBounds, id));
+      if (unknownAttribute) return issueDetail("Encounter attribute", "an allowlisted attribute id", unknownAttribute, "json-preview");
+      for (const [id, value] of Object.entries(attributes)) { const [min, max] = attributeBounds[id];if (!Number.isFinite(value) || value < min || value > max) return issueDetail(`Encounter attribute ${id}`, `a number from ${min} to ${max}`, value, "json-preview"); }
+      for (const [field, id] of Object.entries(directAttributes)) if (member[field] !== undefined) { const [min, max] = attributeBounds[id];if (!Number.isFinite(member[field]) || member[field] < min || member[field] > max) return issueDetail(`Encounter ${field}`, `a number from ${min} to ${max}`, member[field], "json-preview");if (Object.hasOwn(attributes, id)) return issueDetail("Encounter duplicate attribute", `only ${field} or attributes.${id}`, member, "json-preview"); }
+    }
     if (explicitWaves) {
       const ids = resource.waves.map((wave) => wave?.id);const duplicate = firstDuplicate(ids);
       const invalidWave = resource.waves.find((wave) => !wave || typeof wave !== "object" || !/^[a-z][a-z0-9_.-]{0,63}$/.test(wave.id || "") || !Array.isArray(wave.members) || wave.members.length === 0 || (wave.delay_ticks !== undefined && (!Number.isInteger(wave.delay_ticks) || wave.delay_ticks < 0 || wave.delay_ticks > 12000)) || (wave.trigger !== undefined && !["all_defeated", "timer"].includes(wave.trigger)));

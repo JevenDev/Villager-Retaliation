@@ -19,7 +19,22 @@
     {
       "id": "raider_captain",
       "members": [
-        { "entity": "minecraft:pillager", "count": 1 }
+        {
+          "entity": "minecraft:pillager",
+          "count": 1,
+          "custom_name": "Raider Captain",
+          "name_visible": true,
+          "glowing": true,
+          "persistent": true,
+          "health": 40,
+          "movement_speed": 0.32,
+          "attack_damage": 8,
+          "armor": 8,
+          "knockback_resistance": 0.3,
+          "boss": true,
+          "boss_bar_color": "purple",
+          "boss_bar_overlay": "notched_10"
+        }
       ],
       "delay_ticks": 80,
       "trigger": "all_defeated",

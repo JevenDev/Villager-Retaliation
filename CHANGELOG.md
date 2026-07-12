@@ -1,5 +1,6 @@
 # Changelog
 
+- Added allowlisted elite and boss encounter members with safe names, visibility, glow, persistence, bounded combat attributes, correct post-initialization health, and participant-only reload-safe boss bars.
 - Added explicit raid-wave compositions with stable wave IDs, per-wave members, delays, triggers, boss-bar titles, equipment defaults, and durable participant hooks while retaining `members` plus `wave_count` shorthand.
 - Added optional, durable encounter areas with bounded horizontal and vertical radii, participant `ignore`, `warn`, `pause`, and `fail` leave policies, and owned-mob `ignore`, `return`, and timed `teleport` policies.
 - Added datapack-authored encounter equipment, enchantments, drop chances, and `group`, `near_player`, `fixed`, and persistent `raid_waves` spawn modes.

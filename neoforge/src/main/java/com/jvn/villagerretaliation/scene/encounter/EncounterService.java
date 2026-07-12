@@ -21,13 +21,17 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 
 public final class EncounterService {
     private static final String OWNER="VillagerRetaliationEncounter";private static final String SCENE="VillagerRetaliationScene";
+    private static final String BOSS="VillagerRetaliationEncounterBoss";private static final String BOSS_COLOR="VillagerRetaliationBossColor";private static final String BOSS_OVERLAY="VillagerRetaliationBossOverlay";
     private static final Map<UUID,ServerBossEvent> BOSS_BARS=new HashMap<>();
+    private static final Map<UUID,ServerBossEvent> MOB_BOSS_BARS=new HashMap<>();
     private EncounterService(){}
 
     public static Result reconcileSpawn(MinecraftServer server,SceneSavedData data,EncounterInstance encounter,EncounterTemplate template){
@@ -42,6 +46,7 @@ public final class EncounterService {
         int spawned=encounter.spawned().size();ensureWaveIdentity(encounter,template,spawned);
         if(encounter.currentWaveIndex()<0||encounter.currentWaveIndex()>=template.waveCount()||!template.wave(encounter.currentWaveIndex()).id().equals(encounter.currentWaveId())){encounter.fail("persisted wave identity no longer matches encounter template");data.changed();return Result.failed(encounter.diagnostic());}
         updateBossBar(server,encounter,template);
+        updateMobBossBars(server,encounter);
         if(spawned>=encounter.expectedCount()){data.changed();return Result.active();}
         int waveIndex=encounter.currentWaveIndex();EncounterTemplate.Wave wave=template.wave(waveIndex);int start=template.waveStart(waveIndex,encounter.partySize());int waveSize=template.scaledCount(wave,encounter.partySize());int target=start+waveSize;
         if(spawned>=target&&waveIndex+1<template.waveCount()){
@@ -51,11 +56,12 @@ public final class EncounterService {
         if(!encounter.startedWaves().contains(wave.id())){if(wave.delayTicks()>0&&encounter.nextWaveAt()==0L){encounter.scheduleNextWave(level.getGameTime()+wave.delayTicks());data.changed();}if(level.getGameTime()<encounter.nextWaveAt())return Result.waiting("waiting to start wave "+wave.id());encounter.markWaveStarted(wave.id());encounter.scheduleNextWave(0L);fireWaveHooks(server,data,encounter,wave);data.changed();}
         List<EncounterTemplate.Member> desired=desiredMembers(wave,template,encounter.partySize());
         for(int index=spawned;index<target;index++){
-            EncounterTemplate.Member member=desired.get(index-start);Entity entity=spawn(level,member,encounter,template,index);
-            if(entity==null){encounter.fail("safe placement exhausted after "+template.placementAttempts()+" attempts for member "+index);hideBossBar(encounter.id());data.changed();return Result.failed(encounter.diagnostic());}
+            EncounterTemplate.Member member=desired.get(index-start);SpawnResult spawnedEntity=spawn(level,member,encounter,template,index);Entity entity=spawnedEntity.entity();
+            if(entity==null){encounter.fail(spawnedEntity.diagnostic().isBlank()?"safe placement exhausted after "+template.placementAttempts()+" attempts for member "+index:spawnedEntity.diagnostic());hideBossBars(encounter);data.changed();return Result.failed(encounter.diagnostic());}
             encounter.addSpawn(entity.getUUID());data.changed();
         }
         updateBossBar(server,encounter,template);
+        updateMobBossBars(server,encounter);
         return Result.active();
     }
 
@@ -80,7 +86,7 @@ public final class EncounterService {
             if(area.leaveBehavior()==EncounterTemplate.LeaveBehavior.FAIL){
                 long deadline=encounter.leaveDeadlines().getOrDefault(participant,gameTime+area.leaveTimeoutTicks());
                 if(!encounter.leaveDeadlines().containsKey(participant))encounter.setLeaveDeadline(participant,deadline);
-                if(gameTime>=deadline){encounter.fail("participant remained outside the encounter area past the leave timeout");hideBossBar(encounter.id());data.changed();return Result.failed(encounter.diagnostic());}
+                if(gameTime>=deadline){encounter.fail("participant remained outside the encounter area past the leave timeout");hideBossBars(encounter);data.changed();return Result.failed(encounter.diagnostic());}
             }
         }
         if(encounter.areaPaused()!=pause)encounter.setAreaPaused(pause);
@@ -114,18 +120,18 @@ public final class EncounterService {
 
     public static Result refresh(MinecraftServer server,SceneSavedData data,EncounterInstance encounter){
         EncounterTemplate template=EncounterResources.template(server,encounter.templateId()).orElse(null);
-        if(template==null){encounter.fail("encounter template is unavailable");hideBossBar(encounter.id());data.changed();return Result.failed(encounter.diagnostic());}
+        if(template==null){encounter.fail("encounter template is unavailable");hideBossBars(encounter);data.changed();return Result.failed(encounter.diagnostic());}
         if(encounter.state()==EncounterInstance.EncounterState.PREPARED||encounter.state()==EncounterInstance.EncounterState.SPAWNING||encounter.state()==EncounterInstance.EncounterState.ACTIVE){
             Result spawning=reconcileSpawn(server,data,encounter,template);if(spawning.status()==Status.FAILED||spawning.status()==Status.WAITING)return spawning;
         }
-        encounter.checkComplete();if(encounter.state()==EncounterInstance.EncounterState.COMPLETED||encounter.state()==EncounterInstance.EncounterState.FAILED)hideBossBar(encounter.id());else updateBossBar(server,encounter,template);data.changed();return encounter.state()==EncounterInstance.EncounterState.COMPLETED?Result.completed():encounter.state()==EncounterInstance.EncounterState.FAILED?Result.failed(encounter.diagnostic()):Result.active();
+        encounter.checkComplete();if(encounter.state()==EncounterInstance.EncounterState.COMPLETED||encounter.state()==EncounterInstance.EncounterState.FAILED)hideBossBars(encounter);else{updateBossBar(server,encounter,template);updateMobBossBars(server,encounter);}data.changed();return encounter.state()==EncounterInstance.EncounterState.COMPLETED?Result.completed():encounter.state()==EncounterInstance.EncounterState.FAILED?Result.failed(encounter.diagnostic()):Result.active();
     }
 
-    public static Result cleanup(MinecraftServer server,SceneSavedData data,EncounterInstance encounter,boolean forceRemove){hideBossBar(encounter.id());encounter.cleaning();boolean waiting=false;for(UUID id:encounter.spawned()){if(encounter.defeated().contains(id))continue;Entity entity=find(server,id);if(entity==null){waiting=true;continue;}if(forceRemove||encounter.cleanupPolicy()==EncounterTemplate.CleanupPolicy.REMOVE_SURVIVORS)entity.discard();else release(entity);}if(waiting&&(forceRemove||encounter.cleanupPolicy()==EncounterTemplate.CleanupPolicy.REMOVE_SURVIVORS)){data.changed();return Result.waiting("owned encounter entities are unloaded; cleanup will resume when they return");}if(encounter.cleanupPolicy()==EncounterTemplate.CleanupPolicy.PRESERVE_IN_WORLD&&!forceRemove)encounter.released();else encounter.cleaned();data.changed();return Result.completed();}
-    public static void onDeath(LivingEntity entity){CompoundTag persistent=entity.getPersistentData();if(!persistent.hasUUID(OWNER)||!(entity.level() instanceof ServerLevel level))return;SceneSavedData data=SceneSavedData.get(level);data.encounter(persistent.getUUID(OWNER)).ifPresent(encounter->{encounter.defeated(entity.getUUID());if(encounter.state()==EncounterInstance.EncounterState.COMPLETED)hideBossBar(encounter.id());else EncounterResources.template(level.getServer(),encounter.templateId()).ifPresent(template->updateBossBar(level.getServer(),encounter,template));data.changed();});}
-    public static void onEntityJoin(Entity entity){CompoundTag persistent=entity.getPersistentData();if(!persistent.hasUUID(OWNER)||!(entity.level() instanceof ServerLevel level))return;SceneSavedData data=SceneSavedData.get(level);EncounterInstance encounter=data.encounter(persistent.getUUID(OWNER)).orElse(null);if(encounter==null)return;if(encounter.state()==EncounterInstance.EncounterState.RELEASED)release(entity);else if(encounter.state()==EncounterInstance.EncounterState.CLEANED)entity.discard();}
+    public static Result cleanup(MinecraftServer server,SceneSavedData data,EncounterInstance encounter,boolean forceRemove){hideBossBars(encounter);encounter.cleaning();boolean waiting=false;for(UUID id:encounter.spawned()){if(encounter.defeated().contains(id))continue;Entity entity=find(server,id);if(entity==null){waiting=true;continue;}if(forceRemove||encounter.cleanupPolicy()==EncounterTemplate.CleanupPolicy.REMOVE_SURVIVORS)entity.discard();else release(entity);}if(waiting&&(forceRemove||encounter.cleanupPolicy()==EncounterTemplate.CleanupPolicy.REMOVE_SURVIVORS)){data.changed();return Result.waiting("owned encounter entities are unloaded; cleanup will resume when they return");}if(encounter.cleanupPolicy()==EncounterTemplate.CleanupPolicy.PRESERVE_IN_WORLD&&!forceRemove)encounter.released();else encounter.cleaned();data.changed();return Result.completed();}
+    public static void onDeath(LivingEntity entity){hideMobBossBar(entity.getUUID());CompoundTag persistent=entity.getPersistentData();if(!persistent.hasUUID(OWNER)||!(entity.level() instanceof ServerLevel level))return;SceneSavedData data=SceneSavedData.get(level);data.encounter(persistent.getUUID(OWNER)).ifPresent(encounter->{encounter.defeated(entity.getUUID());if(encounter.state()==EncounterInstance.EncounterState.COMPLETED)hideBossBars(encounter);else EncounterResources.template(level.getServer(),encounter.templateId()).ifPresent(template->{updateBossBar(level.getServer(),encounter,template);updateMobBossBars(level.getServer(),encounter);});data.changed();});}
+    public static void onEntityJoin(Entity entity){CompoundTag persistent=entity.getPersistentData();if(!persistent.hasUUID(OWNER)||!(entity.level() instanceof ServerLevel level))return;SceneSavedData data=SceneSavedData.get(level);EncounterInstance encounter=data.encounter(persistent.getUUID(OWNER)).orElse(null);if(encounter==null)return;if(encounter.state()==EncounterInstance.EncounterState.RELEASED)release(entity);else if(encounter.state()==EncounterInstance.EncounterState.CLEANED)entity.discard();else if(encounter.state()==EncounterInstance.EncounterState.PREPARED||encounter.state()==EncounterInstance.EncounterState.SPAWNING||encounter.state()==EncounterInstance.EncounterState.ACTIVE)updateMobBossBars(level.getServer(),encounter);else hideMobBossBar(entity.getUUID());}
 
-    private static Entity spawn(ServerLevel level,EncounterTemplate.Member member,EncounterInstance encounter,EncounterTemplate template,int index){
+    private static SpawnResult spawn(ServerLevel level,EncounterTemplate.Member member,EncounterInstance encounter,EncounterTemplate template,int index){
         EntityType<?> type=BuiltInRegistries.ENTITY_TYPE.get(member.entityType());
         for(int attempt=0;attempt<template.placementAttempts();attempt++){
             BlockPos horizontal=horizontalPosition(encounter,template,index,attempt);if(!level.hasChunkAt(horizontal))continue;
@@ -134,10 +140,11 @@ public final class EncounterService {
             if(!level.noCollision(entity)){entity.discard();continue;}
             // Direct EntityType#create skips vanilla mob initialization (including a pillager's crossbow).
             if(entity instanceof Mob mob)mob.finalizeSpawn(level,level.getCurrentDifficultyAt(pos),MobSpawnType.EVENT,null);
+            String optionError=applyMobOptions(entity,member);if(!optionError.isBlank()){entity.discard();return new SpawnResult(null,optionError);}
             applyEquipment(level,entity,member);entity.getPersistentData().putUUID(OWNER,encounter.id());entity.getPersistentData().putUUID(SCENE,encounter.sceneId());entity.getPersistentData().putInt("VillagerRetaliationSpawnGeneration",encounter.spawnGeneration());
-            if(level.addFreshEntity(entity))return entity;
+            if(level.addFreshEntity(entity))return new SpawnResult(entity,"");
         }
-        return null;
+        return new SpawnResult(null,"");
     }
 
     private static BlockPos horizontalPosition(EncounterInstance encounter,EncounterTemplate template,int index,int attempt){
@@ -156,6 +163,26 @@ public final class EncounterService {
             living.setItemSlot(entry.getKey(),stack);if(living instanceof Mob mob)mob.setDropChance(entry.getKey(),gear.dropChance());
         }
     }
+
+    private static String applyMobOptions(Entity entity,EncounterTemplate.Member member){
+        EncounterTemplate.MobOptions options=member.options();if(!options.customName().isBlank())entity.setCustomName(Component.literal(options.customName()));entity.setCustomNameVisible(options.nameVisible());entity.setGlowingTag(options.glowing());
+        if(options.persistent()){if(entity instanceof Mob mob)mob.setPersistenceRequired();else return "persistent encounter presentation requires a mob entity for "+member.entityType();}
+        if((!options.attributes().isEmpty()||options.boss())&&!(entity instanceof LivingEntity))return "elite attributes and boss designation require a living entity for "+member.entityType();
+        if(entity instanceof LivingEntity living){boolean healthChanged=false;for(var entry:options.attributes().entrySet()){AttributeInstance attribute=attribute(living,entry.getKey());if(attribute==null)return "entity "+member.entityType()+" does not support encounter attribute "+entry.getKey();attribute.setBaseValue(entry.getValue());if(entry.getKey().getPath().equals("max_health"))healthChanged=true;}if(healthChanged)living.setHealth(living.getMaxHealth());}
+        if(options.boss()){CompoundTag tag=entity.getPersistentData();tag.putBoolean(BOSS,true);tag.putString(BOSS_COLOR,options.bossBarColor().name());tag.putString(BOSS_OVERLAY,options.bossBarOverlay().name());}
+        return "";
+    }
+
+    private static AttributeInstance attribute(LivingEntity living,net.minecraft.resources.ResourceLocation id){return switch(id.toString()){case "minecraft:max_health"->living.getAttribute(Attributes.MAX_HEALTH);case "minecraft:movement_speed"->living.getAttribute(Attributes.MOVEMENT_SPEED);case "minecraft:attack_damage"->living.getAttribute(Attributes.ATTACK_DAMAGE);case "minecraft:armor"->living.getAttribute(Attributes.ARMOR);case "minecraft:knockback_resistance"->living.getAttribute(Attributes.KNOCKBACK_RESISTANCE);default->null;};}
+
+    private static void updateMobBossBars(MinecraftServer server,EncounterInstance encounter){
+        for(UUID id:encounter.spawned()){Entity entity=find(server,id);if(!(entity instanceof LivingEntity living)||!entity.getPersistentData().getBoolean(BOSS)||!living.isAlive()){hideMobBossBar(id);continue;}CompoundTag tag=entity.getPersistentData();BossEvent.BossBarColor color=bossColor(tag.getString(BOSS_COLOR));BossEvent.BossBarOverlay overlay=bossOverlay(tag.getString(BOSS_OVERLAY));ServerBossEvent bar=MOB_BOSS_BARS.get(id);if(bar==null||bar.getColor()!=color||bar.getOverlay()!=overlay){hideMobBossBar(id);bar=new ServerBossEvent(entity.getDisplayName(),color,overlay);MOB_BOSS_BARS.put(id,bar);}bar.setName(entity.getDisplayName());bar.setProgress(Math.max(0.0F,Math.min(1.0F,living.getHealth()/Math.max(1.0F,living.getMaxHealth()))));for(var player:new ArrayList<>(bar.getPlayers()))if(!encounter.participants().contains(player.getUUID()))bar.removePlayer(player);for(UUID participant:encounter.participants()){var player=server.getPlayerList().getPlayer(participant);if(player!=null)bar.addPlayer(player);}bar.setVisible(true);}
+    }
+    private static BossEvent.BossBarColor bossColor(String value){try{return BossEvent.BossBarColor.valueOf(value);}catch(IllegalArgumentException e){return BossEvent.BossBarColor.RED;}}
+    private static BossEvent.BossBarOverlay bossOverlay(String value){try{return BossEvent.BossBarOverlay.valueOf(value);}catch(IllegalArgumentException e){return BossEvent.BossBarOverlay.PROGRESS;}}
+    private static void hideMobBossBar(UUID entityId){ServerBossEvent bar=MOB_BOSS_BARS.remove(entityId);if(bar!=null)bar.removeAllPlayers();}
+    public static void hideBossBars(EncounterInstance encounter){hideBossBar(encounter.id());for(UUID id:encounter.spawned())hideMobBossBar(id);}
+    public static boolean hasMobBossBar(UUID entityId){return MOB_BOSS_BARS.containsKey(entityId);}
 
     private static void notifyLocation(MinecraftServer server,EncounterInstance encounter,EncounterTemplate template,SceneSavedData data){
         if(encounter.locationNotified()||template.spawnMode()!=EncounterTemplate.SpawnMode.FIXED)return;
@@ -179,6 +206,7 @@ public final class EncounterService {
     public static void hideBossBar(UUID encounterId){ServerBossEvent bar=BOSS_BARS.remove(encounterId);if(bar!=null)bar.removeAllPlayers();}
 
     private static List<EncounterTemplate.Member> desiredMembers(EncounterTemplate.Wave wave,EncounterTemplate template,int partySize){List<EncounterTemplate.Member> values=new ArrayList<>();for(var member:wave.members())for(int i=0;i<member.count();i++)values.add(member);int extra=template.scaledCount(wave,partySize)-values.size();for(int i=0;i<extra;i++)values.add(wave.members().getFirst());return values;}
-    private static ServerLevel level(MinecraftServer server,EncounterInstance e){return server.getLevel(ResourceKey.create(Registries.DIMENSION,e.anchorDimension()));}private static Entity find(MinecraftServer server,UUID id){for(ServerLevel level:server.getAllLevels()){Entity e=level.getEntity(id);if(e!=null)return e;}return null;}private static boolean ownedBy(Entity entity,UUID id){return entity.getPersistentData().hasUUID(OWNER)&&id.equals(entity.getPersistentData().getUUID(OWNER));}private static void release(Entity entity){entity.getPersistentData().remove(OWNER);entity.getPersistentData().remove(SCENE);entity.getPersistentData().remove("VillagerRetaliationSpawnGeneration");}
+    private static ServerLevel level(MinecraftServer server,EncounterInstance e){return server.getLevel(ResourceKey.create(Registries.DIMENSION,e.anchorDimension()));}private static Entity find(MinecraftServer server,UUID id){for(ServerLevel level:server.getAllLevels()){Entity e=level.getEntity(id);if(e!=null)return e;}return null;}private static boolean ownedBy(Entity entity,UUID id){return entity.getPersistentData().hasUUID(OWNER)&&id.equals(entity.getPersistentData().getUUID(OWNER));}private static void release(Entity entity){hideMobBossBar(entity.getUUID());entity.getPersistentData().remove(OWNER);entity.getPersistentData().remove(SCENE);entity.getPersistentData().remove("VillagerRetaliationSpawnGeneration");entity.getPersistentData().remove(BOSS);entity.getPersistentData().remove(BOSS_COLOR);entity.getPersistentData().remove(BOSS_OVERLAY);}
+    private record SpawnResult(Entity entity,String diagnostic){}
     public record Result(Status status,String diagnostic){public static Result active(){return new Result(Status.ACTIVE,"");}public static Result waiting(String m){return new Result(Status.WAITING,m);}public static Result completed(){return new Result(Status.COMPLETED,"");}public static Result failed(String m){return new Result(Status.FAILED,m);}}public enum Status{ACTIVE,WAITING,COMPLETED,FAILED}
 }

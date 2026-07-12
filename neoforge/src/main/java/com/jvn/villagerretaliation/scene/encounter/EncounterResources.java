@@ -19,6 +19,12 @@ import net.minecraft.world.entity.EquipmentSlot;
 
 public final class EncounterResources {
     public static final ResourceLocation SCHEMA=VillagerRetaliation.id("encounter/v1");
+    private static final Map<ResourceLocation,double[]> MOB_ATTRIBUTES=Map.of(
+            ResourceLocation.parse("minecraft:max_health"),new double[]{1.0D,2048.0D},
+            ResourceLocation.parse("minecraft:movement_speed"),new double[]{0.0D,4.0D},
+            ResourceLocation.parse("minecraft:attack_damage"),new double[]{0.0D,2048.0D},
+            ResourceLocation.parse("minecraft:armor"),new double[]{0.0D,30.0D},
+            ResourceLocation.parse("minecraft:knockback_resistance"),new double[]{0.0D,1.0D});
     private static volatile Cache cache=new Cache(null,Map.of(),Map.of());
     private EncounterResources(){}
     public static Optional<EncounterTemplate> template(MinecraftServer server,ResourceLocation id){return Optional.ofNullable(load(server).templates.get(id));}
@@ -66,9 +72,22 @@ public final class EncounterResources {
     }
     private static List<EncounterTemplate.Member> parseMembers(JsonElement raw,Map<EquipmentSlot,EncounterTemplate.Gear> defaults,List<String> errors,String owner){
         List<EncounterTemplate.Member> members=new ArrayList<>();if(raw==null)return members;if(!raw.isJsonArray()){errors.add(owner+" members must be an array");return members;}
-        for(JsonElement value:raw.getAsJsonArray()){if(!value.isJsonObject()){errors.add(owner+" member must be an object");continue;}JsonObject member=value.getAsJsonObject();ResourceLocation entity=ResourceLocation.tryParse(string(member,"entity",""));if(entity==null||!BuiltInRegistries.ENTITY_TYPE.containsKey(entity)){errors.add("unknown entity type "+entity);continue;}Map<EquipmentSlot,EncounterTemplate.Gear> equipment=new LinkedHashMap<>(defaults);equipment.putAll(parseEquipment(member,errors));members.add(new EncounterTemplate.Member(entity,boundedInteger(member,"count",1,1,64,owner+" member",errors),equipment));}
+        for(JsonElement value:raw.getAsJsonArray()){if(!value.isJsonObject()){errors.add(owner+" member must be an object");continue;}JsonObject member=value.getAsJsonObject();for(String key:member.keySet())if(!List.of("entity","count","equipment","custom_name","name_visible","glowing","persistent","health","movement_speed","attack_damage","armor","knockback_resistance","attributes","boss","boss_bar_color","boss_bar_overlay").contains(key))errors.add("unknown encounter member field "+key);ResourceLocation entity=ResourceLocation.tryParse(string(member,"entity",""));if(entity==null||!BuiltInRegistries.ENTITY_TYPE.containsKey(entity)){errors.add("unknown entity type "+entity);continue;}Map<EquipmentSlot,EncounterTemplate.Gear> equipment=new LinkedHashMap<>(defaults);equipment.putAll(parseEquipment(member,errors));members.add(new EncounterTemplate.Member(entity,boundedInteger(member,"count",1,1,64,owner+" member",errors),equipment,parseMobOptions(member,owner,errors)));}
         return members;
     }
+    private static EncounterTemplate.MobOptions parseMobOptions(JsonObject member,String owner,List<String> errors){
+        String customName=string(member,"custom_name","");if(member.has("custom_name")&&customName.isBlank())errors.add(owner+" custom_name must not be blank");if(customName.length()>128)errors.add(owner+" custom_name exceeds 128 characters");
+        boolean nameVisible=strictBoolean(member,"name_visible",false,owner,errors);boolean glowing=strictBoolean(member,"glowing",false,owner,errors);boolean persistent=strictBoolean(member,"persistent",false,owner,errors);boolean boss=strictBoolean(member,"boss",false,owner,errors);
+        if(nameVisible&&customName.isBlank())errors.add(owner+" name_visible requires custom_name");if(!boss&&(member.has("boss_bar_color")||member.has("boss_bar_overlay")))errors.add(owner+" boss-bar presentation requires boss true");
+        EncounterTemplate.BossColor color=strictEnum(EncounterTemplate.BossColor.class,member,"boss_bar_color",EncounterTemplate.BossColor.RED,errors);EncounterTemplate.BossOverlay overlay=strictEnum(EncounterTemplate.BossOverlay.class,member,"boss_bar_overlay",EncounterTemplate.BossOverlay.PROGRESS,errors);
+        Map<ResourceLocation,Double> attributes=new LinkedHashMap<>();JsonElement raw=member.get("attributes");if(raw!=null){if(!raw.isJsonObject())errors.add(owner+" attributes must be an object");else for(var entry:raw.getAsJsonObject().entrySet()){ResourceLocation id=ResourceLocation.tryParse(entry.getKey());if(id==null||!MOB_ATTRIBUTES.containsKey(id)){errors.add("unknown or unsafe encounter attribute "+entry.getKey());continue;}Double value=strictDecimal(entry.getValue(),owner+" attribute "+id,errors);if(value!=null)putAttribute(attributes,id,value,owner,errors);}}
+        Map<String,ResourceLocation> aliases=Map.of("health",ResourceLocation.parse("minecraft:max_health"),"movement_speed",ResourceLocation.parse("minecraft:movement_speed"),"attack_damage",ResourceLocation.parse("minecraft:attack_damage"),"armor",ResourceLocation.parse("minecraft:armor"),"knockback_resistance",ResourceLocation.parse("minecraft:knockback_resistance"));
+        for(var alias:aliases.entrySet())if(member.has(alias.getKey())){if(attributes.containsKey(alias.getValue()))errors.add(owner+" duplicates attribute "+alias.getValue()+" through "+alias.getKey());Double value=strictDecimal(member.get(alias.getKey()),owner+" "+alias.getKey(),errors);if(value!=null)putAttribute(attributes,alias.getValue(),value,owner,errors);}
+        return new EncounterTemplate.MobOptions(customName,nameVisible,glowing,persistent,attributes,boss,color,overlay);
+    }
+    private static void putAttribute(Map<ResourceLocation,Double> attributes,ResourceLocation id,double value,String owner,List<String> errors){double[] bounds=MOB_ATTRIBUTES.get(id);if(value<bounds[0]||value>bounds[1])errors.add(owner+" attribute "+id+" must be between "+bounds[0]+" and "+bounds[1]);else attributes.put(id,value);}
+    private static Double strictDecimal(JsonElement raw,String owner,List<String> errors){try{double value=raw.getAsDouble();if(!Double.isFinite(value))throw new NumberFormatException();return value;}catch(RuntimeException e){errors.add(owner+" must be a finite number");return null;}}
+    private static boolean strictBoolean(JsonObject object,String key,boolean fallback,String owner,List<String> errors){if(!object.has(key))return fallback;try{JsonElement raw=object.get(key);if(!raw.isJsonPrimitive()||!raw.getAsJsonPrimitive().isBoolean())throw new IllegalArgumentException();return raw.getAsBoolean();}catch(RuntimeException e){errors.add(owner+" "+key+" must be a boolean");return fallback;}}
     private static List<EncounterTemplate.WaveHook> parseWaveHooks(JsonObject wave,String waveId,List<String> errors){
         List<EncounterTemplate.WaveHook> hooks=new ArrayList<>();java.util.Set<String> ids=new java.util.LinkedHashSet<>();JsonElement raw=wave.get("scene_actions");if(raw!=null){if(!raw.isJsonArray())errors.add("wave "+waveId+" scene_actions must be an array");else for(JsonElement value:raw.getAsJsonArray()){if(!value.isJsonObject()){errors.add("wave scene action must be an object");continue;}JsonObject hook=value.getAsJsonObject();for(String key:hook.keySet())if(!List.of("id","type","text").contains(key))errors.add("unknown wave scene action field "+key);String id=string(hook,"id","");if(!ids.add(id))errors.add("duplicate wave hook id "+id);EncounterTemplate.HookType type=strictEnum(EncounterTemplate.HookType.class,hook,"type",null,errors);try{hooks.add(new EncounterTemplate.WaveHook(id,type,string(hook,"text","")));}catch(IllegalArgumentException e){errors.add(e.getMessage());}}}
         if(wave.has("dialogue_hook")){if(!wave.get("dialogue_hook").isJsonObject())errors.add("wave "+waveId+" dialogue_hook must be an object");else{JsonObject hook=wave.getAsJsonObject("dialogue_hook");for(String key:hook.keySet())if(!List.of("id","text").contains(key))errors.add("unknown wave dialogue hook field "+key);String id=string(hook,"id","");if(!ids.add(id))errors.add("duplicate wave hook id "+id);try{hooks.add(new EncounterTemplate.WaveHook(id,EncounterTemplate.HookType.DIALOGUE,string(hook,"text","")));}catch(IllegalArgumentException e){errors.add(e.getMessage());}}}return hooks;
@@ -95,7 +114,7 @@ public final class EncounterResources {
     }
     private static <E extends Enum<E>>E strictEnum(Class<E> type,JsonObject object,String key,E fallback,List<String> errors){
         if(!object.has(key))return fallback;String value=string(object,key,"");
-        try{return Enum.valueOf(type,value.toUpperCase(Locale.ROOT));}catch(IllegalArgumentException e){errors.add("unknown area."+key+" '"+value+"'");return fallback;}
+        try{return Enum.valueOf(type,value.toUpperCase(Locale.ROOT));}catch(IllegalArgumentException e){errors.add("unknown "+key+" '"+value+"'");return fallback;}
     }
     private static Map<EquipmentSlot,EncounterTemplate.Gear> parseEquipment(JsonObject member,List<String> errors){
         if(!member.has("equipment"))return Map.of();JsonElement raw=member.get("equipment");

@@ -54,9 +54,10 @@ public record EncounterTemplate(ResourceLocation id,int version,ResourceLocation
     public int scaledCount(Wave wave,int partySize){int base=wave.members().stream().mapToInt(Member::count).sum();return base+Math.max(0,Math.min(maxPartySize,partySize)-1)*extraPerAdditionalPlayer;}
     public int waveStart(int index,int partySize){int total=0;for(int i=0;i<index;i++)total+=scaledCount(wave(i),partySize);return total;}
     public int totalCount(int partySize){int total=0;for(int i=0;i<waveCount;i++)total+=scaledCount(wave(i),partySize);return total;}
-    public record Member(ResourceLocation entityType,int count,Map<EquipmentSlot,Gear> equipment){
-        public Member{if(entityType==null)throw new IllegalArgumentException("encounter member entity type is required");count=Math.max(1,Math.min(64,count));equipment=equipment==null?Map.of():Map.copyOf(equipment);}
-        public Member(ResourceLocation entityType,int count){this(entityType,count,Map.of());}
+    public record Member(ResourceLocation entityType,int count,Map<EquipmentSlot,Gear> equipment,MobOptions options){
+        public Member{if(entityType==null)throw new IllegalArgumentException("encounter member entity type is required");count=Math.max(1,Math.min(64,count));equipment=equipment==null?Map.of():Map.copyOf(equipment);options=options==null?MobOptions.DEFAULT:options;}
+        public Member(ResourceLocation entityType,int count){this(entityType,count,Map.of(),MobOptions.DEFAULT);}
+        public Member(ResourceLocation entityType,int count,Map<EquipmentSlot,Gear> equipment){this(entityType,count,equipment,MobOptions.DEFAULT);}
     }
     public record Gear(ResourceLocation item,int count,Map<ResourceLocation,Integer> enchantments,float dropChance){
         public Gear{if(item==null)throw new IllegalArgumentException("equipment item is required");count=Math.max(1,Math.min(99,count));enchantments=enchantments==null?Map.of():Map.copyOf(enchantments);dropChance=Math.max(0.0F,Math.min(1.0F,dropChance));}
@@ -66,6 +67,13 @@ public record EncounterTemplate(ResourceLocation id,int version,ResourceLocation
     }
     public record WaveHook(String id,HookType type,String text){public WaveHook{if(id==null||!id.matches("[a-z][a-z0-9_.-]{0,63}"))throw new IllegalArgumentException("wave hook id must be a stable lowercase identifier");if(type==null)throw new IllegalArgumentException("wave hook type is required");if(text==null||text.isBlank()||text.length()>512)throw new IllegalArgumentException("wave hook text must contain 1 to 512 characters");}}
     public enum HookType{NOTIFICATION,DIALOGUE}
+    public record MobOptions(String customName,boolean nameVisible,boolean glowing,boolean persistent,
+            Map<ResourceLocation,Double> attributes,boolean boss,BossColor bossBarColor,BossOverlay bossBarOverlay){
+        public static final MobOptions DEFAULT=new MobOptions("",false,false,false,Map.of(),false,BossColor.RED,BossOverlay.PROGRESS);
+        public MobOptions{customName=customName==null?"":customName;if(customName.length()>128)throw new IllegalArgumentException("custom_name exceeds 128 characters");attributes=attributes==null?Map.of():Map.copyOf(attributes);bossBarColor=bossBarColor==null?BossColor.RED:bossBarColor;bossBarOverlay=bossBarOverlay==null?BossOverlay.PROGRESS:bossBarOverlay;}
+    }
+    public enum BossColor{PINK,BLUE,RED,GREEN,YELLOW,PURPLE,WHITE}
+    public enum BossOverlay{PROGRESS,NOTCHED_6,NOTCHED_10,NOTCHED_12,NOTCHED_20}
     public record Area(int radius,int verticalRadius,LeaveBehavior leaveBehavior,int leaveTimeoutTicks,
             MobBehavior mobBehavior,int mobTimeoutTicks){
         public Area{

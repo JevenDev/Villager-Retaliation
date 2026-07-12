@@ -351,8 +351,159 @@
                 }
               }
             }
+          },
+          "custom_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "name_visible": {
+            "type": "boolean"
+          },
+          "glowing": {
+            "type": "boolean"
+          },
+          "persistent": {
+            "type": "boolean"
+          },
+          "health": {
+            "type": "number",
+            "minimum": 1.0,
+            "maximum": 2048.0
+          },
+          "movement_speed": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 4.0
+          },
+          "attack_damage": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 2048.0
+          },
+          "armor": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 30.0
+          },
+          "knockback_resistance": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "attributes": {
+            "type": "object",
+            "title": "Allowlisted mob attributes",
+            "additionalProperties": false,
+            "properties": {
+              "minecraft:max_health": {
+                "type": "number",
+                "minimum": 1.0,
+                "maximum": 2048.0
+              },
+              "minecraft:movement_speed": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 4.0
+              },
+              "minecraft:attack_damage": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 2048.0
+              },
+              "minecraft:armor": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 30.0
+              },
+              "minecraft:knockback_resistance": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              }
+            }
+          },
+          "boss": {
+            "type": "boolean"
+          },
+          "boss_bar_color": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "pink",
+              "blue",
+              "red",
+              "green",
+              "yellow",
+              "purple",
+              "white"
+            ]
+          },
+          "boss_bar_overlay": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "progress",
+              "notched_6",
+              "notched_10",
+              "notched_12",
+              "notched_20"
+            ]
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "name_visible": {
+                  "const": true
+                }
+              },
+              "required": [
+                "name_visible"
+              ]
+            },
+            "then": {
+              "required": [
+                "custom_name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "boss_bar_color"
+              ]
+            },
+            "then": {
+              "properties": {
+                "boss": {
+                  "const": true
+                }
+              },
+              "required": [
+                "boss"
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "boss_bar_overlay"
+              ]
+            },
+            "then": {
+              "properties": {
+                "boss": {
+                  "const": true
+                }
+              },
+              "required": [
+                "boss"
+              ]
+            }
+          }
+        ]
       },
       "maxItems": 64
     },
@@ -673,8 +824,159 @@
                       }
                     }
                   }
+                },
+                "custom_name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "name_visible": {
+                  "type": "boolean"
+                },
+                "glowing": {
+                  "type": "boolean"
+                },
+                "persistent": {
+                  "type": "boolean"
+                },
+                "health": {
+                  "type": "number",
+                  "minimum": 1.0,
+                  "maximum": 2048.0
+                },
+                "movement_speed": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "maximum": 4.0
+                },
+                "attack_damage": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "maximum": 2048.0
+                },
+                "armor": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "maximum": 30.0
+                },
+                "knockback_resistance": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "maximum": 1.0
+                },
+                "attributes": {
+                  "type": "object",
+                  "title": "Allowlisted mob attributes",
+                  "additionalProperties": false,
+                  "properties": {
+                    "minecraft:max_health": {
+                      "type": "number",
+                      "minimum": 1.0,
+                      "maximum": 2048.0
+                    },
+                    "minecraft:movement_speed": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "maximum": 4.0
+                    },
+                    "minecraft:attack_damage": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "maximum": 2048.0
+                    },
+                    "minecraft:armor": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "maximum": 30.0
+                    },
+                    "minecraft:knockback_resistance": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "maximum": 1.0
+                    }
+                  }
+                },
+                "boss": {
+                  "type": "boolean"
+                },
+                "boss_bar_color": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "pink",
+                    "blue",
+                    "red",
+                    "green",
+                    "yellow",
+                    "purple",
+                    "white"
+                  ]
+                },
+                "boss_bar_overlay": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "progress",
+                    "notched_6",
+                    "notched_10",
+                    "notched_12",
+                    "notched_20"
+                  ]
                 }
-              }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "name_visible": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "name_visible"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "custom_name"
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "boss_bar_color"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "boss": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "boss"
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "boss_bar_overlay"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "boss": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "boss"
+                    ]
+                  }
+                }
+              ]
             },
             "maxItems": 64
           },

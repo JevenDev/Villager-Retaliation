@@ -95,6 +95,18 @@ Encounter offsets are applied to an actor or coordinate anchor before that ancho
     {
       "entity": "minecraft:pillager",
       "count": 1,
+      "custom_name": "Gate Captain",
+      "name_visible": true,
+      "glowing": true,
+      "persistent": true,
+      "health": 40,
+      "movement_speed": 0.35,
+      "attack_damage": 8,
+      "armor": 10,
+      "knockback_resistance": 0.3,
+      "boss": true,
+      "boss_bar_color": "purple",
+      "boss_bar_overlay": "notched_10",
       "equipment": {
         "mainhand": {
           "item": "minecraft:crossbow",
@@ -130,6 +142,24 @@ The optional `area` is a cylinder centered on the encounter's durable anchor. `r
 `mob_behavior` is `ignore`, `return`, or `teleport`. `return` asks loaded owned mobs to navigate back without changing unrelated entities. `teleport` waits for the persisted `mob_timeout_ticks` deadline (default 200, maximum 12000) before returning a loaded mob to the anchor. Area checks never force-load the anchor, a participant, or an owned mob's chunk. Omitting `area` preserves encounter/v1 behavior exactly.
 
 Every mob runs its normal vanilla spawn initialization first, so mobs such as pillagers receive their usual equipment. A member's optional `equipment` object then overrides individual `mainhand`, `offhand`, `head`, `chest`, `legs`, `feet`, or `body` slots. Each slot accepts `item`, optional `count`, an `enchantments` object mapping namespaced enchantment IDs to levels, and `drop_chance` from `0.0` to `1.0`.
+
+### Elite and boss members
+
+Member presentation is an allowlist: `custom_name` (1-128 characters), `name_visible`, `glowing`, and `persistent`. The last option calls the mob's normal persistence mechanism; it does not inject NBT. `name_visible: true` requires a custom name. Omitting every field retains vanilla encounter/v1 presentation and despawn behavior.
+
+Safe combat attributes can use the short fields below or their exact namespaced IDs inside `attributes`, but not both for the same attribute:
+
+| Short field | Attribute ID | Bounds |
+| --- | --- | --- |
+| `health` | `minecraft:max_health` | 1-2048 |
+| `movement_speed` | `minecraft:movement_speed` | 0-4 |
+| `attack_damage` | `minecraft:attack_damage` | 0-2048 |
+| `armor` | `minecraft:armor` | 0-30 |
+| `knockback_resistance` | `minecraft:knockback_resistance` | 0-1 |
+
+Attributes are applied after vanilla spawn initialization and before authored equipment. When maximum health is changed, current health is then set to the resulting maximum. If the selected entity is not living or does not own an authored attribute, spawning fails with a focused diagnostic instead of silently ignoring the field.
+
+Set `boss: true` for a participant-only health bar owned by that spawned member. `boss_bar_color` is `pink`, `blue`, `red`, `green`, `yellow`, `purple`, or `white`; `boss_bar_overlay` is `progress`, `notched_6`, `notched_10`, `notched_12`, or `notched_20`. The designation is stored on the owned entity, so the bar reconstructs after reload or chunk return and disappears on death, failure, cancellation, release, or cleanup. Boss-bar presentation without `boss: true` is rejected.
 
 ### Spawn modes
 

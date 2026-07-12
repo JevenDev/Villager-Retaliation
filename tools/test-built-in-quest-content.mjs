@@ -439,6 +439,13 @@ function validateCinematicResources() {
     for (const member of explicitWaves ? data.waves.flatMap((wave) => wave.members ?? []) : data.members ?? []) {
       assert(typeof member.entity === "string" && member.entity.length > 0, file, "encounter member entity is missing");
       assert(Number(member.count ?? 1) > 0, file, `encounter member ${member.entity} has a non-positive count`);
+      assert(member.custom_name === undefined || (typeof member.custom_name === "string" && member.custom_name.length >= 1 && member.custom_name.length <= 128), file, `encounter member ${member.entity} has an invalid custom name`);
+      assert(member.name_visible !== true || typeof member.custom_name === "string", file, `encounter member ${member.entity} exposes a missing custom name`);
+      assert((member.boss_bar_color === undefined && member.boss_bar_overlay === undefined) || member.boss === true, file, `encounter member ${member.entity} has unreachable boss-bar presentation`);
+      const bounds = { health: [1, 2048], movement_speed: [0, 4], attack_damage: [0, 2048], armor: [0, 30], knockback_resistance: [0, 1] };
+      for (const [field, [minimum, maximum]] of Object.entries(bounds)) assert(member[field] === undefined || (Number.isFinite(member[field]) && member[field] >= minimum && member[field] <= maximum), file, `encounter member ${member.entity} has unsafe ${field}`);
+      const attributeBounds = { "minecraft:max_health": [1, 2048], "minecraft:movement_speed": [0, 4], "minecraft:attack_damage": [0, 2048], "minecraft:armor": [0, 30], "minecraft:knockback_resistance": [0, 1] };
+      for (const [id, value] of Object.entries(member.attributes ?? {})) { assert(Object.hasOwn(attributeBounds, id), file, `encounter member ${member.entity} has unsafe attribute ${id}`);if (Object.hasOwn(attributeBounds, id)) { const [minimum, maximum] = attributeBounds[id];assert(Number.isFinite(value) && value >= minimum && value <= maximum, file, `encounter member ${member.entity} has out-of-range attribute ${id}`); } }
     }
     if (data.area !== undefined) {
       assert(data.area && typeof data.area === "object" && !Array.isArray(data.area), file, "encounter area must be an object");

@@ -142,7 +142,11 @@ public final class SceneSchema {
         properties.add("entity", resourceLocation());
         properties.add("count", boundedInteger(1, 64));
         properties.add("equipment", equipment());
+        JsonObject customName=text();customName.addProperty("maxLength",128);properties.add("custom_name",customName);
+        properties.add("name_visible",bool());properties.add("glowing",bool());properties.add("persistent",bool());
+        properties.add("health",number(1.0D,2048.0D));properties.add("movement_speed",number(0.0D,4.0D));properties.add("attack_damage",number(0.0D,2048.0D));properties.add("armor",number(0.0D,30.0D));properties.add("knockback_resistance",number(0.0D,1.0D));properties.add("attributes",mobAttributes());properties.add("boss",bool());properties.add("boss_bar_color",enumValues(EncounterTemplate.BossColor.values()));properties.add("boss_bar_overlay",enumValues(EncounterTemplate.BossOverlay.values()));
         member.add("properties", properties);
+        JsonArray rules=new JsonArray();rules.add(requireWhenTrue("name_visible","custom_name"));rules.add(requireBossFor("boss_bar_color"));rules.add(requireBossFor("boss_bar_overlay"));member.add("allOf",rules);
         return member;
     }
     private static JsonObject memberArray(){JsonObject members=array(member(),1);members.addProperty("maxItems",64);return members;}
@@ -178,6 +182,11 @@ public final class SceneSchema {
         value.add("additionalProperties", boundedInteger(1, 255));
         return value;
     }
+
+    private static JsonObject mobAttributes(){JsonObject value=object("Allowlisted mob attributes");value.addProperty("additionalProperties",false);JsonObject properties=new JsonObject();properties.add("minecraft:max_health",number(1.0D,2048.0D));properties.add("minecraft:movement_speed",number(0.0D,4.0D));properties.add("minecraft:attack_damage",number(0.0D,2048.0D));properties.add("minecraft:armor",number(0.0D,30.0D));properties.add("minecraft:knockback_resistance",number(0.0D,1.0D));value.add("properties",properties);return value;}
+    private static JsonObject number(double minimum,double maximum){JsonObject value=new JsonObject();value.addProperty("type","number");value.addProperty("minimum",minimum);value.addProperty("maximum",maximum);return value;}
+    private static JsonObject requireWhenTrue(String flag,String required){JsonObject condition=new JsonObject();JsonObject conditionProperties=new JsonObject();conditionProperties.add(flag,constant(true));condition.add("properties",conditionProperties);condition.add("required",strings(flag));JsonObject consequence=new JsonObject();consequence.add("required",strings(required));JsonObject rule=new JsonObject();rule.add("if",condition);rule.add("then",consequence);return rule;}
+    private static JsonObject requireBossFor(String field){JsonObject condition=new JsonObject();condition.add("required",strings(field));JsonObject consequence=new JsonObject();JsonObject properties=new JsonObject();properties.add("boss",constant(true));consequence.add("properties",properties);consequence.add("required",strings("boss"));JsonObject rule=new JsonObject();rule.add("if",condition);rule.add("then",consequence);return rule;}
 
     private static JsonObject registeredIds(com.jvn.villagerretaliation.api.registry.FreezableExtensionRegistry<?> registry) {
         JsonObject value = resourceLocation();
@@ -249,6 +258,7 @@ public final class SceneSchema {
         value.addProperty("const", constant);
         return value;
     }
+    private static JsonObject constant(boolean constant){JsonObject value=new JsonObject();value.addProperty("const",constant);return value;}
 
     private static JsonArray strings(String... values) {
         JsonArray array = new JsonArray();
