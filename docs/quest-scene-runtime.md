@@ -67,3 +67,51 @@ Scene save version 3 introduced explicit `RunIdentityKind`: `QUEST_RUN` or `LEGA
 Non-idempotent effects use operation receipts with `PREPARED`, `APPLIED`, and `COMPLETED` states. Ambiguous prepared work blocks for repair. Continuations have their own completion receipt. Compaction never removes unresolved receipts, pending continuations/rewards, active encounters, blocked cleanup, or nonterminal scenes.
 
 Fully settled terminal scenes remain detailed for seven in-game days, then compact incrementally into replay-blocking tombstones containing the operation identity, result, times, and completed receipt IDs. Maintenance inspects at most 16 candidates every 200 ticks and retains up to 4,096 tombstones.
+
+## Protected villagers and the downed state
+
+Protected villagers do not enter the normal death path after ordinary lethal damage. Final post-mitigation damage is clamped in `LivingDamageEvent.Pre`, the villager remains at one health, and a persistent downed record stores the entry time, earliest recovery time, protection-source diagnostics, data version, and the exact AI/pickup flags that must be restored. Party contracts, quest provider bindings, scene bindings, inventories, and hired work state are not removed.
+
+Protection is active when any of these sources applies:
+
+- the villager has an active party contract and `combat.partyVillagersUseDownedState` is enabled;
+- an active quest run from that exact provider UUID uses `death_protection: "while_active"`;
+- that provider successfully started a quest using `death_protection: "after_start"`;
+- an active scene binds the exact villager to an actor with `lethal_damage_policy: "downed"`;
+- the entity has the permanent scoreboard tag `villagerretaliation_essential`.
+
+While downed, AI, navigation, attacks, work, follow behavior, pickup, trading, gifts, breeding, and dialogue are suspended. Repeated attacks still run ordinary hit consequences once but cannot reduce health. Nearby mobs targeting the villager are cleared on entry and once per second. The client receives transition packets and start-tracking replay, then renders a whole-body kneeling pose.
+
+Recovery requires the configured minimum duration, no nearby natural hostile or mob directly targeting the villager within `downedThreatRadius`, and `downedQuietTicks` of quiet. Health returns to `downedRecoveryHealthPercent` of maximum (at least one), prior AI/pickup flags are restored, and `DOWNED` scene bindings return to `LIVE` and wake their scenes. If the original protection expires while the villager is downed, recovery still finishes normally.
+
+`/kill` (`minecraft:generic_kill`), out-of-world damage, and damage tagged `minecraft:bypasses_invulnerability` bypass protection. Direct entity discard/removal also remains permanent; void damage is allowed to kill so a protected villager cannot fall forever.
+
+Quest-v2 provider contract:
+
+```json
+"provider": {
+  "type": "villagerretaliation:villager",
+  "death_protection": "while_active",
+  "filters": {
+    "professions": ["minecraft:cartographer"]
+  }
+}
+```
+
+`none` is the default. `while_active` applies only while at least one active run is bound to the exact provider UUID. `after_start` writes the originating quest ID to the villager only after durable startup succeeds; offers and viewed dialogue do not protect, and the marker survives terminal quest states and reloads. Multiple quest IDs coexist without duplicate-start side effects. Invalid values emit a focused diagnostic and fall back to `none`.
+
+Scene-v1 actor contract:
+
+```json
+{
+  "alias": "guide",
+  "type": "villagerretaliation:villager",
+  "binding_source": "quest_provider",
+  "replacement_policy": "fixed",
+  "missing_actor_policy": "block",
+  "lethal_damage_policy": "downed",
+  "death_policy": "apply_missing_policy"
+}
+```
+
+`lethal_damage_policy` defaults to `normal`. It prevents death only while the owning scene is active and is intentionally separate from the post-death `death_policy`. A downed binding persists as `DOWNED`; actor-dependent steps block without polling until recovery wakes and resumes the scene.

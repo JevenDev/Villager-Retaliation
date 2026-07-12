@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
+import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
@@ -98,6 +99,27 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void activePartyVillagerDownsWithoutLosingContract(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, "VrDownedParty");
+        leader.getInventory().add(new ItemStack(Items.EMERALD, 32));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        leader.moveTo(villager.getX(), villager.getY(), villager.getZ(), 0.0F, 0.0F);
+        PartyVillagerContractService.ContractResult recruited = PartyVillagerContractService.recruit(leader, villager);
+        helper.assertTrue(recruited.success(), "party villager fixture should recruit");
+
+        villager.hurt(level.damageSources().generic(), 1000.0F);
+
+        helper.assertTrue(VillagerDownedService.isDowned(villager), "active party villager should be downed");
+        helper.assertTrue(villager.isAlive(), "active party villager should remain alive");
+        helper.assertTrue(
+                PartyVillagerContractService.isActivePartyVillager(level, villager),
+                "downed transition should preserve the party contract");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void downedStateSurvivesEntitySerializationAndRestoresPriorFlags(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Villager original = spawnVillager(helper, new BlockPos(1, 2, 1));
@@ -157,11 +179,13 @@ public final class VillagerGameplayGameTests {
                 "downed right-click result");
 
         zombie.setTarget(villager);
-        VillagerDownedService.onVillagerTickPre(villager);
-        helper.assertTrue(zombie.getTarget() == null, "periodic fallback should clear hostile retargeting");
-        helper.assertTrue(villager.isNoAi(), "downed villager should remain AI-suspended");
-        helper.assertFalse(villager.canPickUpLoot(), "downed villager should not pick up items");
-        helper.succeed();
+        zombie.setNoAi(true);
+        helper.runAfterDelay(25, () -> {
+            helper.assertTrue(zombie.getTarget() == null, "periodic fallback should clear hostile retargeting");
+            helper.assertTrue(villager.isNoAi(), "downed villager should remain AI-suspended");
+            helper.assertFalse(villager.canPickUpLoot(), "downed villager should not pick up items");
+            helper.succeed();
+        });
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

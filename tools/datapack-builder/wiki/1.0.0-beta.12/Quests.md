@@ -205,6 +205,8 @@ node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 | `ui` | Tracker text, icon, progress, placeholders, color, and priority |
 | `external_scenes` | Optional external dialogue scene resources used by this module |
 
+Provider objects may set `death_protection` to `none` (default), `while_active`, or `after_start`. `while_active` protects only the exact bound provider UUID while a qualifying run remains active. `after_start` begins only after successful durable quest startup and remains on that villager after completion, failure, expiration, or abandonment; merely showing an offer does not apply it.
+
 ## Dialogue And Scenes
 
 Stage `dialogue` slots normally use these names:

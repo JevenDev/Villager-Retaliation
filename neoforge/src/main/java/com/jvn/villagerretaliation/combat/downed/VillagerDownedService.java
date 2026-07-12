@@ -111,6 +111,7 @@ public final class VillagerDownedService {
         state.putBoolean(PREVIOUS_NO_AI_KEY, villager.isNoAi());
         state.putBoolean(PREVIOUS_PICKUP_KEY, villager.canPickUpLoot());
         villager.getPersistentData().put(STATE_KEY, state);
+        NEXT_THREAT_SCAN_TICKS.remove(villager.getUUID());
         villager.setHealth(Math.max(1.0F, villager.getHealth()));
         if (villager.isPassenger()) {
             villager.stopRiding();

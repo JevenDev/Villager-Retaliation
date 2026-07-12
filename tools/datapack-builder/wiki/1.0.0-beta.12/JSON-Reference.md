@@ -319,6 +319,8 @@ Required top-level fields:
 | `entry_stage` | First stage id |
 | `stages` | Array of stage objects |
 
+`provider.death_protection` accepts `none`, `while_active`, or `after_start`. Scene actor declarations accept `lethal_damage_policy: "normal" | "downed"`; this pre-death policy is separate from the actor's existing `death_policy`.
+
 Common optional fields:
 
 | Field | Meaning |
