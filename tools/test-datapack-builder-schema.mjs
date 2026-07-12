@@ -389,6 +389,7 @@ function testSceneResourceRoundTrip(app) {
       { id: "captain_arrives", trigger: { type: "wave_started", wave: "captain" }, actions: [{ id: "warn", type: "notification", text: "Captain incoming." }] },
       { id: "captain_falls", trigger: { type: "elite_defeated", member: "gate_captain" }, actions: [{ id: "remember", type: "fact", scope: "player", tag: "storypack:captain_defeated" }] }
     ],
+    failure: { on_player_death: "reset_wave", on_protected_actor_death: "branch_scene", retry_delay_ticks: 20, max_attempts: 3, retain_defeated: false, branch_step: "done" },
     completion_objectives: { mode: "all", objectives: [{ id: "clear", type: "all_defeated" }, { id: "leader", type: "defeat_leader", member: "gate_captain" }] },
     area: { radius: 32, vertical_radius: 16, leave_behavior: "warn", leave_timeout_ticks: 200, mob_behavior: "return" }
   };
@@ -417,6 +418,8 @@ function testSceneResourceRoundTrip(app) {
   assert(/authored member id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidObjectives)?.message || ""), "Invalid encounter objective was not diagnosed.");
   const invalidAlly = structuredClone(encounter);invalidAlly.allies[0].actor = "captain_mara";
   assert(/exactly one entity or bound actor/i.test(app.sceneResourceIssueDetail(encounterPath, invalidAlly)?.message || ""), "Invalid controlled ally was not diagnosed.");
+  const invalidFailure = structuredClone(encounter);invalidFailure.failure.on_player_death = "branch_scene";delete invalidFailure.failure.branch_step;
+  assert(/branch_step/i.test(app.sceneResourceIssueDetail(encounterPath, invalidFailure)?.message || ""), "Invalid encounter failure branch was not diagnosed.");
 }
 
 const app = createAppHarness();

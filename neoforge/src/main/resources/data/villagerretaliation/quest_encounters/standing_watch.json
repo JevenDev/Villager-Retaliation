@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "villagerretaliation:standing_watch",
-  "version": 7,
+  "version": 8,
   "controller": "villagerretaliation:controlled",
   "waves": [
     {
@@ -67,6 +67,13 @@
       "affects_completion": true
     }
   ],
+  "failure": {
+    "on_player_death": "reset_wave",
+    "on_protected_actor_death": "fail",
+    "retry_delay_ticks": 200,
+    "max_attempts": 3,
+    "retain_defeated": false
+  },
   "phases": [
     {
       "id": "captain_enters",

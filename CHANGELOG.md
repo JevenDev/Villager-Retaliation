@@ -1,5 +1,6 @@
 # Changelog
 
+- Added datapack-authored encounter failure handling for player or protected-actor death, with bounded fail, wave reset, full restart, timed pause, and receipt-guarded scene-branch actions plus durable attempts, deadlines, and retained progress.
 - Added controlled encounter allies from entity definitions or bound scene actors, with separate durable identity, survival, invulnerability, revival, replacement, completion-gating, targeting, and cleanup policies.
 - Added composable `all`/`any` encounter completion objectives for survival, protection, entry defense, escorts, target destruction, leader defeats, item retrieval, area control, and legacy enemy-clear conditions, with durable tracker and operator state.
 - Added durable mid-fight encounter phases triggered by waves, remaining enemy percentage, elapsed time, or named elite defeats, with receipt-guarded notifications, dialogue, fact sets, and scene transitions.

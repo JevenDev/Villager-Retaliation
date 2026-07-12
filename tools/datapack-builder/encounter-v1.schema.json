@@ -2694,6 +2694,93 @@
       },
       "maxItems": 32
     },
+    "failure": {
+      "type": "object",
+      "title": "Durable encounter failure and retry policy",
+      "additionalProperties": false,
+      "properties": {
+        "on_player_death": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "fail",
+            "reset_wave",
+            "restart_encounter",
+            "pause",
+            "branch_scene"
+          ]
+        },
+        "on_protected_actor_death": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "fail",
+            "reset_wave",
+            "restart_encounter",
+            "pause",
+            "branch_scene"
+          ]
+        },
+        "retry_delay_ticks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12000
+        },
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "retain_defeated": {
+          "type": "boolean"
+        },
+        "branch_step": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {
+                "required": [
+                  "on_player_death"
+                ],
+                "properties": {
+                  "on_player_death": {
+                    "const": "branch_scene"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "on_protected_actor_death"
+                ],
+                "properties": {
+                  "on_protected_actor_death": {
+                    "const": "branch_scene"
+                  }
+                }
+              }
+            ]
+          },
+          "then": {
+            "required": [
+              "branch_step"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "branch_step"
+              ]
+            }
+          }
+        }
+      ]
+    },
     "wave_count": {
       "type": "integer",
       "minimum": 1,

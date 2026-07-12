@@ -223,6 +223,35 @@ The optional `allies` array declares 1-32 controlled friendly definitions, cappe
 
 Loaded ally mobs and encounter-owned hostile mobs receive direct, encounter-local targets. Same-side targets are cleared, but no scoreboard team, global targeting rule, nearby unrelated entity, or participant team membership is changed. Ally identities include definition/index keys, entity UUID and type, last loaded location, generation, recovery deadline, source kind, cleanup policy, and invulnerability restoration state.
 
+### Failure and retry policies
+
+The optional `failure` object controls participant and protected-actor death without embedding commands:
+
+```json
+"failure": {
+  "on_player_death": "reset_wave",
+  "on_protected_actor_death": "branch_scene",
+  "branch_step": "failed",
+  "retry_delay_ticks": 200,
+  "max_attempts": 3,
+  "retain_defeated": false
+}
+```
+
+`on_player_death` applies to captured participants. `on_protected_actor_death` applies to actors referenced by `protect_actor` objectives and bound allies with `required_survival`. Each action is one of:
+
+| Action | Behavior |
+| --- | --- |
+| `fail` | Fails immediately. This is the default for both triggers. |
+| `reset_wave` | Waits for the retry deadline, retires the current wave's non-retained owned mobs, and respawns that wave. |
+| `restart_encounter` | Waits, retires non-retained hostile progress from the whole encounter, and reconciles again from the first remaining wave. |
+| `pause` | Pauses until the retry deadline, then resumes the same entities and progress. |
+| `branch_scene` | Records a scene-transition receipt, chooses `branch_step`, and terminates the failed encounter. |
+
+`retry_delay_ticks` defaults to 200 and is bounded to 0-12,000. `max_attempts` includes the initial attempt, defaults to 3, and is bounded to 1-16. Once exhausted, a retry action becomes a normal failure. `retain_defeated` keeps defeated UUID credits while retiring living owned mobs; otherwise the affected scope's defeat progress is cleared. `branch_step` is required exactly when either trigger uses `branch_scene` and is validated against the owning scene before start.
+
+The encounter saves its attempt count, absolute retry deadline, pending action, cause, and protected actor alias. Retry removal increments the durable spawn generation: an unloaded retired mob that later returns is discarded before it can rejoin the fight, while tracked hostiles from an earlier timer wave remain valid. Wave hook IDs, phase fire counts, and scene operation receipts are never cleared, so retries cannot replay dialogue, notifications, facts, or transitions. Objective state is reevaluated for the new attempt, and cleanup remains idempotent.
+
 The optional `area` is a cylinder centered on the encounter's durable anchor. `radius` is required and limited to 256 blocks; `vertical_radius` defaults to the radius and is limited to 128. `leave_behavior` is `ignore` (the backward-compatible default), `warn`, `pause`, or `fail`. A failing participant has `leave_timeout_ticks` (default 200, maximum 12000) to return. Warnings and absolute deadlines are saved, messages go only to the affected participant, offline players do not start or advance a new leave decision, and returning clears that excursion's state.
 
 `mob_behavior` is `ignore`, `return`, or `teleport`. `return` asks loaded owned mobs to navigate back without changing unrelated entities. `teleport` waits for the persisted `mob_timeout_ticks` deadline (default 200, maximum 12000) before returning a loaded mob to the anchor. Area checks never force-load the anchor, a participant, or an owned mob's chunk. Omitting `area` preserves encounter/v1 behavior exactly.

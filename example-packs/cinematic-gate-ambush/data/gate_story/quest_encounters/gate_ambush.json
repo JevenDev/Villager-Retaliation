@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "gate_story:gate_ambush",
-  "version": 3,
+  "version": 4,
   "controller": "villagerretaliation:controlled",
   "waves": [
     {
@@ -46,6 +46,14 @@
       "affects_completion": true
     }
   ],
+  "failure": {
+    "on_player_death": "restart_encounter",
+    "on_protected_actor_death": "branch_scene",
+    "branch_step": "failed",
+    "retry_delay_ticks": 100,
+    "max_attempts": 3,
+    "retain_defeated": true
+  },
   "phases": [
     {
       "id": "gatebreaker_arrives",
