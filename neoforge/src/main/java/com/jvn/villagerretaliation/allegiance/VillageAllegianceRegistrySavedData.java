@@ -272,10 +272,11 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     public boolean rename(VillageAllegianceId id, String displayName) {
         Optional<VillageAllegianceId> canonical = canonical(id);
-        String safeName = displayName == null ? "" : displayName.trim();
-        if (canonical.isEmpty() || safeName.isBlank() || safeName.length() > 32) {
+        Optional<String> validated = validateVillageName(displayName);
+        if (canonical.isEmpty() || validated.isEmpty()) {
             return false;
         }
+        String safeName = validated.get();
         String normalized = VillageNameGenerator.normalize(safeName);
         boolean duplicate = this.records.values().stream()
                 .filter(record -> !record.id().equals(canonical.get()))
@@ -290,6 +291,15 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         this.records.put(canonical.get(), current.withName(safeName, true));
         setDirty();
         return true;
+    }
+
+    public static Optional<String> validateVillageName(String proposed) {
+        if (proposed == null || proposed.isBlank() || proposed.codePoints()
+                .anyMatch(codePoint -> Character.isISOControl(codePoint) || codePoint == '\u00a7')) {
+            return Optional.empty();
+        }
+        String normalized = proposed.strip().replaceAll("\\s+", " ");
+        return normalized.isBlank() || normalized.length() > 32 ? Optional.empty() : Optional.of(normalized);
     }
 
     public boolean archive(VillageAllegianceId id) {

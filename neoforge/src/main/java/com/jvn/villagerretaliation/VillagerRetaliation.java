@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.command.VillagerRetaliationCommands;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
+import com.jvn.villagerretaliation.allegiance.VillageNamingService;
 import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlockEntityTypes;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
@@ -96,6 +97,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onPlayerClone)
                 .listener(VillagerRetaliationEvents::onEntityInteract)
                 .listener(VillagerRetaliationEvents::onEntityInteractSpecific)
+                .listener(VillageNamingService::onRightClickBlock)
                 .listener(VillagerRetaliationEvents::onRightClickBlock)
                 .listener(VillagerRetaliationEvents::onLeftClickBlock)
                 .listener(VillagerRetaliationEvents::onBlockBreak)

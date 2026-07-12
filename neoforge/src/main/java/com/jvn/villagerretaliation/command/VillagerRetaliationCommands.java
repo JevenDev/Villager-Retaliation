@@ -274,6 +274,14 @@ public final class VillagerRetaliationCommands {
                                 .executes(VillagerRetaliationCommands::migrateAllegiance)))
                 .then(literal("statistics")
                         .executes(VillagerRetaliationCommands::allegianceStatistics))
+                .then(literal("village")
+                        .then(literal("inspect_here")
+                                .executes(VillagerRetaliationCommands::inspectVillageHere))
+                        .then(literal("rename_here")
+                                .then(argument("name", StringArgumentType.greedyString())
+                                        .executes(VillagerRetaliationCommands::renameVillageHere)))
+                        .then(literal("list")
+                                .executes(VillagerRetaliationCommands::listTrackedVillages)))
                 .then(literal("reset_abuse")
                         .then(allegianceEntityArgument()
                                 .then(argument("player", StringArgumentType.word())
@@ -380,6 +388,55 @@ public final class VillagerRetaliationCommands {
                         + " unaffiliated=" + statistics.unaffiliated()
                         + " pending=" + statistics.pending()), false);
         return registry.records().size();
+    }
+
+    private static int inspectVillageHere(CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        BlockPos position = BlockPos.containing(context.getSource().getPosition());
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        var record = registry.discoverAt(level, position).flatMap(registry::canonicalRecord).orElse(null);
+        if (record == null) {
+            context.getSource().sendFailure(Component.literal("No tracked village contains this position."));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                record.displayName() + " id=" + record.id()
+                        + " state=" + record.lifecycleState()
+                        + " center=" + record.center().toShortString()
+                        + " sections=" + record.footprintSections().size()
+                        + " adults=" + record.adultResidentCount()), false);
+        return 1;
+    }
+
+    private static int renameVillageHere(CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        BlockPos position = BlockPos.containing(context.getSource().getPosition());
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        var village = registry.discoverAt(level, position).flatMap(registry::canonicalRecord).orElse(null);
+        String proposed = StringArgumentType.getString(context, "name");
+        if (village == null || !registry.rename(village.id(), proposed)) {
+            context.getSource().sendFailure(Component.literal(
+                    "Village rename failed: stand inside an active village and use a unique 1–32 character name."));
+            return 0;
+        }
+        String name = registry.canonicalRecord(village.id()).orElseThrow().displayName();
+        context.getSource().sendSuccess(() -> Component.literal("Renamed village " + village.id() + " to " + name), true);
+        return 1;
+    }
+
+    private static int listTrackedVillages(CommandContext<CommandSourceStack> context) {
+        ServerLevel level = context.getSource().getLevel();
+        List<VillageAllegianceRegistrySavedData.AllegianceRecord> records = VillageAllegianceRegistrySavedData.get(level)
+                .activeRecords(level.dimension().location());
+        for (var record : records) {
+            context.getSource().sendSuccess(() -> Component.literal(
+                    record.displayName() + " " + record.id() + " " + record.lifecycleState()
+                            + " @ " + record.center().toShortString()), false);
+        }
+        if (records.isEmpty()) {
+            context.getSource().sendSuccess(() -> Component.literal("No active or empty-grace tracked villages."), false);
+        }
+        return records.size();
     }
 
     private static int resetAbuse(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
