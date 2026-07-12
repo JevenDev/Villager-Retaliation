@@ -62,6 +62,11 @@
           "entity"
         ],
         "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
           "entity": {
             "type": "string",
             "minLength": 1,
@@ -535,6 +540,11 @@
                 "entity"
               ],
               "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
                 "entity": {
                   "type": "string",
                   "minLength": 1,
@@ -1567,6 +1577,570 @@
         "farthest_player",
         "one_group_per_point"
       ]
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Durable mid-fight encounter phase",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "trigger",
+          "actions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "trigger": {
+            "type": "object",
+            "title": "Durable encounter phase trigger",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "enum": [
+                  "wave_started",
+                  "wave_completed",
+                  "remaining_percentage",
+                  "elapsed_time",
+                  "elite_defeated"
+                ]
+              },
+              "wave": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "percentage": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "ticks": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1728000
+              },
+              "member": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              }
+            },
+            "oneOf": [
+              {
+                "required": [
+                  "type",
+                  "wave"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "percentage"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "wave_started"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "type",
+                  "wave"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "percentage"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "wave_completed"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "type",
+                  "percentage"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "wave"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "remaining_percentage"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "type",
+                  "ticks"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "wave"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "percentage"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "elapsed_time"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "type",
+                  "member"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "wave"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "percentage"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "ticks"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "elite_defeated"
+                  }
+                }
+              }
+            ]
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "title": "Allowlisted encounter phase action",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "type": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "notification",
+                    "dialogue",
+                    "fact",
+                    "transition"
+                  ]
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512
+                },
+                "scope": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "player",
+                    "quest",
+                    "world"
+                  ]
+                },
+                "tag": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-zA-Z0-9_.:-]{1,128}$"
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "target": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                }
+              },
+              "oneOf": [
+                {
+                  "required": [
+                    "id",
+                    "type",
+                    "text"
+                  ],
+                  "allOf": [
+                    {
+                      "not": {
+                        "anyOf": [
+                          {
+                            "required": [
+                              "scope"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "tag"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "key"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "value"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "target"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "notification"
+                    }
+                  }
+                },
+                {
+                  "required": [
+                    "id",
+                    "type",
+                    "text"
+                  ],
+                  "allOf": [
+                    {
+                      "not": {
+                        "anyOf": [
+                          {
+                            "required": [
+                              "scope"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "tag"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "key"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "value"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "target"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "dialogue"
+                    }
+                  }
+                },
+                {
+                  "required": [
+                    "id",
+                    "type",
+                    "target"
+                  ],
+                  "allOf": [
+                    {
+                      "not": {
+                        "anyOf": [
+                          {
+                            "required": [
+                              "text"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "scope"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "tag"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "key"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "value"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "transition"
+                    }
+                  }
+                },
+                {
+                  "oneOf": [
+                    {
+                      "required": [
+                        "id",
+                        "type",
+                        "tag"
+                      ],
+                      "allOf": [
+                        {
+                          "not": {
+                            "anyOf": [
+                              {
+                                "required": [
+                                  "text"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "key"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "value"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "target"
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "fact"
+                        }
+                      }
+                    },
+                    {
+                      "required": [
+                        "id",
+                        "type",
+                        "key",
+                        "value"
+                      ],
+                      "allOf": [
+                        {
+                          "not": {
+                            "anyOf": [
+                              {
+                                "required": [
+                                  "text"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "tag"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "target"
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "fact"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "maxItems": 32
+          },
+          "repeatable": {
+            "type": "boolean"
+          },
+          "repeat_interval_ticks": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12000
+          },
+          "max_fires": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 64
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "repeatable"
+              ],
+              "properties": {
+                "repeatable": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "repeat_interval_ticks",
+                "max_fires"
+              ]
+            },
+            "else": {
+              "required": [],
+              "allOf": [
+                {
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "repeat_interval_ticks"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "max_fires"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "maxItems": 64
     },
     "wave_count": {
       "type": "integer",

@@ -23,5 +23,5 @@ public final class SceneOperationReceipt {
     public CompoundTag save(){CompoundTag t=new CompoundTag();t.putString("OperationId",operationId);t.putString("Kind",kind.name());t.putString("State",state.name());t.putLong("PreparedTime",preparedTime);t.putLong("AppliedTime",appliedTime);t.putLong("CompletedTime",completedTime);t.putString("Evidence",evidence);return t;}
     public static SceneOperationReceipt load(CompoundTag t){SceneOperationReceipt value=new SceneOperationReceipt(t.getString("OperationId"),Kind.valueOf(t.getString("Kind")),t.getLong("PreparedTime"));value.state=ReceiptState.valueOf(t.getString("State"));value.appliedTime=t.getLong("AppliedTime");value.completedTime=t.getLong("CompletedTime");value.evidence=t.getString("Evidence");return value;}
     public enum ReceiptState{PREPARED,APPLIED,COMPLETED}
-    public enum Kind{ITEM_GRANT,LOOT_GRANT,EXPERIENCE_GRANT,REPUTATION_CHANGE,GOSSIP_CHANGE,COUNTER_INCREMENT,QUEST_TRANSITION,ENCOUNTER_CREATION,DIALOGUE_DELIVERY}
+    public enum Kind{ITEM_GRANT,LOOT_GRANT,EXPERIENCE_GRANT,REPUTATION_CHANGE,GOSSIP_CHANGE,COUNTER_INCREMENT,QUEST_TRANSITION,ENCOUNTER_CREATION,DIALOGUE_DELIVERY,ENCOUNTER_PHASE,FACT_CHANGE,SCENE_TRANSITION}
 }

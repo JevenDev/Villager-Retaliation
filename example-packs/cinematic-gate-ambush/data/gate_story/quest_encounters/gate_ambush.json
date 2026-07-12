@@ -10,8 +10,11 @@
       "boss_bar_title": "Gate Ambush - Roadside Dead"
     },
     {
-      "id": "last_straggler",
-      "members": [{
+      "id": "gatebreaker_wave",
+      "members": [
+        { "entity": "minecraft:zombie", "count": 1 },
+        {
+        "id": "gatebreaker",
         "entity": "minecraft:zombie",
         "count": 1,
         "custom_name": "Gatebreaker",
@@ -21,10 +24,11 @@
         "boss": true,
         "boss_bar_color": "red",
         "boss_bar_overlay": "progress"
-      }],
+        }
+      ],
       "delay_ticks": 40,
       "trigger": "all_defeated",
-      "boss_bar_title": "Gate Ambush - Last Straggler"
+      "boss_bar_title": "Gate Ambush - Gatebreaker"
     }
   ],
   "spawn_mode": "raid_waves",
@@ -33,6 +37,22 @@
     { "id": "east_road", "marker": "gate", "offset_x": 7, "offset_z": 5, "weight": 1 }
   ],
   "spawn_selection": "weighted",
+  "phases": [
+    {
+      "id": "gatebreaker_arrives",
+      "trigger": { "type": "wave_started", "wave": "gatebreaker_wave" },
+      "actions": [
+        { "id": "arrival_line", "type": "dialogue", "text": "Mara: Gatebreaker! Keep it away from the gate!" }
+      ]
+    },
+    {
+      "id": "gatebreaker_falls",
+      "trigger": { "type": "elite_defeated", "member": "gatebreaker" },
+      "actions": [
+        { "id": "remember_gatebreaker", "type": "fact", "scope": "player", "tag": "gate_story:gatebreaker_defeated" }
+      ]
+    }
+  ],
   "extra_per_player": 1,
   "max_party_size": 4,
   "placement_attempts": 16,

@@ -146,6 +146,22 @@ The optional `spawn_points` array supplies 1-64 named positions. Each point has 
 
 `spawn_selection` defaults to `random` and may be `random`, `sequential`, `weighted`, `nearest_player`, `farthest_player`, or `one_group_per_point`. Weighted selection uses each point's optional `weight` (default 1). Distance modes compare the points with online captured participants and wait when no suitable participant is online. Group selection assigns each member definition to a point in authored order; party-scaling extras stay with the first group. Resolved absolute points, every member's selected point ID, and the sequential cursor are saved before placement, so reloads and unloaded chunks wait without rerolling. Recovery checks only the bounded anchor and authored-point neighborhoods and never force-loads chunks. Authored points cannot be combined with `spawn_mode: "near_player"`.
 
+### Mid-fight phases
+
+`phases` is an ordered array of up to 64 durable phase definitions. Every phase has a stable `id`, one `trigger`, and 1-32 allowlisted actions. Trigger shapes are:
+
+| Trigger type | Required field | Fires when |
+|---|---|---|
+| `wave_started` | `wave` | The named authored or shorthand wave has durably started. |
+| `wave_completed` | `wave` | Every enemy through the named wave has been defeated. |
+| `remaining_percentage` | `percentage` (0-100) | Remaining enemies are at or below the threshold. |
+| `elapsed_time` | `ticks` (1-1,728,000) | The durable time since first encounter reconciliation reaches the threshold. |
+| `elite_defeated` | `member` | The referenced stable member ID has been defeated. The member must have count 1, must not receive party-scaling copies, and must be named, enhanced, or designated as a boss. |
+
+Members only need an `id` when another encounter feature references them. IDs are unique across the encounter's waves. A phase action is `notification` or `dialogue` with bounded `text`, `fact` with either a namespaced `tag` or `key`/`value`, or `transition` with a target scene step. Fact scope is `player`, `quest`, or `world`; player and quest facts apply to each captured participant, and quest scope requires a linked quest scene. Transitions are checked against the scene when `start_encounter` prepares. At most one transition may appear in a non-repeatable phase.
+
+Phases fire once by default. Setting `repeatable: true` also requires `repeat_interval_ticks` from 1-12,000 and `max_fires` from 2-64; repeatable phases cannot transition the scene. The encounter saves its start time, defeated member IDs, fire counts, and absolute repeat deadlines. Each phase run and action also receives a stable scene operation receipt. Idempotent facts and transitions resume safely, while participant messages reserve their receipt before delivery so a reload can never send them twice.
+
 The optional `area` is a cylinder centered on the encounter's durable anchor. `radius` is required and limited to 256 blocks; `vertical_radius` defaults to the radius and is limited to 128. `leave_behavior` is `ignore` (the backward-compatible default), `warn`, `pause`, or `fail`. A failing participant has `leave_timeout_ticks` (default 200, maximum 12000) to return. Warnings and absolute deadlines are saved, messages go only to the affected participant, offline players do not start or advance a new leave decision, and returning clears that excursion's state.
 
 `mob_behavior` is `ignore`, `return`, or `teleport`. `return` asks loaded owned mobs to navigate back without changing unrelated entities. `teleport` waits for the persisted `mob_timeout_ticks` deadline (default 200, maximum 12000) before returning a loaded mob to the anchor. Area checks never force-load the anchor, a participant, or an owned mob's chunk. Omitting `area` preserves encounter/v1 behavior exactly.

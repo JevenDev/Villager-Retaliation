@@ -374,13 +374,17 @@ function testSceneResourceRoundTrip(app) {
     spawn_mode: "raid_waves",
     waves: [
       { id: "scouts", members: [{ entity: "minecraft:zombie", count: 2 }], boss_bar_title: "Scouts" },
-      { id: "captain", members: [{ entity: "minecraft:pillager", custom_name: "Gate Captain", name_visible: true, health: 40, attributes: { "minecraft:armor": 10 }, boss: true, boss_bar_color: "purple", boss_bar_overlay: "notched_10" }], delay_ticks: 80, trigger: "all_defeated", equipment: { mainhand: { item: "minecraft:crossbow" } }, dialogue_hook: { id: "arrival", text: "Captain incoming." } }
+      { id: "captain", members: [{ id: "gate_captain", entity: "minecraft:pillager", custom_name: "Gate Captain", name_visible: true, health: 40, attributes: { "minecraft:armor": 10 }, boss: true, boss_bar_color: "purple", boss_bar_overlay: "notched_10" }], delay_ticks: 80, trigger: "all_defeated", equipment: { mainhand: { item: "minecraft:crossbow" } }, dialogue_hook: { id: "arrival", text: "Captain incoming." } }
     ],
     spawn_points: [
       { id: "west_gate", marker: "west_marker", offset_x: -2, weight: 3 },
       { id: "east_gate", x: 12, y: 64, z: 8, dimension: "minecraft:overworld" }
     ],
     spawn_selection: "weighted",
+    phases: [
+      { id: "captain_arrives", trigger: { type: "wave_started", wave: "captain" }, actions: [{ id: "warn", type: "notification", text: "Captain incoming." }] },
+      { id: "captain_falls", trigger: { type: "elite_defeated", member: "gate_captain" }, actions: [{ id: "remember", type: "fact", scope: "player", tag: "storypack:captain_defeated" }] }
+    ],
     area: { radius: 32, vertical_radius: 16, leave_behavior: "warn", leave_timeout_ticks: 200, mob_behavior: "return" }
   };
   assert(app.ingestKnownJson(scenePath, JSON.stringify(scene)), "Scene resource import failed.");
@@ -402,6 +406,8 @@ function testSceneResourceRoundTrip(app) {
   assert(/exactly one actor, marker, or complete x\/y\/z source/i.test(app.sceneResourceIssueDetail(encounterPath, invalidPoints)?.message || ""), "Invalid authored spawn point was not diagnosed.");
   const invalidSelection = structuredClone(encounter);delete invalidSelection.spawn_points;
   assert(/non-empty spawn_points array/i.test(app.sceneResourceIssueDetail(encounterPath, invalidSelection)?.message || ""), "Spawn selection without points was not diagnosed.");
+  const invalidPhase = structuredClone(encounter);invalidPhase.phases = [{ id: "bad", trigger: { type: "wave_started", wave: "missing", ticks: 4 }, repeatable: true, actions: [{ id: "branch", type: "transition", target: "done" }] }];
+  assert(/trigger field|authored wave id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidPhase)?.message || ""), "Invalid encounter phase was not diagnosed.");
 }
 
 const app = createAppHarness();
