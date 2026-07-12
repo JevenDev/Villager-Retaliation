@@ -403,7 +403,7 @@ function validateCinematicResources() {
       }
       if (step.type === "villagerretaliation:start_encounter") {
         const template = step.data?.template ?? step.data?.encounter_template;
-        assert(encounters.has(template), file, `scene step ${step.id} references missing encounter ${template}`);
+        const variants = step.data?.variants;assert((typeof template === "string") !== Array.isArray(variants), file, `scene step ${step.id} must define exactly one template or variants`);const references = Array.isArray(variants) ? variants.map((variant) => variant?.template) : [template];for (const reference of references) assert(encounters.has(reference), file, `scene step ${step.id} references missing encounter ${reference}`);
       }
       if (step.type === "villagerretaliation:action_batch") {
         for (const action of step.data?.actions ?? []) {
@@ -424,7 +424,8 @@ function validateCinematicResources() {
 
   for (const { file, data } of encounters.values()) {
     const explicitWaves = Array.isArray(data.waves);
-    assert(explicitWaves !== Array.isArray(data.members), file, "encounter must define exactly one of members or waves");
+    const explicitVariants = Array.isArray(data.variants);assert([explicitWaves,Array.isArray(data.members),explicitVariants].filter(Boolean).length===1, file, "encounter must define exactly one of members, waves, or variants");
+    if(explicitVariants){assert(data.variants.length>=1&&data.variants.length<=32,file,"encounter must have 1-32 variants");const ids=new Set();for(const variant of data.variants){assert(typeof variant.id==="string"&&/^[a-z][a-z0-9_.-]{0,63}$/.test(variant.id),file,"encounter variant has an invalid stable id");assert(!ids.has(variant.id),file,`encounter repeats variant id ${variant.id}`);ids.add(variant.id);assert(Number.isInteger(variant.weight??1)&&(variant.weight??1)>=1&&(variant.weight??1)<=10000,file,`encounter variant ${variant.id} has an unsafe weight`);assert(encounters.has(variant.template),file,`encounter variant ${variant.id} references missing template ${variant.template}`);}continue;}
     if (explicitWaves) {
       assert(data.waves.length >= 1 && data.waves.length <= 32, file, "encounter must have 1-32 authored waves");
       const waveIds = new Set();
@@ -457,6 +458,7 @@ function validateCinematicResources() {
       assert(data.area?.mob_timeout_ticks === undefined || data.area.mob_behavior === "teleport", file, "encounter mob timeout requires teleport behavior");
     }
   }
+  const visitVariant=(id,path=[])=>{const entry=encounters.get(id);if(!entry||!Array.isArray(entry.data.variants))return;assert(!path.includes(id),entry.file,`recursive encounter variant reference ${[...path,id].join(" -> ")}`);assert(path.length<32,entry.file,"encounter variant chain exceeds 32 selectors");for(const variant of entry.data.variants)visitVariant(variant.template,[...path,id]);};for(const id of encounters.keys())visitVariant(id);
 }
 
 function objectiveSignature(objective) {

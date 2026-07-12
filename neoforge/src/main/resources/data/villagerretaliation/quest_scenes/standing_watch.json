@@ -81,7 +81,7 @@
       "id": "start_attack",
       "type": "villagerretaliation:start_encounter",
       "data": {
-        "template": "villagerretaliation:standing_watch",
+        "template": "villagerretaliation:standing_watch_variants",
         "anchor_actor": "watch_captain",
         "difficulty": "normal"
       },

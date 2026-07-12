@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.quest.runtime.QuestStageBranchOptionIds;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
 import com.jvn.villagerretaliation.quest.runtime.QuestActionSequenceRunner;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
+import com.jvn.villagerretaliation.scene.SceneJournalPresenter;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
@@ -6665,6 +6666,7 @@ public final class VillagerQuestService {
         values.put("has_proof", hasRequiredProof(player, definition) ? "yes" : "no");
         values.put("active_conditions", activeConditionsMet ? "met" : "unmet");
         values.put("objective", progress == null ? "" : progress.targetObjectiveId());
+        values.putAll(SceneJournalPresenter.encounterReplacements(player,definition.id()));
         addObjectiveReplacements(values, player, context, definition, progress, objective);
         addIssuerReplacements(values, player, progress);
 

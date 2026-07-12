@@ -252,6 +252,41 @@ The optional `failure` object controls participant and protected-actor death wit
 
 The encounter saves its attempt count, absolute retry deadline, pending action, cause, and protected actor alias. Retry removal increments the durable spawn generation: an unloaded retired mob that later returns is discarded before it can rejoin the fight, while tracked hostiles from an earlier timer wave remain valid. Wave hook IDs, phase fire counts, and scene operation receipts are never cleared, so retries cannot replay dialogue, notifications, facts, or transitions. Objective state is reevaluated for the new attempt, and cleanup remains idempotent.
 
+### Deterministic encounter variants
+
+An encounter resource may be a bounded selector instead of defining `members` or `waves`:
+
+```json
+{
+  "schema": "villagerretaliation:encounter/v1",
+  "id": "my_pack:roadblock_variants",
+  "variants": [
+    { "id": "zombie_roadblock", "weight": 3, "template": "my_pack:zombie_roadblock" },
+    { "id": "skeleton_ambush", "weight": 2, "template": "my_pack:skeleton_ambush" }
+  ]
+}
+```
+
+Selector resources may contain only `schema`, `id`, optional `version` and `controller`, and `variants`. A `start_encounter` step may author the same `variants` array directly instead of `template` or `encounter_template`. Arrays contain 1-32 entries; IDs are stable and unique, weights are integers from 1-10,000, and templates are namespaced encounter IDs. Every referenced template must exist. Selectors may reference other selectors, but reload validation rejects direct or indirect recursion and chains deeper than 32.
+
+Selection uses a deterministic seed derived from the durable scene ID and encounter operation ID. The start step records the seed, selected variant ID, source template, and final concrete template before spawning. The encounter copies those values into its own save state. Reloads and retries therefore reuse the decision and cannot reroll enemies or duplicate creation receipts.
+
+To branch after creation, give the `start_encounter` step a transition named for a variant ID:
+
+```json
+{
+  "id": "start_roadblock",
+  "type": "villagerretaliation:start_encounter",
+  "data": { "template": "my_pack:roadblock_variants", "x": 120, "y": 64, "z": -40 },
+  "transitions": {
+    "zombie_roadblock": "warn_about_zombies",
+    "skeleton_ambush": "raise_shields"
+  }
+}
+```
+
+If no matching transition is authored, normal `next`/success routing is unchanged. Quest tracker text can use `{encounter_variant}` and `{encounter_template}`; both resolve to empty text before an encounter exists. Scene inspection reports the source template, selected variant, resolved template, and seed.
+
 The optional `area` is a cylinder centered on the encounter's durable anchor. `radius` is required and limited to 256 blocks; `vertical_radius` defaults to the radius and is limited to 128. `leave_behavior` is `ignore` (the backward-compatible default), `warn`, `pause`, or `fail`. A failing participant has `leave_timeout_ticks` (default 200, maximum 12000) to return. Warnings and absolute deadlines are saved, messages go only to the affected participant, offline players do not start or advance a new leave decision, and returning clears that excursion's state.
 
 `mob_behavior` is `ignore`, `return`, or `teleport`. `return` asks loaded owned mobs to navigate back without changing unrelated entities. `teleport` waits for the persisted `mob_timeout_ticks` deadline (default 200, maximum 12000) before returning a loaded mob to the anchor. Area checks never force-load the anchor, a participant, or an owned mob's chunk. Omitting `area` preserves encounter/v1 behavior exactly.

@@ -405,7 +405,7 @@ function testSceneResourceRoundTrip(app) {
   const invalidAreaDetail = app.sceneResourceIssueDetail(encounterPath, invalidArea);
   assert(/area radius/i.test(invalidAreaDetail?.message || ""), `Invalid encounter area was not diagnosed (${invalidAreaDetail?.message || "no diagnostic"}).`);
   const invalidWaves = { ...encounter, members: [{ entity: "minecraft:zombie" }] };
-  assert(/exactly one of members or waves/i.test(app.sceneResourceIssueDetail(encounterPath, invalidWaves)?.message || ""), "Incompatible encounter wave forms were not diagnosed.");
+  assert(/exactly one of members, waves, or variants/i.test(app.sceneResourceIssueDetail(encounterPath, invalidWaves)?.message || ""), "Incompatible encounter wave forms were not diagnosed.");
   const invalidElite = structuredClone(encounter);invalidElite.waves[1].members[0].attributes = { "example:unsafe": 2 };
   assert(/allowlisted attribute id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidElite)?.message || ""), "Unsafe elite attribute was not diagnosed.");
   const invalidPoints = structuredClone(encounter);invalidPoints.spawn_points = [{ id: "bad", actor: "guide", x: 1, weight: 0 }];
@@ -420,6 +420,14 @@ function testSceneResourceRoundTrip(app) {
   assert(/exactly one entity or bound actor/i.test(app.sceneResourceIssueDetail(encounterPath, invalidAlly)?.message || ""), "Invalid controlled ally was not diagnosed.");
   const invalidFailure = structuredClone(encounter);invalidFailure.failure.on_player_death = "branch_scene";delete invalidFailure.failure.branch_step;
   assert(/branch_step/i.test(app.sceneResourceIssueDetail(encounterPath, invalidFailure)?.message || ""), "Invalid encounter failure branch was not diagnosed.");
+  const selector = { schema: "villagerretaliation:encounter/v1", id: "storypack:roadblock_variants", variants: [{ id: "zombies", weight: 3, template: "storypack:zombies" }, { id: "skeletons", weight: 2, template: "storypack:skeletons" }] };
+  assert(app.sceneResourceIssueDetail(encounterPath, selector) === null, "Valid encounter variant selector was rejected.");
+  const invalidVariant = structuredClone(selector);invalidVariant.variants[1].id = "zombies";invalidVariant.variants[1].weight = 0;
+  assert(/variant/i.test(app.sceneResourceIssueDetail(encounterPath, invalidVariant)?.message || ""), "Invalid encounter variants were not diagnosed.");
+  const variantScene = structuredClone(scene);variantScene.steps[0] = { id: "wait", type: "villagerretaliation:start_encounter", data: { variants: selector.variants, x: 0, y: 64, z: 0 }, next: "done" };
+  assert(app.sceneResourceIssueDetail(scenePath, variantScene) === null, "Valid start_encounter variants were rejected.");
+  variantScene.steps[0].data.template = "storypack:zombies";
+  assert(/exactly one template or variants/i.test(app.sceneResourceIssueDetail(scenePath, variantScene)?.message || ""), "Incompatible start_encounter variant sources were not diagnosed.");
 }
 
 const app = createAppHarness();

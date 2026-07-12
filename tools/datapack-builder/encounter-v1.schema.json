@@ -13,21 +13,70 @@
       "required": [
         "members"
       ],
-      "not": {
-        "required": [
-          "waves"
-        ]
-      }
+      "allOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "waves"
+                ]
+              },
+              {
+                "required": [
+                  "variants"
+                ]
+              }
+            ]
+          }
+        }
+      ]
     },
     {
       "required": [
         "waves"
       ],
-      "not": {
-        "required": [
-          "members"
-        ]
-      }
+      "allOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "members"
+                ]
+              },
+              {
+                "required": [
+                  "variants"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "required": [
+        "variants"
+      ],
+      "allOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "members"
+                ]
+              },
+              {
+                "required": [
+                  "waves"
+                ]
+              }
+            ]
+          }
+        }
+      ]
     }
   ],
   "properties": {
@@ -1343,6 +1392,37 @@
                 "maxLength": 512
               }
             }
+          }
+        }
+      },
+      "maxItems": 32
+    },
+    "variants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Weighted deterministic encounter variant",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "template"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "weight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "template": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
           }
         }
       },
@@ -3658,6 +3738,134 @@
         "required": [
           "completion_condition",
           "completion_objectives"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "variants"
+        ]
+      },
+      "then": {
+        "required": [],
+        "allOf": [
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "members"
+                  ]
+                },
+                {
+                  "required": [
+                    "waves"
+                  ]
+                },
+                {
+                  "required": [
+                    "extra_per_player"
+                  ]
+                },
+                {
+                  "required": [
+                    "max_party_size"
+                  ]
+                },
+                {
+                  "required": [
+                    "placement_attempts"
+                  ]
+                },
+                {
+                  "required": [
+                    "spawn_radius"
+                  ]
+                },
+                {
+                  "required": [
+                    "spawn_mode"
+                  ]
+                },
+                {
+                  "required": [
+                    "spawn_points"
+                  ]
+                },
+                {
+                  "required": [
+                    "spawn_selection"
+                  ]
+                },
+                {
+                  "required": [
+                    "phases"
+                  ]
+                },
+                {
+                  "required": [
+                    "allies"
+                  ]
+                },
+                {
+                  "required": [
+                    "failure"
+                  ]
+                },
+                {
+                  "required": [
+                    "wave_count"
+                  ]
+                },
+                {
+                  "required": [
+                    "wave_interval_ticks"
+                  ]
+                },
+                {
+                  "required": [
+                    "wave_trigger"
+                  ]
+                },
+                {
+                  "required": [
+                    "boss_bar"
+                  ]
+                },
+                {
+                  "required": [
+                    "location_message"
+                  ]
+                },
+                {
+                  "required": [
+                    "area"
+                  ]
+                },
+                {
+                  "required": [
+                    "respawn_policy"
+                  ]
+                },
+                {
+                  "required": [
+                    "cleanup_policy"
+                  ]
+                },
+                {
+                  "required": [
+                    "completion_condition"
+                  ]
+                },
+                {
+                  "required": [
+                    "completion_objectives"
+                  ]
+                }
+              ]
+            }
+          }
         ]
       }
     }
