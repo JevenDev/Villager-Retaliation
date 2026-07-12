@@ -17,6 +17,10 @@ import com.jvn.villagerretaliation.loot.ProfessionLootResources;
 import com.jvn.villagerretaliation.notification.VillagerNotificationResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.scene.SceneResources;
+import com.jvn.villagerretaliation.scene.SceneRuntime;
+import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
+import com.jvn.villagerretaliation.scene.encounter.EncounterResources;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.trade.SkillTradeResources;
@@ -48,6 +52,8 @@ public final class VillagerDataWarmup {
         BiomeStoryResources.warm(server);
         DangerousStructureStoryResources.warm(server);
         VillagerQuestResources.warm(server);
+        SceneResources.warm(server);
+        EncounterResources.warm(server);
         VillagerEventTriggerService.warm(server);
         VillagerPresetNameRegistry.warm(server);
         VillagerInteractionSavedData.get(server.overworld());
@@ -56,12 +62,15 @@ public final class VillagerDataWarmup {
         VillagerQuestSavedData.get(server.overworld());
         VillagerEventTriggerSavedData.get(server.overworld());
         VillageEventMemorySavedData.get(server.overworld());
+        SceneSavedData.get(server.overworld());
+        SceneRuntime.initialize(server);
     }
 
     public static void clearCaches() {
         clearResourceCaches();
         VillageEventMemory.clear();
         VillagerEventTriggerService.clearRuntimeState();
+        SceneRuntime.clearRuntimeState();
     }
 
     public static void clearResourceCaches() {
@@ -82,6 +91,8 @@ public final class VillagerDataWarmup {
         DangerousStructureStoryResources.clearCache();
         VillagerWorldTargetCache.clearCache();
         VillagerQuestResources.clearCache();
+        SceneResources.clearCache();
+        EncounterResources.clearCache();
         VillagerEventTriggerService.clearCache();
         VillagerPresetNameRegistry.clearCache();
         VillageMembership.clearCache();

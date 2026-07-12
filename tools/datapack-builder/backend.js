@@ -458,6 +458,14 @@
       );
     }
 
+    function isSceneV1Resource(json) {
+      return Boolean(json && typeof json === "object" && !Array.isArray(json) && json.schema === "villagerretaliation:scene/v1");
+    }
+
+    function isEncounterV1Resource(json) {
+      return Boolean(json && typeof json === "object" && !Array.isArray(json) && json.schema === "villagerretaliation:encounter/v1");
+    }
+
     function normalizeQuestModuleEntry(json, path) {
       const entry = stripBuilderFields(json);
       if (path) entry.__sourcePath = path;
@@ -529,7 +537,7 @@
     }
 
     function isNamespaceRootDataPath(path) {
-      return /^[a-z0-9_.-]+\/(?:dialogue|dialogue_trees|forced_dialogue|notifications|gifts|pacification|quests|villager_names|story_structures|story_biomes)\/.+\.json$/i.test(path);
+      return /^[a-z0-9_.-]+\/(?:dialogue|dialogue_trees|forced_dialogue|notifications|gifts|pacification|quests|quest_scenes|quest_encounters|villager_names|story_structures|story_biomes)\/.+\.json$/i.test(path);
     }
 
     function isTextPath(path) {
@@ -544,6 +552,8 @@
       if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
       if (/^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)) return "pacification";
       if (/^data\/[^/]+\/quests\/.+\.json$/.test(path)) return "quests";
+      if (/^data\/[^/]+\/quest_scenes\/.+\.json$/.test(path)) return "quest_scenes";
+      if (/^data\/[^/]+\/quest_encounters\/.+\.json$/.test(path)) return "quest_encounters";
       if (/^data\/[^/]+\/story_structures\/.+\.json$/.test(path)) return "story_structures";
       if (/^data\/[^/]+\/story_biomes\/.+\.json$/.test(path)) return "story_biomes";
       if (path === namesPath(state)) return "names";
@@ -634,6 +644,15 @@
           state.extraFiles[path] = source;
           if (isQuestV1Resource(parsed)) upsertQuestV1Import(state, parsed, path);
         }
+        return true;
+      }
+
+      if (path.match(/^data\/[^/]+\/(?:quest_scenes|quest_encounters)\/.+\.json$/)) {
+        const parsed = json();
+        if (!parsed) return false;
+        const valid = path.includes("/quest_scenes/") ? isSceneV1Resource(parsed) : isEncounterV1Resource(parsed);
+        if (!valid) return false;
+        state.extraFiles[path] = source;
         return true;
       }
 
@@ -840,6 +859,18 @@
           state.extraFiles[path] = stripTextBom(source);
           if (isQuestV1Resource(json)) upsertQuestV1Import(state, json, path);
         }
+        return true;
+      }
+
+      if (/^data\/[^/]+\/quest_scenes\/.+\.json$/.test(path)) {
+        if (!isSceneV1Resource(json)) return false;
+        state.extraFiles[path] = stripTextBom(source);
+        return true;
+      }
+
+      if (/^data\/[^/]+\/quest_encounters\/.+\.json$/.test(path)) {
+        if (!isEncounterV1Resource(json)) return false;
+        state.extraFiles[path] = stripTextBom(source);
         return true;
       }
 
@@ -1205,6 +1236,8 @@
       questModulePath,
       isQuestV2Module,
       isQuestV1Resource,
+      isSceneV1Resource,
+      isEncounterV1Resource,
       normalizeQuestModuleEntry,
       normalizeQuestV1Import,
       replaceQuestModuleFile,

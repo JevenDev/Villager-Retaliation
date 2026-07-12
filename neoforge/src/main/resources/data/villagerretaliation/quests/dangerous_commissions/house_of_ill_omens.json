@@ -203,6 +203,12 @@
                   "The village is not ready to put that work in your hands yet."
                 ]
               }
+            },
+            {
+              "type": "start_scene",
+              "scene": "villagerretaliation:mansion_warning",
+              "operation_id": "mansion_warning_v1",
+              "wait_for_result": true
             }
           ]
         },

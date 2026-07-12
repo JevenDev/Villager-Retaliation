@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.scene.SceneLaunchService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -63,6 +64,8 @@ public final class VillagerActionExecutor {
             case CLEAR_TAG -> executeClearFactTag(context, action, replacements);
             case SET_VARIABLE -> executeSetFactVariable(context, action, replacements);
             case COUNTER -> executeCounter(context, action, replacements);
+            case START_SCENE -> SceneLaunchService.launch(context, action).accepted()
+                    ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case NONE -> VillagerActionResult.EMPTY;
         };
     }

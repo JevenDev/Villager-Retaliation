@@ -439,7 +439,11 @@ public final class QuestV2Parser {
         }
         validator.expectKeys(object, "/availability", AVAILABILITY_KEYS);
         List<JsonObject> conditions = readConditionObjects(validator, object.get("conditions"), "/availability/conditions");
-        return new QuestV2Resource.Availability(conditions, object);
+        List<ResourceLocation> prerequisites = readResourceLocationList(
+                validator,
+                object.get("prerequisites"),
+                "/availability/prerequisites");
+        return new QuestV2Resource.Availability(conditions, prerequisites, object);
     }
 
     private static QuestV2Resource.Lifecycle readLifecycle(Validator validator, JsonElement element) {
@@ -1474,6 +1478,31 @@ public final class QuestV2Parser {
             }
         }
         return Set.copyOf(values);
+    }
+
+    private static List<ResourceLocation> readResourceLocationList(
+            Validator validator,
+            JsonElement element,
+            String pointer) {
+        if (element == null || element.isJsonNull()) {
+            return List.of();
+        }
+        List<ResourceLocation> values = new ArrayList<>();
+        int index = 0;
+        for (String value : readStringList(element)) {
+            Optional<ResourceLocation> parsed = DatapackJsonReader.parseResourceLocation(value);
+            if (parsed.isPresent()) {
+                values.add(parsed.get());
+            } else {
+                validator.error(
+                        pointer + "/" + index,
+                        "invalid prerequisite quest id \"" + value + "\".",
+                        "Use a namespaced quest id such as villagerretaliation:first_quest.",
+                        Set.of(value));
+            }
+            index++;
+        }
+        return List.copyOf(values);
     }
 
     private static QuestV2Resource.TextSpec readTextSpec(JsonObject object) {

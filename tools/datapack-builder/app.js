@@ -874,6 +874,8 @@ let unsavedShakeTimer = null;
 let exportIssueDialogResolve = null;
 let questRegistryMetadata = null;
 let questV2Schema = null;
+let sceneV1Schema = null;
+let encounterV1Schema = null;
 let questMetadataLoadStatus = "loading";
 
 const els = {
@@ -1032,19 +1034,25 @@ function renderIcons() {
 async function loadQuestAuthoringMetadata() {
   questMetadataLoadStatus = "loading";
   try {
-    const [metadataResponse, schemaResponse] = await Promise.all([
+    const [metadataResponse, schemaResponse, sceneSchemaResponse, encounterSchemaResponse] = await Promise.all([
       fetch("quest-registry-metadata.json", { cache: "no-store" }),
-      fetch("quest-v2.schema.json", { cache: "no-store" })
+      fetch("quest-v2.schema.json", { cache: "no-store" }),
+      fetch("scene-v1.schema.json", { cache: "no-store" }),
+      fetch("encounter-v1.schema.json", { cache: "no-store" })
     ]);
-    if (!metadataResponse.ok || !schemaResponse.ok) {
+    if (!metadataResponse.ok || !schemaResponse.ok || !sceneSchemaResponse.ok || !encounterSchemaResponse.ok) {
       throw new Error("Quest metadata fetch failed.");
     }
     questRegistryMetadata = await metadataResponse.json();
     questV2Schema = await schemaResponse.json();
+    sceneV1Schema = await sceneSchemaResponse.json();
+    encounterV1Schema = await encounterSchemaResponse.json();
     questMetadataLoadStatus = "ready";
   } catch {
     questRegistryMetadata = null;
     questV2Schema = null;
+    sceneV1Schema = null;
+    encounterV1Schema = null;
     questMetadataLoadStatus = "error";
   }
   invalidateCurrentViewSnapshot();
@@ -3516,6 +3524,184 @@ function questModuleIssueDetail(entry) {
   return null;
 }
 
+function sceneResourceIssueDetail(path, resource) {
+  const isScene = path.includes("/quest_scenes/");
+  const schema = isScene ? sceneV1Schema : encounterV1Schema;
+  const schemaId = isScene ? "villagerretaliation:scene/v1" : "villagerretaliation:encounter/v1";
+  const required = Array.isArray(schema?.required)
+    ? schema.required
+    : isScene ? ["schema", "id", "ownership", "entry_step", "actors", "steps"] : ["schema", "id"];
+  if (!resource || typeof resource !== "object" || Array.isArray(resource)) {
+    return issueDetail(isScene ? "Scene resource" : "Encounter resource", "a JSON object", resource, "json-preview");
+  }
+  if (resource.schema !== schemaId) {
+    return issueDetail(isScene ? "Scene schema" : "Encounter schema", schemaId, resource.schema, "json-preview");
+  }
+  const missing = required.find((key) => resource[key] === undefined);
+  if (missing) return issueDetail(`${isScene ? "Scene" : "Encounter"} ${missing}`, "a required field", resource[missing], "json-preview");
+  if (!isValidResourceLocation(resource.id, { requireNamespace: true })) {
+    return issueDetail(`${isScene ? "Scene" : "Encounter"} id`, "a namespaced resource location", resource.id, "json-preview");
+  }
+  if (isScene && Array.isArray(resource.steps)) {
+    for (const step of resource.steps.filter((entry) => entry?.type === "villagerretaliation:start_encounter" || entry?.type === "start_encounter")) {
+      const data = step.data || {};const hasTemplate = data.template !== undefined || data.encounter_template !== undefined;const hasVariants = data.variants !== undefined;if (hasTemplate === hasVariants) return issueDetail(`Scene encounter step ${step.id}`, "exactly one template or variants array", data, "json-preview");if (hasVariants) { const variants = data.variants;if (!Array.isArray(variants) || variants.length < 1 || variants.length > 32) return issueDetail(`Scene encounter step ${step.id} variants`, "between 1 and 32 variants", variants, "json-preview");const duplicate = firstDuplicate(variants.map((variant) => variant?.id));if (duplicate) return issueDetail(`Scene encounter step ${step.id} variant ids`, "unique stable ids", duplicate, "json-preview");const invalid = variants.find((variant) => !variant || typeof variant !== "object" || Array.isArray(variant) || Object.keys(variant).some((key) => !["id", "weight", "template"].includes(key)) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(variant.id || "") || !isValidResourceLocation(variant.template, { requireNamespace: true }) || (variant.weight !== undefined && (!Number.isInteger(variant.weight) || variant.weight < 1 || variant.weight > 10000)));if (invalid) return issueDetail(`Scene encounter step ${step.id} variant`, "a stable id, namespaced template, and optional weight from 1 to 10000", invalid, "json-preview"); }
+    }
+  }
+  if (!isScene) {
+    const explicitWaves = Array.isArray(resource.waves);
+    const explicitVariants = Array.isArray(resource.variants);if ([Array.isArray(resource.members), explicitWaves, explicitVariants].filter(Boolean).length !== 1) return issueDetail("Encounter composition", "exactly one of members, waves, or variants", { members: resource.members, waves: resource.waves, variants: resource.variants }, "json-preview");
+    if (explicitVariants) { if (resource.variants.length < 1 || resource.variants.length > 32) return issueDetail("Encounter variants", "between 1 and 32 variants", resource.variants, "json-preview");const duplicate = firstDuplicate(resource.variants.map((variant) => variant?.id));if (duplicate) return issueDetail("Encounter variant ids", "unique stable ids", duplicate, "json-preview");const invalid = resource.variants.find((variant) => !variant || typeof variant !== "object" || Array.isArray(variant) || Object.keys(variant).some((key) => !["id", "weight", "template"].includes(key)) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(variant.id || "") || !isValidResourceLocation(variant.template, { requireNamespace: true }) || (variant.weight !== undefined && (!Number.isInteger(variant.weight) || variant.weight < 1 || variant.weight > 10000)));if (invalid) return issueDetail("Encounter variant", "a stable id, namespaced template, and optional weight from 1 to 10000", invalid, "json-preview");const unreachable = Object.keys(resource).find((key) => !["schema", "id", "version", "controller", "variants"].includes(key));if (unreachable) return issueDetail("Encounter variant selector field", "only schema, id, version, controller, and variants", unreachable, "json-preview");return null; }
+    if (explicitWaves && (resource.waves.length < 1 || resource.waves.length > 32)) return issueDetail("Encounter waves", "between 1 and 32 waves", resource.waves, "json-preview");
+    if (explicitWaves && ["wave_count", "wave_interval_ticks", "wave_trigger"].some((key) => resource[key] !== undefined)) return issueDetail("Encounter wave shorthand", "omitted when waves is authored", resource, "json-preview");
+    const allMembers = explicitWaves ? resource.waves.flatMap((wave) => Array.isArray(wave?.members) ? wave.members : []) : resource.members;
+    if (!Array.isArray(allMembers) || allMembers.length === 0) return issueDetail("Encounter members", "at least one allowlisted entity member", allMembers, "json-preview");
+    const invalidMember = allMembers.find((member) => !isValidResourceLocation(member?.entity, { requireNamespace: true }) || (member.id !== undefined && !/^[a-z][a-z0-9_.-]{0,63}$/.test(member.id)) || (member.count !== undefined && (!Number.isInteger(member.count) || member.count < 1 || member.count > 64)));
+    if (invalidMember) return issueDetail("Encounter member", "a namespaced entity and positive integer count", invalidMember, "json-preview");
+    const duplicateMemberId = firstDuplicate(allMembers.map((member) => member.id).filter(Boolean));if (duplicateMemberId) return issueDetail("Encounter member ids", "unique stable ids", duplicateMemberId, "json-preview");
+    const attributeBounds = { "minecraft:max_health": [1, 2048], "minecraft:movement_speed": [0, 4], "minecraft:attack_damage": [0, 2048], "minecraft:armor": [0, 30], "minecraft:knockback_resistance": [0, 1] };
+    const directAttributes = { health: "minecraft:max_health", movement_speed: "minecraft:movement_speed", attack_damage: "minecraft:attack_damage", armor: "minecraft:armor", knockback_resistance: "minecraft:knockback_resistance" };
+    for (const member of allMembers) {
+      if (member.custom_name !== undefined && (typeof member.custom_name !== "string" || member.custom_name.length < 1 || member.custom_name.length > 128)) return issueDetail("Encounter custom name", "1-128 characters", member.custom_name, "json-preview");
+      for (const key of ["name_visible", "glowing", "persistent", "boss"]) if (member[key] !== undefined && typeof member[key] !== "boolean") return issueDetail(`Encounter member ${key}`, "a boolean", member[key], "json-preview");
+      if (member.name_visible === true && !member.custom_name) return issueDetail("Encounter visible name", "custom_name when name_visible is true", member, "json-preview");
+      if ((member.boss_bar_color !== undefined || member.boss_bar_overlay !== undefined) && member.boss !== true) return issueDetail("Encounter boss presentation", "boss true", member, "json-preview");
+      if (member.boss_bar_color !== undefined && !["pink", "blue", "red", "green", "yellow", "purple", "white"].includes(member.boss_bar_color)) return issueDetail("Encounter boss-bar color", "a supported boss-bar color", member.boss_bar_color, "json-preview");
+      if (member.boss_bar_overlay !== undefined && !["progress", "notched_6", "notched_10", "notched_12", "notched_20"].includes(member.boss_bar_overlay)) return issueDetail("Encounter boss-bar overlay", "a supported boss-bar overlay", member.boss_bar_overlay, "json-preview");
+      const attributes = member.attributes === undefined ? {} : member.attributes;
+      if (!attributes || typeof attributes !== "object" || Array.isArray(attributes)) return issueDetail("Encounter attributes", "an allowlisted attribute object", attributes, "json-preview");
+      const unknownAttribute = Object.keys(attributes).find((id) => !Object.hasOwn(attributeBounds, id));
+      if (unknownAttribute) return issueDetail("Encounter attribute", "an allowlisted attribute id", unknownAttribute, "json-preview");
+      for (const [id, value] of Object.entries(attributes)) { const [min, max] = attributeBounds[id];if (!Number.isFinite(value) || value < min || value > max) return issueDetail(`Encounter attribute ${id}`, `a number from ${min} to ${max}`, value, "json-preview"); }
+      for (const [field, id] of Object.entries(directAttributes)) if (member[field] !== undefined) { const [min, max] = attributeBounds[id];if (!Number.isFinite(member[field]) || member[field] < min || member[field] > max) return issueDetail(`Encounter ${field}`, `a number from ${min} to ${max}`, member[field], "json-preview");if (Object.hasOwn(attributes, id)) return issueDetail("Encounter duplicate attribute", `only ${field} or attributes.${id}`, member, "json-preview"); }
+    }
+    if (explicitWaves) {
+      const ids = resource.waves.map((wave) => wave?.id);const duplicate = firstDuplicate(ids);
+      const invalidWave = resource.waves.find((wave) => !wave || typeof wave !== "object" || !/^[a-z][a-z0-9_.-]{0,63}$/.test(wave.id || "") || !Array.isArray(wave.members) || wave.members.length === 0 || (wave.delay_ticks !== undefined && (!Number.isInteger(wave.delay_ticks) || wave.delay_ticks < 0 || wave.delay_ticks > 12000)) || (wave.trigger !== undefined && !["all_defeated", "timer"].includes(wave.trigger)));
+      if (duplicate || invalidWave) return issueDetail("Encounter wave", "a unique stable id, members, bounded delay, and known trigger", duplicate || invalidWave, "json-preview");
+      const invalidHook = resource.waves.flatMap((wave) => wave.scene_actions || []).find((hook) => !/^[a-z][a-z0-9_.-]{0,63}$/.test(hook?.id || "") || !["notification", "dialogue"].includes(hook?.type) || typeof hook?.text !== "string" || hook.text.length < 1 || hook.text.length > 512);
+      if (invalidHook) return issueDetail("Encounter wave scene action", "a stable id, notification/dialogue type, and bounded text", invalidHook, "json-preview");
+    }
+    if (resource.area !== undefined) {
+      const area = resource.area;
+      if (!area || typeof area !== "object" || Array.isArray(area)) return issueDetail("Encounter area", "an object", area, "json-preview");
+      const allowed = new Set(["radius", "vertical_radius", "leave_behavior", "leave_timeout_ticks", "mob_behavior", "mob_timeout_ticks"]);
+      const unknown = Object.keys(area).find((key) => !allowed.has(key));
+      if (unknown) return issueDetail("Encounter area field", "a supported area field", unknown, "json-preview");
+      if (!Number.isInteger(area.radius) || area.radius < 1 || area.radius > 256) return issueDetail("Encounter area radius", "an integer from 1 to 256", area.radius, "json-preview");
+      if (area.vertical_radius !== undefined && (!Number.isInteger(area.vertical_radius) || area.vertical_radius < 1 || area.vertical_radius > 128)) return issueDetail("Encounter area vertical radius", "an integer from 1 to 128", area.vertical_radius, "json-preview");
+      if (area.leave_behavior !== undefined && !["ignore", "warn", "pause", "fail"].includes(area.leave_behavior)) return issueDetail("Encounter leave behavior", "ignore, warn, pause, or fail", area.leave_behavior, "json-preview");
+      if (area.mob_behavior !== undefined && !["ignore", "return", "teleport"].includes(area.mob_behavior)) return issueDetail("Encounter mob behavior", "ignore, return, or teleport", area.mob_behavior, "json-preview");
+      for (const key of ["leave_timeout_ticks", "mob_timeout_ticks"]) if (area[key] !== undefined && (!Number.isInteger(area[key]) || area[key] < 1 || area[key] > 12000)) return issueDetail(`Encounter ${key}`, "an integer from 1 to 12000", area[key], "json-preview");
+      if (area.mob_timeout_ticks !== undefined && area.mob_behavior !== "teleport") return issueDetail("Encounter mob timeout", "mob_behavior teleport", area.mob_behavior, "json-preview");
+    }
+    if (resource.spawn_selection !== undefined && !["random", "sequential", "weighted", "nearest_player", "farthest_player", "one_group_per_point"].includes(resource.spawn_selection)) return issueDetail("Encounter spawn selection", "a supported selection mode", resource.spawn_selection, "json-preview");
+    if (resource.spawn_selection !== undefined && !Array.isArray(resource.spawn_points)) return issueDetail("Encounter spawn selection", "a non-empty spawn_points array", resource.spawn_points, "json-preview");
+    if (resource.spawn_points !== undefined) {
+      const points = resource.spawn_points;
+      if (!Array.isArray(points) || points.length < 1 || points.length > 64) return issueDetail("Encounter spawn points", "between 1 and 64 named points", points, "json-preview");
+      if (resource.spawn_mode === "near_player") return issueDetail("Encounter spawn points", "a spawn_mode other than near_player", resource.spawn_mode, "json-preview");
+      const ids = points.map((point) => point?.id);const duplicate = firstDuplicate(ids);
+      if (duplicate) return issueDetail("Encounter spawn point ids", "unique stable ids", duplicate, "json-preview");
+      for (const point of points) {
+        if (!point || typeof point !== "object" || Array.isArray(point) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(point.id || "")) return issueDetail("Encounter spawn point", "an object with a stable id", point, "json-preview");
+        const allowed = new Set(["id", "actor", "marker", "dimension", "x", "y", "z", "offset_x", "offset_y", "offset_z", "weight"]);const unknown = Object.keys(point).find((key) => !allowed.has(key));
+        if (unknown) return issueDetail(`Encounter spawn point ${point.id} field`, "a supported spawn-point field", unknown, "json-preview");
+        const actor = point.actor !== undefined;const marker = point.marker !== undefined;const coordinates = ["x", "y", "z"].filter((key) => point[key] !== undefined);
+        if ((actor ? 1 : 0) + (marker ? 1 : 0) + (coordinates.length ? 1 : 0) !== 1 || (coordinates.length !== 0 && coordinates.length !== 3)) return issueDetail(`Encounter spawn point ${point.id}`, "exactly one actor, marker, or complete x/y/z source", point, "json-preview");
+        const alias = actor ? point.actor : marker ? point.marker : "";if (alias && !/^[a-z][a-z0-9_.-]{0,63}$/.test(alias)) return issueDetail(`Encounter spawn point ${point.id} alias`, "a stable scene actor alias", alias, "json-preview");
+        if (point.dimension !== undefined && !isValidResourceLocation(point.dimension, { requireNamespace: true })) return issueDetail(`Encounter spawn point ${point.id} dimension`, "a namespaced resource location", point.dimension, "json-preview");
+        if ((actor || marker) && point.dimension !== undefined) return issueDetail(`Encounter spawn point ${point.id} dimension`, "dimension only with coordinate sources", point.dimension, "json-preview");
+        const bounds = { x: [-30000000, 30000000], y: [-2048, 2048], z: [-30000000, 30000000], offset_x: [-256, 256], offset_y: [-256, 256], offset_z: [-256, 256], weight: [1, 10000] };
+        for (const [key, [min, max]] of Object.entries(bounds)) if (point[key] !== undefined && (!Number.isInteger(point[key]) || point[key] < min || point[key] > max)) return issueDetail(`Encounter spawn point ${point.id} ${key}`, `an integer from ${min} to ${max}`, point[key], "json-preview");
+        if (coordinates.length && ["offset_x", "offset_y", "offset_z"].some((key) => point[key] !== undefined)) return issueDetail(`Encounter spawn point ${point.id} offsets`, "offsets only with actor or marker sources", point, "json-preview");
+      }
+    }
+    if (resource.allies !== undefined) {
+      const allies = resource.allies;if (!Array.isArray(allies) || allies.length < 1 || allies.length > 32) return issueDetail("Encounter allies", "between 1 and 32 controlled allies", allies, "json-preview");const duplicateAlly = firstDuplicate(allies.map((ally) => ally?.id));if (duplicateAlly) return issueDetail("Encounter ally ids", "unique stable ids", duplicateAlly, "json-preview");let totalAllies = 0;
+      const allyAllowed = new Set(["id", "entity", "actor", "count", "equipment", "custom_name", "name_visible", "glowing", "persistent", "health", "movement_speed", "attack_damage", "armor", "knockback_resistance", "attributes", "required_survival", "invulnerable", "revivable", "revive_delay_ticks", "replacement_policy", "cleanup_policy", "affects_completion"]);
+      for (const ally of allies) {
+        if (!ally || typeof ally !== "object" || Array.isArray(ally) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(ally.id || "")) return issueDetail("Encounter ally", "an object with a stable id", ally, "json-preview");const unknown = Object.keys(ally).find((key) => !allyAllowed.has(key));if (unknown) return issueDetail(`Encounter ally ${ally.id} field`, "a supported ally field", unknown, "json-preview");const entity = ally.entity !== undefined, actor = ally.actor !== undefined;if (entity === actor) return issueDetail(`Encounter ally ${ally.id} source`, "exactly one entity or bound actor", ally, "json-preview");if (entity && !isValidResourceLocation(ally.entity, { requireNamespace: true })) return issueDetail(`Encounter ally ${ally.id} entity`, "a namespaced entity id", ally.entity, "json-preview");if (actor && !/^[a-z][a-z0-9_.-]{0,63}$/.test(ally.actor || "")) return issueDetail(`Encounter ally ${ally.id} actor`, "a stable scene actor alias", ally.actor, "json-preview");const count = ally.count ?? 1;if (!Number.isInteger(count) || count < 1 || count > 16 || actor && count !== 1) return issueDetail(`Encounter ally ${ally.id} count`, "1-16 for entities and exactly 1 for bound actors", count, "json-preview");totalAllies += count;
+        if (actor) { const unreachable = ["count", "equipment", "custom_name", "name_visible", "glowing", "persistent", "health", "movement_speed", "attack_damage", "armor", "knockback_resistance", "attributes"].find((key) => ally[key] !== undefined);if (unreachable) return issueDetail(`Encounter ally ${ally.id} field`, "entity options only for entity-defined allies", unreachable, "json-preview"); }
+        if (ally.required_survival === true && ally.revivable === true) return issueDetail(`Encounter ally ${ally.id} survival`, "required_survival or revivable, not both", ally, "json-preview");if (ally.revive_delay_ticks !== undefined && (ally.revivable !== true || !Number.isInteger(ally.revive_delay_ticks) || ally.revive_delay_ticks < 1 || ally.revive_delay_ticks > 12000)) return issueDetail(`Encounter ally ${ally.id} revive delay`, "1-12000 ticks with revivable true", ally.revive_delay_ticks, "json-preview");if (ally.replacement_policy !== undefined && !["never", "missing_if_loaded"].includes(ally.replacement_policy)) return issueDetail(`Encounter ally ${ally.id} replacement`, "never or missing_if_loaded", ally.replacement_policy, "json-preview");if (ally.cleanup_policy !== undefined && !["remove", "preserve"].includes(ally.cleanup_policy)) return issueDetail(`Encounter ally ${ally.id} cleanup`, "remove or preserve", ally.cleanup_policy, "json-preview");
+      }
+      if (totalAllies > 64) return issueDetail("Encounter ally instances", "at most 64 total controlled allies", totalAllies, "json-preview");
+    }
+    if (resource.failure !== undefined) {
+      const failure = resource.failure;if (!failure || typeof failure !== "object" || Array.isArray(failure)) return issueDetail("Encounter failure policy", "an object", failure, "json-preview");const allowed = new Set(["on_player_death", "on_protected_actor_death", "retry_delay_ticks", "max_attempts", "retain_defeated", "branch_step"]);const unknown = Object.keys(failure).find((key) => !allowed.has(key));if (unknown) return issueDetail("Encounter failure field", "a supported failure field", unknown, "json-preview");const actions = [failure.on_player_death ?? "fail", failure.on_protected_actor_death ?? "fail"];const known = ["fail", "reset_wave", "restart_encounter", "pause", "branch_scene"];if (actions.some((action) => !known.includes(action))) return issueDetail("Encounter failure action", "fail, reset_wave, restart_encounter, pause, or branch_scene", failure, "json-preview");if (failure.retry_delay_ticks !== undefined && (!Number.isInteger(failure.retry_delay_ticks) || failure.retry_delay_ticks < 0 || failure.retry_delay_ticks > 12000)) return issueDetail("Encounter retry delay", "an integer from 0 to 12000", failure.retry_delay_ticks, "json-preview");if (failure.max_attempts !== undefined && (!Number.isInteger(failure.max_attempts) || failure.max_attempts < 1 || failure.max_attempts > 16)) return issueDetail("Encounter max attempts", "an integer from 1 to 16", failure.max_attempts, "json-preview");if (failure.retain_defeated !== undefined && typeof failure.retain_defeated !== "boolean") return issueDetail("Encounter retained progress", "a boolean", failure.retain_defeated, "json-preview");const branches = actions.includes("branch_scene");if (branches !== (typeof failure.branch_step === "string" && /^[a-z][a-z0-9_.-]{0,63}$/.test(failure.branch_step))) return issueDetail("Encounter failure branch", "a stable branch_step exactly when branch_scene is used", failure.branch_step, "json-preview");
+    }
+    if (resource.environment !== undefined) {
+      const environment=resource.environment;if(!environment||typeof environment!=="object"||Array.isArray(environment))return issueDetail("Encounter environment","an object",environment,"json-preview");const unknown=Object.keys(environment).find((key)=>!["cues","temporary_blocks"].includes(key));if(unknown)return issueDetail("Encounter environment field","cues or temporary_blocks",unknown,"json-preview");const cues=environment.cues??[],blocks=environment.temporary_blocks??[];if(!Array.isArray(cues)||cues.length>32||!Array.isArray(blocks)||blocks.length>64||cues.length+blocks.length<1)return issueDetail("Encounter environment","1-32 cues and/or 1-64 temporary blocks",environment,"json-preview");const ids=[...cues,...blocks].map((entry)=>entry?.id);const duplicate=firstDuplicate(ids);if(duplicate)return issueDetail("Encounter environment ids","unique stable ids",duplicate,"json-preview");const badCue=cues.find((cue)=>!cue||!/^[a-z][a-z0-9_.-]{0,63}$/.test(cue.id||"")||!["sound","music","particles","glowing_column"].includes(cue.type)||(cue.type==="sound"||cue.type==="music"?!isValidResourceLocation(cue.sound,{requireNamespace:true}):!isValidResourceLocation(cue.particle,{requireNamespace:true})));if(badCue)return issueDetail("Encounter environment cue","a stable id, safe type, and namespaced sound or particle",badCue,"json-preview");const safeBlocks=new Set(["minecraft:barrier","minecraft:light","minecraft:structure_void","minecraft:glass"]);const badBlock=blocks.find((block)=>!block||!/^[a-z][a-z0-9_.-]{0,63}$/.test(block.id||"")||!safeBlocks.has(block.block));if(badBlock)return issueDetail("Encounter temporary block","a stable id and allowlisted block",badBlock,"json-preview");for(const entry of [...cues,...blocks])for(const key of ["offset_x","offset_y","offset_z"])if(entry[key]!==undefined&&(!Number.isInteger(entry[key])||Math.abs(entry[key])>64))return issueDetail(`Encounter environment ${key}`,"an integer from -64 to 64",entry[key],"json-preview");
+    }
+    if (resource.guidance !== undefined) {
+      const guidance=resource.guidance;if(!guidance||typeof guidance!=="object"||Array.isArray(guidance))return issueDetail("Encounter guidance","an object",guidance,"json-preview");if(resource.location_message!==undefined)return issueDetail("Encounter guidance message","guidance.coordinate_message or legacy location_message, not both",resource.location_message,"json-preview");const allowed=new Set(["coordinate_message","arrival_message","discovery_radius","arrival_radius","distance_tracker","compass_target","directional_particles","hud_marker","exact_coordinates","update_interval_ticks"]);const unknown=Object.keys(guidance).find((key)=>!allowed.has(key));if(unknown)return issueDetail("Encounter guidance field","a supported guidance field",unknown,"json-preview");for(const key of ["coordinate_message","arrival_message"])if(guidance[key]!==undefined&&(typeof guidance[key]!=="string"||guidance[key].length>512))return issueDetail(`Encounter guidance ${key}`,"a string up to 512 characters",guidance[key],"json-preview");for(const key of ["distance_tracker","compass_target","directional_particles","hud_marker"])if(guidance[key]!==undefined&&typeof guidance[key]!=="boolean")return issueDetail(`Encounter guidance ${key}`,"a boolean",guidance[key],"json-preview");const discovery=guidance.discovery_radius??64,arrival=guidance.arrival_radius??8,interval=guidance.update_interval_ticks??20;if(!Number.isInteger(discovery)||discovery<1||discovery>512||!Number.isInteger(arrival)||arrival<1||arrival>64||arrival>discovery)return issueDetail("Encounter guidance radii","discovery 1-512 and arrival 1-64 no larger than discovery",guidance,"json-preview");if(!Number.isInteger(interval)||interval<10||interval>200)return issueDetail("Encounter guidance update interval","an integer from 10 to 200",interval,"json-preview");if(guidance.exact_coordinates!==undefined&&!["always","after_discovery","never"].includes(guidance.exact_coordinates))return issueDetail("Encounter exact coordinates","always, after_discovery, or never",guidance.exact_coordinates,"json-preview");
+    }
+    if (resource.rewards !== undefined) {
+      const rewards=resource.rewards;if(!rewards||typeof rewards!=="object"||Array.isArray(rewards)||Object.keys(rewards).length===0)return issueDetail("Encounter rewards","a non-empty object",rewards,"json-preview");const unknown=Object.keys(rewards).find((key)=>!["waves","phases","completion","trophies","drop_policy"].includes(key));if(unknown)return issueDetail("Encounter rewards field","waves, phases, completion, trophies, or drop_policy",unknown,"json-preview");const waveIds=new Set(explicitWaves?resource.waves.map((wave)=>wave.id):Array.from({length:resource.wave_count||1},(_,index)=>`repeat_${index+1}`)),phaseIds=new Set((resource.phases||[]).map((phase)=>phase.id)),memberIds=new Set(allMembers.map((member)=>member.id).filter(Boolean)),ids=[];let rewardTotal=0;for(const [key,target,known] of [["waves","wave",waveIds],["phases","phase",phaseIds],["completion","",null]]){const list=rewards[key]??[];if(!Array.isArray(list)||list.length>32||(rewards[key]!==undefined&&list.length<1))return issueDetail(`Encounter rewards ${key}`,"1-32 entries when present",list,"json-preview");rewardTotal+=list.length;for(const reward of list){if(!reward||typeof reward!=="object"||Array.isArray(reward)||!/^[a-z][a-z0-9_.-]{0,63}$/.test(reward.id||""))return issueDetail(`Encounter reward ${key}`,"an object with a stable id",reward,"json-preview");ids.push(reward.id);const allowed=new Set(["id",...(target?[target]:[]),"loot_table","item","count","trophy_name"]),field=Object.keys(reward).find((name)=>!allowed.has(name));if(field)return issueDetail(`Encounter reward ${reward.id} field`,"a reachable reward field",field,"json-preview");if(target&&!known.has(reward[target]))return issueDetail(`Encounter reward ${reward.id} ${target}`,`an authored ${target} id`,reward[target],"json-preview");const hasLoot=reward.loot_table!==undefined,hasItem=reward.item!==undefined;if(hasLoot===hasItem||hasLoot&&!isValidResourceLocation(reward.loot_table,{requireNamespace:true})||hasItem&&!isValidResourceLocation(reward.item,{requireNamespace:true}))return issueDetail(`Encounter reward ${reward.id} source`,"exactly one namespaced loot_table or item",reward,"json-preview");if(hasLoot&&(reward.count!==undefined||reward.trophy_name!==undefined))return issueDetail(`Encounter reward ${reward.id} loot fields`,"count and trophy_name only for item rewards",reward,"json-preview");if(reward.count!==undefined&&(!Number.isInteger(reward.count)||reward.count<1||reward.count>64)||reward.trophy_name!==undefined&&(typeof reward.trophy_name!=="string"||reward.trophy_name.length>128))return issueDetail(`Encounter reward ${reward.id} item fields`,"count 1-64 and trophy_name up to 128 characters",reward,"json-preview");}}
+      const trophies=rewards.trophies??[];if(!Array.isArray(trophies)||trophies.length>32||(rewards.trophies!==undefined&&trophies.length<1))return issueDetail("Encounter trophies","1-32 entries when present",trophies,"json-preview");for(const trophy of trophies){if(!trophy||!/^[a-z][a-z0-9_.-]{0,63}$/.test(trophy.id||"")||!memberIds.has(trophy.member)||!isValidResourceLocation(trophy.item,{requireNamespace:true})||trophy.count!==undefined&&(!Number.isInteger(trophy.count)||trophy.count<1||trophy.count>64)||trophy.name!==undefined&&(typeof trophy.name!=="string"||trophy.name.length>128))return issueDetail("Encounter trophy","a stable id, named member, namespaced item, and safe count/name",trophy,"json-preview");ids.push(trophy.id);}const duplicate=firstDuplicate(ids);if(duplicate)return issueDetail("Encounter reward ids","unique across rewards and trophies",duplicate,"json-preview");if(rewardTotal>64)return issueDetail("Encounter rewards","at most 64 wave, phase, and completion rewards",rewardTotal,"json-preview");const policy=rewards.drop_policy??"normal";if(!["normal","suppress","authored_only","trophy_only"].includes(policy))return issueDetail("Encounter drop policy","normal, suppress, authored_only, or trophy_only",policy,"json-preview");if(policy==="trophy_only"&&trophies.length===0)return issueDetail("Encounter trophy-only drops","at least one trophy",trophies,"json-preview");if(policy==="authored_only"&&!allMembers.some((member)=>Object.values(member.equipment||{}).some((gear)=>Number(gear.drop_chance||0)>0)))return issueDetail("Encounter authored-only drops","equipment with drop_chance above zero",resource,"json-preview");
+    }
+    if (resource.phases !== undefined) {
+      const phases = resource.phases;if (!Array.isArray(phases) || phases.length < 1 || phases.length > 64) return issueDetail("Encounter phases", "between 1 and 64 phases", phases, "json-preview");const duplicatePhase = firstDuplicate(phases.map((phase) => phase?.id));if (duplicatePhase) return issueDetail("Encounter phase ids", "unique stable ids", duplicatePhase, "json-preview");
+      const waveIds = new Set(explicitWaves ? resource.waves.map((wave) => wave.id) : Array.from({ length: resource.wave_count || 1 }, (_, index) => `repeat_${index + 1}`));const membersById = new Map(allMembers.filter((member) => member.id).map((member) => [member.id, member]));
+      for (const phase of phases) {
+        if (!phase || typeof phase !== "object" || Array.isArray(phase) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(phase.id || "")) return issueDetail("Encounter phase", "an object with a stable id", phase, "json-preview");const phaseAllowed = new Set(["id", "trigger", "actions", "repeatable", "repeat_interval_ticks", "max_fires"]);const unknownPhase = Object.keys(phase).find((key) => !phaseAllowed.has(key));if (unknownPhase) return issueDetail(`Encounter phase ${phase.id} field`, "a supported phase field", unknownPhase, "json-preview");
+        const trigger = phase.trigger;const triggerFields = { wave_started: "wave", wave_completed: "wave", remaining_percentage: "percentage", elapsed_time: "ticks", elite_defeated: "member" };const triggerField = triggerFields[trigger?.type];if (!triggerField || trigger[triggerField] === undefined) return issueDetail(`Encounter phase ${phase.id} trigger`, "a supported trigger with its required field", trigger, "json-preview");const unexpectedTrigger = Object.keys(trigger).find((key) => key !== "type" && key !== triggerField);if (unexpectedTrigger) return issueDetail(`Encounter phase ${phase.id} trigger field`, `only ${triggerField} for ${trigger.type}`, unexpectedTrigger, "json-preview");if ((trigger.type === "wave_started" || trigger.type === "wave_completed") && !waveIds.has(trigger.wave)) return issueDetail(`Encounter phase ${phase.id} wave`, "an authored wave id", trigger.wave, "json-preview");if (trigger.type === "remaining_percentage" && (!Number.isInteger(trigger.percentage) || trigger.percentage < 0 || trigger.percentage > 100)) return issueDetail(`Encounter phase ${phase.id} percentage`, "an integer from 0 to 100", trigger.percentage, "json-preview");if (trigger.type === "elapsed_time" && (!Number.isInteger(trigger.ticks) || trigger.ticks < 1 || trigger.ticks > 1728000)) return issueDetail(`Encounter phase ${phase.id} ticks`, "an integer from 1 to 1728000", trigger.ticks, "json-preview");if (trigger.type === "elite_defeated") { const member = membersById.get(trigger.member);const enhanced = member && (member.custom_name || member.boss || Object.keys(member.attributes || {}).length > 0 || ["health", "movement_speed", "attack_damage", "armor", "knockback_resistance"].some((key) => member[key] !== undefined));const scales = member && (resource.extra_per_player || 0) > 0 && (resource.max_party_size || 4) > 1 && (explicitWaves ? resource.waves.some((wave) => wave.members?.[0] === member) : resource.members?.[0] === member);if (!member || (member.count || 1) !== 1 || scales || !enhanced) return issueDetail(`Encounter phase ${phase.id} elite`, "a single named or enhanced member id", trigger.member, "json-preview"); }
+        if (!Array.isArray(phase.actions) || phase.actions.length < 1 || phase.actions.length > 32) return issueDetail(`Encounter phase ${phase.id} actions`, "between 1 and 32 allowlisted actions", phase.actions, "json-preview");const duplicateAction = firstDuplicate(phase.actions.map((action) => action?.id));if (duplicateAction) return issueDetail(`Encounter phase ${phase.id} action ids`, "unique stable ids", duplicateAction, "json-preview");let transitions = 0;
+        for (const action of phase.actions) { if (!action || !/^[a-z][a-z0-9_.-]{0,63}$/.test(action.id || "") || !["notification", "dialogue", "fact", "transition"].includes(action.type)) return issueDetail(`Encounter phase ${phase.id} action`, "a stable id and allowlisted type", action, "json-preview");const actionAllowed = { notification: ["id", "type", "text"], dialogue: ["id", "type", "text"], fact: ["id", "type", "scope", "tag", "key", "value"], transition: ["id", "type", "target"] }[action.type];const unknownAction = Object.keys(action).find((key) => !actionAllowed.includes(key));if (unknownAction) return issueDetail(`Encounter phase ${phase.id} action ${action.id} field`, "a reachable field for its action type", unknownAction, "json-preview");if ((action.type === "notification" || action.type === "dialogue") && (typeof action.text !== "string" || action.text.length < 1 || action.text.length > 512)) return issueDetail(`Encounter phase ${phase.id} action ${action.id} text`, "1-512 characters", action.text, "json-preview");if (action.type === "fact") { const hasTag = action.tag !== undefined;const hasKey = action.key !== undefined || action.value !== undefined;if (hasTag === hasKey || (hasTag && !isValidResourceLocation(action.tag, { requireNamespace: true })) || (hasKey && (!/^[a-zA-Z0-9_.:-]{1,128}$/.test(action.key || "") || typeof action.value !== "string" || action.value.length > 128)) || (action.scope !== undefined && !["player", "quest", "world"].includes(action.scope))) return issueDetail(`Encounter phase ${phase.id} fact ${action.id}`, "one valid tag or key/value with a safe scope", action, "json-preview"); }if (action.type === "transition") { transitions++;if (!/^[a-z][a-z0-9_.-]{0,63}$/.test(action.target || "")) return issueDetail(`Encounter phase ${phase.id} transition`, "a stable scene step id", action.target, "json-preview"); } }
+        if (transitions > 1 || (phase.repeatable === true && transitions > 0)) return issueDetail(`Encounter phase ${phase.id} transitions`, "at most one transition on a non-repeatable phase", phase.actions, "json-preview");if (phase.repeatable === true) { if (!Number.isInteger(phase.repeat_interval_ticks) || phase.repeat_interval_ticks < 1 || phase.repeat_interval_ticks > 12000 || !Number.isInteger(phase.max_fires) || phase.max_fires < 2 || phase.max_fires > 64) return issueDetail(`Encounter phase ${phase.id} repeat policy`, "a bounded interval and 2-64 max fires", phase, "json-preview"); } else if (phase.repeat_interval_ticks !== undefined || phase.max_fires !== undefined) return issueDetail(`Encounter phase ${phase.id} repeat policy`, "repeat fields only when repeatable is true", phase, "json-preview");
+      }
+    }
+    if (resource.completion_condition !== undefined && resource.completion_objectives !== undefined) return issueDetail("Encounter completion", "either completion_condition or completion_objectives, not both", resource.completion_objectives, "json-preview");
+    if (resource.completion_objectives !== undefined) {
+      const composition = resource.completion_objectives;
+      if (!composition || typeof composition !== "object" || Array.isArray(composition) || !Array.isArray(composition.objectives) || composition.objectives.length < 1 || composition.objectives.length > 32) return issueDetail("Encounter completion objectives", "an object containing 1-32 objectives", composition, "json-preview");
+      const unknownComposition = Object.keys(composition).find((key) => !["mode", "objectives"].includes(key));if (unknownComposition || (composition.mode !== undefined && !["all", "any"].includes(composition.mode))) return issueDetail("Encounter completion composition", "mode all/any and objectives only", unknownComposition || composition.mode, "json-preview");
+      const duplicate = firstDuplicate(composition.objectives.map((objective) => objective?.id));if (duplicate) return issueDetail("Encounter objective ids", "unique stable ids", duplicate, "json-preview");
+      const pointIds = new Set((resource.spawn_points || []).map((point) => point.id));const memberIds = new Set(allMembers.map((member) => member.id).filter(Boolean));
+      const fields = { all_defeated: [], all_gone: [], survive_duration: ["duration_ticks"], protect_actor: ["actor", "duration_ticks"], prevent_entry: ["point", "duration_ticks", "radius", "vertical_radius"], escort_actor: ["actor", "point", "radius", "vertical_radius"], destroy_targets: ["actors"], defeat_leader: ["member"], retrieve_item: ["item", "count"], hold_areas: ["points", "duration_ticks", "radius", "vertical_radius"] };
+      for (const objective of composition.objectives) {
+        if (!objective || typeof objective !== "object" || Array.isArray(objective) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(objective.id || "") || !fields[objective.type]) return issueDetail("Encounter objective", "a stable id and supported objective type", objective, "json-preview");
+        const unknown = Object.keys(objective).find((key) => !["id", "type", ...fields[objective.type]].includes(key));if (unknown) return issueDetail(`Encounter objective ${objective.id} field`, `a reachable field for ${objective.type}`, unknown, "json-preview");
+        const durationRequired = ["survive_duration", "protect_actor", "prevent_entry", "hold_areas"].includes(objective.type);if (durationRequired && (!Number.isInteger(objective.duration_ticks) || objective.duration_ticks < 1 || objective.duration_ticks > 1728000)) return issueDetail(`Encounter objective ${objective.id} duration`, "an integer from 1 to 1728000", objective.duration_ticks, "json-preview");
+        for (const key of ["radius", "vertical_radius"]) if (objective[key] !== undefined && (!Number.isInteger(objective[key]) || objective[key] < 1 || objective[key] > 64)) return issueDetail(`Encounter objective ${objective.id} ${key}`, "an integer from 1 to 64", objective[key], "json-preview");
+        if (["protect_actor", "escort_actor"].includes(objective.type) && !/^[a-z][a-z0-9_.-]{0,63}$/.test(objective.actor || "")) return issueDetail(`Encounter objective ${objective.id} actor`, "a stable scene actor alias", objective.actor, "json-preview");
+        if (["prevent_entry", "escort_actor"].includes(objective.type) && !pointIds.has(objective.point)) return issueDetail(`Encounter objective ${objective.id} point`, "an authored spawn point id", objective.point, "json-preview");
+        if (objective.type === "destroy_targets" && (!Array.isArray(objective.actors) || objective.actors.length < 1 || objective.actors.length > 32 || objective.actors.some((actor) => !/^[a-z][a-z0-9_.-]{0,63}$/.test(actor)) || firstDuplicate(objective.actors))) return issueDetail(`Encounter objective ${objective.id} actors`, "1-32 unique stable scene actor aliases", objective.actors, "json-preview");
+        if (objective.type === "defeat_leader" && !memberIds.has(objective.member)) return issueDetail(`Encounter objective ${objective.id} member`, "an authored member id", objective.member, "json-preview");
+        if (objective.type === "retrieve_item" && (!isValidResourceLocation(objective.item, { requireNamespace: true }) || (objective.count !== undefined && (!Number.isInteger(objective.count) || objective.count < 1 || objective.count > 64)))) return issueDetail(`Encounter objective ${objective.id} item`, "a namespaced item and count from 1 to 64", objective, "json-preview");
+        if (objective.type === "hold_areas" && (!Array.isArray(objective.points) || objective.points.length < 1 || objective.points.length > 16 || objective.points.some((point) => !pointIds.has(point)) || firstDuplicate(objective.points))) return issueDetail(`Encounter objective ${objective.id} points`, "1-16 unique authored spawn point ids", objective.points, "json-preview");
+      }
+    }
+    return null;
+  }
+
+  const actors = Array.isArray(resource.actors) ? resource.actors : [];
+  const steps = Array.isArray(resource.steps) ? resource.steps : [];
+  const aliases = actors.map((actor) => actor?.alias).filter(Boolean);
+  const stepIds = steps.map((step) => step?.id).filter(Boolean);
+  const duplicateAlias = firstDuplicate(aliases);
+  if (duplicateAlias) return issueDetail("Scene actor aliases", "unique aliases", duplicateAlias, "json-preview");
+  const duplicateStep = firstDuplicate(stepIds);
+  if (duplicateStep) return issueDetail("Scene step ids", "unique stable ids", duplicateStep, "json-preview");
+  if (!stepIds.includes(resource.entry_step)) return issueDetail("Scene entry step", "one of the authored stable step ids", resource.entry_step, "json-preview");
+  const actorTypeIds = questRegistryIdSet("actor_types", { includeAliases: true });
+  const badActorType = metadataStatusReady() && actorTypeIds.size > 0
+    ? actors.find((actor) => actor?.type && !actorTypeIds.has(actor.type))?.type
+    : "";
+  if (badActorType) return issueDetail("Scene actor type", `a registered actor type`, badActorType, "json-preview");
+  const stepTypeIds = questRegistryIdSet("scene_steps", { includeAliases: true });
+  const badStepType = metadataStatusReady() && stepTypeIds.size > 0
+    ? steps.find((step) => step?.type && !stepTypeIds.has(step.type))?.type
+    : "";
+  if (badStepType) return issueDetail("Scene step type", "a registered scene step type", badStepType, "json-preview");
+  const references = steps.flatMap((step) => [step?.next, step?.failure_step, ...Object.values(step?.transitions || {})]).filter(Boolean);
+  const missingReference = references.find((id) => !stepIds.includes(id));
+  return missingReference ? issueDetail("Scene transition", "an existing stable step id", missingReference, "json-preview") : null;
+}
+
+function metadataStatusReady() {
+  return questMetadataLoadStatus === "ready";
+}
+
 function firstQuestRegistryMiss(module, registry, keys) {
   if (questMetadataLoadStatus !== "ready") return "";
   const allowed = questRegistryIdSet(registry, { includeAliases: true });
@@ -4812,6 +4998,20 @@ function validate() {
   }
   if (state.quests.v1Imports.length > 0) {
     addCheck(checks, "info", "Quest migration", `${state.quests.v1Imports.length} legacy quest import${state.quests.v1Imports.length === 1 ? "" : "s"} preserved with migration suggestions.`);
+  }
+
+  for (const [path, source] of Object.entries(state.extraFiles)) {
+    if (!/^data\/[^/]+\/(?:quest_scenes|quest_encounters)\/.+\.json$/.test(path)) continue;
+    let resource;
+    try {
+      resource = JSON.parse(source);
+    } catch {
+      addCheck(checks, "error", "Scene resource JSON", `${path} is not valid JSON.`, { paths: [path] });
+      continue;
+    }
+    const detail = sceneResourceIssueDetail(path, resource);
+    if (!detail) continue;
+    addCheck(checks, detail.severity || "error", path.includes("/quest_scenes/") ? "Scene resource" : "Encounter resource", detail.message, { paths: [path] });
   }
 
   for (const entry of state.notifications.notifications) {

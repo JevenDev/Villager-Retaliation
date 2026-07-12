@@ -1,0 +1,25 @@
+{
+  "schema": "villagerretaliation:encounter/v1",
+  "id": "villagerretaliation:night_run_attack",
+  "version": 2,
+  "controller": "villagerretaliation:controlled",
+  "members": [
+    {
+      "entity": "minecraft:spider",
+      "count": 3
+    },
+    {
+      "entity": "minecraft:skeleton",
+      "count": 2
+    }
+  ],
+  "spawn_mode": "fixed",
+  "location_message": "The blocked night route is at {x}, {y}, {z}. Clear it before returning.",
+  "extra_per_player": 1,
+  "max_party_size": 4,
+  "placement_attempts": 24,
+  "spawn_radius": 12,
+  "respawn_policy": "missing_if_loaded",
+  "cleanup_policy": "remove_survivors",
+  "completion_condition": "all_defeated"
+}

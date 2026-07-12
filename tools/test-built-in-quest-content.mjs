@@ -6,6 +6,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataRoot = path.join(root, "neoforge", "src", "main", "resources", "data", "villagerretaliation");
 const questRoot = path.join(dataRoot, "quests");
 const lootRoot = path.join(dataRoot, "loot_table", "quest");
+const sceneRoot = path.join(dataRoot, "quest_scenes");
+const encounterRoot = path.join(dataRoot, "quest_encounters");
 
 const expectedExpansionRepeatables = new Set([
   "apiary_smoke",
@@ -34,11 +36,17 @@ const expectedBranchingQuestlines = new Set([
 
 const questFiles = await jsonFiles(questRoot);
 const lootFiles = await jsonFiles(lootRoot);
+const sceneFiles = await jsonFiles(sceneRoot);
+const encounterFiles = await jsonFiles(encounterRoot);
 const lootIds = new Set(lootFiles.map((file) => `villagerretaliation:quest/${withoutJson(path.relative(lootRoot, file))}`));
 const quests = new Map();
+const scenes = new Map();
+const encounters = new Map();
 const errors = [];
 let stageCount = 0;
 let choiceRouteCount = 0;
+let sceneReferenceCount = 0;
+const sceneQuestIds = new Set();
 
 for (const file of questFiles) {
   const data = await readJson(file);
@@ -48,6 +56,24 @@ for (const file of questFiles) {
   assert(typeof data.id === "string" && data.id.length > 0, file, "quest id is missing");
   assert(!quests.has(data.id), file, `duplicate quest id ${data.id}`);
   quests.set(data.id, { file, data });
+}
+
+for (const file of sceneFiles) {
+  const data = await readJson(file);
+  if (!data || typeof data !== "object") continue;
+  assert(data.schema === "villagerretaliation:scene/v1", file, "scene must use the scene/v1 schema");
+  assert(typeof data.id === "string" && data.id.length > 0, file, "scene id is missing");
+  assert(!scenes.has(data.id), file, `duplicate scene id ${data.id}`);
+  scenes.set(data.id, { file, data });
+}
+
+for (const file of encounterFiles) {
+  const data = await readJson(file);
+  if (!data || typeof data !== "object") continue;
+  assert(data.schema === "villagerretaliation:encounter/v1", file, "encounter must use the encounter/v1 schema");
+  assert(typeof data.id === "string" && data.id.length > 0, file, "encounter id is missing");
+  assert(!encounters.has(data.id), file, `duplicate encounter id ${data.id}`);
+  encounters.set(data.id, { file, data });
 }
 
 for (const { file, data } of quests.values()) {
@@ -79,6 +105,7 @@ validateExpansionRoster();
 validateExpansionBalance();
 validateBranchingQuestlines();
 validateUniqueExpansionMechanics();
+validateCinematicResources();
 
 if (errors.length > 0) {
   for (const error of errors) {
@@ -94,7 +121,8 @@ if (errors.length > 0) {
   console.log(
     `Built-in quest content passed: ${quests.size} quests, ${stageCount} v2 stages, `
       + `${repeatableCount} repeatables, ${choiceRouteCount} validated choice routes, `
-      + `${expectedBranchingQuestlines.size} new branching questlines.`
+      + `${expectedBranchingQuestlines.size} new branching questlines, `
+      + `${sceneQuestIds.size} quests with persistent scenes across ${sceneReferenceCount} launch points.`
   );
 }
 
@@ -323,6 +351,117 @@ function validateUniqueExpansionMechanics() {
     assert(!other, quest.file, `${id} duplicates the complete objective signature of ${other ?? "another quest"}`);
     signatures.set(signature, id);
   }
+}
+
+function validateCinematicResources() {
+  for (const { file, data } of quests.values()) {
+    walk(data, (node) => {
+      if (node.type !== "start_scene") return;
+      const sceneId = node.scene ?? node.scene_id ?? node.start_scene;
+      sceneReferenceCount++;
+      sceneQuestIds.add(data.id);
+      assert(typeof sceneId === "string" && sceneId.length > 0, file, "start_scene action has no scene id");
+      assert(scenes.has(sceneId), file, `start_scene action references missing scene ${sceneId}`);
+      assert(typeof node.operation_id === "string" && node.operation_id.length > 0, file,
+        `start_scene action for ${sceneId} has no stable operation_id`);
+    });
+  }
+
+  for (const { file, data } of scenes.values()) {
+    assert(typeof data.metadata?.quest === "string" && quests.has(data.metadata.quest), file,
+      `scene metadata references missing quest ${data.metadata?.quest}`);
+    const hasControlledEncounter = (data.steps ?? [])
+      .some((step) => step.type === "villagerretaliation:start_encounter");
+    if (hasControlledEncounter) {
+      const quest = quests.get(data.metadata?.quest)?.data;
+      assert(quest?.availability?.cross_villager_compatible === true, file,
+        "combat scene quest must allow a compatible replacement provider");
+      for (const provider of (data.actors ?? []).filter((actor) => actor.binding_source === "quest_provider")) {
+        assert(provider.required === false, file, `combat scene provider ${provider.alias} must be optional`);
+        assert(provider.replacement_policy === "compatible_replacement", file,
+          `combat scene provider ${provider.alias} must allow compatible replacement`);
+        assert(provider.missing_actor_policy === "skip", file,
+          `combat scene provider ${provider.alias} must let post-fight presentation skip after a casualty`);
+        assert(provider.death_policy === "continue_with_snapshot", file,
+          `combat scene provider ${provider.alias} must retain its encounter anchor after death`);
+      }
+    }
+    const actors = new Set();
+    for (const actor of data.actors ?? []) {
+      assert(typeof actor.alias === "string" && actor.alias.length > 0, file, "scene actor alias is missing");
+      assert(!actors.has(actor.alias), file, `scene repeats actor alias ${actor.alias}`);
+      actors.add(actor.alias);
+    }
+
+    const steps = new Map();
+    for (const step of data.steps ?? []) {
+      assert(typeof step.id === "string" && step.id.length > 0, file, "scene step id is missing");
+      assert(!steps.has(step.id), file, `scene repeats stable step id ${step.id}`);
+      steps.set(step.id, step);
+      for (const actor of step.actors ?? []) {
+        assert(actors.has(actor), file, `scene step ${step.id} references missing actor ${actor}`);
+      }
+      if (step.type === "villagerretaliation:start_encounter") {
+        const template = step.data?.template ?? step.data?.encounter_template;
+        const variants = step.data?.variants;assert((typeof template === "string") !== Array.isArray(variants), file, `scene step ${step.id} must define exactly one template or variants`);const references = Array.isArray(variants) ? variants.map((variant) => variant?.template) : [template];for (const reference of references) assert(encounters.has(reference), file, `scene step ${step.id} references missing encounter ${reference}`);
+      }
+      if (step.type === "villagerretaliation:action_batch") {
+        for (const action of step.data?.actions ?? []) {
+          assert(typeof action.id === "string" && action.id.length > 0, file,
+            `scene action batch ${step.id} contains an action without a stable id`);
+        }
+      }
+    }
+    assert(steps.has(data.entry_step), file, `scene entry step ${JSON.stringify(data.entry_step)} does not exist`);
+    for (const step of steps.values()) {
+      const targets = [step.next, step.failure_step, ...Object.values(step.transitions ?? {})]
+        .filter((target) => typeof target === "string" && target.length > 0);
+      for (const target of targets) {
+        assert(steps.has(target), file, `scene step ${step.id} transitions to missing step ${target}`);
+      }
+    }
+  }
+
+  for (const { file, data } of encounters.values()) {
+    const explicitWaves = Array.isArray(data.waves);
+    const explicitVariants = Array.isArray(data.variants);assert([explicitWaves,Array.isArray(data.members),explicitVariants].filter(Boolean).length===1, file, "encounter must define exactly one of members, waves, or variants");
+    if(explicitVariants){assert(data.variants.length>=1&&data.variants.length<=32,file,"encounter must have 1-32 variants");const ids=new Set();for(const variant of data.variants){assert(typeof variant.id==="string"&&/^[a-z][a-z0-9_.-]{0,63}$/.test(variant.id),file,"encounter variant has an invalid stable id");assert(!ids.has(variant.id),file,`encounter repeats variant id ${variant.id}`);ids.add(variant.id);assert(Number.isInteger(variant.weight??1)&&(variant.weight??1)>=1&&(variant.weight??1)<=10000,file,`encounter variant ${variant.id} has an unsafe weight`);assert(encounters.has(variant.template),file,`encounter variant ${variant.id} references missing template ${variant.template}`);}continue;}
+    if (explicitWaves) {
+      assert(data.waves.length >= 1 && data.waves.length <= 32, file, "encounter must have 1-32 authored waves");
+      const waveIds = new Set();
+      for (const wave of data.waves) {
+        assert(typeof wave.id === "string" && /^[a-z][a-z0-9_.-]{0,63}$/.test(wave.id), file, "encounter wave has an invalid stable id");
+        assert(!waveIds.has(wave.id), file, `encounter repeats wave id ${wave.id}`);waveIds.add(wave.id);
+        assert(Array.isArray(wave.members) && wave.members.length > 0, file, `encounter wave ${wave.id} has no members`);
+        assert(wave.delay_ticks === undefined || (Number.isInteger(wave.delay_ticks) && wave.delay_ticks >= 0 && wave.delay_ticks <= 12000), file, `encounter wave ${wave.id} has an unsafe delay`);
+        assert(wave.trigger === undefined || ["all_defeated", "timer"].includes(wave.trigger), file, `encounter wave ${wave.id} has an unknown trigger`);
+      }
+    }
+    for (const member of explicitWaves ? data.waves.flatMap((wave) => wave.members ?? []) : data.members ?? []) {
+      assert(typeof member.entity === "string" && member.entity.length > 0, file, "encounter member entity is missing");
+      assert(Number(member.count ?? 1) > 0, file, `encounter member ${member.entity} has a non-positive count`);
+      assert(member.custom_name === undefined || (typeof member.custom_name === "string" && member.custom_name.length >= 1 && member.custom_name.length <= 128), file, `encounter member ${member.entity} has an invalid custom name`);
+      assert(member.name_visible !== true || typeof member.custom_name === "string", file, `encounter member ${member.entity} exposes a missing custom name`);
+      assert((member.boss_bar_color === undefined && member.boss_bar_overlay === undefined) || member.boss === true, file, `encounter member ${member.entity} has unreachable boss-bar presentation`);
+      const bounds = { health: [1, 2048], movement_speed: [0, 4], attack_damage: [0, 2048], armor: [0, 30], knockback_resistance: [0, 1] };
+      for (const [field, [minimum, maximum]] of Object.entries(bounds)) assert(member[field] === undefined || (Number.isFinite(member[field]) && member[field] >= minimum && member[field] <= maximum), file, `encounter member ${member.entity} has unsafe ${field}`);
+      const attributeBounds = { "minecraft:max_health": [1, 2048], "minecraft:movement_speed": [0, 4], "minecraft:attack_damage": [0, 2048], "minecraft:armor": [0, 30], "minecraft:knockback_resistance": [0, 1] };
+      for (const [id, value] of Object.entries(member.attributes ?? {})) { assert(Object.hasOwn(attributeBounds, id), file, `encounter member ${member.entity} has unsafe attribute ${id}`);if (Object.hasOwn(attributeBounds, id)) { const [minimum, maximum] = attributeBounds[id];assert(Number.isFinite(value) && value >= minimum && value <= maximum, file, `encounter member ${member.entity} has out-of-range attribute ${id}`); } }
+    }
+    if (data.area !== undefined) {
+      assert(data.area && typeof data.area === "object" && !Array.isArray(data.area), file, "encounter area must be an object");
+      assert(Number.isInteger(data.area?.radius) && data.area.radius >= 1 && data.area.radius <= 256, file, "encounter area radius must be from 1 to 256");
+      assert(data.area?.vertical_radius === undefined || (Number.isInteger(data.area.vertical_radius) && data.area.vertical_radius >= 1 && data.area.vertical_radius <= 128), file, "encounter area vertical radius must be from 1 to 128");
+      assert(data.area?.leave_behavior === undefined || ["ignore", "warn", "pause", "fail"].includes(data.area.leave_behavior), file, "encounter area has an unknown leave behavior");
+      assert(data.area?.mob_behavior === undefined || ["ignore", "return", "teleport"].includes(data.area.mob_behavior), file, "encounter area has an unknown mob behavior");
+      for (const key of ["leave_timeout_ticks", "mob_timeout_ticks"]) assert(data.area?.[key] === undefined || (Number.isInteger(data.area[key]) && data.area[key] >= 1 && data.area[key] <= 12000), file, `encounter area ${key} must be from 1 to 12000`);
+      assert(data.area?.mob_timeout_ticks === undefined || data.area.mob_behavior === "teleport", file, "encounter mob timeout requires teleport behavior");
+    }
+    if(data.environment!==undefined){const cues=data.environment?.cues??[],blocks=data.environment?.temporary_blocks??[];assert(Array.isArray(cues)&&cues.length<=32&&Array.isArray(blocks)&&blocks.length<=64&&cues.length+blocks.length>0,file,"encounter environment exceeds bounded limits");const ids=new Set();for(const effect of [...cues,...blocks]){assert(typeof effect.id==="string"&&!ids.has(effect.id),file,`encounter repeats environment effect ${effect.id}`);ids.add(effect.id);}const safe=new Set(["minecraft:barrier","minecraft:light","minecraft:structure_void","minecraft:glass"]);for(const block of blocks)assert(safe.has(block.block),file,`encounter temporary block ${block.id} is not allowlisted`);}
+    if(data.guidance!==undefined){const guidance=data.guidance,discovery=guidance?.discovery_radius??64,arrival=guidance?.arrival_radius??8,interval=guidance?.update_interval_ticks??20;assert(guidance&&typeof guidance==="object"&&!Array.isArray(guidance),file,"encounter guidance must be an object");assert(Number.isInteger(discovery)&&discovery>=1&&discovery<=512,file,"encounter guidance discovery radius is unsafe");assert(Number.isInteger(arrival)&&arrival>=1&&arrival<=64&&arrival<=discovery,file,"encounter guidance arrival radius is unsafe");assert(Number.isInteger(interval)&&interval>=10&&interval<=200,file,"encounter guidance interval is unsafe");assert(guidance.exact_coordinates===undefined||["always","after_discovery","never"].includes(guidance.exact_coordinates),file,"encounter exact-coordinate policy is unknown");}
+    if(data.rewards!==undefined){const rewards=data.rewards;assert(rewards&&typeof rewards==="object"&&!Array.isArray(rewards)&&Object.keys(rewards).length>0,file,"encounter rewards must be a non-empty object");const ids=new Set(),waveIds=new Set(explicitWaves?data.waves.map((wave)=>wave.id):Array.from({length:data.wave_count||1},(_,index)=>`repeat_${index+1}`)),phaseIds=new Set((data.phases??[]).map((phase)=>phase.id)),memberIds=new Set((explicitWaves?data.waves.flatMap((wave)=>wave.members??[]):data.members??[]).map((member)=>member.id).filter(Boolean));let total=0;for(const [key,target,known] of [["waves","wave",waveIds],["phases","phase",phaseIds],["completion","",null]]){const list=rewards[key]??[];assert(Array.isArray(list)&&list.length<=32,file,`encounter ${key} rewards exceed limits`);total+=list.length;for(const reward of list){assert(typeof reward.id==="string"&&!ids.has(reward.id),file,`encounter repeats reward ${reward.id}`);ids.add(reward.id);assert(!target||known.has(reward[target]),file,`encounter reward ${reward.id} references unknown ${target}`);assert((typeof reward.item==="string")!==(typeof reward.loot_table==="string"),file,`encounter reward ${reward.id} needs one item or loot table`);assert(reward.count===undefined||(Number.isInteger(reward.count)&&reward.count>=1&&reward.count<=64),file,`encounter reward ${reward.id} has unsafe count`);}}assert(total<=64,file,"encounter has more than 64 triggered rewards");const trophies=rewards.trophies??[];assert(Array.isArray(trophies)&&trophies.length<=32,file,"encounter trophies exceed limits");for(const trophy of trophies){assert(typeof trophy.id==="string"&&!ids.has(trophy.id),file,`encounter repeats trophy ${trophy.id}`);ids.add(trophy.id);assert(memberIds.has(trophy.member),file,`encounter trophy ${trophy.id} references unknown member`);}assert(rewards.drop_policy===undefined||["normal","suppress","authored_only","trophy_only"].includes(rewards.drop_policy),file,"encounter drop policy is unknown");assert(rewards.drop_policy!=="trophy_only"||trophies.length>0,file,"trophy_only encounter needs trophies");}
+  }
+  const visitVariant=(id,path=[])=>{const entry=encounters.get(id);if(!entry||!Array.isArray(entry.data.variants))return;assert(!path.includes(id),entry.file,`recursive encounter variant reference ${[...path,id].join(" -> ")}`);assert(path.length<32,entry.file,"encounter variant chain exceeds 32 selectors");for(const variant of entry.data.variants)visitVariant(variant.template,[...path,id]);};for(const id of encounters.keys())visitVariant(id);
 }
 
 function objectiveSignature(objective) {

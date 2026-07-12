@@ -1,0 +1,102 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "villagerretaliation:trial_chamber_briefing",
+  "definition_version": 1,
+  "metadata": {
+    "title": "Trial Chamber briefing",
+    "quest": "villagerretaliation:trial_chamber_recall"
+  },
+  "ownership": "quest_instance",
+  "entry_step": "face_explorer",
+  "timeout_ticks": 1200,
+  "failure_policy": "block_for_repair",
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "none",
+  "actors": [
+    {
+      "alias": "player",
+      "type": "villagerretaliation:player",
+      "required": true,
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "binding_source": "owner_player",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "wait_until_timeout",
+      "death_policy": "block",
+      "timeout_ticks": 600
+    },
+    {
+      "alias": "surveyor",
+      "type": "villagerretaliation:villager",
+      "required": true,
+      "capabilities": [
+        "villagerretaliation:capability/dialogue",
+        "villagerretaliation:capability/living"
+      ],
+      "binding_source": "quest_provider",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "wait_until_timeout",
+      "death_policy": "continue_with_snapshot",
+      "timeout_ticks": 600
+    }
+  ],
+  "steps": [
+    {
+      "id": "face_explorer",
+      "type": "villagerretaliation:face_actor",
+      "actors": [
+        "surveyor",
+        "player"
+      ],
+      "data": {
+        "actor": "surveyor",
+        "target_actor": "player"
+      },
+      "next": "read_the_mark",
+      "failure_step": "failed"
+    },
+    {
+      "id": "read_the_mark",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "surveyor"
+      ],
+      "data": {
+        "text": "Copper and tuff mark the chamber, but the wind inside it is the part that hunts back.",
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20
+      },
+      "next": "check_the_map",
+      "failure_step": "failed"
+    },
+    {
+      "id": "check_the_map",
+      "type": "villagerretaliation:wait_ticks",
+      "data": {
+        "ticks": 40
+      },
+      "next": "name_the_proof"
+    },
+    {
+      "id": "name_the_proof",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "surveyor"
+      ],
+      "data": {
+        "text": "Return with a Trial Key and a Breeze Rod. Both will be consumed when the survey is closed."
+      },
+      "next": "completed",
+      "failure_step": "failed"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ]
+}

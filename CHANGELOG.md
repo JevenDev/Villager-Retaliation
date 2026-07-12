@@ -1,5 +1,21 @@
 # Changelog
 
+- Added receipt-guarded per-wave, phase, and completion encounter rewards, named trophy items, validated loot-table grants, and retry-safe normal/suppress/authored-only/trophy-only mob drop policies.
+- Added participant-only, dimension-aware encounter navigation with coordinate privacy, durable discovery and arrival, distance and compass tracker values, temporary HUD markers, directional particles, and terminal cleanup.
+- Added bounded encounter-owned environmental cues and temporary blocks, including participant sounds/music, particles, glowing columns, persisted block ownership, reload-safe reconciliation, and cleanup that never overwrites later player edits.
+- Added deterministic weighted encounter variants on selector templates and `start_encounter` steps, with persisted seeds, selected IDs, resolved templates, recursive-reference diagnostics, scene branches, tracker placeholders, and operator inspection.
+- Added datapack-authored encounter failure handling for player or protected-actor death, with bounded fail, wave reset, full restart, timed pause, and receipt-guarded scene-branch actions plus durable attempts, deadlines, and retained progress.
+- Added controlled encounter allies from entity definitions or bound scene actors, with separate durable identity, survival, invulnerability, revival, replacement, completion-gating, targeting, and cleanup policies.
+- Added composable `all`/`any` encounter completion objectives for survival, protection, entry defense, escorts, target destruction, leader defeats, item retrieval, area control, and legacy enemy-clear conditions, with durable tracker and operator state.
+- Added durable mid-fight encounter phases triggered by waves, remaining enemy percentage, elapsed time, or named elite defeats, with receipt-guarded notifications, dialogue, fact sets, and scene transitions.
+- Added named encounter spawn points sourced from scene actors, marker aliases, or explicit coordinates, with durable random, sequential, weighted, participant-distance, and member-group selection.
+- Added allowlisted elite and boss encounter members with safe names, visibility, glow, persistence, bounded combat attributes, correct post-initialization health, and participant-only reload-safe boss bars.
+- Added explicit raid-wave compositions with stable wave IDs, per-wave members, delays, triggers, boss-bar titles, equipment defaults, and durable participant hooks while retaining `members` plus `wave_count` shorthand.
+- Added optional, durable encounter areas with bounded horizontal and vertical radii, participant `ignore`, `warn`, `pause`, and `fail` leave policies, and owned-mob `ignore`, `return`, and timed `teleport` policies.
+- Added datapack-authored encounter equipment, enchantments, drop chances, and `group`, `near_player`, `fixed`, and persistent `raid_waves` spawn modes.
+- Added participant-only raid-wave boss bars, enabled by default and configurable with the encounter template's `boss_bar` field.
+- Updated Standing Watch into a two-wave village defense, moved Night Run's attack to a surfaced destination away from its quest giver, and made the remaining built-in encounter placement modes explicit.
+
 ## Unreleased
 
 ### Added
@@ -11,6 +27,7 @@
 
 ### Changed
 
+- Upgraded ten built-in quests with persistent scenes. Standing Watch, The Night Ward, The Night Run, and The Atlas Test's risky route now use controlled cleanup-safe encounters; Choose the Horizon, Choose a Road, and Choose a Star use choice-aware scene branches; and Trial Chamber Recall, House of Ill Omens, and After the Roar receive durable cinematic briefings.
 - Rewrote the remaining built-in v1 quests as self-contained quest module v2 resources while keeping their stable quest IDs, rewards, provider requirements, completion triggers, and saved quest identity.
 - Replaced repeated template dialogue with concise, Minecraft-specific offer, acceptance, reminder, decline, abandonment, and turn-in variations.
 - Rebalanced Trial Chamber Recall to consume its Trial Key and Breeze Rod, reduced its excessive repeat payout, and made every structure/proof requirement explicit in the quest stages.
@@ -20,6 +37,9 @@
 
 ### Fixed
 
+- Fixed controlled quest scenes becoming operator-blocked or leaving provider-locked quests stranded when the issuing villager died during the authored attack. Combat scenes now retain their saved anchor, skip unavailable presentation safely, and allow a compatible quest giver to finish the work.
+- Fixed `start_scene` actions rejecting the documented `scene` field even though the quest authoring tools and example pack emit it.
+- Fixed provider-bound abandonment and expiration hooks being lost when their issuing villager was unavailable. Deferred lifecycle events now survive saves and replay once after provider return or an audited compatible rebind.
 - Fixed Bread Delivery, Village Lanterns, and Trial Chamber Recall allowing repeat turn-ins without consuming their required items.
 - Fixed End City Survey lacking a parent link to Lost Civilization.
 - Fixed the dialogue validator rejecting the live work-status placeholders `{cap}` and `{types}`.

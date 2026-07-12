@@ -32,6 +32,9 @@ public record VillagerActionDefinition(
         String factValue,
         Map<String, List<String>> linesByStatus,
         CompiledQuestTransition questTransition,
+        ResourceLocation sceneId,
+        String sceneOperationId,
+        boolean waitForScene,
         boolean required) {
     public VillagerActionDefinition {
         kind = kind == null ? Kind.NONE : kind;
@@ -44,6 +47,7 @@ public record VillagerActionDefinition(
         factValue = factValue == null ? "" : factValue;
         linesByStatus = linesByStatus == null ? Map.of() : copyLines(linesByStatus);
         questTransition = questTransition == null ? CompiledQuestTransition.EMPTY : questTransition;
+        sceneOperationId = sceneOperationId == null ? "" : sceneOperationId.trim();
     }
 
     public static List<VillagerActionDefinition> readList(ResourceLocation location, String context, JsonObject entry) {
@@ -118,6 +122,8 @@ public record VillagerActionDefinition(
                 || entry.has("target_stage")
                 || entry.has("from_stage")
                 || entry.has("scene_path")
+                || entry.has("scene_id")
+                || entry.has("start_scene")
                 || entry.has("source_pointer");
     }
 
@@ -134,7 +140,7 @@ public record VillagerActionDefinition(
 
         boolean hasExplicitQuestId = hasQuestIdField(entry);
         ResourceLocation questId = readQuestId(location, entry);
-        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind.isQuestFact()) && !hasExplicitQuestId) {
+        if (questId == null && (kind == Kind.QUEST || kind == Kind.QUEST_TRANSITION || kind == Kind.START_SCENE || kind.isQuestFact()) && !hasExplicitQuestId) {
             questId = defaultQuestId;
         }
         QuestAction questAction = QuestAction.bySerializedName(
@@ -155,6 +161,9 @@ public record VillagerActionDefinition(
         CompiledQuestTransition questTransition = kind == Kind.QUEST_TRANSITION
                 ? CompiledQuestTransition.read(location, entry, questId)
                 : CompiledQuestTransition.EMPTY;
+        ResourceLocation sceneId = kind == Kind.START_SCENE ? readSceneId(location, entry) : null;
+        String sceneOperationId = DatapackJsonReader.readString(entry, "operation_id", "scene_operation_id");
+        boolean waitForScene = DatapackJsonReader.readBoolean(entry, "wait_for_result", false);
         boolean required = DatapackJsonReader.readBoolean(entry, "required", false);
 
         if (!hasRequiredFields(
@@ -171,7 +180,9 @@ public record VillagerActionDefinition(
                 factTag,
                 factKey,
                 factValue,
-                questTransition)) {
+                questTransition,
+                sceneId,
+                sceneOperationId)) {
             return java.util.Optional.empty();
         }
         return java.util.Optional.of(new VillagerActionDefinition(
@@ -191,6 +202,9 @@ public record VillagerActionDefinition(
                 factValue,
                 readLinesByStatus(entry),
                 questTransition,
+                sceneId,
+                sceneOperationId,
+                waitForScene,
                 required));
     }
 
@@ -213,6 +227,9 @@ public record VillagerActionDefinition(
         }
         if (entry.has("target_stage") || entry.has("from_stage") || entry.has("scene_path") || entry.has("source_pointer")) {
             return Kind.QUEST_TRANSITION;
+        }
+        if (entry.has("scene_id") || entry.has("start_scene")) {
+            return Kind.START_SCENE;
         }
         if (entry.has("counter") || entry.has("increment_counter")) {
             return Kind.COUNTER;
@@ -301,7 +318,9 @@ public record VillagerActionDefinition(
             ResourceLocation factTag,
             String factKey,
             String factValue,
-            CompiledQuestTransition questTransition) {
+            CompiledQuestTransition questTransition,
+            ResourceLocation sceneId,
+            String sceneOperationId) {
         boolean valid = switch (kind) {
             case QUEST -> questId != null && questAction != QuestAction.NONE;
             case QUEST_TRANSITION -> questTransition != null && !questTransition.isEmpty();
@@ -312,6 +331,7 @@ public record VillagerActionDefinition(
             case SET_TAG, CLEAR_TAG -> factTag != null;
             case SET_VARIABLE -> !factKey.isBlank() && !factValue.isBlank();
             case COUNTER -> !factKey.isBlank();
+            case START_SCENE -> sceneId != null && !sceneOperationId.isBlank();
             case TRACKER, EXPERIENCE, REPUTATION, GOSSIP -> true;
             case NONE -> false;
         };
@@ -319,6 +339,19 @@ public record VillagerActionDefinition(
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "action is missing required fields for type \"" + kind.serializedName() + "\".");
         }
         return valid;
+    }
+
+    private static ResourceLocation readSceneId(ResourceLocation location, JsonObject entry) {
+        String value = firstNonBlank(DatapackJsonReader.readString(entry, "scene_id"),
+                firstNonBlank(DatapackJsonReader.readString(entry, "scene"),
+                        DatapackJsonReader.readString(entry, "start_scene")));
+        if (value.isBlank()) return null;
+        ResourceLocation parsed = value.contains(":") ? ResourceLocation.tryParse(value)
+                : ResourceLocation.fromNamespaceAndPath(location.getNamespace(), value);
+        if (parsed == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(location, "scene action", "invalid scene id \"" + value + "\"");
+        }
+        return parsed;
     }
 
     private static ResourceLocation readMemoryTag(ResourceLocation location, String context, JsonObject entry) {
@@ -469,7 +502,8 @@ public record VillagerActionDefinition(
         SET_TAG("set_tag"),
         CLEAR_TAG("clear_tag"),
         SET_VARIABLE("set_variable"),
-        COUNTER("counter");
+        COUNTER("counter"),
+        START_SCENE("start_scene");
 
         private final String serializedName;
 
@@ -495,6 +529,7 @@ public record VillagerActionDefinition(
         START,
         REMIND,
         TURN_IN,
+        FAIL,
         ABANDON,
         BLOCK;
 
@@ -504,6 +539,7 @@ public record VillagerActionDefinition(
                 case "start", "accept", "begin" -> START;
                 case "remind", "reminder", "details" -> REMIND;
                 case "turn_in", "turnin", "complete", "claim" -> TURN_IN;
+                case "fail", "failed" -> FAIL;
                 case "abandon", "drop", "cancel", "remove" -> ABANDON;
                 case "block", "lock", "consume", "close", "close_branch", "branch_lock" -> BLOCK;
                 default -> NONE;

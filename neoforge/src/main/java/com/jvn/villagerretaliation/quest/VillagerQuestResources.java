@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.quest;
 
+import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
+
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveEventKind;
 import com.google.gson.JsonElement;
@@ -247,6 +249,7 @@ public final class VillagerQuestResources {
     }
 
     private static CachedQuests loadCache(MinecraftServer server) {
+        VillagerRetaliationRegistries.freezeForDatapackCompilation();
         CachedQuests current = cachedQuests;
         if (current.server() == server) {
             return current;
@@ -385,10 +388,32 @@ public final class VillagerQuestResources {
             }
             readFile(resource, quests, compiledQuests, sources, replacementMode);
         }
+        validatePrerequisiteReferences(quests, compiledQuests);
         return new LoadedQuestCatalog(
                 freezeOrderedResourceMap(quests),
                 new CompiledQuestCatalog(compiledQuests),
                 QuestDialogueCatalog.merge(dialogueCatalogs));
+    }
+
+    private static void validatePrerequisiteReferences(
+            Map<ResourceLocation, QuestDefinition> quests,
+            Map<ResourceLocation, CompiledQuest> compiledQuests) {
+        for (CompiledQuest quest : compiledQuests.values()) {
+            if (quest.schemaVersion() != QuestSchemaVersion.V2) {
+                continue;
+            }
+            for (int index = 0; index < quest.prerequisites().size(); index++) {
+                ResourceLocation prerequisite = quest.prerequisites().get(index);
+                if (!quests.containsKey(prerequisite)) {
+                    DatapackDiagnostics.warnQuestV2Validation(
+                            quest.source().resource(),
+                            "/availability/prerequisites/" + index,
+                            "prerequisite quest id \"" + prerequisite + "\" does not exist.",
+                            "Declare the referenced quest or remove it from availability.prerequisites.",
+                            Set.of(quest.id().toString(), prerequisite.toString()));
+                }
+            }
+        }
     }
 
     private static void readFile(
@@ -486,6 +511,7 @@ public final class VillagerQuestResources {
         String titleKey = display == null ? "" : DatapackJsonReader.readString(display, "title_key");
         String descriptionKey = display == null ? "" : DatapackJsonReader.readString(display, "description_key");
         ResourceLocation parent = DatapackJsonReader.readResourceLocation(root, "parent").orElse(null);
+        List<ResourceLocation> prerequisites = readQuestPrerequisites(root, parent);
 
         return new QuestDefinition(
                 id,
@@ -496,12 +522,14 @@ public final class VillagerQuestResources {
                 firstNonBlank(DatapackJsonReader.readString(root, "questline"), inferQuestline(location)),
                 readQuestTags(root),
                 parent,
+                prerequisites,
                 DatapackJsonReader.readBoolean(root, "show_locked_adventure_hint", true),
                 readOffer(location, root, id),
                 readTarget(root),
                 readObjectives(location, root, id),
                 readRules(location, root, id),
                 readTracker(root),
+                DatapackJsonReader.readString(root, "entry_stage"),
                 readStages(location, root, id),
                 readTriggers(location, root, id),
                 readRewards(root),
@@ -509,6 +537,17 @@ public final class VillagerQuestResources {
                 DialogueEntryMetadata.read(location, "quest", "quest", root),
                 readLinks(root)
         );
+    }
+
+    private static List<ResourceLocation> readQuestPrerequisites(JsonObject root, ResourceLocation parent) {
+        List<ResourceLocation> prerequisites = new ArrayList<>();
+        for (String value : DatapackJsonReader.readStringList(root, "prerequisites")) {
+            DatapackJsonReader.parseResourceLocation(value).ifPresent(prerequisites::add);
+        }
+        if (prerequisites.isEmpty() && parent != null) {
+            prerequisites.add(parent);
+        }
+        return List.copyOf(prerequisites);
     }
 
     private static Set<String> readQuestTags(JsonObject root) {

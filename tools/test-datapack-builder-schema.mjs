@@ -129,6 +129,7 @@ globalThis.__test = {
   dialoguePathInfo,
   applyEditedFile,
   ingestKnownJson,
+  sceneResourceIssueDetail,
   validate,
   dialogueFolderTemplateFiles,
   get dialogueTypes() { return CONSTANTS.dialogueTypes; }
@@ -355,6 +356,89 @@ function testBackendPathNormalization(app) {
   assert(Object.hasOwn(questNamespaceRoot, "data/villagerretaliation/quests/example/errand.json"), "Namespace-root quest import was not lifted under data/.");
 }
 
+function testSceneResourceRoundTrip(app) {
+  app.state = app.createInitialState();
+  const scenePath = "data/storypack/quest_scenes/gate_ambush.json";
+  const encounterPath = "data/storypack/quest_encounters/gate_ambush.json";
+  const scene = {
+    schema: "villagerretaliation:scene/v1",
+    id: "storypack:gate_ambush",
+    ownership: "player",
+    entry_step: "wait",
+    actors: [],
+    steps: [{ id: "wait", type: "villagerretaliation:wait_ticks", data: { ticks: 20 }, next: "done" }, { id: "done", type: "villagerretaliation:scene_complete" }]
+  };
+  const encounter = {
+    schema: "villagerretaliation:encounter/v1",
+    id: "storypack:gate_ambush",
+    spawn_mode: "raid_waves",
+    waves: [
+      { id: "scouts", members: [{ entity: "minecraft:zombie", count: 2 }], boss_bar_title: "Scouts" },
+      { id: "captain", members: [{ id: "gate_captain", entity: "minecraft:pillager", custom_name: "Gate Captain", name_visible: true, health: 40, attributes: { "minecraft:armor": 10 }, boss: true, boss_bar_color: "purple", boss_bar_overlay: "notched_10" }], delay_ticks: 80, trigger: "all_defeated", equipment: { mainhand: { item: "minecraft:crossbow" } }, dialogue_hook: { id: "arrival", text: "Captain incoming." } }
+    ],
+    spawn_points: [
+      { id: "west_gate", marker: "west_marker", offset_x: -2, weight: 3 },
+      { id: "east_gate", x: 12, y: 64, z: 8, dimension: "minecraft:overworld" }
+    ],
+    spawn_selection: "weighted",
+    allies: [
+      { id: "gate_guard", entity: "minecraft:iron_golem", revivable: true, revive_delay_ticks: 100, replacement_policy: "missing_if_loaded", cleanup_policy: "preserve", affects_completion: true },
+      { id: "captain_ally", actor: "captain_mara", invulnerable: true, cleanup_policy: "preserve" }
+    ],
+    phases: [
+      { id: "captain_arrives", trigger: { type: "wave_started", wave: "captain" }, actions: [{ id: "warn", type: "notification", text: "Captain incoming." }] },
+      { id: "captain_falls", trigger: { type: "elite_defeated", member: "gate_captain" }, actions: [{ id: "remember", type: "fact", scope: "player", tag: "storypack:captain_defeated" }] }
+    ],
+    failure: { on_player_death: "reset_wave", on_protected_actor_death: "branch_scene", retry_delay_ticks: 20, max_attempts: 3, retain_defeated: false, branch_step: "done" },
+    environment: { cues: [{ id: "alarm", type: "sound", sound: "minecraft:block.bell.use", volume: 1, pitch: 0.8 }, { id: "column", type: "glowing_column", particle: "minecraft:end_rod", count: 24, height: 8 }], temporary_blocks: [{ id: "gate_light", block: "minecraft:light", offset_y: 3 }] },
+    guidance: { coordinate_message: "Find {location}.", arrival_message: "Arrived at {coordinates}.", discovery_radius: 64, arrival_radius: 8, distance_tracker: true, compass_target: true, directional_particles: true, hud_marker: true, exact_coordinates: "after_discovery", update_interval_ticks: 20 },
+    rewards: { waves: [{ id: "captain_supply", wave: "captain", item: "minecraft:arrow", count: 4 }], phases: [{ id: "captain_token", phase: "captain_falls", item: "minecraft:iron_nugget" }], completion: [{ id: "medal", item: "minecraft:emerald", trophy_name: "Gate Medal" }], trophies: [{ id: "badge", member: "gate_captain", item: "minecraft:gold_nugget", name: "Captain Badge" }], drop_policy: "trophy_only" },
+    completion_objectives: { mode: "all", objectives: [{ id: "clear", type: "all_defeated" }, { id: "leader", type: "defeat_leader", member: "gate_captain" }] },
+    area: { radius: 32, vertical_radius: 16, leave_behavior: "warn", leave_timeout_ticks: 200, mob_behavior: "return" }
+  };
+  assert(app.ingestKnownJson(scenePath, JSON.stringify(scene)), "Scene resource import failed.");
+  assert(app.ingestKnownJson(encounterPath, JSON.stringify(encounter)), "Encounter resource import failed.");
+  assert(app.backend.importedKnownKind(app.state, scenePath) === "quest_scenes", "Scene resource kind was not detected.");
+  assert(app.backend.importedKnownKind(app.state, encounterPath) === "quest_encounters", "Encounter resource kind was not detected.");
+  const files = app.generatedFiles();
+  assert(JSON.stringify(jsonFile(files, scenePath)) === JSON.stringify(scene), "Scene resource changed during export.");
+  assert(JSON.stringify(jsonFile(files, encounterPath)) === JSON.stringify(encounter), "Encounter resource changed during export.");
+  assert(!app.applyEditedFile(scenePath, JSON.stringify({ ...scene, schema: "wrong" })), "Invalid scene schema edit was accepted.");
+  const invalidArea = { ...encounter, area: { radius: 0, leave_behavior: "wander" } };
+  const invalidAreaDetail = app.sceneResourceIssueDetail(encounterPath, invalidArea);
+  assert(/area radius/i.test(invalidAreaDetail?.message || ""), `Invalid encounter area was not diagnosed (${invalidAreaDetail?.message || "no diagnostic"}).`);
+  const invalidWaves = { ...encounter, members: [{ entity: "minecraft:zombie" }] };
+  assert(/exactly one of members, waves, or variants/i.test(app.sceneResourceIssueDetail(encounterPath, invalidWaves)?.message || ""), "Incompatible encounter wave forms were not diagnosed.");
+  const invalidElite = structuredClone(encounter);invalidElite.waves[1].members[0].attributes = { "example:unsafe": 2 };
+  assert(/allowlisted attribute id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidElite)?.message || ""), "Unsafe elite attribute was not diagnosed.");
+  const invalidPoints = structuredClone(encounter);invalidPoints.spawn_points = [{ id: "bad", actor: "guide", x: 1, weight: 0 }];
+  assert(/exactly one actor, marker, or complete x\/y\/z source/i.test(app.sceneResourceIssueDetail(encounterPath, invalidPoints)?.message || ""), "Invalid authored spawn point was not diagnosed.");
+  const invalidSelection = structuredClone(encounter);delete invalidSelection.spawn_points;
+  assert(/non-empty spawn_points array/i.test(app.sceneResourceIssueDetail(encounterPath, invalidSelection)?.message || ""), "Spawn selection without points was not diagnosed.");
+  const invalidPhase = structuredClone(encounter);delete invalidPhase.rewards;invalidPhase.phases = [{ id: "bad", trigger: { type: "wave_started", wave: "missing", ticks: 4 }, repeatable: true, actions: [{ id: "branch", type: "transition", target: "done" }] }];
+  assert(/trigger field|authored wave id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidPhase)?.message || ""), "Invalid encounter phase was not diagnosed.");
+  const invalidObjectives = structuredClone(encounter);invalidObjectives.completion_objectives.objectives[1].member = "missing";
+  assert(/authored member id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidObjectives)?.message || ""), "Invalid encounter objective was not diagnosed.");
+  const invalidAlly = structuredClone(encounter);invalidAlly.allies[0].actor = "captain_mara";
+  assert(/exactly one entity or bound actor/i.test(app.sceneResourceIssueDetail(encounterPath, invalidAlly)?.message || ""), "Invalid controlled ally was not diagnosed.");
+  const invalidFailure = structuredClone(encounter);invalidFailure.failure.on_player_death = "branch_scene";delete invalidFailure.failure.branch_step;
+  assert(/branch_step/i.test(app.sceneResourceIssueDetail(encounterPath, invalidFailure)?.message || ""), "Invalid encounter failure branch was not diagnosed.");
+  const invalidEnvironment = structuredClone(encounter);invalidEnvironment.environment.temporary_blocks[0].block = "minecraft:diamond_block";
+  assert(/temporary block/i.test(app.sceneResourceIssueDetail(encounterPath, invalidEnvironment)?.message || ""), "Unsafe encounter environment block was not diagnosed.");
+  const invalidGuidance = structuredClone(encounter);invalidGuidance.guidance.arrival_radius = 65;invalidGuidance.guidance.discovery_radius = 4;
+  assert(/guidance radii/i.test(app.sceneResourceIssueDetail(encounterPath, invalidGuidance)?.message || ""), "Unsafe encounter guidance radii were not diagnosed.");
+  const invalidRewards = structuredClone(encounter);invalidRewards.rewards.waves[0].wave = "missing";invalidRewards.rewards.completion[0].loot_table = "storypack:duplicate";
+  assert(/reward/i.test(app.sceneResourceIssueDetail(encounterPath, invalidRewards)?.message || ""), "Unsafe encounter rewards were not diagnosed.");
+  const selector = { schema: "villagerretaliation:encounter/v1", id: "storypack:roadblock_variants", variants: [{ id: "zombies", weight: 3, template: "storypack:zombies" }, { id: "skeletons", weight: 2, template: "storypack:skeletons" }] };
+  assert(app.sceneResourceIssueDetail(encounterPath, selector) === null, "Valid encounter variant selector was rejected.");
+  const invalidVariant = structuredClone(selector);invalidVariant.variants[1].id = "zombies";invalidVariant.variants[1].weight = 0;
+  assert(/variant/i.test(app.sceneResourceIssueDetail(encounterPath, invalidVariant)?.message || ""), "Invalid encounter variants were not diagnosed.");
+  const variantScene = structuredClone(scene);variantScene.steps[0] = { id: "wait", type: "villagerretaliation:start_encounter", data: { variants: selector.variants, x: 0, y: 64, z: 0 }, next: "done" };
+  assert(app.sceneResourceIssueDetail(scenePath, variantScene) === null, "Valid start_encounter variants were rejected.");
+  variantScene.steps[0].data.template = "storypack:zombies";
+  assert(/exactly one template or variants/i.test(app.sceneResourceIssueDetail(scenePath, variantScene)?.message || ""), "Incompatible start_encounter variant sources were not diagnosed.");
+}
+
 const app = createAppHarness();
 testTypedFolderOutput(app);
 testTypedImportAndProfessionDefaults(app);
@@ -366,5 +450,6 @@ testCheckedInTemplateMatchesBuilder(app);
 testAllSurfaceGeneration(app);
 testSurfaceImportsAndEdits(app);
 testBackendPathNormalization(app);
+testSceneResourceRoundTrip(app);
 
 console.log("Datapack builder schema/import smoke test passed.");

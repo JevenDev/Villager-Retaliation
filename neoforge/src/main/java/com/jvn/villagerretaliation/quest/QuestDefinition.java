@@ -30,12 +30,14 @@ public record QuestDefinition(
         String questline,
         Set<String> tags,
         ResourceLocation parent,
+        List<ResourceLocation> prerequisites,
         boolean showLockedAdventureHint,
         Offer offer,
         Target target,
         List<Objective> objectives,
         Rules rules,
         Tracker tracker,
+        String entryStage,
         Map<String, Stage> stages,
         List<Trigger> triggers,
         Rewards rewards,
@@ -55,11 +57,15 @@ public record QuestDefinition(
                         .filter(tag -> tag != null && !tag.isBlank())
                         .map(String::trim)
                         .collect(java.util.stream.Collectors.toUnmodifiableSet());
+        prerequisites = prerequisites == null
+                ? (parent == null ? List.of() : List.of(parent))
+                : prerequisites.stream().filter(java.util.Objects::nonNull).toList();
         offer = offer == null ? Offer.any() : offer;
         target = target == null ? Target.EMPTY : target;
         objectives = objectives == null ? List.of() : List.copyOf(objectives);
         rules = rules == null ? Rules.DEFAULT : rules;
         tracker = tracker == null ? Tracker.EMPTY : tracker;
+        entryStage = entryStage == null ? "" : entryStage.trim();
         stages = stages == null ? Map.of() : java.util.Collections.unmodifiableMap(new java.util.LinkedHashMap<>(stages));
         triggers = triggers == null ? List.of() : List.copyOf(triggers);
         rewards = rewards == null ? Rewards.EMPTY : rewards;
@@ -652,6 +658,7 @@ public record QuestDefinition(
         PROGRESS,
         STAGE_CHANGED,
         COMPLETED,
+        FAILED,
         ABANDONED,
         EXPIRED;
 

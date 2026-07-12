@@ -30,6 +30,8 @@ import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.scene.SceneOperatorService;
+import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
@@ -58,6 +60,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.commands.CommandSourceStack;
@@ -147,6 +150,7 @@ public final class VillagerRetaliationCommands {
                         .then(villageDebugCommands())
                         .then(hiredDebugCommands())
                         .then(questDebugCommands())
+                        .then(sceneDebugCommands())
                         .then(debugCommands())
                         .then(literal("profile")
                                 .then(literal("get")
@@ -431,6 +435,12 @@ public final class VillagerRetaliationCommands {
                         .then(literal("inspect")
                                 .then(questIdArgument()
                                         .executes(VillagerRetaliationCommands::inspectQuestDebug)))
+                        .then(literal("rebind")
+                                .then(questIdArgument()
+                                        .then(providerNameArgument()
+                                                .executes(context -> rebindQuestDebug(
+                                                        context,
+                                                        DEFAULT_DEBUG_PROVIDER_RADIUS)))))
                         .then(literal("why_available")
                                 .then(questIdArgument()
                                         .then(providerNameArgument()
@@ -909,6 +919,85 @@ public final class VillagerRetaliationCommands {
                 player,
                 quest.questId());
         if (!result.removed()) {
+            source.sendFailure(Component.literal(result.message()));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal(result.message()), true);
+        return 1;
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> sceneDebugCommands() {
+        return literal("scene")
+                .then(literal("list").executes(VillagerRetaliationCommands::listScenesDebug))
+                .then(literal("inspect").then(argument("scene_id", StringArgumentType.word())
+                        .executes(context -> showSceneLines(context, false))))
+                .then(literal("trace").then(argument("scene_id", StringArgumentType.word())
+                        .executes(context -> showSceneLines(context, true))))
+                .then(literal("retry").then(argument("scene_id", StringArgumentType.word())
+                        .executes(context -> mutateScene(context, "retry"))))
+                .then(literal("cancel").then(argument("scene_id", StringArgumentType.word())
+                        .executes(context -> mutateScene(context, "cancel"))))
+                .then(literal("resume").then(argument("scene_id", StringArgumentType.word())
+                        .executes(context -> mutateScene(context, "resume"))))
+                .then(literal("rebind").then(argument("scene_id", StringArgumentType.word())
+                        .then(argument("alias", StringArgumentType.word())
+                                .then(argument("target", EntityArgument.entity())
+                                        .executes(VillagerRetaliationCommands::rebindSceneActorDebug)))))
+                .then(literal("cleanup_encounter").then(argument("encounter_id", StringArgumentType.word())
+                        .executes(VillagerRetaliationCommands::cleanupEncounterDebug)));
+    }
+
+    private static int listScenesDebug(CommandContext<CommandSourceStack> context) {
+        SceneSavedData data=SceneSavedData.get(context.getSource().getLevel());
+        List<com.jvn.villagerretaliation.scene.runtime.SceneInstance> scenes=data.active().stream()
+                .sorted(Comparator.comparing(value->value.id().toString())).toList();
+        context.getSource().sendSuccess(()->Component.literal("Active scenes: "+scenes.size()+" (blocked="+data.byState(com.jvn.villagerretaliation.scene.runtime.SceneState.BLOCKED).size()+")"),false);
+        scenes.forEach(scene->context.getSource().sendSuccess(()->Component.literal(scene.id()+" "+scene.sceneId()+" "+scene.state()+" step="+scene.currentStep()),false));
+        return scenes.size();
+    }
+
+    private static int showSceneLines(CommandContext<CommandSourceStack> context,boolean trace) {
+        UUID id=parseUuid(context,"scene_id");if(id==null)return 0;List<String> lines=trace?SceneOperatorService.trace(context.getSource().getLevel(),id):SceneOperatorService.inspect(context.getSource().getLevel(),id);lines.forEach(line->context.getSource().sendSuccess(()->Component.literal(line),false));return lines.size();
+    }
+
+    private static int mutateScene(CommandContext<CommandSourceStack> context,String action) {
+        UUID id=parseUuid(context,"scene_id");if(id==null)return 0;String operator=context.getSource().getTextName();var result=switch(action){case "retry"->SceneOperatorService.retry(context.getSource().getLevel(),id,"operator_retry",operator);case "cancel"->SceneOperatorService.cancel(context.getSource().getLevel(),id,"operator_cancel",operator);default->SceneOperatorService.resume(context.getSource().getLevel(),id,"operator_resume",operator);};context.getSource().sendSuccess(()->Component.literal(result.message()),false);return result.success()?1:0;
+    }
+
+    private static int rebindSceneActorDebug(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        UUID id=parseUuid(context,"scene_id");if(id==null)return 0;var result=SceneOperatorService.rebind(context.getSource().getLevel(),id,StringArgumentType.getString(context,"alias"),EntityArgument.getEntity(context,"target"),"operator_rebind",context.getSource().getTextName());context.getSource().sendSuccess(()->Component.literal(result.message()),false);return result.success()?1:0;
+    }
+
+    private static int cleanupEncounterDebug(CommandContext<CommandSourceStack> context) {
+        UUID id=parseUuid(context,"encounter_id");if(id==null)return 0;var result=SceneOperatorService.forceCleanup(context.getSource().getLevel(),id,"operator_force_cleanup",context.getSource().getTextName());context.getSource().sendSuccess(()->Component.literal(result.message()),false);return result.success()?1:0;
+    }
+
+    private static UUID parseUuid(CommandContext<CommandSourceStack> context,String key) {
+        try{return UUID.fromString(StringArgumentType.getString(context,key));}catch(IllegalArgumentException exception){context.getSource().sendFailure(Component.literal(key+" must be a UUID"));return null;}
+    }
+
+    private static int rebindQuestDebug(CommandContext<CommandSourceStack> context, double radius) {
+        CommandSourceStack source = context.getSource();
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("This command must be run by a player near the replacement provider."));
+            return 0;
+        }
+        QuestResolution quest = resolveQuestDebugQuest(source, StringArgumentType.getString(context, "quest_id"));
+        if (!quest.error().isBlank()) {
+            source.sendFailure(Component.literal(quest.error()));
+            return 0;
+        }
+        ProviderResolution provider = resolveQuestDebugProvider(
+                player,
+                StringArgumentType.getString(context, "provider_name"),
+                debugProviderRadius(radius));
+        if (!provider.error().isBlank()) {
+            source.sendFailure(Component.literal(provider.error()));
+            return 0;
+        }
+        VillagerQuestService.ProviderRebindResult result =
+                VillagerQuestService.debugRebindQuest(player, provider.provider(), quest.questId());
+        if (!result.rebound()) {
             source.sendFailure(Component.literal(result.message()));
             return 0;
         }

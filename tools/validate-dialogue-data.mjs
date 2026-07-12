@@ -1052,8 +1052,8 @@ function validateQuestRegistryMetadata(metadata) {
     errors.push("tools/datapack-builder/quest-registry-metadata.json: root must be an object.");
     return;
   }
-  if (metadata.format_version !== 1) {
-    errors.push("tools/datapack-builder/quest-registry-metadata.json: format_version must be 1.");
+  if (![1, 2].includes(metadata.format_version)) {
+    errors.push("tools/datapack-builder/quest-registry-metadata.json: format_version must be 1 or 2.");
   }
   const registries = metadata.registries;
   if (!registries || typeof registries !== "object" || Array.isArray(registries)) {
@@ -1063,6 +1063,13 @@ function validateQuestRegistryMetadata(metadata) {
   for (const registry of ["conditions", "actions", "objectives", "triggers", "providers"]) {
     if (!Array.isArray(registries[registry]) || registries[registry].length === 0) {
       errors.push(`tools/datapack-builder/quest-registry-metadata.json: registries.${registry} must be a non-empty array.`);
+    }
+  }
+  if (metadata.format_version >= 2) {
+    for (const registry of ["actor_types", "scene_steps", "encounter_templates", "public_quest_providers", "public_quest_objectives", "public_quest_actions", "public_quest_conditions", "public_quest_triggers"]) {
+      if (!Array.isArray(registries[registry]) || registries[registry].length === 0) {
+        errors.push(`tools/datapack-builder/quest-registry-metadata.json: registries.${registry} must be a non-empty array in format v2.`);
+      }
     }
   }
   const fragments = metadata.schema_fragments;

@@ -41,6 +41,7 @@
   let activeView = "setup";
   let selectedStageId = "";
   let selectedSlot = "offer";
+  let selectedSceneId = "";
   let registryMetadata = { registries: {} };
   let metadataStatus = "loading";
   let undoStack = [];
@@ -92,6 +93,10 @@
     return quest?.stages?.find((stage) => stage.id === selectedStageId) || quest?.stages?.[0] || null;
   }
 
+  function currentScene() {
+    return project.scenes?.find((scene) => scene.id === selectedSceneId) || project.scenes?.[0] || null;
+  }
+
   function issuesForQuest(quest) {
     const questIndex = project.quests.indexOf(quest);
     return model.validateProject(project, registryMetadata)
@@ -104,6 +109,7 @@
     const quest = currentQuest();
     if (!quest) return;
     if (!quest.stages?.some((stage) => stage.id === selectedStageId)) selectedStageId = quest.entry_stage || quest.stages?.[0]?.id || "";
+    if (!project.scenes?.some((scene) => scene.id === selectedSceneId)) selectedSceneId = project.scenes?.[0]?.id || "";
   }
 
   function projectSnapshot() {
@@ -186,11 +192,12 @@
     renderNavigation();
     renderStageShortcuts();
     const quest = currentQuest();
-    const issues = issuesForQuest(quest);
+    const issues = activeView === "scenes" ? (currentScene() ? model.validateScene(currentScene(), registryMetadata) : []) : issuesForQuest(quest);
     if (activeView === "setup") renderSetup(quest, issues);
     else if (activeView === "stages") renderStages(quest, issues);
     else if (activeView === "dialogue") renderDialogue(quest, issues);
     else if (activeView === "rewards") renderRewards(quest, issues);
+    else if (activeView === "scenes") renderScenes(issues);
     else renderReview(quest, issues);
     renderChecks(issues);
     els.undoButton.disabled = undoStack.length === 0;
@@ -266,6 +273,7 @@
         <h2>Availability</h2>
         <div class="form-grid">
           ${selectField({ label: "Entry stage", value: quest.entry_stage || "", field: "entry_stage", options: stageOptions, path: "/entry_stage", issues })}
+          ${field({ label: "Prerequisite quests", value: (availability.prerequisites || []).join(", "), field: "availability.prerequisites", dataType: "list", className: "span-8", placeholder: "my_pack:first_quest, my_pack:second_quest", help: "All listed quests must be completed. Order is preserved in the journal." })}
           ${numberField({ label: "Maximum completions", value: availability.max_completions ?? 1, field: "availability.max_completions", min: 0, help: "0 means unlimited when the quest is repeatable." })}
           ${checkboxField({ label: "Repeatable", detail: "Allow this quest to be completed more than once.", checked: Boolean(availability.repeatable), field: "availability.repeatable" })}
           ${checkboxField({ label: "Lock to villager", detail: "The same villager must receive the turn-in.", checked: availability.locked_to_villager !== false, field: "availability.locked_to_villager" })}
@@ -402,7 +410,7 @@
   }
 
   function renderResponse(quest, stageIndex, slotName, response, index, issues) {
-    const type = response.stage || response.next ? "stage" : response.scene ? "scene" : response.complete ? "complete" : response.abandon ? "abandon" : "none";
+    const type = response.stage || response.next ? "stage" : response.scene ? "scene" : response.complete ? "complete" : response.fail ? "fail" : response.abandon ? "abandon" : "none";
     const destination = response.stage || response.next || response.scene || "";
     const destinationControl = type === "stage"
       ? selectField({ label: "Destination", value: destination, responseField: "destination", responseIndex: index, options: [{ value: "", label: "Choose a stage" }, ...quest.stages.map((stage) => ({ value: stage.id, label: stage.title || model.titleFromId(stage.id) }))], bare: true })
@@ -413,7 +421,7 @@
       ${field({ label: "Response id", value: response.id || "", responseField: "id", responseIndex: index, bare: true, path: `/stages/${stageIndex}/dialogue/${slotName}/responses/${index}/id`, issues })}
       ${field({ label: "Player text", value: response.label || response.text || "", responseField: "label", responseIndex: index, bare: true, placeholder: "I can help." })}
       ${selectField({ label: "Outcome", value: type, responseField: "outcome", responseIndex: index, options: [
-        { value: "none", label: "No transition" }, { value: "stage", label: "Go to stage" }, { value: "scene", label: "Run scene" }, { value: "complete", label: "Complete quest" }, { value: "abandon", label: "Abandon quest" }
+        { value: "none", label: "No transition" }, { value: "stage", label: "Go to stage" }, { value: "scene", label: "Run scene" }, { value: "complete", label: "Complete quest" }, { value: "fail", label: "Fail quest" }, { value: "abandon", label: "Abandon quest" }
       ], bare: true })}
       ${destinationControl}
       <button class="icon-button remove-button" type="button" data-action="remove-response" data-response-index="${index}" aria-label="Remove response"><i data-lucide="trash-2"></i></button>
@@ -467,6 +475,56 @@
         <textarea id="raw-json" spellcheck="false" autocomplete="off">${escapeHtml(json)}</textarea>
         <div class="modal-actions"><button class="button button-secondary" type="button" data-action="reset-json">Reset</button><button class="button button-primary" type="button" data-action="apply-json">Apply JSON changes</button></div>
       </section>
+    </div>`;
+  }
+
+  function renderScenes(issues) {
+    const scene = currentScene();
+    const sceneOptions = (project.scenes || []).map((item) => ({ value: item.id, label: model.titleFromId(item.id) }));
+    if (!scene) {
+      els.editor.innerHTML = `<div class="editor-content">${pageHeader("Scenes", "Create persistent actor and step graphs exported under data/<namespace>/quest_scenes/.", `<button class="button button-primary" type="button" data-action="add-scene"><i data-lucide="plus"></i>Add scene</button>`)}<div class="empty-state"><p>No scene resources in this project.</p><button class="button button-primary" type="button" data-action="add-scene">Add scene</button></div></div>`;
+      return;
+    }
+    const actorTypes = (registryMetadata.registries?.actor_types || []).filter((item) => item.browser_available !== false).map((item) => ({ value: item.id, label: item.title || model.titleFromId(item.id) }));
+    const stepTypes = (registryMetadata.registries?.scene_steps || []).filter((item) => item.browser_available !== false).map((item) => ({ value: item.id, label: item.title || model.titleFromId(item.id) }));
+    const stepOptions = (scene.steps || []).map((step) => ({ value: step.id, label: step.id }));
+    els.editor.innerHTML = `<div class="editor-content">
+      ${pageHeader("Scenes", "Edit stable actor declarations and graph steps. Validation uses the same registered metadata as runtime compilation.", `<button class="button button-secondary" type="button" data-action="add-scene"><i data-lucide="plus"></i>Add scene</button><button class="button button-plain" type="button" data-action="delete-scene"><i data-lucide="trash-2"></i>Delete</button>`)}
+      <section class="section-card"><div class="form-grid">
+        ${selectField({ label: "Scene resource", value: scene.id, sceneSelect: true, options: sceneOptions, className: "span-4" })}
+        ${field({ label: "Scene id", value: scene.id, sceneField: "id", path: "/id", className: "span-4", issues })}
+        ${selectField({ label: "Ownership", value: scene.ownership || "player", sceneField: "ownership", options: ["player", "party", "quest_instance", "world"], className: "span-2" })}
+        ${selectField({ label: "Entry step", value: scene.entry_step || "", sceneField: "entry_step", options: stepOptions, className: "span-2", path: "/entry_step", issues })}
+        ${field({ label: "Scene timeout (ticks)", value: scene.timeout_ticks ?? "", sceneField: "timeout_ticks", dataType: "number", min: 0, className: "span-2" })}
+        ${selectField({ label: "Failure policy", value: scene.failure_policy || "fail_scene", sceneField: "failure_policy", options: ["fail_scene", "cancel_scene", "block_for_repair", "run_failure_step"], className: "span-3" })}
+        ${selectField({ label: "Cancellation policy", value: scene.cancellation_policy || "cancel_scene", sceneField: "cancellation_policy", options: ["fail_scene", "cancel_scene", "block_for_repair", "run_failure_step"], className: "span-3" })}
+        ${selectField({ label: "Cleanup policy", value: scene.cleanup_policy || "owned_entities", sceneField: "cleanup_policy", options: ["none", "owned_entities", "encounters", "all_owned", "preserve_world"], className: "span-3" })}
+      </div></section>
+      <section class="section-card"><div class="section-card-header"><div><h2>Actors</h2><p>Bindings are explicit; fixed actors are never replaced by proximity.</p></div><button class="button button-secondary" type="button" data-action="add-scene-actor"><i data-lucide="plus"></i>Add actor</button></div>
+        <div class="objective-list">${(scene.actors || []).map((actor, index) => `<article class="objective-card"><div class="objective-header"><strong>${escapeHtml(actor.alias || `Actor ${index + 1}`)}</strong><button class="icon-button remove-button" type="button" data-action="remove-scene-actor" data-actor-index="${index}" aria-label="Remove actor"><i data-lucide="trash-2"></i></button></div><div class="form-grid">
+          ${field({ label: "Stable alias", value: actor.alias || "", actorField: "alias", actorIndex: index, className: "span-2" })}
+          ${selectField({ label: "Actor type", value: actor.type || "villagerretaliation:villager", actorField: "type", actorIndex: index, options: actorTypes, className: "span-3" })}
+          ${selectField({ label: "Binding source", value: actor.binding_source || "unbound", actorField: "binding_source", actorIndex: index, options: ["owner_player", "party_member", "quest_provider", "uuid", "marker", "encounter", "owned_spawn", "unbound"], className: "span-2" })}
+          ${field({ label: "Binding reference", value: actor.binding || "", actorField: "binding", actorIndex: index, className: "span-3" })}
+          ${selectField({ label: "Replacement", value: actor.replacement_policy || "fixed", actorField: "replacement_policy", actorIndex: index, options: ["fixed", "operator_rebindable", "compatible_replacement", "respawn_if_owned", "optional"], className: "span-3" })}
+          ${selectField({ label: "Missing actor", value: actor.missing_actor_policy || "block", actorField: "missing_actor_policy", actorIndex: index, options: ["block", "fail", "skip", "wait_until_timeout"], className: "span-2" })}
+          ${selectField({ label: "Death policy", value: actor.death_policy || "apply_missing_policy", actorField: "death_policy", actorIndex: index, options: ["fail", "block", "apply_missing_policy", "respawn_if_owned", "continue_with_snapshot"], className: "span-3" })}
+          ${checkboxField({ label: "Required actor", detail: "Block or fail when its policy cannot recover this binding.", checked: actor.required !== false, actorField: "required", actorIndex: index, className: "span-3" })}
+          ${field({ label: "Required capabilities", value: (actor.capabilities || []).join(", "), actorField: "capabilities", actorIndex: index, dataType: "list", className: "span-4" })}
+          ${field({ label: "Missing timeout (ticks)", value: actor.timeout_ticks ?? "", actorField: "timeout_ticks", actorIndex: index, dataType: "number", min: 0, className: "span-2" })}
+          ${textareaField({ label: "Actor filters (JSON)", value: JSON.stringify(actor.filters || {}, null, 2), actorField: "filters", actorIndex: index, dataType: "json", className: "full" })}
+        </div></article>`).join("")}</div></section>
+      <section class="section-card"><div class="section-card-header"><div><h2>Steps</h2><p>Every step id is authored and remains stable across reloads.</p></div><button class="button button-secondary" type="button" data-action="add-scene-step"><i data-lucide="plus"></i>Add step</button></div>
+        <div class="objective-list">${(scene.steps || []).map((step, index) => `<article class="objective-card"><div class="objective-header"><strong>${escapeHtml(step.id || `Step ${index + 1}`)}</strong><button class="icon-button remove-button" type="button" data-action="remove-scene-step" data-step-index="${index}" aria-label="Remove step"><i data-lucide="trash-2"></i></button></div><div class="form-grid">
+          ${field({ label: "Stable step id", value: step.id || "", stepField: "id", stepIndex: index, className: "span-2" })}
+          ${selectField({ label: "Step type", value: step.type || "villagerretaliation:wait_ticks", stepField: "type", stepIndex: index, options: stepTypes, className: "span-4" })}
+          ${field({ label: "Actor aliases", value: (step.actors || []).join(", "), stepField: "actors", stepIndex: index, dataType: "list", className: "span-3" })}
+          ${selectField({ label: "Next step", value: step.next || "", stepField: "next", stepIndex: index, options: [{ value: "", label: "Terminal / transitions" }, ...stepOptions], className: "span-3" })}
+          ${selectField({ label: "Failure step", value: step.failure_step || "", stepField: "failure_step", stepIndex: index, options: [{ value: "", label: "Use scene policy" }, ...stepOptions], className: "span-3" })}
+          ${textareaField({ label: "Named transitions (JSON)", value: JSON.stringify(step.transitions || {}, null, 2), stepField: "transitions", stepIndex: index, dataType: "json", className: "span-4" })}
+          ${textareaField({ label: "Step data (JSON)", value: JSON.stringify(step.data || {}, null, 2), stepField: "data", stepIndex: index, dataType: "json", className: "full" })}
+        </div></article>`).join("")}</div></section>
+      <section class="section-card"><h2>Export path</h2><div class="path-display"><code>${escapeHtml(model.sceneFilePath(scene))}</code></div></section>
     </div>`;
   }
 
@@ -528,6 +586,12 @@
     if (options.dialogueField) values.push(`data-dialogue-field="${escapeHtml(options.dialogueField)}"`);
     if (options.responseField) values.push(`data-response-field="${escapeHtml(options.responseField)}"`);
     if (options.responseIndex !== undefined) values.push(`data-response-index="${options.responseIndex}"`);
+    if (options.sceneField) values.push(`data-scene-field="${escapeHtml(options.sceneField)}"`);
+    if (options.sceneSelect) values.push("data-scene-select");
+    if (options.actorField) values.push(`data-actor-field="${escapeHtml(options.actorField)}"`);
+    if (options.actorIndex !== undefined) values.push(`data-actor-index="${options.actorIndex}"`);
+    if (options.stepField) values.push(`data-step-field="${escapeHtml(options.stepField)}"`);
+    if (options.stepIndex !== undefined) values.push(`data-step-index="${options.stepIndex}"`);
     if (options.selectStage) values.push("data-select-stage-control");
     if (options.dataType) values.push(`data-type="${escapeHtml(options.dataType)}"`);
     if (options.min !== undefined) values.push(`min="${escapeHtml(options.min)}"`);
@@ -625,6 +689,19 @@
       if (!response) return;
       const path = control.dataset.responseField;
       commitMutation(() => updateResponse(response, path, value, quest));
+      return;
+    }
+    const scene = currentScene();
+    if (control.dataset.sceneField && scene) {
+      commitMutation(() => { const previous = scene.id; setNested(scene, control.dataset.sceneField, value, { deleteEmpty: false }); if (control.dataset.sceneField === "id" && selectedSceneId === previous) selectedSceneId = value; });
+      return;
+    }
+    if (control.dataset.actorField && scene) {
+      commitMutation(() => setNested(scene.actors[Number(control.dataset.actorIndex)], control.dataset.actorField, value, { deleteEmpty: true }));
+      return;
+    }
+    if (control.dataset.stepField && scene) {
+      commitMutation(() => setNested(scene.steps[Number(control.dataset.stepIndex)], control.dataset.stepField, value, { deleteEmpty: true }));
     }
   }
 
@@ -634,6 +711,7 @@
       if (value === "stage") response.stage = quest.stages.find((stage) => stage.id !== selectedStageId)?.id || "";
       if (value === "scene") response.scene = "scene_id";
       if (value === "complete") response.complete = true;
+      if (value === "fail") response.fail = true;
       if (value === "abandon") response.abandon = true;
       return;
     }
@@ -721,6 +799,18 @@
       rawJsonDraft = ""; rawJsonError = ""; render();
     } else if (action === "center-graph") {
       document.querySelector(".graph-scroll")?.scrollTo({ left: 0, top: 0, behavior: "smooth" });
+    } else if (action === "add-scene") {
+      commitMutation(() => { const scene = model.createScene(project.namespace); scene.id = model.uniqueId(scene.id, project.scenes.map((item) => item.id)); project.scenes.push(scene); selectedSceneId = scene.id; });
+    } else if (action === "delete-scene" && currentScene()) {
+      commitMutation(() => { project.scenes = project.scenes.filter((item) => item !== currentScene()); selectedSceneId = project.scenes[0]?.id || ""; });
+    } else if (action === "add-scene-actor" && currentScene()) {
+      commitMutation(() => currentScene().actors.push({ alias: model.uniqueId("actor", currentScene().actors.map((item) => item.alias)), type: "villagerretaliation:villager", required: true, binding_source: "unbound", replacement_policy: "fixed", missing_actor_policy: "block" }));
+    } else if (action === "remove-scene-actor" && currentScene()) {
+      commitMutation(() => currentScene().actors.splice(Number(trigger.dataset.actorIndex), 1));
+    } else if (action === "add-scene-step" && currentScene()) {
+      commitMutation(() => currentScene().steps.push({ id: model.uniqueId("new_step", currentScene().steps.map((item) => item.id)), type: "villagerretaliation:wait_ticks", data: { ticks: 20 } }));
+    } else if (action === "remove-scene-step" && currentScene()) {
+      commitMutation(() => currentScene().steps.splice(Number(trigger.dataset.stepIndex), 1));
     }
   }
 
@@ -877,6 +967,11 @@
       if (Object.hasOwn(files, path)) throw new Error(`Two quests export to ${path}. Give them different ids.`);
       files[path] = JSON.stringify(model.stripBuilderFields(quest), null, 2) + "\n";
     }
+    for (const scene of project.scenes || []) {
+      const path = model.sceneFilePath(scene);
+      if (Object.hasOwn(files, path)) throw new Error(`Two resources export to ${path}. Give them different ids.`);
+      files[path] = JSON.stringify(model.stripBuilderFields(scene), null, 2) + "\n";
+    }
     return files;
   }
 
@@ -1001,6 +1096,7 @@
     if (!control) return;
     if (control.id === "raw-json") { rawJsonDraft = control.value; return; }
     if (control.matches("[data-select-stage-control]")) { selectedStageId = control.value; render(); return; }
+    if (control.matches("[data-scene-select]")) { selectedSceneId = control.value; render(); return; }
     updateFromControl(control);
   });
 
@@ -1072,6 +1168,7 @@
     els.importInput.value = "";
     if (!files.length) return;
     const imported = [];
+    const importedScenes = [];
     const failures = [];
     for (const file of files) {
       try {
@@ -1079,27 +1176,34 @@
           const packFiles = await zipUtils.readZip(new Uint8Array(await file.arrayBuffer()));
           const questFiles = zipUtils.decodeJsonFiles(packFiles, (path) => /^data\/[a-z0-9_.-]+\/quests\/.+\.json$/i.test(path));
           const quests = questFiles.map((entry) => entry.value).filter((value) => value?.schema === model.SCHEMA_ID);
-          if (!quests.length) throw new Error("No Quest v2 files were found under data/<namespace>/quests.");
+          const sceneFiles = zipUtils.decodeJsonFiles(packFiles, (path) => /^data\/[a-z0-9_.-]+\/quest_scenes\/.+\.json$/i.test(path));
+          importedScenes.push(...sceneFiles.map((entry) => entry.value).filter((value) => value?.schema === model.SCENE_SCHEMA_ID));
+          if (!quests.length && !importedScenes.length) throw new Error("No Quest v2 or scene v1 files were found in the datapack.");
           imported.push(...quests);
         } else {
           const parsed = JSON.parse(await file.text());
-          if (parsed?.version && Array.isArray(parsed.quests)) imported.push(...parsed.quests);
+          if (parsed?.version && Array.isArray(parsed.quests)) { imported.push(...parsed.quests); importedScenes.push(...(parsed.scenes || [])); }
           else if (parsed?.schema === model.SCHEMA_ID) imported.push(parsed);
-          else throw new Error("This is not a Quest v2 file or Quest Builder project backup.");
+          else if (parsed?.schema === model.SCENE_SCHEMA_ID) importedScenes.push(parsed);
+          else throw new Error("This is not a Quest v2, scene v1, or Quest Builder project backup.");
         }
       } catch (error) { failures.push(`${file.name}: ${error.message}`); }
     }
-    if (imported.length) {
+    if (imported.length || importedScenes.length) {
       commitMutation(() => {
         for (const quest of imported) {
           const index = project.quests.findIndex((existing) => existing.id === quest.id);
           if (index >= 0) project.quests[index] = quest;
           else project.quests.push(quest);
         }
-        project.selectedQuestId = imported.at(-1).id;
-        selectedStageId = imported.at(-1).entry_stage || imported.at(-1).stages?.[0]?.id || "";
+        for (const scene of importedScenes) {
+          const index = project.scenes.findIndex((existing) => existing.id === scene.id);
+          if (index >= 0) project.scenes[index] = scene; else project.scenes.push(scene);
+        }
+        if (imported.length) { project.selectedQuestId = imported.at(-1).id; selectedStageId = imported.at(-1).entry_stage || imported.at(-1).stages?.[0]?.id || ""; }
+        if (importedScenes.length) selectedSceneId = importedScenes.at(-1).id;
       });
-      showToast(`Imported ${imported.length} quest${imported.length === 1 ? "" : "s"}.`);
+      showToast(`Imported ${imported.length} quest${imported.length === 1 ? "" : "s"} and ${importedScenes.length} scene${importedScenes.length === 1 ? "" : "s"}.`);
     }
     if (failures.length) showToast(failures.join(" "), true);
   }

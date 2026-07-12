@@ -27,6 +27,7 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.quest.debug.QuestDebugFormatter;
+import com.jvn.villagerretaliation.quest.conditions.QuestAvailabilityService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.debug.QuestDebugTraceService;
 import com.jvn.villagerretaliation.quest.debug.QuestDiagnostic;
@@ -61,6 +62,9 @@ import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderType;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
+import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
+import com.jvn.villagerretaliation.quest.runtime.QuestStateMachine;
+import com.jvn.villagerretaliation.quest.persistence.QuestSaveMigrations;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestSchemaVersion;
 import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Parser;
@@ -69,6 +73,7 @@ import com.jvn.villagerretaliation.quest.schema.v2.QuestV2Schema;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
+import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
@@ -521,6 +526,9 @@ public final class VillagerQuestGameTests {
                 "",
                 Map.of(),
                 CompiledQuestTransition.EMPTY,
+                null,
+                "",
+                false,
                 false);
         ActionResult dryRun = VillagerActionRegistry.dryRun(null, notification, Map.of());
         helper.assertValueEqual(dryRun.status(), ActionStatus.SKIPPED, "dry run status");
@@ -1214,12 +1222,14 @@ public final class VillagerQuestGameTests {
                 "",
                 Set.of("test"),
                 null,
+                List.of(),
                 true,
                 null,
                 QuestDefinition.Target.EMPTY,
                 List.of(defeatZombie, bringBones),
                 QuestDefinition.Rules.DEFAULT,
                 QuestDefinition.Tracker.EMPTY,
+                "",
                 Map.of("started", started, "return", returnStage),
                 List.of(),
                 QuestDefinition.Rewards.EMPTY,
@@ -1558,11 +1568,12 @@ public final class VillagerQuestGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         Set<ResourceLocation> mobKillQuests = VillagerQuestResources
                 .questIdsWithObjective(server, QuestDefinition.ObjectiveType.MOB_KILL);
-        helper.assertValueEqual(mobKillQuests.size(), 21, "mob-kill quest index size");
+        helper.assertValueEqual(mobKillQuests.size(), 22, "mob-kill quest index size");
         assertContainsAll(helper, mobKillQuests, Set.of(
                 VillagerRetaliation.id("beacon_polish"),
                 VillagerRetaliation.id("ender_freight"),
                 VillagerRetaliation.id("fortress_line"),
+                VillagerRetaliation.id("standing_watch"),
                 VillagerRetaliation.id("timber_brace")), "expanded mob-kill quest ids");
         helper.assertTrue(
                 VillagerQuestResources.memoryEventQuestIds(server, VillagerRetaliation.id("player_defended_village"))
@@ -1878,6 +1889,77 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(dispatch.trace().matchedTriggers(), 1, "bounded v2 progress matches");
         DatapackDiagnostics.clear();
 
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2EntryStageRemainsAuthoritativeWhenStartedStageExists(GameTestHelper helper) {
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_entry_stage_contract.json");
+        JsonObject root = validQuestV2Fixture();
+        root.addProperty("id", "villagerretaliation:v2_entry_stage_contract");
+        root.addProperty("entry_stage", "prologue");
+        JsonArray stages = new JsonArray();
+        stages.add(JsonParser.parseString("""
+                {"id":"prologue","objectives":[],"next":"started"}
+                """).getAsJsonObject());
+        stages.add(JsonParser.parseString("""
+                {"id":"started","objectives":[]}
+                """).getAsJsonObject());
+        root.add("stages", stages);
+        root.remove("events");
+
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root)
+                .orElseThrow(() -> new GameTestAssertException("entry-stage fixture envelope did not parse"));
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException("entry-stage fixture did not parse"));
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
+                .orElseThrow(() -> new GameTestAssertException("entry-stage fixture did not compile"));
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+
+        helper.assertValueEqual(parsed.entryStage(), "prologue", "parsed authored entry stage");
+        helper.assertValueEqual(compiled.entryStage(), "prologue", "compiled authored entry stage");
+        QuestLifecycleService.initializeStage(compiled, progress, 20L);
+        helper.assertValueEqual(progress.currentStage(), "prologue", "runtime authored entry stage");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2PreservesEveryOrderedPrerequisite(GameTestHelper helper) {
+        ResourceLocation location = VillagerRetaliation.id("quests/v2_prerequisite_contract.json");
+        JsonObject root = validQuestV2Fixture();
+        root.addProperty("id", "villagerretaliation:v2_prerequisite_contract");
+        JsonArray prerequisites = new JsonArray();
+        prerequisites.add("villagerretaliation:first");
+        prerequisites.add("villagerretaliation:second");
+        prerequisites.add("villagerretaliation:third");
+        root.getAsJsonObject("availability").add("prerequisites", prerequisites);
+        List<ResourceLocation> expected = List.of(
+                VillagerRetaliation.id("first"),
+                VillagerRetaliation.id("second"),
+                VillagerRetaliation.id("third"));
+
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root)
+                .orElseThrow(() -> new GameTestAssertException("prerequisite fixture envelope did not parse"));
+        QuestV2Resource parsed = QuestV2Parser.parse(envelope)
+                .orElseThrow(() -> new GameTestAssertException("prerequisite fixture did not parse"));
+        CompiledQuest compiled = QuestV2Compiler.compile(parsed, envelope)
+                .orElseThrow(() -> new GameTestAssertException("prerequisite fixture did not compile"));
+
+        helper.assertValueEqual(parsed.availability().prerequisites(), expected, "parsed prerequisites");
+        helper.assertValueEqual(compiled.prerequisites(), expected, "compiled prerequisites");
+        helper.assertValueEqual(compiled.asQuestDefinition().prerequisites(), expected, "runtime prerequisites");
+        List<QuestTrackerSyncPayload.Prerequisite> presented = QuestTrackerPresenter.prerequisites(
+                null,
+                compiled.asQuestDefinition(),
+                ResourceLocation::toString,
+                id -> id.equals(expected.getFirst()));
+        helper.assertValueEqual(
+                presented.stream().map(QuestTrackerSyncPayload.Prerequisite::questId).toList(),
+                expected.stream().map(ResourceLocation::toString).toList(),
+                "presented prerequisite order");
+        helper.assertTrue(presented.getFirst().met(), "first prerequisite should be met");
+        helper.assertFalse(presented.get(1).met(), "second prerequisite should remain locked");
+        helper.assertFalse(presented.get(2).met(), "third prerequisite should remain locked");
         helper.succeed();
     }
 
@@ -3195,6 +3277,201 @@ public final class VillagerQuestGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2FailureIsDistinctFromAbandonment(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        EmbeddedDialogueQuest failure = embeddedDialogueQuest(
+                "v2_failure_runtime",
+                failureQuestV2Fixture("v2_failure_runtime"));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(failure.quest()), failure.dialogueCatalog());
+            VillagerQuestService.DebugStartResult started =
+                    VillagerQuestService.debugStartQuest(player, villager, failure.quest().id(), true);
+            helper.assertTrue(started.started(), "failure quest did not start: " + started.message());
+            DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+            int experienceBefore = player.totalExperience;
+            VillagerQuestService.applyCompiledTransition(
+                    context,
+                    new CompiledQuestTransition(
+                            failure.quest().id(), "start", "stage.start.responses", "fail_now",
+                            CompiledQuestTransition.Target.FAIL, "", "/stages/0/responses/0"),
+                    Map.of());
+
+            VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(level)
+                    .get(player.getUUID(), failure.quest().id());
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.FAILED, "explicit fail state");
+            helper.assertValueEqual(progress.abandonCount(), 0, "explicit failure dispatched abandonment");
+            helper.assertValueEqual(progress.completionCount(), 0, "explicit failure completed quest");
+            helper.assertValueEqual(player.totalExperience, experienceBefore, "explicit failure granted rewards");
+            QuestScopeKey scope = QuestScopeKey.quest(player.getUUID(), failure.quest().id());
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).variable(scope, "failure_hook").orElse(""),
+                    "ran",
+                    "on_fail actions did not run");
+            helper.assertTrue(
+                    VillagerQuestFacts.get(level).variable(scope, "abandon_hook").isEmpty(),
+                    "on_abandon ran during failure");
+
+            VillagerQuestService.DebugStartResult restarted =
+                    VillagerQuestService.debugStartQuest(player, villager, failure.quest().id(), false);
+            helper.assertTrue(restarted.started(), "repeatable failed quest did not restart: " + restarted.message());
+            VillagerQuestService.DebugInspectResult fired = VillagerQuestService.debugFireTrigger(
+                    player, failure.quest().id(), QuestDefinition.TriggerEvent.PROGRESS);
+            helper.assertTrue(fired.found(), "event failure trigger did not run: " + fired.message());
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.FAILED, "event-triggered fail state");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            villager.discard();
+            VillagerQuestResources.clearCache();
+            DialogueTreeResources.clearCache();
+            DialogueTreeService.clearRuntimeState();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questFailureStateAndSaveVersionsRoundTrip(GameTestHelper helper) {
+        UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000401");
+        UUID villagerId = UUID.fromString("00000000-0000-0000-0000-000000000402");
+        ResourceLocation questId = VillagerRetaliation.id("failure_round_trip");
+        VillagerQuestSavedData data = new VillagerQuestSavedData();
+        VillagerQuestSavedData.QuestProgress progress = data.getOrCreate(playerId, questId);
+        progress.start(villagerId, Level.OVERWORLD, null, 10L);
+
+        QuestStateMachine.TransitionResult result = QuestStateMachine.fail(progress, 80L, " Provider Lost! ");
+        helper.assertValueEqual(result.previousState(), VillagerQuestSavedData.QuestState.ACTIVE, "failure previous state");
+        helper.assertValueEqual(result.newState(), VillagerQuestSavedData.QuestState.FAILED, "failure new state");
+        helper.assertValueEqual(result.lifecycleEvent(), QuestStateMachine.LifecycleEvent.FAILED, "failure lifecycle event");
+        helper.assertTrue(result.dirty(), "failure transition was not dirty");
+        helper.assertValueEqual(progress.failedGameTime(), 80L, "failure game time");
+        helper.assertValueEqual(progress.failureReason(), "provider_lost", "normalized failure reason");
+        helper.assertValueEqual(progress.completionCount(), 0, "failure granted a completion");
+        helper.assertValueEqual(progress.abandonCount(), 0, "failure counted as abandonment");
+
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        helper.assertValueEqual(
+                saved.getInt("DataVersion"),
+                VillagerQuestSavedData.CURRENT_DATA_VERSION,
+                "quest save data version");
+        VillagerQuestSavedData.QuestProgress loaded = VillagerQuestSavedData
+                .load(saved, helper.getLevel().registryAccess())
+                .get(playerId, questId);
+        helper.assertTrue(loaded != null, "failed progress did not load");
+        helper.assertValueEqual(loaded.state(), VillagerQuestSavedData.QuestState.FAILED, "loaded failed state");
+        helper.assertValueEqual(loaded.failedGameTime(), 80L, "loaded failure time");
+        helper.assertValueEqual(loaded.failureReason(), "provider_lost", "loaded failure reason");
+
+        CompoundTag legacy = new CompoundTag();
+        ListTag entries = new ListTag();
+        CompoundTag abandoned = new CompoundTag();
+        abandoned.putUUID("Player", playerId);
+        abandoned.putString("Quest", questId.toString());
+        abandoned.putString("State", "ABANDONED");
+        entries.add(abandoned);
+        legacy.put("Entries", entries);
+        VillagerQuestSavedData.QuestProgress legacyProgress = VillagerQuestSavedData
+                .load(legacy, helper.getLevel().registryAccess())
+                .get(playerId, questId);
+        helper.assertValueEqual(legacyProgress.state(), VillagerQuestSavedData.QuestState.ABANDONED,
+                "unversioned abandonment was rewritten as failure");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questSaveMigrationsPreserveReadableFutureAndMalformedData(GameTestHelper helper) {
+        CompoundTag unversioned = new CompoundTag();
+        unversioned.putString("Marker", "keep");
+        QuestSaveMigrations.MigrationResult migrated = QuestSaveMigrations.migrate(
+                unversioned,
+                VillagerQuestSavedData.CURRENT_DATA_VERSION);
+        helper.assertValueEqual(migrated.sourceVersion(), 0, "unversioned source version");
+        helper.assertValueEqual(migrated.data().getInt("DataVersion"), VillagerQuestSavedData.CURRENT_DATA_VERSION,
+                "migrated data version");
+        helper.assertValueEqual(migrated.data().getString("Marker"), "keep", "migration discarded readable data");
+        helper.assertFalse(unversioned.contains("DataVersion"), "migration mutated its input");
+
+        CompoundTag versionOne = new CompoundTag();
+        versionOne.putInt("DataVersion", 1);
+        versionOne.putString("Marker", "version_one");
+        QuestSaveMigrations.MigrationResult upgraded = QuestSaveMigrations.migrate(
+                versionOne,
+                VillagerQuestSavedData.CURRENT_DATA_VERSION);
+        helper.assertValueEqual(upgraded.sourceVersion(), 1, "version-one source version");
+        helper.assertValueEqual(upgraded.targetVersion(), VillagerQuestSavedData.CURRENT_DATA_VERSION,
+                "version-one target version");
+        helper.assertValueEqual(upgraded.data().getString("Marker"), "version_one",
+                "version-one migration discarded readable data");
+
+        CompoundTag future = new CompoundTag();
+        future.putInt("DataVersion", VillagerQuestSavedData.CURRENT_DATA_VERSION + 10);
+        future.putString("Marker", "future");
+        QuestSaveMigrations.MigrationResult preserved = QuestSaveMigrations.migrate(
+                future,
+                VillagerQuestSavedData.CURRENT_DATA_VERSION);
+        helper.assertTrue(preserved.futureVersion(), "future version was not reported");
+        helper.assertValueEqual(preserved.data().getString("Marker"), "future", "future readable data was reset");
+
+        VillagerQuestFacts facts = new VillagerQuestFacts();
+        CompoundTag savedFacts = facts.save(new CompoundTag(), helper.getLevel().registryAccess());
+        helper.assertValueEqual(savedFacts.getInt("DataVersion"), VillagerQuestFacts.CURRENT_DATA_VERSION,
+                "quest facts data version");
+        CompoundTag malformed = new CompoundTag();
+        malformed.putInt("DataVersion", VillagerQuestFacts.CURRENT_DATA_VERSION);
+        malformed.putString("Entries", "not-a-list");
+        VillagerQuestFacts.load(malformed, helper.getLevel().registryAccess());
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questTerminalStatesRoundTripWithoutSemanticDrift(GameTestHelper helper) {
+        UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000451");
+        UUID providerId = UUID.fromString("00000000-0000-0000-0000-000000000452");
+        VillagerQuestSavedData data = new VillagerQuestSavedData();
+        Map<String, VillagerQuestSavedData.QuestState> expected = new LinkedHashMap<>();
+
+        VillagerQuestSavedData.QuestProgress completed = data.getOrCreate(playerId, VillagerRetaliation.id("terminal_completed"));
+        completed.start(providerId, Level.OVERWORLD, null, 1L);
+        QuestStateMachine.complete(completed, 10L, false);
+        expected.put("terminal_completed", VillagerQuestSavedData.QuestState.COMPLETED);
+
+        VillagerQuestSavedData.QuestProgress failed = data.getOrCreate(playerId, VillagerRetaliation.id("terminal_failed"));
+        failed.start(providerId, Level.OVERWORLD, null, 2L);
+        QuestStateMachine.fail(failed, 11L, "contract_failure");
+        expected.put("terminal_failed", VillagerQuestSavedData.QuestState.FAILED);
+
+        VillagerQuestSavedData.QuestProgress abandoned = data.getOrCreate(playerId, VillagerRetaliation.id("terminal_abandoned"));
+        abandoned.start(providerId, Level.OVERWORLD, null, 3L);
+        QuestStateMachine.abandon(abandoned, 12L, false);
+        expected.put("terminal_abandoned", VillagerQuestSavedData.QuestState.ABANDONED);
+
+        VillagerQuestSavedData.QuestProgress expired = data.getOrCreate(playerId, VillagerRetaliation.id("terminal_expired"));
+        expired.start(providerId, Level.OVERWORLD, null, 4L);
+        QuestStateMachine.expire(expired, 13L, false);
+        expected.put("terminal_expired", VillagerQuestSavedData.QuestState.EXPIRED);
+
+        VillagerQuestSavedData.QuestProgress consumed = data.getOrCreate(playerId, VillagerRetaliation.id("terminal_consumed"));
+        consumed.start(providerId, Level.OVERWORLD, null, 5L);
+        QuestStateMachine.consume(consumed, "branch_lock");
+        expected.put("terminal_consumed", VillagerQuestSavedData.QuestState.CONSUMED);
+
+        VillagerQuestSavedData loaded = VillagerQuestSavedData.load(
+                data.save(new CompoundTag(), helper.getLevel().registryAccess()),
+                helper.getLevel().registryAccess());
+        expected.forEach((path, state) -> helper.assertValueEqual(
+                loaded.get(playerId, VillagerRetaliation.id(path)).state(), state, path + " state after reload"));
+        helper.assertValueEqual(loaded.get(playerId, VillagerRetaliation.id("terminal_completed")).completionCount(), 1,
+                "completed terminal count");
+        helper.assertValueEqual(loaded.get(playerId, VillagerRetaliation.id("terminal_failed")).failureReason(),
+                "contract_failure", "failed terminal reason");
+        helper.assertValueEqual(loaded.get(playerId, VillagerRetaliation.id("terminal_abandoned")).abandonCount(), 1,
+                "abandoned terminal count");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questSavedDataLimitsTrackedQuestsToThree(GameTestHelper helper) {
         UUID playerId = UUID.fromString("00000000-0000-0000-0000-000000000301");
         ResourceLocation first = VillagerRetaliation.id("tracked_first");
@@ -3380,6 +3657,182 @@ public final class VillagerQuestGameTests {
                 VillagerQuestProviderType.INSTANCE.matchesIssuerLock(otherExecution, quest, progress),
                 "different saved provider satisfied issuer lock");
 
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void missingQuestProviderCanBeAbandonedAndExplicitlyRebound(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ResourceLocation location = VillagerRetaliation.id("quests/provider_recovery.json");
+        JsonObject root = providerRecoveryQuestV2Fixture("provider_recovery", true);
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
+        CompiledQuest compiled = QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope).orElseThrow();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager original = spawnVillager(helper, new BlockPos(2, 2, 2));
+        original.setVillagerData(original.getVillagerData().setProfession(VillagerProfession.FARMER).setLevel(2));
+        Villager replacement = spawnVillager(helper, new BlockPos(4, 2, 2));
+        replacement.setVillagerData(replacement.getVillagerData().setProfession(VillagerProfession.FARMER).setLevel(2));
+        Villager incompatible = spawnVillager(helper, new BlockPos(6, 2, 2));
+        incompatible.setVillagerData(incompatible.getVillagerData().setProfession(VillagerProfession.LIBRARIAN).setLevel(2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled));
+            helper.assertTrue(
+                    VillagerQuestService.debugStartQuest(player, original, compiled.id(), true).started(),
+                    "provider recovery quest did not start");
+            VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(level)
+                    .get(player.getUUID(), compiled.id());
+            UUID originalId = original.getUUID();
+            original.discard();
+
+            QuestProviderBinding snapshot = VillagerQuestProviderType.INSTANCE
+                    .bindingFromProgress(level, progress).orElseThrow();
+            helper.assertValueEqual(snapshot.providerId(), originalId, "offline snapshot provider id");
+            helper.assertFalse(snapshot.live(), "missing provider snapshot was marked live");
+            VillagerQuestService.handleTrackerRequest(
+                    player, compiled.id().toString(), QuestTrackerRequestPayload.Action.ABANDON);
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.ABANDONED,
+                    "journal abandonment required a live provider");
+            helper.assertTrue(
+                    progress.pendingLifecycleEvents().contains(QuestDefinition.TriggerEvent.ABANDONED),
+                    "offline abandonment did not queue its lifecycle event");
+            QuestScopeKey questScope = QuestScopeKey.quest(player.getUUID(), compiled.id());
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).counter(questScope, "abandon_replays"), 0,
+                    "offline abandonment ran a provider-bound hook early");
+
+            UUID missingId = UUID.fromString("00000000-0000-0000-0000-000000000499");
+            progress.setIssuer(missingId, "Missing Farmer", "minecraft:farmer", 2,
+                    Level.OVERWORLD, new BlockPos(20, 64, 20), "village:missing");
+            CompoundTag pendingSave = VillagerQuestSavedData.get(level).save(new CompoundTag(), level.registryAccess());
+            VillagerQuestSavedData.QuestProgress loadedPending = VillagerQuestSavedData
+                    .load(pendingSave, level.registryAccess()).get(player.getUUID(), compiled.id());
+            helper.assertTrue(
+                    loadedPending.pendingLifecycleEvents().contains(QuestDefinition.TriggerEvent.ABANDONED),
+                    "deferred lifecycle event did not reload");
+
+            VillagerQuestService.ProviderRebindResult rejected = VillagerQuestService.debugRebindQuest(
+                    player, incompatible, compiled.id());
+            helper.assertFalse(rejected.rebound(), "incompatible provider rebind was accepted");
+            helper.assertValueEqual(progress.startedVillagerId(), missingId, "rejected rebind mutated provider id");
+
+            VillagerQuestService.ProviderRebindResult rebound = VillagerQuestService.debugRebindQuest(
+                    player, replacement, compiled.id());
+            helper.assertTrue(rebound.rebound(), "compatible provider rebind failed: " + rebound.message());
+            helper.assertValueEqual(progress.state(), VillagerQuestSavedData.QuestState.ABANDONED,
+                    "rebind reopened the terminal quest");
+            helper.assertValueEqual(progress.startedVillagerId(), replacement.getUUID(), "replacement provider id");
+            helper.assertValueEqual(progress.providerRebindHistory().size(), 1, "provider rebind history count");
+            helper.assertValueEqual(progress.providerRebindHistory().getFirst().previousProviderId(), missingId,
+                    "provider rebind lost previous UUID");
+            helper.assertFalse(progress.hasPendingLifecycleEvents(), "replayed lifecycle event remained queued");
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).counter(questScope, "abandon_replays"), 1,
+                    "deferred abandonment hook did not replay exactly once");
+            VillagerQuestService.ProviderRebindResult duplicate = VillagerQuestService.debugRebindQuest(
+                    player, replacement, compiled.id());
+            helper.assertFalse(duplicate.rebound(), "live replacement accepted a duplicate rebind");
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).counter(questScope, "abandon_replays"), 1,
+                    "resolved lifecycle hook replayed twice");
+
+            CompoundTag saved = VillagerQuestSavedData.get(level).save(new CompoundTag(), level.registryAccess());
+            VillagerQuestSavedData.QuestProgress loaded = VillagerQuestSavedData
+                    .load(saved, level.registryAccess()).get(player.getUUID(), compiled.id());
+            helper.assertValueEqual(loaded.providerRebindHistory().size(), 1, "rebind history did not reload");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            replacement.discard();
+            incompatible.discard();
+            VillagerQuestResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void deferredLifecycleEventReplaysWhenOriginalProviderReturns(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ResourceLocation location = VillagerRetaliation.id("quests/provider_return_replay.json");
+        CompiledQuest compiled = compileQuestFixture(
+                location, providerRecoveryQuestV2Fixture("provider_return_replay", true));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager provider = spawnVillager(helper, new BlockPos(2, 2, 2));
+        provider.setVillagerData(provider.getVillagerData().setProfession(VillagerProfession.FARMER).setLevel(2));
+        movePlayer(helper, player, new BlockPos(1, 2, 2));
+        try {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+            VillagerQuestResources.installCompiledTestCatalog(level.getServer(), List.of(compiled));
+            helper.assertTrue(
+                    VillagerQuestService.debugStartQuest(player, provider, compiled.id(), true).started(),
+                    "provider return quest did not start");
+            VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(level)
+                    .get(player.getUUID(), compiled.id());
+            UUID providerId = provider.getUUID();
+            progress.setIssuer(
+                    UUID.fromString("00000000-0000-0000-0000-000000000498"),
+                    "Temporarily Missing Farmer",
+                    "minecraft:farmer",
+                    2,
+                    Level.OVERWORLD,
+                    provider.blockPosition(),
+                    "village:temporarily_missing");
+            helper.assertTrue(
+                    VillagerQuestService.abandonQuestFromJournal(player, compiled.id()),
+                    "offline abandonment failed");
+            helper.assertTrue(progress.hasPendingLifecycleEvents(), "offline hook was not deferred");
+
+            progress.setIssuer(
+                    providerId,
+                    "Returned Farmer",
+                    "minecraft:farmer",
+                    2,
+                    Level.OVERWORLD,
+                    provider.blockPosition(),
+                    "village:returning");
+            player.tickCount = 0;
+            VillagerQuestService.onPlayerTick(player);
+            QuestScopeKey questScope = QuestScopeKey.quest(player.getUUID(), compiled.id());
+            helper.assertFalse(progress.hasPendingLifecycleEvents(), "provider return left lifecycle work queued");
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).counter(questScope, "abandon_replays"), 1,
+                    "provider return did not replay the deferred hook");
+            VillagerQuestService.onPlayerTick(player);
+            helper.assertValueEqual(
+                    VillagerQuestFacts.get(level).counter(questScope, "abandon_replays"), 1,
+                    "provider return replayed the hook twice");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            provider.discard();
+            VillagerQuestResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void crossVillagerCompletionRequiresAuthoredCompatibility(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager original = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager other = spawnVillager(helper, new BlockPos(4, 2, 2));
+        original.setVillagerData(original.getVillagerData().setProfession(VillagerProfession.FARMER).setLevel(2));
+        other.setVillagerData(other.getVillagerData().setProfession(VillagerProfession.FARMER).setLevel(2));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        DialogueContext otherContext = VillagerInteractionService.createDialogueContext(level, player, other);
+        VillagerQuestSavedData.QuestProgress progress = new VillagerQuestSavedData.QuestProgress();
+        progress.start(original.getUUID(), Level.OVERWORLD, null, 1L);
+
+        QuestDefinition compatible = compileQuestFixture(
+                VillagerRetaliation.id("quests/cross_provider_yes.json"),
+                providerRecoveryQuestV2Fixture("cross_provider_yes", true)).asQuestDefinition();
+        QuestDefinition locked = compileQuestFixture(
+                VillagerRetaliation.id("quests/cross_provider_no.json"),
+                providerRecoveryQuestV2Fixture("cross_provider_no", false)).asQuestDefinition();
+        helper.assertTrue(QuestAvailabilityService.matchesProviderLock(otherContext, compatible, progress),
+                "authored cross-villager compatibility was ignored");
+        helper.assertFalse(QuestAvailabilityService.matchesProviderLock(otherContext, locked, progress),
+                "locked quest completed through a replacement provider");
+        original.discard();
+        other.discard();
         helper.succeed();
     }
 
@@ -4096,12 +4549,14 @@ public final class VillagerQuestGameTests {
                 "",
                 Set.of("test"),
                 null,
+                List.of(),
                 true,
                 null,
                 QuestDefinition.Target.EMPTY,
                 List.of(objective),
                 QuestDefinition.Rules.DEFAULT,
                 QuestDefinition.Tracker.EMPTY,
+                "",
                 Map.of("started", started, "done", done),
                 List.of(),
                 QuestDefinition.Rewards.EMPTY,
@@ -4137,12 +4592,14 @@ public final class VillagerQuestGameTests {
                 "",
                 Set.of("test"),
                 null,
+                List.of(),
                 true,
                 null,
                 QuestDefinition.Target.EMPTY,
                 List.of(),
                 QuestDefinition.Rules.DEFAULT,
                 QuestDefinition.Tracker.EMPTY,
+                "",
                 Map.of(),
                 triggers,
                 QuestDefinition.Rewards.EMPTY,
@@ -4173,12 +4630,14 @@ public final class VillagerQuestGameTests {
                 definition.questline(),
                 definition.tags(),
                 definition.parent(),
+                definition.prerequisites(),
                 definition.showLockedAdventureHint(),
                 definition.offer(),
                 definition.target(),
                 definition.objectives(),
                 definition.rules(),
                 definition.tracker(),
+                definition.entryStage(),
                 definition.stages(),
                 triggers,
                 definition.rewards(),
@@ -4194,6 +4653,8 @@ public final class VillagerQuestGameTests {
                 compiled.metadata(),
                 compiled.provider(),
                 compiled.target(),
+                compiled.entryStage(),
+                compiled.prerequisites(),
                 compiled.rules(),
                 compiled.ui(),
                 compiled.objectives(),
@@ -4462,7 +4923,7 @@ public final class VillagerQuestGameTests {
                 .filter(candidate -> candidate.id().equals(branchId))
                 .findFirst()
                 .orElseThrow(() -> new GameTestAssertException("Missing response " + branchId));
-        helper.assertValueEqual(response.actions().size(), 4, branchId + " response action count");
+        helper.assertValueEqual(response.actions().size(), 5, branchId + " response action count");
         assertSetVariableAction(helper, response.actions().get(0), "choice", branchId, branchId + " choice action");
         VillagerActionDefinition tagAction = response.actions().get(1);
         helper.assertValueEqual(tagAction.kind(), VillagerActionDefinition.Kind.SET_TAG, branchId + " route tag kind");
@@ -4472,7 +4933,11 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(notification.kind(), VillagerActionDefinition.Kind.NOTIFICATION, branchId + " notification kind");
         helper.assertValueEqual(notification.notificationTrigger(), "quest.updated", branchId + " notification trigger");
         helper.assertFalse(notification.text().isBlank(), branchId + " notification text");
-        VillagerActionDefinition transition = response.actions().get(3);
+        VillagerActionDefinition scene = response.actions().get(3);
+        helper.assertValueEqual(scene.kind(), VillagerActionDefinition.Kind.START_SCENE, branchId + " scene action kind");
+        helper.assertValueEqual(scene.sceneId(), VillagerRetaliation.id("atlas_horizon_choice"), branchId + " scene id");
+        helper.assertValueEqual(scene.sceneOperationId(), "atlas_horizon_choice_v1", branchId + " scene operation");
+        VillagerActionDefinition transition = response.actions().get(4);
         helper.assertValueEqual(transition.kind(), VillagerActionDefinition.Kind.QUEST_TRANSITION, branchId + " transition kind");
         helper.assertValueEqual(transition.questTransition().responseId(), branchId, branchId + " transition response");
         helper.assertValueEqual(transition.questTransition().targetStage(), nextStage, branchId + " transition target");
@@ -5305,6 +5770,53 @@ public final class VillagerQuestGameTests {
                 """).getAsJsonObject();
         root.addProperty("id", VillagerRetaliation.id(path).toString());
         return root;
+    }
+
+    private static JsonObject failureQuestV2Fixture(String path) {
+        JsonObject root = JsonParser.parseString("""
+                {
+                  "schema": "villagerretaliation:quest/v2",
+                  "metadata": {"title":"Failure Contract","questline":"tests"},
+                  "provider": {"type":"villagerretaliation:villager"},
+                  "availability": {"repeatable":true,"max_starts":3},
+                  "lifecycle": {
+                    "on_fail": {"actions":[{"type":"set_variable","scope":"quest","key":"failure_hook","value":"ran"}]},
+                    "on_abandon": {"actions":[{"type":"set_variable","scope":"quest","key":"abandon_hook","value":"ran"}]}
+                  },
+                  "entry_stage": "start",
+                  "stages": [{
+                    "id":"start",
+                    "objectives":[],
+                    "responses":[{"id":"fail_now","label":"Fail","transition":{"fail":true}}]
+                  }],
+                  "events": [{"id":"event_fail","event":"progress","transition":{"fail":true}}],
+                  "rewards": {"actions":[{"type":"experience","amount":25}]}
+                }
+                """).getAsJsonObject();
+        root.addProperty("id", VillagerRetaliation.id(path).toString());
+        return root;
+    }
+
+    private static JsonObject providerRecoveryQuestV2Fixture(String path, boolean crossVillagerCompatible) {
+        JsonObject root = JsonParser.parseString("""
+                {
+                  "schema":"villagerretaliation:quest/v2",
+                  "metadata":{"title":"Provider Recovery","questline":"tests"},
+                  "provider":{"type":"villagerretaliation:villager","filters":{"professions":["minecraft:farmer"]}},
+                  "availability":{"repeatable":true,"max_starts":4,"locked_to_villager":true},
+                  "lifecycle":{"on_abandon":{"actions":[{"type":"counter","scope":"quest","key":"abandon_replays","amount":1}]}},
+                  "entry_stage":"start",
+                  "stages":[{"id":"start","objectives":[]}]
+                }
+                """).getAsJsonObject();
+        root.addProperty("id", VillagerRetaliation.id(path).toString());
+        root.getAsJsonObject("availability").addProperty("cross_villager_compatible", crossVillagerCompatible);
+        return root;
+    }
+
+    private static CompiledQuest compileQuestFixture(ResourceLocation location, JsonObject root) {
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
+        return QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope).orElseThrow();
     }
 
     private static JsonObject invalidQuestV2Fixture() {

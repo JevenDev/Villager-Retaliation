@@ -51,7 +51,7 @@ public final class QuestV2Compiler {
                     Set.of(resource.id().toString()));
             return Optional.empty();
         }
-        return Optional.of(compileDefinition(definition, source, canonical));
+        return Optional.of(compileDefinition(definition, resource.provider().type(), source, canonical));
     }
 
     private static CanonicalQuestJson canonicalize(QuestV2Resource resource, QuestSourcePointer source) {
@@ -63,6 +63,7 @@ public final class QuestV2Compiler {
         addTarget(root, resource);
         addRules(root, resource);
         addTracker(root, resource);
+        putString(root, "entry_stage", resource.entryStage());
 
         Map<String, QuestSourcePointer> objectiveSources = new LinkedHashMap<>();
         Map<String, QuestSourcePointer> stageSources = new LinkedHashMap<>();
@@ -136,9 +137,22 @@ public final class QuestV2Compiler {
 
     private static void addQuestIdentity(JsonObject root, QuestV2Resource resource) {
         putString(root, "questline", metadataString(resource, "questline"));
+        String authoredParent = metadataString(resource, "parent");
+        List<ResourceLocation> prerequisites = resource.availability().prerequisites();
         putString(root, "parent", firstNonBlank(
-                metadataString(resource, "parent"),
-                firstResourceLocationString(resource.availability().data(), "prerequisites")));
+                authoredParent,
+                prerequisites.isEmpty() ? "" : prerequisites.getFirst().toString()));
+        JsonArray prerequisiteIds = new JsonArray();
+        if (prerequisites.isEmpty()) {
+            if (!authoredParent.isBlank()) {
+                prerequisiteIds.add(authoredParent);
+            }
+        } else {
+            prerequisites.forEach(prerequisite -> prerequisiteIds.add(prerequisite.toString()));
+        }
+        if (!prerequisiteIds.isEmpty()) {
+            root.add("prerequisites", prerequisiteIds);
+        }
         JsonArray tags = stringArray(resource.metadata().get("tags"));
         if (tags.size() > 0) {
             root.add("tags", tags);
@@ -398,7 +412,7 @@ public final class QuestV2Compiler {
                 triggers,
                 triggerSources,
                 "on_fail",
-                QuestDefinition.TriggerEvent.ABANDONED);
+                QuestDefinition.TriggerEvent.FAILED);
     }
 
     private static void appendLifecycleTrigger(
@@ -546,8 +560,11 @@ public final class QuestV2Compiler {
         if (transition.complete()) {
             return List.of(questAction(questId, "turn_in"));
         }
-        if (transition.abandon() || transition.fail()) {
+        if (transition.abandon()) {
             return List.of(questAction(questId, "abandon"));
+        }
+        if (transition.fail()) {
+            return List.of(questAction(questId, "fail"));
         }
         return List.of();
     }
@@ -639,6 +656,7 @@ public final class QuestV2Compiler {
 
     private static CompiledQuest compileDefinition(
             QuestDefinition definition,
+            ResourceLocation providerType,
             QuestSourcePointer source,
             CanonicalQuestJson canonical) {
         List<CompiledQuestObjective> objectives = compileObjectives(definition, canonical.objectiveSources(), source);
@@ -661,8 +679,10 @@ public final class QuestV2Compiler {
                         definition.tags(),
                         definition.parent(),
                         definition.metadata()),
-                new CompiledQuestProvider(definition.offer()),
+                new CompiledQuestProvider(providerType, definition.offer()),
                 definition.target(),
+                definition.entryStage(),
+                definition.prerequisites(),
                 definition.rules(),
                 new CompiledQuestUi(definition.tracker(), definition.dialogue(), definition.links()),
                 objectives,

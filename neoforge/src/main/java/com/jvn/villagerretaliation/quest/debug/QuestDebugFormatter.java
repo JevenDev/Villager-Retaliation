@@ -1,7 +1,8 @@
 package com.jvn.villagerretaliation.quest.debug;
 
-import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
+import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -25,6 +26,7 @@ public final class QuestDebugFormatter {
         return "identity questline=" + blankAs(definition.questline(), "none")
                 + " tags=" + stringSet(definition.tags())
                 + " parent=" + parentState
+                + " prerequisites=" + definition.prerequisites()
                 + " objectives=" + definition.objectives().size()
                 + " triggers=" + definition.triggers().size();
     }
@@ -101,6 +103,8 @@ public final class QuestDebugFormatter {
                 + " completed=" + progress.completedGameTime()
                 + " abandoned=" + progress.abandonedGameTime()
                 + " expired=" + progress.expiredGameTime()
+                + " failed=" + progress.failedGameTime()
+                + " failure_reason=" + blankAs(progress.failureReason(), "none")
                 + " consumed_reason=" + blankAs(progress.consumedReason(), "none");
     }
 
@@ -115,6 +119,29 @@ public final class QuestDebugFormatter {
                 + " latest_prior_stage=" + blankAs(latest.priorStage(), "none")
                 + " latest_next_stage=" + blankAs(latest.nextStage(), "none")
                 + " latest_time=" + latest.gameTime();
+    }
+
+    public static String providerRebindHistoryLine(VillagerQuestSavedData.QuestProgress progress) {
+        if (progress == null || progress.providerRebindHistory().isEmpty()) {
+            return "provider_rebind_history entries=0";
+        }
+        VillagerQuestSavedData.ProviderRebindHistoryEntry latest = progress.providerRebindHistory().getLast();
+        return "provider_rebind_history entries=" + progress.providerRebindHistory().size()
+                + " latest_previous=" + latest.previousProviderId()
+                + " latest_replacement=" + latest.newProviderId()
+                + " latest_reason=" + latest.reason()
+                + " latest_time=" + latest.gameTime();
+    }
+
+    public static String pendingLifecycleEventsLine(VillagerQuestSavedData.QuestProgress progress) {
+        if (progress == null || progress.pendingLifecycleEvents().isEmpty()) {
+            return "pending_lifecycle_events entries=0";
+        }
+        return "pending_lifecycle_events entries=" + progress.pendingLifecycleEvents().size()
+                + " events=" + progress.pendingLifecycleEvents().stream()
+                        .map(QuestTriggerRegistry::canonicalEventId)
+                        .sorted()
+                        .toList();
     }
 
     public static String targetDefinitionLine(QuestDefinition.Target target) {

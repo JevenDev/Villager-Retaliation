@@ -122,6 +122,12 @@
                   "The Last Ember is not ready to ask this of you right now."
                 ]
               }
+            },
+            {
+              "type": "start_scene",
+              "scene": "villagerretaliation:last_ember_charge",
+              "operation_id": "last_ember_charge_v1",
+              "wait_for_result": true
             }
           ]
         },

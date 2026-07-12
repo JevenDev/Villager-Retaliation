@@ -47,6 +47,7 @@ public final class QuestAvailabilityService {
                             context.level().getGameTime(),
                             progress.completedGameTime(),
                             definition.rules().completionCooldownTicks());
+            case FAILED -> definition.rules().repeatable();
             case EXPIRED -> definition.rules().expiration().allowRepickup();
             case ABANDONED -> switch (definition.rules().abandonment()) {
                 case REMOVE_FOREVER -> false;

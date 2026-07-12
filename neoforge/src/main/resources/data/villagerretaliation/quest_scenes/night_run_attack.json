@@ -1,0 +1,120 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "villagerretaliation:night_run_attack",
+  "definition_version": 2,
+  "metadata": {
+    "title": "Night Run attack",
+    "quest": "villagerretaliation:night_run"
+  },
+  "ownership": "quest_instance",
+  "entry_step": "route_warning",
+  "timeout_ticks": 3600,
+  "failure_policy": "block_for_repair",
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "all_owned",
+  "actors": [
+    {
+      "alias": "player",
+      "type": "villagerretaliation:player",
+      "required": true,
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "binding_source": "owner_player",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "wait_until_timeout",
+      "death_policy": "block",
+      "timeout_ticks": 1200
+    },
+    {
+      "alias": "route_keeper",
+      "type": "villagerretaliation:villager",
+      "required": false,
+      "capabilities": [
+        "villagerretaliation:capability/dialogue"
+      ],
+      "binding_source": "quest_provider",
+      "replacement_policy": "compatible_replacement",
+      "missing_actor_policy": "skip",
+      "death_policy": "continue_with_snapshot",
+      "timeout_ticks": 1200
+    }
+  ],
+  "steps": [
+    {
+      "id": "route_warning",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "route_keeper"
+      ],
+      "data": {
+        "text": "I marked the blocked stretch beyond the lamps: webs in the hedges and skeletons watching the road.",
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20
+      },
+      "next": "listen_in_dark",
+      "failure_step": "failed"
+    },
+    {
+      "id": "listen_in_dark",
+      "type": "villagerretaliation:wait_ticks",
+      "data": {
+        "ticks": 40
+      },
+      "next": "start_attack"
+    },
+    {
+      "id": "start_attack",
+      "type": "villagerretaliation:start_encounter",
+      "data": {
+        "template": "villagerretaliation:night_run_attack",
+        "anchor_actor": "route_keeper",
+        "offset_x": 20,
+        "offset_z": 12,
+        "surface_anchor": true,
+        "difficulty": "normal"
+      },
+      "next": "clear_route",
+      "failure_step": "failed"
+    },
+    {
+      "id": "clear_route",
+      "type": "villagerretaliation:wait_encounter",
+      "data": {
+        "encounter_step": "start_attack"
+      },
+      "next": "clean_up",
+      "failure_step": "failed"
+    },
+    {
+      "id": "clean_up",
+      "type": "villagerretaliation:cleanup_encounter",
+      "data": {
+        "encounter_step": "start_attack",
+        "force_remove": false
+      },
+      "next": "mark_the_road",
+      "failure_step": "failed"
+    },
+    {
+      "id": "mark_the_road",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "route_keeper"
+      ],
+      "data": {
+        "text": "The dangerous stretch is clear. Bring lanterns and signs so the next courier needs less courage."
+      },
+      "next": "completed",
+      "failure_step": "failed"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ]
+}

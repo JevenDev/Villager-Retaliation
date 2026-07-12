@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveQuery;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.scene.SceneJournalPresenter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -29,7 +30,8 @@ public final class QuestTrackerPresenter {
                 resolveText(input.player(), input.title(), input.replacements()),
                 resolveText(input.player(), new QuestDefinition.SelectedText(step.text(), step.textKey()), input.replacements()),
                 resolveText(input.player(), new QuestDefinition.SelectedText(definition.description(), definition.descriptionKey()), input.replacements()),
-                metadataText(input.player(), step.metadata(), input.replacements(), input.status(), input.issuer()),
+                appendSceneStatus(metadataText(input.player(), step.metadata(), input.replacements(), input.status(), input.issuer()),
+                        SceneJournalPresenter.status(input.player(), definition.id())),
                 Mth.clamp(input.progress(), 0.0F, 1.0F),
                 input.showProgress(),
                 input.state().name().toLowerCase(Locale.ROOT),
@@ -42,6 +44,11 @@ public final class QuestTrackerPresenter {
                 input.objectiveSteps(),
                 false,
                 false);
+    }
+
+    private static String appendSceneStatus(String metadata,String sceneStatus){
+        if(sceneStatus==null||sceneStatus.isBlank())return metadata;
+        return metadata==null||metadata.isBlank()?sceneStatus:metadata+" • "+sceneStatus;
     }
 
     public static String syncSignature(
@@ -200,6 +207,7 @@ public final class QuestTrackerPresenter {
             case "abandoned" -> "Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} to pick this back up.";
             case "abandoned_cooldown" -> "Available later. Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z}.";
             case "expired" -> "Expired. Return to {issuer} near {issuer_x}, {issuer_y}, {issuer_z} if this can be restarted.";
+            case "failed" -> "Failed. Review the quest details before restarting.";
             case "completed" -> "Completed.";
             case "branch_locked" -> "Closed by another choice.";
             case "consumed" -> "Unavailable.";
@@ -214,7 +222,7 @@ public final class QuestTrackerPresenter {
 
     public static float fallbackProgress(String stepKey) {
         return switch (stepKey) {
-            case "inactive", "abandoned", "abandoned_cooldown", "expired", "branch_locked", "consumed", "not_started" -> 0.0F;
+            case "inactive", "failed", "abandoned", "abandoned_cooldown", "expired", "branch_locked", "consumed", "not_started" -> 0.0F;
             case "proof" -> 0.66F;
             case "return", "completed" -> 1.0F;
             default -> 0.25F;
@@ -432,24 +440,27 @@ public final class QuestTrackerPresenter {
             QuestDefinition definition,
             Function<ResourceLocation, String> questTitleLabeler,
             Function<ResourceLocation, Boolean> completionLookup) {
-        if (definition == null || definition.parent() == null) {
+        if (definition == null || definition.prerequisites().isEmpty()) {
             return List.of();
         }
-        ResourceLocation parent = definition.parent();
-        String parentTitle = questTitleLabeler == null ? parent.toString() : questTitleLabeler.apply(parent);
-        if (parentTitle == null || parentTitle.isBlank()) {
-            parentTitle = parent.toString();
+        List<QuestTrackerSyncPayload.Prerequisite> presented = new ArrayList<>();
+        for (ResourceLocation prerequisite : definition.prerequisites()) {
+            String title = questTitleLabeler == null ? prerequisite.toString() : questTitleLabeler.apply(prerequisite);
+            if (title == null || title.isBlank()) {
+                title = prerequisite.toString();
+            }
+            Map<String, String> values = new LinkedHashMap<>();
+            values.put("parent_quest", title);
+            values.put("parent_quest_id", prerequisite.toString());
+            boolean met = completionLookup != null && Boolean.TRUE.equals(completionLookup.apply(prerequisite));
+            String fallback = met ? "Completed {parent_quest}" : "Complete {parent_quest}";
+            String key = met ? "quest.tracker.prerequisite.parent_complete" : "quest.tracker.prerequisite.parent";
+            presented.add(new QuestTrackerSyncPayload.Prerequisite(
+                    prerequisite.toString(),
+                    resolveGlobalText(player, key, fallback, values),
+                    met));
         }
-        Map<String, String> values = new LinkedHashMap<>();
-        values.put("parent_quest", parentTitle);
-        values.put("parent_quest_id", parent.toString());
-        boolean met = completionLookup != null && Boolean.TRUE.equals(completionLookup.apply(parent));
-        String fallback = met ? "Completed {parent_quest}" : "Complete {parent_quest}";
-        String key = met ? "quest.tracker.prerequisite.parent_complete" : "quest.tracker.prerequisite.parent";
-        return List.of(new QuestTrackerSyncPayload.Prerequisite(
-                parent.toString(),
-                resolveGlobalText(player, key, fallback, values),
-                met));
+        return List.copyOf(presented);
     }
 
     private static void addQuestItem(

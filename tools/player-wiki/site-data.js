@@ -848,6 +848,7 @@ window.VR_WIKI_DATA = {
       },
       "rules": [
         "One-time",
+        "Can be completed with another valid villager",
         "Locked to the quest giver",
         "Turn-in items are consumed on completion"
       ],
@@ -13988,6 +13989,7 @@ window.VR_WIKI_DATA = {
       },
       "rules": [
         "One-time",
+        "Can be completed with another valid villager",
         "Locked to the quest giver",
         "Turn-in items are consumed on completion"
       ],
@@ -19586,6 +19588,7 @@ window.VR_WIKI_DATA = {
       },
       "rules": [
         "One-time",
+        "Can be completed with another valid villager",
         "Locked to the quest giver",
         "Turn-in items are consumed on completion"
       ],
@@ -48939,13 +48942,15 @@ window.VR_WIKI_DATA = {
       },
       "target": null,
       "objectives": [
-        "Record memory: Player Defended Village"
+        "Record memory: Player Defended Village",
+        "Defeat 3 Zombie",
+        "Defeat 1 Pillager"
       ],
       "steps": [
         {
           "id": "work",
           "label": "Work",
-          "text": "Defend the village from a real threat.",
+          "text": "Defeat the watch attackers and defend the village.",
           "progress": 0.75,
           "hint": ""
         },
@@ -48954,6 +48959,20 @@ window.VR_WIKI_DATA = {
           "label": "Defend Village",
           "text": "Defend the village from a real threat.",
           "progress": 0.85,
+          "hint": ""
+        },
+        {
+          "id": "defeat_zombies",
+          "label": "Defeat Zombies",
+          "text": "Defeat 3 zombies in the watch attack.",
+          "progress": 0.65,
+          "hint": ""
+        },
+        {
+          "id": "defeat_pillager",
+          "label": "Defeat Pillager",
+          "text": "Defeat the pillager leading the attack.",
+          "progress": 0.8,
           "hint": ""
         },
         {
@@ -49036,7 +49055,7 @@ window.VR_WIKI_DATA = {
           {
             "stageId": "work",
             "label": "Work",
-            "trackerText": "Defend the village from a real threat.",
+            "trackerText": "Defeat the watch attackers and defend the village.",
             "slots": [
               {
                 "slot": "offer",
@@ -49322,7 +49341,7 @@ window.VR_WIKI_DATA = {
           {
             "stageId": "work",
             "label": "Work",
-            "trackerText": "Defend the village from a real threat.",
+            "trackerText": "Defeat the watch attackers and defend the village.",
             "slots": [
               {
                 "slot": "offer",

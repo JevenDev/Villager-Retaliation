@@ -6,6 +6,7 @@
   "use strict";
 
   const SCHEMA_ID = "villagerretaliation:quest/v2";
+  const SCENE_SCHEMA_ID = "villagerretaliation:scene/v1";
   const RESOURCE_LOCATION = /^[a-z0-9_.-]+:[a-z0-9_./-]+$/;
   const STAGE_ID = /^(?!__generated)(?!vr\$)[A-Za-z0-9_.:-]+$/;
   const STORAGE_VERSION = 1;
@@ -196,6 +197,7 @@
       namespace: namespaceify(namespace),
       selectedQuestId: quest.id,
       quests: [quest],
+      scenes: [],
       updatedAt: new Date().toISOString()
     };
   }
@@ -206,6 +208,7 @@
     project.name = String(project.name || "Quest Project");
     project.namespace = namespaceify(project.namespace || project.quests?.[0]?.id?.split(":")[0] || "my_pack");
     project.quests = Array.isArray(project.quests) ? project.quests.filter((quest) => quest && typeof quest === "object") : [];
+    project.scenes = Array.isArray(project.scenes) ? project.scenes.filter((scene) => scene && typeof scene === "object") : [];
     if (!project.quests.length) project.quests.push(createLinearQuest(project.namespace));
     project.selectedQuestId = project.quests.some((quest) => quest.id === project.selectedQuestId) ? project.selectedQuestId : project.quests[0].id;
     project.updatedAt = new Date().toISOString();
@@ -216,6 +219,113 @@
     const match = String(quest?.id || "").match(/^([a-z0-9_.-]+):([a-z0-9_./-]+)$/);
     if (!match) return "data/my_pack/quests/untitled.json";
     return `data/${match[1]}/quests/${match[2]}.json`;
+  }
+
+  function createScene(namespace = "my_pack") {
+    const safe = namespaceify(namespace);
+    return {
+      schema: SCENE_SCHEMA_ID,
+      id: `${safe}:new_scene`,
+      definition_version: 1,
+      ownership: "player",
+      entry_step: "opening_wait",
+      actors: [
+        { alias: "player", type: "villagerretaliation:player", required: true, binding_source: "owner_player", replacement_policy: "fixed", missing_actor_policy: "wait_until_timeout" },
+        { alias: "guide", type: "villagerretaliation:villager", required: true, binding_source: "quest_provider", replacement_policy: "fixed", missing_actor_policy: "block" }
+      ],
+      steps: [
+        { id: "opening_wait", type: "villagerretaliation:wait_ticks", data: { ticks: 20 }, next: "finish" },
+        { id: "finish", type: "villagerretaliation:scene_complete" }
+      ],
+      failure_policy: "block_for_repair",
+      cancellation_policy: "cancel_scene",
+      cleanup_policy: "all_owned"
+    };
+  }
+
+  function sceneFilePath(scene) {
+    const match = String(scene?.id || "").match(/^([a-z0-9_.-]+):([a-z0-9_./-]+)$/);
+    if (!match) return "data/my_pack/quest_scenes/untitled.json";
+    return `data/${match[1]}/quest_scenes/${match[2]}.json`;
+  }
+
+  function validateScene(scene, registries = {}) {
+    const issues = [];
+    const issue = (severity, code, path, message, hint) => issues.push({ severity, code, path, message, hint });
+    if (scene?.schema !== SCENE_SCHEMA_ID) issue("error", "scene.schema", "/schema", `Schema must be ${SCENE_SCHEMA_ID}.`, "Use the supported scene v1 schema id.");
+    if (!RESOURCE_LOCATION.test(String(scene?.id || ""))) issue("error", "scene.id", "/id", "Scene id must be a namespaced resource location.", "Use lowercase namespace:path text.");
+    if (!["player", "party", "quest_instance", "world"].includes(scene?.ownership)) issue("error", "scene.ownership", "/ownership", "Scene ownership is missing or unsupported.", "Choose player, party, quest_instance, or world.");
+    const actors = Array.isArray(scene?.actors) ? scene.actors : [];
+    const aliases = new Set();
+    const actorTypes = registrySet(registries, "actor_types");
+    const actorDescriptors = registryEntries(registries, "actor_types");
+    actors.forEach((actor, index) => {
+      if (!actor?.alias || aliases.has(actor.alias)) issue("error", "scene.actor.duplicate", `/actors/${index}/alias`, "Actor aliases must be present and unique.", "Give every actor a stable alias.");
+      aliases.add(actor?.alias);
+      if (!RESOURCE_LOCATION.test(String(actor?.type || ""))) issue("error", "scene.actor.type", `/actors/${index}/type`, "Actor type must be namespaced.", "Choose a registered actor type.");
+      else if (actorTypes.size && !actorTypes.has(actor.type)) issue("error", "scene.actor.unknown", `/actors/${index}/type`, `Unknown actor type “${actor.type}”.`, "Choose a loaded actor type; runtime-only extensions are unavailable in this browser.");
+      const descriptor = actorDescriptors.find((entry) => entry.id === actor?.type || (entry.aliases || []).includes(actor?.type));
+      if (descriptor?.browser_available === false) issue("warning", "scene.actor.runtime_only", `/actors/${index}/type`, `Actor type “${actor.type}” is runtime-only.`, "The browser preserves it, but its extension must validate the resource on the server.");
+      const capabilities = new Set([...(descriptor?.live_capabilities || []), ...(descriptor?.snapshot_capabilities || [])]);
+      const missingCapability = (actor?.capabilities || []).find((capability) => !capabilities.has(capability));
+      if (descriptor && missingCapability) issue("error", "scene.actor.capability", `/actors/${index}/capabilities`, `Actor type “${actor.type}” does not declare capability “${missingCapability}”.`, "Remove the capability or choose a compatible actor type.");
+    });
+    const steps = Array.isArray(scene?.steps) ? scene.steps : [];
+    const ids = new Set();
+    const stepTypes = registrySet(registries, "scene_steps");
+    const stepDescriptors = registryEntries(registries, "scene_steps");
+    const encounterTemplates = registrySet(registries, "encounter_templates");
+    steps.forEach((step, index) => {
+      if (!step?.id || ids.has(step.id)) issue("error", "scene.step.duplicate", `/steps/${index}/id`, "Step ids must be present and unique.", "Author an explicit stable id; array positions are not identities.");
+      ids.add(step?.id);
+      if (!RESOURCE_LOCATION.test(String(step?.type || ""))) issue("error", "scene.step.type", `/steps/${index}/type`, "Step type must be namespaced.", "Choose a registered scene step.");
+      else if (stepTypes.size && !stepTypes.has(step.type)) issue("error", "scene.step.unknown", `/steps/${index}/type`, `Unknown step type “${step.type}”.`, "Choose a browser-available registered step.");
+      const descriptor = stepDescriptors.find((entry) => entry.id === step?.type || (entry.aliases || []).includes(step?.type));
+      if (descriptor?.browser_available === false) issue("warning", "scene.step.runtime_only", `/steps/${index}/type`, `Step type “${step.type}” is runtime-only.`, "The browser preserves its data, but the extension must validate it on the server.");
+      for (const alias of step?.actors || []) if (!aliases.has(alias)) issue("error", "scene.step.actor", `/steps/${index}/actors`, `Unknown actor alias “${alias}”.`, "Declare the actor before using it.");
+      if (step?.type === "villagerretaliation:start_encounter") {
+        const template = step?.data?.template || step?.data?.encounter_template;
+        const variants=step?.data?.variants;const hasTemplate=Boolean(template),hasVariants=Array.isArray(variants);if(hasTemplate===hasVariants)issue("error","scene.encounter.source",`/steps/${index}/data`,"Encounter start needs exactly one template or variants array.","Choose one deterministic encounter source.");else if(hasVariants){if(variants.length<1||variants.length>32)issue("error","scene.encounter.variants",`/steps/${index}/data/variants`,"Encounter variants need 1-32 entries.","Add a bounded weighted variant list.");const ids=new Set();variants.forEach((variant,variantIndex)=>{if(!/^[a-z][a-z0-9_.-]{0,63}$/.test(String(variant?.id||""))||ids.has(variant?.id))issue("error","scene.encounter.variant_id",`/steps/${index}/data/variants/${variantIndex}/id`,"Variant ids must be stable and unique.","Use a unique lowercase id.");ids.add(variant?.id);if(!RESOURCE_LOCATION.test(String(variant?.template||"")))issue("error","scene.encounter.variant_template",`/steps/${index}/data/variants/${variantIndex}/template`,"Variant template must be namespaced.","Choose a quest_encounters resource id.");if(variant?.weight!==undefined&&(!Number.isInteger(variant.weight)||variant.weight<1||variant.weight>10000))issue("error","scene.encounter.variant_weight",`/steps/${index}/data/variants/${variantIndex}/weight`,"Variant weight must be an integer from 1 to 10000.","Use a bounded positive weight.");});}
+        else if (!RESOURCE_LOCATION.test(String(template || ""))) issue("error", "scene.encounter.template", `/steps/${index}/data/template`, "Encounter start needs a namespaced template id.", "Choose a registered encounter template.");
+        else if (encounterTemplates.size && !encounterTemplates.has(template)) issue("warning", "scene.encounter.external", `/steps/${index}/data/template`, `Encounter template “${template}” is not a registered controller id.`, "Ensure the corresponding quest_encounters resource ships in the datapack.");
+      }
+    });
+    if (!ids.has(scene?.entry_step)) issue("error", "scene.entry", "/entry_step", "Entry step does not exist.", "Choose one of the stable step ids.");
+    const outgoing = new Map();
+    steps.forEach((step, index) => {
+      const targets = [step?.next, step?.failure_step, ...Object.values(step?.transitions || {})].filter(Boolean);
+      for (const target of targets) if (!ids.has(target)) issue("error", "scene.transition", `/steps/${index}`, `Transition references missing step “${target}”.`, "Choose an existing stable step id.");
+      outgoing.set(step?.id, targets.filter((target) => ids.has(target)));
+    });
+    const reachable = new Set();
+    const queue = ids.has(scene?.entry_step) ? [scene.entry_step] : [];
+    while (queue.length) {
+      const id = queue.shift();
+      if (reachable.has(id)) continue;
+      reachable.add(id);
+      queue.push(...(outgoing.get(id) || []));
+    }
+    steps.forEach((step, index) => {
+      if (step?.id && !reachable.has(step.id)) issue("warning", "scene.step.unreachable", `/steps/${index}/id`, `Step “${step.id}” is unreachable from the entry step.`, "Connect it from the graph or remove it.");
+    });
+    const terminal = steps.some((step) => reachable.has(step?.id) && ["villagerretaliation:scene_complete", "villagerretaliation:scene_fail"].includes(step?.type));
+    if (steps.length && !terminal) issue("error", "scene.terminal", "/steps", "No terminal step is reachable from the entry step.", "Connect a scene_complete or scene_fail step.");
+    const suspending = new Set(["villagerretaliation:wait_ticks", "villagerretaliation:wait_condition", "villagerretaliation:move_actor", "villagerretaliation:dialogue", "villagerretaliation:wait_encounter"]);
+    const visiting = new Set();
+    const visited = new Set();
+    const immediateCycle = (id) => {
+      const step = steps.find((entry) => entry.id === id);
+      if (!step || suspending.has(step.type)) return false;
+      if (visiting.has(id)) return true;
+      if (visited.has(id)) return false;
+      visiting.add(id);
+      const found = (outgoing.get(id) || []).some(immediateCycle);
+      visiting.delete(id);
+      visited.add(id);
+      return found;
+    };
+    if (scene?.entry_step && immediateCycle(scene.entry_step)) issue("error", "scene.cycle.immediate", "/steps", "The graph contains an unbounded immediate cycle.", "Insert a persistent wait/event step or connect the cycle to a terminal path.");
+    return issues.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || a.path.localeCompare(b.path));
   }
 
   function collectEdges(quest) {
@@ -312,6 +422,11 @@
     if (!quest.entry_stage) issue("error", "entry.missing", "/entry_stage", "Choose where the quest begins.", "Set an entry stage in Quest setup.");
     else if (!stageSet.has(quest.entry_stage)) issue("error", "entry.unknown", "/entry_stage", `Entry stage “${quest.entry_stage}” does not exist.`, "Choose one of the stages in this quest.");
     for (const duplicate of new Set(duplicates)) issue("error", "stage.duplicate", "/stages", `Stage id “${duplicate}” is used more than once.`, "Give every stage a unique id.");
+    const prerequisites = Array.isArray(quest.availability?.prerequisites) ? quest.availability.prerequisites : [];
+    prerequisites.forEach((prerequisite, index) => {
+      if (!RESOURCE_LOCATION.test(String(prerequisite || ""))) issue("error", "prerequisite.invalid", `/availability/prerequisites/${index}`, `Prerequisite “${prerequisite}” is not a namespaced quest id.`, "Use lowercase namespace:path format.");
+      if (prerequisites.indexOf(prerequisite) !== index) issue("warning", "prerequisite.duplicate", `/availability/prerequisites/${index}`, `Prerequisite “${prerequisite}” is listed more than once.`, "Keep each prerequisite once, in the order it should appear.");
+    });
 
     const objectiveIds = new Set();
     const objectiveRegistry = registrySet(registries, "objectives");
@@ -402,6 +517,8 @@
         if ((response.stage || response.next || response.scene) && response.actions?.some((action) => action.type === "quest_transition" || action.transition || action.stage || action.next)) {
           issue("warning", "response.transition.conflict", `${path}/responses/${index}`, `Response “${response.id || index + 1}” has two transition sources.`, "Keep either the direct destination or the transition action.");
         }
+        const terminalOutcomes = [response.complete, response.abandon, response.fail].filter(Boolean).length;
+        if (terminalOutcomes > 1) issue("error", "response.terminal.conflict", `${path}/responses/${index}`, `Response “${response.id || index + 1}” mixes failure, abandonment, or completion.`, "Choose exactly one terminal outcome.");
       }
     }
   }
@@ -416,8 +533,12 @@
   }
 
   function registrySet(registries, name) {
-    const entries = Array.isArray(registries?.[name]) ? registries[name] : Array.isArray(registries?.registries?.[name]) ? registries.registries[name] : [];
+    const entries = registryEntries(registries, name);
     return new Set(entries.flatMap((entry) => typeof entry === "string" ? [entry] : [entry.id, ...(entry.aliases || [])]).filter(Boolean));
+  }
+
+  function registryEntries(registries, name) {
+    return Array.isArray(registries?.[name]) ? registries[name] : Array.isArray(registries?.registries?.[name]) ? registries.registries[name] : [];
   }
 
   function validateRegistryBlocks(quest, key, candidateKeys, allowed, issue) {
@@ -472,7 +593,13 @@
         questId: quests[questIndex]?.id || ""
       });
     });
-    return issues.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || a.questIndex - b.questIndex || a.path.localeCompare(b.path));
+    for (const [sceneIndex, scene] of (project.scenes || []).entries()) {
+      for (const entry of validateScene(scene, registries)) issues.push({ ...entry, sceneIndex, sceneId: scene.id || "" });
+    }
+    return issues.sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
+      || (a.questIndex ?? Number.MAX_SAFE_INTEGER) - (b.questIndex ?? Number.MAX_SAFE_INTEGER)
+      || (a.sceneIndex ?? Number.MAX_SAFE_INTEGER) - (b.sceneIndex ?? Number.MAX_SAFE_INTEGER)
+      || a.path.localeCompare(b.path));
   }
 
   function stripBuilderFields(value) {
@@ -485,6 +612,7 @@
 
   return {
     SCHEMA_ID,
+    SCENE_SCHEMA_ID,
     STORAGE_VERSION,
     OBJECTIVE_LABELS,
     RESOURCE_LOCATION,
@@ -500,8 +628,10 @@
     createLinearQuest,
     createBranchingQuest,
     createProject,
+    createScene,
     normalizeProject,
     questFilePath,
+    sceneFilePath,
     collectEdges,
     collectNamedArrays,
     renameStage,
@@ -509,6 +639,7 @@
     reachableStages,
     validateQuest,
     validateProject,
+    validateScene,
     summarizeIssues,
     stripBuilderFields
   };

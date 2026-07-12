@@ -51,6 +51,12 @@ public final class QuestTriggerRegistry {
                     false,
                     0L),
             register(
+                    "failed",
+                    QuestDefinition.TriggerEvent.FAILED,
+                    aliases("fail", "quest_failed"),
+                    false,
+                    0L),
+            register(
                     "abandoned",
                     QuestDefinition.TriggerEvent.ABANDONED,
                     aliases("abandon", "quest_abandoned"),

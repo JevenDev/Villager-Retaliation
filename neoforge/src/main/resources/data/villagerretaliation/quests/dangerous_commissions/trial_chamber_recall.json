@@ -175,6 +175,12 @@
                   "The village is not ready to put that work in your hands yet."
                 ]
               }
+            },
+            {
+              "type": "start_scene",
+              "scene": "villagerretaliation:trial_chamber_briefing",
+              "operation_id": "trial_chamber_briefing_v1",
+              "wait_for_result": true
             }
           ]
         },

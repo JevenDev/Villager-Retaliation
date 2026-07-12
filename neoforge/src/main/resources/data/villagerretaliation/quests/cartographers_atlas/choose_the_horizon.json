@@ -104,6 +104,12 @@
                   "type": "notification",
                   "trigger": "quest.updated",
                   "text": "You chose the drowned coast. Reach the Ocean Monument, then bring back the prismarine proof."
+                },
+                {
+                  "type": "start_scene",
+                  "scene": "villagerretaliation:atlas_horizon_choice",
+                  "operation_id": "atlas_horizon_choice_v1",
+                  "wait_for_result": true
                 }
               ],
               "transition": {
@@ -130,6 +136,12 @@
                   "type": "notification",
                   "trigger": "quest.updated",
                   "text": "You chose the dark roof road. Reach the Woodland Mansion, then bring back the binding proof."
+                },
+                {
+                  "type": "start_scene",
+                  "scene": "villagerretaliation:atlas_horizon_choice",
+                  "operation_id": "atlas_horizon_choice_v1",
+                  "wait_for_result": true
                 }
               ],
               "transition": {

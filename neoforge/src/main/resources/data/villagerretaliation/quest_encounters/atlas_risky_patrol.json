@@ -1,0 +1,20 @@
+{
+  "schema": "villagerretaliation:encounter/v1",
+  "id": "villagerretaliation:atlas_risky_patrol",
+  "version": 1,
+  "controller": "villagerretaliation:controlled",
+  "members": [
+    {
+      "entity": "minecraft:pillager",
+      "count": 3
+    }
+  ],
+  "spawn_mode": "group",
+  "extra_per_player": 1,
+  "max_party_size": 4,
+  "placement_attempts": 24,
+  "spawn_radius": 12,
+  "respawn_policy": "missing_if_loaded",
+  "cleanup_policy": "remove_survivors",
+  "completion_condition": "all_defeated"
+}

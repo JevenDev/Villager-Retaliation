@@ -194,11 +194,11 @@ node tools/validate-dialogue-data.mjs --quest path/to/quest.json
 | --- | --- |
 | `schema` | Must be `villagerretaliation:quest/v2` for v2 modules |
 | `id` | Stable quest resource id used by saves, commands, dialogue, and overrides |
-| `metadata` | Player-facing title, description, questline, tags, and parent |
+| `metadata` | Player-facing title, description, questline, tags, and legacy parent convenience |
 | `provider` | Who can offer or own the quest |
-| `availability` | Repeat limits, abandonment, cooldowns, locking, and active gates |
+| `availability` | Ordered prerequisites, repeat limits, abandonment, cooldowns, locking, and active gates |
 | `target` | Optional world target such as a structure search |
-| `entry_stage` | First stage id |
+| `entry_stage` | Authoritative first stage id; a later stage named `started` does not override it |
 | `stages` | Objectives, stage-local dialogue, responses, scenes, events, and UI |
 | `events` | Quest-level triggers that run while the quest exists |
 | `rewards` | XP, reputation, gossip, loot, memory events, or reward actions |
@@ -230,6 +230,36 @@ Keep each response to one transition source. Pick one of:
 - a transition action such as `quest_transition`
 
 Do not combine direct transition fields with a transition action on the same response. Put side effects, such as `set_variable`, `notification`, or `reputation`, in `actions`, then put the single stage or scene move in `transition`.
+
+`fail` and `abandon` are different terminal outcomes. Failure records `FAILED`, runs only `lifecycle.on_fail`, stores a normalized failure code and time, and never grants completion rewards or increments completion/abandonment counts. Voluntary abandonment records `ABANDONED` (or `CONSUMED` when authored that way) and runs only `lifecycle.on_abandon`.
+
+## Prerequisites And Restart Rules
+
+Put every required quest in `availability.prerequisites`. The list is ordered for journal/debug presentation and every entry must be completed; `metadata.parent` remains a singular compatibility and organization field for older content.
+
+```json
+"availability": {
+  "prerequisites": [
+    "my_pack:first_steps",
+    "my_pack:earn_their_trust",
+    "my_pack:find_the_map"
+  ]
+}
+```
+
+Failed quests can restart only when `repeatable` is true. `max_starts`, `max_completions`, provider locking, and completion scope still apply. Failure does not consume the quest by itself. Abandoned quests continue to follow `abandonment`, abandonment cooldown, and `consume_on_abandonment`.
+
+## Missing Providers And Rebind
+
+Active progress remains in the journal using the saved provider name, profession, location, and UUID when the live villager is gone. The journal's **Abandon quest** action works without the live provider. If abandonment or expiration has an authored lifecycle hook, the runtime persists that event instead of dropping its provider-bound actions. It replays the event once when the original provider is live again, or immediately after an operator supplies a compatible replacement. Turning in through another matching provider is allowed only with `cross_villager_compatible: true`; the runtime never chooses a nearby villager automatically.
+
+Operators can explicitly repair a missing binding with:
+
+```text
+/villagerretaliation quest debug rebind <quest_id> <provider_name>
+```
+
+The command refuses a rebind while the current provider is live, verifies the provider type and authored filters, retains the previous snapshot in save history, and reports the accepted or rejected audit result. A terminal quest can be rebound only while it has deferred lifecycle work; the rebind consumes that work after one dispatch without reopening the quest. The debug inspector lists pending lifecycle events alongside provider history.
 
 ## Branch Example
 
@@ -675,6 +705,7 @@ Useful commands while testing:
 /villagerretaliation quest debug why_available <quest_id> <provider_name>
 /villagerretaliation quest debug why_hidden <quest_id> [provider_name]
 /villagerretaliation quest debug inspect <quest_id>
+/villagerretaliation quest debug rebind <quest_id> <provider_name>
 /villagerretaliation quest debug objectives <quest_id>
 /villagerretaliation quest debug trace on
 /villagerretaliation quest debug trace show [limit]

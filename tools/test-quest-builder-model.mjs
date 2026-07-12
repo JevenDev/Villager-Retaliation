@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
@@ -12,7 +13,9 @@ const registryMetadata = {
       { id: "quest_transition", aliases: ["branch_transition"] }
     ],
     conditions: [{ id: "reputation", aliases: [] }],
-    triggers: [{ id: "started", aliases: ["start"] }]
+    triggers: [{ id: "started", aliases: ["start"] }],
+    actor_types: ["player", "villager", "position"].map((id) => ({ id: `villagerretaliation:${id}`, aliases: [] })),
+    scene_steps: ["wait_ticks", "dialogue", "scene_complete", "scene_fail"].map((id) => ({ id: `villagerretaliation:${id}`, aliases: [] }))
   }
 };
 
@@ -87,6 +90,41 @@ function testDuplicateProjectPaths() {
   assert.equal(issues.find((issue) => issue.code === "project.path.duplicate").questIndex, 1);
 }
 
+function testFailureAndPrerequisiteContracts() {
+  const quest = model.createLinearQuest("contract_pack");
+  quest.availability.prerequisites = ["contract_pack:first", "contract_pack:second", "contract_pack:third"];
+  quest.stages[0].dialogue = { reminder: { lines: ["Continue?"], responses: [{ id: "fail", label: "Give up", fail: true }] } };
+  assert.deepEqual(model.validateQuest(quest, registryMetadata), []);
+  quest.availability.prerequisites.push("Bad prerequisite");
+  quest.stages[0].dialogue.reminder.responses[0].abandon = true;
+  const issueCodes = codes(model.validateQuest(quest, registryMetadata));
+  assert(issueCodes.includes("prerequisite.invalid"));
+  assert(issueCodes.includes("response.terminal.conflict"));
+}
+
+function testPersistentSceneModel() {
+  const scene = model.createScene("scene_pack");
+  assert.equal(scene.schema, model.SCENE_SCHEMA_ID);
+  assert.equal(model.sceneFilePath(scene), "data/scene_pack/quest_scenes/new_scene.json");
+  assert.deepEqual(model.validateScene(scene, registryMetadata), []);
+  scene.steps.push({ ...scene.steps[0] });
+  const codes = model.validateScene(scene, registryMetadata).map((issue) => issue.code);
+  assert(codes.includes("scene.step.duplicate"));
+  scene.steps.pop();
+  scene.steps[0].next = "missing_step";
+  assert(model.validateScene(scene, registryMetadata).some((issue) => issue.code === "scene.transition"));
+  const project = model.createProject("linear", "scene_pack");
+  project.scenes.push(model.createScene("scene_pack"));
+  assert.equal(model.normalizeProject(project).scenes.length, 1);
+}
+
+function testWorkedSceneExample() {
+  const metadata = JSON.parse(fs.readFileSync("tools/datapack-builder/quest-registry-metadata.json", "utf8"));
+  const scene = JSON.parse(fs.readFileSync("example-packs/cinematic-gate-ambush/data/gate_story/quest_scenes/gate_ambush.json", "utf8"));
+  const errors = model.validateScene(scene, metadata).filter((issue) => issue.severity === "error");
+  assert.deepEqual(errors, [], errors.map((issue) => `${issue.code}: ${issue.message}`).join("\n"));
+}
+
 testLinearTemplate();
 testBranchingTemplate();
 testRenameReferences();
@@ -94,5 +132,8 @@ testRemoveReferences();
 testActionableValidation();
 testProjectRecovery();
 testDuplicateProjectPaths();
+testFailureAndPrerequisiteContracts();
+testPersistentSceneModel();
+testWorkedSceneExample();
 
 console.log("Quest builder model tests passed.");

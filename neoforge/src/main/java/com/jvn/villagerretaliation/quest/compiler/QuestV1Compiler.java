@@ -54,6 +54,8 @@ public final class QuestV1Compiler {
                         definition.metadata()),
                 new CompiledQuestProvider(definition.offer()),
                 definition.target(),
+                "",
+                definition.prerequisites(),
                 definition.rules(),
                 new CompiledQuestUi(definition.tracker(), definition.dialogue(), definition.links()),
                 objectives,

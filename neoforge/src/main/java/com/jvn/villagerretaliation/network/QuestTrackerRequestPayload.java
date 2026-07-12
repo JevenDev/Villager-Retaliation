@@ -33,6 +33,7 @@ public record QuestTrackerRequestPayload(String questId, Action action) implemen
         TRACK,
         UNTRACK,
         TOGGLE,
+        ABANDON,
         REFRESH;
 
         public static Action byName(String value) {

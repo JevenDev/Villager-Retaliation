@@ -7,6 +7,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
+import com.jvn.villagerretaliation.api.registry.FreezableExtensionRegistry;
+import com.jvn.villagerretaliation.api.registry.RuntimeTypeDescriptor;
 import com.jvn.villagerretaliation.action.ActionCapability;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
@@ -33,7 +36,8 @@ public final class QuestRegistryMetadata {
 
     public static JsonObject export() {
         JsonObject root = new JsonObject();
-        root.addProperty("format_version", 1);
+        VillagerRetaliationRegistries.registerBuiltIns();
+        root.addProperty("format_version", 2);
         root.addProperty("mod_id", VillagerRetaliation.MOD_ID);
         root.addProperty("generated_by", "com.jvn.villagerretaliation.quest.QuestRegistryMetadata");
 
@@ -43,6 +47,14 @@ public final class QuestRegistryMetadata {
         registries.add("objectives", objectiveDescriptors());
         registries.add("triggers", triggerDescriptors());
         registries.add("providers", providerDescriptors());
+        registries.add("actor_types", extensionDescriptors(VillagerRetaliationRegistries.ACTOR_TYPES));
+        registries.add("scene_steps", extensionDescriptors(VillagerRetaliationRegistries.SCENE_STEPS));
+        registries.add("encounter_templates", extensionDescriptors(VillagerRetaliationRegistries.ENCOUNTER_TEMPLATES));
+        registries.add("public_quest_providers", extensionDescriptors(VillagerRetaliationRegistries.QUEST_PROVIDERS));
+        registries.add("public_quest_objectives", extensionDescriptors(VillagerRetaliationRegistries.QUEST_OBJECTIVES));
+        registries.add("public_quest_actions", extensionDescriptors(VillagerRetaliationRegistries.QUEST_ACTIONS));
+        registries.add("public_quest_conditions", extensionDescriptors(VillagerRetaliationRegistries.QUEST_CONDITIONS));
+        registries.add("public_quest_triggers", extensionDescriptors(VillagerRetaliationRegistries.QUEST_TRIGGER_EVENTS));
         root.add("registries", registries);
 
         JsonObject fragments = new JsonObject();
@@ -126,6 +138,25 @@ public final class QuestRegistryMetadata {
             providers.add(entry);
         }
         return providers;
+    }
+
+    private static JsonArray extensionDescriptors(FreezableExtensionRegistry<RuntimeTypeDescriptor> registry) {
+        JsonArray result = new JsonArray();
+        for (RuntimeTypeDescriptor descriptor : registry.descriptors()) {
+            JsonObject entry = new JsonObject();
+            entry.addProperty("id", descriptor.id().toString());
+            entry.add("aliases", resourceLocationNames(descriptor.aliases()));
+            entry.add("live_capabilities", resourceLocationNames(descriptor.liveCapabilities()));
+            entry.add("snapshot_capabilities", resourceLocationNames(descriptor.snapshotCapabilities()));
+            entry.addProperty("recovery", descriptor.recoveryMode().name().toLowerCase(java.util.Locale.ROOT));
+            entry.addProperty("client_sync", descriptor.clientSync().name().toLowerCase(java.util.Locale.ROOT));
+            entry.addProperty("title", descriptor.tooling().title());
+            entry.addProperty("description", descriptor.tooling().description());
+            entry.addProperty("browser_available", descriptor.tooling().browserAvailable());
+            entry.add("schema", GSON.toJsonTree(descriptor.tooling().schema()));
+            result.add(entry);
+        }
+        return result;
     }
 
     private static JsonObject descriptorBase(String id, Set<String> aliases) {

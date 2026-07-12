@@ -18,6 +18,8 @@ public record CompiledQuest(
         CompiledQuestMetadata metadata,
         CompiledQuestProvider provider,
         QuestDefinition.Target target,
+        String entryStage,
+        List<ResourceLocation> prerequisites,
         QuestDefinition.Rules rules,
         CompiledQuestUi ui,
         List<CompiledQuestObjective> objectives,
@@ -42,6 +44,8 @@ public record CompiledQuest(
                 : metadata;
         provider = provider == null ? new CompiledQuestProvider(null) : provider;
         target = target == null ? QuestDefinition.Target.EMPTY : target;
+        entryStage = entryStage == null ? "" : entryStage.trim();
+        prerequisites = prerequisites == null ? List.of() : List.copyOf(prerequisites);
         rules = rules == null ? QuestDefinition.Rules.DEFAULT : rules;
         ui = ui == null ? new CompiledQuestUi(null, null, null) : ui;
         objectives = objectives == null ? List.of() : List.copyOf(objectives);

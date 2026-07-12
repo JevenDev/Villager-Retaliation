@@ -1,0 +1,4426 @@
+{
+  "type": "object",
+  "title": "Controlled encounter template v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jeven.dev/villager-retaliation/schema/encounter-v1.schema.json",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "id"
+  ],
+  "oneOf": [
+    {
+      "required": [
+        "members"
+      ],
+      "allOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "waves"
+                ]
+              },
+              {
+                "required": [
+                  "variants"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "required": [
+        "waves"
+      ],
+      "allOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "members"
+                ]
+              },
+              {
+                "required": [
+                  "variants"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "required": [
+        "variants"
+      ],
+      "allOf": [
+        {
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "members"
+                ]
+              },
+              {
+                "required": [
+                  "waves"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "properties": {
+    "schema": {
+      "const": "villagerretaliation:encounter/v1"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "controller": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$",
+      "enum": [
+        "villagerretaliation:controlled"
+      ]
+    },
+    "members": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Encounter member",
+        "additionalProperties": false,
+        "required": [
+          "entity"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "entity": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 64
+          },
+          "equipment": {
+            "type": "object",
+            "title": "Equipment by slot",
+            "additionalProperties": false,
+            "properties": {
+              "mainhand": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "offhand": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "head": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "chest": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "legs": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "feet": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "body": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            }
+          },
+          "custom_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "name_visible": {
+            "type": "boolean"
+          },
+          "glowing": {
+            "type": "boolean"
+          },
+          "persistent": {
+            "type": "boolean"
+          },
+          "health": {
+            "type": "number",
+            "minimum": 1.0,
+            "maximum": 2048.0
+          },
+          "movement_speed": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 4.0
+          },
+          "attack_damage": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 2048.0
+          },
+          "armor": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 30.0
+          },
+          "knockback_resistance": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "attributes": {
+            "type": "object",
+            "title": "Allowlisted mob attributes",
+            "additionalProperties": false,
+            "properties": {
+              "minecraft:max_health": {
+                "type": "number",
+                "minimum": 1.0,
+                "maximum": 2048.0
+              },
+              "minecraft:movement_speed": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 4.0
+              },
+              "minecraft:attack_damage": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 2048.0
+              },
+              "minecraft:armor": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 30.0
+              },
+              "minecraft:knockback_resistance": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              }
+            }
+          },
+          "boss": {
+            "type": "boolean"
+          },
+          "boss_bar_color": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "pink",
+              "blue",
+              "red",
+              "green",
+              "yellow",
+              "purple",
+              "white"
+            ]
+          },
+          "boss_bar_overlay": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "progress",
+              "notched_6",
+              "notched_10",
+              "notched_12",
+              "notched_20"
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "name_visible": {
+                  "const": true
+                }
+              },
+              "required": [
+                "name_visible"
+              ]
+            },
+            "then": {
+              "required": [
+                "custom_name"
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "boss_bar_color"
+              ]
+            },
+            "then": {
+              "properties": {
+                "boss": {
+                  "const": true
+                }
+              },
+              "required": [
+                "boss"
+              ]
+            }
+          },
+          {
+            "if": {
+              "required": [
+                "boss_bar_overlay"
+              ]
+            },
+            "then": {
+              "properties": {
+                "boss": {
+                  "const": true
+                }
+              },
+              "required": [
+                "boss"
+              ]
+            }
+          }
+        ]
+      },
+      "maxItems": 64
+    },
+    "waves": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Authored encounter wave",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "members"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "members": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "title": "Encounter member",
+              "additionalProperties": false,
+              "required": [
+                "entity"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "entity": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 64
+                },
+                "equipment": {
+                  "type": "object",
+                  "title": "Equipment by slot",
+                  "additionalProperties": false,
+                  "properties": {
+                    "mainhand": {
+                      "type": "object",
+                      "title": "Equipped item",
+                      "additionalProperties": false,
+                      "required": [
+                        "item"
+                      ],
+                      "properties": {
+                        "item": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 99
+                        },
+                        "enchantments": {
+                          "type": "object",
+                          "title": "Enchantment levels",
+                          "propertyNames": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                          },
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          }
+                        },
+                        "drop_chance": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      }
+                    },
+                    "offhand": {
+                      "type": "object",
+                      "title": "Equipped item",
+                      "additionalProperties": false,
+                      "required": [
+                        "item"
+                      ],
+                      "properties": {
+                        "item": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 99
+                        },
+                        "enchantments": {
+                          "type": "object",
+                          "title": "Enchantment levels",
+                          "propertyNames": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                          },
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          }
+                        },
+                        "drop_chance": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      }
+                    },
+                    "head": {
+                      "type": "object",
+                      "title": "Equipped item",
+                      "additionalProperties": false,
+                      "required": [
+                        "item"
+                      ],
+                      "properties": {
+                        "item": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 99
+                        },
+                        "enchantments": {
+                          "type": "object",
+                          "title": "Enchantment levels",
+                          "propertyNames": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                          },
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          }
+                        },
+                        "drop_chance": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      }
+                    },
+                    "chest": {
+                      "type": "object",
+                      "title": "Equipped item",
+                      "additionalProperties": false,
+                      "required": [
+                        "item"
+                      ],
+                      "properties": {
+                        "item": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 99
+                        },
+                        "enchantments": {
+                          "type": "object",
+                          "title": "Enchantment levels",
+                          "propertyNames": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                          },
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          }
+                        },
+                        "drop_chance": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      }
+                    },
+                    "legs": {
+                      "type": "object",
+                      "title": "Equipped item",
+                      "additionalProperties": false,
+                      "required": [
+                        "item"
+                      ],
+                      "properties": {
+                        "item": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 99
+                        },
+                        "enchantments": {
+                          "type": "object",
+                          "title": "Enchantment levels",
+                          "propertyNames": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                          },
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          }
+                        },
+                        "drop_chance": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      }
+                    },
+                    "feet": {
+                      "type": "object",
+                      "title": "Equipped item",
+                      "additionalProperties": false,
+                      "required": [
+                        "item"
+                      ],
+                      "properties": {
+                        "item": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 99
+                        },
+                        "enchantments": {
+                          "type": "object",
+                          "title": "Enchantment levels",
+                          "propertyNames": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                          },
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          }
+                        },
+                        "drop_chance": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      }
+                    },
+                    "body": {
+                      "type": "object",
+                      "title": "Equipped item",
+                      "additionalProperties": false,
+                      "required": [
+                        "item"
+                      ],
+                      "properties": {
+                        "item": {
+                          "type": "string",
+                          "minLength": 1,
+                          "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                        },
+                        "count": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 99
+                        },
+                        "enchantments": {
+                          "type": "object",
+                          "title": "Enchantment levels",
+                          "propertyNames": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                          },
+                          "additionalProperties": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 255
+                          }
+                        },
+                        "drop_chance": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        }
+                      }
+                    }
+                  }
+                },
+                "custom_name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "name_visible": {
+                  "type": "boolean"
+                },
+                "glowing": {
+                  "type": "boolean"
+                },
+                "persistent": {
+                  "type": "boolean"
+                },
+                "health": {
+                  "type": "number",
+                  "minimum": 1.0,
+                  "maximum": 2048.0
+                },
+                "movement_speed": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "maximum": 4.0
+                },
+                "attack_damage": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "maximum": 2048.0
+                },
+                "armor": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "maximum": 30.0
+                },
+                "knockback_resistance": {
+                  "type": "number",
+                  "minimum": 0.0,
+                  "maximum": 1.0
+                },
+                "attributes": {
+                  "type": "object",
+                  "title": "Allowlisted mob attributes",
+                  "additionalProperties": false,
+                  "properties": {
+                    "minecraft:max_health": {
+                      "type": "number",
+                      "minimum": 1.0,
+                      "maximum": 2048.0
+                    },
+                    "minecraft:movement_speed": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "maximum": 4.0
+                    },
+                    "minecraft:attack_damage": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "maximum": 2048.0
+                    },
+                    "minecraft:armor": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "maximum": 30.0
+                    },
+                    "minecraft:knockback_resistance": {
+                      "type": "number",
+                      "minimum": 0.0,
+                      "maximum": 1.0
+                    }
+                  }
+                },
+                "boss": {
+                  "type": "boolean"
+                },
+                "boss_bar_color": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "pink",
+                    "blue",
+                    "red",
+                    "green",
+                    "yellow",
+                    "purple",
+                    "white"
+                  ]
+                },
+                "boss_bar_overlay": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "progress",
+                    "notched_6",
+                    "notched_10",
+                    "notched_12",
+                    "notched_20"
+                  ]
+                }
+              },
+              "allOf": [
+                {
+                  "if": {
+                    "properties": {
+                      "name_visible": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "name_visible"
+                    ]
+                  },
+                  "then": {
+                    "required": [
+                      "custom_name"
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "boss_bar_color"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "boss": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "boss"
+                    ]
+                  }
+                },
+                {
+                  "if": {
+                    "required": [
+                      "boss_bar_overlay"
+                    ]
+                  },
+                  "then": {
+                    "properties": {
+                      "boss": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "boss"
+                    ]
+                  }
+                }
+              ]
+            },
+            "maxItems": 64
+          },
+          "delay_ticks": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 12000
+          },
+          "trigger": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "all_defeated",
+              "timer"
+            ]
+          },
+          "boss_bar_title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "equipment": {
+            "type": "object",
+            "title": "Equipment by slot",
+            "additionalProperties": false,
+            "properties": {
+              "mainhand": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "offhand": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "head": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "chest": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "legs": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "feet": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "body": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            }
+          },
+          "scene_actions": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+              "type": "object",
+              "title": "Safe wave scene action",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "type",
+                "text"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "type": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "notification",
+                    "dialogue"
+                  ]
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512
+                }
+              }
+            },
+            "maxItems": 32
+          },
+          "dialogue_hook": {
+            "type": "object",
+            "title": "Wave dialogue hook",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "text"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 512
+              }
+            }
+          }
+        }
+      },
+      "maxItems": 32
+    },
+    "variants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Weighted deterministic encounter variant",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "template"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "weight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "template": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          }
+        }
+      },
+      "maxItems": 32
+    },
+    "extra_per_player": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 64
+    },
+    "max_party_size": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 16
+    },
+    "placement_attempts": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 64
+    },
+    "spawn_radius": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 32
+    },
+    "spawn_mode": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "group",
+        "near_player",
+        "fixed",
+        "raid_waves"
+      ]
+    },
+    "spawn_points": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Named authored spawn point",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "marker": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "dimension": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          },
+          "x": {
+            "type": "integer",
+            "minimum": -30000000,
+            "maximum": 30000000
+          },
+          "y": {
+            "type": "integer",
+            "minimum": -2048,
+            "maximum": 2048
+          },
+          "z": {
+            "type": "integer",
+            "minimum": -30000000,
+            "maximum": 30000000
+          },
+          "offset_x": {
+            "type": "integer",
+            "minimum": -256,
+            "maximum": 256
+          },
+          "offset_y": {
+            "type": "integer",
+            "minimum": -256,
+            "maximum": 256
+          },
+          "offset_z": {
+            "type": "integer",
+            "minimum": -256,
+            "maximum": 256
+          },
+          "weight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "actor"
+            ],
+            "allOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "marker"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "dimension"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "x"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "y"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "z"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "required": [
+              "marker"
+            ],
+            "allOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "actor"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "dimension"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "x"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "y"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "z"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "allOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "actor"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "marker"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "offset_x"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "offset_y"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "offset_z"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "maxItems": 64
+    },
+    "spawn_selection": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "random",
+        "sequential",
+        "weighted",
+        "nearest_player",
+        "farthest_player",
+        "one_group_per_point"
+      ]
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Durable mid-fight encounter phase",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "trigger",
+          "actions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "trigger": {
+            "type": "object",
+            "title": "Durable encounter phase trigger",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "enum": [
+                  "wave_started",
+                  "wave_completed",
+                  "remaining_percentage",
+                  "elapsed_time",
+                  "elite_defeated"
+                ]
+              },
+              "wave": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "percentage": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "ticks": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1728000
+              },
+              "member": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              }
+            },
+            "oneOf": [
+              {
+                "required": [
+                  "type",
+                  "wave"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "percentage"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "wave_started"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "type",
+                  "wave"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "percentage"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "wave_completed"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "type",
+                  "percentage"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "wave"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "remaining_percentage"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "type",
+                  "ticks"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "wave"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "percentage"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "elapsed_time"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "type",
+                  "member"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "wave"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "percentage"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "ticks"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "elite_defeated"
+                  }
+                }
+              }
+            ]
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "title": "Allowlisted encounter phase action",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "type": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "notification",
+                    "dialogue",
+                    "fact",
+                    "transition"
+                  ]
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 512
+                },
+                "scope": {
+                  "type": "string",
+                  "minLength": 1,
+                  "enum": [
+                    "player",
+                    "quest",
+                    "world"
+                  ]
+                },
+                "tag": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                },
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-zA-Z0-9_.:-]{1,128}$"
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 128
+                },
+                "target": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                }
+              },
+              "oneOf": [
+                {
+                  "required": [
+                    "id",
+                    "type",
+                    "text"
+                  ],
+                  "allOf": [
+                    {
+                      "not": {
+                        "anyOf": [
+                          {
+                            "required": [
+                              "scope"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "tag"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "key"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "value"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "target"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "notification"
+                    }
+                  }
+                },
+                {
+                  "required": [
+                    "id",
+                    "type",
+                    "text"
+                  ],
+                  "allOf": [
+                    {
+                      "not": {
+                        "anyOf": [
+                          {
+                            "required": [
+                              "scope"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "tag"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "key"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "value"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "target"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "dialogue"
+                    }
+                  }
+                },
+                {
+                  "required": [
+                    "id",
+                    "type",
+                    "target"
+                  ],
+                  "allOf": [
+                    {
+                      "not": {
+                        "anyOf": [
+                          {
+                            "required": [
+                              "text"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "scope"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "tag"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "key"
+                            ]
+                          },
+                          {
+                            "required": [
+                              "value"
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "transition"
+                    }
+                  }
+                },
+                {
+                  "oneOf": [
+                    {
+                      "required": [
+                        "id",
+                        "type",
+                        "tag"
+                      ],
+                      "allOf": [
+                        {
+                          "not": {
+                            "anyOf": [
+                              {
+                                "required": [
+                                  "text"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "key"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "value"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "target"
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "fact"
+                        }
+                      }
+                    },
+                    {
+                      "required": [
+                        "id",
+                        "type",
+                        "key",
+                        "value"
+                      ],
+                      "allOf": [
+                        {
+                          "not": {
+                            "anyOf": [
+                              {
+                                "required": [
+                                  "text"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "tag"
+                                ]
+                              },
+                              {
+                                "required": [
+                                  "target"
+                                ]
+                              }
+                            ]
+                          }
+                        }
+                      ],
+                      "properties": {
+                        "type": {
+                          "const": "fact"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "maxItems": 32
+          },
+          "repeatable": {
+            "type": "boolean"
+          },
+          "repeat_interval_ticks": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12000
+          },
+          "max_fires": {
+            "type": "integer",
+            "minimum": 2,
+            "maximum": 64
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "repeatable"
+              ],
+              "properties": {
+                "repeatable": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "repeat_interval_ticks",
+                "max_fires"
+              ]
+            },
+            "else": {
+              "required": [],
+              "allOf": [
+                {
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "repeat_interval_ticks"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "max_fires"
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "maxItems": 64
+    },
+    "allies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Controlled friendly encounter participant",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "entity": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16
+          },
+          "equipment": {
+            "type": "object",
+            "title": "Equipment by slot",
+            "additionalProperties": false,
+            "properties": {
+              "mainhand": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "offhand": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "head": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "chest": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "legs": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "feet": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "body": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            }
+          },
+          "custom_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "name_visible": {
+            "type": "boolean"
+          },
+          "glowing": {
+            "type": "boolean"
+          },
+          "persistent": {
+            "type": "boolean"
+          },
+          "health": {
+            "type": "number",
+            "minimum": 1.0,
+            "maximum": 2048.0
+          },
+          "movement_speed": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 4.0
+          },
+          "attack_damage": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 2048.0
+          },
+          "armor": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 30.0
+          },
+          "knockback_resistance": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "attributes": {
+            "type": "object",
+            "title": "Allowlisted mob attributes",
+            "additionalProperties": false,
+            "properties": {
+              "minecraft:max_health": {
+                "type": "number",
+                "minimum": 1.0,
+                "maximum": 2048.0
+              },
+              "minecraft:movement_speed": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 4.0
+              },
+              "minecraft:attack_damage": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 2048.0
+              },
+              "minecraft:armor": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 30.0
+              },
+              "minecraft:knockback_resistance": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              }
+            }
+          },
+          "required_survival": {
+            "type": "boolean"
+          },
+          "invulnerable": {
+            "type": "boolean"
+          },
+          "revivable": {
+            "type": "boolean"
+          },
+          "revive_delay_ticks": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12000
+          },
+          "replacement_policy": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "never",
+              "missing_if_loaded"
+            ]
+          },
+          "cleanup_policy": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "remove",
+              "preserve"
+            ]
+          },
+          "affects_completion": {
+            "type": "boolean"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "entity"
+            ],
+            "allOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "actor"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "required": [
+              "actor"
+            ],
+            "allOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "entity"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "count"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "equipment"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "custom_name"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "name_visible"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "glowing"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "persistent"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "health"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "movement_speed"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "attack_damage"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "armor"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "knockback_resistance"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "attributes"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "revive_delay_ticks"
+              ]
+            },
+            "then": {
+              "required": [
+                "revivable"
+              ],
+              "properties": {
+                "revivable": {
+                  "const": true
+                }
+              }
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "required_survival",
+                "revivable"
+              ],
+              "properties": {
+                "required_survival": {
+                  "const": true
+                },
+                "revivable": {
+                  "const": true
+                }
+              }
+            }
+          }
+        ]
+      },
+      "maxItems": 32
+    },
+    "failure": {
+      "type": "object",
+      "title": "Durable encounter failure and retry policy",
+      "additionalProperties": false,
+      "properties": {
+        "on_player_death": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "fail",
+            "reset_wave",
+            "restart_encounter",
+            "pause",
+            "branch_scene"
+          ]
+        },
+        "on_protected_actor_death": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "fail",
+            "reset_wave",
+            "restart_encounter",
+            "pause",
+            "branch_scene"
+          ]
+        },
+        "retry_delay_ticks": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 12000
+        },
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 16
+        },
+        "retain_defeated": {
+          "type": "boolean"
+        },
+        "branch_step": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {
+                "required": [
+                  "on_player_death"
+                ],
+                "properties": {
+                  "on_player_death": {
+                    "const": "branch_scene"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "on_protected_actor_death"
+                ],
+                "properties": {
+                  "on_protected_actor_death": {
+                    "const": "branch_scene"
+                  }
+                }
+              }
+            ]
+          },
+          "then": {
+            "required": [
+              "branch_step"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "branch_step"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "environment": {
+      "type": "object",
+      "title": "Bounded encounter-owned environmental effects",
+      "additionalProperties": false,
+      "properties": {
+        "cues": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "title": "One-time safe sound, music, particle, or glowing-column cue",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "type"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "enum": [
+                  "sound",
+                  "music",
+                  "particles",
+                  "glowing_column"
+                ]
+              },
+              "sound": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "particle": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "offset_x": {
+                "type": "integer",
+                "minimum": -64,
+                "maximum": 64
+              },
+              "offset_y": {
+                "type": "integer",
+                "minimum": -64,
+                "maximum": 64
+              },
+              "offset_z": {
+                "type": "integer",
+                "minimum": -64,
+                "maximum": 64
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 128
+              },
+              "height": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              },
+              "volume": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 4.0
+              },
+              "pitch": {
+                "type": "number",
+                "minimum": 0.25,
+                "maximum": 4.0
+              }
+            }
+          },
+          "maxItems": 32
+        },
+        "temporary_blocks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "title": "Encounter-owned temporary allowlisted block",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "block"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "block": {
+                "type": "string",
+                "minLength": 1,
+                "enum": [
+                  "minecraft:barrier",
+                  "minecraft:light",
+                  "minecraft:structure_void",
+                  "minecraft:glass"
+                ]
+              },
+              "offset_x": {
+                "type": "integer",
+                "minimum": -64,
+                "maximum": 64
+              },
+              "offset_y": {
+                "type": "integer",
+                "minimum": -64,
+                "maximum": 64
+              },
+              "offset_z": {
+                "type": "integer",
+                "minimum": -64,
+                "maximum": 64
+              }
+            }
+          },
+          "maxItems": 64
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "cues"
+          ]
+        },
+        {
+          "required": [
+            "temporary_blocks"
+          ]
+        }
+      ]
+    },
+    "guidance": {
+      "type": "object",
+      "title": "Participant-only navigation guidance to the durable encounter anchor",
+      "additionalProperties": false,
+      "properties": {
+        "coordinate_message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "arrival_message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "discovery_radius": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 512
+        },
+        "arrival_radius": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "distance_tracker": {
+          "type": "boolean"
+        },
+        "compass_target": {
+          "type": "boolean"
+        },
+        "directional_particles": {
+          "type": "boolean"
+        },
+        "hud_marker": {
+          "type": "boolean"
+        },
+        "exact_coordinates": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "always",
+            "after_discovery",
+            "never"
+          ]
+        },
+        "update_interval_ticks": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 200
+        }
+      }
+    },
+    "rewards": {
+      "type": "object",
+      "title": "Receipt-guarded encounter rewards and mob drop policy",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "waves": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "title": "One durable per-participant item or loot-table reward",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "wave"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "wave": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "loot_table": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "item": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              },
+              "trophy_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            },
+            "oneOf": [
+              {
+                "required": [
+                  "loot_table"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "trophy_name"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "required": [
+                  "item"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "loot_table"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "maxItems": 32
+        },
+        "phases": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "title": "One durable per-participant item or loot-table reward",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "phase"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "phase": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "loot_table": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "item": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              },
+              "trophy_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            },
+            "oneOf": [
+              {
+                "required": [
+                  "loot_table"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "trophy_name"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "required": [
+                  "item"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "loot_table"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "maxItems": 32
+        },
+        "completion": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "title": "One durable per-participant item or loot-table reward",
+            "additionalProperties": false,
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "loot_table": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "item": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              },
+              "trophy_name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            },
+            "oneOf": [
+              {
+                "required": [
+                  "loot_table"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "trophy_name"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              {
+                "required": [
+                  "item"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "loot_table"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "maxItems": 32
+        },
+        "trophies": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "title": "Retry-safe trophy dropped once for a durable hostile spawn index",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "member",
+              "item"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "member": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "item": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128
+              }
+            }
+          },
+          "maxItems": 32
+        },
+        "drop_policy": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "normal",
+            "suppress",
+            "authored_only",
+            "trophy_only"
+          ]
+        }
+      }
+    },
+    "wave_count": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 32
+    },
+    "wave_interval_ticks": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "wave_trigger": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "all_defeated",
+        "timer"
+      ]
+    },
+    "boss_bar": {
+      "type": "boolean"
+    },
+    "location_message": {
+      "type": "string",
+      "minLength": 1
+    },
+    "area": {
+      "type": "object",
+      "title": "Durable encounter area",
+      "additionalProperties": false,
+      "required": [
+        "radius"
+      ],
+      "properties": {
+        "radius": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "vertical_radius": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "leave_behavior": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "ignore",
+            "warn",
+            "pause",
+            "fail"
+          ]
+        },
+        "leave_timeout_ticks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12000
+        },
+        "mob_behavior": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "ignore",
+            "return",
+            "teleport"
+          ]
+        },
+        "mob_timeout_ticks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12000
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "mob_timeout_ticks"
+            ]
+          },
+          "then": {
+            "required": [
+              "mob_behavior"
+            ],
+            "properties": {
+              "mob_behavior": {
+                "const": "teleport"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "respawn_policy": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "never",
+        "missing_if_loaded",
+        "until_first_defeat"
+      ]
+    },
+    "cleanup_policy": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "remove_survivors",
+        "preserve_in_world"
+      ]
+    },
+    "completion_condition": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "all_defeated",
+        "all_gone"
+      ]
+    },
+    "completion_objectives": {
+      "type": "object",
+      "title": "Composable encounter completion objectives",
+      "additionalProperties": false,
+      "required": [
+        "objectives"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "all",
+            "any"
+          ]
+        },
+        "objectives": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "title": "Durable encounter completion objective",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "enum": [
+                  "all_defeated",
+                  "all_gone",
+                  "survive_duration",
+                  "protect_actor",
+                  "prevent_entry",
+                  "escort_actor",
+                  "destroy_targets",
+                  "defeat_leader",
+                  "retrieve_item",
+                  "hold_areas"
+                ]
+              },
+              "duration_ticks": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1728000
+              },
+              "actor": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "point": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "actors": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "maxItems": 32,
+                "uniqueItems": true
+              },
+              "points": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                },
+                "maxItems": 16,
+                "uniqueItems": true
+              },
+              "member": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+              },
+              "item": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              },
+              "radius": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              },
+              "vertical_radius": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 64
+              }
+            },
+            "oneOf": [
+              {
+                "required": [
+                  "id",
+                  "type"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "duration_ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actor"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "point"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actors"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "points"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "radius"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "vertical_radius"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "all_defeated"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "id",
+                  "type"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "duration_ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actor"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "point"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actors"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "points"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "radius"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "vertical_radius"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "all_gone"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "id",
+                  "type",
+                  "duration_ticks"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "actor"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "point"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actors"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "points"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "radius"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "vertical_radius"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "survive_duration"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "id",
+                  "type",
+                  "actor",
+                  "duration_ticks"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "point"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actors"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "points"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "radius"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "vertical_radius"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "protect_actor"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "id",
+                  "type",
+                  "point",
+                  "duration_ticks"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "actor"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actors"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "points"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "prevent_entry"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "id",
+                  "type",
+                  "actor",
+                  "point"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "duration_ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actors"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "points"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "escort_actor"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "id",
+                  "type",
+                  "actors"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "duration_ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actor"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "point"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "points"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "radius"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "vertical_radius"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "destroy_targets"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "id",
+                  "type",
+                  "member"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "duration_ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actor"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "point"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actors"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "points"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "radius"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "vertical_radius"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "defeat_leader"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "id",
+                  "type",
+                  "item"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "duration_ticks"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actor"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "point"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actors"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "points"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "radius"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "vertical_radius"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "retrieve_item"
+                  }
+                }
+              },
+              {
+                "required": [
+                  "id",
+                  "type",
+                  "points",
+                  "duration_ticks"
+                ],
+                "allOf": [
+                  {
+                    "not": {
+                      "anyOf": [
+                        {
+                          "required": [
+                            "actor"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "point"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "actors"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "member"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "item"
+                          ]
+                        },
+                        {
+                          "required": [
+                            "count"
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ],
+                "properties": {
+                  "type": {
+                    "const": "hold_areas"
+                  }
+                }
+              }
+            ]
+          },
+          "maxItems": 32
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "spawn_selection"
+        ]
+      },
+      "then": {
+        "required": [
+          "spawn_points"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "spawn_mode"
+        ],
+        "properties": {
+          "spawn_mode": {
+            "const": "near_player"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "spawn_points"
+          ]
+        }
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "completion_condition",
+          "completion_objectives"
+        ]
+      }
+    },
+    {
+      "not": {
+        "required": [
+          "location_message",
+          "guidance"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "variants"
+        ]
+      },
+      "then": {
+        "required": [],
+        "allOf": [
+          {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "members"
+                  ]
+                },
+                {
+                  "required": [
+                    "waves"
+                  ]
+                },
+                {
+                  "required": [
+                    "extra_per_player"
+                  ]
+                },
+                {
+                  "required": [
+                    "max_party_size"
+                  ]
+                },
+                {
+                  "required": [
+                    "placement_attempts"
+                  ]
+                },
+                {
+                  "required": [
+                    "spawn_radius"
+                  ]
+                },
+                {
+                  "required": [
+                    "spawn_mode"
+                  ]
+                },
+                {
+                  "required": [
+                    "spawn_points"
+                  ]
+                },
+                {
+                  "required": [
+                    "spawn_selection"
+                  ]
+                },
+                {
+                  "required": [
+                    "phases"
+                  ]
+                },
+                {
+                  "required": [
+                    "allies"
+                  ]
+                },
+                {
+                  "required": [
+                    "failure"
+                  ]
+                },
+                {
+                  "required": [
+                    "environment"
+                  ]
+                },
+                {
+                  "required": [
+                    "guidance"
+                  ]
+                },
+                {
+                  "required": [
+                    "rewards"
+                  ]
+                },
+                {
+                  "required": [
+                    "wave_count"
+                  ]
+                },
+                {
+                  "required": [
+                    "wave_interval_ticks"
+                  ]
+                },
+                {
+                  "required": [
+                    "wave_trigger"
+                  ]
+                },
+                {
+                  "required": [
+                    "boss_bar"
+                  ]
+                },
+                {
+                  "required": [
+                    "location_message"
+                  ]
+                },
+                {
+                  "required": [
+                    "area"
+                  ]
+                },
+                {
+                  "required": [
+                    "respawn_policy"
+                  ]
+                },
+                {
+                  "required": [
+                    "cleanup_policy"
+                  ]
+                },
+                {
+                  "required": [
+                    "completion_condition"
+                  ]
+                },
+                {
+                  "required": [
+                    "completion_objectives"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

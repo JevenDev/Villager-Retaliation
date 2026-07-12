@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation;
 
 import com.jvn.villagerretaliation.command.VillagerRetaliationCommands;
+import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlockEntityTypes;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -36,6 +37,7 @@ public class VillagerRetaliation {
     }
 
     public VillagerRetaliation(IEventBus modEventBus, ModContainer modContainer) {
+        VillagerRetaliationRegistries.registerBuiltIns();
         VillagerRetaliationConfig.init();
         VillagerRetaliationBlocks.register(modEventBus);
         VillagerRetaliationBlockEntityTypes.register(modEventBus);
