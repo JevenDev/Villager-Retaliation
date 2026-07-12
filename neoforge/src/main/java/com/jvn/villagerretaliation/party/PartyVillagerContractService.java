@@ -86,7 +86,8 @@ public final class PartyVillagerContractService {
                 DAILY_EMERALD_COST,
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 professionTranslationKey(villager),
-                level.dimension().location()
+                level.dimension().location(),
+                villager.blockPosition()
         );
         if (currentParty != null) {
             record.setAttackWithParty(currentParty.attackWithParty());
@@ -278,7 +279,8 @@ public final class PartyVillagerContractService {
         record.updateDisplay(
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 professionTranslationKey(villager),
-                level.dimension().location());
+                level.dimension().location(),
+                villager.blockPosition());
         PartyService.markChanged(level);
         attachEntityState(level, villager, party.id(), record);
         applyCommandState(level, villager, party, record);
@@ -294,10 +296,17 @@ public final class PartyVillagerContractService {
     public static void onVillagerUnloaded(Villager villager) {
         if (villager != null && villager.level() instanceof ServerLevel level) {
             PartyService.getPartyForVillager(level, villager.getUUID())
-                    .ifPresent(party -> PartySyncService.syncPartyWithUnavailableVillager(
-                            level.getServer(),
-                            party.id(),
-                            villager.getUUID()));
+                    .ifPresent(party -> {
+                        PartyVillagerRecord record = party.villager(villager.getUUID());
+                        if (record != null) {
+                            updateLastKnownLocation(record, villager);
+                            PartyService.markChanged(level);
+                        }
+                        PartySyncService.syncPartyWithUnavailableVillager(
+                                level.getServer(),
+                                party.id(),
+                                villager.getUUID());
+                    });
         }
     }
 
@@ -322,10 +331,15 @@ public final class PartyVillagerContractService {
         if (party == null) {
             return;
         }
+        PartyVillagerRecord record = party.villager(villager.getUUID());
+        if (record == null) {
+            return;
+        }
+        updateLastKnownLocation(record, villager);
         PartyService.removeVillager(level, villager.getUUID());
         cleanupEntity(villager);
         closeJobInventories(level.getServer(), villager.getId());
-        notifyLeader(level.getServer(), party, "villagerretaliation.party.villager_died");
+        notifyLeader(level.getServer(), party, "villagerretaliation.party.villager_died", record);
         PartySyncService.syncParty(level.getServer(), party.id());
     }
 
@@ -429,10 +443,11 @@ public final class PartyVillagerContractService {
         }
         Villager loaded = findLoadedVillager(server, record.villagerId());
         if (loaded != null) {
+            updateLastKnownLocation(record, loaded);
             cleanupEntity(loaded);
             closeJobInventories(server, loaded.getId());
         }
-        notifyLeader(server, party, "villagerretaliation.party.contract_expired");
+        notifyLeader(server, party, "villagerretaliation.party.contract_expired", record);
         PartySyncService.syncParty(server, party.id());
     }
 
@@ -486,11 +501,38 @@ public final class PartyVillagerContractService {
         }
     }
 
-    private static void notifyLeader(MinecraftServer server, PartyRecord party, String messageKey) {
+    private static void notifyLeader(
+            MinecraftServer server,
+            PartyRecord party,
+            String messageKey,
+            PartyVillagerRecord record) {
         ServerPlayer leader = server.getPlayerList().getPlayer(party.leaderId());
         if (leader != null) {
-            leader.sendSystemMessage(Component.translatable(messageKey));
+            leader.sendSystemMessage(alertMessage(messageKey, record));
         }
+    }
+
+    static Component alertMessage(String messageKey, PartyVillagerRecord record) {
+        String name = record.cachedName().isBlank() ? "Unknown villager" : record.cachedName();
+        Component profession = record.cachedProfession().isBlank()
+                ? Component.translatable("villagerretaliation.gui.profession.unemployed")
+                : Component.translatable(record.cachedProfession());
+        String dimension = record.lastKnownDimension() == null
+                ? "unknown dimension"
+                : record.lastKnownDimension().toString();
+        BlockPos position = record.lastKnownPosition();
+        String coordinates = position == null
+                ? "unknown coordinates"
+                : position.getX() + ", " + position.getY() + ", " + position.getZ();
+        return Component.translatable(messageKey, name, profession, dimension, coordinates);
+    }
+
+    private static void updateLastKnownLocation(PartyVillagerRecord record, Villager villager) {
+        record.updateDisplay(
+                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                professionTranslationKey(villager),
+                villager.level().dimension().location(),
+                villager.blockPosition());
     }
 
     private static String professionTranslationKey(Villager villager) {

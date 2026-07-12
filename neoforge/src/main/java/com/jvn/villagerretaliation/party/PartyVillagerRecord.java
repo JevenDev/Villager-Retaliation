@@ -23,6 +23,9 @@ public final class PartyVillagerRecord {
     private static final String TAG_NAME = "Name";
     private static final String TAG_PROFESSION = "Profession";
     private static final String TAG_LAST_DIMENSION = "LastDimension";
+    private static final String TAG_LAST_X = "LastX";
+    private static final String TAG_LAST_Y = "LastY";
+    private static final String TAG_LAST_Z = "LastZ";
     private static final String TAG_ATTACK_WITH_PARTY = "AttackWithParty";
     private static final String TAG_DEFEND_PARTY = "DefendParty";
     private static final String TAG_DROP_COLLECTION = "DropCollection";
@@ -41,6 +44,7 @@ public final class PartyVillagerRecord {
     private String cachedName;
     private String cachedProfession;
     private ResourceLocation lastKnownDimension;
+    private BlockPos lastKnownPosition;
     private boolean attackWithParty = true;
     private boolean defendParty = true;
     private PartyDropCollectionMode dropCollectionMode = PartyDropCollectionMode.OFF;
@@ -59,7 +63,8 @@ public final class PartyVillagerRecord {
             int emeraldsPaid,
             String cachedName,
             String cachedProfession,
-            ResourceLocation lastKnownDimension) {
+            ResourceLocation lastKnownDimension,
+            BlockPos lastKnownPosition) {
         this.villagerId = villagerId;
         this.recruiterId = recruiterId;
         this.contractId = contractId;
@@ -74,6 +79,7 @@ public final class PartyVillagerRecord {
         this.cachedName = safeText(cachedName, 128);
         this.cachedProfession = safeText(cachedProfession, 128);
         this.lastKnownDimension = lastKnownDimension;
+        this.lastKnownPosition = lastKnownPosition == null ? null : lastKnownPosition.immutable();
     }
 
     public UUID villagerId() {
@@ -132,6 +138,10 @@ public final class PartyVillagerRecord {
         return this.lastKnownDimension;
     }
 
+    public BlockPos lastKnownPosition() {
+        return this.lastKnownPosition;
+    }
+
     public boolean attackWithParty() {
         return this.attackWithParty;
     }
@@ -187,10 +197,11 @@ public final class PartyVillagerRecord {
         this.emeraldsPaid += Math.max(0, additionalEmeralds);
     }
 
-    void updateDisplay(String name, String profession, ResourceLocation dimension) {
+    void updateDisplay(String name, String profession, ResourceLocation dimension, BlockPos position) {
         this.cachedName = safeText(name, 128);
         this.cachedProfession = safeText(profession, 128);
         this.lastKnownDimension = dimension;
+        this.lastKnownPosition = position == null ? null : position.immutable();
     }
 
     CompoundTag save() {
@@ -214,6 +225,11 @@ public final class PartyVillagerRecord {
         tag.putString(TAG_PROFESSION, this.cachedProfession);
         if (this.lastKnownDimension != null) {
             tag.putString(TAG_LAST_DIMENSION, this.lastKnownDimension.toString());
+        }
+        if (this.lastKnownPosition != null) {
+            tag.putInt(TAG_LAST_X, this.lastKnownPosition.getX());
+            tag.putInt(TAG_LAST_Y, this.lastKnownPosition.getY());
+            tag.putInt(TAG_LAST_Z, this.lastKnownPosition.getZ());
         }
         tag.putBoolean(TAG_ATTACK_WITH_PARTY, this.attackWithParty);
         tag.putBoolean(TAG_DEFEND_PARTY, this.defendParty);
@@ -248,7 +264,10 @@ public final class PartyVillagerRecord {
                 tag.getInt(TAG_EMERALDS_PAID),
                 tag.getString(TAG_NAME),
                 tag.getString(TAG_PROFESSION),
-                ResourceLocation.tryParse(tag.getString(TAG_LAST_DIMENSION))
+                ResourceLocation.tryParse(tag.getString(TAG_LAST_DIMENSION)),
+                hasLastKnownPosition(tag)
+                        ? new BlockPos(tag.getInt(TAG_LAST_X), tag.getInt(TAG_LAST_Y), tag.getInt(TAG_LAST_Z))
+                        : null
         );
         record.setAttackWithParty(!tag.contains(TAG_ATTACK_WITH_PARTY) || tag.getBoolean(TAG_ATTACK_WITH_PARTY));
         record.setDefendParty(!tag.contains(TAG_DEFEND_PARTY) || tag.getBoolean(TAG_DEFEND_PARTY));
@@ -260,6 +279,12 @@ public final class PartyVillagerRecord {
         return tag.contains(TAG_STAY_X, Tag.TAG_INT)
                 && tag.contains(TAG_STAY_Y, Tag.TAG_INT)
                 && tag.contains(TAG_STAY_Z, Tag.TAG_INT);
+    }
+
+    private static boolean hasLastKnownPosition(CompoundTag tag) {
+        return tag.contains(TAG_LAST_X, Tag.TAG_INT)
+                && tag.contains(TAG_LAST_Y, Tag.TAG_INT)
+                && tag.contains(TAG_LAST_Z, Tag.TAG_INT);
     }
 
     private static String safeText(String value, int maximumLength) {

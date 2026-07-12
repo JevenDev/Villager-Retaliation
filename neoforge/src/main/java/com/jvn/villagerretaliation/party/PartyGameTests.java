@@ -140,6 +140,8 @@ public final class PartyGameTests {
                 "stay mode persistence");
         helper.assertValueEqual(restored.villager(villagers.get(1)).stayPosition(), new BlockPos(12, 65, -4),
                 "stay position persistence");
+        helper.assertValueEqual(restored.villager(villagers.getFirst()).lastKnownPosition(), new BlockPos(0, 64, 0),
+                "last-known villager position persistence");
         helper.assertValueEqual(loaded.partyForPlayer(fourth).map(PartyRecord::id).orElse(null), party.id(),
                 "player membership index persistence");
         helper.assertValueEqual(loaded.partyForVillager(villagers.getLast()).map(PartyRecord::id).orElse(null), party.id(),
@@ -489,7 +491,8 @@ public final class PartyGameTests {
                 32,
                 "Expired",
                 "minecraft:farmer",
-                Level.OVERWORLD.location());
+                Level.OVERWORLD.location(),
+                new BlockPos(7, 70, -9));
         try {
             PartySavedData.get(level).addVillager(party, future);
             PartySavedData.get(level).addVillager(party, expired);
@@ -604,7 +607,8 @@ public final class PartyGameTests {
                 32,
                 "Villager " + order,
                 "minecraft:farmer",
-                Level.OVERWORLD.location());
+                Level.OVERWORLD.location(),
+                new BlockPos(order, 64, -order));
     }
 
     private static QuestDefinition.Objective itemObjective(String id, ResourceLocation item, int count) {
