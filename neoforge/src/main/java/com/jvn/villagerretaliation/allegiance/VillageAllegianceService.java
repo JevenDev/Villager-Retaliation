@@ -95,6 +95,13 @@ public final class VillageAllegianceService {
                 completed.add(entry.getKey());
                 continue;
             }
+            Optional<VillageAllegianceData> explicit = VillageAllegianceApi.get(entity)
+                    .filter(data -> data.dataVersion() >= VillageAllegianceData.CURRENT_VERSION);
+            if (explicit.isPresent()) {
+                normalizeAndTrack(level, entity, explicit.get());
+                completed.add(entry.getKey());
+                continue;
+            }
             int attempts = pending.attempts() + 1;
             boolean finalAttempt = attempts >= MAX_ASSIGNMENT_ATTEMPTS;
             if (tryResolve(level, entity, pending.source(), finalAttempt, pending.initialPosition())) {
@@ -253,9 +260,7 @@ public final class VillageAllegianceService {
 
     private static void normalizeAndTrack(ServerLevel level, Entity entity, VillageAllegianceData data) {
         if (!data.isKnown()) {
-            if (data.state() == AllegianceState.UNAFFILIATED) {
-                VillageAllegianceRegistrySavedData.get(level).removeResidentEverywhere(entity.getUUID());
-            }
+            VillageAllegianceRegistrySavedData.get(level).removeResidentEverywhere(entity.getUUID());
             return;
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);

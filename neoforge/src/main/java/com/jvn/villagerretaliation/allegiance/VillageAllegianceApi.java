@@ -30,6 +30,23 @@ public final class VillageAllegianceApi {
     /** Assigns an explicit allegiance payload without consulting physical village state. */
     public static void assign(Entity entity, VillageAllegianceData data) {
         VillageAllegianceEntityData.write(entity, data);
+        if (entity == null || data == null || !(entity.level() instanceof ServerLevel level)) {
+            return;
+        }
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        registry.removeResidentEverywhere(entity.getUUID());
+        if (!data.isKnown()) {
+            return;
+        }
+        var dimension = data.originDimension() == null
+                ? level.dimension().location()
+                : data.originDimension();
+        registry.ensureRecord(data.primary(), level.getGameTime(), dimension, data.originPosition());
+        registry.canonical(data.primary()).ifPresent(id -> {
+            if (entity instanceof Villager villager) {
+                registry.addOrUpdateResident(id, villager.getUUID(), !villager.isBaby(), level.getGameTime());
+            }
+        });
     }
 
     /** Assigns a known primary allegiance and registers its durable record. */
@@ -46,10 +63,6 @@ public final class VillageAllegianceApi {
                 canonical, source, AllegianceConfidence.AUTHORITATIVE, level.getGameTime(),
                 level.dimension().location(), entity.blockPosition(), List.of());
         assign(entity, data);
-        registry.removeResidentEverywhere(entity.getUUID());
-        if (entity instanceof Villager villager) {
-            registry.addOrUpdateResident(canonical, villager.getUUID(), !villager.isBaby(), level.getGameTime());
-        }
         return data;
     }
 
@@ -57,7 +70,6 @@ public final class VillageAllegianceApi {
             ServerLevel level,
             Entity entity,
             AllegianceAssignmentSource source) {
-        VillageAllegianceRegistrySavedData.get(level).removeResidentEverywhere(entity.getUUID());
         VillageAllegianceData data = VillageAllegianceData.unaffiliated(
                 source, level.getGameTime(), level.dimension().location(), entity.blockPosition());
         assign(entity, data);

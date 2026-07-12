@@ -202,6 +202,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         if (id != null && !this.records.containsKey(id)) {
             String name = VillageNameGenerator.generate(id.value(), unavailableNames());
             this.records.put(id, AllegianceRecord.create(id, gameTime, dimension, position, name, false));
+            // A missing alias target may have cached empty results for the whole path.
+            this.canonicalCache.clear();
             setDirty();
         }
     }

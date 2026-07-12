@@ -115,6 +115,32 @@ public final class VillageAllegianceGameTests {
                 "multiple scopes may resolve to one canonical allegiance");
         helper.assertTrue(restored.uniqueCandidate("scope:ambiguous").isEmpty(),
                 "one scope may retain multiple candidates");
+
+        VillageAllegianceId lateRecord = VillageAllegianceId.random();
+        helper.assertTrue(restored.canonical(lateRecord).isEmpty(), "missing records resolve conservatively");
+        restored.ensureRecord(lateRecord, 5L, level.dimension().location(), BlockPos.ZERO);
+        helper.assertValueEqual(restored.canonical(lateRecord).orElseThrow(), lateRecord,
+                "creating a record invalidates cached missing canonical paths");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void explicitStatesKeepResidentRostersConsistent(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = createVillager(level);
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceId home = registry.create(
+                level.getGameTime(), level.dimension().location(), BlockPos.ZERO, "Roster Home");
+
+        VillageAllegianceApi.assignKnown(level, villager, home, AllegianceAssignmentSource.ADMIN);
+        helper.assertTrue(registry.record(home).orElseThrow().residents().containsKey(villager.getUUID()),
+                "known explicit assignments add villagers to the canonical roster");
+
+        VillageAllegianceApi.assign(villager, VillageAllegianceData.unknown(
+                AllegianceAssignmentSource.ADMIN, AllegianceConfidence.AUTHORITATIVE,
+                level.getGameTime(), level.dimension().location(), villager.blockPosition()));
+        helper.assertFalse(registry.record(home).orElseThrow().residents().containsKey(villager.getUUID()),
+                "unknown explicit assignments remove stale roster membership");
         helper.succeed();
     }
 
