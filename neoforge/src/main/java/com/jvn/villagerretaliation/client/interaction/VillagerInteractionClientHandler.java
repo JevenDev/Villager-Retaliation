@@ -104,6 +104,7 @@ public final class VillagerInteractionClientHandler {
                 professionUiColors,
                 genderName,
                 payload.baby(),
+                payload.canTrade(),
                 payload.reputation(),
                 payload.reputationLevel(),
                 payload.mood(),

@@ -194,10 +194,6 @@ public final class VillagerQuestService {
             return new QuestOfferHint(QuestOfferHintKind.SKILL, 0, skill);
         }
 
-        private static QuestOfferHint parent() {
-            return new QuestOfferHint(QuestOfferHintKind.PARENT, 0, null);
-        }
-
         private static QuestOfferHint timing() {
             return new QuestOfferHint(QuestOfferHintKind.TIMING, 0, null);
         }
@@ -207,7 +203,6 @@ public final class VillagerQuestService {
         TRUST,
         LEVEL,
         SKILL,
-        PARENT,
         TIMING
     }
 
@@ -477,15 +472,13 @@ public final class VillagerQuestService {
                 || definition == null
                 || !definition.showLockedAdventureHint()
                 || context.villager().isBaby()
+                || !definition.prerequisites().isEmpty()
                 || canStart(context, definition, progress)
                 || !offerProfessionMatches(context, definition.offer())) {
             return Optional.empty();
         }
         if (canStart(context, definition, progress, true)) {
             return Optional.of(questOfferRequirementHint(context, definition));
-        }
-        if (parentLockedHintCandidate(context, definition, progress)) {
-            return Optional.of(QuestOfferHint.parent());
         }
         return Optional.empty();
     }
@@ -494,15 +487,6 @@ public final class VillagerQuestService {
         return offer == null
                 || offer.professions().isEmpty()
                 || offer.professions().contains(context.profession());
-    }
-
-    private static boolean parentLockedHintCandidate(
-            DialogueContext context,
-            QuestDefinition definition,
-            VillagerQuestSavedData.QuestProgress progress) {
-        return !definition.prerequisites().isEmpty()
-                && (progress == null || progress.state() == VillagerQuestSavedData.QuestState.NOT_STARTED)
-                && !parentCompleted(context, definition);
     }
 
     private static QuestOfferHint questOfferRequirementHint(DialogueContext context, QuestDefinition definition) {
@@ -551,7 +535,6 @@ public final class VillagerQuestService {
             case TRUST -> "trust";
             case LEVEL -> "level";
             case SKILL -> "skill";
-            case PARENT -> "parent";
             case TIMING -> "timing";
         };
         return "quest.offer_hint." + suffix;

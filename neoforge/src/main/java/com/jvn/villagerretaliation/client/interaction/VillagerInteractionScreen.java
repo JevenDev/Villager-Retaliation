@@ -244,6 +244,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final VillagerProfessionUiColors.ColorPair professionUiColors;
     private final String genderName;
     private final boolean baby;
+    private final boolean canTrade;
     private int reputation;
     private VillagerReputationLevel reputationLevel;
     private DialogueDisposition mood;
@@ -366,6 +367,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             VillagerProfessionUiColors.ColorPair professionUiColors,
             String genderName,
             boolean baby,
+            boolean canTrade,
             int reputation,
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
@@ -421,6 +423,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.professionUiColors = professionUiColors == null ? VillagerProfessionUiColors.DEFAULT_COLORS : professionUiColors;
         this.genderName = localizedGenderName(genderName);
         this.baby = baby;
+        this.canTrade = canTrade;
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         this.mood = mood;
@@ -1017,7 +1020,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addOption("root.profile", this::openProfilePage);
             addOption("root.skills", this::openSkillsPage);
             this.options.add(DialogueOption.enabled(familyButtonText(), this::openFamilyPage));
-            if (!this.recruitedPartyVillager) {
+            if (!this.recruitedPartyVillager && this.canTrade) {
                 addOption("root.trade", this::requestTrade);
             }
             if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
@@ -2877,7 +2880,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 translate("interaction_button.talk.description"),
                 this::openTalkPage,
                 true));
-        if (!this.baby && !this.recruitedPartyVillager) {
+        if (!this.baby && !this.recruitedPartyVillager && this.canTrade) {
             buttons.add(new InteractionMenuButton(
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TRADE_TEXTURE,
                     translate("root.trade"),

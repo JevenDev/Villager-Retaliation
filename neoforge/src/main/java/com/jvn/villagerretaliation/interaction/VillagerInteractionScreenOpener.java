@@ -32,6 +32,7 @@ import java.util.List;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerInteractionScreenOpener {
@@ -176,6 +177,7 @@ public final class VillagerInteractionScreenOpener {
                 professionTranslationKey(villager),
                 VillagerPresetNameRegistry.resolveGender(villager).serializedName(),
                 villager.isBaby(),
+                hasTradingProfession(villager),
                 reputation.value(),
                 reputation.level(),
                 mood,
@@ -241,6 +243,11 @@ public final class VillagerInteractionScreenOpener {
                 villager.getVillagerData().getProfession(),
                 "villagerretaliation.gui.profession.unemployed"
         );
+    }
+
+    private static boolean hasTradingProfession(Villager villager) {
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        return profession != VillagerProfession.NONE && profession != VillagerProfession.NITWIT;
     }
 
     private record ReputationSnapshot(int value, VillagerReputationLevel level) {
