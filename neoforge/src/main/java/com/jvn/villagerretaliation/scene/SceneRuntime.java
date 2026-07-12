@@ -53,8 +53,11 @@ public final class SceneRuntime {
         Map<String, SceneActorBinding> bindings = initialBindings(request.server(), scene, request.playerId(), request.providerId());
         SceneSavedData data = SceneSavedData.get(request.server().overworld());
         SceneSavedData.StartResult result = data.start(scene, request.operationId(), owner.owner(),
-                owner.owningQuestInstance(), owner.participants(), bindings, request.server().overworld().getGameTime());
-        result.instance().linkQuest(request.questId());
+                owner.owningQuestInstance(), owner.participants(), bindings,
+                request.server().overworld().getGameTime(), request.questId());
+        if (result.instance() == null) {
+            return SceneLaunchService.LaunchResult.accepted(result.instanceId(), false);
+        }
         data.changed();
         scheduler(request.server()).enqueue(result.instance());
         return SceneLaunchService.LaunchResult.accepted(result.instance().id(), result.created());
@@ -64,7 +67,7 @@ public final class SceneRuntime {
         if (server == null) return;
         SceneSavedData data = SceneSavedData.get(server.overworld());
         scheduler(server).tick(server, data, server.overworld().getGameTime());
-        if(server.overworld().getGameTime()%20L==0L)EncounterService.maintainCleanup(server,data);
+        if(server.overworld().getGameTime()%20L==0L){EncounterService.maintainCleanup(server,data);maintainSceneCleanup(server,data);}
     }
     public static void wake(MinecraftServer server, SceneInstance instance) { if(server!=null&&instance!=null)scheduler(server).enqueue(instance); }
 
@@ -89,20 +92,46 @@ public final class SceneRuntime {
         }
     }
 
+    private static void maintainSceneCleanup(MinecraftServer server, SceneSavedData data) {
+        for (SceneInstance scene : data.takeCleanupBatch(16)) {
+            CompiledScene definition = SceneResources.scene(server, scene.sceneId()).orElse(null);
+            if (definition == null) {
+                scene.cleanupStatus(SceneInstance.CleanupStatus.BLOCKED);
+                data.requestCleanup(scene);
+                continue;
+            }
+            boolean clean = true;
+            if (definition.cleanupPolicy() != SceneResource.CleanupPolicy.NONE
+                    && definition.cleanupPolicy() != SceneResource.CleanupPolicy.PRESERVE_WORLD) {
+                for (var encounter : data.encounters()) {
+                    if (!encounter.sceneId().equals(scene.id())) continue;
+                    switch (encounter.state()) {
+                        case CLEANED, RELEASED -> { }
+                        default -> { EncounterService.cleanup(server, data, encounter, false); clean = false; }
+                    }
+                }
+            }
+            if (clean) scene.cleanupStatus(SceneInstance.CleanupStatus.COMPLETE);
+            else data.requestCleanup(scene);
+            data.changed();
+        }
+    }
+
     private static OwnerAndParticipants owner(CompiledScene scene, SceneLaunchService.LaunchRequest request) {
         UUID player = request.playerId();
         return switch (scene.ownership()) {
             case PLAYER -> player == null ? null : new OwnerAndParticipants(
-                    new SceneOwner(SceneResource.OwnershipMode.PLAYER, player, null, null, ""), Set.of(player));
+                    new SceneOwner(SceneResource.OwnershipMode.PLAYER, player, null, null, ""), Set.of(player), request.questRunId());
             case PARTY -> {
                 PartyRecord party = player == null ? null : PartyService.getPartyForPlayer(request.server().overworld(), player).orElse(null);
                 yield party == null ? null : new OwnerAndParticipants(
                         new SceneOwner(SceneResource.OwnershipMode.PARTY, null, party.id(), null, ""),
-                        Set.copyOf(party.playerIds()));
+                        Set.copyOf(party.playerIds()), request.questRunId());
             }
             case QUEST_INSTANCE -> {
                 if (player == null) yield null;
-                UUID quest = UUID.nameUUIDFromBytes((scene.id() + "|" + player).getBytes(StandardCharsets.UTF_8));
+                UUID quest = request.questRunId() != null ? request.questRunId()
+                        : UUID.nameUUIDFromBytes((scene.id() + "|standalone|" + player).getBytes(StandardCharsets.UTF_8));
                 yield new OwnerAndParticipants(new SceneOwner(SceneResource.OwnershipMode.QUEST_INSTANCE, player, null, quest, ""), Set.of(player), quest);
             }
             case WORLD -> new OwnerAndParticipants(new SceneOwner(SceneResource.OwnershipMode.WORLD, null, null, null,

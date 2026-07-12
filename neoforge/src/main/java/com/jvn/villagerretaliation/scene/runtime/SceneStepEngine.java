@@ -4,6 +4,8 @@ import com.jvn.villagerretaliation.api.scene.SceneStepExecutor;
 import com.jvn.villagerretaliation.api.scene.SceneStepExecutors;
 import com.jvn.villagerretaliation.scene.model.CompiledScene;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
+import com.jvn.villagerretaliation.scene.model.SceneResource;
+import com.jvn.villagerretaliation.scene.runtime.SceneAuditEntry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.minecraft.server.MinecraftServer;
@@ -17,6 +19,10 @@ public final class SceneStepEngine {
         if(definition==null){instance.block("definition_missing","scene definition is unavailable",time);data.changed();return SceneScheduler.ProcessResult.idle();}
         var reconciliation=SceneDefinitionReconciler.reconcile(instance,definition);
         if(!reconciliation.safe()){instance.block("definition_incompatible",reconciliation.diagnostic(),time);data.changed();return SceneScheduler.ProcessResult.idle();}
+        if (definition.timeoutTicks() > 0L && !instance.deadlineHandled()
+                && time >= deadline(instance.startGameTime(), definition.timeoutTicks())) {
+            return timeout(data, instance, definition, time);
+        }
         if(instance.state()==SceneState.PENDING)instance.transition(SceneState.RUNNING,time);
         if(instance.state()==SceneState.WAITING)instance.transition(SceneState.RUNNING,time);
         CompiledScene.CompiledStep step=definition.steps().get(instance.currentStep());
@@ -64,4 +70,38 @@ public final class SceneStepEngine {
     }
 
     public static void clearRuntimeState(){PREPARED_THIS_SESSION.clear();}
+
+    private static long deadline(long start, long duration) {
+        return duration > Long.MAX_VALUE - start ? Long.MAX_VALUE : start + duration;
+    }
+
+    private static SceneScheduler.ProcessResult timeout(SceneSavedData data, SceneInstance instance,
+            CompiledScene definition, long time) {
+        SceneState prior = instance.state();
+        instance.markDeadlineHandled();
+        switch (definition.failurePolicy()) {
+            case FAIL_SCENE -> instance.fail("scene_timeout", "scene exceeded its authored overall timeout", time);
+            case CANCEL_SCENE -> instance.cancel("scene_timeout", "scene was cancelled after its authored overall timeout", time);
+            case BLOCK_FOR_REPAIR -> instance.block("scene_timeout", "scene timed out and requires operator repair", time);
+            case RUN_FAILURE_STEP -> {
+                CompiledScene.CompiledStep current = definition.steps().get(instance.currentStep());
+                if (current != null && !current.failureStep().isBlank()
+                        && definition.steps().containsKey(current.failureStep())) {
+                    instance.advance(current.failureStep(), time);
+                } else {
+                    instance.block("scene_timeout_failure_step_missing",
+                            "scene timed out but the current step has no authored failure_step", time);
+                }
+            }
+        }
+        data.audit(new SceneAuditEntry(instance.id(), "", prior.name(), instance.state().name(),
+                "scene_timeout", time, "runtime"));
+        if (instance.state().terminal()) {
+            instance.cleanupStatus(SceneInstance.CleanupStatus.RUNNING);
+            data.requestCleanup(instance);
+        }
+        data.changed();
+        return instance.state().terminal() || instance.state() == SceneState.BLOCKED
+                ? SceneScheduler.ProcessResult.idle() : SceneScheduler.ProcessResult.now();
+    }
 }

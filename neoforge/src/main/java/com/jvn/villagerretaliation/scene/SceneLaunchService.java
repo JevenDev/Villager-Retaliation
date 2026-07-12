@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.scene;
 
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 
@@ -20,8 +21,14 @@ public final class SceneLaunchService {
         if (SceneResources.scene(context.level().getServer(), action.sceneId()).isEmpty()) {
             return LaunchResult.rejected("unknown compiled scene " + action.sceneId());
         }
+        UUID runId = null;
+        if (action.questId() != null) {
+            VillagerQuestSavedData.QuestProgress progress = VillagerQuestSavedData.get(context.level())
+                    .get(context.player().getUUID(), action.questId());
+            runId = progress == null ? null : progress.questRunId();
+        }
         return launcher.launch(new LaunchRequest(context.level().getServer(), action.sceneId(), action.sceneOperationId(),
-                action.waitForScene(), context.player().getUUID(), context.villager().getUUID(), action.questId()));
+                action.waitForScene(), context.player().getUUID(), context.villager().getUUID(), action.questId(), runId));
     }
 
     public static void install(Launcher implementation) {
@@ -37,7 +44,7 @@ public final class SceneLaunchService {
 
     public record LaunchRequest(net.minecraft.server.MinecraftServer server, ResourceLocation sceneId,
                                 String operationId, boolean waitForResult, UUID playerId, UUID providerId,
-                                ResourceLocation questId) {
+                                ResourceLocation questId, UUID questRunId) {
     }
 
     public record LaunchResult(boolean accepted, boolean created, UUID instanceId, String diagnostic) {

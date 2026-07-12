@@ -38,6 +38,7 @@ public final class SceneInstance {
     private final List<PendingOperation> pendingOperations = new ArrayList<>();
     private final Map<String, SceneOperationReceipt> receipts = new LinkedHashMap<>();
     private CompletionResult completionResult = CompletionResult.NONE;
+    private boolean deadlineHandled;
 
     public SceneInstance(UUID id, CompiledScene definition, String operationId, SceneOwner owner, UUID owningQuestInstance,
             Set<UUID> participants, Map<String, SceneActorBinding> actorBindings, long gameTime) {
@@ -82,6 +83,7 @@ public final class SceneInstance {
     public String failureCode(){return failureCode;} public String diagnostic(){return diagnostic;}
     public CleanupStatus cleanupStatus(){return cleanupStatus;} public List<PendingOperation> pendingOperations(){return List.copyOf(pendingOperations);}
     public CompletionResult completionResult(){return completionResult;}
+    public boolean deadlineHandled(){return deadlineHandled;}
     public Map<String,SceneOperationReceipt> receipts(){return Map.copyOf(receipts);}
     public SceneOperationReceipt prepareReceipt(String operationId,SceneOperationReceipt.Kind kind,long time){return receipts.computeIfAbsent(operationId,id->new SceneOperationReceipt(id,kind,time));}
     public SceneOperationReceipt receipt(String operationId){return receipts.get(operationId);}
@@ -92,6 +94,8 @@ public final class SceneInstance {
     public void block(String code,String message,long time){state=SceneState.BLOCKED;failureCode=code;diagnostic=message;updateGameTime=time;}
     public void fail(String code,String message,long time){state=SceneState.FAILED;failureCode=code;diagnostic=message;completionResult=CompletionResult.FAILURE;updateGameTime=time;}
     public void complete(long time){state=SceneState.COMPLETED;completionResult=CompletionResult.SUCCESS;updateGameTime=time;}
+    public void cancel(String code,String message,long time){state=SceneState.CANCELLED;failureCode=code;diagnostic=message;completionResult=CompletionResult.CANCELLED;updateGameTime=time;}
+    public void markDeadlineHandled(){deadlineHandled=true;}
     public void retry(){retryCount++; failureCode=""; diagnostic=""; state=SceneState.RUNNING;}
     public void cleanupStatus(CleanupStatus value){cleanupStatus=value;}
     public void reconcileDefinition(CompiledScene definition){definitionVersion=definition.definitionVersion();definitionHash=definition.definitionHash();}
@@ -101,11 +105,13 @@ public final class SceneInstance {
         CompoundTag tag=new CompoundTag(); tag.putUUID("InstanceId",id); tag.putString("SceneId",sceneId.toString());
         tag.putInt("DefinitionVersion",definitionVersion);tag.putString("DefinitionHash",definitionHash);tag.putString("OperationId",operationId);
         tag.put("Owner",saveOwner(owner)); if(owningQuestInstance!=null)tag.putUUID("OwningQuestInstance",owningQuestInstance);
+        if(owningQuestInstance!=null)tag.putUUID("QuestRunId",owningQuestInstance);
         if(owningQuestId!=null)tag.putString("OwningQuestId",owningQuestId.toString());
         ListTag people=new ListTag();participants.forEach(v->people.add(StringTag.valueOf(v.toString())));tag.put("Participants",people);
         tag.putString("State",state.name());tag.putString("CurrentStep",currentStep);tag.putLong("StartGameTime",startGameTime);
         tag.putLong("UpdateGameTime",updateGameTime);tag.putInt("RetryCount",retryCount);tag.putString("FailureCode",failureCode);
         tag.putString("Diagnostic",diagnostic);tag.putString("CleanupStatus",cleanupStatus.name());tag.putString("CompletionResult",completionResult.name());
+        tag.putBoolean("DeadlineHandled",deadlineHandled);
         ListTag bindings=new ListTag();actorBindings.values().forEach(v->bindings.add(v.save()));tag.put("ActorBindings",bindings);
         ListTag records=new ListTag();stepRecords.values().forEach(v->records.add(v.save()));tag.put("StepRecords",records);
         ListTag receiptTags=new ListTag();receipts.values().forEach(v->receiptTags.add(v.save()));tag.put("Receipts",receiptTags);
@@ -121,6 +127,7 @@ public final class SceneInstance {
         value.owningQuestId=ResourceLocation.tryParse(tag.getString("OwningQuestId"));
         try{value.cleanupStatus=CleanupStatus.valueOf(tag.getString("CleanupStatus"));}catch(IllegalArgumentException ignored){}
         try{value.completionResult=CompletionResult.valueOf(tag.getString("CompletionResult"));}catch(IllegalArgumentException ignored){}
+        value.deadlineHandled=tag.getBoolean("DeadlineHandled");
         for(Tag raw:tag.getList("Receipts",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag receipt){var r=SceneOperationReceipt.load(receipt);value.receipts.put(r.operationId(),r);}
         for(Tag raw:tag.getList("PendingOperations",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag operation)value.pendingOperations.add(PendingOperation.load(operation));return value;
     }

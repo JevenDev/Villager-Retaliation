@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.nio.charset.StandardCharsets;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -28,7 +29,7 @@ import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
 public class VillagerQuestSavedData extends SavedData {
-    public static final int CURRENT_DATA_VERSION = 2;
+    public static final int CURRENT_DATA_VERSION = 3;
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String DATA_NAME = "villagerretaliation_quests";
     private static final String TAG_ENTRIES = "Entries";
@@ -50,6 +51,7 @@ public class VillagerQuestSavedData extends SavedData {
     private static final String TAG_PENDING_PARTY_REWARD = "PendingPartyReward";
     private static final String TAG_PARTY_REWARD_CLAIMED = "PartyRewardClaimed";
     private static final String TAG_PARTY_QUEST_INSTANCE = "PartyQuestInstance";
+    private static final String TAG_QUEST_RUN_ID = "QuestRunId";
     private static final String TAG_ISSUER_NAME = "IssuerName";
     private static final String TAG_ISSUER_PROFESSION = "IssuerProfession";
     private static final String TAG_ISSUER_LEVEL = "IssuerLevel";
@@ -112,6 +114,7 @@ public class VillagerQuestSavedData extends SavedData {
                 continue;
             }
             QuestProgress progress = QuestProgress.load(entryTag);
+            progress.ensureRunId(questId);
             data.entries.computeIfAbsent(entryTag.getUUID(TAG_PLAYER), ignored -> new HashMap<>()).put(questId, progress);
         }
         ListTag trackedTag = tag.getList(TAG_TRACKED_QUESTS, Tag.TAG_COMPOUND);
@@ -508,6 +511,7 @@ public class VillagerQuestSavedData extends SavedData {
         private boolean pendingPartyReward;
         private boolean partyRewardClaimed;
         private UUID partyQuestInstanceId;
+        private UUID questRunId;
         private String issuerName = "";
         private String issuerProfession = "";
         private int issuerLevel;
@@ -548,6 +552,9 @@ public class VillagerQuestSavedData extends SavedData {
             progress.partyRewardClaimed = tag.getBoolean(TAG_PARTY_REWARD_CLAIMED);
             if (tag.hasUUID(TAG_PARTY_QUEST_INSTANCE)) {
                 progress.partyQuestInstanceId = tag.getUUID(TAG_PARTY_QUEST_INSTANCE);
+            }
+            if (tag.hasUUID(TAG_QUEST_RUN_ID)) {
+                progress.questRunId = tag.getUUID(TAG_QUEST_RUN_ID);
             }
             progress.issuerName = tag.getString(TAG_ISSUER_NAME);
             progress.issuerProfession = tag.getString(TAG_ISSUER_PROFESSION);
@@ -638,6 +645,9 @@ public class VillagerQuestSavedData extends SavedData {
             tag.putBoolean(TAG_PARTY_REWARD_CLAIMED, this.partyRewardClaimed);
             if (this.partyQuestInstanceId != null) {
                 tag.putUUID(TAG_PARTY_QUEST_INSTANCE, this.partyQuestInstanceId);
+            }
+            if (this.questRunId != null) {
+                tag.putUUID(TAG_QUEST_RUN_ID, this.questRunId);
             }
             if (!this.issuerName.isBlank()) {
                 tag.putString(TAG_ISSUER_NAME, this.issuerName);
@@ -781,8 +791,32 @@ public class VillagerQuestSavedData extends SavedData {
             return this.partyQuestInstanceId;
         }
 
+        public UUID questRunId() {
+            return this.questRunId;
+        }
+
+        public UUID beginRun(ResourceLocation questId) {
+            if (questId == null) throw new IllegalArgumentException("quest run identity requires a quest id");
+            this.questRunId = deterministicRunId(questId, Math.max(1, this.startCount));
+            return this.questRunId;
+        }
+
+        private void ensureRunId(ResourceLocation questId) {
+            if (this.questRunId == null && this.state == QuestState.ACTIVE) {
+                this.questRunId = this.partyQuestInstanceId != null
+                        ? this.partyQuestInstanceId
+                        : deterministicRunId(questId, Math.max(1, this.startCount));
+            }
+        }
+
+        public static UUID deterministicRunId(ResourceLocation questId, int runNumber) {
+            return UUID.nameUUIDFromBytes((questId + "|run|" + Math.max(1, runNumber))
+                    .getBytes(StandardCharsets.UTF_8));
+        }
+
         public void linkPartyQuest(UUID instanceId) {
             this.partyQuestInstanceId = instanceId;
+            if (instanceId != null) this.questRunId = instanceId;
         }
 
         public String issuerName() {
@@ -893,6 +927,7 @@ public class VillagerQuestSavedData extends SavedData {
             this.pendingPartyReward = false;
             this.partyRewardClaimed = false;
             this.partyQuestInstanceId = null;
+            this.questRunId = null;
             this.consumedReason = "";
             this.currentStage = "started";
             this.issuerVillageKey = "";

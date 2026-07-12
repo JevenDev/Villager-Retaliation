@@ -65,11 +65,13 @@ public final class SceneResources {
                 ResourceLocation source = resource.location();
                 var root = DatapackResourceLoader.readObject(source, "quest scene", resource.resource()).orElse(null);
                 SceneParser.ParseResult parsed = SceneParser.parse(source, root);
-                List<SceneDiagnostic> combined = new ArrayList<>(parsed.diagnostics());
-                if (parsed.resource() != null) {
+                List<SceneDiagnostic> combined = parsed.diagnostics().stream()
+                        .map(diagnostic -> diagnostic.atSource(source)).collect(Collectors.toCollection(ArrayList::new));
+                if (parsed.valid()) {
                     SceneCompiler.CompileResult compiled = SceneCompiler.compile(parsed.resource(), encounterTemplates);
-                    combined.addAll(compiled.diagnostics());
-                    if (compiled.scene() != null) scenes.put(compiled.scene().id(), compiled.scene());
+                    combined.addAll(compiled.diagnostics().stream().map(diagnostic -> diagnostic.atSource(source)).toList());
+                    boolean fatal = combined.stream().anyMatch(diagnostic -> diagnostic.severity() == SceneDiagnostic.Severity.ERROR);
+                    if (!fatal && compiled.scene() != null) scenes.put(compiled.scene().id(), compiled.scene());
                     diagnostics.put(parsed.resource().id(), List.copyOf(combined));
                 } else {
                     diagnostics.put(source, List.copyOf(combined));

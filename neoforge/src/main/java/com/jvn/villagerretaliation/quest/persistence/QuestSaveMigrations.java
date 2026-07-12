@@ -32,6 +32,9 @@ public final class QuestSaveMigrations {
             // Version 2 adds the optional per-progress PendingLifecycleEvents list.
             // Existing entries require no rewrite; absence means there is no deferred work.
             case 1 -> 2;
+            // Version 3 adds deterministic per-run quest identity. It is derived lazily from
+            // quest id and the persisted start counter so legacy active quests remain stable.
+            case 2 -> 3;
             default -> throw new IllegalStateException("No quest save migration from version " + version);
         };
     }

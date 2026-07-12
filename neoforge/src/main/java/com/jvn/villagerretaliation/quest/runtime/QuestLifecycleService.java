@@ -23,6 +23,7 @@ public final class QuestLifecycleService {
                 target == null ? providerBinding.dimension() : target.dimension(),
                 target == null ? null : target.pos(),
                 gameTime);
+        progress.beginRun(questId);
         progress.setIssuer(
                 providerBinding.providerId(),
                 providerBinding.displayName(),

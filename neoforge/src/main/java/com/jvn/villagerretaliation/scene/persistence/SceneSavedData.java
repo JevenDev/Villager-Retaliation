@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.ArrayDeque;
+import java.util.HashSet;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -32,9 +34,12 @@ public final class SceneSavedData extends SavedData {
     private static final Logger LOGGER = LogUtils.getLogger();
     private final Map<UUID, SceneInstance> instances = new LinkedHashMap<>();
     private final Map<String, UUID> byOperation = new LinkedHashMap<>();
+    private final Map<String, UUID> legacyActiveOperations = new LinkedHashMap<>();
     private final Map<UUID, EncounterInstance> encounters = new LinkedHashMap<>();
     private final Map<String, UUID> encounterOperations = new LinkedHashMap<>();
     private final List<SceneAuditEntry> auditEntries = new ArrayList<>();
+    private final ArrayDeque<UUID> pendingSceneCleanup = new ArrayDeque<>();
+    private final Set<UUID> queuedSceneCleanup = new HashSet<>();
     private boolean futureVersion;
     private CompoundTag preservedFutureRoot;
 
@@ -57,7 +62,12 @@ public final class SceneSavedData extends SavedData {
             try {
                 SceneInstance instance = SceneInstance.load(tag);
                 data.instances.put(instance.id(), instance);
-                data.byOperation.put(operationKey(instance.owner(), instance.operationId()), instance.id());
+                data.byOperation.put(operationKey(instance), instance.id());
+                if (instance.cleanupStatus() == SceneInstance.CleanupStatus.RUNNING
+                        || instance.cleanupStatus() == SceneInstance.CleanupStatus.BLOCKED) data.requestCleanup(instance);
+                if (!tag.hasUUID("QuestRunId") && !instance.state().terminal()) {
+                    data.legacyActiveOperations.put(legacyOperationKey(instance.owner(), instance.operationId()), instance.id());
+                }
             } catch (RuntimeException exception) {
                 LOGGER.error("Could not read scene instance; preserving the rest of the scene save", exception);
             }
@@ -83,15 +93,30 @@ public final class SceneSavedData extends SavedData {
 
     public StartResult start(CompiledScene scene, String operationId, SceneOwner owner, UUID owningQuestInstance,
             Set<UUID> participants, Map<String, com.jvn.villagerretaliation.scene.actor.SceneActorBinding> bindings, long time) {
-        String key = operationKey(owner, operationId);
+        return start(scene, operationId, owner, owningQuestInstance, participants, bindings, time, null);
+    }
+
+    public StartResult start(CompiledScene scene, String operationId, SceneOwner owner, UUID owningQuestInstance,
+            Set<UUID> participants, Map<String, com.jvn.villagerretaliation.scene.actor.SceneActorBinding> bindings,
+            long time, ResourceLocation questId) {
+        String key = operationKey(scene.id(), owner, questId, owningQuestInstance, operationId);
         UUID existingId = byOperation.get(key);
-        if (existingId != null) return new StartResult(instances.get(existingId), false);
+        if (existingId == null) {
+            UUID legacyId = legacyActiveOperations.get(legacyOperationKey(owner, operationId));
+            SceneInstance legacy = instances.get(legacyId);
+            if (legacy != null && legacy.sceneId().equals(scene.id()) && !legacy.state().terminal()) existingId = legacyId;
+        }
+        if (existingId != null) {
+            SceneInstance existing = instances.get(existingId);
+            return new StartResult(existing, false, existingId);
+        }
         SceneInstance instance = new SceneInstance(UUID.randomUUID(), scene, operationId, owner, owningQuestInstance,
                 participants, bindings, time);
+        instance.linkQuest(questId);
         instances.put(instance.id(), instance);
         byOperation.put(key, instance.id());
         setDirty();
-        return new StartResult(instance, true);
+        return new StartResult(instance, true, instance.id());
     }
 
     public Optional<SceneInstance> get(UUID id) { return Optional.ofNullable(instances.get(id)); }
@@ -106,11 +131,37 @@ public final class SceneSavedData extends SavedData {
     public Optional<EncounterInstance> encounter(UUID id){return Optional.ofNullable(encounters.get(id));}public List<EncounterInstance> encounters(){return List.copyOf(encounters.values());}
     public Optional<EncounterInstance> encounterByOperation(UUID sceneId,String operationId){UUID id=encounterOperations.get(sceneId+"|"+operationId);return Optional.ofNullable(id==null?null:encounters.get(id));}
     public void audit(SceneAuditEntry entry){auditEntries.add(entry);if(auditEntries.size()>2048)auditEntries.removeFirst();setDirty();}public List<SceneAuditEntry> auditEntries(){return List.copyOf(auditEntries);}
+    public void requestCleanup(SceneInstance instance) {
+        if (instance != null && instance.cleanupStatus() != SceneInstance.CleanupStatus.COMPLETE
+                && queuedSceneCleanup.add(instance.id())) pendingSceneCleanup.addLast(instance.id());
+    }
+    public List<SceneInstance> takeCleanupBatch(int maximum) {
+        List<SceneInstance> result = new ArrayList<>();
+        while (result.size() < Math.max(1, maximum) && !pendingSceneCleanup.isEmpty()) {
+            UUID id = pendingSceneCleanup.removeFirst();
+            queuedSceneCleanup.remove(id);
+            SceneInstance instance = instances.get(id);
+            if (instance != null && instance.cleanupStatus() != SceneInstance.CleanupStatus.COMPLETE) result.add(instance);
+        }
+        return List.copyOf(result);
+    }
 
-    private static String operationKey(SceneOwner owner, String operationId) {
+    private static String operationKey(SceneInstance instance) {
+        return operationKey(instance.sceneId(), instance.owner(), instance.owningQuestId(),
+                instance.owningQuestInstance(), instance.operationId());
+    }
+
+    private static String operationKey(ResourceLocation sceneId, SceneOwner owner, ResourceLocation questId,
+            UUID questRunId, String operationId) {
+        return "scene:" + sceneId + "|owner:" + owner.stableKey() + "|quest:"
+                + (questId == null ? "-" : questId) + "|run:"
+                + (questRunId == null ? "-" : questRunId) + "|operation:" + operationId;
+    }
+
+    private static String legacyOperationKey(SceneOwner owner, String operationId) {
         return owner.stableKey() + "|" + operationId;
     }
 
-    public record StartResult(SceneInstance instance, boolean created) { }
+    public record StartResult(SceneInstance instance, boolean created, UUID instanceId) { }
     public record EncounterStartResult(EncounterInstance encounter,boolean created){}
 }
