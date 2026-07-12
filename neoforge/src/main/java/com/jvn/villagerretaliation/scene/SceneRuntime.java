@@ -69,6 +69,7 @@ public final class SceneRuntime {
         scheduler(server).tick(server, data, server.overworld().getGameTime());
         SceneContinuationService.maintain(server, data);
         if(server.overworld().getGameTime()%20L==0L){EncounterService.maintainCleanup(server,data);maintainSceneCleanup(server,data);}
+        if(server.overworld().getGameTime()%200L==0L)data.compactTerminalHistory(server.overworld().getGameTime(),SceneSavedData.DEFAULT_COMPACTION_WORK);
     }
     public static void wake(MinecraftServer server, SceneInstance instance) { if(server!=null&&instance!=null)scheduler(server).enqueue(instance); }
 

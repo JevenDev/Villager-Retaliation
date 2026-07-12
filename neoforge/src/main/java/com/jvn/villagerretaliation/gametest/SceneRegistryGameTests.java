@@ -1148,6 +1148,85 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void sceneResourceBoundaryRejectsErrorsButLoadsWarnings(GameTestHelper helper) {
+        JsonObject invalid = validScene();
+        invalid.getAsJsonArray("steps").get(0).getAsJsonObject().addProperty("next", "missing_step");
+        JsonObject warningOnly = validScene();
+        warningOnly.addProperty("id", "villagerretaliation:warning_only_scene");
+        warningOnly.getAsJsonArray("steps").add(JsonParser.parseString("""
+                {"id":"unused","type":"villagerretaliation:scene_complete"}
+                """));
+        ResourceLocation invalidSource = VillagerRetaliation.id("quest_scenes/invalid_boundary.json");
+        ResourceLocation warningSource = VillagerRetaliation.id("quest_scenes/warning_boundary.json");
+        SceneResources.installTestResources(helper.getLevel().getServer(),
+                Map.of(invalidSource, invalid, warningSource, warningOnly));
+        helper.assertTrue(SceneResources.scene(helper.getLevel().getServer(), VillagerRetaliation.id("gate_scene")).isEmpty(),
+                "parser/compiler errors must never enter SceneResources");
+        helper.assertTrue(SceneResources.scene(helper.getLevel().getServer(),
+                VillagerRetaliation.id("warning_only_scene")).isPresent(),
+                "warning-only scenes must remain loadable");
+        var invalidDiagnostics = SceneResources.diagnostics(helper.getLevel().getServer())
+                .get(VillagerRetaliation.id("gate_scene"));
+        helper.assertTrue(invalidDiagnostics != null && invalidDiagnostics.stream().anyMatch(value ->
+                        value.severity() == SceneDiagnostic.Severity.ERROR
+                                && invalidSource.equals(value.resourceId())
+                                && value.path().contains("transition")),
+                "scene diagnostics must retain source resource ids and focused JSON paths");
+        SceneResources.clearCache();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void settledTerminalHistoryCompactsWithoutReplay(GameTestHelper helper) {
+        var definition = compiledValidScene();
+        ResourceLocation questId = VillagerRetaliation.id("compaction_quest");
+        UUID playerId = UUID.randomUUID();
+        UUID runId = VillagerQuestSavedData.QuestProgress.deterministicRunId(playerId, questId, 1);
+        SceneOwner owner = new SceneOwner(
+                com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.QUEST_INSTANCE,
+                playerId, null, runId, "");
+        SceneSavedData data = new SceneSavedData();
+        SceneInstance scene = data.start(definition, "compaction/reward", owner, runId,
+                Set.of(playerId), Map.of(), 0L, questId).instance();
+        scene.prepareReceipt("reward", SceneOperationReceipt.Kind.LOOT_GRANT, 1L)
+                .completed(1L, "granted once");
+        var continuation = data.suspendContinuation(scene, playerId, null, "compaction/continuation",
+                List.of(), 0, Map.of());
+        continuation.complete();
+        SceneTransitionService.complete(data, scene, 2L);
+        scene.cleanupStatus(SceneInstance.CleanupStatus.COMPLETE);
+        long maintenanceTime = 2L + SceneSavedData.TERMINAL_RETENTION_TICKS;
+        helper.assertValueEqual(data.compactTerminalHistory(maintenanceTime, 8), 1,
+                "fully settled terminal scene should compact incrementally");
+        helper.assertTrue(data.all().isEmpty() && data.tombstones().size() == 1
+                        && data.tombstones().getFirst().completedReceiptIds().contains("reward"),
+                "compaction must retain a replay-blocking receipt tombstone");
+        var replay = data.start(definition, "compaction/reward", owner, runId,
+                Set.of(playerId), Map.of(), maintenanceTime + 1L, questId);
+        helper.assertTrue(!replay.created() && replay.instance() == null && replay.instanceId().equals(scene.id()),
+                "compacted operation must not replay its scene, reward, or continuation");
+
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        SceneSavedData reloaded = SceneSavedData.load(saved, helper.getLevel().registryAccess());
+        var replayAfterReload = reloaded.start(definition, "compaction/reward", owner, runId,
+                Set.of(playerId), Map.of(), maintenanceTime + 2L, questId);
+        helper.assertTrue(!replayAfterReload.created() && reloaded.tombstones().size() == 1,
+                "operation tombstone must survive reload and continue blocking replay");
+
+        SceneInstance unresolved = reloaded.start(definition, "compaction/unresolved",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        UUID.randomUUID(), null, null, ""), null, Set.of(), Map.of(), 0L).instance();
+        unresolved.prepareReceipt("ambiguous_reward", SceneOperationReceipt.Kind.LOOT_GRANT, 1L);
+        SceneTransitionService.complete(reloaded, unresolved, 2L);
+        unresolved.cleanupStatus(SceneInstance.CleanupStatus.COMPLETE);
+        helper.assertValueEqual(reloaded.compactTerminalHistory(maintenanceTime, 8), 0,
+                "unresolved receipts must prevent terminal compaction");
+        helper.assertTrue(reloaded.get(unresolved.id()).isPresent(),
+                "ambiguous terminal record must remain available for operator repair");
+        helper.succeed();
+    }
+
     private static RuntimeTypeDescriptor descriptor(String path, Set<net.minecraft.resources.ResourceLocation> aliases) {
         return new RuntimeTypeDescriptor(VillagerRetaliation.id(path), aliases, Set.of(), Set.of(),
                 JsonObject::deepCopy, value -> List.of(), (value, context) -> value, String::valueOf,

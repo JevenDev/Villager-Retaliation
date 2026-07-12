@@ -51,6 +51,28 @@ public final class SceneResources {
         cache = new Cache(server, Map.copyOf(values), Map.of());
     }
 
+    public static void installTestResources(MinecraftServer server, Map<ResourceLocation, com.google.gson.JsonObject> resources) {
+        Map<ResourceLocation, CompiledScene> scenes = new LinkedHashMap<>();
+        Map<ResourceLocation, List<SceneDiagnostic>> diagnostics = new LinkedHashMap<>();
+        if (resources != null) {
+            resources.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+                SceneParser.ParseResult parsed = SceneParser.parse(entry.getKey(), entry.getValue());
+                List<SceneDiagnostic> combined = parsed.diagnostics().stream()
+                        .map(value -> value.atSource(entry.getKey())).collect(Collectors.toCollection(ArrayList::new));
+                if (parsed.valid()) {
+                    SceneCompiler.CompileResult compiled = SceneCompiler.compile(parsed.resource());
+                    combined.addAll(compiled.diagnostics().stream().map(value -> value.atSource(entry.getKey())).toList());
+                    if (combined.stream().noneMatch(value -> value.severity() == SceneDiagnostic.Severity.ERROR)
+                            && compiled.scene() != null) scenes.put(compiled.scene().id(), compiled.scene());
+                    diagnostics.put(parsed.resource().id(), List.copyOf(combined));
+                } else {
+                    diagnostics.put(entry.getKey(), List.copyOf(combined));
+                }
+            });
+        }
+        cache = new Cache(server, Map.copyOf(scenes), Map.copyOf(diagnostics));
+    }
+
     private static Cache load(MinecraftServer server) {
         Cache current = cache;
         if (current.server() == server) return current;

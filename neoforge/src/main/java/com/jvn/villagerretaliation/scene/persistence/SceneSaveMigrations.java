@@ -30,6 +30,9 @@ public final class SceneSaveMigrations {
             } else if (version == 2) {
                 markRunIdentityKinds(data);
                 version = 3;
+            } else if (version == 3) {
+                // Version 4 adds bounded terminal operation tombstones; old saves start with none.
+                version = 4;
             } else throw new IllegalStateException("No scene save migration from version " + version);
         }
         data.putInt(DATA_VERSION, current);
