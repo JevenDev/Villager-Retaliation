@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "villagerretaliation:standing_watch",
-  "version": 5,
+  "version": 6,
   "controller": "villagerretaliation:controlled",
   "waves": [
     {
@@ -85,5 +85,11 @@
   },
   "respawn_policy": "missing_if_loaded",
   "cleanup_policy": "remove_survivors",
-  "completion_condition": "all_defeated"
+  "completion_objectives": {
+    "mode": "all",
+    "objectives": [
+      { "id": "clear_attackers", "type": "all_defeated" },
+      { "id": "stop_captain", "type": "defeat_leader", "member": "raider_captain" }
+    ]
+  }
 }

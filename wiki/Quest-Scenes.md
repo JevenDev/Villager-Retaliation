@@ -162,6 +162,37 @@ Members only need an `id` when another encounter feature references them. IDs ar
 
 Phases fire once by default. Setting `repeatable: true` also requires `repeat_interval_ticks` from 1-12,000 and `max_fires` from 2-64; repeatable phases cannot transition the scene. The encounter saves its start time, defeated member IDs, fire counts, and absolute repeat deadlines. Each phase run and action also receives a stable scene operation receipt. Idempotent facts and transitions resume safely, while participant messages reserve their receipt before delivery so a reload can never send them twice.
 
+### Completion objectives
+
+`completion_objectives` replaces the legacy `completion_condition` when an encounter needs more than a simple enemy clear. It contains a `mode` of `all` (the default) or `any` and 1-32 objectives with unique stable IDs. `all` completes after every objective completes and fails as soon as one objective fails. `any` completes after the first success and fails only when every objective has failed. The two completion fields are mutually exclusive.
+
+| Objective type | Fields | Meaning |
+| --- | --- | --- |
+| `all_defeated` | none | Every encounter-owned enemy has been defeated. |
+| `all_gone` | none | Every owned enemy is defeated or durably missing. |
+| `survive_duration` | `duration_ticks` | The encounter remains active for the requested duration. |
+| `protect_actor` | `actor`, `duration_ticks` | The bound scene actor survives for the duration; its death fails the objective. |
+| `prevent_entry` | `point`, `duration_ticks`, optional radii | No living encounter-owned enemy enters the named point's area for the duration. A breach fails the objective. |
+| `escort_actor` | `actor`, `point`, optional radii | The live bound actor reaches the named point; the actor's death fails the objective. |
+| `destroy_targets` | `actors` | Every listed bound scene actor dies. |
+| `defeat_leader` | `member` | The encounter member with that stable ID is defeated. |
+| `retrieve_item` | `item`, optional `count` | Captured participants collectively carry the item count. Items are inspected, not consumed. |
+| `hold_areas` | `points`, `duration_ticks`, optional radii | Every named point is continuously occupied by at least one captured participant for the duration. Leaving any area resets the timer. |
+
+Durations are 1-1,728,000 ticks. Horizontal `radius` and `vertical_radius` default to 4 and are bounded to 1-64. Point references use resolved `spawn_points`; actor references are checked against the owning scene at encounter preparation, item IDs are checked against the item registry, and leader IDs must name an authored member. Runtime evaluation uses only captured participants, bound actor UUIDs, resolved points, and encounter-owned entity UUIDs—never an unbounded world scan.
+
+```json
+"completion_objectives": {
+  "mode": "all",
+  "objectives": [
+    { "id": "hold_gate", "type": "prevent_entry", "point": "west_gate", "duration_ticks": 600, "radius": 5 },
+    { "id": "stop_captain", "type": "defeat_leader", "member": "raider_captain" }
+  ]
+}
+```
+
+Completed and failed objective IDs, continuous-hold timestamps, destroyed actor aliases, and the custom-completion flag are saved with the encounter. The quest tracker reports custom-objective progress, and scene inspection includes the completed, failed, and active-timer sets.
+
 The optional `area` is a cylinder centered on the encounter's durable anchor. `radius` is required and limited to 256 blocks; `vertical_radius` defaults to the radius and is limited to 128. `leave_behavior` is `ignore` (the backward-compatible default), `warn`, `pause`, or `fail`. A failing participant has `leave_timeout_ticks` (default 200, maximum 12000) to return. Warnings and absolute deadlines are saved, messages go only to the affected participant, offline players do not start or advance a new leave decision, and returning clears that excursion's state.
 
 `mob_behavior` is `ignore`, `return`, or `teleport`. `return` asks loaded owned mobs to navigate back without changing unrelated entities. `teleport` waits for the persisted `mob_timeout_ticks` deadline (default 200, maximum 12000) before returning a loaded mob to the anchor. Area checks never force-load the anchor, a participant, or an owned mob's chunk. Omitting `area` preserves encounter/v1 behavior exactly.

@@ -385,6 +385,7 @@ function testSceneResourceRoundTrip(app) {
       { id: "captain_arrives", trigger: { type: "wave_started", wave: "captain" }, actions: [{ id: "warn", type: "notification", text: "Captain incoming." }] },
       { id: "captain_falls", trigger: { type: "elite_defeated", member: "gate_captain" }, actions: [{ id: "remember", type: "fact", scope: "player", tag: "storypack:captain_defeated" }] }
     ],
+    completion_objectives: { mode: "all", objectives: [{ id: "clear", type: "all_defeated" }, { id: "leader", type: "defeat_leader", member: "gate_captain" }] },
     area: { radius: 32, vertical_radius: 16, leave_behavior: "warn", leave_timeout_ticks: 200, mob_behavior: "return" }
   };
   assert(app.ingestKnownJson(scenePath, JSON.stringify(scene)), "Scene resource import failed.");
@@ -408,6 +409,8 @@ function testSceneResourceRoundTrip(app) {
   assert(/non-empty spawn_points array/i.test(app.sceneResourceIssueDetail(encounterPath, invalidSelection)?.message || ""), "Spawn selection without points was not diagnosed.");
   const invalidPhase = structuredClone(encounter);invalidPhase.phases = [{ id: "bad", trigger: { type: "wave_started", wave: "missing", ticks: 4 }, repeatable: true, actions: [{ id: "branch", type: "transition", target: "done" }] }];
   assert(/trigger field|authored wave id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidPhase)?.message || ""), "Invalid encounter phase was not diagnosed.");
+  const invalidObjectives = structuredClone(encounter);invalidObjectives.completion_objectives.objectives[1].member = "missing";
+  assert(/authored member id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidObjectives)?.message || ""), "Invalid encounter objective was not diagnosed.");
 }
 
 const app = createAppHarness();

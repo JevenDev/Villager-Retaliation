@@ -1,5 +1,6 @@
 # Changelog
 
+- Added composable `all`/`any` encounter completion objectives for survival, protection, entry defense, escorts, target destruction, leader defeats, item retrieval, area control, and legacy enemy-clear conditions, with durable tracker and operator state.
 - Added durable mid-fight encounter phases triggered by waves, remaining enemy percentage, elapsed time, or named elite defeats, with receipt-guarded notifications, dialogue, fact sets, and scene transitions.
 - Added named encounter spawn points sourced from scene actors, marker aliases, or explicit coordinates, with durable random, sequential, weighted, participant-distance, and member-group selection.
 - Added allowlisted elite and boss encounter members with safe names, visibility, glow, persistence, bounded combat attributes, correct post-initialization health, and participant-only reload-safe boss bars.

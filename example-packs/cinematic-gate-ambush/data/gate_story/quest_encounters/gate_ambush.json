@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "gate_story:gate_ambush",
-  "version": 1,
+  "version": 2,
   "controller": "villagerretaliation:controlled",
   "waves": [
     {
@@ -67,5 +67,11 @@
   },
   "respawn_policy": "missing_if_loaded",
   "cleanup_policy": "remove_survivors",
-  "completion_condition": "all_defeated"
+  "completion_objectives": {
+    "mode": "all",
+    "objectives": [
+      { "id": "clear_ambush", "type": "all_defeated" },
+      { "id": "break_gatebreaker", "type": "defeat_leader", "member": "gatebreaker" }
+    ]
+  }
 }

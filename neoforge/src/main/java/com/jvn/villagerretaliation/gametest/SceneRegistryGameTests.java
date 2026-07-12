@@ -540,6 +540,29 @@ public final class SceneRegistryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void composableEncounterObjectivesParseEvaluateAndPersist(GameTestHelper helper) {
+        var errors=new java.util.ArrayList<String>();EncounterTemplate template=EncounterResources.parse(VillagerRetaliation.id("objective_catalog"),JsonParser.parseString("""
+                {"schema":"villagerretaliation:encounter/v1","id":"villagerretaliation:objective_catalog","members":[{"id":"leader","entity":"minecraft:zombie","custom_name":"Leader"}],
+                 "spawn_points":[{"id":"gate","x":2,"y":1,"z":2},{"id":"yard","x":7,"y":1,"z":7}],
+                 "completion_objectives":{"mode":"any","objectives":[
+                   {"id":"clear","type":"all_defeated"},{"id":"gone","type":"all_gone"},{"id":"survive","type":"survive_duration","duration_ticks":40},
+                   {"id":"protect","type":"protect_actor","actor":"guide","duration_ticks":40},{"id":"deny","type":"prevent_entry","point":"gate","duration_ticks":40},
+                   {"id":"escort","type":"escort_actor","actor":"guide","point":"yard"},{"id":"targets","type":"destroy_targets","actors":["crate_a","crate_b"]},
+                   {"id":"leader","type":"defeat_leader","member":"leader"},{"id":"retrieve","type":"retrieve_item","item":"minecraft:apple","count":2},
+                   {"id":"hold","type":"hold_areas","points":["gate","yard"],"duration_ticks":20}
+                 ]}}
+                """).getAsJsonObject(),errors);helper.assertTrue(template!=null&&errors.isEmpty(),"objective catalog should parse every objective type: "+errors);
+        var invalidErrors=new java.util.ArrayList<String>();EncounterResources.parse(VillagerRetaliation.id("bad_objectives"),JsonParser.parseString("""
+                {"schema":"villagerretaliation:encounter/v1","id":"villagerretaliation:bad_objectives","members":[{"entity":"minecraft:zombie"}],"completion_condition":"all_defeated",
+                 "completion_objectives":{"mode":"all","objectives":[{"id":"bad","type":"escort_actor","actor":"guide","point":"missing","duration_ticks":2}]}}
+                """).getAsJsonObject(),invalidErrors);helper.assertTrue(invalidErrors.stream().anyMatch(value->value.contains("mutually exclusive"))&&invalidErrors.stream().anyMatch(value->value.contains("unreachable"))&&invalidErrors.stream().anyMatch(value->value.contains("unknown spawn point")),"invalid objective composition should report focused diagnostics: "+invalidErrors);
+        EncounterResources.installTestTemplates(helper.getLevel().getServer(),List.of(template));ServerPlayer player=helper.makeMockServerPlayerInLevel();player.getInventory().add(new net.minecraft.world.item.ItemStack(net.minecraft.world.item.Items.APPLE,2));SceneSavedData data=new SceneSavedData();SceneInstance scene=data.start(compiledValidScene(),"objective_scene",new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,player.getUUID(),null,null,""),null,Set.of(player.getUUID()),Map.of(),0L).instance();BlockPos anchor=helper.absolutePos(new BlockPos(4,1,4));var points=List.of(new EncounterInstance.ResolvedSpawnPoint("gate",helper.getLevel().dimension().location(),helper.absolutePos(new BlockPos(2,1,2)),1),new EncounterInstance.ResolvedSpawnPoint("yard",helper.getLevel().dimension().location(),helper.absolutePos(new BlockPos(7,1,7)),1));EncounterInstance encounter=data.startEncounter(template,scene,"objectives/start",helper.getLevel().dimension().location(),anchor,"normal",points).encounter();var result=EncounterService.reconcileSpawn(helper.getLevel().getServer(),data,encounter,template);helper.assertTrue(result.status()==EncounterService.Status.COMPLETED&&encounter.completedObjectives().contains("retrieve")&&encounter.customCompletion(),"any composition should complete from a retrieved participant item without consuming it");EncounterInstance loaded=EncounterInstance.load(encounter.save());helper.assertValueEqual(loaded.completedObjectives(),encounter.completedObjectives(),"completed objectives survive reload");helper.assertTrue(loaded.customCompletion()&&player.getInventory().countItem(net.minecraft.world.item.Items.APPLE)==2,"custom completion flag persists and retrieve_item is non-consuming");
+        var protectErrors=new java.util.ArrayList<String>();EncounterTemplate protect=EncounterResources.parse(VillagerRetaliation.id("protect_failure"),JsonParser.parseString("""
+                {"schema":"villagerretaliation:encounter/v1","id":"villagerretaliation:protect_failure","members":[{"entity":"minecraft:zombie"}],"completion_objectives":{"objectives":[{"id":"guard","type":"protect_actor","actor":"guide","duration_ticks":20}]}}
+                """).getAsJsonObject(),protectErrors);helper.assertTrue(protect!=null&&protectErrors.isEmpty(),"protect objective should parse: "+protectErrors);EncounterInstance failed=data.startEncounter(protect,scene,"objectives/protect",helper.getLevel().dimension().location(),anchor,"normal").encounter();failed.destroyActorAlias("guide");var failure=EncounterService.reconcileSpawn(helper.getLevel().getServer(),data,failed,protect);helper.assertTrue(failure.status()==EncounterService.Status.FAILED&&failed.failedObjectives().contains("guard"),"all composition should fail durably when a protected actor is destroyed");helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void missingActorsFollowRequiredAndOptionalPolicies(GameTestHelper helper) {
         BuiltinSceneStepExecutors.register();
         JsonObject requiredJson=JsonParser.parseString("""
