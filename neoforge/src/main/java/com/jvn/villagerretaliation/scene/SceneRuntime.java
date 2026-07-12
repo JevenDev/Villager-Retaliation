@@ -93,13 +93,17 @@ public final class SceneRuntime {
     }
 
     private static void maintainSceneCleanup(MinecraftServer server, SceneSavedData data) {
-        for (SceneInstance scene : data.takeCleanupBatch(16)) {
+        long gameTime = server.overworld().getGameTime();
+        for (SceneInstance scene : data.takeCleanupBatch(16, gameTime)) {
             CompiledScene definition = SceneResources.scene(server, scene.sceneId()).orElse(null);
             if (definition == null) {
-                scene.cleanupStatus(SceneInstance.CleanupStatus.BLOCKED);
+                scene.blockCleanup("scene definition is unavailable; cleanup will retry with bounded backoff",
+                        safeAdd(gameTime, 1200L));
                 data.requestCleanup(scene);
+                data.changed();
                 continue;
             }
+            scene.clearCleanupBlock();
             boolean clean = true;
             if (definition.cleanupPolicy() != SceneResource.CleanupPolicy.NONE
                     && definition.cleanupPolicy() != SceneResource.CleanupPolicy.PRESERVE_WORLD) {
@@ -115,6 +119,10 @@ public final class SceneRuntime {
             else data.requestCleanup(scene);
             data.changed();
         }
+    }
+
+    private static long safeAdd(long start, long duration) {
+        return duration > Long.MAX_VALUE - start ? Long.MAX_VALUE : start + duration;
     }
 
     private static OwnerAndParticipants owner(CompiledScene scene, SceneLaunchService.LaunchRequest request) {

@@ -40,6 +40,13 @@ public final class SceneInstance {
     private final Map<String, SceneOperationReceipt> receipts = new LinkedHashMap<>();
     private CompletionResult completionResult = CompletionResult.NONE;
     private boolean deadlineHandled;
+    private TransitionIntent transitionIntent = TransitionIntent.NONE;
+    private boolean policyApplied;
+    private String transitionCode = "";
+    private String transitionDiagnostic = "";
+    private boolean repairableBlocked;
+    private String cleanupDiagnostic = "";
+    private long cleanupRetryAt;
 
     public SceneInstance(UUID id, CompiledScene definition, String operationId, SceneOwner owner, UUID owningQuestInstance,
             Set<UUID> participants, Map<String, SceneActorBinding> actorBindings, long gameTime) {
@@ -89,6 +96,10 @@ public final class SceneInstance {
     public CleanupStatus cleanupStatus(){return cleanupStatus;} public List<PendingOperation> pendingOperations(){return List.copyOf(pendingOperations);}
     public CompletionResult completionResult(){return completionResult;}
     public boolean deadlineHandled(){return deadlineHandled;}
+    public TransitionIntent transitionIntent(){return transitionIntent;} public boolean policyApplied(){return policyApplied;}
+    public String transitionCode(){return transitionCode;} public String transitionDiagnostic(){return transitionDiagnostic;}
+    public boolean repairableBlocked(){return repairableBlocked;} public String cleanupDiagnostic(){return cleanupDiagnostic;}
+    public long cleanupRetryAt(){return cleanupRetryAt;}
     public Map<String,SceneOperationReceipt> receipts(){return Map.copyOf(receipts);}
     public SceneOperationReceipt prepareReceipt(String operationId,SceneOperationReceipt.Kind kind,long time){return receipts.computeIfAbsent(operationId,id->new SceneOperationReceipt(id,kind,time));}
     public SceneOperationReceipt receipt(String operationId){return receipts.get(operationId);}
@@ -96,13 +107,19 @@ public final class SceneInstance {
     public SceneStepRecord currentRecord(ResourceLocation type) { return stepRecords.computeIfAbsent(currentStep, id -> new SceneStepRecord(id, type)); }
     public void transition(SceneState next, long time) { state=next; updateGameTime=time; }
     public void advance(String stepId, long time) { currentStep=stepId; state=SceneState.RUNNING; updateGameTime=time; }
-    public void block(String code,String message,long time){state=SceneState.BLOCKED;failureCode=code;diagnostic=message;updateGameTime=time;}
+    public void block(String code,String message,long time){state=SceneState.BLOCKED;failureCode=code;diagnostic=message;repairableBlocked=false;updateGameTime=time;}
+    public void blockForRepair(String code,String message,long time){state=SceneState.BLOCKED;failureCode=code;diagnostic=message;repairableBlocked=true;updateGameTime=time;}
     public void fail(String code,String message,long time){state=SceneState.FAILED;failureCode=code;diagnostic=message;completionResult=CompletionResult.FAILURE;updateGameTime=time;}
     public void complete(long time){state=SceneState.COMPLETED;completionResult=CompletionResult.SUCCESS;updateGameTime=time;}
     public void cancel(String code,String message,long time){state=SceneState.CANCELLED;failureCode=code;diagnostic=message;completionResult=CompletionResult.CANCELLED;updateGameTime=time;}
     public void markDeadlineHandled(){deadlineHandled=true;}
-    public void retry(){retryCount++; failureCode=""; diagnostic=""; state=SceneState.RUNNING;}
-    public void cleanupStatus(CleanupStatus value){cleanupStatus=value;}
+    public void retry(){retryCount++; failureCode=""; diagnostic=""; repairableBlocked=false;transitionIntent=TransitionIntent.NONE;policyApplied=false;transitionCode="";transitionDiagnostic="";state=SceneState.RUNNING;}
+    public void cleanupStatus(CleanupStatus value){cleanupStatus=value;if(value==CleanupStatus.COMPLETE){cleanupDiagnostic="";cleanupRetryAt=0L;}}
+    public void blockCleanup(String message,long retryAt){cleanupStatus=CleanupStatus.BLOCKED;cleanupDiagnostic=message==null?"":message;cleanupRetryAt=Math.max(0L,retryAt);}
+    public void clearCleanupBlock(){cleanupDiagnostic="";cleanupRetryAt=0L;if(cleanupStatus==CleanupStatus.BLOCKED)cleanupStatus=CleanupStatus.RUNNING;}
+    public void preparePolicyTransition(TransitionIntent intent,String code,String message){if(transitionIntent==TransitionIntent.NONE&&!policyApplied){transitionIntent=intent==null?TransitionIntent.FAILURE:intent;transitionCode=code==null?"":code;transitionDiagnostic=message==null?"":message;}}
+    public void markPolicyApplied(){policyApplied=true;}
+    public void finishPolicyTransitionForContinuation(){transitionIntent=TransitionIntent.NONE;policyApplied=false;transitionCode="";transitionDiagnostic="";}
     public void reconcileDefinition(CompiledScene definition){definitionVersion=definition.definitionVersion();definitionHash=definition.definitionHash();}
     public void replaceBinding(String alias, SceneActorBinding binding){actorBindings.put(alias,binding);}
     public boolean mergeLaunchContext(Set<UUID> additionalParticipants, Map<String, SceneActorBinding> additionalBindings) {
@@ -130,6 +147,10 @@ public final class SceneInstance {
         tag.putLong("UpdateGameTime",updateGameTime);tag.putInt("RetryCount",retryCount);tag.putString("FailureCode",failureCode);
         tag.putString("Diagnostic",diagnostic);tag.putString("CleanupStatus",cleanupStatus.name());tag.putString("CompletionResult",completionResult.name());
         tag.putBoolean("DeadlineHandled",deadlineHandled);
+        tag.putString("TransitionIntent",transitionIntent.name());tag.putBoolean("PolicyApplied",policyApplied);
+        tag.putString("TransitionCode",transitionCode);tag.putString("TransitionDiagnostic",transitionDiagnostic);
+        tag.putBoolean("RepairableBlocked",repairableBlocked);tag.putString("CleanupDiagnostic",cleanupDiagnostic);
+        tag.putLong("CleanupRetryAt",cleanupRetryAt);
         ListTag bindings=new ListTag();actorBindings.values().forEach(v->bindings.add(v.save()));tag.put("ActorBindings",bindings);
         ListTag records=new ListTag();stepRecords.values().forEach(v->records.add(v.save()));tag.put("StepRecords",records);
         ListTag receiptTags=new ListTag();receipts.values().forEach(v->receiptTags.add(v.save()));tag.put("Receipts",receiptTags);
@@ -146,6 +167,10 @@ public final class SceneInstance {
         try{value.cleanupStatus=CleanupStatus.valueOf(tag.getString("CleanupStatus"));}catch(IllegalArgumentException ignored){}
         try{value.completionResult=CompletionResult.valueOf(tag.getString("CompletionResult"));}catch(IllegalArgumentException ignored){}
         value.deadlineHandled=tag.getBoolean("DeadlineHandled");
+        try{value.transitionIntent=TransitionIntent.valueOf(tag.getString("TransitionIntent"));}catch(IllegalArgumentException ignored){}
+        value.policyApplied=tag.getBoolean("PolicyApplied");value.transitionCode=tag.getString("TransitionCode");
+        value.transitionDiagnostic=tag.getString("TransitionDiagnostic");value.repairableBlocked=tag.getBoolean("RepairableBlocked");
+        value.cleanupDiagnostic=tag.getString("CleanupDiagnostic");value.cleanupRetryAt=tag.getLong("CleanupRetryAt");
         for(Tag raw:tag.getList("Receipts",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag receipt){var r=SceneOperationReceipt.load(receipt);value.receipts.put(r.operationId(),r);}
         for(Tag raw:tag.getList("PendingOperations",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag operation)value.pendingOperations.add(PendingOperation.load(operation));return value;
     }
@@ -156,5 +181,6 @@ public final class SceneInstance {
 
     public enum CleanupStatus{NOT_STARTED,RUNNING,COMPLETE,BLOCKED} public enum CompletionResult{NONE,SUCCESS,FAILURE,CANCELLED}
     public enum RunIdentityKind{QUEST_RUN,LEGACY_OWNER}
+    public enum TransitionIntent{NONE,FAILURE,CANCELLATION}
     public record PendingOperation(String operationId,String kind,String state){public PendingOperation{operationId=operationId==null?"":operationId;kind=kind==null?"":kind;state=state==null?"prepared":state;}CompoundTag save(){CompoundTag t=new CompoundTag();t.putString("Id",operationId);t.putString("Kind",kind);t.putString("State",state);return t;}static PendingOperation load(CompoundTag t){return new PendingOperation(t.getString("Id"),t.getString("Kind"),t.getString("State"));}}
 }

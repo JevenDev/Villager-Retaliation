@@ -24,6 +24,7 @@ import com.jvn.villagerretaliation.scene.runtime.SceneOwner;
 import com.jvn.villagerretaliation.scene.runtime.SceneScheduler;
 import com.jvn.villagerretaliation.scene.runtime.SceneState;
 import com.jvn.villagerretaliation.scene.runtime.SceneStepEngine;
+import com.jvn.villagerretaliation.scene.runtime.SceneTransitionService;
 import com.jvn.villagerretaliation.scene.runtime.StepExecutionStatus;
 import com.jvn.villagerretaliation.scene.runtime.SceneExecutionContext;
 import com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt;
@@ -764,7 +765,7 @@ public final class SceneRegistryGameTests {
         JsonObject json=validScene();json.getAsJsonArray("actors").get(0).getAsJsonObject().addProperty("replacement_policy","operator_rebindable");var definition=compiledScene(json);SceneResources.installTestScenes(helper.getLevel().getServer(),List.of(definition));SceneSavedData data=SceneSavedData.get(helper.getLevel());
         SceneActorBinding binding=SceneActorBinding.entity("guide",VillagerRetaliation.id("villager"),first.getUUID(),VillagerRetaliation.id("villager"),helper.getLevel().dimension().location(),first.blockPosition(),"First",true);SceneInstance scene=data.start(definition,"operator/"+UUID.randomUUID(),new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,player.getUUID(),null,null,""),null,Set.of(player.getUUID()),Map.of("guide",binding),0L).instance();scene.linkQuest(VillagerRetaliation.id("operator_test_quest"));scene.prepareReceipt("existing_reward",SceneOperationReceipt.Kind.EXPERIENCE_GRANT,1L).completed(1L,"already granted");
         var rebound=SceneOperatorService.rebind(helper.getLevel(),scene.id(),"guide",second,"repair binding","TestOperator");helper.assertTrue(rebound.success()&&scene.actorBindings().get("guide").replacementHistory().size()==1,"operator should rebind and retain replacement history");helper.assertTrue(scene.receipts().containsKey("existing_reward"),"operator repair must not erase receipts");
-        scene.block("manual_test","blocked",2L);var resumed=SceneOperatorService.resume(helper.getLevel(),scene.id(),"repair complete","TestOperator");helper.assertTrue(resumed.success()&&scene.state()==SceneState.RUNNING,"operator should resume repaired blocked scene");
+        scene.blockForRepair("manual_test","blocked",2L);var resumed=SceneOperatorService.resume(helper.getLevel(),scene.id(),"repair complete","TestOperator");helper.assertTrue(resumed.success()&&scene.state()==SceneState.RUNNING,"operator should resume repaired blocked scene");
         SceneLifecycleIntegration.onQuestTerminal(helper.getLevel(),player.getUUID(),VillagerRetaliation.id("operator_test_quest"),"abandoned");helper.assertValueEqual(scene.state(),SceneState.CANCELLED,"quest abandonment scene state");helper.assertTrue(data.auditEntries().stream().filter(a->a.sceneId().equals(scene.id())).count()>=2&&scene.receipts().containsKey("existing_reward"),"operator mutations should append audit entries without deleting history");helper.succeed();
     }
 
@@ -932,11 +933,127 @@ public final class SceneRegistryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void executorFailureRunsAuthoredFailureStepExactlyOnce(GameTestHelper helper) {
+        BuiltinSceneStepExecutors.register();
+        JsonObject json = JsonParser.parseString("""
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:failure_branch",
+                 "failure_policy":"run_failure_step","entry_step":"move","actors":[
+                  {"alias":"guide","type":"villagerretaliation:villager","binding_source":"unbound",
+                   "missing_actor_policy":"fail"}],"steps":[
+                  {"id":"move","type":"villagerretaliation:move_actor","actors":["guide"],
+                   "data":{"x":0,"y":64,"z":0},"next":"done","failure_step":"recover"},
+                  {"id":"recover","type":"villagerretaliation:scene_complete"},
+                  {"id":"done","type":"villagerretaliation:scene_complete"}]}
+                """).getAsJsonObject();
+        var definition = compiledScene(json);
+        SceneResources.installTestScenes(helper.getLevel().getServer(), List.of(definition));
+        UUID playerId = UUID.randomUUID();
+        SceneSavedData data = new SceneSavedData();
+        SceneInstance scene = data.start(definition, "failure/branch",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        playerId, null, null, ""),
+                null, Set.of(playerId), Map.of(), 0L).instance();
+        SceneScheduler scheduler = new SceneScheduler(8, SceneStepEngine::process);
+        scheduler.rebuild(helper.getLevel().getServer(), data, 0L);
+        scheduler.tick(helper.getLevel().getServer(), data, 1L);
+        helper.assertTrue(scene.state() == SceneState.COMPLETED && scene.currentStep().equals("recover"),
+                "ordinary executor failure must follow failure_step and complete its recovery branch");
+        helper.assertTrue(scene.cleanupStatus() == SceneInstance.CleanupStatus.RUNNING
+                        && data.takeCleanupBatch(8, 1L).stream().filter(value -> value.id().equals(scene.id())).count() == 1,
+                "completed recovery branch must queue cleanup exactly once");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void transitionPoliciesArePersistedRepairableAndIdempotent(GameTestHelper helper) {
+        var base = compiledValidScene();
+        UUID playerId = UUID.randomUUID();
+        for (var policy : com.jvn.villagerretaliation.scene.model.SceneResource.TransitionPolicy.values()) {
+            var definition = sceneWithPolicy(base, policy, policy);
+            SceneSavedData data = new SceneSavedData();
+            SceneInstance scene = data.start(definition, "policy/" + policy.name().toLowerCase(),
+                    new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                            playerId, null, null, ""),
+                    null, Set.of(playerId), Map.of(), 0L).instance();
+            SceneTransitionService.fail(data, scene, definition, "semantic_failure", "semantic failure", 1L);
+            switch (policy) {
+                case FAIL_SCENE -> helper.assertValueEqual(scene.state(), SceneState.FAILED, "FAIL_SCENE state");
+                case CANCEL_SCENE -> helper.assertValueEqual(scene.state(), SceneState.CANCELLED, "CANCEL_SCENE state");
+                case BLOCK_FOR_REPAIR -> helper.assertTrue(scene.state() == SceneState.BLOCKED
+                                && scene.repairableBlocked(),
+                        "BLOCK_FOR_REPAIR must produce an explicitly repairable block");
+                case RUN_FAILURE_STEP -> helper.assertTrue(scene.state() == SceneState.BLOCKED
+                                && scene.repairableBlocked()
+                                && scene.failureCode().contains("failure_step_missing"),
+                        "missing failure_step must block with a focused repair diagnostic");
+            }
+        }
+
+        var cancellationDefinition = sceneWithPolicy(base,
+                com.jvn.villagerretaliation.scene.model.SceneResource.TransitionPolicy.FAIL_SCENE,
+                com.jvn.villagerretaliation.scene.model.SceneResource.TransitionPolicy.BLOCK_FOR_REPAIR);
+        SceneSavedData cancellationData = new SceneSavedData();
+        SceneInstance cancelled = cancellationData.start(cancellationDefinition, "policy/cancel",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        playerId, null, null, ""), null, Set.of(playerId), Map.of(), 0L).instance();
+        SceneTransitionService.cancel(cancellationData, cancelled, cancellationDefinition,
+                "quest_abandoned", "quest abandoned", 2L);
+        helper.assertTrue(cancelled.state() == SceneState.BLOCKED && cancelled.repairableBlocked(),
+                "cancellation must honor cancellation_policy instead of directly cancelling");
+
+        SceneInstance pending = new SceneSavedData().start(base, "policy/pending",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        UUID.randomUUID(), null, null, ""), null, Set.of(), Map.of(), 0L).instance();
+        pending.preparePolicyTransition(SceneInstance.TransitionIntent.FAILURE,
+                "persisted_failure", "detected before save");
+        SceneInstance reloaded = SceneInstance.load(pending.save());
+        SceneSavedData reloadedData = new SceneSavedData();
+        SceneTransitionService.applyPrepared(reloadedData, reloaded, base, 3L);
+        SceneTransitionService.applyPrepared(reloadedData, reloaded, base, 4L);
+        helper.assertTrue(reloaded.state() == SceneState.FAILED && reloaded.policyApplied()
+                        && reloaded.cleanupStatus() == SceneInstance.CleanupStatus.RUNNING,
+                "reload between detection and policy application must terminalize once and retain cleanup intent");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void everyTerminalResultStartsDurableCleanup(GameTestHelper helper) {
+        var definition = compiledValidScene();
+        SceneSavedData data = new SceneSavedData();
+        java.util.List<SceneInstance> scenes = new java.util.ArrayList<>();
+        for (int index = 0; index < 3; index++) {
+            UUID playerId = UUID.randomUUID();
+            scenes.add(data.start(definition, "terminal/" + index,
+                    new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                            playerId, null, null, ""), null, Set.of(playerId), Map.of(), 0L).instance());
+        }
+        SceneTransitionService.complete(data, scenes.get(0), 1L);
+        SceneTransitionService.fail(data, scenes.get(1), definition, "failed", "failed", 1L);
+        SceneTransitionService.cancel(data, scenes.get(2), definition, "cancelled", "cancelled", 1L);
+        helper.assertTrue(scenes.stream().allMatch(scene -> scene.cleanupStatus() == SceneInstance.CleanupStatus.RUNNING),
+                "complete, fail, and cancel must remain unsettled until cleanup finishes");
+        helper.assertValueEqual(data.takeCleanupBatch(8, 1L).size(), 3,
+                "each terminal path must enqueue one cleanup job");
+        helper.assertTrue(data.takeCleanupBatch(8, 1L).isEmpty(), "cleanup jobs must dequeue only once");
+        helper.succeed();
+    }
+
     private static RuntimeTypeDescriptor descriptor(String path, Set<net.minecraft.resources.ResourceLocation> aliases) {
         return new RuntimeTypeDescriptor(VillagerRetaliation.id(path), aliases, Set.of(), Set.of(),
                 JsonObject::deepCopy, value -> List.of(), (value, context) -> value, String::valueOf,
                 RecoveryMode.NATURALLY_IDEMPOTENT,
                 new ToolingMetadata(path, path, Map.of("type", "object"), true), ClientSync.NONE);
+    }
+
+    private static com.jvn.villagerretaliation.scene.model.CompiledScene sceneWithPolicy(
+            com.jvn.villagerretaliation.scene.model.CompiledScene base,
+            com.jvn.villagerretaliation.scene.model.SceneResource.TransitionPolicy failure,
+            com.jvn.villagerretaliation.scene.model.SceneResource.TransitionPolicy cancellation) {
+        return new com.jvn.villagerretaliation.scene.model.CompiledScene(
+                base.id(), base.definitionVersion(), base.definitionHash(), base.ownership(), base.metadata(),
+                base.actors(), base.entryStep(), base.steps(), failure, cancellation,
+                base.cleanupPolicy(), base.timeoutTicks());
     }
 
     private static Villager spawnVillager(GameTestHelper helper, int x, int z) {

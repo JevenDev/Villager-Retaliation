@@ -144,12 +144,23 @@ public final class SceneSavedData extends SavedData {
                 && queuedSceneCleanup.add(instance.id())) pendingSceneCleanup.addLast(instance.id());
     }
     public List<SceneInstance> takeCleanupBatch(int maximum) {
+        return takeCleanupBatch(maximum, Long.MAX_VALUE);
+    }
+    public List<SceneInstance> takeCleanupBatch(int maximum, long gameTime) {
         List<SceneInstance> result = new ArrayList<>();
-        while (result.size() < Math.max(1, maximum) && !pendingSceneCleanup.isEmpty()) {
+        int inspected = 0;
+        int inspectionLimit = Math.max(1, maximum);
+        while (result.size() < inspectionLimit && inspected < inspectionLimit && !pendingSceneCleanup.isEmpty()) {
             UUID id = pendingSceneCleanup.removeFirst();
             queuedSceneCleanup.remove(id);
+            inspected++;
             SceneInstance instance = instances.get(id);
-            if (instance != null && instance.cleanupStatus() != SceneInstance.CleanupStatus.COMPLETE) result.add(instance);
+            if (instance == null || instance.cleanupStatus() == SceneInstance.CleanupStatus.COMPLETE) continue;
+            if (instance.cleanupRetryAt() > gameTime) {
+                requestCleanup(instance);
+                continue;
+            }
+            result.add(instance);
         }
         return List.copyOf(result);
     }

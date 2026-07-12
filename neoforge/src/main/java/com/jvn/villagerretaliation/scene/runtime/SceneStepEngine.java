@@ -16,6 +16,9 @@ public final class SceneStepEngine {
 
     public static SceneScheduler.ProcessResult process(MinecraftServer server, SceneSavedData data, SceneInstance instance,
             CompiledScene definition,long time){
+        if (instance.transitionIntent() != SceneInstance.TransitionIntent.NONE && !instance.policyApplied()) {
+            return SceneTransitionService.applyPrepared(data, instance, definition, time);
+        }
         if(definition==null){instance.block("definition_missing","scene definition is unavailable",time);data.changed();return SceneScheduler.ProcessResult.idle();}
         var reconciliation=SceneDefinitionReconciler.reconcile(instance,definition);
         if(!reconciliation.safe()){instance.block("definition_incompatible",reconciliation.diagnostic(),time);data.changed();return SceneScheduler.ProcessResult.idle();}
@@ -38,7 +41,8 @@ public final class SceneStepEngine {
             case PREPARED,RUNNING -> result=fresh?executor.apply(context):executor.reconcile(context);
             case APPLIED -> result=executor.verify(context);
             case COMPLETED,SKIPPED -> {return advance(instance,definition,step,record,time,data,"");}
-            case FAILED -> {instance.block("step_failed",record.failureCode(),time);data.changed();return SceneScheduler.ProcessResult.idle();}
+            case FAILED -> {return SceneTransitionService.fail(data,instance,definition,
+                    record.failureCode(),"step execution previously failed",time);}
             default -> result=SceneStepResult.block("invalid_step_state","unsupported step state");
         }
         return handle(result,instance,definition,step,record,time,data,key);
@@ -53,15 +57,17 @@ public final class SceneStepEngine {
             case SKIP -> {record.status(StepExecutionStatus.SKIPPED,time);PREPARED_THIS_SESSION.remove(key);data.changed();yield advance(instance,definition,step,record,time,data,result.transition());}
             case WAIT -> {record.wakeTime(result.wakeTime());instance.transition(SceneState.WAITING,time);data.changed();yield SceneScheduler.ProcessResult.wakeAt(result.wakeTime());}
             case BLOCK -> {instance.block(result.code().isBlank()?"step_blocked":result.code(),result.diagnostic(),time);data.changed();yield SceneScheduler.ProcessResult.idle();}
-            case FAIL -> {record.fail(result.code());instance.fail(result.code(),result.diagnostic(),time);data.changed();yield SceneScheduler.ProcessResult.idle();}
+            case FAIL -> {record.fail(result.code());data.changed();yield SceneTransitionService.fail(
+                    data,instance,definition,result.code(),result.diagnostic(),time);}
         };
     }
 
     private static SceneScheduler.ProcessResult advance(SceneInstance instance,CompiledScene definition,CompiledScene.CompiledStep step,
             SceneStepRecord record,long time,SceneSavedData data,String requested){
         if(step.terminal()){
-            if(step.type().getPath().equals("scene_fail"))instance.fail("scene_fail","scene reached authored failure terminal",time);else instance.complete(time);
-            data.changed();return SceneScheduler.ProcessResult.idle();
+            if(step.type().getPath().equals("scene_fail"))return SceneTransitionService.fail(data,instance,definition,
+                    "scene_fail","scene reached authored failure terminal",time);
+            SceneTransitionService.complete(data,instance,time);return SceneScheduler.ProcessResult.idle();
         }
         String choice=!record.chosenTransition().isBlank()?record.chosenTransition():requested;
         String next=choice.isBlank()?step.transitions().get("success"):step.transitions().getOrDefault(choice,choice);
@@ -79,29 +85,11 @@ public final class SceneStepEngine {
             CompiledScene definition, long time) {
         SceneState prior = instance.state();
         instance.markDeadlineHandled();
-        switch (definition.failurePolicy()) {
-            case FAIL_SCENE -> instance.fail("scene_timeout", "scene exceeded its authored overall timeout", time);
-            case CANCEL_SCENE -> instance.cancel("scene_timeout", "scene was cancelled after its authored overall timeout", time);
-            case BLOCK_FOR_REPAIR -> instance.block("scene_timeout", "scene timed out and requires operator repair", time);
-            case RUN_FAILURE_STEP -> {
-                CompiledScene.CompiledStep current = definition.steps().get(instance.currentStep());
-                if (current != null && !current.failureStep().isBlank()
-                        && definition.steps().containsKey(current.failureStep())) {
-                    instance.advance(current.failureStep(), time);
-                } else {
-                    instance.block("scene_timeout_failure_step_missing",
-                            "scene timed out but the current step has no authored failure_step", time);
-                }
-            }
-        }
+        SceneScheduler.ProcessResult result = SceneTransitionService.fail(data, instance, definition,
+                "scene_timeout", "scene exceeded its authored overall timeout", time);
         data.audit(new SceneAuditEntry(instance.id(), "", prior.name(), instance.state().name(),
                 "scene_timeout", time, "runtime"));
-        if (instance.state().terminal()) {
-            instance.cleanupStatus(SceneInstance.CleanupStatus.RUNNING);
-            data.requestCleanup(instance);
-        }
         data.changed();
-        return instance.state().terminal() || instance.state() == SceneState.BLOCKED
-                ? SceneScheduler.ProcessResult.idle() : SceneScheduler.ProcessResult.now();
+        return result;
     }
 }
