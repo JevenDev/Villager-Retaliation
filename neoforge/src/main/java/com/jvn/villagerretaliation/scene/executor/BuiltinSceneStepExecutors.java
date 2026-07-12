@@ -14,6 +14,9 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
+import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
+import com.jvn.villagerretaliation.scene.model.SceneQuestTransition;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.scene.runtime.SceneExecutionContext;
 import com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt;
 import com.jvn.villagerretaliation.scene.runtime.SceneReceiptGuard;
@@ -150,8 +153,32 @@ public final class BuiltinSceneStepExecutors {
 
     private static final class QuestTransition extends Base {
         QuestTransition(){super(RecoveryMode.RECEIPT_REQUIRED);}
-        public SceneStepResult apply(SceneExecutionContext c){DialogueContext dialogue=context(c);if(dialogue==null)return actorUnavailable(c,"quest transition context is unavailable");JsonObject action=c.step().parameters().deepCopy();action.addProperty("type",action.has("target_stage")?"quest_transition":"quest");JsonObject wrapper=new JsonObject();JsonArray array=new JsonArray();array.add(action);wrapper.add("actions",array);var parsed=VillagerActionDefinition.readList(c.definition().id(),"scene quest_transition",wrapper,null);if(parsed.size()!=1)return SceneStepResult.fail("quest_transition_invalid","quest transition action is invalid");
-            var guarded=SceneReceiptGuard.applyOnce(c,"quest_transition",SceneOperationReceipt.Kind.QUEST_TRANSITION,()->VillagerActionRegistry.execute(dialogue,parsed.getFirst(),java.util.Map.of()),"quest transition");if(guarded.status()==SceneReceiptGuard.Status.AMBIGUOUS_PREPARED)return SceneStepResult.block("quest_transition_ambiguous","cannot prove quest transition outcome after reload");guarded.receipt().completed(c.gameTime(),"quest transition");return SceneStepResult.applied();}
+        public SceneStepResult apply(SceneExecutionContext c){
+            DialogueContext dialogue=context(c);
+            if(dialogue==null)return actorUnavailable(c,"quest transition context is unavailable");
+            SceneQuestTransition transition;
+            try{transition=SceneQuestTransition.parse(c.step().parameters());}
+            catch(IllegalArgumentException exception){return SceneStepResult.fail("quest_transition_invalid",exception.getMessage());}
+            JsonObject action=new JsonObject();action.addProperty("quest",transition.questId().toString());
+            if(transition.target()==SceneQuestTransition.Target.STAGE){
+                var progress=VillagerQuestSavedData.get(dialogue.level()).get(dialogue.player().getUUID(),transition.questId());
+                if(progress==null)return SceneStepResult.fail("quest_transition_inactive","quest transition requires an active quest");
+                action.addProperty("type","quest_transition");action.addProperty("target_stage",transition.targetStage());
+                action.addProperty("from_stage",progress.currentStage());action.addProperty("scene_path",c.definition().id().toString());
+                action.addProperty("response_id",c.instance().id()+"/"+c.step().id());
+            }else{
+                action.addProperty("type","quest");
+                action.addProperty("action",switch(transition.target()){case COMPLETE->"turn_in";case FAIL->"fail";case ABANDON->"abandon";case STAGE->throw new IllegalStateException();});
+            }
+            JsonObject wrapper=new JsonObject();JsonArray array=new JsonArray();array.add(action);wrapper.add("actions",array);
+            var parsed=VillagerActionDefinition.readList(c.definition().id(),"scene quest_transition",wrapper,null);
+            if(parsed.size()!=1)return SceneStepResult.fail("quest_transition_invalid","quest transition action is invalid");
+            var guarded=SceneReceiptGuard.applyOnce(c,"quest_transition",SceneOperationReceipt.Kind.QUEST_TRANSITION,
+                    ()->SceneLifecycleIntegration.withOriginatingScene(c.instance().id(),
+                            ()->VillagerActionRegistry.execute(dialogue,parsed.getFirst(),java.util.Map.of())),"quest transition");
+            if(guarded.status()==SceneReceiptGuard.Status.AMBIGUOUS_PREPARED)return SceneStepResult.block("quest_transition_ambiguous","cannot prove quest transition outcome after reload");
+            guarded.receipt().completed(c.gameTime(),"quest transition target="+transition.target().name().toLowerCase(Locale.ROOT));
+            return SceneStepResult.applied();}
         public SceneStepResult reconcile(SceneExecutionContext c){return apply(c);}
     }
 

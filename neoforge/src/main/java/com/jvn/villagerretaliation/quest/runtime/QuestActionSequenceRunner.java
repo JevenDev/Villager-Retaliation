@@ -1,10 +1,8 @@
 package com.jvn.villagerretaliation.quest.runtime;
 
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
-import com.jvn.villagerretaliation.action.VillagerActionExecutor;
-import com.jvn.villagerretaliation.action.VillagerActionResult;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import java.util.LinkedHashMap;
+import com.jvn.villagerretaliation.scene.SceneContinuationService;
 import java.util.List;
 import java.util.Map;
 
@@ -21,18 +19,7 @@ public final class QuestActionSequenceRunner {
             return false;
         }
 
-        boolean ranAction = false;
-        Map<String, String> replacements = baseReplacements == null
-                ? new LinkedHashMap<>()
-                : new LinkedHashMap<>(baseReplacements);
-        for (VillagerActionDefinition action : actions) {
-            VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
-            replacements.putAll(result.replacements());
-            if (result.flashTracker() && trackerFlashHandler != null) {
-                trackerFlashHandler.run();
-            }
-            ranAction |= result.ran();
-        }
-        return ranAction;
+        return SceneContinuationService.run(context, actions, baseReplacements, trackerFlashHandler,
+                "quest_action_sequence").ran();
     }
 }

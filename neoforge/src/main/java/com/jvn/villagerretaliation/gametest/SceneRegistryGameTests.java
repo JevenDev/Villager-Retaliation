@@ -37,6 +37,7 @@ import com.jvn.villagerretaliation.scene.encounter.EncounterResources;
 import com.jvn.villagerretaliation.scene.encounter.EncounterService;
 import com.jvn.villagerretaliation.scene.encounter.EncounterTemplate;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
+import com.jvn.villagerretaliation.scene.SceneContinuationService;
 import com.jvn.villagerretaliation.scene.SceneOperatorService;
 import com.jvn.villagerretaliation.api.scene.SceneStepExecutors;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
@@ -1036,6 +1037,114 @@ public final class SceneRegistryGameTests {
         helper.assertValueEqual(data.takeCleanupBatch(8, 1L).size(), 3,
                 "each terminal path must enqueue one cleanup job");
         helper.assertTrue(data.takeCleanupBatch(8, 1L).isEmpty(), "cleanup jobs must dequeue only once");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void sceneContinuationSurvivesReloadAndResumesOnce(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager provider = spawnVillager(helper, 1, 1);
+        var definition = compiledValidScene();
+        UUID ownerId = player.getUUID();
+        SceneSavedData data = new SceneSavedData();
+        SceneInstance scene = data.start(definition, "continuation/success",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        ownerId, null, null, ""), null, Set.of(ownerId), Map.of(), 0L).instance();
+        JsonObject wrapper = JsonParser.parseString("""
+                {"actions":[
+                  {"type":"start_scene","scene":"villagerretaliation:gate_scene","operation_id":"wait","wait_for_result":true},
+                  {"type":"experience","amount":7}]}
+                """).getAsJsonObject();
+        List<VillagerActionDefinition> actions = VillagerActionDefinition.readList(
+                VillagerRetaliation.id("quests/continuation.json"), "continuation", wrapper, null);
+        var first = data.suspendContinuation(scene, ownerId, provider.getUUID(),
+                "stage_entry/0/wait", actions, 1, Map.of("branch", "bold"));
+        var duplicate = data.suspendContinuation(scene, ownerId, provider.getUUID(),
+                "stage_entry/0/wait", actions, 1, Map.of());
+        helper.assertTrue(first.id().equals(duplicate.id()) && data.continuations().size() == 1,
+                "duplicate packets must reuse one pending continuation");
+        SceneTransitionService.complete(data, scene, 1L);
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        SceneSavedData loaded = SceneSavedData.load(saved, helper.getLevel().registryAccess());
+        int before = player.totalExperience;
+        SceneContinuationService.maintain(helper.getLevel().getServer(), loaded);
+        SceneContinuationService.maintain(helper.getLevel().getServer(), loaded);
+        var resumed = loaded.continuations().getFirst();
+        helper.assertTrue(player.totalExperience == before + 7 && resumed.completionReceipt()
+                        && resumed.sceneResult() == SceneInstance.CompletionResult.SUCCESS,
+                "successful scene continuation must resume exactly once after reload");
+        helper.assertValueEqual(resumed.replacements().get("branch"), "bold",
+                "compiled continuation replacements must survive reload");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void failedAndCancelledContinuationsRemainDistinguishable(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager provider = spawnVillager(helper, 1, 1);
+        var definition = compiledValidScene();
+        SceneSavedData data = new SceneSavedData();
+        java.util.List<SceneInstance> scenes = new java.util.ArrayList<>();
+        for (int index = 0; index < 2; index++) {
+            scenes.add(data.start(definition, "continuation/result/" + index,
+                    new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                            player.getUUID(), null, null, ""), null, Set.of(player.getUUID()), Map.of(), 0L).instance());
+            data.suspendContinuation(scenes.get(index), player.getUUID(), provider.getUUID(),
+                    "result/" + index, List.of(), 0, Map.of());
+        }
+        SceneTransitionService.fail(data, scenes.get(0), definition, "failed", "failed", 1L);
+        SceneTransitionService.cancel(data, scenes.get(1), definition, "cancelled", "cancelled", 1L);
+        SceneContinuationService.maintain(helper.getLevel().getServer(), data);
+        helper.assertTrue(data.continuations().stream().allMatch(value -> value.completionReceipt())
+                        && data.continuations().stream().map(value -> value.sceneResult()).collect(java.util.stream.Collectors.toSet())
+                        .equals(Set.of(SceneInstance.CompletionResult.FAILURE, SceneInstance.CompletionResult.CANCELLED)),
+                "failure and cancellation outcomes must persist distinctly without running success actions");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questTransitionShapeIsTypedAndOriginSceneIsNotCancelled(GameTestHelper helper) {
+        JsonObject gate = JsonParser.parseString("""
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:gate_transition",
+                 "entry_step":"finish_quest","actors":[],"steps":[
+                  {"id":"finish_quest","type":"villagerretaliation:quest_transition",
+                   "data":{"quest":"gate_story:gate_ambush","target":"complete"},"next":"done"},
+                  {"id":"done","type":"villagerretaliation:scene_complete"}]}
+                """).getAsJsonObject();
+        var definition = compiledScene(gate);
+        helper.assertTrue(definition.steps().get("finish_quest").parameters().get("target").getAsString().equals("complete"),
+                "gate example target complete shape must compile as a typed quest transition");
+        JsonObject mixed = gate.deepCopy();
+        mixed.getAsJsonArray("steps").get(0).getAsJsonObject().getAsJsonObject("data")
+                .addProperty("target_stage", "other");
+        var mixedResult = SceneCompiler.compile(SceneParser.parse(
+                VillagerRetaliation.id("quest_scenes/mixed_transition.json"), mixed).resource());
+        helper.assertTrue(mixedResult.diagnostics().stream().anyMatch(value -> value.code().equals("scene.quest_transition.invalid")),
+                "mixed terminal and stage targets must be rejected during scene compilation");
+
+        SceneSavedData data = new SceneSavedData();
+        UUID playerId = UUID.randomUUID();
+        ResourceLocation questId = ResourceLocation.parse("gate_story:gate_ambush");
+        SceneInstance origin = data.start(definition, "origin",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        playerId, null, null, ""), null, Set.of(playerId), Map.of(), 0L, questId).instance();
+        SceneInstance sibling = data.start(definition, "sibling",
+                new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        playerId, null, null, ""), null, Set.of(playerId), Map.of(), 0L, questId).instance();
+        SceneLifecycleIntegration.withOriginatingScene(origin.id(), () -> {
+            helper.assertTrue(SceneLifecycleIntegration.isOriginatingScene(origin.id()),
+                    "quest terminal callback must recognize its originating scene");
+            if (!SceneLifecycleIntegration.isOriginatingScene(sibling.id())) {
+                SceneTransitionService.cancel(data, sibling, definition,
+                        "quest_completed", "owning quest became terminal", 1L);
+            }
+            return null;
+        });
+        helper.assertTrue(!origin.state().terminal() && sibling.state() == SceneState.CANCELLED,
+                "originating scene must remain active while sibling cancellation follows policy");
+        SceneTransitionService.complete(data, origin, 2L);
+        helper.assertValueEqual(origin.state(), SceneState.COMPLETED,
+                "originating quest-transition scene must finish completed, not cancelled");
         helper.succeed();
     }
 

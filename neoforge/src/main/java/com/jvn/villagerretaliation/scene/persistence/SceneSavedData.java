@@ -7,6 +7,9 @@ import com.jvn.villagerretaliation.scene.runtime.SceneState;
 import com.jvn.villagerretaliation.scene.encounter.EncounterInstance;
 import com.jvn.villagerretaliation.scene.encounter.EncounterTemplate;
 import com.jvn.villagerretaliation.scene.runtime.SceneAuditEntry;
+import com.jvn.villagerretaliation.scene.runtime.SceneContinuation;
+import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import java.nio.charset.StandardCharsets;
 import com.mojang.logging.LogUtils;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -38,6 +41,8 @@ public final class SceneSavedData extends SavedData {
     private final Map<UUID, EncounterInstance> encounters = new LinkedHashMap<>();
     private final Map<String, UUID> encounterOperations = new LinkedHashMap<>();
     private final List<SceneAuditEntry> auditEntries = new ArrayList<>();
+    private final Map<UUID, SceneContinuation> continuations = new LinkedHashMap<>();
+    private final Map<String, UUID> continuationKeys = new LinkedHashMap<>();
     private final ArrayDeque<UUID> pendingSceneCleanup = new ArrayDeque<>();
     private final Set<UUID> queuedSceneCleanup = new HashSet<>();
     private boolean futureVersion;
@@ -76,6 +81,17 @@ public final class SceneSavedData extends SavedData {
         }
         for(Tag raw:migration.data().getList("Encounters",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag encounterTag){try{EncounterInstance encounter=EncounterInstance.load(encounterTag);data.encounters.put(encounter.id(),encounter);data.encounterOperations.put(encounter.sceneId()+"|"+encounter.operationId(),encounter.id());}catch(RuntimeException exception){LOGGER.error("Could not read encounter instance",exception);}}
         for(Tag raw:migration.data().getList("Audit",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag audit)data.auditEntries.add(SceneAuditEntry.load(audit));
+        for (Tag raw : migration.data().getList("Continuations", Tag.TAG_COMPOUND)) {
+            if (!(raw instanceof CompoundTag continuationTag)) continue;
+            try {
+                SceneContinuation continuation = SceneContinuation.load(continuationTag);
+                data.continuations.put(continuation.id(), continuation);
+                data.continuationKeys.put(continuationKey(continuation.sceneInstanceId(),
+                        continuation.playerId(), continuation.sourcePointer()), continuation.id());
+            } catch (RuntimeException exception) {
+                LOGGER.error("Could not read scene continuation", exception);
+            }
+        }
         return data;
     }
 
@@ -90,6 +106,7 @@ public final class SceneSavedData extends SavedData {
         output.put("Instances", values);
         ListTag encounterTags=new ListTag();encounters.values().stream().sorted(Comparator.comparing(value->value.id().toString())).forEach(value->encounterTags.add(value.save()));output.put("Encounters",encounterTags);
         ListTag audit=new ListTag();auditEntries.forEach(value->audit.add(value.save()));output.put("Audit",audit);
+        ListTag continuationTags=new ListTag();continuations.values().stream().sorted(Comparator.comparing(value->value.id().toString())).forEach(value->continuationTags.add(value.save()));output.put("Continuations",continuationTags);
         return output;
     }
 
@@ -137,6 +154,31 @@ public final class SceneSavedData extends SavedData {
     public EncounterStartResult startEncounter(EncounterTemplate template,SceneInstance scene,String operationId,ResourceLocation dimension,net.minecraft.core.BlockPos anchor,String difficulty,java.util.Collection<EncounterInstance.ResolvedSpawnPoint> spawnPoints){return startEncounter(template,template.id(),"",0L,scene,operationId,dimension,anchor,difficulty,spawnPoints);}
     public EncounterStartResult startEncounter(EncounterTemplate template,ResourceLocation sourceTemplate,String selectedVariant,long variantSeed,SceneInstance scene,String operationId,ResourceLocation dimension,net.minecraft.core.BlockPos anchor,String difficulty,java.util.Collection<EncounterInstance.ResolvedSpawnPoint> spawnPoints){String key=scene.id()+"|"+operationId;UUID existing=encounterOperations.get(key);if(existing!=null)return new EncounterStartResult(encounters.get(existing),false);EncounterInstance encounter=new EncounterInstance(UUID.randomUUID(),template.id(),sourceTemplate,selectedVariant,variantSeed,scene.id(),operationId,scene.owner().stableKey(),scene.participants(),dimension,anchor,Math.max(1,scene.participants().size()),difficulty,template.cleanupPolicy(),template.completionCondition(),template.totalCount(Math.max(1,scene.participants().size())));if(template.completionObjectives()!=null)encounter.enableCustomCompletion();encounter.initializeWave(0,template.wave(0).id());encounter.setResolvedSpawnPoints(spawnPoints);encounters.put(encounter.id(),encounter);encounterOperations.put(key,encounter.id());setDirty();return new EncounterStartResult(encounter,true);}
     public Optional<EncounterInstance> encounter(UUID id){return Optional.ofNullable(encounters.get(id));}public List<EncounterInstance> encounters(){return List.copyOf(encounters.values());}
+    public List<SceneContinuation> continuations() {
+        return List.copyOf(continuations.values());
+    }
+
+    public SceneContinuation suspendContinuation(
+            SceneInstance scene,
+            UUID playerId,
+            UUID providerId,
+            String sourcePointer,
+            List<VillagerActionDefinition> actions,
+            int nextActionIndex,
+            Map<String, String> replacements) {
+        String key = continuationKey(scene.id(), playerId, sourcePointer);
+        UUID existingId = continuationKeys.get(key);
+        SceneContinuation existing = continuations.get(existingId);
+        if (existing != null && !existing.completionReceipt()) return existing;
+        UUID id = UUID.nameUUIDFromBytes(key.getBytes(StandardCharsets.UTF_8));
+        SceneContinuation continuation = new SceneContinuation(id, scene.id(), playerId, providerId,
+                scene.owningQuestId(), scene.owningQuestInstance(), sourcePointer,
+                actions, nextActionIndex, replacements);
+        continuations.put(id, continuation);
+        continuationKeys.put(key, id);
+        setDirty();
+        return continuation;
+    }
     public Optional<EncounterInstance> encounterByOperation(UUID sceneId,String operationId){UUID id=encounterOperations.get(sceneId+"|"+operationId);return Optional.ofNullable(id==null?null:encounters.get(id));}
     public void audit(SceneAuditEntry entry){auditEntries.add(entry);if(auditEntries.size()>2048)auditEntries.removeFirst();setDirty();}public List<SceneAuditEntry> auditEntries(){return List.copyOf(auditEntries);}
     public void requestCleanup(SceneInstance instance) {
@@ -183,6 +225,10 @@ public final class SceneSavedData extends SavedData {
                 ? "quest-player:" + owner.playerId()
                 : owner.stableKey();
         return ownerKey + "|quest:" + (questId == null ? "-" : questId) + "|operation:" + operationId;
+    }
+
+    private static String continuationKey(UUID sceneId, UUID playerId, String sourcePointer) {
+        return sceneId + "|player:" + playerId + "|source:" + (sourcePointer == null ? "" : sourcePointer);
     }
 
     public record StartResult(SceneInstance instance, boolean created, UUID instanceId) { }

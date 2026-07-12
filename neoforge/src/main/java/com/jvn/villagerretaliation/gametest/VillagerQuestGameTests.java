@@ -74,6 +74,9 @@ import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
+import com.jvn.villagerretaliation.scene.SceneContinuationService;
+import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
+import com.jvn.villagerretaliation.scene.runtime.SceneTransitionService;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
 import com.jvn.villagerretaliation.util.DatapackJsonReader;
 import com.jvn.villagerretaliation.util.DatapackResourceLoader;
@@ -4857,6 +4860,18 @@ public final class VillagerQuestGameTests {
 
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
         VillagerQuestSavedData.QuestProgress progress = data.get(player.getUUID(), questId);
+        if (progress == null) {
+            SceneSavedData scenes = SceneSavedData.get(level);
+            var continuation = scenes.continuations().stream()
+                    .filter(value -> value.playerId().equals(player.getUUID()) && !value.completionReceipt())
+                    .findFirst().orElse(null);
+            helper.assertTrue(continuation != null, branchId + " waiting scene continuation missing after response");
+            var waitingScene = scenes.get(continuation.sceneInstanceId()).orElse(null);
+            helper.assertTrue(waitingScene != null, branchId + " waiting scene instance missing after response");
+            SceneTransitionService.complete(scenes, waitingScene, level.getGameTime());
+            SceneContinuationService.maintain(level.getServer(), scenes);
+            progress = data.get(player.getUUID(), questId);
+        }
         helper.assertTrue(progress != null, branchId + " progress missing after response");
         helper.assertValueEqual(progress.currentStage(), nextStage, branchId + " transition stage");
         helper.assertValueEqual(progress.choiceHistory().size(), 1, branchId + " choice history count");

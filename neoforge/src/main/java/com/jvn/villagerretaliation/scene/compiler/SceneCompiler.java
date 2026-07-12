@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.api.registry.RuntimeTypeDescriptor;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
 import com.jvn.villagerretaliation.scene.model.CompiledScene;
 import com.jvn.villagerretaliation.scene.model.SceneResource;
+import com.jvn.villagerretaliation.scene.model.SceneQuestTransition;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -75,6 +76,18 @@ public final class SceneCompiler {
                 diagnostics.add(error("scene.step.actor", "steps." + step.id() + ".actors", "unknown actor alias " + alias));
             }
             validateEncounterReference(step, availableEncounterTemplates, diagnostics);
+            if (step.type().getPath().equals("quest_transition")) {
+                try {
+                    SceneQuestTransition.parse(step.data());
+                } catch (IllegalArgumentException exception) {
+                    diagnostics.add(error("scene.quest_transition.invalid", "steps." + step.id() + ".data",
+                            exception.getMessage()));
+                }
+            }
+            if (step.type().getPath().equals("action_batch") && containsWaitingSceneAction(step.data())) {
+                diagnostics.add(error("scene.action_batch.wait_for_result", "steps." + step.id() + ".data.actions",
+                        "action_batch cannot suspend on start_scene wait_for_result; author a separate scene boundary"));
+            }
             try {
                 Object parsed = descriptor.parser().parse(step.data());
                 for (String message : descriptor.validator().validate(parsed)) {
@@ -154,6 +167,18 @@ public final class SceneCompiler {
     private static String string(JsonObject object, String... keys) {
         for (String key : keys) if (object.has(key) && object.get(key).isJsonPrimitive()) return object.get(key).getAsString();
         return "";
+    }
+
+    private static boolean containsWaitingSceneAction(JsonObject data) {
+        if (data == null || !data.has("actions") || !data.get("actions").isJsonArray()) return false;
+        for (JsonElement raw : data.getAsJsonArray("actions")) {
+            if (!raw.isJsonObject()) continue;
+            JsonObject action = raw.getAsJsonObject();
+            if ("start_scene".equals(string(action, "type"))
+                    && action.has("wait_for_result") && action.get("wait_for_result").isJsonPrimitive()
+                    && action.get("wait_for_result").getAsBoolean()) return true;
+        }
+        return false;
     }
 
     private static Set<String> reachable(String entry, Map<String, CompiledScene.CompiledStep> steps) {
