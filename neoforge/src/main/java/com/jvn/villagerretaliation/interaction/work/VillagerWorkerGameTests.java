@@ -581,6 +581,7 @@ public final class VillagerWorkerGameTests {
         ServerPlayer hirer = fakePlayer(level, "VrHunterActiveAmmo");
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.BUTCHER));
         HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.HUNTING);
 
         CompoundTag state = new CompoundTag();
@@ -687,7 +688,7 @@ public final class VillagerWorkerGameTests {
         ServerPlayer hirer = fakePlayer(level, "VrBuilderDeath");
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.MASON));
-        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.BUILDER);
+        HiredVillagerContractService.startOneOffBuilderJob(level, villager, hirer);
 
         CompoundTag state = persistentWorkState(villager);
         UUID jobId = seedBuilderTask(state, 23, 0);
@@ -4101,6 +4102,7 @@ public final class VillagerWorkerGameTests {
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.NITWIT));
 
         HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.NITWIT);
         HiredVillagerWorkService.initializeWorkArea(level, villager);
@@ -4205,6 +4207,7 @@ public final class VillagerWorkerGameTests {
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 4));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.NITWIT));
         tickVillager(level, villager, 20);
         BlockPos outsideStart = helper.absolutePos(new BlockPos(2, 2, 4));
         villager.moveTo(outsideStart.getX() + 0.5D, outsideStart.getY(), outsideStart.getZ() + 0.5D, 0.0F, 0.0F);
@@ -4562,6 +4565,7 @@ public final class VillagerWorkerGameTests {
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.WEAPONSMITH));
         Villager otherVillager = spawnVillager(helper, new BlockPos(3, 2, 2));
 
         HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.COMBAT);

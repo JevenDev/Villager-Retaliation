@@ -28,6 +28,8 @@
 
 - Prevented recruited party villagers from helping players attack villagers, wandering traders, or village iron golems, including when those protected targets fight back.
 - Prevented unrelated village crime witness and gossip penalties from reducing the offending player's reputation with their recruited party villagers; directly attacking a recruit still reduces its reputation.
+- Fixed villager trade-level XP previews drifting from the actual award during rapid or shift-click trading, including when server multiplier settings differ from the client.
+- Fixed low-XP trades consuming fractional trade-level XP banked by earlier trades without awarding that progress.
 
 ### Added
 
@@ -38,6 +40,7 @@
 
 ### Changed
 
+- Rebalanced skill-based trade leveling to scale linearly across a villager's profession skill, giving average-skilled villagers fairer progress while retaining the configured minimum and maximum multipliers.
 - Upgraded ten built-in quests with persistent scenes. Standing Watch, The Night Ward, The Night Run, and The Atlas Test's risky route now use controlled cleanup-safe encounters; Choose the Horizon, Choose a Road, and Choose a Star use choice-aware scene branches; and Trial Chamber Recall, House of Ill Omens, and After the Roar receive durable cinematic briefings.
 - Rewrote the remaining built-in v1 quests as self-contained quest module v2 resources while keeping their stable quest IDs, rewards, provider requirements, completion triggers, and saved quest identity.
 - Replaced repeated template dialogue with concise, Minecraft-specific offer, acceptance, reminder, decline, abandonment, and turn-in variations.

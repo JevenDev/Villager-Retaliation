@@ -7,6 +7,9 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCata
 import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.skill.VillagerTradeLevelingService;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.toucanlib.neoforge.network.ToucanNetwork;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -14,11 +17,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "40";
+    private static final String PROTOCOL_VERSION = "41";
 
     private VillagerReputationNetworking() {
     }
@@ -568,8 +572,25 @@ public final class VillagerReputationNetworking {
                 profile.socialAttributes(),
                 profile.skillGeneratedVersion(),
                 profile.skills(),
-                profile.tradeLevelSkillAdjustedXpProgress()
+                isSkillBasedTradeLevelingEnabled(villager),
+                profile.tradeLevelSkillAdjustedXpProgress(),
+                tradeLevelXpMultiplier(villager, profile)
         ));
+    }
+
+    private static double tradeLevelXpMultiplier(AbstractVillager villager, VillagerProfile profile) {
+        if (!isSkillBasedTradeLevelingEnabled(villager)) {
+            return 1.0D;
+        }
+        Villager villageResident = (Villager) villager;
+        VillagerSkill primarySkill = VillagerProfessionSkills.primarySkill(villageResident);
+        return VillagerTradeLevelingService.tradeLevelXpMultiplier(profile.skills().get(primarySkill));
+    }
+
+    private static boolean isSkillBasedTradeLevelingEnabled(AbstractVillager villager) {
+        return VillagerRetaliationConfig.ENABLE_SKILL_BASED_TRADE_LEVELING.get()
+                && villager instanceof Villager villageResident
+                && !villageResident.isBaby();
     }
 
     public static void sendWorldTextIndicator(AbstractVillager villager, String text, VillagerWorldTextIndicatorKind kind) {

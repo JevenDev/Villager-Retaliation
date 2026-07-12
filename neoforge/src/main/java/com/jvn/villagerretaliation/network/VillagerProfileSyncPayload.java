@@ -39,7 +39,9 @@ public record VillagerProfileSyncPayload(
         int leatherworking,
         int diplomacy,
         int survival,
-        double tradeLevelSkillAdjustedXpProgress) implements CustomPacketPayload {
+        boolean skillBasedTradeLevelingEnabled,
+        double tradeLevelSkillAdjustedXpProgress,
+        double tradeLevelXpMultiplier) implements CustomPacketPayload {
     public static final Type<VillagerProfileSyncPayload> TYPE = VillagerPayloads.type("villager_profile_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerProfileSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(VillagerProfileSyncPayload::encode, VillagerProfileSyncPayload::decode);
@@ -79,7 +81,9 @@ public record VillagerProfileSyncPayload(
             VillagerSocialAttributes attributes,
             int skillGeneratedVersion,
             VillagerSkillSet skills,
-            double tradeLevelSkillAdjustedXpProgress) {
+            boolean skillBasedTradeLevelingEnabled,
+            double tradeLevelSkillAdjustedXpProgress,
+            double tradeLevelXpMultiplier) {
         VillagerSocialAttributes safeAttributes = attributes == null ? VillagerSocialAttributes.DEFAULT : attributes;
         VillagerSkillSet safeSkills = skills == null ? VillagerSkillSet.DEFAULT : skills.completeWith(VillagerSkillSet.DEFAULT);
         Map<VillagerSkill, Integer> values = safeSkills.asMap();
@@ -112,7 +116,9 @@ public record VillagerProfileSyncPayload(
                 values.get(VillagerSkill.LEATHERWORKING),
                 values.get(VillagerSkill.DIPLOMACY),
                 values.get(VillagerSkill.SURVIVAL),
-                clampFractionalProgress(tradeLevelSkillAdjustedXpProgress)
+                skillBasedTradeLevelingEnabled,
+                clampFractionalProgress(tradeLevelSkillAdjustedXpProgress),
+                clampMultiplier(tradeLevelXpMultiplier)
         );
     }
 
@@ -145,7 +151,9 @@ public record VillagerProfileSyncPayload(
         buffer.writeVarInt(payload.leatherworking());
         buffer.writeVarInt(payload.diplomacy());
         buffer.writeVarInt(payload.survival());
+        buffer.writeBoolean(payload.skillBasedTradeLevelingEnabled());
         buffer.writeDouble(payload.tradeLevelSkillAdjustedXpProgress());
+        buffer.writeDouble(payload.tradeLevelXpMultiplier());
     }
 
     private static VillagerProfileSyncPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -178,6 +186,8 @@ public record VillagerProfileSyncPayload(
                 buffer.readVarInt(),
                 buffer.readVarInt(),
                 buffer.readVarInt(),
+                buffer.readBoolean(),
+                buffer.readDouble(),
                 buffer.readDouble()
         );
     }
@@ -187,6 +197,13 @@ public record VillagerProfileSyncPayload(
             return 0.0D;
         }
         return Math.max(0.0D, Math.min(0.999_999D, progress));
+    }
+
+    private static double clampMultiplier(double multiplier) {
+        if (!Double.isFinite(multiplier)) {
+            return 1.0D;
+        }
+        return Math.max(0.0D, Math.min(1.0D, multiplier));
     }
 
     @Override
