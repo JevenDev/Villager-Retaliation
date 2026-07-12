@@ -51,7 +51,31 @@ public final class EncounterResources {
                 enumValue(EncounterTemplate.SpawnMode.class,string(root,"spawn_mode","group"),EncounterTemplate.SpawnMode.GROUP),
                 integer(root,"wave_count",1),integer(root,"wave_interval_ticks",100),
                 enumValue(EncounterTemplate.WaveTrigger.class,string(root,"wave_trigger","all_defeated"),EncounterTemplate.WaveTrigger.ALL_DEFEATED),
-                bool(root,"boss_bar",true),string(root,"location_message",""));}catch(IllegalArgumentException e){errors.add(e.getMessage());return null;}
+                bool(root,"boss_bar",true),string(root,"location_message",""),parseArea(root,errors));}catch(IllegalArgumentException e){errors.add(e.getMessage());return null;}
+    }
+    private static EncounterTemplate.Area parseArea(JsonObject root,List<String> errors){
+        if(!root.has("area"))return null;
+        if(!root.get("area").isJsonObject()){errors.add("area must be an object");return null;}
+        JsonObject area=root.getAsJsonObject("area");
+        for(String key:area.keySet())if(!List.of("radius","vertical_radius","leave_behavior","leave_timeout_ticks","mob_behavior","mob_timeout_ticks").contains(key))errors.add("unknown area field "+key);
+        if(!area.has("radius")){errors.add("area.radius is required");return null;}
+        Integer radius=strictInteger(area,"radius",errors);Integer vertical=strictInteger(area,"vertical_radius",errors);
+        Integer leaveTimeout=strictInteger(area,"leave_timeout_ticks",errors);Integer mobTimeout=strictInteger(area,"mob_timeout_ticks",errors);
+        EncounterTemplate.LeaveBehavior leave=strictEnum(EncounterTemplate.LeaveBehavior.class,area,"leave_behavior",EncounterTemplate.LeaveBehavior.IGNORE,errors);
+        EncounterTemplate.MobBehavior mob=strictEnum(EncounterTemplate.MobBehavior.class,area,"mob_behavior",EncounterTemplate.MobBehavior.IGNORE,errors);
+        if(area.has("mob_timeout_ticks")&&mob!=EncounterTemplate.MobBehavior.TELEPORT)errors.add("area.mob_timeout_ticks requires mob_behavior teleport");
+        if(radius==null)return null;
+        try{return new EncounterTemplate.Area(radius,vertical==null?Math.min(radius,128):vertical,leave,
+                leaveTimeout==null?200:leaveTimeout,mob,mobTimeout==null?200:mobTimeout);}
+        catch(IllegalArgumentException e){errors.add(e.getMessage());return null;}
+    }
+    private static Integer strictInteger(JsonObject object,String key,List<String> errors){
+        if(!object.has(key))return null;
+        try{double value=object.get(key).getAsDouble();if(!Double.isFinite(value)||value!=Math.rint(value))throw new NumberFormatException();return (int)value;}catch(RuntimeException e){errors.add("area."+key+" must be an integer");return null;}
+    }
+    private static <E extends Enum<E>>E strictEnum(Class<E> type,JsonObject object,String key,E fallback,List<String> errors){
+        if(!object.has(key))return fallback;String value=string(object,key,"");
+        try{return Enum.valueOf(type,value.toUpperCase(Locale.ROOT));}catch(IllegalArgumentException e){errors.add("unknown area."+key+" '"+value+"'");return fallback;}
     }
     private static Map<EquipmentSlot,EncounterTemplate.Gear> parseEquipment(JsonObject member,List<String> errors){
         if(!member.has("equipment"))return Map.of();JsonElement raw=member.get("equipment");

@@ -386,6 +386,74 @@
       "type": "string",
       "minLength": 1
     },
+    "area": {
+      "type": "object",
+      "title": "Durable encounter area",
+      "additionalProperties": false,
+      "required": [
+        "radius"
+      ],
+      "properties": {
+        "radius": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "vertical_radius": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
+        },
+        "leave_behavior": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "ignore",
+            "warn",
+            "pause",
+            "fail"
+          ]
+        },
+        "leave_timeout_ticks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12000
+        },
+        "mob_behavior": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "ignore",
+            "return",
+            "teleport"
+          ]
+        },
+        "mob_timeout_ticks": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12000
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": [
+              "mob_timeout_ticks"
+            ]
+          },
+          "then": {
+            "required": [
+              "mob_behavior"
+            ],
+            "properties": {
+              "mob_behavior": {
+                "const": "teleport"
+              }
+            }
+          }
+        }
+      ]
+    },
     "respawn_policy": {
       "type": "string",
       "minLength": 1,

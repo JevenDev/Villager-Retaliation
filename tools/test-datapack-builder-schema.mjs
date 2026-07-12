@@ -129,6 +129,7 @@ globalThis.__test = {
   dialoguePathInfo,
   applyEditedFile,
   ingestKnownJson,
+  sceneResourceIssueDetail,
   validate,
   dialogueFolderTemplateFiles,
   get dialogueTypes() { return CONSTANTS.dialogueTypes; }
@@ -370,7 +371,8 @@ function testSceneResourceRoundTrip(app) {
   const encounter = {
     schema: "villagerretaliation:encounter/v1",
     id: "storypack:gate_ambush",
-    members: [{ entity: "minecraft:zombie", count: 3 }]
+    members: [{ entity: "minecraft:zombie", count: 3 }],
+    area: { radius: 32, vertical_radius: 16, leave_behavior: "warn", leave_timeout_ticks: 200, mob_behavior: "return" }
   };
   assert(app.ingestKnownJson(scenePath, JSON.stringify(scene)), "Scene resource import failed.");
   assert(app.ingestKnownJson(encounterPath, JSON.stringify(encounter)), "Encounter resource import failed.");
@@ -380,6 +382,8 @@ function testSceneResourceRoundTrip(app) {
   assert(JSON.stringify(jsonFile(files, scenePath)) === JSON.stringify(scene), "Scene resource changed during export.");
   assert(JSON.stringify(jsonFile(files, encounterPath)) === JSON.stringify(encounter), "Encounter resource changed during export.");
   assert(!app.applyEditedFile(scenePath, JSON.stringify({ ...scene, schema: "wrong" })), "Invalid scene schema edit was accepted.");
+  const invalidArea = { ...encounter, area: { radius: 0, leave_behavior: "wander" } };
+  assert(/area radius/i.test(app.sceneResourceIssueDetail(encounterPath, invalidArea)?.message || ""), "Invalid encounter area was not diagnosed.");
 }
 
 const app = createAppHarness();

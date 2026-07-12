@@ -10,6 +10,14 @@
   "max_party_size": 4,
   "placement_attempts": 16,
   "spawn_radius": 8,
+  "area": {
+    "radius": 24,
+    "vertical_radius": 12,
+    "leave_behavior": "pause",
+    "leave_timeout_ticks": 200,
+    "mob_behavior": "teleport",
+    "mob_timeout_ticks": 100
+  },
   "respawn_policy": "missing_if_loaded",
   "cleanup_policy": "remove_survivors",
   "completion_condition": "all_defeated"

@@ -61,11 +61,30 @@ public final class SceneSchema {
         properties.add("wave_trigger", enumValues(EncounterTemplate.WaveTrigger.values()));
         properties.add("boss_bar", bool());
         properties.add("location_message", text());
+        properties.add("area", encounterArea());
         properties.add("respawn_policy", enumValues(EncounterTemplate.RespawnPolicy.values()));
         properties.add("cleanup_policy", enumValues(EncounterTemplate.CleanupPolicy.values()));
         properties.add("completion_condition", enumValues(EncounterTemplate.CompletionCondition.values()));
         root.add("properties", properties);
         return root;
+    }
+
+    private static JsonObject encounterArea() {
+        JsonObject area = object("Durable encounter area");
+        area.addProperty("additionalProperties", false);
+        area.add("required", strings("radius"));
+        JsonObject properties = new JsonObject();
+        properties.add("radius", boundedInteger(1, 256));
+        properties.add("vertical_radius", boundedInteger(1, 128));
+        properties.add("leave_behavior", enumValues(EncounterTemplate.LeaveBehavior.values()));
+        properties.add("leave_timeout_ticks", boundedInteger(1, 12000));
+        properties.add("mob_behavior", enumValues(EncounterTemplate.MobBehavior.values()));
+        properties.add("mob_timeout_ticks", boundedInteger(1, 12000));
+        area.add("properties", properties);
+        JsonObject condition = new JsonObject();condition.add("required", strings("mob_timeout_ticks"));
+        JsonObject consequence = new JsonObject();consequence.add("required", strings("mob_behavior"));JsonObject consequenceProperties = new JsonObject();consequenceProperties.add("mob_behavior", constant("teleport"));consequence.add("properties", consequenceProperties);
+        JsonObject rule = new JsonObject();rule.add("if", condition);rule.add("then", consequence);JsonArray rules = new JsonArray();rules.add(rule);area.add("allOf", rules);
+        return area;
     }
 
     private static JsonObject actor() {

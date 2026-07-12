@@ -3546,8 +3546,22 @@ function sceneResourceIssueDetail(path, resource) {
     if (!Array.isArray(resource.members) || resource.members.length === 0) {
       return issueDetail("Encounter members", "at least one allowlisted entity member", resource.members, "json-preview");
     }
-    const invalidMember = resource.members.find((member) => !isValidResourceLocation(member?.entity, { requireNamespace: true }) || !Number.isInteger(member?.count) || member.count < 1);
-    return invalidMember ? issueDetail("Encounter member", "a namespaced entity and positive integer count", invalidMember, "json-preview") : null;
+    const invalidMember = resource.members.find((member) => !isValidResourceLocation(member?.entity, { requireNamespace: true }) || (member.count !== undefined && (!Number.isInteger(member.count) || member.count < 1 || member.count > 64)));
+    if (invalidMember) return issueDetail("Encounter member", "a namespaced entity and positive integer count", invalidMember, "json-preview");
+    if (resource.area !== undefined) {
+      const area = resource.area;
+      if (!area || typeof area !== "object" || Array.isArray(area)) return issueDetail("Encounter area", "an object", area, "json-preview");
+      const allowed = new Set(["radius", "vertical_radius", "leave_behavior", "leave_timeout_ticks", "mob_behavior", "mob_timeout_ticks"]);
+      const unknown = Object.keys(area).find((key) => !allowed.has(key));
+      if (unknown) return issueDetail("Encounter area field", "a supported area field", unknown, "json-preview");
+      if (!Number.isInteger(area.radius) || area.radius < 1 || area.radius > 256) return issueDetail("Encounter area radius", "an integer from 1 to 256", area.radius, "json-preview");
+      if (area.vertical_radius !== undefined && (!Number.isInteger(area.vertical_radius) || area.vertical_radius < 1 || area.vertical_radius > 128)) return issueDetail("Encounter area vertical radius", "an integer from 1 to 128", area.vertical_radius, "json-preview");
+      if (area.leave_behavior !== undefined && !["ignore", "warn", "pause", "fail"].includes(area.leave_behavior)) return issueDetail("Encounter leave behavior", "ignore, warn, pause, or fail", area.leave_behavior, "json-preview");
+      if (area.mob_behavior !== undefined && !["ignore", "return", "teleport"].includes(area.mob_behavior)) return issueDetail("Encounter mob behavior", "ignore, return, or teleport", area.mob_behavior, "json-preview");
+      for (const key of ["leave_timeout_ticks", "mob_timeout_ticks"]) if (area[key] !== undefined && (!Number.isInteger(area[key]) || area[key] < 1 || area[key] > 12000)) return issueDetail(`Encounter ${key}`, "an integer from 1 to 12000", area[key], "json-preview");
+      if (area.mob_timeout_ticks !== undefined && area.mob_behavior !== "teleport") return issueDetail("Encounter mob timeout", "mob_behavior teleport", area.mob_behavior, "json-preview");
+    }
+    return null;
   }
 
   const actors = Array.isArray(resource.actors) ? resource.actors : [];

@@ -110,6 +110,13 @@ Encounter offsets are applied to an actor or coordinate anchor before that ancho
   "max_party_size": 4,
   "placement_attempts": 16,
   "spawn_radius": 8,
+  "area": {
+    "radius": 32,
+    "vertical_radius": 16,
+    "leave_behavior": "warn",
+    "leave_timeout_ticks": 200,
+    "mob_behavior": "return"
+  },
   "respawn_policy": "missing_if_loaded",
   "cleanup_policy": "remove_survivors",
   "completion_condition": "all_defeated"
@@ -117,6 +124,10 @@ Encounter offsets are applied to an actor or coordinate anchor before that ancho
 ```
 
 Templates are allowlists, not command containers. Party-size and difficulty inputs are captured when the encounter starts. Owned entities carry durable encounter identity; reload reconciles UUIDs and tags before bounded safe-placement attempts. Unrelated nearby mobs never count. Cleanup removes, retains, or releases surviving owned mobs according to the template and scene policy.
+
+The optional `area` is a cylinder centered on the encounter's durable anchor. `radius` is required and limited to 256 blocks; `vertical_radius` defaults to the radius and is limited to 128. `leave_behavior` is `ignore` (the backward-compatible default), `warn`, `pause`, or `fail`. A failing participant has `leave_timeout_ticks` (default 200, maximum 12000) to return. Warnings and absolute deadlines are saved, messages go only to the affected participant, offline players do not start or advance a new leave decision, and returning clears that excursion's state.
+
+`mob_behavior` is `ignore`, `return`, or `teleport`. `return` asks loaded owned mobs to navigate back without changing unrelated entities. `teleport` waits for the persisted `mob_timeout_ticks` deadline (default 200, maximum 12000) before returning a loaded mob to the anchor. Area checks never force-load the anchor, a participant, or an owned mob's chunk. Omitting `area` preserves encounter/v1 behavior exactly.
 
 Every mob runs its normal vanilla spawn initialization first, so mobs such as pillagers receive their usual equipment. A member's optional `equipment` object then overrides individual `mainhand`, `offhand`, `head`, `chest`, `legs`, `feet`, or `body` slots. Each slot accepts `item`, optional `count`, an `enchantments` object mapping namespaced enchantment IDs to levels, and `drop_chance` from `0.0` to `1.0`.
 

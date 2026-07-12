@@ -31,7 +31,9 @@ public final class EncounterService {
     private EncounterService(){}
 
     public static Result reconcileSpawn(MinecraftServer server,SceneSavedData data,EncounterInstance encounter,EncounterTemplate template){
-        ServerLevel level=level(server,encounter);if(level==null||!level.hasChunkAt(encounter.anchor()))return Result.waiting("spawn anchor chunk is unloaded");
+        ServerLevel level=level(server,encounter);if(level==null)return Result.waiting("spawn anchor dimension is unavailable");
+        Result area=updateArea(server,data,encounter,template,level.getGameTime());if(area.status()!=Status.ACTIVE)return area;
+        if(!level.hasChunkAt(encounter.anchor()))return Result.waiting("spawn anchor chunk is unloaded");
         int recoveryRadius=template.spawnMode()==EncounterTemplate.SpawnMode.NEAR_PLAYER?4:template.spawnRadius()+2;
         // Recover entities spawned before their UUID list was saved, but only inside the bounded anchor area and by exact durable owner tag.
         for(Entity entity:level.getEntities((Entity)null,new AABB(encounter.anchor()).inflate(recoveryRadius),value->ownedBy(value,encounter.id())))if(!encounter.spawned().contains(entity.getUUID()))encounter.addSpawn(entity.getUUID());
@@ -59,6 +61,56 @@ public final class EncounterService {
         }
         updateBossBar(server,encounter,template);
         return Result.active();
+    }
+
+    public static Result updateArea(MinecraftServer server,SceneSavedData data,EncounterInstance encounter,EncounterTemplate template,long gameTime){
+        EncounterTemplate.Area area=template.area();if(area==null)return Result.active();boolean pause=false;
+        for(UUID participant:encounter.participants()){
+            var player=server.getPlayerList().getPlayer(participant);if(player==null)continue;
+            if(inside(player.level().dimension().location(),player.blockPosition(),encounter,area)){encounter.clearLeave(participant);continue;}
+            if(area.leaveBehavior()!=EncounterTemplate.LeaveBehavior.IGNORE&&!encounter.leaveWarned().contains(participant)){
+                String message=switch(area.leaveBehavior()){
+                    case WARN->"You have left the quest encounter area.";
+                    case PAUSE->"The quest encounter is paused while you are outside its area.";
+                    case FAIL->"Return to the quest encounter area within "+area.leaveTimeoutTicks()+" ticks or the encounter will fail.";
+                    case IGNORE->"";
+                };
+                if(!message.isBlank())player.sendSystemMessage(Component.literal(message));encounter.markLeaveWarned(participant);
+            }
+            if(area.leaveBehavior()==EncounterTemplate.LeaveBehavior.PAUSE)pause=true;
+            if(area.leaveBehavior()==EncounterTemplate.LeaveBehavior.FAIL){
+                long deadline=encounter.leaveDeadlines().getOrDefault(participant,gameTime+area.leaveTimeoutTicks());
+                if(!encounter.leaveDeadlines().containsKey(participant))encounter.setLeaveDeadline(participant,deadline);
+                if(gameTime>=deadline){encounter.fail("participant remained outside the encounter area past the leave timeout");hideBossBar(encounter.id());data.changed();return Result.failed(encounter.diagnostic());}
+            }
+        }
+        if(encounter.areaPaused()!=pause)encounter.setAreaPaused(pause);
+        enforceMobArea(server,encounter,area,gameTime);data.changed();
+        return pause?Result.waiting("encounter paused while a participant is outside its area"):Result.active();
+    }
+
+    private static void enforceMobArea(MinecraftServer server,EncounterInstance encounter,EncounterTemplate.Area area,long gameTime){
+        if(area.mobBehavior()==EncounterTemplate.MobBehavior.IGNORE)return;
+        ServerLevel anchorLevel=level(server,encounter);
+        for(UUID id:encounter.spawned()){
+            if(encounter.defeated().contains(id)){encounter.clearMobDeadline(id);continue;}
+            Entity entity=find(server,id);if(entity==null)continue;
+            if(inside(entity.level().dimension().location(),entity.blockPosition(),encounter,area)){encounter.clearMobDeadline(id);continue;}
+            if(area.mobBehavior()==EncounterTemplate.MobBehavior.RETURN){
+                if(entity.level()==anchorLevel&&entity instanceof Mob mob)mob.getNavigation().moveTo(encounter.anchor().getX()+.5D,encounter.anchor().getY(),encounter.anchor().getZ()+.5D,1.1D);
+                continue;
+            }
+            long deadline=encounter.mobDeadlines().getOrDefault(id,gameTime+area.mobTimeoutTicks());
+            if(!encounter.mobDeadlines().containsKey(id))encounter.setMobDeadline(id,deadline);
+            if(gameTime>=deadline&&entity.level()==anchorLevel&&anchorLevel!=null&&anchorLevel.hasChunkAt(encounter.anchor())){
+                entity.teleportTo(encounter.anchor().getX()+.5D,encounter.anchor().getY(),encounter.anchor().getZ()+.5D);encounter.clearMobDeadline(id);
+            }
+        }
+    }
+
+    private static boolean inside(net.minecraft.resources.ResourceLocation dimension,BlockPos position,EncounterInstance encounter,EncounterTemplate.Area area){
+        if(!encounter.anchorDimension().equals(dimension))return false;long dx=position.getX()-encounter.anchor().getX();long dz=position.getZ()-encounter.anchor().getZ();
+        return Math.abs(position.getY()-encounter.anchor().getY())<=area.verticalRadius()&&dx*dx+dz*dz<=(long)area.radius()*area.radius();
     }
 
     public static Result refresh(MinecraftServer server,SceneSavedData data,EncounterInstance encounter){

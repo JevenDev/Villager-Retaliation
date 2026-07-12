@@ -434,6 +434,31 @@ public final class SceneRegistryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void encounterAreasPersistLeaveAndMobDeadlines(GameTestHelper helper) {
+        var errors=new java.util.ArrayList<String>();EncounterResources.parse(VillagerRetaliation.id("invalid_area"),JsonParser.parseString("""
+                {"schema":"villagerretaliation:encounter/v1","id":"villagerretaliation:invalid_area","members":[{"entity":"minecraft:zombie"}],
+                 "area":{"radius":300,"leave_behavior":"wander","mystery":true}}
+                """).getAsJsonObject(),errors);
+        helper.assertTrue(errors.stream().anyMatch(value->value.contains("radius"))&&errors.stream().anyMatch(value->value.contains("leave_behavior"))&&errors.stream().anyMatch(value->value.contains("unknown area field")),"malformed encounter areas should produce focused diagnostics");
+        EncounterTemplate template=new EncounterTemplate(VillagerRetaliation.id("test_area"),1,VillagerRetaliation.id("controlled"),
+                List.of(new EncounterTemplate.Member(ResourceLocation.parse("minecraft:zombie"),1)),0,1,16,3,
+                EncounterTemplate.RespawnPolicy.NEVER,EncounterTemplate.CleanupPolicy.REMOVE_SURVIVORS,EncounterTemplate.CompletionCondition.ALL_DEFEATED,
+                EncounterTemplate.SpawnMode.GROUP,1,0,EncounterTemplate.WaveTrigger.ALL_DEFEATED,false,"",
+                new EncounterTemplate.Area(6,4,EncounterTemplate.LeaveBehavior.FAIL,20,EncounterTemplate.MobBehavior.TELEPORT,10));
+        EncounterResources.installTestTemplates(helper.getLevel().getServer(),List.of(template));ServerPlayer player=helper.makeMockServerPlayerInLevel();
+        SceneSavedData data=new SceneSavedData();var definition=compiledValidScene();SceneInstance scene=data.start(definition,"area_scene",new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,player.getUUID(),null,null,""),null,Set.of(player.getUUID()),Map.of(),0L).instance();
+        BlockPos anchor=helper.absolutePos(new BlockPos(4,1,4));var encounter=data.startEncounter(template,scene,"area/start",helper.getLevel().dimension().location(),anchor,"normal").encounter();
+        player.moveTo(anchor.getX()+.5D,anchor.getY(),anchor.getZ()+.5D,0,0);
+        EncounterService.reconcileSpawn(helper.getLevel().getServer(),data,encounter,template);var mob=helper.getLevel().getEntity(encounter.spawned().iterator().next());helper.assertTrue(mob!=null,"area test mob should spawn");
+        player.moveTo(anchor.getX()+20.5D,anchor.getY(),anchor.getZ()+.5D,0,0);mob.moveTo(anchor.getX()+20.5D,anchor.getY(),anchor.getZ()+.5D,0,0);
+        EncounterService.updateArea(helper.getLevel().getServer(),data,encounter,template,10L);EncounterInstance loaded=EncounterInstance.load(encounter.save());
+        helper.assertTrue(loaded.leaveWarned().contains(player.getUUID())&&loaded.leaveDeadlines().get(player.getUUID())==30L,"leave warning and absolute failure deadline should survive reload");
+        helper.assertTrue(loaded.mobDeadlines().get(mob.getUUID())==20L,"mob teleport deadline should survive reload");
+        EncounterService.updateArea(helper.getLevel().getServer(),data,loaded,template,20L);helper.assertTrue(mob.blockPosition().closerThan(anchor,2.0D),"owned mob should return to the durable anchor after its bounded timeout");
+        var failed=EncounterService.updateArea(helper.getLevel().getServer(),data,loaded,template,30L);helper.assertTrue(failed.status()==EncounterService.Status.FAILED&&loaded.state()==EncounterInstance.EncounterState.FAILED,"participant leave timeout should fail the encounter once");helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void missingActorsFollowRequiredAndOptionalPolicies(GameTestHelper helper) {
         BuiltinSceneStepExecutors.register();
         JsonObject requiredJson=JsonParser.parseString("""

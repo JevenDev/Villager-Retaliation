@@ -428,6 +428,15 @@ function validateCinematicResources() {
       assert(typeof member.entity === "string" && member.entity.length > 0, file, "encounter member entity is missing");
       assert(Number(member.count ?? 1) > 0, file, `encounter member ${member.entity} has a non-positive count`);
     }
+    if (data.area !== undefined) {
+      assert(data.area && typeof data.area === "object" && !Array.isArray(data.area), file, "encounter area must be an object");
+      assert(Number.isInteger(data.area?.radius) && data.area.radius >= 1 && data.area.radius <= 256, file, "encounter area radius must be from 1 to 256");
+      assert(data.area?.vertical_radius === undefined || (Number.isInteger(data.area.vertical_radius) && data.area.vertical_radius >= 1 && data.area.vertical_radius <= 128), file, "encounter area vertical radius must be from 1 to 128");
+      assert(data.area?.leave_behavior === undefined || ["ignore", "warn", "pause", "fail"].includes(data.area.leave_behavior), file, "encounter area has an unknown leave behavior");
+      assert(data.area?.mob_behavior === undefined || ["ignore", "return", "teleport"].includes(data.area.mob_behavior), file, "encounter area has an unknown mob behavior");
+      for (const key of ["leave_timeout_ticks", "mob_timeout_ticks"]) assert(data.area?.[key] === undefined || (Number.isInteger(data.area[key]) && data.area[key] >= 1 && data.area[key] <= 12000), file, `encounter area ${key} must be from 1 to 12000`);
+      assert(data.area?.mob_timeout_ticks === undefined || data.area.mob_behavior === "teleport", file, "encounter mob timeout requires teleport behavior");
+    }
   }
 }
 
