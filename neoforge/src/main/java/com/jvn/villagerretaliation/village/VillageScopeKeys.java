@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.village;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import java.util.Optional;
 import net.minecraft.core.BlockPos;
@@ -20,11 +22,12 @@ public final class VillageScopeKeys {
         if (level == null || villager == null) {
             return "";
         }
-        return VillageMembership.resolve(level, villager)
+        return allegianceScope(level, villager)
+                .or(() -> VillageMembership.resolve(level, villager)
                 .map(area -> forArea(level, area))
                 .or(() -> VillagerSocialGraphService.knownVillage(level, villager.getUUID())
                         .map(VillageScopeKeys::fromSavedSocialKey)
-                        .filter(key -> !key.isBlank()))
+                        .filter(key -> !key.isBlank())))
                 .orElseGet(() -> forPosition(level.dimension(), villager.blockPosition()));
     }
 
@@ -32,13 +35,14 @@ public final class VillageScopeKeys {
         if (level == null) {
             return "";
         }
-        return VillageMembership.resolve(level, villager)
+        return allegianceScope(level, villager)
+                .or(() -> VillageMembership.resolve(level, villager)
                 .map(area -> forArea(level, area))
                 .or(() -> villager == null
                         ? Optional.empty()
                         : VillagerSocialGraphService.knownVillage(level, villager.getUUID())
                                 .map(VillageScopeKeys::fromSavedSocialKey)
-                                .filter(key -> !key.isBlank()))
+                                .filter(key -> !key.isBlank())))
                 .orElseGet(() -> forPosition(level.dimension(), fallbackPos));
     }
 
@@ -46,7 +50,18 @@ public final class VillageScopeKeys {
         if (level == null || area == null) {
             return "";
         }
-        return VillageRegistrySavedData.get(level).keyFor(level, area.centerBlock());
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        return registry.discoverAt(level, area.centerBlock())
+                .flatMap(registry::canonicalRecord)
+                .map(record -> forPosition(record.originDimension(), record.originPosition()))
+                .orElseGet(() -> VillageRegistrySavedData.get(level).keyFor(level, area.centerBlock()));
+    }
+
+    private static Optional<String> allegianceScope(ServerLevel level, Villager villager) {
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        return VillageAllegianceApi.canonicalPrimary(level, villager)
+                .flatMap(registry::canonicalRecord)
+                .map(record -> forPosition(record.originDimension(), record.originPosition()));
     }
 
     public static String forPosition(ResourceKey<Level> dimension, BlockPos pos) {

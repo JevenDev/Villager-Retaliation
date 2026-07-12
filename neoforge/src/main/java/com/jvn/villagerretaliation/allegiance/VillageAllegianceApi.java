@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.Villager;
 
 /** Server-side integration API for durable village allegiance data. */
 public final class VillageAllegianceApi {
@@ -39,9 +40,26 @@ public final class VillageAllegianceApi {
             AllegianceAssignmentSource source) {
         VillageAllegianceRegistrySavedData.get(level).ensureRecord(
                 id, level.getGameTime(), level.dimension().location(), entity.blockPosition());
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceId canonical = registry.canonical(id).orElse(id);
         VillageAllegianceData data = VillageAllegianceData.known(
-                id, source, AllegianceConfidence.AUTHORITATIVE, level.getGameTime(),
+                canonical, source, AllegianceConfidence.AUTHORITATIVE, level.getGameTime(),
                 level.dimension().location(), entity.blockPosition(), List.of());
+        assign(entity, data);
+        registry.removeResidentEverywhere(entity.getUUID());
+        if (entity instanceof Villager villager) {
+            registry.addOrUpdateResident(canonical, villager.getUUID(), !villager.isBaby(), level.getGameTime());
+        }
+        return data;
+    }
+
+    public static VillageAllegianceData assignUnaffiliated(
+            ServerLevel level,
+            Entity entity,
+            AllegianceAssignmentSource source) {
+        VillageAllegianceRegistrySavedData.get(level).removeResidentEverywhere(entity.getUUID());
+        VillageAllegianceData data = VillageAllegianceData.unaffiliated(
+                source, level.getGameTime(), level.dimension().location(), entity.blockPosition());
         assign(entity, data);
         return data;
     }
@@ -56,6 +74,25 @@ public final class VillageAllegianceApi {
         return get(entity)
                 .filter(VillageAllegianceData::isKnown)
                 .flatMap(data -> VillageAllegianceRegistrySavedData.get(level).canonical(data.primary()));
+    }
+
+    public static Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> village(
+            ServerLevel level,
+            Entity entity) {
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        return canonicalPrimary(level, entity).flatMap(registry::canonicalRecord);
+    }
+
+    public static Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> villageAt(
+            ServerLevel level,
+            net.minecraft.core.BlockPos position) {
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        return registry.resolveAt(level, position).flatMap(registry::canonicalRecord);
+    }
+
+    public static String displayName(ServerLevel level, Entity entity) {
+        return village(level, entity).map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
+                .orElse("Wanderer");
     }
 
     static Optional<VillageAllegianceData> providerData(Entity entity) {

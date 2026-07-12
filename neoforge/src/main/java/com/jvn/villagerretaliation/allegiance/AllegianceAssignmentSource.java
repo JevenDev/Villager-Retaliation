@@ -8,6 +8,7 @@ public enum AllegianceAssignmentSource {
     CURE_INFERRED,
     COMMAND,
     QUEST,
+    TRUST_REASSIGNMENT,
     MIGRATION,
     ADMIN,
     EXPLICIT_API

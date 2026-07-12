@@ -239,7 +239,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     public Optional<VillageAllegianceId> discoverAt(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null || !level.isVillage(pos)) {
-            return resolveAt(level, pos);
+            return Optional.empty();
         }
         Set<Long> sources = occupiedVillageSections(level, pos);
         long originSection = SectionPos.asLong(pos);
@@ -319,6 +319,26 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         setDirty();
     }
 
+    public void refreshLoadedLifecycles(ServerLevel level, long observedTicks) {
+        if (level == null || observedTicks <= 0L) {
+            return;
+        }
+        ResourceLocation dimension = level.dimension().location();
+        for (AllegianceRecord record : List.copyOf(activeRecords(dimension))) {
+            if (record.sourceSections().isEmpty() || !entireFootprintLoaded(level, record)) {
+                continue;
+            }
+            if (hasOccupiedSource(level, record)) {
+                if (record.lifecycleState() != VillageLifecycleState.ACTIVE || record.emptyObservedTicks() != 0L) {
+                    this.records.put(record.id(), record.withLifecycle(VillageLifecycleState.ACTIVE, 0L));
+                    setDirty();
+                }
+            } else {
+                observeEmpty(record.id(), observedTicks);
+            }
+        }
+    }
+
     public void addOrUpdateResident(VillageAllegianceId id, UUID residentId, boolean adult, long gameTime) {
         AllegianceRecord current = canonicalRecord(id).orElse(null);
         if (current == null || residentId == null) {
@@ -335,6 +355,22 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         AllegianceRecord current = canonicalRecord(id).orElse(null);
         if (current != null && current.residents().containsKey(residentId)) {
             this.records.put(current.id(), current.withoutResident(residentId));
+            setDirty();
+        }
+    }
+
+    public void removeResidentEverywhere(UUID residentId) {
+        if (residentId == null) {
+            return;
+        }
+        boolean changed = false;
+        for (Map.Entry<VillageAllegianceId, AllegianceRecord> entry : List.copyOf(this.records.entrySet())) {
+            if (entry.getValue().residents().containsKey(residentId)) {
+                this.records.put(entry.getKey(), entry.getValue().withoutResident(residentId));
+                changed = true;
+            }
+        }
+        if (changed) {
             setDirty();
         }
     }
@@ -463,6 +499,36 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             }
         }
         return sections;
+    }
+
+    private static boolean entireFootprintLoaded(ServerLevel level, AllegianceRecord record) {
+        for (long packed : record.footprintSections()) {
+            SectionPos section = SectionPos.of(packed);
+            if (!level.hasChunk(section.x(), section.z())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean hasOccupiedSource(ServerLevel level, AllegianceRecord record) {
+        PoiManager manager = level.getPoiManager();
+        Set<ChunkPos> chunks = record.sourceSections().stream()
+                .map(SectionPos::of)
+                .map(SectionPos::chunk)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        for (ChunkPos chunk : chunks) {
+            boolean found = manager.getInChunk(
+                            type -> type.is(PoiTypeTags.VILLAGE),
+                            chunk,
+                            PoiManager.Occupancy.IS_OCCUPIED)
+                    .map(poi -> SectionPos.asLong(poi.getPos()))
+                    .anyMatch(record.sourceSections()::contains);
+            if (found) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static Set<Long> connectedSources(Set<Long> all, Set<Long> seeds) {

@@ -17,7 +17,7 @@ public record VillageAllegianceData(
         ResourceLocation originDimension,
         BlockPos originPosition,
         List<VillageAllegianceId> protectedParents) {
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
     public static final int MAX_PROTECTED_PARENTS = 2;
 
     public VillageAllegianceData {

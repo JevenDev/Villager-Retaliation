@@ -69,6 +69,7 @@ public class VillagerRetaliation {
                 .listener(VillagerReputationEvents::onLivingDamage)
                 .listener(VillagerDisciplineService::onLivingDamage)
                 .listener(VillagerRetaliationEvents::onLivingDeath)
+                .listener(VillageAllegianceService::onLivingDeath)
                 .listener(VillagerSocialGraphService::onLivingDeath)
                 .listener(VillagerReputationEvents::onLivingDeath)
                 .listener(VillagerRetaliationEvents::onLivingDrops)
