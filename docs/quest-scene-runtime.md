@@ -80,7 +80,7 @@ Protection is active when any of these sources applies:
 - an active scene binds the exact villager to an actor with `lethal_damage_policy: "downed"`;
 - the entity has the permanent scoreboard tag `villagerretaliation_essential`.
 
-While downed, AI, navigation, attacks, work, follow behavior, pickup, trading, gifts, breeding, and dialogue are suspended. Repeated attacks still run ordinary hit consequences once but cannot reduce health. Nearby mobs targeting the villager are cleared on entry and once per second. The client receives transition packets and start-tracking replay, then renders a whole-body kneeling pose.
+While downed, AI, navigation, attacks, work, follow behavior, pickup, trading, gifts, breeding, and dialogue are suspended. Repeated attacks still run ordinary hit consequences once but cannot reduce health. Nearby mobs targeting the villager are cleared on entry and once per second. The client receives transition packets and start-tracking replay, then renders one of three stable whole-body poses: sitting, lying on one side, or resting on hands and knees. Each variation also resizes the villager's hitbox and moves its name-tag attachment to match the downed silhouette.
 
 Recovery requires the configured minimum duration, no nearby natural hostile or mob directly targeting the villager within `downedThreatRadius`, and `downedQuietTicks` of quiet. Health returns to `downedRecoveryHealthPercent` of maximum (at least one), prior AI/pickup flags are restored, and `DOWNED` scene bindings return to `LIVE` and wake their scenes. If the original protection expires while the villager is downed, recovery still finishes normally.
 

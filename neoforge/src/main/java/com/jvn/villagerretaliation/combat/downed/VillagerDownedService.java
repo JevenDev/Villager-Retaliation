@@ -117,6 +117,7 @@ public final class VillagerDownedService {
             villager.stopRiding();
         }
         enforceIncapacitatedState(villager);
+        villager.refreshDimensions();
         VillagerConversationService.endForVillager(villager, true);
         clearNearbyTargets(level, villager);
         SceneLifecycleIntegration.onActorDowned(villager);
@@ -161,6 +162,7 @@ public final class VillagerDownedService {
         if (isDowned(villager)) {
             enforceIncapacitatedState(villager);
             villager.setHealth(Math.max(1.0F, villager.getHealth()));
+            villager.refreshDimensions();
         }
     }
 
@@ -194,6 +196,7 @@ public final class VillagerDownedService {
         boolean previousNoAi = state.getBoolean(PREVIOUS_NO_AI_KEY);
         boolean previousCanPickUpLoot = state.getBoolean(PREVIOUS_PICKUP_KEY);
         villager.getPersistentData().remove(STATE_KEY);
+        villager.refreshDimensions();
         NEXT_THREAT_SCAN_TICKS.remove(villager.getUUID());
         PENDING_ABSORPTION_RESTORE.remove(villager.getUUID());
         villager.setNoAi(previousNoAi);

@@ -20,7 +20,6 @@ public class VillagerArmorModel<T extends AbstractVillager> extends HumanoidMode
     private static final float EXTRA_ARMOR_DEFORMATION = 0.25F;
     private static final CubeDeformation INNER_ARMOR_DEFORMATION = new CubeDeformation(0.5F);
     private static final CubeDeformation OUTER_ARMOR_DEFORMATION = new CubeDeformation(1.0F);
-
     public VillagerArmorModel(ModelPart root) {
         super(root);
     }

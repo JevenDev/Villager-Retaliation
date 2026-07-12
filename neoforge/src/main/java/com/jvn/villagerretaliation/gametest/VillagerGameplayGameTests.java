@@ -84,11 +84,15 @@ public final class VillagerGameplayGameTests {
     public static void essentialVillagerDownsOnceAndRejectsRepeatedDamage(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         villager.addTag(VillagerDeathProtectionResolver.ESSENTIAL_ENTITY_TAG);
+        float standingWidth = villager.getBbWidth();
+        float standingHeight = villager.getBbHeight();
 
         villager.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
         helper.assertTrue(VillagerDownedService.isDowned(villager), "essential villager should be downed");
         helper.assertTrue(villager.isAlive(), "downed villager should remain alive");
         helper.assertTrue(villager.getHealth() >= 1.0F, "downed villager should retain at least one health");
+        helper.assertTrue(villager.getBbWidth() > standingWidth, "downed hitbox should widen for the grounded pose");
+        helper.assertTrue(villager.getBbHeight() < standingHeight, "downed hitbox should lower for the grounded pose");
         float healthAfterLethalHit = villager.getHealth();
 
         villager.invulnerableTime = 0;
@@ -139,11 +143,15 @@ public final class VillagerGameplayGameTests {
         VillagerDownedService.onVillagerLoaded(loaded);
         helper.assertTrue(VillagerDownedService.isDowned(loaded), "serialized villager should remain downed");
         helper.assertTrue(loaded.isNoAi(), "loaded downed villager should remain incapacitated");
+        float downedWidth = loaded.getBbWidth();
+        float downedHeight = loaded.getBbHeight();
 
         VillagerDownedService.recover(loaded);
         helper.assertFalse(VillagerDownedService.isDowned(loaded), "recovery should clear persisted state");
         helper.assertFalse(loaded.isNoAi(), "recovery should restore the prior AI flag");
         helper.assertTrue(loaded.canPickUpLoot(), "recovery should restore the prior pickup flag");
+        helper.assertTrue(loaded.getBbWidth() < downedWidth, "recovery should restore the standing hitbox width");
+        helper.assertTrue(loaded.getBbHeight() > downedHeight, "recovery should restore the standing hitbox height");
         helper.succeed();
     }
 

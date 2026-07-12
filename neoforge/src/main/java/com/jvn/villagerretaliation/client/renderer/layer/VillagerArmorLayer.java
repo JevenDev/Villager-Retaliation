@@ -49,6 +49,8 @@ public class VillagerArmorLayer<T extends AbstractVillager> extends RenderLayer<
             float netHeadYaw,
             float headPitch
     ) {
+        poseStack.pushPose();
+        this.getParentModel().translateRoot(poseStack);
         this.renderArmorPiece(poseStack, buffer, villager, EquipmentSlot.CHEST, packedLight,
                 this.getArmorModel(EquipmentSlot.CHEST), limbSwing, limbSwingAmount, partialTick, ageInTicks, netHeadYaw, headPitch);
         this.renderArmorPiece(poseStack, buffer, villager, EquipmentSlot.LEGS, packedLight,
@@ -57,6 +59,7 @@ public class VillagerArmorLayer<T extends AbstractVillager> extends RenderLayer<
                 this.getArmorModel(EquipmentSlot.FEET), limbSwing, limbSwingAmount, partialTick, ageInTicks, netHeadYaw, headPitch);
         this.renderArmorPiece(poseStack, buffer, villager, EquipmentSlot.HEAD, packedLight,
                 this.getArmorModel(EquipmentSlot.HEAD), limbSwing, limbSwingAmount, partialTick, ageInTicks, netHeadYaw, headPitch);
+        poseStack.popPose();
     }
 
     private void renderArmorPiece(

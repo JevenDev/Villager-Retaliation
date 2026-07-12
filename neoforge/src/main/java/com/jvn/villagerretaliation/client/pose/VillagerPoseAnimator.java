@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.pose;
 
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedPose;
 import net.minecraft.client.model.AnimationUtils;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.util.Mth;
@@ -13,32 +14,123 @@ public final class VillagerPoseAnimator {
     }
 
     public static void applyDownedPose(
+            AbstractVillager villager,
+            ModelPart root,
             ModelPart body,
             ModelPart head,
             ModelPart rightArm,
             ModelPart leftArm,
             ModelPart rightLeg,
             ModelPart leftLeg) {
-        body.y = 5.0F;
-        body.xRot = 0.28F;
-        head.y = 5.0F;
-        head.xRot = 0.38F;
+        switch (VillagerDownedPose.forVillager(villager.getUUID())) {
+            case SITTING -> applyDownedSittingPose(body, head, rightArm, leftArm, rightLeg, leftLeg);
+            case SIDE_LYING -> applyDownedSideLyingPose(villager, root, body, head, rightArm, leftArm, rightLeg, leftLeg);
+            case HANDS_AND_KNEES -> applyDownedHandsAndKneesPose(body, head, rightArm, leftArm, rightLeg, leftLeg);
+        }
+    }
 
-        rightArm.y = 7.0F;
-        rightArm.xRot = -0.55F;
-        rightArm.yRot = -0.18F;
-        rightArm.zRot = 0.08F;
-        leftArm.y = 7.0F;
-        leftArm.xRot = -0.35F;
-        leftArm.yRot = 0.22F;
-        leftArm.zRot = -0.08F;
+    private static void applyDownedSittingPose(
+            ModelPart body,
+            ModelPart head,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            ModelPart rightLeg,
+            ModelPart leftLeg) {
+        body.y = 10.0F;
+        body.xRot = -0.12F;
+        head.y = 10.0F;
+        head.xRot = 0.18F;
 
-        rightLeg.y = 16.0F;
-        rightLeg.xRot = -1.12F;
+        rightArm.y = 12.0F;
+        rightArm.xRot = -0.18F;
+        rightArm.yRot = -0.12F;
+        rightArm.zRot = 0.1F;
+        leftArm.y = 12.0F;
+        leftArm.xRot = -0.18F;
+        leftArm.yRot = 0.12F;
+        leftArm.zRot = -0.1F;
+
+        rightLeg.y = 22.0F;
+        rightLeg.xRot = -1.42F;
+        rightLeg.yRot = 0.16F;
+        rightLeg.zRot = 0.04F;
+        leftLeg.y = 22.0F;
+        leftLeg.xRot = -1.32F;
+        leftLeg.yRot = -0.16F;
+        leftLeg.zRot = -0.04F;
+    }
+
+    private static void applyDownedSideLyingPose(
+            AbstractVillager villager,
+            ModelPart root,
+            ModelPart body,
+            ModelPart head,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            ModelPart rightLeg,
+            ModelPart leftLeg) {
+        boolean liesOnRightSide = (villager.getUUID().getLeastSignificantBits() & 1L) == 0L;
+        float side = liesOnRightSide ? 1.0F : -1.0F;
+        root.x = side * 7.0F;
+        root.y = 20.0F;
+        root.zRot = side * ((float) Math.PI / 2.0F);
+
+        body.xRot = 0.08F;
+        head.xRot = 0.16F;
+        head.yRot = -side * 0.18F;
+
+        rightArm.x = -1.0F;
+        rightArm.xRot = -0.22F;
+        rightArm.yRot = -0.3F;
+        rightArm.zRot = 0.12F;
+        leftArm.x = 1.0F;
+        leftArm.xRot = -0.52F;
+        leftArm.yRot = 0.28F;
+        leftArm.zRot = -0.12F;
+
+        rightLeg.xRot = -0.3F;
         rightLeg.yRot = 0.12F;
-        leftLeg.y = 16.0F;
-        leftLeg.xRot = -0.48F;
+        rightLeg.zRot = 0.08F;
+        leftLeg.xRot = 0.18F;
         leftLeg.yRot = -0.12F;
+        leftLeg.zRot = -0.08F;
+    }
+
+    private static void applyDownedHandsAndKneesPose(
+            ModelPart body,
+            ModelPart head,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            ModelPart rightLeg,
+            ModelPart leftLeg) {
+        body.y = 11.5F;
+        body.z = 1.0F;
+        body.xRot = 1.28F;
+        head.y = 13.0F;
+        head.z = -4.5F;
+        head.xRot = 0.48F;
+
+        rightArm.y = 13.0F;
+        rightArm.z = -3.5F;
+        rightArm.xRot = -0.12F;
+        rightArm.yRot = -0.08F;
+        rightArm.zRot = 0.06F;
+        leftArm.y = 13.0F;
+        leftArm.z = -3.5F;
+        leftArm.xRot = -0.12F;
+        leftArm.yRot = 0.08F;
+        leftArm.zRot = -0.06F;
+
+        rightLeg.y = 14.0F;
+        rightLeg.z = 5.0F;
+        rightLeg.xRot = 0.62F;
+        rightLeg.yRot = 0.12F;
+        rightLeg.zRot = 0.06F;
+        leftLeg.y = 14.0F;
+        leftLeg.z = 5.0F;
+        leftLeg.xRot = 0.62F;
+        leftLeg.yRot = -0.12F;
+        leftLeg.zRot = -0.06F;
     }
 
     public static <T extends AbstractVillager> void applyPose(

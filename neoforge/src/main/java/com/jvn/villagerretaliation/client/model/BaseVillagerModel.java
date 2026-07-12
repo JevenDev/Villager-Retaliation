@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.model;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.HeadedModel;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.HierarchicalModel;
@@ -9,5 +10,8 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 public abstract class BaseVillagerModel<T extends AbstractVillager> extends HierarchicalModel<T> implements HeadedModel, VillagerHeadModel {
     public void copyPropertiesToHumanoidArmor(HumanoidModel<T> armorModel) {
         this.copyPropertiesTo(armorModel);
+    }
+
+    public void translateRoot(PoseStack poseStack) {
     }
 }

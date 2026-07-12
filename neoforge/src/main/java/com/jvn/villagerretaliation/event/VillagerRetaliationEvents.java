@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.scene.encounter.EncounterService;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedPose;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -94,6 +95,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -198,6 +200,14 @@ public final class VillagerRetaliationEvents {
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
         VillagerRetaliationHandler.onEntityAttributeModification(event);
         WanderingTraderRetaliationHandler.onEntityAttributeModification(event);
+    }
+
+    public static void onEntitySize(EntityEvent.Size event) {
+        if (event.getEntity() instanceof Villager villager
+                && !villager.level().isClientSide()
+                && VillagerDownedService.isDowned(villager)) {
+            event.setNewSize(VillagerDownedPose.forVillager(villager.getUUID()).dimensions(event.getNewSize()));
+        }
     }
 
     public static void onLivingDrops(LivingDropsEvent event) {

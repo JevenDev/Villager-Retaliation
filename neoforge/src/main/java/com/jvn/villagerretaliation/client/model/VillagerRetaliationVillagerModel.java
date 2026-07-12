@@ -98,6 +98,8 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         if (VillagerDownedClientCache.isDowned(villager)) {
             this.setArmLayout(true);
             VillagerPoseAnimator.applyDownedPose(
+                    villager,
+                    this.root,
                     this.body,
                     this.head,
                     this.rightArm,
@@ -185,7 +187,13 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     }
 
     public void translateToHand(HumanoidArm arm, PoseStack poseStack) {
+        this.root.translateAndRotate(poseStack);
         this.getArm(arm).translateAndRotate(poseStack);
+    }
+
+    @Override
+    public void translateRoot(PoseStack poseStack) {
+        this.root.translateAndRotate(poseStack);
     }
 
     private void setArmLayout(boolean sideArmsVisible) {
