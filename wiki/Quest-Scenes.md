@@ -336,6 +336,35 @@ Guidance is participant-only and dimension-aware. `discovery_radius` is 1-512 bl
 
 Quest tracker text can use `{encounter_distance}`, `{encounter_direction}`, `{encounter_coordinates}`, `{encounter_dimension}`, `{encounter_discovered}`, and `{encounter_arrived}`. Values respect the exact-coordinate policy and are empty when a feature is disabled or the target is in another dimension. Completion, failure, cancellation, and cleanup stop updates and remove the temporary HUD marker. The legacy fixed-mode `location_message` keeps its old one-time behavior when `guidance` is omitted; it cannot be combined with `guidance.coordinate_message`.
 
+### Rewards and mob drops
+
+Concrete encounter templates can grant bounded rewards and control drops without commands:
+
+```json
+"rewards": {
+  "waves": [
+    { "id": "scout_supplies", "wave": "scouts", "item": "minecraft:arrow", "count": 4 }
+  ],
+  "phases": [
+    { "id": "captain_token", "phase": "captain_falls", "item": "minecraft:iron_nugget" }
+  ],
+  "completion": [
+    { "id": "village_medal", "item": "minecraft:emerald", "trophy_name": "Village Medal" },
+    { "id": "bonus_cache", "loot_table": "example:encounters/gate_cache" }
+  ],
+  "trophies": [
+    { "id": "captain_badge", "member": "gate_captain", "item": "minecraft:gold_nugget", "name": "Captain Badge" }
+  ],
+  "drop_policy": "trophy_only"
+}
+```
+
+`waves`, `phases`, and `completion` each contain at most 32 rewards, with at most 64 triggered rewards total. IDs are unique across every reward and trophy. A reward has exactly one registered `item` (count 1-64) or registered `loot_table`; `trophy_name` is an optional bounded custom name for direct item rewards. Wave and phase targets must reference authored IDs. Repeatable phase rewards use the phase fire ordinal, so each bounded fire is independently receipt-guarded.
+
+Every eligible reward reserves a durable scene operation receipt per captured participant before delivery. Item and loot grants use the existing item/loot receipt kinds; loot rolls use a stable encounter/reward/player seed. Reconciliation, reload, retry, and maintenance reuse the receipt and never grant it twice. Offline participants remain pending, and successfully completed encounters retain completion eligibility through cleanup so their rewards can be delivered after they reconnect. Failed or cancelled encounters do not create new pending grants. A persisted ambiguous `prepared` receipt is treated as consumed rather than risking a duplicate.
+
+`drop_policy` defaults to `normal` and preserves vanilla drops plus authored equipment `drop_chance`. `suppress` removes all item drops. `authored_only` removes vanilla loot and deterministically rolls only authored equipment with a positive `drop_chance`; it is rejected when no such equipment exists. `trophy_only` removes vanilla and equipment drops, requires `trophies`, and drops matching trophies once per durable hostile spawn index. Trophy claims persist separately from hostile death progress, so wave reset, encounter restart, reload, and repeated drop callbacks cannot farm them. Cleanup/discard operations do not produce encounter drops.
+
 The optional `area` is a cylinder centered on the encounter's durable anchor. `radius` is required and limited to 256 blocks; `vertical_radius` defaults to the radius and is limited to 128. `leave_behavior` is `ignore` (the backward-compatible default), `warn`, `pause`, or `fail`. A failing participant has `leave_timeout_ticks` (default 200, maximum 12000) to return. Warnings and absolute deadlines are saved, messages go only to the affected participant, offline players do not start or advance a new leave decision, and returning clears that excursion's state.
 
 `mob_behavior` is `ignore`, `return`, or `teleport`. `return` asks loaded owned mobs to navigate back without changing unrelated entities. `teleport` waits for the persisted `mob_timeout_ticks` deadline (default 200, maximum 12000) before returning a loaded mob to the anchor. Area checks never force-load the anchor, a participant, or an owned mob's chunk. Omitting `area` preserves encounter/v1 behavior exactly.

@@ -205,6 +205,7 @@ public final class VillagerRetaliationEvents {
             WanderingTraderLootHandler.addDrops(wanderingTrader, event);
         }
         com.jvn.villagerretaliation.party.PartyVillagerDropCollection.markSlainEntityDrops(event);
+        EncounterService.onDrops(event);
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {

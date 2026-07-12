@@ -1,5 +1,6 @@
 # Changelog
 
+- Added receipt-guarded per-wave, phase, and completion encounter rewards, named trophy items, validated loot-table grants, and retry-safe normal/suppress/authored-only/trophy-only mob drop policies.
 - Added participant-only, dimension-aware encounter navigation with coordinate privacy, durable discovery and arrival, distance and compass tracker values, temporary HUD markers, directional particles, and terminal cleanup.
 - Added bounded encounter-owned environmental cues and temporary blocks, including participant sounds/music, particles, glowing columns, persisted block ownership, reload-safe reconciliation, and cleanup that never overwrites later player edits.
 - Added deterministic weighted encounter variants on selector templates and `start_encounter` steps, with persisted seeds, selected IDs, resolved templates, recursive-reference diagnostics, scene branches, tracker placeholders, and operator inspection.

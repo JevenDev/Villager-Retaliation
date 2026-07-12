@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "villagerretaliation:standing_watch",
-  "version": 10,
+  "version": 11,
   "controller": "villagerretaliation:controlled",
   "waves": [
     {
@@ -111,6 +111,21 @@
     "hud_marker": true,
     "exact_coordinates": "after_discovery",
     "update_interval_ticks": 20
+  },
+  "rewards": {
+    "waves": [
+      { "id": "captain_wave_supplies", "wave": "raider_captain", "item": "minecraft:arrow", "count": 4 }
+    ],
+    "phases": [
+      { "id": "captain_phase_token", "phase": "captain_falls", "item": "minecraft:iron_nugget", "count": 2 }
+    ],
+    "completion": [
+      { "id": "watch_medal", "item": "minecraft:emerald", "trophy_name": "Standing Watch Medal" }
+    ],
+    "trophies": [
+      { "id": "captain_insignia", "member": "raider_captain", "item": "minecraft:iron_nugget", "name": "Raider Captain's Insignia" }
+    ],
+    "drop_policy": "trophy_only"
   },
   "phases": [
     {
