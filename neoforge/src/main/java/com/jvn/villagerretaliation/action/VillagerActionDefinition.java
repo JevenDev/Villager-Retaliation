@@ -343,7 +343,8 @@ public record VillagerActionDefinition(
 
     private static ResourceLocation readSceneId(ResourceLocation location, JsonObject entry) {
         String value = firstNonBlank(DatapackJsonReader.readString(entry, "scene_id"),
-                DatapackJsonReader.readString(entry, "start_scene"));
+                firstNonBlank(DatapackJsonReader.readString(entry, "scene"),
+                        DatapackJsonReader.readString(entry, "start_scene")));
         if (value.isBlank()) return null;
         ResourceLocation parsed = value.contains(":") ? ResourceLocation.tryParse(value)
                 : ResourceLocation.fromNamespaceAndPath(location.getNamespace(), value);

@@ -189,7 +189,7 @@ public final class SceneRegistryGameTests {
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void questActionParsesStableSceneLaunchOperation(GameTestHelper helper) {
         JsonObject wrapper = JsonParser.parseString("""
-                {"actions":[{"type":"start_scene","scene_id":"villagerretaliation:gate_ambush",
+                {"actions":[{"type":"start_scene","scene":"villagerretaliation:gate_ambush",
                   "operation_id":"acceptance/gate_ambush","wait_for_result":true}]}
                 """).getAsJsonObject();
         List<VillagerActionDefinition> actions = VillagerActionDefinition.readList(

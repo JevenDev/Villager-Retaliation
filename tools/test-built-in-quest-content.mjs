@@ -6,6 +6,8 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const dataRoot = path.join(root, "neoforge", "src", "main", "resources", "data", "villagerretaliation");
 const questRoot = path.join(dataRoot, "quests");
 const lootRoot = path.join(dataRoot, "loot_table", "quest");
+const sceneRoot = path.join(dataRoot, "quest_scenes");
+const encounterRoot = path.join(dataRoot, "quest_encounters");
 
 const expectedExpansionRepeatables = new Set([
   "apiary_smoke",
@@ -34,11 +36,17 @@ const expectedBranchingQuestlines = new Set([
 
 const questFiles = await jsonFiles(questRoot);
 const lootFiles = await jsonFiles(lootRoot);
+const sceneFiles = await jsonFiles(sceneRoot);
+const encounterFiles = await jsonFiles(encounterRoot);
 const lootIds = new Set(lootFiles.map((file) => `villagerretaliation:quest/${withoutJson(path.relative(lootRoot, file))}`));
 const quests = new Map();
+const scenes = new Map();
+const encounters = new Map();
 const errors = [];
 let stageCount = 0;
 let choiceRouteCount = 0;
+let sceneReferenceCount = 0;
+const sceneQuestIds = new Set();
 
 for (const file of questFiles) {
   const data = await readJson(file);
@@ -48,6 +56,24 @@ for (const file of questFiles) {
   assert(typeof data.id === "string" && data.id.length > 0, file, "quest id is missing");
   assert(!quests.has(data.id), file, `duplicate quest id ${data.id}`);
   quests.set(data.id, { file, data });
+}
+
+for (const file of sceneFiles) {
+  const data = await readJson(file);
+  if (!data || typeof data !== "object") continue;
+  assert(data.schema === "villagerretaliation:scene/v1", file, "scene must use the scene/v1 schema");
+  assert(typeof data.id === "string" && data.id.length > 0, file, "scene id is missing");
+  assert(!scenes.has(data.id), file, `duplicate scene id ${data.id}`);
+  scenes.set(data.id, { file, data });
+}
+
+for (const file of encounterFiles) {
+  const data = await readJson(file);
+  if (!data || typeof data !== "object") continue;
+  assert(data.schema === "villagerretaliation:encounter/v1", file, "encounter must use the encounter/v1 schema");
+  assert(typeof data.id === "string" && data.id.length > 0, file, "encounter id is missing");
+  assert(!encounters.has(data.id), file, `duplicate encounter id ${data.id}`);
+  encounters.set(data.id, { file, data });
 }
 
 for (const { file, data } of quests.values()) {
@@ -79,6 +105,7 @@ validateExpansionRoster();
 validateExpansionBalance();
 validateBranchingQuestlines();
 validateUniqueExpansionMechanics();
+validateCinematicResources();
 
 if (errors.length > 0) {
   for (const error of errors) {
@@ -94,7 +121,8 @@ if (errors.length > 0) {
   console.log(
     `Built-in quest content passed: ${quests.size} quests, ${stageCount} v2 stages, `
       + `${repeatableCount} repeatables, ${choiceRouteCount} validated choice routes, `
-      + `${expectedBranchingQuestlines.size} new branching questlines.`
+      + `${expectedBranchingQuestlines.size} new branching questlines, `
+      + `${sceneQuestIds.size} quests with persistent scenes across ${sceneReferenceCount} launch points.`
   );
 }
 
@@ -322,6 +350,84 @@ function validateUniqueExpansionMechanics() {
     const other = signatures.get(signature);
     assert(!other, quest.file, `${id} duplicates the complete objective signature of ${other ?? "another quest"}`);
     signatures.set(signature, id);
+  }
+}
+
+function validateCinematicResources() {
+  for (const { file, data } of quests.values()) {
+    walk(data, (node) => {
+      if (node.type !== "start_scene") return;
+      const sceneId = node.scene ?? node.scene_id ?? node.start_scene;
+      sceneReferenceCount++;
+      sceneQuestIds.add(data.id);
+      assert(typeof sceneId === "string" && sceneId.length > 0, file, "start_scene action has no scene id");
+      assert(scenes.has(sceneId), file, `start_scene action references missing scene ${sceneId}`);
+      assert(typeof node.operation_id === "string" && node.operation_id.length > 0, file,
+        `start_scene action for ${sceneId} has no stable operation_id`);
+    });
+  }
+
+  for (const { file, data } of scenes.values()) {
+    assert(typeof data.metadata?.quest === "string" && quests.has(data.metadata.quest), file,
+      `scene metadata references missing quest ${data.metadata?.quest}`);
+    const hasControlledEncounter = (data.steps ?? [])
+      .some((step) => step.type === "villagerretaliation:start_encounter");
+    if (hasControlledEncounter) {
+      const quest = quests.get(data.metadata?.quest)?.data;
+      assert(quest?.availability?.cross_villager_compatible === true, file,
+        "combat scene quest must allow a compatible replacement provider");
+      for (const provider of (data.actors ?? []).filter((actor) => actor.binding_source === "quest_provider")) {
+        assert(provider.required === false, file, `combat scene provider ${provider.alias} must be optional`);
+        assert(provider.replacement_policy === "compatible_replacement", file,
+          `combat scene provider ${provider.alias} must allow compatible replacement`);
+        assert(provider.missing_actor_policy === "skip", file,
+          `combat scene provider ${provider.alias} must let post-fight presentation skip after a casualty`);
+        assert(provider.death_policy === "continue_with_snapshot", file,
+          `combat scene provider ${provider.alias} must retain its encounter anchor after death`);
+      }
+    }
+    const actors = new Set();
+    for (const actor of data.actors ?? []) {
+      assert(typeof actor.alias === "string" && actor.alias.length > 0, file, "scene actor alias is missing");
+      assert(!actors.has(actor.alias), file, `scene repeats actor alias ${actor.alias}`);
+      actors.add(actor.alias);
+    }
+
+    const steps = new Map();
+    for (const step of data.steps ?? []) {
+      assert(typeof step.id === "string" && step.id.length > 0, file, "scene step id is missing");
+      assert(!steps.has(step.id), file, `scene repeats stable step id ${step.id}`);
+      steps.set(step.id, step);
+      for (const actor of step.actors ?? []) {
+        assert(actors.has(actor), file, `scene step ${step.id} references missing actor ${actor}`);
+      }
+      if (step.type === "villagerretaliation:start_encounter") {
+        const template = step.data?.template ?? step.data?.encounter_template;
+        assert(encounters.has(template), file, `scene step ${step.id} references missing encounter ${template}`);
+      }
+      if (step.type === "villagerretaliation:action_batch") {
+        for (const action of step.data?.actions ?? []) {
+          assert(typeof action.id === "string" && action.id.length > 0, file,
+            `scene action batch ${step.id} contains an action without a stable id`);
+        }
+      }
+    }
+    assert(steps.has(data.entry_step), file, `scene entry step ${JSON.stringify(data.entry_step)} does not exist`);
+    for (const step of steps.values()) {
+      const targets = [step.next, step.failure_step, ...Object.values(step.transitions ?? {})]
+        .filter((target) => typeof target === "string" && target.length > 0);
+      for (const target of targets) {
+        assert(steps.has(target), file, `scene step ${step.id} transitions to missing step ${target}`);
+      }
+    }
+  }
+
+  for (const { file, data } of encounters.values()) {
+    assert(Array.isArray(data.members) && data.members.length > 0, file, "encounter has no members");
+    for (const member of data.members ?? []) {
+      assert(typeof member.entity === "string" && member.entity.length > 0, file, "encounter member entity is missing");
+      assert(Number(member.count ?? 1) > 0, file, `encounter member ${member.entity} has a non-positive count`);
+    }
   }
 }
 

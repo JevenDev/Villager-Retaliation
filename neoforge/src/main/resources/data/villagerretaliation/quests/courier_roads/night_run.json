@@ -32,7 +32,7 @@
   "availability": {
     "abandonment": "allow_repickup",
     "consume_on_completion": true,
-    "cross_villager_compatible": false,
+    "cross_villager_compatible": true,
     "locked_to_villager": true,
     "max_completions": 1,
     "max_starts": 0,
@@ -136,6 +136,12 @@
                   "The night route is not ready to ask for help right now."
                 ]
               }
+            },
+            {
+              "type": "start_scene",
+              "scene": "villagerretaliation:night_run_attack",
+              "operation_id": "night_run_attack_v1",
+              "wait_for_result": true
             }
           ]
         },

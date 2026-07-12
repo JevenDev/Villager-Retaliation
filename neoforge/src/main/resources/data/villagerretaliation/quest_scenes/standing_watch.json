@@ -1,0 +1,149 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "villagerretaliation:standing_watch",
+  "definition_version": 1,
+  "metadata": {
+    "title": "Standing Watch defense",
+    "quest": "villagerretaliation:standing_watch"
+  },
+  "ownership": "quest_instance",
+  "entry_step": "sound_the_watch",
+  "timeout_ticks": 3600,
+  "failure_policy": "block_for_repair",
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "all_owned",
+  "actors": [
+    {
+      "alias": "player",
+      "type": "villagerretaliation:player",
+      "required": true,
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "binding_source": "owner_player",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "wait_until_timeout",
+      "death_policy": "block",
+      "timeout_ticks": 1200
+    },
+    {
+      "alias": "watch_captain",
+      "type": "villagerretaliation:villager",
+      "required": false,
+      "capabilities": [
+        "villagerretaliation:capability/dialogue",
+        "villagerretaliation:capability/living"
+      ],
+      "binding_source": "quest_provider",
+      "replacement_policy": "compatible_replacement",
+      "missing_actor_policy": "skip",
+      "death_policy": "continue_with_snapshot",
+      "timeout_ticks": 1200
+    }
+  ],
+  "steps": [
+    {
+      "id": "sound_the_watch",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "watch_captain"
+      ],
+      "data": {
+        "text": "The watch bell rings. Hostiles are closing on the village—hold near the quest giver.",
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20
+      },
+      "next": "face_defender",
+      "failure_step": "failed"
+    },
+    {
+      "id": "face_defender",
+      "type": "villagerretaliation:face_actor",
+      "actors": [
+        "watch_captain",
+        "player"
+      ],
+      "data": {
+        "actor": "watch_captain",
+        "target_actor": "player"
+      },
+      "next": "brace"
+    },
+    {
+      "id": "brace",
+      "type": "villagerretaliation:wait_ticks",
+      "data": {
+        "ticks": 40
+      },
+      "next": "start_attack"
+    },
+    {
+      "id": "start_attack",
+      "type": "villagerretaliation:start_encounter",
+      "data": {
+        "template": "villagerretaliation:standing_watch",
+        "anchor_actor": "watch_captain",
+        "difficulty": "normal"
+      },
+      "next": "hold_the_line",
+      "failure_step": "failed"
+    },
+    {
+      "id": "hold_the_line",
+      "type": "villagerretaliation:wait_encounter",
+      "data": {
+        "encounter_step": "start_attack"
+      },
+      "next": "clean_up",
+      "failure_step": "failed"
+    },
+    {
+      "id": "clean_up",
+      "type": "villagerretaliation:cleanup_encounter",
+      "data": {
+        "encounter_step": "start_attack",
+        "force_remove": false
+      },
+      "next": "record_defense",
+      "failure_step": "failed"
+    },
+    {
+      "id": "record_defense",
+      "type": "villagerretaliation:action_batch",
+      "actors": [
+        "watch_captain"
+      ],
+      "data": {
+        "actions": [
+          {
+            "id": "remember_standing_watch_defense",
+            "type": "memory",
+            "memory_event": "villagerretaliation:player_defended_village"
+          }
+        ]
+      },
+      "next": "after_action",
+      "failure_step": "failed"
+    },
+    {
+      "id": "after_action",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "watch_captain"
+      ],
+      "data": {
+        "text": "The line holds. Return to the quest giver when you are ready to close the watch."
+      },
+      "next": "completed",
+      "failure_step": "failed"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ]
+}

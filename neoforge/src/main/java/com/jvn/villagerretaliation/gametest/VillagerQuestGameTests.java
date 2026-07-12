@@ -1568,11 +1568,12 @@ public final class VillagerQuestGameTests {
         MinecraftServer server = helper.getLevel().getServer();
         Set<ResourceLocation> mobKillQuests = VillagerQuestResources
                 .questIdsWithObjective(server, QuestDefinition.ObjectiveType.MOB_KILL);
-        helper.assertValueEqual(mobKillQuests.size(), 21, "mob-kill quest index size");
+        helper.assertValueEqual(mobKillQuests.size(), 22, "mob-kill quest index size");
         assertContainsAll(helper, mobKillQuests, Set.of(
                 VillagerRetaliation.id("beacon_polish"),
                 VillagerRetaliation.id("ender_freight"),
                 VillagerRetaliation.id("fortress_line"),
+                VillagerRetaliation.id("standing_watch"),
                 VillagerRetaliation.id("timber_brace")), "expanded mob-kill quest ids");
         helper.assertTrue(
                 VillagerQuestResources.memoryEventQuestIds(server, VillagerRetaliation.id("player_defended_village"))
@@ -4922,7 +4923,7 @@ public final class VillagerQuestGameTests {
                 .filter(candidate -> candidate.id().equals(branchId))
                 .findFirst()
                 .orElseThrow(() -> new GameTestAssertException("Missing response " + branchId));
-        helper.assertValueEqual(response.actions().size(), 4, branchId + " response action count");
+        helper.assertValueEqual(response.actions().size(), 5, branchId + " response action count");
         assertSetVariableAction(helper, response.actions().get(0), "choice", branchId, branchId + " choice action");
         VillagerActionDefinition tagAction = response.actions().get(1);
         helper.assertValueEqual(tagAction.kind(), VillagerActionDefinition.Kind.SET_TAG, branchId + " route tag kind");
@@ -4932,7 +4933,11 @@ public final class VillagerQuestGameTests {
         helper.assertValueEqual(notification.kind(), VillagerActionDefinition.Kind.NOTIFICATION, branchId + " notification kind");
         helper.assertValueEqual(notification.notificationTrigger(), "quest.updated", branchId + " notification trigger");
         helper.assertFalse(notification.text().isBlank(), branchId + " notification text");
-        VillagerActionDefinition transition = response.actions().get(3);
+        VillagerActionDefinition scene = response.actions().get(3);
+        helper.assertValueEqual(scene.kind(), VillagerActionDefinition.Kind.START_SCENE, branchId + " scene action kind");
+        helper.assertValueEqual(scene.sceneId(), VillagerRetaliation.id("atlas_horizon_choice"), branchId + " scene id");
+        helper.assertValueEqual(scene.sceneOperationId(), "atlas_horizon_choice_v1", branchId + " scene operation");
+        VillagerActionDefinition transition = response.actions().get(4);
         helper.assertValueEqual(transition.kind(), VillagerActionDefinition.Kind.QUEST_TRANSITION, branchId + " transition kind");
         helper.assertValueEqual(transition.questTransition().responseId(), branchId, branchId + " transition response");
         helper.assertValueEqual(transition.questTransition().targetStage(), nextStage, branchId + " transition target");

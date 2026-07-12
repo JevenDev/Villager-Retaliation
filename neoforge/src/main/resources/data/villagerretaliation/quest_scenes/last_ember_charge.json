@@ -1,0 +1,102 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "villagerretaliation:last_ember_charge",
+  "definition_version": 1,
+  "metadata": {
+    "title": "The Last Ember charge",
+    "quest": "villagerretaliation:breath_after_the_roar"
+  },
+  "ownership": "quest_instance",
+  "entry_step": "face_the_witness",
+  "timeout_ticks": 1200,
+  "failure_policy": "block_for_repair",
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "none",
+  "actors": [
+    {
+      "alias": "player",
+      "type": "villagerretaliation:player",
+      "required": true,
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "binding_source": "owner_player",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "wait_until_timeout",
+      "death_policy": "block",
+      "timeout_ticks": 600
+    },
+    {
+      "alias": "ember_keeper",
+      "type": "villagerretaliation:villager",
+      "required": true,
+      "capabilities": [
+        "villagerretaliation:capability/dialogue",
+        "villagerretaliation:capability/living"
+      ],
+      "binding_source": "quest_provider",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "wait_until_timeout",
+      "death_policy": "continue_with_snapshot",
+      "timeout_ticks": 600
+    }
+  ],
+  "steps": [
+    {
+      "id": "face_the_witness",
+      "type": "villagerretaliation:face_actor",
+      "actors": [
+        "ember_keeper",
+        "player"
+      ],
+      "data": {
+        "actor": "ember_keeper",
+        "target_actor": "player"
+      },
+      "next": "first_charge",
+      "failure_step": "failed"
+    },
+    {
+      "id": "first_charge",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "ember_keeper"
+      ],
+      "data": {
+        "text": "The Last Ember ends beyond the gate, but the village's part does not.",
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20
+      },
+      "next": "hold_the_silence",
+      "failure_step": "failed"
+    },
+    {
+      "id": "hold_the_silence",
+      "type": "villagerretaliation:wait_ticks",
+      "data": {
+        "ticks": 50
+      },
+      "next": "final_charge"
+    },
+    {
+      "id": "final_charge",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "ember_keeper"
+      ],
+      "data": {
+        "text": "Come home after the roar. Bring breath, stone, and a story that still belongs to you."
+      },
+      "next": "completed",
+      "failure_step": "failed"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ]
+}

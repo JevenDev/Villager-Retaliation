@@ -11,6 +11,7 @@
 
 ### Changed
 
+- Upgraded ten built-in quests with persistent scenes. Standing Watch, The Night Ward, The Night Run, and The Atlas Test's risky route now use controlled cleanup-safe encounters; Choose the Horizon, Choose a Road, and Choose a Star use choice-aware scene branches; and Trial Chamber Recall, House of Ill Omens, and After the Roar receive durable cinematic briefings.
 - Rewrote the remaining built-in v1 quests as self-contained quest module v2 resources while keeping their stable quest IDs, rewards, provider requirements, completion triggers, and saved quest identity.
 - Replaced repeated template dialogue with concise, Minecraft-specific offer, acceptance, reminder, decline, abandonment, and turn-in variations.
 - Rebalanced Trial Chamber Recall to consume its Trial Key and Breeze Rod, reduced its excessive repeat payout, and made every structure/proof requirement explicit in the quest stages.
@@ -20,6 +21,8 @@
 
 ### Fixed
 
+- Fixed controlled quest scenes becoming operator-blocked or leaving provider-locked quests stranded when the issuing villager died during the authored attack. Combat scenes now retain their saved anchor, skip unavailable presentation safely, and allow a compatible quest giver to finish the work.
+- Fixed `start_scene` actions rejecting the documented `scene` field even though the quest authoring tools and example pack emit it.
 - Fixed provider-bound abandonment and expiration hooks being lost when their issuing villager was unavailable. Deferred lifecycle events now survive saves and replay once after provider return or an audited compatible rebind.
 - Fixed Bread Delivery, Village Lanterns, and Trial Chamber Recall allowing repeat turn-ins without consuming their required items.
 - Fixed End City Survey lacking a parent link to Lost Civilization.

@@ -1,0 +1,102 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "villagerretaliation:mansion_warning",
+  "definition_version": 1,
+  "metadata": {
+    "title": "Mansion warning",
+    "quest": "villagerretaliation:house_of_ill_omens"
+  },
+  "ownership": "quest_instance",
+  "entry_step": "face_hunter",
+  "timeout_ticks": 1200,
+  "failure_policy": "block_for_repair",
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "none",
+  "actors": [
+    {
+      "alias": "player",
+      "type": "villagerretaliation:player",
+      "required": true,
+      "capabilities": [
+        "villagerretaliation:capability/live_entity"
+      ],
+      "binding_source": "owner_player",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "wait_until_timeout",
+      "death_policy": "block",
+      "timeout_ticks": 600
+    },
+    {
+      "alias": "informant",
+      "type": "villagerretaliation:villager",
+      "required": true,
+      "capabilities": [
+        "villagerretaliation:capability/dialogue",
+        "villagerretaliation:capability/living"
+      ],
+      "binding_source": "quest_provider",
+      "replacement_policy": "fixed",
+      "missing_actor_policy": "wait_until_timeout",
+      "death_policy": "continue_with_snapshot",
+      "timeout_ticks": 600
+    }
+  ],
+  "steps": [
+    {
+      "id": "face_hunter",
+      "type": "villagerretaliation:face_actor",
+      "actors": [
+        "informant",
+        "player"
+      ],
+      "data": {
+        "actor": "informant",
+        "target_actor": "player"
+      },
+      "next": "first_warning",
+      "failure_step": "failed"
+    },
+    {
+      "id": "first_warning",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "informant"
+      ],
+      "data": {
+        "text": "The mansion mark is true. Its patrols have already learned the quiet roads around us.",
+        "offline_policy": "wait",
+        "offline_poll_ticks": 20
+      },
+      "next": "let_warning_settle",
+      "failure_step": "failed"
+    },
+    {
+      "id": "let_warning_settle",
+      "type": "villagerretaliation:wait_ticks",
+      "data": {
+        "ticks": 45
+      },
+      "next": "final_warning"
+    },
+    {
+      "id": "final_warning",
+      "type": "villagerretaliation:dialogue",
+      "actors": [
+        "informant"
+      ],
+      "data": {
+        "text": "Bring back its evoker's totem. The village needs proof strong enough to silence comfortable doubt."
+      },
+      "next": "completed",
+      "failure_step": "failed"
+    },
+    {
+      "id": "completed",
+      "type": "villagerretaliation:scene_complete"
+    },
+    {
+      "id": "failed",
+      "type": "villagerretaliation:scene_fail"
+    }
+  ]
+}

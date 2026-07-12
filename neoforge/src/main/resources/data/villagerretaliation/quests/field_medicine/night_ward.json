@@ -30,7 +30,7 @@
   "availability": {
     "abandonment": "allow_repickup",
     "consume_on_completion": true,
-    "cross_villager_compatible": false,
+    "cross_villager_compatible": true,
     "locked_to_villager": true,
     "max_completions": 1,
     "max_starts": 0,
@@ -134,6 +134,12 @@
                   "The ward is not ready to ask this of you right now."
                 ]
               }
+            },
+            {
+              "type": "start_scene",
+              "scene": "villagerretaliation:night_ward_attack",
+              "operation_id": "night_ward_attack_v1",
+              "wait_for_result": true
             }
           ]
         },

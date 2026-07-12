@@ -941,7 +941,8 @@ public final class VillagerRetaliationCommands {
                         .executes(context -> mutateScene(context, "resume"))))
                 .then(literal("rebind").then(argument("scene_id", StringArgumentType.word())
                         .then(argument("alias", StringArgumentType.word())
-                                .then(targetArgument().executes(VillagerRetaliationCommands::rebindSceneActorDebug)))))
+                                .then(argument("target", EntityArgument.entity())
+                                        .executes(VillagerRetaliationCommands::rebindSceneActorDebug)))))
                 .then(literal("cleanup_encounter").then(argument("encounter_id", StringArgumentType.word())
                         .executes(VillagerRetaliationCommands::cleanupEncounterDebug)));
     }
