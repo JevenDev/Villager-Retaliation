@@ -4,6 +4,10 @@
 
 `example-packs/cinematic-gate-ambush/` is the complete beta.13 scene-orchestration example: two named villagers, player/party ownership, a recorded choice branch, movement, dialogue, a persisted wait, controlled encounter scaling and cleanup, quest completion/failure, and provider-unload recovery.
 
+## Repeatable scene run identity
+
+`example-packs/repeatable-scene-run-id/` is a deliberately small repeatable quest. It launches the same scene operation twice in one run (one instance), then demonstrates that a later legitimate run and an unrelated player's run receive different `QUEST_INSTANCE` owners.
+
 The repo already includes a full starter datapack you can copy from:
 
 ```text

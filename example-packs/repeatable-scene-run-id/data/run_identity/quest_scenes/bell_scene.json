@@ -1,0 +1,20 @@
+{
+  "schema": "villagerretaliation:scene/v1",
+  "id": "run_identity:bell_scene",
+  "definition_version": 1,
+  "ownership": "quest_instance",
+  "entry_step": "announce",
+  "failure_policy": "fail_scene",
+  "cancellation_policy": "cancel_scene",
+  "cleanup_policy": "none",
+  "actors": [],
+  "steps": [
+    {
+      "id": "announce",
+      "type": "villagerretaliation:dialogue",
+      "data": { "text": "A new quest run rings the bell." },
+      "next": "done"
+    },
+    { "id": "done", "type": "villagerretaliation:scene_complete" }
+  ]
+}
