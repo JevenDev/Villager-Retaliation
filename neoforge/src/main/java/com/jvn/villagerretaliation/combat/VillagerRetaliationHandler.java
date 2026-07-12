@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision;
 import com.jvn.villagerretaliation.allegiance.AllegianceEntityClassifier;
 import com.jvn.villagerretaliation.allegiance.UnlawfulOrderService;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -843,15 +844,11 @@ public final class VillagerRetaliationHandler {
             AllegianceCombatContext context = attackingWithParty
                     ? AllegianceCombatContext.PARTY_ATTACK
                     : AllegianceCombatContext.PARTY_DEFEND;
-            boolean opposingParties = PartyService.getPartyForEntity(target)
-                    .map(targetParty -> !targetParty.id().equals(party.id()))
-                    .orElse(false);
             var decision = VillageAllegianceCombatPolicy.evaluate(
-                    level, villager, target, context, opposingParties);
+                    level, villager, target, context, false);
             if (decision.denied()) {
                 if (AllegianceEntityClassifier.protectedCivilian(target)
-                        && (decision.reason() == AllegianceCombatDecision.Reason.SAME_CANONICAL_ALLEGIANCE
-                        || decision.reason() == AllegianceCombatDecision.Reason.PARENT_PROTECTION)) {
+                        && decision.reason() == AllegianceCombatDecision.Reason.SAME_CANONICAL_ALLEGIANCE) {
                     UUID responsiblePlayer = partyMember instanceof Player
                             ? partyMember.getUUID()
                             : party.leaderId();
@@ -1021,6 +1018,7 @@ public final class VillagerRetaliationHandler {
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
             if (nearby != sourceEntity
                     && !nearby.isBaby()
+                    && belongsToHarmedCommunity(level, nearby, sourceEntity)
                     && canWitnessRetaliationEvent(nearby, sourceEntity)
                     && shouldAggroFromWitness(nearby, attacker, false)) {
                 anger(nearby, attacker);
@@ -1048,6 +1046,7 @@ public final class VillagerRetaliationHandler {
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
             if (nearby != sourceEntity
                     && !nearby.isBaby()
+                    && belongsToHarmedCommunity(level, nearby, sourceEntity)
                     && canWitnessRetaliationEvent(nearby, sourceEntity)
                     && shouldAggroFromWitness(nearby, attacker, witnessedVillagerKill)) {
                 anger(nearby, attacker, announceRetaliation, announceRetaliation);
@@ -1063,7 +1062,9 @@ public final class VillagerRetaliationHandler {
         List<Villager> witnesses = new ArrayList<>();
         AABB area = sourceEntity.getBoundingBox().inflate(radius);
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (nearby != sourceEntity && canWitnessRetaliationEvent(nearby, sourceEntity)) {
+            if (nearby != sourceEntity
+                    && belongsToHarmedCommunity(level, nearby, sourceEntity)
+                    && canWitnessRetaliationEvent(nearby, sourceEntity)) {
                 witnesses.add(nearby);
             }
         }
@@ -1110,6 +1111,13 @@ public final class VillagerRetaliationHandler {
         return VillagerAggressionPolicy.shouldAggroFromWitnessedPlayerCrime(witness, player, pendingReputationChange);
     }
 
+    private static boolean belongsToHarmedCommunity(ServerLevel level, Villager witness, Entity sourceEntity) {
+        if (!AllegianceEntityClassifier.bearsAllegiance(sourceEntity)) {
+            return true;
+        }
+        return VillageAllegianceRelations.sharesCommunity(level, sourceEntity, witness);
+    }
+
     private static void rallyNearbyVillagers(Villager alarmVillager, LivingEntity attacker, double radius) {
         rallyNearbyVillagers(alarmVillager, attacker, radius, true);
     }
@@ -1133,7 +1141,9 @@ public final class VillagerRetaliationHandler {
 
         AABB area = sourceEntity.getBoundingBox().inflate(radius);
         for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (isNitwitAlarm(nearby) && canWitnessRetaliationEvent(nearby, sourceEntity)) {
+            if (isNitwitAlarm(nearby)
+                    && belongsToHarmedCommunity(level, nearby, sourceEntity)
+                    && canWitnessRetaliationEvent(nearby, sourceEntity)) {
                 rallyNearbyVillagers(nearby, attacker, radius);
             }
         }

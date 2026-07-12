@@ -104,7 +104,7 @@ public final class VillageAllegianceGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void centralPolicyProtectsCanonicalAndParentRelationships(GameTestHelper helper) {
+    public static void centralPolicyProtectsCanonicalVillageAndAllowsForeignOrders(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Villager actor = spawnVillager(helper, new BlockPos(2, 2, 2));
         Villager target = spawnVillager(helper, new BlockPos(4, 2, 2));
@@ -113,6 +113,9 @@ public final class VillageAllegianceGameTests {
         VillageAllegianceId alias = registry.create(level.getGameTime(), level.dimension().location(), actor.blockPosition(), "Alias");
         VillageAllegianceId foreign = registry.create(level.getGameTime(), level.dimension().location(), target.blockPosition(), "Foreign");
         registry.merge(alias, home);
+        PartyRecord actorParty = PartySavedData.get(level).createParty(UUID.randomUUID(), level.getGameTime());
+        PartySavedData.get(level).addVillager(
+                actorParty, partyVillagerRecord(actor.getUUID(), actorParty.leaderId(), level.getGameTime()));
         try {
             assign(level, actor, alias, List.of());
             assign(level, target, home, List.of());
@@ -123,15 +126,15 @@ public final class VillageAllegianceGameTests {
 
             assign(level, target, foreign, List.of(home));
             helper.assertValueEqual(VillageAllegianceCombatPolicy.evaluate(
-                            level, actor, target, AllegianceCombatContext.PARTY_ATTACK, true).reason(),
-                    AllegianceCombatDecision.Reason.PARENT_PROTECTION,
-                    "parent protection must deny");
+                            level, actor, target, AllegianceCombatContext.PARTY_ATTACK, false).action(),
+                    AllegianceCombatDecision.Action.ALLOW,
+                    "legacy parent metadata must not block a foreign-village order");
 
             assign(level, target, foreign, List.of());
             helper.assertValueEqual(VillageAllegianceCombatPolicy.evaluate(
                             level, actor, target, AllegianceCombatContext.PARTY_ATTACK, false).reason(),
-                    AllegianceCombatDecision.Reason.NO_OPPOSING_PARTY_AUTHORIZATION,
-                    "different allegiance without party authorization must deny");
+                    AllegianceCombatDecision.Reason.AUTHORIZED_PARTY_CONFLICT,
+                    "a foreign target does not need its own party");
             helper.assertValueEqual(VillageAllegianceCombatPolicy.evaluate(
                             level, actor, target, AllegianceCombatContext.PARTY_ATTACK, true).action(),
                     AllegianceCombatDecision.Action.ALLOW,
@@ -152,16 +155,14 @@ public final class VillageAllegianceGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void authorizedOpposingPartiesDamageButCanonicalMergeStopsDamage(GameTestHelper helper) {
+    public static void recruitedForeignAndWandererDamageButCanonicalMergeStopsResidents(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Villager actor = spawnVillager(helper, new BlockPos(2, 2, 2));
         Villager target = spawnVillager(helper, new BlockPos(3, 2, 2));
         long now = level.getServer().overworld().getGameTime();
         PartySavedData partyData = PartySavedData.get(level);
         PartyRecord actorParty = partyData.createParty(UUID.randomUUID(), now);
-        PartyRecord targetParty = partyData.createParty(UUID.randomUUID(), now);
         partyData.addVillager(actorParty, partyVillagerRecord(actor.getUUID(), actorParty.leaderId(), now));
-        partyData.addVillager(targetParty, partyVillagerRecord(target.getUUID(), targetParty.leaderId(), now));
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         VillageAllegianceId actorHome = registry.create(now, level.dimension().location(), actor.blockPosition(), "Actor");
         VillageAllegianceId targetHome = registry.create(now, level.dimension().location(), target.blockPosition(), "Target");
@@ -170,7 +171,7 @@ public final class VillageAllegianceGameTests {
         try {
             helper.assertTrue(VillageCombatAuthorizationService.authorize(
                     level, actor, target, AllegianceCombatContext.PARTY_ATTACK),
-                    "opposing parties receive a short authorization");
+                    "a recruited foreign resident can target a villager without a party");
             float before = target.getHealth();
             helper.assertTrue(target.hurt(level.damageSources().mobAttack(actor), 2.0F),
                     "authorized different known allegiance damage should land");
@@ -182,6 +183,17 @@ public final class VillageAllegianceGameTests {
             target.hurt(level.damageSources().mobAttack(actor), 2.0F);
             helper.assertValueEqual(target.getHealth(), afterAuthorizedHit,
                     "canonical merge is re-evaluated and stops stale authorized damage");
+
+            VillageAllegianceEntityData.write(actor, VillageAllegianceData.unaffiliated(
+                    AllegianceAssignmentSource.ADMIN, now, level.dimension().location(), actor.blockPosition()));
+            helper.assertTrue(VillageCombatAuthorizationService.authorize(
+                    level, actor, target, AllegianceCombatContext.PARTY_ATTACK),
+                    "a recruited Wanderer can be authorized against any real village");
+            target.invulnerableTime = 0;
+            float beforeWandererHit = target.getHealth();
+            target.hurt(level.damageSources().mobAttack(actor), 2.0F);
+            helper.assertTrue(target.getHealth() < beforeWandererHit,
+                    "Wanderer party damage lands without village infighting rules");
         } finally {
             VillageCombatAuthorizationService.clearRuntimeState();
             actor.discard();

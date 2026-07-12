@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -27,12 +28,12 @@ public final class VillageCombatAuthorizationService {
             AllegianceCombatContext context) {
         PartyRecord actorParty = PartyService.getPartyForEntity(actor).orElse(null);
         PartyRecord targetParty = PartyService.getPartyForEntity(target).orElse(null);
-        if (actorParty == null || targetParty == null || actorParty.id().equals(targetParty.id())) {
+        if (actorParty == null || targetParty != null && actorParty.id().equals(targetParty.id())) {
             return false;
         }
         long expires = level.getServer().overworld().getGameTime() + AUTHORIZATION_TTL_TICKS;
         AUTHORIZATIONS.put(new CombatPair(actor.getUUID(), target.getUUID()),
-                new Authorization(context, actorParty.id(), targetParty.id(), expires));
+                new Authorization(context, actorParty.id(), targetParty == null ? null : targetParty.id(), expires));
         return true;
     }
 
@@ -46,10 +47,10 @@ public final class VillageCombatAuthorizationService {
         }
         PartyRecord actorParty = PartyService.getPartyForEntity(actor).orElse(null);
         PartyRecord targetParty = PartyService.getPartyForEntity(target).orElse(null);
-        return actorParty != null && targetParty != null
+        return actorParty != null
                 && actorParty.id().equals(authorization.actorPartyId())
-                && targetParty.id().equals(authorization.targetPartyId())
-                && !actorParty.id().equals(targetParty.id());
+                && Objects.equals(targetParty == null ? null : targetParty.id(), authorization.targetPartyId())
+                && (targetParty == null || !actorParty.id().equals(targetParty.id()));
     }
 
     public static void associateProjectile(Entity projectile, LivingEntity actor, LivingEntity target) {

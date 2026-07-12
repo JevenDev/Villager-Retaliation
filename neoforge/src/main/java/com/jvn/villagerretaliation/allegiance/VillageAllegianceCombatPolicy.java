@@ -1,9 +1,7 @@
 package com.jvn.villagerretaliation.allegiance;
 
 import com.jvn.villagerretaliation.party.PartyService;
-import java.util.LinkedHashSet;
 import java.util.Optional;
-import java.util.Set;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -38,7 +36,7 @@ public final class VillageAllegianceCombatPolicy {
             return AllegianceCombatDecision.pass(AllegianceCombatDecision.Reason.NON_CIVILIAN_TARGET);
         }
         if (targetClass == AllegianceEntityClassifier.Classification.VILLAGE_GOLEM
-                && isPartyContext(context)) {
+                && context == AllegianceCombatContext.PARTY_ATTACK) {
             return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.GOLEM_RESTRICTED);
         }
         if (!AllegianceEntityClassifier.bearsAllegiance(actor)) {
@@ -53,7 +51,18 @@ public final class VillageAllegianceCombatPolicy {
             return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.UNKNOWN_TARGET);
         }
         if (!actorData.isKnown() || !targetData.isKnown()) {
-            return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.NEUTRAL_TRADER);
+            if (isInitialPartyOrder(context)) {
+                return PartyService.getPartyForEntity(actor).isPresent()
+                        ? AllegianceCombatDecision.allow(AllegianceCombatDecision.Reason.AUTHORIZED_PARTY_CONFLICT)
+                        : AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.NO_PARTY_AUTHORIZATION);
+            }
+            if (isContinuation(context) && opposingPartyAuthorization) {
+                return AllegianceCombatDecision.allow(AllegianceCombatDecision.Reason.AUTHORIZED_PARTY_CONFLICT);
+            }
+            if (isContinuation(context) && PartyService.getPartyForEntity(actor).isPresent()) {
+                return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.NO_PARTY_AUTHORIZATION);
+            }
+            return AllegianceCombatDecision.pass(AllegianceCombatDecision.Reason.WANDERER_NEUTRALITY);
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         Optional<VillageAllegianceId> actorCanonical = registry.canonical(actorData.primary());
@@ -67,37 +76,27 @@ public final class VillageAllegianceCombatPolicy {
         if (actorCanonical.get().equals(targetCanonical.get())) {
             return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.SAME_CANONICAL_ALLEGIANCE);
         }
-        if (canonicalParents(registry, actorData).contains(targetCanonical.get())
-                || canonicalParents(registry, targetData).contains(actorCanonical.get())) {
-            return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.PARENT_PROTECTION);
+        if (isInitialPartyOrder(context)) {
+            if (PartyService.getPartyForEntity(actor).isPresent()) {
+                return AllegianceCombatDecision.allow(AllegianceCombatDecision.Reason.AUTHORIZED_PARTY_CONFLICT);
+            }
+            return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.NO_PARTY_AUTHORIZATION);
         }
-        if (!opposingPartyAuthorization && isPartyControlled(context)) {
-            return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.NO_OPPOSING_PARTY_AUTHORIZATION);
+        if (isContinuation(context) && opposingPartyAuthorization) {
+            return AllegianceCombatDecision.allow(AllegianceCombatDecision.Reason.AUTHORIZED_PARTY_CONFLICT);
         }
-        if (opposingPartyAuthorization) {
-            return AllegianceCombatDecision.allow(AllegianceCombatDecision.Reason.AUTHORIZED_OPPOSING_ALLEGIANCE);
+        if (isContinuation(context) && PartyService.getPartyForEntity(actor).isPresent()) {
+            return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.NO_PARTY_AUTHORIZATION);
         }
         return AllegianceCombatDecision.pass(AllegianceCombatDecision.Reason.ORDINARY_BEHAVIOR);
     }
 
-    private static Set<VillageAllegianceId> canonicalParents(
-            VillageAllegianceRegistrySavedData registry,
-            VillageAllegianceData data) {
-        Set<VillageAllegianceId> result = new LinkedHashSet<>();
-        for (VillageAllegianceId id : data.protectedParents()) {
-            registry.canonical(id).ifPresent(result::add);
-        }
-        return result;
+    private static boolean isInitialPartyOrder(AllegianceCombatContext context) {
+        return context == AllegianceCombatContext.PARTY_ATTACK || context == AllegianceCombatContext.PARTY_DEFEND;
     }
 
-    private static boolean isPartyContext(AllegianceCombatContext context) {
-        return context == AllegianceCombatContext.PARTY_ATTACK
-                || context == AllegianceCombatContext.PARTY_DEFEND;
-    }
-
-    private static boolean isPartyControlled(AllegianceCombatContext context) {
-        return isPartyContext(context)
-                || context == AllegianceCombatContext.CUSTOM_TARGET
+    private static boolean isContinuation(AllegianceCombatContext context) {
+        return context == AllegianceCombatContext.CUSTOM_TARGET
                 || context == AllegianceCombatContext.TARGET_CONTINUATION
                 || context == AllegianceCombatContext.DAMAGE;
     }
