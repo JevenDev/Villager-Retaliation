@@ -17,6 +17,10 @@ final class VillagerInteractionUiAnimation {
         animationStartMillis = Util.getMillis();
     }
 
+    static void completeAnimation() {
+        animationStartMillis = Util.getMillis() - (long) TEXT_FADE_IN_DURATION_MILLIS;
+    }
+
     private static float normalizedProgress(float elapsedMillis, float delayMillis, float durationMillis) {
         return Mth.clamp((elapsedMillis - delayMillis) / durationMillis, 0.0F, 1.0F);
     }

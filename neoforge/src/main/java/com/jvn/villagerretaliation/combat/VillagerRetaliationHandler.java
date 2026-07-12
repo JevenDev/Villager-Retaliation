@@ -778,7 +778,8 @@ public final class VillagerRetaliationHandler {
     private static void rallyPartyVillagers(Entity partyMember, LivingEntity target, boolean attackingWithParty) {
         if (!(partyMember.level() instanceof ServerLevel level)
                 || partyMember == target
-                || PartyService.areInSameParty(partyMember, target)) {
+                || PartyService.areInSameParty(partyMember, target)
+                || !PartyService.canRecruitedVillagersAssistAgainst(target)) {
             return;
         }
         PartyRecord party = PartyService.getPartyForEntity(partyMember).orElse(null);

@@ -35,6 +35,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.InteractionResult;
@@ -559,6 +560,58 @@ public final class PartyGameTests {
             PartyService.deleteParty(level, secondParty.id());
             firstVillager.discard();
             secondVillager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void recruitedVillagersNeverAssistAgainstVillageResidents(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        IronGolem ironGolem = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(3, 2, 2));
+        var zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 2, 2));
+        try {
+            helper.assertFalse(PartyService.canRecruitedVillagersAssistAgainst(villager),
+                    "party aggression must not target villagers");
+            helper.assertFalse(PartyService.canRecruitedVillagersAssistAgainst(ironGolem),
+                    "party aggression must not target village iron golems");
+            helper.assertTrue(PartyService.canRecruitedVillagersAssistAgainst(zombie),
+                    "party aggression must still target ordinary mobs");
+        } finally {
+            villager.discard();
+            ironGolem.discard();
+            zombie.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void recruitedVillagersIgnoreUnrelatedVillageCrimeReputation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, uniqueName("party_reputation_exemption"));
+        Villager recruited = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(player.getUUID(), now);
+        try {
+            PartySavedData.get(level).addVillager(
+                    party,
+                    villagerRecord(recruited.getUUID(), player.getUUID(), 0, now));
+            VillagerReputationManager.addWitnessedReputation(
+                    level, recruited, player.getUUID(), -10, recruited.blockPosition());
+            VillagerReputationManager.addGossipReputation(
+                    level, recruited, player.getUUID(), -5, UUID.randomUUID());
+            helper.assertValueEqual(
+                    VillagerReputationManager.getReputation(level, recruited, player.getUUID()),
+                    0,
+                    "party villagers must ignore indirect penalties for unrelated village crimes");
+
+            VillagerReputationManager.addDirectReputation(level, recruited, player.getUUID(), -4);
+            helper.assertValueEqual(
+                    VillagerReputationManager.getReputation(level, recruited, player.getUUID()),
+                    -4,
+                    "directly attacking the recruited villager must still damage its reputation");
+        } finally {
+            PartyService.deleteParty(level, party.id());
+            recruited.discard();
         }
         helper.succeed();
     }

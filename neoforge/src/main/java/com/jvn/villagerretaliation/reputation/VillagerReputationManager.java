@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerWorldTextIndicatorKind;
 import com.jvn.villagerretaliation.notification.ResolvedVillagerNotification;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -229,7 +230,9 @@ public final class VillagerReputationManager {
     }
 
     private static void addReputation(ServerLevel level, AbstractVillager villager, UUID playerId, int amount, ReputationEventType eventType, BlockPos eventPos) {
-        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get() || amount == 0) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || amount == 0
+                || shouldIgnorePartyCrimeReputation(level, villager, playerId, amount, eventType)) {
             return;
         }
 
@@ -261,6 +264,19 @@ public final class VillagerReputationManager {
             notifyQuestReputationChanged(level, villager, player, entry.reputation());
         }
         syncToTrackingPlayer(level, villager, playerId);
+    }
+
+    private static boolean shouldIgnorePartyCrimeReputation(
+            ServerLevel level,
+            AbstractVillager villager,
+            UUID playerId,
+            int amount,
+            ReputationEventType eventType) {
+        if (amount >= 0
+                || eventType != ReputationEventType.WITNESSED_HIT && eventType != ReputationEventType.GOSSIP) {
+            return false;
+        }
+        return PartyService.arePlayerAndVillagerInSameParty(level, playerId, villager.getUUID());
     }
 
     private static void notifyQuestReputationChanged(

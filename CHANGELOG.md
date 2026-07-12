@@ -18,6 +18,11 @@
 
 ## Unreleased
 
+### Fixed
+
+- Prevented recruited party villagers from helping players attack villagers, wandering traders, or village iron golems, including when those protected targets fight back.
+- Prevented unrelated village crime witness and gossip penalties from reducing the offending player's reputation with their recruited party villagers; directly attacking a recruit still reduces its reputation.
+
 ### Added
 
 - Added separate horizontal and vertical excavation orders for hired miners. Horizontal excavation uses five-block reach, cuts and later removes temporary access stairs for tall spaces, avoids ladder shafts, and can patch unsafe floors with mined or user-supplied blocks.

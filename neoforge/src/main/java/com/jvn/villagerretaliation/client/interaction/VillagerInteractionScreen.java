@@ -548,6 +548,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.replacingFromServer = true;
     }
 
+    public void continueOpenSession() {
+        this.animationStartMillis = -1L;
+        VillagerInteractionUiAnimation.completeAnimation();
+    }
+
     public void closeFromServer() {
         this.closingFromServer = true;
         Minecraft minecraft = Minecraft.getInstance();

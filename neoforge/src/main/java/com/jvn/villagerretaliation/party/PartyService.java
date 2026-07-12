@@ -7,6 +7,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 
 public final class PartyService {
@@ -49,6 +52,28 @@ public final class PartyService {
         Optional<PartyRecord> firstParty = getPartyForEntity(first);
         return firstParty.isPresent()
                 && getPartyForEntity(second).map(party -> party.id().equals(firstParty.get().id())).orElse(false);
+    }
+
+    public static boolean arePlayerAndVillagerInSameParty(ServerLevel level, UUID playerId, UUID villagerId) {
+        if (level == null || playerId == null || villagerId == null) {
+            return false;
+        }
+        Optional<PartyRecord> playerParty = getPartyForPlayer(level, playerId);
+        return playerParty.isPresent()
+                && getPartyForVillager(level, villagerId)
+                .map(party -> party.id().equals(playerParty.get().id()))
+                .orElse(false);
+    }
+
+    /**
+     * Returns whether recruited villagers may rally against a party member's combat target.
+     * Village residents and their iron golems stay protected even when a party member starts
+     * the fight, so recruitment cannot be used to turn a village against itself.
+     */
+    public static boolean canRecruitedVillagersAssistAgainst(LivingEntity target) {
+        return target != null
+                && !(target instanceof AbstractVillager)
+                && !(target instanceof IronGolem);
     }
 
     public static PartyResult setPolicies(

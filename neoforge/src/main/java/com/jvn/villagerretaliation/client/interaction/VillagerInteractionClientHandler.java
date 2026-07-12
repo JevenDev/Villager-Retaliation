@@ -156,6 +156,9 @@ public final class VillagerInteractionClientHandler {
         if (shouldPreserveDialogueOnReplacement(payload, replacingSameVillager)) {
             previousInteractionScreen.copyCurrentDialogueTo(screen);
         }
+        if (replacingSameVillager && !payload.forcedDialogue() && !payload.clipboardMenu()) {
+            screen.continueOpenSession();
+        }
         minecraft.setScreen(screen);
         boolean forceCamera = payload.forcedDialogue() || payload.forceCameraTowardsVillager();
         if (replacingInteractionScreen && ClientVillagerConversationState.active()) {
