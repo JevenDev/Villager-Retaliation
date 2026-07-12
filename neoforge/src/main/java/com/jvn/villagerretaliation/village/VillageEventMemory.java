@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -35,9 +36,11 @@ public final class VillageEventMemory {
     private static final long NOISY_EVENT_DEDUPE_TICKS = 40L;
     private static final long RECENT_QUERY_CACHE_TICKS = 20L;
     private static final int MAX_EVENTS_PER_DIMENSION = 80;
+    private static final int MAX_RECENT_QUERY_CACHE_ENTRIES = 512;
     private static final double RELEVANT_EVENT_RADIUS_SQR = 48.0D * 48.0D;
     private static final Map<ResourceKey<Level>, Long> NEXT_PRUNE_TICKS = new HashMap<>();
-    private static final Map<RecentQueryKey, CachedRecentEvents> RECENT_QUERY_CACHE = new HashMap<>();
+    private static final Map<RecentQueryKey, CachedRecentEvents> RECENT_QUERY_CACHE =
+            new LinkedHashMap<>(64, 0.75F, true);
 
     private VillageEventMemory() {
     }
@@ -268,8 +271,21 @@ public final class VillageEventMemory {
         }
 
         List<MemoryEvent> events = eventsSupplier.get();
+        makeRecentCacheRoom(gameTime);
         RECENT_QUERY_CACHE.put(cacheKey, new CachedRecentEvents(events, gameTime + RECENT_QUERY_CACHE_TICKS));
         return events;
+    }
+
+    private static void makeRecentCacheRoom(long gameTime) {
+        if (RECENT_QUERY_CACHE.size() < MAX_RECENT_QUERY_CACHE_ENTRIES) {
+            return;
+        }
+        RECENT_QUERY_CACHE.entrySet().removeIf(entry -> !entry.getValue().isValid(gameTime));
+        Iterator<RecentQueryKey> iterator = RECENT_QUERY_CACHE.keySet().iterator();
+        while (RECENT_QUERY_CACHE.size() >= MAX_RECENT_QUERY_CACHE_ENTRIES && iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
+        }
     }
 
     private static boolean remember(ServerLevel level, MemoryEvent event) {

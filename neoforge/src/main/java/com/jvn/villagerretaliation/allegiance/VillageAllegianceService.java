@@ -115,12 +115,13 @@ public final class VillageAllegianceService {
         if (gameTime >= nextLifecycleRefresh) {
             nextLifecycleRefresh = gameTime + LIFECYCLE_REFRESH_TICKS;
             for (ServerLevel level : server.getAllLevels()) {
-                VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-                registry.refreshLoadedLifecycles(level, LIFECYCLE_REFRESH_TICKS);
-                for (Entity entity : level.getAllEntities()) {
-                    if (entity instanceof Villager villager) {
-                        VillageAllegianceApi.get(villager).ifPresent(data -> normalizeAndTrack(level, villager, data));
-                    }
+                VillageAllegianceRegistrySavedData.get(level).refreshLoadedLifecycles(level, LIFECYCLE_REFRESH_TICKS);
+            }
+            VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(server.overworld());
+            for (UUID residentId : registry.residentIds()) {
+                Entity entity = findLoaded(server, residentId);
+                if (entity instanceof Villager villager && villager.level() instanceof ServerLevel level) {
+                    VillageAllegianceApi.get(villager).ifPresent(data -> normalizeAndTrack(level, villager, data));
                 }
             }
         }
@@ -249,7 +250,6 @@ public final class VillageAllegianceService {
                 level.dimension().location(),
                 evidencePosition,
                 List.of()));
-        registry.removeResidentEverywhere(entity.getUUID());
         if (entity instanceof Villager villager) {
             registry.addOrUpdateResident(canonical, villager.getUUID(), !villager.isBaby(), level.getGameTime());
         }
@@ -275,7 +275,6 @@ public final class VillageAllegianceService {
                     data.originDimension(), data.originPosition(), List.of()));
         }
         if (entity instanceof Villager villager) {
-            registry.removeResidentEverywhere(villager.getUUID());
             registry.addOrUpdateResident(canonical.get(), villager.getUUID(), !villager.isBaby(), level.getGameTime());
         }
     }

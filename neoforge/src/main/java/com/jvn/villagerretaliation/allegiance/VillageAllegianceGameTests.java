@@ -136,11 +136,21 @@ public final class VillageAllegianceGameTests {
         helper.assertTrue(registry.record(home).orElseThrow().residents().containsKey(villager.getUUID()),
                 "known explicit assignments add villagers to the canonical roster");
 
+        VillageAllegianceId newHome = registry.create(
+                level.getGameTime(), level.dimension().location(), BlockPos.ZERO, "New Roster Home");
+        VillageAllegianceApi.assignKnown(level, villager, newHome, AllegianceAssignmentSource.ADMIN);
+        helper.assertFalse(registry.record(home).orElseThrow().residents().containsKey(villager.getUUID()),
+                "indexed reassignment removes the old roster membership");
+        helper.assertTrue(registry.record(newHome).orElseThrow().residents().containsKey(villager.getUUID()),
+                "indexed reassignment adds the new roster membership");
+
         VillageAllegianceApi.assign(villager, VillageAllegianceData.unknown(
                 AllegianceAssignmentSource.ADMIN, AllegianceConfidence.AUTHORITATIVE,
                 level.getGameTime(), level.dimension().location(), villager.blockPosition()));
-        helper.assertFalse(registry.record(home).orElseThrow().residents().containsKey(villager.getUUID()),
+        helper.assertFalse(registry.record(newHome).orElseThrow().residents().containsKey(villager.getUUID()),
                 "unknown explicit assignments remove stale roster membership");
+        helper.assertFalse(registry.residentIds().contains(villager.getUUID()),
+                "removing the last membership also clears the runtime resident index");
         helper.succeed();
     }
 
@@ -273,6 +283,8 @@ public final class VillageAllegianceGameTests {
                 registry.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
         helper.assertTrue(restored.record(original).orElseThrow().residents().containsKey(resident),
                 "resident roster survives persistence even after archive");
+        helper.assertTrue(restored.residentIds().contains(resident),
+                "the runtime resident index rebuilds from persisted rosters");
         helper.succeed();
     }
 

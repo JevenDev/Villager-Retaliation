@@ -33,12 +33,14 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     private static final int FORMAT_VERSION = 2;
     private static final int MAX_ALIAS_DEPTH = 32;
     private static final int DISCOVERY_RADIUS_BLOCKS = 128;
+    private static final long RESIDENT_LAST_SEEN_REFRESH_TICKS = 1_200L;
     public static final long ARCHIVE_GRACE_TICKS = 72_000L;
 
     private final Map<VillageAllegianceId, AllegianceRecord> records = new LinkedHashMap<>();
     private final Map<VillageAllegianceId, VillageAllegianceId> aliases = new LinkedHashMap<>();
     private final Map<String, LinkedHashSet<VillageAllegianceId>> candidatesByScope = new LinkedHashMap<>();
     private final Map<VillageAllegianceId, Optional<VillageAllegianceId>> canonicalCache = new HashMap<>();
+    private final Map<UUID, LinkedHashSet<VillageAllegianceId>> residentRecords = new HashMap<>();
 
     public static VillageAllegianceRegistrySavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -122,6 +124,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             }
         }
         data.ensureNames();
+        data.rebuildResidentIndex();
         return data;
     }
 
@@ -352,9 +355,33 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         if (current == null || residentId == null) {
             return;
         }
-        ResidentRecord resident = new ResidentRecord(residentId, adult, gameTime);
-        if (!resident.equals(current.residents().get(residentId))) {
-            this.records.put(current.id(), current.withResident(resident));
+        boolean changed = false;
+        LinkedHashSet<VillageAllegianceId> previousRecords = this.residentRecords.get(residentId);
+        if (previousRecords != null) {
+            for (VillageAllegianceId previousId : List.copyOf(previousRecords)) {
+                if (previousId.equals(current.id())) {
+                    continue;
+                }
+                AllegianceRecord previous = this.records.get(previousId);
+                if (previous != null && previous.residents().containsKey(residentId)) {
+                    this.records.put(previousId, previous.withoutResident(residentId));
+                    changed = true;
+                }
+            }
+        }
+
+        current = this.records.get(current.id());
+        ResidentRecord existing = current.residents().get(residentId);
+        boolean refreshLastSeen = existing == null
+                || existing.adult() != adult
+                || gameTime < existing.lastSeenGameTime()
+                || gameTime - existing.lastSeenGameTime() >= RESIDENT_LAST_SEEN_REFRESH_TICKS;
+        if (refreshLastSeen) {
+            this.records.put(current.id(), current.withResident(new ResidentRecord(residentId, adult, gameTime)));
+            changed = true;
+        }
+        this.residentRecords.put(residentId, new LinkedHashSet<>(Set.of(current.id())));
+        if (changed) {
             setDirty();
         }
     }
@@ -363,6 +390,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         AllegianceRecord current = canonicalRecord(id).orElse(null);
         if (current != null && current.residents().containsKey(residentId)) {
             this.records.put(current.id(), current.withoutResident(residentId));
+            removeResidentIndex(residentId, current.id());
             setDirty();
         }
     }
@@ -371,16 +399,25 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         if (residentId == null) {
             return;
         }
+        LinkedHashSet<VillageAllegianceId> indexed = this.residentRecords.remove(residentId);
+        if (indexed == null || indexed.isEmpty()) {
+            return;
+        }
         boolean changed = false;
-        for (Map.Entry<VillageAllegianceId, AllegianceRecord> entry : List.copyOf(this.records.entrySet())) {
-            if (entry.getValue().residents().containsKey(residentId)) {
-                this.records.put(entry.getKey(), entry.getValue().withoutResident(residentId));
+        for (VillageAllegianceId recordId : indexed) {
+            AllegianceRecord record = this.records.get(recordId);
+            if (record != null && record.residents().containsKey(residentId)) {
+                this.records.put(recordId, record.withoutResident(residentId));
                 changed = true;
             }
         }
         if (changed) {
             setDirty();
         }
+    }
+
+    public Set<UUID> residentIds() {
+        return Set.copyOf(this.residentRecords.keySet());
     }
 
     public Optional<VillageAllegianceId> canonical(VillageAllegianceId raw) {
@@ -482,7 +519,11 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         if (sourceRecord == null || targetRecord == null || source.equals(target)) {
             return false;
         }
-        this.records.put(target, targetRecord.absorb(sourceRecord));
+        AllegianceRecord merged = targetRecord.absorb(sourceRecord);
+        this.records.put(target, merged);
+        for (UUID residentId : merged.residents().keySet()) {
+            this.residentRecords.computeIfAbsent(residentId, ignored -> new LinkedHashSet<>()).add(target);
+        }
         this.aliases.put(source, target);
         this.canonicalCache.clear();
         this.candidatesByScope.values().forEach(ids -> {
@@ -549,13 +590,23 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     private static Set<Long> connectedSources(Set<Long> all, Set<Long> seeds) {
         Set<Long> result = new LinkedHashSet<>(seeds);
+        Set<Long> remaining = new HashSet<>(all);
+        remaining.removeAll(seeds);
         ArrayDeque<Long> pending = new ArrayDeque<>(seeds);
         while (!pending.isEmpty()) {
-            long current = pending.removeFirst();
-            for (long candidate : all) {
-                if (!result.contains(candidate) && sectionDistance(current, candidate) <= 2) {
-                    result.add(candidate);
-                    pending.addLast(candidate);
+            SectionPos current = SectionPos.of(pending.removeFirst());
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dy = -2; dy <= 2; dy++) {
+                    for (int dz = -2; dz <= 2; dz++) {
+                        if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > 2) {
+                            continue;
+                        }
+                        long candidate = SectionPos.asLong(current.x() + dx, current.y() + dy, current.z() + dz);
+                        if (remaining.remove(candidate)) {
+                            result.add(candidate);
+                            pending.addLast(candidate);
+                        }
+                    }
                 }
             }
         }
@@ -627,6 +678,26 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
         if (changed) {
             setDirty();
+        }
+    }
+
+    private void rebuildResidentIndex() {
+        this.residentRecords.clear();
+        for (Map.Entry<VillageAllegianceId, AllegianceRecord> entry : this.records.entrySet()) {
+            for (UUID residentId : entry.getValue().residents().keySet()) {
+                this.residentRecords.computeIfAbsent(residentId, ignored -> new LinkedHashSet<>()).add(entry.getKey());
+            }
+        }
+    }
+
+    private void removeResidentIndex(UUID residentId, VillageAllegianceId recordId) {
+        LinkedHashSet<VillageAllegianceId> indexed = this.residentRecords.get(residentId);
+        if (indexed == null) {
+            return;
+        }
+        indexed.remove(recordId);
+        if (indexed.isEmpty()) {
+            this.residentRecords.remove(residentId);
         }
     }
 

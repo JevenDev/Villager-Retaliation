@@ -25,6 +25,7 @@ public class VillageRegistrySavedData extends SavedData {
     private static final String TAG_LAST_SEEN_GAME_TIME = "LastSeenGameTime";
     private static final int MATCH_RADIUS_BLOCKS = 48;
     private static final long MATCH_RADIUS_SQUARED = (long) MATCH_RADIUS_BLOCKS * MATCH_RADIUS_BLOCKS;
+    private static final long LAST_SEEN_REFRESH_TICKS = 1_200L;
 
     private final Map<String, Entry> entriesByKey = new LinkedHashMap<>();
 
@@ -67,7 +68,7 @@ public class VillageRegistrySavedData extends SavedData {
         ResourceLocation dimension = level.dimension().location();
         Entry existing = nearest(dimension, center);
         if (existing != null) {
-            if (existing.needsCenterUpdate(center)) {
+            if (existing.needsRefresh(center, level.getGameTime())) {
                 this.entriesByKey.put(existing.key(), existing.with(center, level.getGameTime()));
                 setDirty();
             }
@@ -169,8 +170,10 @@ public class VillageRegistrySavedData extends SavedData {
             return tag;
         }
 
-        private boolean needsCenterUpdate(BlockPos center) {
-            return !this.center.equals(center);
+        private boolean needsRefresh(BlockPos center, long gameTime) {
+            return !this.center.equals(center)
+                    || gameTime < this.lastSeenGameTime
+                    || gameTime - this.lastSeenGameTime >= LAST_SEEN_REFRESH_TICKS;
         }
 
         private Entry with(BlockPos center, long gameTime) {

@@ -34,8 +34,8 @@ public final class VillageAllegianceApi {
             return;
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-        registry.removeResidentEverywhere(entity.getUUID());
         if (!data.isKnown()) {
+            registry.removeResidentEverywhere(entity.getUUID());
             return;
         }
         var dimension = data.originDimension() == null
