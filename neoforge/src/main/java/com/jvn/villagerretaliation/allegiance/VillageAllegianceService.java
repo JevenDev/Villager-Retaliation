@@ -119,7 +119,13 @@ public final class VillageAllegianceService {
                 primary = firstId.get();
                 parents = List.of();
             } else {
-                primary = deterministicParent(parents, child.getUUID());
+                Optional<VillageAllegianceId> householdDefault = VillageMembership.resolve(level, child.blockPosition())
+                        .map(area -> VillageScopeKeys.forArea(level, area))
+                        .flatMap(registry::uniqueCandidate)
+                        .filter(candidate -> candidate.equals(firstId.get()) || candidate.equals(secondId.get()));
+                primary = householdDefault.isPresent()
+                        ? householdDefault.get()
+                        : deterministicParent(parents, child.getUUID());
             }
             VillageAllegianceEntityData.write(child, VillageAllegianceData.known(
                     primary, AllegianceAssignmentSource.BIRTH, AllegianceConfidence.INHERITED,

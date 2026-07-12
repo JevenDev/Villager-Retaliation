@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
@@ -173,6 +174,7 @@ final class VillagerRangedCombatHelper {
                 VillagerSocialAttributeBehavior.adjustRangedInaccuracy(level, villager, (float) (14 - level.getDifficulty().getId() * 4))
         );
         level.addFreshEntity(thrownTrident);
+        VillageCombatAuthorizationService.associateProjectile(thrownTrident, villager, target);
 
         heldTrident.hurtAndBreak(1, villager, LivingEntity.getSlotForHand(hand));
         villager.swing(hand, true);
@@ -266,6 +268,7 @@ final class VillagerRangedCombatHelper {
         );
         villager.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (villager.getRandom().nextFloat() * 0.4F + 0.8F));
         level.addFreshEntity(arrow);
+        VillageCombatAuthorizationService.associateProjectile(arrow, villager, target);
         return true;
     }
 

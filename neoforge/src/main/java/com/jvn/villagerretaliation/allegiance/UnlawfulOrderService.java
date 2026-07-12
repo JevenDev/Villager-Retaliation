@@ -21,7 +21,8 @@ public final class UnlawfulOrderService {
         }
         long now = level.getServer().overworld().getGameTime();
         IncidentKey key = new IncidentKey(recruit.getUUID(), responsiblePlayerId, targetId);
-        if (now - LAST_INCIDENTS.getOrDefault(key, Long.MIN_VALUE) < DEDUPLICATION_TICKS) {
+        Long previous = LAST_INCIDENTS.get(key);
+        if (previous != null && now - previous < DEDUPLICATION_TICKS) {
             return;
         }
         LAST_INCIDENTS.put(key, now);
