@@ -25,12 +25,6 @@ public final class DialogueReputationService {
                 || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return DialogueReputationEffect.none(requestType);
         }
-        if (context.villager().isBaby()
-                && requestType != DialogueRequestType.INSULT
-                && requestType != DialogueRequestType.APOLOGY) {
-            return DialogueReputationEffect.none(requestType);
-        }
-
         PlannedEffect plannedEffect = planEffect(context, requestType, interactionState);
         plannedEffect = applySocialAttributeRecovery(context, requestType, plannedEffect);
         if (plannedEffect.delta() == 0) {
@@ -73,16 +67,14 @@ public final class DialogueReputationService {
     }
 
     private static PlannedEffect planEffect(DialogueContext context, DialogueRequestType requestType, VillagerInteractionTracker.InteractionState interactionState) {
-        if (context.villager().isBaby()) {
-            return requestType == DialogueRequestType.INSULT
-                    ? new PlannedEffect(
+        if (context.villager().isBaby() && requestType == DialogueRequestType.INSULT) {
+            return new PlannedEffect(
                     VillagerRetaliationConfig.INSULT_REPUTATION_LOSS.get(),
                     "insult_child",
                     DialogueReputationEffect.CooldownCategory.NEGATIVE,
                     false,
                     response(context, "reputation.insult_child")
-            )
-                    : PlannedEffect.none();
+            );
         }
         if (isDialogueOptionExhausted(context, requestType, interactionState)) {
             return new PlannedEffect(

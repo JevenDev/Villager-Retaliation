@@ -627,6 +627,11 @@ public final class VillagerInteractionService {
                 || (belongsToPartyContract && isPartyContractMemberAction(action));
         boolean canOpenJobInventory = action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
                 && com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(level, villager, player);
+        boolean canIssueFollowCommand = action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
+                || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE
+                || (action == VillagerRecruitRequestPayload.Action.FOLLOW
+                        || action == VillagerRecruitRequestPayload.Action.STAY_HERE)
+                        && VillagerRecruitmentService.canFollow(level, villager, player);
         if (action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
                 && recruitedParty != null
                 && !canOpenJobInventory) {
@@ -636,7 +641,8 @@ public final class VillagerInteractionService {
         if (!VillagerRecruitmentService.canRecruit(level, villager, player)
                 && !canAdministerContract
                 && !canAdministerPartyContract
-                && !canOpenJobInventory) {
+                && !canOpenJobInventory
+                && !canIssueFollowCommand) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
@@ -2213,7 +2219,7 @@ public final class VillagerInteractionService {
 
     public static void handleReputationRequest(ServerPlayer player, int entityId) {
         Entity entity = player.serverLevel().getEntity(entityId);
-        if (!(entity instanceof Villager villager) || !villager.isAlive() || villager.isBaby()) {
+        if (!(entity instanceof Villager villager) || !villager.isAlive()) {
             return;
         }
 

@@ -2872,7 +2872,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 translate("interaction_button.talk.description"),
                 this::openTalkPage,
                 true));
-        if (!this.recruitedPartyVillager) {
+        if (!this.baby && !this.recruitedPartyVillager) {
             buttons.add(new InteractionMenuButton(
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_TRADE_TEXTURE,
                     translate("root.trade"),
@@ -2880,7 +2880,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     this::requestTrade,
                     true));
         }
-        if (!this.recruitedPartyVillager || !this.partyVillagerPartyMember) {
+        if (hasQuestOptions() && (!this.recruitedPartyVillager || !this.partyVillagerPartyMember)) {
             buttons.add(new InteractionMenuButton(
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
                     translate("root.adventures"),
@@ -2902,18 +2902,20 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     this::openGiftPage,
                     true));
         }
-        buttons.add(new InteractionMenuButton(
-                VillagerRetaliationClientAssets.PARTY_RECRUITMENT_PLACEHOLDER_ICON,
-                translate(this.recruitedPartyVillager
-                        ? "root.party"
-                        : this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "interaction_button.hire_job"),
-                translate(this.recruitedPartyVillager
-                        ? "interaction_button.party.description"
-                        : this.hiredByPlayer || this.hiredByOtherPlayer
-                                ? "interaction_button.job.description"
-                                : "interaction_button.hire_job.description"),
-                this::openRecruitPage,
-                true));
+        if (!this.baby) {
+            buttons.add(new InteractionMenuButton(
+                    VillagerRetaliationClientAssets.PARTY_RECRUITMENT_PLACEHOLDER_ICON,
+                    translate(this.recruitedPartyVillager
+                            ? "root.party"
+                            : this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "interaction_button.hire_job"),
+                    translate(this.recruitedPartyVillager
+                            ? "interaction_button.party.description"
+                            : this.hiredByPlayer || this.hiredByOtherPlayer
+                                    ? "interaction_button.job.description"
+                                    : "interaction_button.hire_job.description"),
+                    this::openRecruitPage,
+                    true));
+        }
         buttons.add(new InteractionMenuButton(
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_INVENTORY_TEXTURE,
                 translate("root.inventory"),

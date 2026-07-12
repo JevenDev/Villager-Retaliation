@@ -51,10 +51,6 @@ public final class VillagerGiftRequestHandler {
             InteractionRequestValidator.endConversationWithRefusal(target, "interaction.keep_distance");
             return;
         }
-        if (villager.isBaby()) {
-            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.child_refuse_gift");
-            return;
-        }
         if (inventorySlot < 0 || inventorySlot >= 36) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_invalid");
             return;
