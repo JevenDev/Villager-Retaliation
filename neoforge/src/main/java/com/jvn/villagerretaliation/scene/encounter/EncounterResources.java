@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -41,12 +42,14 @@ public final class EncounterResources {
         if(controller==null||VillagerRetaliationRegistries.ENCOUNTER_TEMPLATES.get(controller).isEmpty())errors.add("unknown encounter controller "+controller);
         boolean hasWaves=root.has("waves");List<EncounterTemplate.Member> members=parseMembers(root.get("members"),Map.of(),errors,"encounter");
         List<EncounterTemplate.Wave> waves=parseWaves(root,errors);
+        List<EncounterTemplate.SpawnPoint> spawnPoints=parseSpawnPoints(root,errors);EncounterTemplate.SpawnSelectionMode spawnSelection=strictEnum(EncounterTemplate.SpawnSelectionMode.class,root,"spawn_selection",EncounterTemplate.SpawnSelectionMode.RANDOM,errors);
         if(hasWaves&&root.has("members"))errors.add("members and waves are mutually exclusive");
         if(hasWaves&&(root.has("wave_count")||root.has("wave_interval_ticks")||root.has("wave_trigger")))errors.add("explicit waves cannot use wave_count, wave_interval_ticks, or wave_trigger shorthand");
         if(hasWaves&&!bool(root,"boss_bar",true)&&waves.stream().anyMatch(wave->!wave.bossBarTitle().isBlank()))errors.add("wave boss_bar_title is unreachable when boss_bar is false");
+        if(spawnPoints.isEmpty()&&root.has("spawn_selection"))errors.add("spawn_selection requires a non-empty spawn_points array");if(!spawnPoints.isEmpty()&&string(root,"spawn_mode",defaultSpawnFor(hasWaves)).equalsIgnoreCase("near_player"))errors.add("authored spawn_points are incompatible with spawn_mode near_player");
         if(id==null)errors.add("valid namespaced id is required");if(members.isEmpty()&&waves.isEmpty())errors.add("at least one valid member or wave is required");
         if(id==null||controller==null||(members.isEmpty()&&waves.isEmpty()))return null;
-        String defaultSpawn=hasWaves?"raid_waves":"group";
+        String defaultSpawn=defaultSpawnFor(hasWaves);
         int extra=boundedInteger(root,"extra_per_player",0,0,64,"encounter",errors);int maxParty=boundedInteger(root,"max_party_size",4,1,16,"encounter",errors);
         try{return new EncounterTemplate(id,integer(root,"version",1),controller,members,extra,
                 maxParty,integer(root,"placement_attempts",16),integer(root,"spawn_radius",8),
@@ -56,7 +59,13 @@ public final class EncounterResources {
                 enumValue(EncounterTemplate.SpawnMode.class,string(root,"spawn_mode",defaultSpawn),hasWaves?EncounterTemplate.SpawnMode.RAID_WAVES:EncounterTemplate.SpawnMode.GROUP),
                 integer(root,"wave_count",1),integer(root,"wave_interval_ticks",100),
                 enumValue(EncounterTemplate.WaveTrigger.class,string(root,"wave_trigger","all_defeated"),EncounterTemplate.WaveTrigger.ALL_DEFEATED),
-                bool(root,"boss_bar",true),string(root,"location_message",""),parseArea(root,errors),waves);}catch(IllegalArgumentException e){errors.add(e.getMessage());return null;}
+                bool(root,"boss_bar",true),string(root,"location_message",""),parseArea(root,errors),waves,spawnPoints,spawnSelection);}catch(IllegalArgumentException e){errors.add(e.getMessage());return null;}
+    }
+    private static String defaultSpawnFor(boolean hasWaves){return hasWaves?"raid_waves":"group";}
+    private static List<EncounterTemplate.SpawnPoint> parseSpawnPoints(JsonObject root,List<String> errors){
+        if(!root.has("spawn_points"))return List.of();JsonElement raw=root.get("spawn_points");if(!raw.isJsonArray()){errors.add("spawn_points must be an array");return List.of();}if(raw.getAsJsonArray().size()<1||raw.getAsJsonArray().size()>64)errors.add("spawn_points must contain between 1 and 64 entries");List<EncounterTemplate.SpawnPoint> points=new ArrayList<>();java.util.Set<String> ids=new java.util.LinkedHashSet<>();int index=0;
+        for(JsonElement value:raw.getAsJsonArray()){if(!value.isJsonObject()){errors.add("spawn_points["+index+"] must be an object");index++;continue;}JsonObject point=value.getAsJsonObject();for(String key:point.keySet())if(!List.of("id","actor","marker","dimension","x","y","z","offset_x","offset_y","offset_z","weight").contains(key))errors.add("unknown spawn point field "+key);String id=string(point,"id","");if(!ids.add(id))errors.add("duplicate spawn point id "+id);String actor=string(point,"actor",string(point,"marker",""));if(point.has("actor")&&point.has("marker"))errors.add("spawn point "+id+" cannot define both actor and marker");boolean anyCoordinate=point.has("x")||point.has("y")||point.has("z");boolean allCoordinates=point.has("x")&&point.has("y")&&point.has("z");if(anyCoordinate&&!allCoordinates)errors.add("spawn point "+id+" coordinates require x, y, and z");if(!actor.isBlank()&&anyCoordinate)errors.add("spawn point "+id+" actor and coordinates are mutually exclusive");ResourceLocation dimension=null;if(point.has("dimension")){dimension=ResourceLocation.tryParse(string(point,"dimension",""));if(dimension==null)errors.add("spawn point "+id+" has invalid dimension");}BlockPos position=allCoordinates?new BlockPos(boundedInteger(point,"x",0,-30000000,30000000,"spawn point "+id,errors),boundedInteger(point,"y",0,-2048,2048,"spawn point "+id,errors),boundedInteger(point,"z",0,-30000000,30000000,"spawn point "+id,errors)):null;BlockPos offset=new BlockPos(boundedInteger(point,"offset_x",0,-256,256,"spawn point "+id,errors),boundedInteger(point,"offset_y",0,-256,256,"spawn point "+id,errors),boundedInteger(point,"offset_z",0,-256,256,"spawn point "+id,errors));try{points.add(new EncounterTemplate.SpawnPoint(id,actor,dimension,position,offset,boundedInteger(point,"weight",1,1,10000,"spawn point "+id,errors)));}catch(IllegalArgumentException e){errors.add(e.getMessage());}index++;}
+        return points;
     }
     private static List<EncounterTemplate.Wave> parseWaves(JsonObject root,List<String> errors){
         if(!root.has("waves"))return List.of();JsonElement raw=root.get("waves");if(!raw.isJsonArray()){errors.add("waves must be an array");return List.of();}

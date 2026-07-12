@@ -28,6 +28,11 @@
     }
   ],
   "spawn_mode": "raid_waves",
+  "spawn_points": [
+    { "id": "west_road", "marker": "gate", "offset_x": -7, "offset_z": 5, "weight": 2 },
+    { "id": "east_road", "marker": "gate", "offset_x": 7, "offset_z": 5, "weight": 1 }
+  ],
+  "spawn_selection": "weighted",
   "extra_per_player": 1,
   "max_party_size": 4,
   "placement_attempts": 16,

@@ -58,6 +58,8 @@ public final class SceneSchema {
         properties.add("placement_attempts", boundedInteger(1, 64));
         properties.add("spawn_radius", boundedInteger(1, 32));
         properties.add("spawn_mode", enumValues(EncounterTemplate.SpawnMode.values()));
+        JsonObject spawnPoints=array(spawnPoint(),1);spawnPoints.addProperty("maxItems",64);properties.add("spawn_points",spawnPoints);
+        properties.add("spawn_selection",enumValues(EncounterTemplate.SpawnSelectionMode.values()));
         properties.add("wave_count", boundedInteger(1, 32));
         properties.add("wave_interval_ticks", integer(0));
         properties.add("wave_trigger", enumValues(EncounterTemplate.WaveTrigger.values()));
@@ -68,7 +70,14 @@ public final class SceneSchema {
         properties.add("cleanup_policy", enumValues(EncounterTemplate.CleanupPolicy.values()));
         properties.add("completion_condition", enumValues(EncounterTemplate.CompletionCondition.values()));
         root.add("properties", properties);
+        JsonArray rules=new JsonArray();JsonObject selectionCondition=new JsonObject();selectionCondition.add("required",strings("spawn_selection"));JsonObject pointsRequired=new JsonObject();pointsRequired.add("required",strings("spawn_points"));JsonObject selectionRule=new JsonObject();selectionRule.add("if",selectionCondition);selectionRule.add("then",pointsRequired);rules.add(selectionRule);
+        JsonObject nearCondition=new JsonObject();nearCondition.add("required",strings("spawn_mode"));JsonObject nearProperties=new JsonObject();nearProperties.add("spawn_mode",constant("near_player"));nearCondition.add("properties",nearProperties);JsonObject noPoints=new JsonObject();noPoints.add("not",pointsRequired);JsonObject nearRule=new JsonObject();nearRule.add("if",nearCondition);nearRule.add("then",noPoints);rules.add(nearRule);root.add("allOf",rules);
         return root;
+    }
+
+    private static JsonObject spawnPoint(){
+        JsonObject point=object("Named authored spawn point");point.addProperty("additionalProperties",false);point.add("required",strings("id"));JsonObject properties=new JsonObject();properties.add("id",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("actor",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("marker",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("dimension",resourceLocation());properties.add("x",boundedInteger(-30000000,30000000));properties.add("y",boundedInteger(-2048,2048));properties.add("z",boundedInteger(-30000000,30000000));properties.add("offset_x",boundedInteger(-256,256));properties.add("offset_y",boundedInteger(-256,256));properties.add("offset_z",boundedInteger(-256,256));properties.add("weight",boundedInteger(1,10000));point.add("properties",properties);
+        JsonArray sources=new JsonArray();sources.add(requiredWithoutAny(new String[]{"actor"},"marker","dimension","x","y","z"));sources.add(requiredWithoutAny(new String[]{"marker"},"actor","dimension","x","y","z"));sources.add(requiredWithoutAny(new String[]{"x","y","z"},"actor","marker","offset_x","offset_y","offset_z"));point.add("oneOf",sources);return point;
     }
 
     private static JsonObject wave() {
@@ -79,6 +88,7 @@ public final class SceneSchema {
     private static JsonObject waveHook(){JsonObject hook=object("Safe wave scene action");hook.addProperty("additionalProperties",false);hook.add("required",strings("id","type","text"));JsonObject properties=new JsonObject();properties.add("id",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("type",enumValues(EncounterTemplate.HookType.values()));JsonObject text=text();text.addProperty("maxLength",512);properties.add("text",text);hook.add("properties",properties);return hook;}
     private static JsonObject dialogueHook(){JsonObject hook=object("Wave dialogue hook");hook.addProperty("additionalProperties",false);hook.add("required",strings("id","text"));JsonObject properties=new JsonObject();properties.add("id",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));JsonObject text=text();text.addProperty("maxLength",512);properties.add("text",text);hook.add("properties",properties);return hook;}
     private static JsonObject requiredWithout(String required,String forbidden){JsonObject value=new JsonObject();value.add("required",strings(required));JsonObject not=new JsonObject();not.add("required",strings(forbidden));value.add("not",not);return value;}
+    private static JsonObject requiredWithoutAny(String[] required,String... forbidden){JsonObject value=new JsonObject();value.add("required",strings(required));JsonArray rules=new JsonArray();for(String field:forbidden){JsonObject present=new JsonObject();present.add("required",strings(field));rules.add(present);}JsonObject any=new JsonObject();any.add("anyOf",rules);JsonObject not=new JsonObject();not.add("not",any);value.add("allOf",new JsonArray());value.getAsJsonArray("allOf").add(not);return value;}
 
     private static JsonObject encounterArea() {
         JsonObject area = object("Durable encounter area");

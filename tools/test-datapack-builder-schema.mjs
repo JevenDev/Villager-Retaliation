@@ -376,6 +376,11 @@ function testSceneResourceRoundTrip(app) {
       { id: "scouts", members: [{ entity: "minecraft:zombie", count: 2 }], boss_bar_title: "Scouts" },
       { id: "captain", members: [{ entity: "minecraft:pillager", custom_name: "Gate Captain", name_visible: true, health: 40, attributes: { "minecraft:armor": 10 }, boss: true, boss_bar_color: "purple", boss_bar_overlay: "notched_10" }], delay_ticks: 80, trigger: "all_defeated", equipment: { mainhand: { item: "minecraft:crossbow" } }, dialogue_hook: { id: "arrival", text: "Captain incoming." } }
     ],
+    spawn_points: [
+      { id: "west_gate", marker: "west_marker", offset_x: -2, weight: 3 },
+      { id: "east_gate", x: 12, y: 64, z: 8, dimension: "minecraft:overworld" }
+    ],
+    spawn_selection: "weighted",
     area: { radius: 32, vertical_radius: 16, leave_behavior: "warn", leave_timeout_ticks: 200, mob_behavior: "return" }
   };
   assert(app.ingestKnownJson(scenePath, JSON.stringify(scene)), "Scene resource import failed.");
@@ -393,6 +398,10 @@ function testSceneResourceRoundTrip(app) {
   assert(/exactly one of members or waves/i.test(app.sceneResourceIssueDetail(encounterPath, invalidWaves)?.message || ""), "Incompatible encounter wave forms were not diagnosed.");
   const invalidElite = structuredClone(encounter);invalidElite.waves[1].members[0].attributes = { "example:unsafe": 2 };
   assert(/allowlisted attribute id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidElite)?.message || ""), "Unsafe elite attribute was not diagnosed.");
+  const invalidPoints = structuredClone(encounter);invalidPoints.spawn_points = [{ id: "bad", actor: "guide", x: 1, weight: 0 }];
+  assert(/exactly one actor, marker, or complete x\/y\/z source/i.test(app.sceneResourceIssueDetail(encounterPath, invalidPoints)?.message || ""), "Invalid authored spawn point was not diagnosed.");
+  const invalidSelection = structuredClone(encounter);delete invalidSelection.spawn_points;
+  assert(/non-empty spawn_points array/i.test(app.sceneResourceIssueDetail(encounterPath, invalidSelection)?.message || ""), "Spawn selection without points was not diagnosed.");
 }
 
 const app = createAppHarness();

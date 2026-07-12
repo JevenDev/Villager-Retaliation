@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -29,6 +30,7 @@ import net.minecraft.world.phys.AABB;
 
 public final class EncounterService {
     private static final String OWNER="VillagerRetaliationEncounter";private static final String SCENE="VillagerRetaliationScene";
+    private static final String SPAWN_INDEX="VillagerRetaliationSpawnIndex";private static final String SPAWN_POINT="VillagerRetaliationSpawnPoint";private static final String SPAWN_SEQUENCE="VillagerRetaliationSpawnSequence";
     private static final String BOSS="VillagerRetaliationEncounterBoss";private static final String BOSS_COLOR="VillagerRetaliationBossColor";private static final String BOSS_OVERLAY="VillagerRetaliationBossOverlay";
     private static final Map<UUID,ServerBossEvent> BOSS_BARS=new HashMap<>();
     private static final Map<UUID,ServerBossEvent> MOB_BOSS_BARS=new HashMap<>();
@@ -37,14 +39,16 @@ public final class EncounterService {
     public static Result reconcileSpawn(MinecraftServer server,SceneSavedData data,EncounterInstance encounter,EncounterTemplate template){
         ServerLevel level=level(server,encounter);if(level==null)return Result.waiting("spawn anchor dimension is unavailable");
         Result area=updateArea(server,data,encounter,template,level.getGameTime());if(area.status()!=Status.ACTIVE)return area;
-        if(!level.hasChunkAt(encounter.anchor()))return Result.waiting("spawn anchor chunk is unloaded");
+        if(template.spawnPoints().isEmpty()&&!level.hasChunkAt(encounter.anchor()))return Result.waiting("spawn anchor chunk is unloaded");
         int recoveryRadius=template.spawnMode()==EncounterTemplate.SpawnMode.NEAR_PLAYER?4:template.spawnRadius()+2;
         // Recover entities spawned before their UUID list was saved, but only inside the bounded anchor area and by exact durable owner tag.
-        for(Entity entity:level.getEntities((Entity)null,new AABB(encounter.anchor()).inflate(recoveryRadius),value->ownedBy(value,encounter.id())))if(!encounter.spawned().contains(entity.getUUID()))encounter.addSpawn(entity.getUUID());
+        if(template.spawnPoints().isEmpty()&&level.hasChunkAt(encounter.anchor()))for(Entity entity:level.getEntities((Entity)null,new AABB(encounter.anchor()).inflate(recoveryRadius),value->ownedBy(value,encounter.id())))recoverSpawn(encounter,entity);
+        for(EncounterInstance.ResolvedSpawnPoint point:encounter.resolvedSpawnPoints().values())if(level.hasChunkAt(point.position()))for(Entity entity:level.getEntities((Entity)null,new AABB(point.position()).inflate(4),value->ownedBy(value,encounter.id())))recoverSpawn(encounter,entity);
         notifyLocation(server,encounter,template,data);
 
         int spawned=encounter.spawned().size();ensureWaveIdentity(encounter,template,spawned);
         if(encounter.currentWaveIndex()<0||encounter.currentWaveIndex()>=template.waveCount()||!template.wave(encounter.currentWaveIndex()).id().equals(encounter.currentWaveId())){encounter.fail("persisted wave identity no longer matches encounter template");data.changed();return Result.failed(encounter.diagnostic());}
+        if(!template.spawnPoints().isEmpty()){if(encounter.resolvedSpawnPoints().size()!=template.spawnPoints().size()||template.spawnPoints().stream().anyMatch(point->!encounter.resolvedSpawnPoints().containsKey(point.id()))){encounter.fail("authored spawn points were not durably resolved when the encounter was created");data.changed();return Result.failed(encounter.diagnostic());}for(var selection:encounter.selectedSpawnPoints().entrySet())if(selection.getKey()<0||selection.getKey()>=encounter.expectedCount()||!encounter.resolvedSpawnPoints().containsKey(selection.getValue())){encounter.fail("persisted encounter contains an invalid authored spawn-point selection");data.changed();return Result.failed(encounter.diagnostic());}}
         updateBossBar(server,encounter,template);
         updateMobBossBars(server,encounter);
         if(spawned>=encounter.expectedCount()){data.changed();return Result.active();}
@@ -54,9 +58,10 @@ public final class EncounterService {
             encounter.advanceWave(waveIndex+1,next.id());encounter.nextGeneration();data.changed();waveIndex++;wave=next;start=target;waveSize=template.scaledCount(wave,encounter.partySize());target=start+waveSize;
         }
         if(!encounter.startedWaves().contains(wave.id())){if(wave.delayTicks()>0&&encounter.nextWaveAt()==0L){encounter.scheduleNextWave(level.getGameTime()+wave.delayTicks());data.changed();}if(level.getGameTime()<encounter.nextWaveAt())return Result.waiting("waiting to start wave "+wave.id());encounter.markWaveStarted(wave.id());encounter.scheduleNextWave(0L);fireWaveHooks(server,data,encounter,wave);data.changed();}
-        List<EncounterTemplate.Member> desired=desiredMembers(wave,template,encounter.partySize());
+        List<SpawnMember> desired=desiredMembers(wave,template,encounter.partySize());
         for(int index=spawned;index<target;index++){
-            EncounterTemplate.Member member=desired.get(index-start);SpawnResult spawnedEntity=spawn(level,member,encounter,template,index);Entity entity=spawnedEntity.entity();
+            SpawnMember desiredMember=desired.get(index-start);PointSelection selection=selectSpawnPoint(server,encounter,template,index,desiredMember.groupIndex());if(selection.waiting())return Result.waiting(selection.diagnostic());if(!selection.diagnostic().isBlank()){encounter.fail(selection.diagnostic());data.changed();return Result.failed(encounter.diagnostic());}data.changed();EncounterTemplate.Member member=desiredMember.member();SpawnResult spawnedEntity=spawn(level,member,encounter,template,index,selection.point());Entity entity=spawnedEntity.entity();
+            if(spawnedEntity.waiting())return Result.waiting(spawnedEntity.diagnostic());
             if(entity==null){encounter.fail(spawnedEntity.diagnostic().isBlank()?"safe placement exhausted after "+template.placementAttempts()+" attempts for member "+index:spawnedEntity.diagnostic());hideBossBars(encounter);data.changed();return Result.failed(encounter.diagnostic());}
             encounter.addSpawn(entity.getUUID());data.changed();
         }
@@ -131,27 +136,58 @@ public final class EncounterService {
     public static void onDeath(LivingEntity entity){hideMobBossBar(entity.getUUID());CompoundTag persistent=entity.getPersistentData();if(!persistent.hasUUID(OWNER)||!(entity.level() instanceof ServerLevel level))return;SceneSavedData data=SceneSavedData.get(level);data.encounter(persistent.getUUID(OWNER)).ifPresent(encounter->{encounter.defeated(entity.getUUID());if(encounter.state()==EncounterInstance.EncounterState.COMPLETED)hideBossBars(encounter);else EncounterResources.template(level.getServer(),encounter.templateId()).ifPresent(template->{updateBossBar(level.getServer(),encounter,template);updateMobBossBars(level.getServer(),encounter);});data.changed();});}
     public static void onEntityJoin(Entity entity){CompoundTag persistent=entity.getPersistentData();if(!persistent.hasUUID(OWNER)||!(entity.level() instanceof ServerLevel level))return;SceneSavedData data=SceneSavedData.get(level);EncounterInstance encounter=data.encounter(persistent.getUUID(OWNER)).orElse(null);if(encounter==null)return;if(encounter.state()==EncounterInstance.EncounterState.RELEASED)release(entity);else if(encounter.state()==EncounterInstance.EncounterState.CLEANED)entity.discard();else if(encounter.state()==EncounterInstance.EncounterState.PREPARED||encounter.state()==EncounterInstance.EncounterState.SPAWNING||encounter.state()==EncounterInstance.EncounterState.ACTIVE)updateMobBossBars(level.getServer(),encounter);else hideMobBossBar(entity.getUUID());}
 
-    private static SpawnResult spawn(ServerLevel level,EncounterTemplate.Member member,EncounterInstance encounter,EncounterTemplate template,int index){
+    private static SpawnResult spawn(ServerLevel level,EncounterTemplate.Member member,EncounterInstance encounter,EncounterTemplate template,int index,EncounterInstance.ResolvedSpawnPoint spawnPoint){
         EntityType<?> type=BuiltInRegistries.ENTITY_TYPE.get(member.entityType());
+        if(spawnPoint!=null&&!level.hasChunkAt(spawnPoint.position()))return new SpawnResult(null,"selected spawn point chunk is unloaded",true);
+        boolean loadedCandidate=false;
         for(int attempt=0;attempt<template.placementAttempts();attempt++){
-            BlockPos horizontal=horizontalPosition(encounter,template,index,attempt);if(!level.hasChunkAt(horizontal))continue;
-            int y=template.spawnMode()==EncounterTemplate.SpawnMode.FIXED?encounter.anchor().getY():level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,horizontal.getX(),horizontal.getZ());BlockPos pos=new BlockPos(horizontal.getX(),y,horizontal.getZ());
+            BlockPos horizontal=horizontalPosition(encounter,template,index,attempt,spawnPoint);if(!level.hasChunkAt(horizontal))continue;loadedCandidate=true;
+            int y=spawnPoint!=null?spawnPoint.position().getY():template.spawnMode()==EncounterTemplate.SpawnMode.FIXED?encounter.anchor().getY():level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,horizontal.getX(),horizontal.getZ());BlockPos pos=new BlockPos(horizontal.getX(),y,horizontal.getZ());
             Entity entity=type.create(level);if(entity==null)continue;entity.moveTo(pos.getX()+.5,pos.getY(),pos.getZ()+.5,0,0);
             if(!level.noCollision(entity)){entity.discard();continue;}
             // Direct EntityType#create skips vanilla mob initialization (including a pillager's crossbow).
             if(entity instanceof Mob mob)mob.finalizeSpawn(level,level.getCurrentDifficultyAt(pos),MobSpawnType.EVENT,null);
-            String optionError=applyMobOptions(entity,member);if(!optionError.isBlank()){entity.discard();return new SpawnResult(null,optionError);}
-            applyEquipment(level,entity,member);entity.getPersistentData().putUUID(OWNER,encounter.id());entity.getPersistentData().putUUID(SCENE,encounter.sceneId());entity.getPersistentData().putInt("VillagerRetaliationSpawnGeneration",encounter.spawnGeneration());
-            if(level.addFreshEntity(entity))return new SpawnResult(entity,"");
+            String optionError=applyMobOptions(entity,member);if(!optionError.isBlank()){entity.discard();return new SpawnResult(null,optionError,false);}
+            applyEquipment(level,entity,member);entity.getPersistentData().putUUID(OWNER,encounter.id());entity.getPersistentData().putUUID(SCENE,encounter.sceneId());entity.getPersistentData().putInt("VillagerRetaliationSpawnGeneration",encounter.spawnGeneration());entity.getPersistentData().putInt(SPAWN_INDEX,index);entity.getPersistentData().putInt(SPAWN_SEQUENCE,encounter.spawnPointSequence());if(spawnPoint!=null)entity.getPersistentData().putString(SPAWN_POINT,spawnPoint.id());
+            if(level.addFreshEntity(entity))return new SpawnResult(entity,"",false);
         }
-        return new SpawnResult(null,"");
+        return loadedCandidate?new SpawnResult(null,"",false):new SpawnResult(null,"selected spawn point chunk is unloaded",true);
     }
 
-    private static BlockPos horizontalPosition(EncounterInstance encounter,EncounterTemplate template,int index,int attempt){
+    private static BlockPos horizontalPosition(EncounterInstance encounter,EncounterTemplate template,int index,int attempt,EncounterInstance.ResolvedSpawnPoint spawnPoint){
+        if(spawnPoint!=null){if(attempt==0)return spawnPoint.position();int radius=Math.min(2,template.spawnRadius());int width=radius*2+1;int seed=Math.floorMod(encounter.id().hashCode()*31+index*17+attempt*13,width*width);return spawnPoint.position().offset(seed%width-radius,0,(seed/width)%width-radius);}
         int radius=switch(template.spawnMode()){case NEAR_PLAYER->Math.min(3,template.spawnRadius());case FIXED->Math.min(2,template.spawnRadius());case GROUP,RAID_WAVES->template.spawnRadius();};
         int width=radius*2+1;int seed=Math.floorMod(encounter.id().hashCode()*31+index*17+attempt*13,width*width);int dx=seed%width-radius;int dz=(seed/width)%width-radius;
         if(template.spawnMode()==EncounterTemplate.SpawnMode.RAID_WAVES&&radius>2){int inner=Math.max(2,radius/2);if(Math.abs(dx)<inner&&Math.abs(dz)<inner){dx=dx<0?-inner:inner;dz=dz<0?-inner:inner;}}
         return encounter.anchor().offset(dx,0,dz);
+    }
+
+    private static PointSelection selectSpawnPoint(MinecraftServer server,EncounterInstance encounter,EncounterTemplate template,int spawnIndex,int groupIndex){
+        if(template.spawnPoints().isEmpty())return new PointSelection(null,"",false);
+        List<EncounterInstance.ResolvedSpawnPoint> points=new ArrayList<>();
+        for(EncounterTemplate.SpawnPoint definition:template.spawnPoints()){
+            EncounterInstance.ResolvedSpawnPoint point=encounter.resolvedSpawnPoints().get(definition.id());
+            if(point==null)return new PointSelection(null,"persisted encounter is missing authored spawn point "+definition.id(),false);
+            points.add(point);
+        }
+        String saved=encounter.selectedSpawnPoints().get(spawnIndex);
+        if(saved!=null){for(EncounterInstance.ResolvedSpawnPoint point:points)if(point.id().equals(saved))return new PointSelection(point,"",false);return new PointSelection(null,"persisted spawn "+spawnIndex+" references unknown point "+saved,false);}
+        int selected;
+        boolean advance=false;
+        switch(template.spawnSelection()){
+            case RANDOM->selected=Math.floorMod(encounter.id().hashCode()*31+spawnIndex*17,points.size());
+            case SEQUENTIAL->{selected=Math.floorMod(encounter.spawnPointSequence(),points.size());advance=true;}
+            case WEIGHTED->{long total=0;for(EncounterInstance.ResolvedSpawnPoint point:points)total+=point.weight();long roll=Math.floorMod(((long)encounter.id().hashCode()<<32)^spawnIndex*0x9E3779B97F4A7C15L,total);selected=0;for(int i=0;i<points.size();i++){roll-=points.get(i).weight();if(roll<0){selected=i;break;}}}
+            case ONE_GROUP_PER_POINT->selected=Math.floorMod(groupIndex,points.size());
+            case NEAREST_PLAYER,FARTHEST_PLAYER->{
+                List<net.minecraft.server.level.ServerPlayer> players=new ArrayList<>();for(UUID participant:encounter.participants()){var player=server.getPlayerList().getPlayer(participant);if(player!=null)players.add(player);}if(players.isEmpty())return new PointSelection(null,"waiting for an online participant to select an authored spawn point",true);
+                selected=-1;double best=template.spawnSelection()==EncounterTemplate.SpawnSelectionMode.NEAREST_PLAYER?Double.POSITIVE_INFINITY:Double.NEGATIVE_INFINITY;
+                for(int i=0;i<points.size();i++){EncounterInstance.ResolvedSpawnPoint point=points.get(i);double score=Double.POSITIVE_INFINITY;for(var player:players)if(player.level().dimension().location().equals(point.dimension()))score=Math.min(score,player.distanceToSqr(point.position().getX()+.5D,point.position().getY(),point.position().getZ()+.5D));if(!Double.isFinite(score))continue;boolean better=template.spawnSelection()==EncounterTemplate.SpawnSelectionMode.NEAREST_PLAYER?score<best:score>best;if(better){best=score;selected=i;}}
+                if(selected<0)return new PointSelection(null,"waiting for an online participant in the authored spawn-point dimension",true);
+            }
+            default->throw new IllegalStateException("Unhandled spawn selection "+template.spawnSelection());
+        }
+        EncounterInstance.ResolvedSpawnPoint point=points.get(selected);encounter.selectSpawnPoint(spawnIndex,point.id(),advance);return new PointSelection(point,"",false);
     }
 
     private static void applyEquipment(ServerLevel level,Entity entity,EncounterTemplate.Member member){
@@ -205,8 +241,11 @@ public final class EncounterService {
 
     public static void hideBossBar(UUID encounterId){ServerBossEvent bar=BOSS_BARS.remove(encounterId);if(bar!=null)bar.removeAllPlayers();}
 
-    private static List<EncounterTemplate.Member> desiredMembers(EncounterTemplate.Wave wave,EncounterTemplate template,int partySize){List<EncounterTemplate.Member> values=new ArrayList<>();for(var member:wave.members())for(int i=0;i<member.count();i++)values.add(member);int extra=template.scaledCount(wave,partySize)-values.size();for(int i=0;i<extra;i++)values.add(wave.members().getFirst());return values;}
-    private static ServerLevel level(MinecraftServer server,EncounterInstance e){return server.getLevel(ResourceKey.create(Registries.DIMENSION,e.anchorDimension()));}private static Entity find(MinecraftServer server,UUID id){for(ServerLevel level:server.getAllLevels()){Entity e=level.getEntity(id);if(e!=null)return e;}return null;}private static boolean ownedBy(Entity entity,UUID id){return entity.getPersistentData().hasUUID(OWNER)&&id.equals(entity.getPersistentData().getUUID(OWNER));}private static void release(Entity entity){hideMobBossBar(entity.getUUID());entity.getPersistentData().remove(OWNER);entity.getPersistentData().remove(SCENE);entity.getPersistentData().remove("VillagerRetaliationSpawnGeneration");entity.getPersistentData().remove(BOSS);entity.getPersistentData().remove(BOSS_COLOR);entity.getPersistentData().remove(BOSS_OVERLAY);}
-    private record SpawnResult(Entity entity,String diagnostic){}
+    private static List<SpawnMember> desiredMembers(EncounterTemplate.Wave wave,EncounterTemplate template,int partySize){List<SpawnMember> values=new ArrayList<>();int group=0;for(var member:wave.members()){for(int i=0;i<member.count();i++)values.add(new SpawnMember(member,group));group++;}int extra=template.scaledCount(wave,partySize)-values.size();for(int i=0;i<extra;i++)values.add(new SpawnMember(wave.members().getFirst(),0));return values;}
+    private static void recoverSpawn(EncounterInstance encounter,Entity entity){CompoundTag tag=entity.getPersistentData();if(!encounter.spawned().contains(entity.getUUID()))encounter.addSpawn(entity.getUUID());if(tag.contains(SPAWN_POINT,Tag.TAG_STRING))encounter.restoreSpawnPoint(tag.getInt(SPAWN_INDEX),tag.getString(SPAWN_POINT),tag.getInt(SPAWN_SEQUENCE));}
+    private static ServerLevel level(MinecraftServer server,EncounterInstance e){return server.getLevel(ResourceKey.create(Registries.DIMENSION,e.anchorDimension()));}private static Entity find(MinecraftServer server,UUID id){for(ServerLevel level:server.getAllLevels()){Entity e=level.getEntity(id);if(e!=null)return e;}return null;}private static boolean ownedBy(Entity entity,UUID id){return entity.getPersistentData().hasUUID(OWNER)&&id.equals(entity.getPersistentData().getUUID(OWNER));}private static void release(Entity entity){hideMobBossBar(entity.getUUID());entity.getPersistentData().remove(OWNER);entity.getPersistentData().remove(SCENE);entity.getPersistentData().remove("VillagerRetaliationSpawnGeneration");entity.getPersistentData().remove(SPAWN_INDEX);entity.getPersistentData().remove(SPAWN_POINT);entity.getPersistentData().remove(SPAWN_SEQUENCE);entity.getPersistentData().remove(BOSS);entity.getPersistentData().remove(BOSS_COLOR);entity.getPersistentData().remove(BOSS_OVERLAY);}
+    private record SpawnMember(EncounterTemplate.Member member,int groupIndex){}
+    private record SpawnResult(Entity entity,String diagnostic,boolean waiting){}
+    private record PointSelection(EncounterInstance.ResolvedSpawnPoint point,String diagnostic,boolean waiting){}
     public record Result(Status status,String diagnostic){public static Result active(){return new Result(Status.ACTIVE,"");}public static Result waiting(String m){return new Result(Status.WAITING,m);}public static Result completed(){return new Result(Status.COMPLETED,"");}public static Result failed(String m){return new Result(Status.FAILED,m);}}public enum Status{ACTIVE,WAITING,COMPLETED,FAILED}
 }

@@ -2,18 +2,21 @@ package com.jvn.villagerretaliation.scene.encounter;
 
 import java.util.List;
 import java.util.Map;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
 
 public record EncounterTemplate(ResourceLocation id,int version,ResourceLocation controller,List<Member> members,
         int extraPerAdditionalPlayer,int maxPartySize,int placementAttempts,int spawnRadius,
         RespawnPolicy respawnPolicy,CleanupPolicy cleanupPolicy,CompletionCondition completionCondition,
-        SpawnMode spawnMode,int waveCount,int waveIntervalTicks,WaveTrigger waveTrigger,boolean bossBar,String locationMessage,Area area,List<Wave> waves) {
+        SpawnMode spawnMode,int waveCount,int waveIntervalTicks,WaveTrigger waveTrigger,boolean bossBar,String locationMessage,Area area,List<Wave> waves,
+        List<SpawnPoint> spawnPoints,SpawnSelectionMode spawnSelection) {
     public EncounterTemplate {
-        members=members==null?List.of():List.copyOf(members);waves=waves==null?List.of():List.copyOf(waves);
+        members=members==null?List.of():List.copyOf(members);waves=waves==null?List.of():List.copyOf(waves);spawnPoints=spawnPoints==null?List.of():List.copyOf(spawnPoints);spawnSelection=spawnSelection==null?SpawnSelectionMode.RANDOM:spawnSelection;
         if(id==null||controller==null||(members.isEmpty()&&waves.isEmpty()))throw new IllegalArgumentException("encounter needs id, controller, and members or waves");
         if(!members.isEmpty()&&!waves.isEmpty())throw new IllegalArgumentException("encounter members and waves are mutually exclusive");
         if(members.size()>64||waves.size()>32)throw new IllegalArgumentException("encounter composition exceeds its bounded limits");
+        if(spawnPoints.size()>64)throw new IllegalArgumentException("encounter exceeds 64 authored spawn points");
         version=Math.max(1,version);extraPerAdditionalPlayer=Math.max(0,Math.min(64,extraPerAdditionalPlayer));
         maxPartySize=Math.max(1,Math.min(16,maxPartySize));placementAttempts=Math.max(1,Math.min(64,placementAttempts));
         spawnRadius=Math.max(1,Math.min(32,spawnRadius));respawnPolicy=respawnPolicy==null?RespawnPolicy.NEVER:respawnPolicy;
@@ -30,7 +33,7 @@ public record EncounterTemplate(ResourceLocation id,int version,ResourceLocation
             int extraPerAdditionalPlayer,int maxPartySize,int placementAttempts,int spawnRadius,
             RespawnPolicy respawnPolicy,CleanupPolicy cleanupPolicy,CompletionCondition completionCondition) {
         this(id,version,controller,members,extraPerAdditionalPlayer,maxPartySize,placementAttempts,spawnRadius,
-                respawnPolicy,cleanupPolicy,completionCondition,SpawnMode.GROUP,1,0,WaveTrigger.ALL_DEFEATED,true,"",null,List.of());
+                respawnPolicy,cleanupPolicy,completionCondition,SpawnMode.GROUP,1,0,WaveTrigger.ALL_DEFEATED,true,"",null,List.of(),List.of(),SpawnSelectionMode.RANDOM);
     }
     /** Source-compatible constructor for encounter/v1 spawn-mode extension code written before encounter areas. */
     public EncounterTemplate(ResourceLocation id,int version,ResourceLocation controller,List<Member> members,
@@ -38,7 +41,7 @@ public record EncounterTemplate(ResourceLocation id,int version,ResourceLocation
             RespawnPolicy respawnPolicy,CleanupPolicy cleanupPolicy,CompletionCondition completionCondition,
             SpawnMode spawnMode,int waveCount,int waveIntervalTicks,WaveTrigger waveTrigger,boolean bossBar,String locationMessage) {
         this(id,version,controller,members,extraPerAdditionalPlayer,maxPartySize,placementAttempts,spawnRadius,
-                respawnPolicy,cleanupPolicy,completionCondition,spawnMode,waveCount,waveIntervalTicks,waveTrigger,bossBar,locationMessage,null,List.of());
+                respawnPolicy,cleanupPolicy,completionCondition,spawnMode,waveCount,waveIntervalTicks,waveTrigger,bossBar,locationMessage,null,List.of(),List.of(),SpawnSelectionMode.RANDOM);
     }
     /** Source-compatible constructor for encounter/v1 area extension code written before explicit waves. */
     public EncounterTemplate(ResourceLocation id,int version,ResourceLocation controller,List<Member> members,
@@ -46,7 +49,14 @@ public record EncounterTemplate(ResourceLocation id,int version,ResourceLocation
             RespawnPolicy respawnPolicy,CleanupPolicy cleanupPolicy,CompletionCondition completionCondition,
             SpawnMode spawnMode,int waveCount,int waveIntervalTicks,WaveTrigger waveTrigger,boolean bossBar,String locationMessage,Area area) {
         this(id,version,controller,members,extraPerAdditionalPlayer,maxPartySize,placementAttempts,spawnRadius,
-                respawnPolicy,cleanupPolicy,completionCondition,spawnMode,waveCount,waveIntervalTicks,waveTrigger,bossBar,locationMessage,area,List.of());
+                respawnPolicy,cleanupPolicy,completionCondition,spawnMode,waveCount,waveIntervalTicks,waveTrigger,bossBar,locationMessage,area,List.of(),List.of(),SpawnSelectionMode.RANDOM);
+    }
+    /** Source-compatible constructor for encounter/v1 explicit-wave code written before authored spawn points. */
+    public EncounterTemplate(ResourceLocation id,int version,ResourceLocation controller,List<Member> members,
+            int extraPerAdditionalPlayer,int maxPartySize,int placementAttempts,int spawnRadius,
+            RespawnPolicy respawnPolicy,CleanupPolicy cleanupPolicy,CompletionCondition completionCondition,
+            SpawnMode spawnMode,int waveCount,int waveIntervalTicks,WaveTrigger waveTrigger,boolean bossBar,String locationMessage,Area area,List<Wave> waves) {
+        this(id,version,controller,members,extraPerAdditionalPlayer,maxPartySize,placementAttempts,spawnRadius,respawnPolicy,cleanupPolicy,completionCondition,spawnMode,waveCount,waveIntervalTicks,waveTrigger,bossBar,locationMessage,area,waves,List.of(),SpawnSelectionMode.RANDOM);
     }
     public boolean explicitWaves(){return !waves.isEmpty();}
     public Wave wave(int index){if(explicitWaves())return waves.get(index);return new Wave("repeat_"+(index+1),members,index==0?0:waveIntervalTicks,waveTrigger,"",List.of());}
@@ -74,6 +84,12 @@ public record EncounterTemplate(ResourceLocation id,int version,ResourceLocation
     }
     public enum BossColor{PINK,BLUE,RED,GREEN,YELLOW,PURPLE,WHITE}
     public enum BossOverlay{PROGRESS,NOTCHED_6,NOTCHED_10,NOTCHED_12,NOTCHED_20}
+    public record SpawnPoint(String id,String actorAlias,ResourceLocation dimension,BlockPos position,BlockPos offset,int weight){
+        public SpawnPoint{id=id==null?"":id;if(!id.matches("[a-z][a-z0-9_.-]{0,63}"))throw new IllegalArgumentException("spawn point id must be a stable lowercase identifier");actorAlias=actorAlias==null?"":actorAlias;if(!actorAlias.isBlank()&&!actorAlias.matches("[a-z][a-z0-9_.-]{0,63}"))throw new IllegalArgumentException("spawn point "+id+" actor must be a stable scene alias");position=position==null?null:position.immutable();offset=offset==null?BlockPos.ZERO:offset.immutable();if(actorAlias.isBlank()==(position==null))throw new IllegalArgumentException("spawn point "+id+" requires exactly one actor or coordinate source");if(!actorAlias.isBlank()&&dimension!=null)throw new IllegalArgumentException("spawn point "+id+" dimension is only valid for coordinate sources");if(actorAlias.isBlank()&&!offset.equals(BlockPos.ZERO))throw new IllegalArgumentException("spawn point "+id+" offsets require an actor or marker source");if(weight<1||weight>10000)throw new IllegalArgumentException("spawn point "+id+" weight must be between 1 and 10000");}
+        public SpawnPoint(String id,String actorAlias,ResourceLocation dimension,BlockPos position,int weight){this(id,actorAlias,dimension,position,BlockPos.ZERO,weight);}
+        public boolean actorSource(){return !actorAlias.isBlank();}
+    }
+    public enum SpawnSelectionMode{RANDOM,SEQUENTIAL,WEIGHTED,NEAREST_PLAYER,FARTHEST_PLAYER,ONE_GROUP_PER_POINT}
     public record Area(int radius,int verticalRadius,LeaveBehavior leaveBehavior,int leaveTimeoutTicks,
             MobBehavior mobBehavior,int mobTimeoutTicks){
         public Area{

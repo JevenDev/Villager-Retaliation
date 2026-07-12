@@ -118,6 +118,11 @@ Encounter offsets are applied to an actor or coordinate anchor before that ancho
     }
   ],
   "spawn_mode": "group",
+  "spawn_points": [
+    { "id": "west_gate", "marker": "gate", "offset_x": -8, "weight": 2 },
+    { "id": "east_gate", "x": 120, "y": 64, "z": -32, "dimension": "minecraft:overworld" }
+  ],
+  "spawn_selection": "weighted",
   "extra_per_player": 1,
   "max_party_size": 4,
   "placement_attempts": 16,
@@ -136,6 +141,10 @@ Encounter offsets are applied to an actor or coordinate anchor before that ancho
 ```
 
 Templates are allowlists, not command containers. Party-size and difficulty inputs are captured when the encounter starts. Owned entities carry durable encounter identity; reload reconciles UUIDs and tags before bounded safe-placement attempts. Unrelated nearby mobs never count. Cleanup removes, retains, or releases surviving owned mobs according to the template and scene policy.
+
+The optional `spawn_points` array supplies 1-64 named positions. Each point has a stable `id` and exactly one source: `actor`, `marker`, or complete `x`/`y`/`z` coordinates. `actor` and `marker` both name an actor alias declared by the scene; the two spellings let a template communicate whether it expects a live/snapshotted actor or a position actor bound from a marker. Actor and marker sources may add bounded `offset_x`, `offset_y`, and `offset_z` values. Explicit coordinates may set `dimension`; otherwise they use the encounter anchor dimension. Every point must resolve into that same dimension. Missing actors, unknown or incompatible dimensions, incomplete coordinates, duplicate IDs, empty lists, and weights outside 1-10000 reject the start with a focused diagnostic.
+
+`spawn_selection` defaults to `random` and may be `random`, `sequential`, `weighted`, `nearest_player`, `farthest_player`, or `one_group_per_point`. Weighted selection uses each point's optional `weight` (default 1). Distance modes compare the points with online captured participants and wait when no suitable participant is online. Group selection assigns each member definition to a point in authored order; party-scaling extras stay with the first group. Resolved absolute points, every member's selected point ID, and the sequential cursor are saved before placement, so reloads and unloaded chunks wait without rerolling. Recovery checks only the bounded anchor and authored-point neighborhoods and never force-loads chunks. Authored points cannot be combined with `spawn_mode: "near_player"`.
 
 The optional `area` is a cylinder centered on the encounter's durable anchor. `radius` is required and limited to 256 blocks; `vertical_radius` defaults to the radius and is limited to 128. `leave_behavior` is `ignore` (the backward-compatible default), `warn`, `pause`, or `fail`. A failing participant has `leave_timeout_ticks` (default 200, maximum 12000) to return. Warnings and absolute deadlines are saved, messages go only to the affected participant, offline players do not start or advance a new leave decision, and returning clears that excursion's state.
 

@@ -1368,6 +1368,206 @@
         "raid_waves"
       ]
     },
+    "spawn_points": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Named authored spawn point",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "marker": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "dimension": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          },
+          "x": {
+            "type": "integer",
+            "minimum": -30000000,
+            "maximum": 30000000
+          },
+          "y": {
+            "type": "integer",
+            "minimum": -2048,
+            "maximum": 2048
+          },
+          "z": {
+            "type": "integer",
+            "minimum": -30000000,
+            "maximum": 30000000
+          },
+          "offset_x": {
+            "type": "integer",
+            "minimum": -256,
+            "maximum": 256
+          },
+          "offset_y": {
+            "type": "integer",
+            "minimum": -256,
+            "maximum": 256
+          },
+          "offset_z": {
+            "type": "integer",
+            "minimum": -256,
+            "maximum": 256
+          },
+          "weight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 10000
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "actor"
+            ],
+            "allOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "marker"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "dimension"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "x"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "y"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "z"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "required": [
+              "marker"
+            ],
+            "allOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "actor"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "dimension"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "x"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "y"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "z"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "required": [
+              "x",
+              "y",
+              "z"
+            ],
+            "allOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "actor"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "marker"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "offset_x"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "offset_y"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "offset_z"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "maxItems": 64
+    },
+    "spawn_selection": {
+      "type": "string",
+      "minLength": 1,
+      "enum": [
+        "random",
+        "sequential",
+        "weighted",
+        "nearest_player",
+        "farthest_player",
+        "one_group_per_point"
+      ]
+    },
     "wave_count": {
       "type": "integer",
       "minimum": 1,
@@ -1485,5 +1685,38 @@
         "all_gone"
       ]
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "spawn_selection"
+        ]
+      },
+      "then": {
+        "required": [
+          "spawn_points"
+        ]
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "spawn_mode"
+        ],
+        "properties": {
+          "spawn_mode": {
+            "const": "near_player"
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "required": [
+            "spawn_points"
+          ]
+        }
+      }
+    }
+  ]
 }

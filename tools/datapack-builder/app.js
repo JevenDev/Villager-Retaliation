@@ -3587,6 +3587,28 @@ function sceneResourceIssueDetail(path, resource) {
       for (const key of ["leave_timeout_ticks", "mob_timeout_ticks"]) if (area[key] !== undefined && (!Number.isInteger(area[key]) || area[key] < 1 || area[key] > 12000)) return issueDetail(`Encounter ${key}`, "an integer from 1 to 12000", area[key], "json-preview");
       if (area.mob_timeout_ticks !== undefined && area.mob_behavior !== "teleport") return issueDetail("Encounter mob timeout", "mob_behavior teleport", area.mob_behavior, "json-preview");
     }
+    if (resource.spawn_selection !== undefined && !["random", "sequential", "weighted", "nearest_player", "farthest_player", "one_group_per_point"].includes(resource.spawn_selection)) return issueDetail("Encounter spawn selection", "a supported selection mode", resource.spawn_selection, "json-preview");
+    if (resource.spawn_selection !== undefined && !Array.isArray(resource.spawn_points)) return issueDetail("Encounter spawn selection", "a non-empty spawn_points array", resource.spawn_points, "json-preview");
+    if (resource.spawn_points !== undefined) {
+      const points = resource.spawn_points;
+      if (!Array.isArray(points) || points.length < 1 || points.length > 64) return issueDetail("Encounter spawn points", "between 1 and 64 named points", points, "json-preview");
+      if (resource.spawn_mode === "near_player") return issueDetail("Encounter spawn points", "a spawn_mode other than near_player", resource.spawn_mode, "json-preview");
+      const ids = points.map((point) => point?.id);const duplicate = firstDuplicate(ids);
+      if (duplicate) return issueDetail("Encounter spawn point ids", "unique stable ids", duplicate, "json-preview");
+      for (const point of points) {
+        if (!point || typeof point !== "object" || Array.isArray(point) || !/^[a-z][a-z0-9_.-]{0,63}$/.test(point.id || "")) return issueDetail("Encounter spawn point", "an object with a stable id", point, "json-preview");
+        const allowed = new Set(["id", "actor", "marker", "dimension", "x", "y", "z", "offset_x", "offset_y", "offset_z", "weight"]);const unknown = Object.keys(point).find((key) => !allowed.has(key));
+        if (unknown) return issueDetail(`Encounter spawn point ${point.id} field`, "a supported spawn-point field", unknown, "json-preview");
+        const actor = point.actor !== undefined;const marker = point.marker !== undefined;const coordinates = ["x", "y", "z"].filter((key) => point[key] !== undefined);
+        if ((actor ? 1 : 0) + (marker ? 1 : 0) + (coordinates.length ? 1 : 0) !== 1 || (coordinates.length !== 0 && coordinates.length !== 3)) return issueDetail(`Encounter spawn point ${point.id}`, "exactly one actor, marker, or complete x/y/z source", point, "json-preview");
+        const alias = actor ? point.actor : marker ? point.marker : "";if (alias && !/^[a-z][a-z0-9_.-]{0,63}$/.test(alias)) return issueDetail(`Encounter spawn point ${point.id} alias`, "a stable scene actor alias", alias, "json-preview");
+        if (point.dimension !== undefined && !isValidResourceLocation(point.dimension, { requireNamespace: true })) return issueDetail(`Encounter spawn point ${point.id} dimension`, "a namespaced resource location", point.dimension, "json-preview");
+        if ((actor || marker) && point.dimension !== undefined) return issueDetail(`Encounter spawn point ${point.id} dimension`, "dimension only with coordinate sources", point.dimension, "json-preview");
+        const bounds = { x: [-30000000, 30000000], y: [-2048, 2048], z: [-30000000, 30000000], offset_x: [-256, 256], offset_y: [-256, 256], offset_z: [-256, 256], weight: [1, 10000] };
+        for (const [key, [min, max]] of Object.entries(bounds)) if (point[key] !== undefined && (!Number.isInteger(point[key]) || point[key] < min || point[key] > max)) return issueDetail(`Encounter spawn point ${point.id} ${key}`, `an integer from ${min} to ${max}`, point[key], "json-preview");
+        if (coordinates.length && ["offset_x", "offset_y", "offset_z"].some((key) => point[key] !== undefined)) return issueDetail(`Encounter spawn point ${point.id} offsets`, "offsets only with actor or marker sources", point, "json-preview");
+      }
+    }
     return null;
   }
 
