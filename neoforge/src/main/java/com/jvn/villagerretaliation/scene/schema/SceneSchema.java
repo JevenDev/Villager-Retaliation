@@ -152,6 +152,7 @@ public final class SceneSchema {
         properties.add("binding", text());
         properties.add("replacement_policy", enumValues(SceneActorDeclaration.ReplacementPolicy.values()));
         properties.add("missing_actor_policy", enumValues(SceneActorDeclaration.MissingActorPolicy.values()));
+        properties.add("lethal_damage_policy", enumValues(SceneActorDeclaration.LethalDamagePolicy.values()));
         properties.add("death_policy", enumValues(SceneActorDeclaration.DeathPolicy.values()));
         properties.add("filters", map());
         properties.add("timeout_ticks", integer(0));
@@ -172,7 +173,76 @@ public final class SceneSchema {
         properties.add("failure_step", text());
         properties.add("transitions", map());
         step.add("properties", properties);
+        JsonObject condition = new JsonObject();
+        JsonObject conditionProperties = new JsonObject();
+        conditionProperties.add("type", constant("villagerretaliation:quest_transition"));
+        condition.add("properties", conditionProperties);
+        condition.add("required", strings("type"));
+        JsonObject consequence = new JsonObject();
+        JsonObject consequenceProperties = new JsonObject();
+        consequenceProperties.add("data", questTransitionData());
+        consequence.add("properties", consequenceProperties);
+        consequence.add("required", strings("data"));
+        JsonObject rule = new JsonObject();
+        rule.add("if", condition);
+        rule.add("then", consequence);
+        JsonArray rules = new JsonArray();
+        rules.add(rule);
+        step.add("allOf", rules);
         return step;
+    }
+
+    private static JsonObject questTransitionData() {
+        JsonObject data = object("Typed quest transition");
+        data.addProperty("additionalProperties", false);
+        JsonObject properties = new JsonObject();
+        properties.add("quest", resourceLocation());
+        properties.add("quest_id", resourceLocation());
+        JsonObject target = text();
+        JsonArray targets = new JsonArray();
+        for (String value : new String[]{"stage", "complete", "fail", "abandon"}) targets.add(value);
+        target.add("enum", targets);
+        properties.add("target", target);
+        properties.add("target_stage", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));
+        data.add("properties", properties);
+        JsonArray questIds = new JsonArray();
+        JsonObject quest = new JsonObject();
+        quest.add("required", strings("quest"));
+        questIds.add(quest);
+        JsonObject questId = new JsonObject();
+        questId.add("required", strings("quest_id"));
+        questIds.add(questId);
+        data.add("oneOf", questIds);
+        JsonArray targetForms = new JsonArray();
+        JsonObject stage = new JsonObject();
+        stage.add("required", strings("target_stage"));
+        JsonObject stageProperties = new JsonObject();
+        JsonObject stageTarget = new JsonObject();
+        JsonArray stageValues = new JsonArray();
+        stageValues.add("stage");
+        stageTarget.add("enum", stageValues);
+        stageProperties.add("target", stageTarget);
+        stage.add("properties", stageProperties);
+        targetForms.add(stage);
+        JsonObject terminal = new JsonObject();
+        terminal.add("required", strings("target"));
+        JsonObject terminalProperties = new JsonObject();
+        JsonObject terminalTarget = new JsonObject();
+        JsonArray terminalValues = new JsonArray();
+        for (String value : new String[]{"complete", "fail", "abandon"}) terminalValues.add(value);
+        terminalTarget.add("enum", terminalValues);
+        terminalProperties.add("target", terminalTarget);
+        terminal.add("properties", terminalProperties);
+        JsonObject noTargetStage = new JsonObject();
+        noTargetStage.add("required", strings("target_stage"));
+        terminal.add("not", noTargetStage);
+        targetForms.add(terminal);
+        JsonObject targetRule = new JsonObject();
+        targetRule.add("oneOf", targetForms);
+        JsonArray allRules = new JsonArray();
+        allRules.add(targetRule);
+        data.add("allOf", allRules);
+        return data;
     }
 
     private static JsonObject member() {

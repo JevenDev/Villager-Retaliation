@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.quest.schema.v2;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceSource;
+import com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,12 +47,18 @@ public record QuestV2Resource(
     public record Provider(
             ResourceLocation type,
             Set<ResourceLocation> requiredCapabilities,
+            QuestProviderDeathProtection deathProtection,
             JsonObject data
     ) {
-        public static final Provider EMPTY = new Provider(null, Set.of(), new JsonObject());
+        public static final Provider EMPTY = new Provider(null, Set.of(), QuestProviderDeathProtection.NONE, new JsonObject());
+
+        public Provider(ResourceLocation type, Set<ResourceLocation> requiredCapabilities, JsonObject data) {
+            this(type, requiredCapabilities, QuestProviderDeathProtection.NONE, data);
+        }
 
         public Provider {
             requiredCapabilities = requiredCapabilities == null ? Set.of() : Set.copyOf(requiredCapabilities);
+            deathProtection = deathProtection == null ? QuestProviderDeathProtection.NONE : deathProtection;
             data = copy(data);
         }
     }

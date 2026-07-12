@@ -67,7 +67,9 @@ public final class SceneRuntime {
         if (server == null) return;
         SceneSavedData data = SceneSavedData.get(server.overworld());
         scheduler(server).tick(server, data, server.overworld().getGameTime());
+        SceneContinuationService.maintain(server, data);
         if(server.overworld().getGameTime()%20L==0L){EncounterService.maintainCleanup(server,data);maintainSceneCleanup(server,data);}
+        if(server.overworld().getGameTime()%200L==0L)data.compactTerminalHistory(server.overworld().getGameTime(),SceneSavedData.DEFAULT_COMPACTION_WORK);
     }
     public static void wake(MinecraftServer server, SceneInstance instance) { if(server!=null&&instance!=null)scheduler(server).enqueue(instance); }
 
@@ -86,20 +88,24 @@ public final class SceneRuntime {
         synchronized (SCHEDULERS) {
             return SCHEDULERS.computeIfAbsent(server, key -> {
                 SceneScheduler value = new SceneScheduler(SceneScheduler.DEFAULT_MAX_WORK_PER_TICK, processor);
-                value.rebuild(SceneSavedData.get(server.overworld()), server.overworld().getGameTime());
+                value.rebuild(server, SceneSavedData.get(server.overworld()), server.overworld().getGameTime());
                 return value;
             });
         }
     }
 
     private static void maintainSceneCleanup(MinecraftServer server, SceneSavedData data) {
-        for (SceneInstance scene : data.takeCleanupBatch(16)) {
+        long gameTime = server.overworld().getGameTime();
+        for (SceneInstance scene : data.takeCleanupBatch(16, gameTime)) {
             CompiledScene definition = SceneResources.scene(server, scene.sceneId()).orElse(null);
             if (definition == null) {
-                scene.cleanupStatus(SceneInstance.CleanupStatus.BLOCKED);
+                scene.blockCleanup("scene definition is unavailable; cleanup will retry with bounded backoff",
+                        safeAdd(gameTime, 1200L));
                 data.requestCleanup(scene);
+                data.changed();
                 continue;
             }
+            scene.clearCleanupBlock();
             boolean clean = true;
             if (definition.cleanupPolicy() != SceneResource.CleanupPolicy.NONE
                     && definition.cleanupPolicy() != SceneResource.CleanupPolicy.PRESERVE_WORLD) {
@@ -117,6 +123,10 @@ public final class SceneRuntime {
         }
     }
 
+    private static long safeAdd(long start, long duration) {
+        return duration > Long.MAX_VALUE - start ? Long.MAX_VALUE : start + duration;
+    }
+
     private static OwnerAndParticipants owner(CompiledScene scene, SceneLaunchService.LaunchRequest request) {
         UUID player = request.playerId();
         return switch (scene.ownership()) {
@@ -132,11 +142,30 @@ public final class SceneRuntime {
                 if (player == null) yield null;
                 UUID quest = request.questRunId() != null ? request.questRunId()
                         : UUID.nameUUIDFromBytes((scene.id() + "|standalone|" + player).getBytes(StandardCharsets.UTF_8));
-                yield new OwnerAndParticipants(new SceneOwner(SceneResource.OwnershipMode.QUEST_INSTANCE, player, null, quest, ""), Set.of(player), quest);
+                yield new OwnerAndParticipants(
+                        new SceneOwner(SceneResource.OwnershipMode.QUEST_INSTANCE, player, null, quest, ""),
+                        questParticipants(request.server().overworld(), player, quest), quest);
             }
             case WORLD -> new OwnerAndParticipants(new SceneOwner(SceneResource.OwnershipMode.WORLD, null, null, null,
                     request.server().overworld().dimension().location().toString()), player == null ? Set.of() : Set.of(player), null);
         };
+    }
+
+    private static Set<UUID> questParticipants(ServerLevel level, UUID playerId, UUID questRunId) {
+        PartyRecord party = PartyService.getPartyForPlayer(level, playerId).orElse(null);
+        if (party == null || party.sharedQuests().stream().noneMatch(shared -> shared.instanceId().equals(questRunId))) {
+            return Set.of(playerId);
+        }
+        Set<UUID> participants = new LinkedHashSet<>();
+        party.sharedQuests().stream()
+                .filter(shared -> shared.instanceId().equals(questRunId))
+                .findFirst()
+                .ifPresent(shared -> shared.enrollments().values().stream()
+                        .filter(enrollment -> !enrollment.pendingStart())
+                        .map(com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment::playerId)
+                        .forEach(participants::add));
+        participants.add(playerId);
+        return Set.copyOf(participants);
     }
 
     private static Map<String, SceneActorBinding> initialBindings(MinecraftServer server, CompiledScene scene,

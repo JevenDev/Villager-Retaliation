@@ -115,6 +115,10 @@ public final class QuestV2Schema {
         properties.add("type", stringEnum(providerTypes()));
         properties.add("required_capabilities", arrayOf(stringEnum(providerCapabilities())));
         properties.add("capabilities", arrayOf(stringEnum(providerCapabilities())));
+        properties.add("death_protection", stringEnum(java.util.Arrays.stream(
+                com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection.values())
+                .map(com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection::serializedName)
+                .toList()));
         properties.add("filters", openObject());
         properties.add("data", openObject());
         schema.add("properties", properties);

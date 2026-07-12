@@ -1,0 +1,9 @@
+{
+  "pack": {
+    "pack_format": 34,
+    "description": "Repeatable quest-run scene identity regression fixture"
+  },
+  "villagerretaliation": {
+    "pack_version": "1.0.0-beta.13"
+  }
+}

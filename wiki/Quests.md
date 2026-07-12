@@ -4,6 +4,8 @@ Quest module v2 is the preferred shape for new quest datapacks. A v2 module can 
 
 Legacy v1 quest files are still supported. Keep existing v1 packs working, but use v2 for new simple quests and for migrations where you want dialogue and quest state to live together.
 
+Every active quest has a persisted run UUID. Solo IDs are player-scoped and repeat-safe; party members share the party quest instance ID. The definitive ID is saved before entry actions and `STARTED` triggers, so scene operation IDs remain stable across packets and reloads without colliding between players.
+
 ## Paths
 
 ```text

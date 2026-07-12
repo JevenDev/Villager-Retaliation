@@ -18,7 +18,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "39";
+    private static final String PROTOCOL_VERSION = "40";
 
     private VillagerReputationNetworking() {
     }
@@ -53,6 +53,12 @@ public final class VillagerReputationNetworking {
                 FearedVillagerPulsePayload.TYPE,
                 FearedVillagerPulsePayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                VillagerDownedStatePayload.TYPE,
+                VillagerDownedStatePayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache",
                 "accept"
         );
         network.safePlayToClientThreaded(
@@ -490,6 +496,16 @@ public final class VillagerReputationNetworking {
 
     public static void sendFearedPulse(AbstractVillager villager, int ticks) {
         PacketDistributor.sendToPlayersTrackingEntity(villager, new FearedVillagerPulsePayload(villager.getId(), ticks));
+    }
+
+    public static void sendDownedState(ServerPlayer player, net.minecraft.world.entity.npc.Villager villager, boolean downed) {
+        trySendToPlayer(player, new VillagerDownedStatePayload(villager.getId(), downed));
+    }
+
+    public static void syncDownedStateToTracking(net.minecraft.world.entity.npc.Villager villager, boolean downed) {
+        PacketDistributor.sendToPlayersTrackingEntity(
+                villager,
+                new VillagerDownedStatePayload(villager.getId(), downed));
     }
 
     public static void sendName(ServerPlayer player, Entity villager) {

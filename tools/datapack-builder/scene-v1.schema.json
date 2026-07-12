@@ -161,6 +161,14 @@
               "wait_until_timeout"
             ]
           },
+          "lethal_damage_policy": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "normal",
+              "downed"
+            ]
+          },
           "death_policy": {
             "type": "string",
             "minLength": 1,
@@ -249,7 +257,109 @@
             "title": "Data",
             "additionalProperties": true
           }
-        }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "const": "villagerretaliation:quest_transition"
+                }
+              },
+              "required": [
+                "type"
+              ]
+            },
+            "then": {
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "title": "Typed quest transition",
+                  "additionalProperties": false,
+                  "properties": {
+                    "quest": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "quest_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "target": {
+                      "type": "string",
+                      "minLength": 1,
+                      "enum": [
+                        "stage",
+                        "complete",
+                        "fail",
+                        "abandon"
+                      ]
+                    },
+                    "target_stage": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+                    }
+                  },
+                  "oneOf": [
+                    {
+                      "required": [
+                        "quest"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "quest_id"
+                      ]
+                    }
+                  ],
+                  "allOf": [
+                    {
+                      "oneOf": [
+                        {
+                          "required": [
+                            "target_stage"
+                          ],
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "stage"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "required": [
+                            "target"
+                          ],
+                          "properties": {
+                            "target": {
+                              "enum": [
+                                "complete",
+                                "fail",
+                                "abandon"
+                              ]
+                            }
+                          },
+                          "not": {
+                            "required": [
+                              "target_stage"
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "data"
+              ]
+            }
+          }
+        ]
       }
     }
   }

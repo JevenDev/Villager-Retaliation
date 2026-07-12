@@ -58,6 +58,7 @@ public class VillagerRetaliation {
                 .listener(VillagerSkillTradeEvents::onWandererTrades)
                 .listener(VillagerRetaliationCommands::onRegisterCommands)
                 .listener(VillagerRetaliationEvents::onLivingDamagePre)
+                .listener(VillagerRetaliationEvents::onLivingDamageFinalPre)
                 .listener(VillagerRetaliationEvents::onLivingDamage)
                 .listener(VillagerReputationEvents::onLivingDamage)
                 .listener(VillagerRetaliationEvents::onLivingDeath)

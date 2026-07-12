@@ -14,6 +14,9 @@ import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.scene.actor.SceneActorBinding;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration;
+import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
+import com.jvn.villagerretaliation.scene.model.SceneQuestTransition;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.scene.runtime.SceneExecutionContext;
 import com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt;
 import com.jvn.villagerretaliation.scene.runtime.SceneReceiptGuard;
@@ -150,8 +153,32 @@ public final class BuiltinSceneStepExecutors {
 
     private static final class QuestTransition extends Base {
         QuestTransition(){super(RecoveryMode.RECEIPT_REQUIRED);}
-        public SceneStepResult apply(SceneExecutionContext c){DialogueContext dialogue=context(c);if(dialogue==null)return actorUnavailable(c,"quest transition context is unavailable");JsonObject action=c.step().parameters().deepCopy();action.addProperty("type",action.has("target_stage")?"quest_transition":"quest");JsonObject wrapper=new JsonObject();JsonArray array=new JsonArray();array.add(action);wrapper.add("actions",array);var parsed=VillagerActionDefinition.readList(c.definition().id(),"scene quest_transition",wrapper,null);if(parsed.size()!=1)return SceneStepResult.fail("quest_transition_invalid","quest transition action is invalid");
-            var guarded=SceneReceiptGuard.applyOnce(c,"quest_transition",SceneOperationReceipt.Kind.QUEST_TRANSITION,()->VillagerActionRegistry.execute(dialogue,parsed.getFirst(),java.util.Map.of()),"quest transition");if(guarded.status()==SceneReceiptGuard.Status.AMBIGUOUS_PREPARED)return SceneStepResult.block("quest_transition_ambiguous","cannot prove quest transition outcome after reload");guarded.receipt().completed(c.gameTime(),"quest transition");return SceneStepResult.applied();}
+        public SceneStepResult apply(SceneExecutionContext c){
+            DialogueContext dialogue=context(c);
+            if(dialogue==null)return actorUnavailable(c,"quest transition context is unavailable");
+            SceneQuestTransition transition;
+            try{transition=SceneQuestTransition.parse(c.step().parameters());}
+            catch(IllegalArgumentException exception){return SceneStepResult.fail("quest_transition_invalid",exception.getMessage());}
+            JsonObject action=new JsonObject();action.addProperty("quest",transition.questId().toString());
+            if(transition.target()==SceneQuestTransition.Target.STAGE){
+                var progress=VillagerQuestSavedData.get(dialogue.level()).get(dialogue.player().getUUID(),transition.questId());
+                if(progress==null)return SceneStepResult.fail("quest_transition_inactive","quest transition requires an active quest");
+                action.addProperty("type","quest_transition");action.addProperty("target_stage",transition.targetStage());
+                action.addProperty("from_stage",progress.currentStage());action.addProperty("scene_path",c.definition().id().toString());
+                action.addProperty("response_id",c.instance().id()+"/"+c.step().id());
+            }else{
+                action.addProperty("type","quest");
+                action.addProperty("action",switch(transition.target()){case COMPLETE->"turn_in";case FAIL->"fail";case ABANDON->"abandon";case STAGE->throw new IllegalStateException();});
+            }
+            JsonObject wrapper=new JsonObject();JsonArray array=new JsonArray();array.add(action);wrapper.add("actions",array);
+            var parsed=VillagerActionDefinition.readList(c.definition().id(),"scene quest_transition",wrapper,null);
+            if(parsed.size()!=1)return SceneStepResult.fail("quest_transition_invalid","quest transition action is invalid");
+            var guarded=SceneReceiptGuard.applyOnce(c,"quest_transition",SceneOperationReceipt.Kind.QUEST_TRANSITION,
+                    ()->SceneLifecycleIntegration.withOriginatingScene(c.instance().id(),
+                            ()->VillagerActionRegistry.execute(dialogue,parsed.getFirst(),java.util.Map.of())),"quest transition");
+            if(guarded.status()==SceneReceiptGuard.Status.AMBIGUOUS_PREPARED)return SceneStepResult.block("quest_transition_ambiguous","cannot prove quest transition outcome after reload");
+            guarded.receipt().completed(c.gameTime(),"quest transition target="+transition.target().name().toLowerCase(Locale.ROOT));
+            return SceneStepResult.applied();}
         public SceneStepResult reconcile(SceneExecutionContext c){return apply(c);}
     }
 
@@ -169,9 +196,9 @@ public final class BuiltinSceneStepExecutors {
 
     private static DialogueContext context(SceneExecutionContext c){ServerPlayer player=null;for(UUID id:c.instance().participants()){player=c.server().getPlayerList().getPlayer(id);if(player!=null)break;}if(player==null&&c.instance().owner().playerId()!=null)player=c.server().getPlayerList().getPlayer(c.instance().owner().playerId());Villager villager=null;for(SceneActorBinding binding:c.instance().actorBindings().values()){Entity entity=find(c,binding);if(entity instanceof Villager value){villager=value;break;}}return player==null||villager==null?null:VillagerInteractionService.createDialogueContext(player.serverLevel(),player,villager);}
     private static Entity actor(SceneExecutionContext c,String alias){SceneActorBinding binding=c.instance().actorBindings().get(alias);return binding==null?null:find(c,binding);}
-    private static Entity find(SceneExecutionContext c,SceneActorBinding binding){if(binding.entityId()==null)return null;if(binding.lastDimension()!=null){ServerLevel level=c.server().getLevel(ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,binding.lastDimension()));if(level!=null)return level.getEntity(binding.entityId());}for(ServerLevel level:c.server().getAllLevels()){Entity value=level.getEntity(binding.entityId());if(value!=null)return value;}return null;}
+    private static Entity find(SceneExecutionContext c,SceneActorBinding binding){if(binding.entityId()==null||binding.state()==SceneActorBinding.BindingState.DOWNED)return null;if(binding.lastDimension()!=null){ServerLevel level=c.server().getLevel(ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,binding.lastDimension()));if(level!=null)return level.getEntity(binding.entityId());}for(ServerLevel level:c.server().getAllLevels()){Entity value=level.getEntity(binding.entityId());if(value!=null)return value;}return null;}
     private static SceneStepResult actorUnavailable(SceneExecutionContext c,String message){return actorUnavailable(c,sourceAlias(c),message);}
-    private static SceneStepResult actorUnavailable(SceneExecutionContext c,String alias,String message){SceneActorDeclaration declaration=c.definition().actors().get(alias);if(declaration==null)return SceneStepResult.block("actor_missing",message);return switch(declaration.missingActorPolicy()){case SKIP->SceneStepResult.skip();case FAIL->SceneStepResult.fail("actor_missing",message);case BLOCK->SceneStepResult.block("actor_missing",message);case WAIT_UNTIL_TIMEOUT->{String key="actor_deadline/"+alias;long timeout=declaration.timeoutTicks();long deadline=durableLong(c,key,0);if(deadline==0){deadline=c.gameTime()+timeout;c.record().putDurableValue(key,Long.toString(deadline));}yield timeout>0&&c.gameTime()>=deadline?SceneStepResult.fail("actor_timeout",message):SceneStepResult.waitUntil(c.gameTime()+20,message);}};}
+    private static SceneStepResult actorUnavailable(SceneExecutionContext c,String alias,String message){SceneActorBinding binding=c.instance().actorBindings().get(alias);if(binding!=null&&binding.state()==SceneActorBinding.BindingState.DOWNED)return SceneStepResult.block("actor_downed","scene actor "+alias+" is incapacitated");SceneActorDeclaration declaration=c.definition().actors().get(alias);if(declaration==null)return SceneStepResult.block("actor_missing",message);return switch(declaration.missingActorPolicy()){case SKIP->SceneStepResult.skip();case FAIL->SceneStepResult.fail("actor_missing",message);case BLOCK->SceneStepResult.block("actor_missing",message);case WAIT_UNTIL_TIMEOUT->{String key="actor_deadline/"+alias;long timeout=declaration.timeoutTicks();long deadline=durableLong(c,key,0);if(deadline==0){deadline=c.gameTime()+timeout;c.record().putDurableValue(key,Long.toString(deadline));}yield timeout>0&&c.gameTime()>=deadline?SceneStepResult.fail("actor_timeout",message):SceneStepResult.waitUntil(c.gameTime()+20,message);}};}
     private static String sourceAlias(SceneExecutionContext c){String authored=string(c,"actor","");return authored.isBlank()?(c.step().actors().isEmpty()?"":c.step().actors().getFirst()):authored;}
     private static Destination destination(SceneExecutionContext c){String target=string(c,"target_actor","");if(!target.isBlank()){SceneActorBinding binding=c.instance().actorBindings().get(target);if(binding!=null&&binding.lastDimension()!=null&&binding.lastPosition()!=null)return new Destination(binding.lastDimension(),binding.lastPosition());Entity entity=actor(c,target);if(entity!=null)return new Destination(entity.level().dimension().location(),entity.blockPosition());}if(c.step().parameters().has("x")&&c.step().parameters().has("y")&&c.step().parameters().has("z")){ResourceLocation dimension=ResourceLocation.tryParse(string(c,"dimension","minecraft:overworld"));return dimension==null?null:new Destination(dimension,new BlockPos((int)longValue(c,"x",0),(int)longValue(c,"y",0),(int)longValue(c,"z",0)));}return null;}
     private static Destination durableDestination(SceneExecutionContext c){ResourceLocation d=ResourceLocation.tryParse(c.record().durableValues().getOrDefault("destination_dimension",""));if(d==null)return null;try{return new Destination(d,new BlockPos(Integer.parseInt(c.record().durableValues().get("destination_x")),Integer.parseInt(c.record().durableValues().get("destination_y")),Integer.parseInt(c.record().durableValues().get("destination_z"))));}catch(RuntimeException ignored){return null;}}

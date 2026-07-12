@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.quest.objectives.QuestObjectiveRegistry;
 import com.jvn.villagerretaliation.quest.QuestTriggerRegistry;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderRegistry;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderTypeDescriptor;
+import com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceEnvelope;
 import com.jvn.villagerretaliation.quest.schema.QuestResourceSource;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
@@ -69,6 +70,7 @@ public final class QuestV2Parser {
             "type",
             "capabilities",
             "required_capabilities",
+            "death_protection",
             "filters",
             "data");
     private static final Set<String> AVAILABILITY_KEYS = Set.of(
@@ -426,7 +428,18 @@ public final class QuestV2Parser {
                 }
             }
         }
-        return new QuestV2Resource.Provider(type.orElse(null), requiredCapabilities, object);
+        String deathProtectionValue = readString(object, "death_protection");
+        QuestProviderDeathProtection deathProtection = QuestProviderDeathProtection.parse(deathProtectionValue)
+                .orElseGet(() -> {
+                    DatapackDiagnostics.warnQuestV2Validation(
+                            validator.location,
+                            "/provider/death_protection",
+                            "invalid provider death protection \"" + deathProtectionValue + "\"; using none.",
+                            "Use none, while_active, or after_start.",
+                            Set.of(deathProtectionValue));
+                    return QuestProviderDeathProtection.NONE;
+                });
+        return new QuestV2Resource.Provider(type.orElse(null), requiredCapabilities, deathProtection, object);
     }
 
     private static QuestV2Resource.Availability readAvailability(Validator validator, JsonElement element) {

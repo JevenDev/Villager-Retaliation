@@ -7,6 +7,8 @@ import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
+import com.jvn.villagerretaliation.scene.SceneLaunchService;
+import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -207,7 +209,24 @@ public final class DialogueTreeService {
         }
         List<String> texts = new ArrayList<>();
         String lineId = "";
-        for (VillagerActionDefinition action : actions) {
+        for (int index = 0; index < actions.size(); index++) {
+            VillagerActionDefinition action = actions.get(index);
+            if (action.kind() == VillagerActionDefinition.Kind.START_SCENE && action.waitForScene()) {
+                SceneLaunchService.LaunchResult launch = SceneLaunchService.launch(context, action);
+                boolean suspended = false;
+                if (launch.accepted()) {
+                    SceneSavedData data = SceneSavedData.get(context.level());
+                    var scene = data.get(launch.instanceId()).orElse(null);
+                    if (scene != null) {
+                        data.suspendContinuation(scene, context.player().getUUID(), context.villager().getUUID(),
+                                "dialogue_response/" + index + "/" + action.sceneOperationId(),
+                                actions, index + 1, replacements);
+                        suspended = true;
+                    }
+                }
+                if (suspended || action.required()) break;
+                continue;
+            }
             ActionResult actionResult = VillagerActionRegistry.execute(context, action, replacements);
             VillagerActionResult result = actionResult.legacyResult();
             replacements.putAll(result.replacements());

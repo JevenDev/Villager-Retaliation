@@ -17,6 +17,10 @@ Use the registered safe quest action `start_scene`:
 
 The operation ID is part of the owning player, party, quest instance, or world key. Repeating the same operation returns the existing instance instead of creating another. `wait_for_result` records that the caller consumes the durable terminal result; scene execution itself is always asynchronous.
 
+For solo quests, the run identity includes the player UUID, quest ID, and persisted start count. Shared party quests use one durable shared instance ID before stage actions or `STARTED` triggers run. `world` ownership is an explicit global singleton for the dimension/scene/quest/operation combination.
+
+When `wait_for_result` is true, the enclosing dialogue, stage, or lifecycle sequence is persisted and resumes only after scene success. Failure and cancellation remain distinct and do not run success actions. Scene `action_batch` cannot suspend and rejects a waiting scene launch during compilation.
+
 ## Scene format
 
 Every step ID is authored and persistence-critical. Keep IDs stable when editing a live pack.
@@ -39,6 +43,10 @@ Every step ID is authored and persistence-critical. Keep IDs stable when editing
 ```
 
 Ownership is `player`, `party`, `quest_instance`, or `world`. Failure/cancellation policies are `fail_scene`, `cancel_scene`, `block_for_repair`, and `run_failure_step`. Cleanup is `none`, `owned_entities`, `encounters`, `all_owned`, or `preserve_world`.
+
+`quest_transition` uses one typed target: `target_stage` (or `target: "stage"` plus `target_stage`), `target: "complete"`, `target: "fail"`, or `target: "abandon"`. Mixed targets are compile errors.
+
+Overall timeouts wake at the earlier of the current step wake and the absolute scene deadline, including while blocked. Terminal state remains visible until cleanup reaches `COMPLETE`; missing definitions show a durable cleanup diagnostic and bounded retry time.
 
 The compiler rejects missing references, duplicate actor or step IDs, missing capabilities, unknown types/templates, unreachable paths, invalid failure paths, and immediate unbounded cycles. Datapack reload compares the canonical definition hash and stable step IDs. Compatible edits continue; incompatible edits leave the readable instance blocked for repair.
 

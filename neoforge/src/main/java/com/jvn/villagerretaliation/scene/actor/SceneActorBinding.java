@@ -117,6 +117,7 @@ public record SceneActorBinding(
 
     public enum BindingState {
         LIVE,
+        DOWNED,
         SNAPSHOT,
         MISSING,
         DEAD;

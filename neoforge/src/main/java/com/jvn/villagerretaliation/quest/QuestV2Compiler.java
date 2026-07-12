@@ -51,7 +51,12 @@ public final class QuestV2Compiler {
                     Set.of(resource.id().toString()));
             return Optional.empty();
         }
-        return Optional.of(compileDefinition(definition, resource.provider().type(), source, canonical));
+        return Optional.of(compileDefinition(
+                definition,
+                resource.provider().type(),
+                resource.provider().deathProtection(),
+                source,
+                canonical));
     }
 
     private static CanonicalQuestJson canonicalize(QuestV2Resource resource, QuestSourcePointer source) {
@@ -657,6 +662,7 @@ public final class QuestV2Compiler {
     private static CompiledQuest compileDefinition(
             QuestDefinition definition,
             ResourceLocation providerType,
+            com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection deathProtection,
             QuestSourcePointer source,
             CanonicalQuestJson canonical) {
         List<CompiledQuestObjective> objectives = compileObjectives(definition, canonical.objectiveSources(), source);
@@ -679,7 +685,7 @@ public final class QuestV2Compiler {
                         definition.tags(),
                         definition.parent(),
                         definition.metadata()),
-                new CompiledQuestProvider(providerType, definition.offer()),
+                new CompiledQuestProvider(providerType, definition.offer(), deathProtection),
                 definition.target(),
                 definition.entryStage(),
                 definition.prerequisites(),

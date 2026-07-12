@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.event;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionExecutor;
 import com.jvn.villagerretaliation.action.VillagerActionResult;
+import com.jvn.villagerretaliation.scene.SceneLaunchService;
+import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialoguePlaceholders;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
@@ -135,7 +137,25 @@ public final class VillagerEventTriggerService {
             VillagerEventTriggerDefinition definition,
             Map<String, String> replacements) {
         boolean ran = false;
-        for (VillagerActionDefinition action : definition.actions()) {
+        for (int index = 0; index < definition.actions().size(); index++) {
+            VillagerActionDefinition action = definition.actions().get(index);
+            if (action.kind() == VillagerActionDefinition.Kind.START_SCENE && action.waitForScene()) {
+                SceneLaunchService.LaunchResult launch = SceneLaunchService.launch(context, action);
+                boolean suspended = false;
+                if (launch.accepted()) {
+                    SceneSavedData data = SceneSavedData.get(context.level());
+                    var scene = data.get(launch.instanceId()).orElse(null);
+                    if (scene != null) {
+                        data.suspendContinuation(scene, context.player().getUUID(), context.villager().getUUID(),
+                                "quest_trigger/" + index + "/" + action.sceneOperationId(),
+                                definition.actions(), index + 1, replacements);
+                        suspended = true;
+                        ran = true;
+                    }
+                }
+                if (suspended || action.required()) break;
+                continue;
+            }
             VillagerActionResult result = VillagerActionExecutor.execute(context, action, replacements);
             replacements.putAll(result.replacements());
             if (result.flashTracker()) {

@@ -634,6 +634,22 @@ public final class VillagerRetaliationConfigModel {
     }
 
     public static final class Combat {
+        public boolean enableVillagerDownedState = true;
+
+        public boolean partyVillagersUseDownedState = true;
+
+        @RangeConstraint(min = 1, max = 20 * 60 * 10)
+        public int downedMinimumTicks = 160;
+
+        @RangeConstraint(min = 0.01D, max = 1.0D, decimalPlaces = 2)
+        public double downedRecoveryHealthPercent = 0.25D;
+
+        @RangeConstraint(min = 1.0D, max = 64.0D, decimalPlaces = 1)
+        public double downedThreatRadius = 16.0D;
+
+        @RangeConstraint(min = 0, max = 20 * 60 * 5)
+        public int downedQuietTicks = 60;
+
         public boolean weaponsmithsFightBack = true;
 
         public boolean toolsmithsFightBack = true;

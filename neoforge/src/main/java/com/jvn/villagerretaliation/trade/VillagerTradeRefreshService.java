@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.trade;
 
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -47,6 +49,7 @@ public final class VillagerTradeRefreshService {
         Entity entity = level.getEntity(entityId);
         if (!(entity instanceof Villager villager)
                 || !villager.isAlive()
+                || VillagerDownedService.isDowned(villager)
                 || villager.getTradingPlayer() != player
                 || !(player.containerMenu instanceof MerchantMenu)) {
             VillagerInteractionService.sendNotice(player, entityId, "trade_refresh.unavailable");

@@ -12,6 +12,35 @@ public final class VillagerPoseAnimator {
     private VillagerPoseAnimator() {
     }
 
+    public static void applyDownedPose(
+            ModelPart body,
+            ModelPart head,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            ModelPart rightLeg,
+            ModelPart leftLeg) {
+        body.y = 5.0F;
+        body.xRot = 0.28F;
+        head.y = 5.0F;
+        head.xRot = 0.38F;
+
+        rightArm.y = 7.0F;
+        rightArm.xRot = -0.55F;
+        rightArm.yRot = -0.18F;
+        rightArm.zRot = 0.08F;
+        leftArm.y = 7.0F;
+        leftArm.xRot = -0.35F;
+        leftArm.yRot = 0.22F;
+        leftArm.zRot = -0.08F;
+
+        rightLeg.y = 16.0F;
+        rightLeg.xRot = -1.12F;
+        rightLeg.yRot = 0.12F;
+        leftLeg.y = 16.0F;
+        leftLeg.xRot = -0.48F;
+        leftLeg.yRot = -0.12F;
+    }
+
     public static <T extends AbstractVillager> void applyPose(
             VillagerArmPose pose,
             T villager,

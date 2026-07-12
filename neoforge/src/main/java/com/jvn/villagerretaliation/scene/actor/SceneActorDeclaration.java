@@ -16,6 +16,7 @@ public record SceneActorDeclaration(
         String bindingReference,
         ReplacementPolicy replacementPolicy,
         MissingActorPolicy missingActorPolicy,
+        LethalDamagePolicy lethalDamagePolicy,
         DeathPolicy deathPolicy,
         Map<String, String> filters,
         long timeoutTicks
@@ -37,9 +38,26 @@ public record SceneActorDeclaration(
         missingActorPolicy = missingActorPolicy == null
                 ? (required ? MissingActorPolicy.BLOCK : MissingActorPolicy.SKIP)
                 : missingActorPolicy;
+        lethalDamagePolicy = lethalDamagePolicy == null ? LethalDamagePolicy.NORMAL : lethalDamagePolicy;
         deathPolicy = deathPolicy == null ? DeathPolicy.APPLY_MISSING_POLICY : deathPolicy;
         filters = immutableStrings(filters);
         timeoutTicks = Math.max(0L, timeoutTicks);
+    }
+
+    public SceneActorDeclaration(
+            String alias,
+            ResourceLocation actorType,
+            Set<ResourceLocation> requiredCapabilities,
+            boolean required,
+            BindingSource bindingSource,
+            String bindingReference,
+            ReplacementPolicy replacementPolicy,
+            MissingActorPolicy missingActorPolicy,
+            DeathPolicy deathPolicy,
+            Map<String, String> filters,
+            long timeoutTicks) {
+        this(alias, actorType, requiredCapabilities, required, bindingSource, bindingReference, replacementPolicy,
+                missingActorPolicy, LethalDamagePolicy.NORMAL, deathPolicy, filters, timeoutTicks);
     }
 
     private static Set<ResourceLocation> immutableIds(Set<ResourceLocation> values) {
@@ -93,5 +111,10 @@ public record SceneActorDeclaration(
         APPLY_MISSING_POLICY,
         RESPAWN_IF_OWNED,
         CONTINUE_WITH_SNAPSHOT
+    }
+
+    public enum LethalDamagePolicy {
+        NORMAL,
+        DOWNED
     }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+- Added a server-authoritative downed state for protected villagers. Active party members, quest-v2 providers, protected scene actors, and villagers tagged `villagerretaliation_essential` survive ordinary lethal damage, suspend AI and interactions, and recover after a configurable quiet period.
+- Added quest-v2 provider `death_protection` policies (`none`, `while_active`, and `after_start`) plus scene-v1 actor `lethal_damage_policy` values (`normal` and `downed`), including generated schemas, durable state, client synchronization, and an incapacitated whole-body pose.
+
+- Hardened persistent quest scenes with player-scoped and shared-party run IDs, immutable startup ordering, durable legacy operation aliases, exact overall deadline wakes, centralized failure/cancellation policy transitions, uniform terminal cleanup, persisted `wait_for_result` continuations, typed quest transitions, and bounded terminal tombstones.
+- Added regression coverage for scene resource diagnostics, repeatable and party run identity, repeated legacy migrations, operation reuse, waiting/blocked deadlines, policy recovery, cleanup queuing, continuation reload/outcomes, quest-transition self-cancellation, and replay-safe history compaction.
+
 - Added receipt-guarded per-wave, phase, and completion encounter rewards, named trophy items, validated loot-table grants, and retry-safe normal/suppress/authored-only/trophy-only mob drop policies.
 - Added participant-only, dimension-aware encounter navigation with coordinate privacy, durable discovery and arrival, distance and compass tracker values, temporary HUD markers, directional particles, and terminal cleanup.
 - Added bounded encounter-owned environmental cues and temporary blocks, including participant sounds/music, particles, glowing columns, persisted block ownership, reload-safe reconciliation, and cleanup that never overwrites later player edits.

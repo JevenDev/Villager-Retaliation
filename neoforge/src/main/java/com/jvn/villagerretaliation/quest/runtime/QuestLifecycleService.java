@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.tracking.VillagerQuestTargets;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
+import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
 
 public final class QuestLifecycleService {
@@ -16,14 +17,16 @@ public final class QuestLifecycleService {
             VillagerQuestSavedData.QuestProgress progress,
             QuestProviderBinding providerBinding,
             VillagerQuestTargets.LocatedTarget target,
-            long gameTime) {
+            long gameTime,
+            UUID playerId,
+            UUID sharedRunId) {
         QuestStateMachine.start(
                 progress,
                 providerBinding.providerId(),
                 target == null ? providerBinding.dimension() : target.dimension(),
                 target == null ? null : target.pos(),
                 gameTime);
-        progress.beginRun(questId);
+        progress.beginRun(playerId, questId, sharedRunId);
         progress.setIssuer(
                 providerBinding.providerId(),
                 providerBinding.displayName(),
