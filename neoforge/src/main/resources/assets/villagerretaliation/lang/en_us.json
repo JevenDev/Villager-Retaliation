@@ -1547,5 +1547,8 @@
   "villagerretaliation.party.error.contract_inactive": "This party contract is no longer active.",
   "villagerretaliation.party.error.contract_maximum": "This contract cannot be extended any further.",
   "villagerretaliation.party.error.job_inventory_denied": "Job inventory access denied.",
-  "villagerretaliation.party.error.use_follow_or_stay": "Recruited villagers must be set to either Follow or Stay."
+  "villagerretaliation.party.error.use_follow_or_stay": "Recruited villagers must be set to either Follow or Stay.",
+  "villagerretaliation.allegiance.warning.first": "%s warns you not to strike them again.",
+  "villagerretaliation.allegiance.warning.final": "%s gives you a final warning.",
+  "villagerretaliation.allegiance.warning.discipline": "%s refuses to tolerate further abuse."
 }
