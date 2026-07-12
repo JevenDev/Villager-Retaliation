@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.combat.downed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -89,6 +90,7 @@ public final class VillagerDownedService {
         }
         enforceIncapacitatedState(villager);
         clearNearbyTargets(level, villager);
+        SceneLifecycleIntegration.onActorDowned(villager);
         return true;
     }
 
@@ -164,6 +166,7 @@ public final class VillagerDownedService {
         villager.setHealth(Math.max(1.0F, villager.getMaxHealth() * percent));
         villager.setTarget(null);
         villager.setAggressive(false);
+        SceneLifecycleIntegration.onActorRecovered(villager);
     }
 
     private static CompoundTag state(Villager villager) {

@@ -53,6 +53,7 @@ import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.quest.VillagerQuestDeathProtectionService;
 import com.jvn.villagerretaliation.quest.QuestV2Compiler;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuest;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestObjective;
@@ -60,6 +61,7 @@ import com.jvn.villagerretaliation.quest.compiled.CompiledQuestStage;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTrigger;
 import com.jvn.villagerretaliation.quest.compiled.CompiledQuestTransition;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
+import com.jvn.villagerretaliation.quest.provider.QuestProviderDeathProtection;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderType;
 import com.jvn.villagerretaliation.quest.provider.VillagerQuestProviderType;
 import com.jvn.villagerretaliation.quest.runtime.QuestLifecycleService;
@@ -1826,6 +1828,107 @@ public final class VillagerQuestGameTests {
                 "validated v2 fixture leaked into compiled quest listings before compiler pass");
         helper.assertTrue(DatapackDiagnostics.recent().isEmpty(), "valid v2 parser emitted diagnostics");
 
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questV2ProviderDeathProtectionParsesCompilesAndFallsBackSafely(GameTestHelper helper) {
+        for (QuestProviderDeathProtection policy : QuestProviderDeathProtection.values()) {
+            JsonObject root = validQuestV2Fixture();
+            root.getAsJsonObject("provider").addProperty("death_protection", policy.serializedName());
+            ResourceLocation location = VillagerRetaliation.id("quests/death_protection_" + policy.serializedName() + ".json");
+            QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
+            QuestV2Resource parsed = QuestV2Parser.parse(envelope).orElseThrow();
+            helper.assertValueEqual(parsed.provider().deathProtection(), policy, "parsed provider policy");
+            helper.assertValueEqual(
+                    QuestV2Compiler.compile(parsed, envelope).orElseThrow().provider().deathProtection(),
+                    policy,
+                    "compiled provider policy");
+        }
+
+        DatapackDiagnostics.clear();
+        JsonObject invalid = validQuestV2Fixture();
+        invalid.getAsJsonObject("provider").addProperty("death_protection", "immortal_forever");
+        QuestV2Resource fallback = QuestV2Parser.parse(
+                VillagerRetaliation.id("quests/death_protection_invalid.json"), invalid).orElseThrow();
+        helper.assertValueEqual(
+                fallback.provider().deathProtection(),
+                QuestProviderDeathProtection.NONE,
+                "invalid provider policy fallback");
+        assertRecentDiagnosticPointer(helper, "/provider/death_protection", "using none");
+        DatapackDiagnostics.clear();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void afterStartProtectionIsWrittenOnlyBySuccessfulQuestStart(GameTestHelper helper) {
+        ResourceLocation location = VillagerRetaliation.id("quests/death_protection_after_start_runtime.json");
+        JsonObject root = validQuestV2Fixture();
+        root.getAsJsonObject("provider").addProperty("death_protection", "after_start");
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
+        CompiledQuest compiled = QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope).orElseThrow();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager provider = spawnVillager(helper, new BlockPos(2, 2, 2));
+        VillagerQuestResources.installCompiledTestCatalog(helper.getLevel().getServer(), List.of(compiled));
+        VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+        try {
+            helper.assertTrue(
+                    VillagerQuestDeathProtectionService.permanentAfterStartQuests(provider).isEmpty(),
+                    "offering a quest should not protect its provider");
+            helper.assertTrue(
+                    VillagerQuestService.debugStartQuest(player, provider, compiled.id(), true).started(),
+                    "after_start quest should start");
+            helper.assertValueEqual(
+                    VillagerQuestDeathProtectionService.permanentAfterStartQuests(provider),
+                    Set.of(compiled.id()),
+                    "successful start should persist its exact quest id");
+
+            VillagerQuestService.debugStartQuest(player, provider, compiled.id(), true);
+            helper.assertValueEqual(
+                    VillagerQuestDeathProtectionService.permanentAfterStartQuests(provider).size(),
+                    1,
+                    "duplicate start should not duplicate protection state");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            VillagerQuestResources.clearCache();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void whileActiveProtectionUsesExactProviderAndEndsWithProgress(GameTestHelper helper) {
+        ResourceLocation location = VillagerRetaliation.id("quests/death_protection_while_active_runtime.json");
+        JsonObject root = validQuestV2Fixture();
+        root.getAsJsonObject("provider").addProperty("death_protection", "while_active");
+        QuestResourceEnvelope envelope = QuestResourceEnvelope.read(location, root).orElseThrow();
+        CompiledQuest compiled = QuestV2Compiler.compile(QuestV2Parser.parse(envelope).orElseThrow(), envelope).orElseThrow();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager provider = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager other = spawnVillager(helper, new BlockPos(4, 2, 2));
+        VillagerQuestResources.installCompiledTestCatalog(helper.getLevel().getServer(), List.of(compiled));
+        VillagerQuestService.setClientEffectsSuppressedForTests(player, true);
+        try {
+            helper.assertTrue(
+                    VillagerQuestService.debugStartQuest(player, provider, compiled.id(), true).started(),
+                    "while_active quest should start");
+            helper.assertValueEqual(
+                    VillagerQuestDeathProtectionService.activeWhileActiveQuests(helper.getLevel(), provider),
+                    Set.of(compiled.id()),
+                    "exact provider should be protected during active progress");
+            helper.assertTrue(
+                    VillagerQuestDeathProtectionService.activeWhileActiveQuests(helper.getLevel(), other).isEmpty(),
+                    "different villager should not inherit provider protection");
+
+            VillagerQuestSavedData data = VillagerQuestSavedData.get(helper.getLevel());
+            data.get(player.getUUID(), compiled.id()).abandon(helper.getLevel().getGameTime(), false);
+            data.setDirty();
+            helper.assertTrue(
+                    VillagerQuestDeathProtectionService.activeWhileActiveQuests(helper.getLevel(), provider).isEmpty(),
+                    "terminal progress should end while_active protection");
+        } finally {
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
+            VillagerQuestResources.clearCache();
+        }
         helper.succeed();
     }
 

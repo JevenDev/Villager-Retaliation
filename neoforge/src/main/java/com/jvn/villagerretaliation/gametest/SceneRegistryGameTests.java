@@ -47,6 +47,8 @@ import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration.BindingSour
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration.DeathPolicy;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration.MissingActorPolicy;
 import com.jvn.villagerretaliation.scene.actor.SceneActorDeclaration.ReplacementPolicy;
+import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -163,6 +165,83 @@ public final class SceneRegistryGameTests {
                 "compiled graph should preserve explicitly authored stable ids");
         helper.assertTrue(compiled.scene().definitionHash().length() == 64,
                 "compiled scene should carry a canonical SHA-256 definition hash");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void sceneActorDownedPolicyAndBindingStateRoundTrip(GameTestHelper helper) {
+        JsonObject root = validScene();
+        root.getAsJsonArray("actors").get(0).getAsJsonObject().addProperty("lethal_damage_policy", "downed");
+        SceneParser.ParseResult parsed = SceneParser.parse(
+                VillagerRetaliation.id("quest_scenes/downed_actor.json"), root);
+        helper.assertTrue(parsed.valid(), "downed actor policy should parse: " + parsed.diagnostics());
+        helper.assertValueEqual(
+                parsed.resource().actors().getFirst().lethalDamagePolicy(),
+                SceneActorDeclaration.LethalDamagePolicy.DOWNED,
+                "scene actor lethal policy");
+
+        SceneActorBinding downed = binding("guide", "Ada", 1)
+                .withState(SceneActorBinding.BindingState.DOWNED);
+        helper.assertValueEqual(
+                SceneActorBinding.load(downed.save()).state(),
+                SceneActorBinding.BindingState.DOWNED,
+                "downed binding state persistence");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void activeSceneActorTransitionsDownedAndBackToLive(GameTestHelper helper) {
+        JsonObject root = validScene();
+        root.getAsJsonArray("actors").get(0).getAsJsonObject().addProperty("lethal_damage_policy", "downed");
+        var compiled = compiledScene(root);
+        SceneResources.installTestScenes(helper.getLevel().getServer(), List.of(compiled));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, 2, 2);
+        SceneActorBinding binding = SceneActorBinding.entity(
+                "guide",
+                VillagerRetaliation.id("villager"),
+                villager.getUUID(),
+                VillagerRetaliation.id("villager"),
+                helper.getLevel().dimension().location(),
+                villager.blockPosition(),
+                "Guide",
+                true);
+        SceneSavedData data = SceneSavedData.get(helper.getLevel());
+        SceneInstance scene = data.start(
+                compiled,
+                "downed_actor_runtime",
+                new SceneOwner(
+                        com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,
+                        player.getUUID(),
+                        null,
+                        null,
+                        ""),
+                null,
+                Set.of(player.getUUID()),
+                Map.of("guide", binding),
+                helper.getLevel().getGameTime()).instance();
+        try {
+            helper.assertValueEqual(
+                    SceneLifecycleIntegration.protectingScenes(helper.getLevel(), villager),
+                    Set.of(compiled.id()),
+                    "active scene protection source");
+            VillagerDownedService.enterDowned(
+                    helper.getLevel(),
+                    villager,
+                    new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("scene_test")));
+            helper.assertValueEqual(
+                    scene.actorBindings().get("guide").state(),
+                    SceneActorBinding.BindingState.DOWNED,
+                    "scene binding after incapacitation");
+
+            VillagerDownedService.recover(villager);
+            helper.assertValueEqual(
+                    scene.actorBindings().get("guide").state(),
+                    SceneActorBinding.BindingState.LIVE,
+                    "scene binding after recovery");
+        } finally {
+            SceneResources.clearCache();
+        }
         helper.succeed();
     }
 

@@ -2176,6 +2176,10 @@ public final class VillagerQuestService {
         }
         data.setDirty();
         data.setTrackedQuest(context.player().getUUID(), definition.id());
+        VillagerQuestDeathProtectionService.markAfterSuccessfulStart(
+                context.level(),
+                context.villager(),
+                definition.id());
         shareStartedQuest(context, definition, started, partyStart);
         markQuestLifecycleFact(context.level(), context.player(), definition, QUEST_STARTED_FACT, "started");
         initializeQuestStage(context, definition, started);

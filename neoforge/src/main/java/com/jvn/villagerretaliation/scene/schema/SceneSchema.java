@@ -152,6 +152,7 @@ public final class SceneSchema {
         properties.add("binding", text());
         properties.add("replacement_policy", enumValues(SceneActorDeclaration.ReplacementPolicy.values()));
         properties.add("missing_actor_policy", enumValues(SceneActorDeclaration.MissingActorPolicy.values()));
+        properties.add("lethal_damage_policy", enumValues(SceneActorDeclaration.LethalDamagePolicy.values()));
         properties.add("death_policy", enumValues(SceneActorDeclaration.DeathPolicy.values()));
         properties.add("filters", map());
         properties.add("timeout_ticks", integer(0));

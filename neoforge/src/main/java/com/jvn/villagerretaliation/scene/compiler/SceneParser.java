@@ -76,6 +76,8 @@ public final class SceneParser {
                                 SceneActorDeclaration.ReplacementPolicy.FIXED, diagnostics, path + ".replacement_policy"),
                         enumValue(SceneActorDeclaration.MissingActorPolicy.class, DatapackJsonReader.readString(actor, "missing_actor_policy"),
                                 SceneActorDeclaration.MissingActorPolicy.BLOCK, diagnostics, path + ".missing_actor_policy"),
+                        enumValue(SceneActorDeclaration.LethalDamagePolicy.class, DatapackJsonReader.readString(actor, "lethal_damage_policy"),
+                                SceneActorDeclaration.LethalDamagePolicy.NORMAL, diagnostics, path + ".lethal_damage_policy"),
                         enumValue(SceneActorDeclaration.DeathPolicy.class, DatapackJsonReader.readString(actor, "death_policy"),
                                 SceneActorDeclaration.DeathPolicy.APPLY_MISSING_POLICY, diagnostics, path + ".death_policy"),
                         stringMap(actor.get("filters")), valueLong(actor, "timeout_ticks", 0L)));

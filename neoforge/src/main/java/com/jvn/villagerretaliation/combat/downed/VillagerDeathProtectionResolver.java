@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.combat.downed;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
+import com.jvn.villagerretaliation.quest.VillagerQuestDeathProtectionService;
+import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.server.level.ServerLevel;
@@ -26,6 +28,12 @@ public final class VillagerDeathProtectionResolver {
                 && PartyVillagerContractService.isActivePartyVillager(level, villager)) {
             sources.add("party");
         }
+        VillagerQuestDeathProtectionService.activeWhileActiveQuests(level, villager)
+                .forEach(id -> sources.add("quest:while_active:" + id));
+        VillagerQuestDeathProtectionService.permanentAfterStartQuests(villager)
+                .forEach(id -> sources.add("quest:after_start:" + id));
+        SceneLifecycleIntegration.protectingScenes(level, villager)
+                .forEach(id -> sources.add("scene:" + id));
         return sources.isEmpty() ? ProtectionResult.unprotected() : new ProtectionResult(true, List.copyOf(sources));
     }
 

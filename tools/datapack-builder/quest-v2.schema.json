@@ -150,6 +150,14 @@
             ]
           }
         },
+        "death_protection": {
+          "type": "string",
+          "enum": [
+            "after_start",
+            "none",
+            "while_active"
+          ]
+        },
         "filters": {
           "type": "object"
         },
