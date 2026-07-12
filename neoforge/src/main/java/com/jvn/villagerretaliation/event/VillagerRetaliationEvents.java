@@ -231,6 +231,7 @@ public final class VillagerRetaliationEvents {
             VillagerAmbientIndicatorService.onVillagerDamaged(level, villager, event.getSource().getEntity());
             VillagerMoodService.recordVillagerDamaged(level, villager, event.getSource().getEntity());
         }
+        VillagerDownedService.onLivingDamagePost(event);
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
@@ -312,6 +313,9 @@ public final class VillagerRetaliationEvents {
             return;
         }
         if (entity instanceof Villager villager) {
+            if (VillagerDownedService.isDowned(villager)) {
+                return;
+            }
             VillagerNaturalJobArmor.maybeRoll(villager);
             VillagerConversationService.tickVillager(villager);
             HiredVillagerContractService.onVillagerTickPost(villager);
@@ -381,6 +385,9 @@ public final class VillagerRetaliationEvents {
         if (event.getTarget() instanceof AbstractVillager villager) {
             VillagerProfileManager.getOrCreateProfile(player.serverLevel(), villager);
         }
+        if (event.getTarget() instanceof Villager villager) {
+            VillagerReputationNetworking.sendDownedState(player, villager, VillagerDownedService.isDowned(villager));
+        }
         if (VillagerPresetNameRegistry.isVillagerForm(event.getTarget())) {
             VillagerReputationNetworking.sendName(player, event.getTarget());
         }
@@ -388,6 +395,17 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
         if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+
+        if (event.getTarget() instanceof Villager villager
+                && VillagerDownedService.isDowned(villager)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                VillagerConversationService.endForVillager(villager, true);
+                VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.incapacitated");
+            }
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.FAIL);
             return;
         }
 

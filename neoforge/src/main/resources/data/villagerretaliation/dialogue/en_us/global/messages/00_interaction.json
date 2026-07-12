@@ -200,6 +200,13 @@
       "id": "global.messages.00_interaction.messages.interaction.busy.008"
     },
     {
+      "key": "interaction.incapacitated",
+      "lines": [
+        "This villager is incapacitated."
+      ],
+      "id": "global.messages.00_interaction.messages.interaction.incapacitated.downed"
+    },
+    {
       "key": "interaction.unavailable",
       "lines": [
         "I am no longer available.",

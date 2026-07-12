@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.client.pose.VillagerArmPose;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseAnimator;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
 import com.jvn.villagerretaliation.client.renderer.VillagerRenderEquipmentState;
+import com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
@@ -93,6 +94,19 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         this.root.getAllParts().forEach(ModelPart::resetPose);
         this.head.yRot = netHeadYaw * ((float) Math.PI / 180F);
         this.head.xRot = headPitch * ((float) Math.PI / 180F);
+
+        if (VillagerDownedClientCache.isDowned(villager)) {
+            this.setArmLayout(true);
+            VillagerPoseAnimator.applyDownedPose(
+                    this.body,
+                    this.head,
+                    this.rightArm,
+                    this.leftArm,
+                    this.rightLeg,
+                    this.leftLeg);
+            this.syncRobe(villager);
+            return;
+        }
 
         if (this.riding) {
             this.setArmLayout(true);

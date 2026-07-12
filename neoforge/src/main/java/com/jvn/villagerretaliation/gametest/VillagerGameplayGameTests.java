@@ -138,6 +138,33 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void downedVillagerSuspendsInteractionAndClearsRetargeting(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrDownedInteraction");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie zombie = spawnZombie(helper, new BlockPos(4, 2, 2));
+        VillagerDownedService.enterDowned(
+                level,
+                villager,
+                new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("test")));
+
+        helper.assertFalse(
+                VillagerInteractionService.canUseInteractionSystem(player, villager),
+                "downed villager should reject server-side interaction validation");
+        helper.assertValueEqual(
+                VillagerInteractionService.handleVillagerRightClick(villager, player),
+                net.minecraft.world.InteractionResult.FAIL,
+                "downed right-click result");
+
+        zombie.setTarget(villager);
+        VillagerDownedService.onVillagerTickPre(villager);
+        helper.assertTrue(zombie.getTarget() == null, "periodic fallback should clear hostile retargeting");
+        helper.assertTrue(villager.isNoAi(), "downed villager should remain AI-suspended");
+        helper.assertFalse(villager.canPickUpLoot(), "downed villager should not pick up items");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void hiredContractIndexesClipboardWorkforce(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         HiredVillagerIndex.clearRuntimeState();

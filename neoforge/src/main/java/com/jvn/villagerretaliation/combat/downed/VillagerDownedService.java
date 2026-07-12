@@ -4,6 +4,8 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
+import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -31,6 +33,7 @@ public final class VillagerDownedService {
     private static final int DATA_VERSION = 1;
     private static final long THREAT_SCAN_INTERVAL_TICKS = 20L;
     private static final Map<UUID, Long> NEXT_THREAT_SCAN_TICKS = new HashMap<>();
+    private static final Map<UUID, Float> PENDING_ABSORPTION_RESTORE = new HashMap<>();
 
     private VillagerDownedService() {
     }
@@ -43,7 +46,18 @@ public final class VillagerDownedService {
         }
 
         if (isDowned(villager)) {
-            event.setNewDamage(0.0F);
+            float consequenceHealth = Math.min(villager.getMaxHealth(), 2.0F);
+            if (event.getNewDamage() > 0.0F && consequenceHealth > 1.0F) {
+                float absorption = villager.getAbsorptionAmount();
+                if (absorption > 0.0F) {
+                    PENDING_ABSORPTION_RESTORE.put(villager.getUUID(), absorption);
+                    villager.setAbsorptionAmount(0.0F);
+                }
+                villager.setHealth(consequenceHealth);
+                event.setNewDamage(consequenceHealth - 1.0F);
+            } else {
+                event.setNewDamage(0.0F);
+            }
             enforceIncapacitatedState(villager);
             return;
         }
@@ -60,8 +74,21 @@ public final class VillagerDownedService {
             return;
         }
 
-        event.setNewDamage(Math.max(0.0F, villager.getHealth() - 1.0F + absorption));
+        float consequenceHealth = Math.max(villager.getHealth(), Math.min(villager.getMaxHealth(), 2.0F));
+        villager.setHealth(consequenceHealth);
+        event.setNewDamage(Math.max(0.0F, consequenceHealth - 1.0F + absorption));
         enterDowned(level, villager, protection);
+    }
+
+    public static void onLivingDamagePost(LivingDamageEvent.Post event) {
+        if (!(event.getEntity() instanceof Villager villager) || !isDowned(villager)) {
+            return;
+        }
+        Float absorption = PENDING_ABSORPTION_RESTORE.remove(villager.getUUID());
+        if (absorption != null) {
+            villager.setAbsorptionAmount(Math.max(villager.getAbsorptionAmount(), absorption));
+        }
+        villager.setHealth(Math.max(1.0F, villager.getHealth()));
     }
 
     public static boolean enterDowned(
@@ -89,8 +116,10 @@ public final class VillagerDownedService {
             villager.stopRiding();
         }
         enforceIncapacitatedState(villager);
+        VillagerConversationService.endForVillager(villager, true);
         clearNearbyTargets(level, villager);
         SceneLifecycleIntegration.onActorDowned(villager);
+        VillagerReputationNetworking.syncDownedStateToTracking(villager, true);
         return true;
     }
 
@@ -103,14 +132,17 @@ public final class VillagerDownedService {
 
         long now = level.getGameTime();
         CompoundTag state = state(villager);
-        if (now < state.getLong(RECOVERY_AT_KEY)
-                || !TickThrottle.consume(villager.getUUID(), NEXT_THREAT_SCAN_TICKS, now, THREAT_SCAN_INTERVAL_TICKS)) {
+        if (!TickThrottle.consume(villager.getUUID(), NEXT_THREAT_SCAN_TICKS, now, THREAT_SCAN_INTERVAL_TICKS)) {
             return;
         }
 
         if (hasNearbyThreat(level, villager)) {
             state.putLong(QUIET_SINCE_KEY, -1L);
             clearNearbyTargets(level, villager);
+            return;
+        }
+
+        if (now < state.getLong(RECOVERY_AT_KEY)) {
             return;
         }
 
@@ -133,10 +165,12 @@ public final class VillagerDownedService {
 
     public static void onVillagerUnloaded(Villager villager) {
         NEXT_THREAT_SCAN_TICKS.remove(villager.getUUID());
+        PENDING_ABSORPTION_RESTORE.remove(villager.getUUID());
     }
 
     public static void clearRuntimeState() {
         NEXT_THREAT_SCAN_TICKS.clear();
+        PENDING_ABSORPTION_RESTORE.clear();
     }
 
     public static boolean isDowned(Villager villager) {
@@ -160,6 +194,7 @@ public final class VillagerDownedService {
         boolean previousCanPickUpLoot = state.getBoolean(PREVIOUS_PICKUP_KEY);
         villager.getPersistentData().remove(STATE_KEY);
         NEXT_THREAT_SCAN_TICKS.remove(villager.getUUID());
+        PENDING_ABSORPTION_RESTORE.remove(villager.getUUID());
         villager.setNoAi(previousNoAi);
         villager.setCanPickUpLoot(previousCanPickUpLoot);
         float percent = VillagerRetaliationConfig.DOWNED_RECOVERY_HEALTH_PERCENT.get().floatValue();
@@ -167,6 +202,7 @@ public final class VillagerDownedService {
         villager.setTarget(null);
         villager.setAggressive(false);
         SceneLifecycleIntegration.onActorRecovered(villager);
+        VillagerReputationNetworking.syncDownedStateToTracking(villager, false);
     }
 
     private static CompoundTag state(Villager villager) {

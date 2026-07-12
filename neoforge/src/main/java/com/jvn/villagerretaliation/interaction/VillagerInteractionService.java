@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerChatBroadcastMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
@@ -177,6 +178,10 @@ public final class VillagerInteractionService {
     }
 
     public static InteractionResult handleVillagerRightClick(Villager villager, ServerPlayer player) {
+        if (VillagerDownedService.isDowned(villager)) {
+            sendVillagerNotice(player, villager, "interaction.incapacitated");
+            return InteractionResult.FAIL;
+        }
         if (villager.isSleeping()) {
             return handleSleepingVillagerInteraction(villager, player);
         }
@@ -2552,6 +2557,7 @@ public final class VillagerInteractionService {
     static boolean shouldStayForcedConversationSession(ServerPlayer player, Villager villager) {
         double maxDistance = VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get();
         return villager.isAlive()
+                && !VillagerDownedService.isDowned(villager)
                 && !villager.isSleeping()
                 && !villager.isTrading()
                 && player.isAlive()
@@ -2567,6 +2573,7 @@ public final class VillagerInteractionService {
 
     private static boolean canUseInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping, double maxDistance) {
         return villager.isAlive()
+                && !VillagerDownedService.isDowned(villager)
                 && (allowSleeping || !villager.isSleeping())
                 && !villager.isTrading()
                 && !isCombatBusy(villager)
@@ -2578,6 +2585,7 @@ public final class VillagerInteractionService {
 
     private static boolean canOpenInteractionTarget(ServerPlayer player, Villager villager, boolean allowSleeping, double maxDistance) {
         return villager.isAlive()
+                && !VillagerDownedService.isDowned(villager)
                 && (allowSleeping || !villager.isSleeping())
                 && !villager.isTrading()
                 && (!isCombatBusy(villager) || canInterruptHiredWorkForInteraction(player, villager))
