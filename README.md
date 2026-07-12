@@ -90,7 +90,7 @@ Hostile villagers and wandering traders can also block trading. If you have not 
 
 ### Tracked Villages and Allegiance
 
-Villages now have durable identities, generated names, resident rosters, and POI-section footprints. Villagers born or spawned inside a tracked footprint keep that village as their permanent home; villagers created outside one are Wanderers and remain neutral to every village. Recruited Wanderers and foreign residents can fight for their party, while residents never attack their own canonical village—even after village merges.
+Villages now have durable identities, generated names, resident rosters, and footprints made from POIs, complete village structure pieces, and connected village terrain such as paths. Villagers born or spawned inside a tracked footprint keep that village as their permanent home; villagers created outside one are Wanderers and remain neutral to every village. Recruited Wanderers and foreign residents can fight for their party, while residents never attack their own canonical village—even after village merges.
 
 The interaction screen's Allegiance page shows a villager's home, current village, assignment history, lifecycle, and loyalty. At Revered or Royalty standing, a player can ask a villager to adopt the active village they are currently standing in. Trusted players can also use a banner on a village bell to name the village; the banner is not consumed.
 
@@ -281,6 +281,8 @@ Use the [player wiki](https://jevendev.github.io/Villager-Retaliation/) for ques
 Villager Retaliation! also has built-in datapack and resource-pack support for creators who want to tune the experience without writing Java.
 
 Datapacks can add or replace villager dialogue, dialogue trees, quests, forced dialogue events, chat event lines, notification text, ambient world text, gift preferences, pacification payments, profession loot, natural job armor, skill trades, story discoveries, and preset villager names. Forced dialogue can cover watched-container events, retaliation-started barks, nearby player item reactions through `player_item_proximity`, trade-refresh option sets, and quest-triggered locked scenes. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
+
+Modded village worldgen can participate in tracked footprints by extending `villagerretaliation:village_footprint` in the structure-tag registry and `villagerretaliation:village_terrain` in the block-tag registry. Structure pieces are included as authored; terrain-tag sections join only when connected to the POI/structure footprint.
 
 Resource packs can translate the interaction GUI and reputation UI, replace normal and combat villager textures, customize wandering trader textures, and override the combat-capable villager model used when villagers need independent arms for weapons, shields, bows, potions, and throwing animations.
 

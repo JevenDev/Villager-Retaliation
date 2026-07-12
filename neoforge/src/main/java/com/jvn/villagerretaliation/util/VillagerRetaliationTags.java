@@ -5,6 +5,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.levelgen.structure.Structure;
 
 public final class VillagerRetaliationTags {
     private VillagerRetaliationTags() {
@@ -15,7 +16,22 @@ public final class VillagerRetaliationTags {
                 Registries.BLOCK,
                 VillagerRetaliation.id("watched_containers"));
 
+        /** Surface/terrain blocks whose connected sections extend a tracked village footprint. */
+        public static final TagKey<Block> VILLAGE_TERRAIN = TagKey.create(
+                Registries.BLOCK,
+                VillagerRetaliation.id("village_terrain"));
+
         private Blocks() {
+        }
+    }
+
+    public static final class Structures {
+        /** Worldgen structures whose individual pieces belong to a tracked village footprint. */
+        public static final TagKey<Structure> VILLAGE_FOOTPRINT = TagKey.create(
+                Registries.STRUCTURE,
+                VillagerRetaliation.id("village_footprint"));
+
+        private Structures() {
         }
     }
 

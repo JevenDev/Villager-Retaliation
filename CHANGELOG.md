@@ -38,6 +38,7 @@
 - Added banner-on-bell village naming with server-side validation and a Revered-or-Royalty gate covering at least half of tracked living adult residents; operators can bypass the trust gate.
 - Added `debugOverlay.showVillageBounds`, a bounded subscription-based POI-section outline preview with canonical village names shown at the top center of the HUD while inside a synchronized footprint.
 - Added allegiance village administration commands for inspecting, listing, and renaming tracked villages.
+- Expanded village footprints to include every tagged village structure piece and connected tagged terrain such as vanilla dirt paths, with datapack tags for modded village structures and terrain blocks.
 - Added separate horizontal and vertical excavation orders for hired miners. Horizontal excavation uses five-block reach, cuts and later removes temporary access stairs for tall spaces, avoids ladder shafts, and can patch unsafe floors with mined or user-supplied blocks.
 - Added 15 repeatable village commissions spanning early, mid, and late game, with distinct gathering, trading, building, mining, combat, structure-survey, Nether, End, Ancient City, and Wither objectives.
 - Added five four-quest branching questlines: Green Thumb, Deep Delvers, Redstone Works, Nether Routes, and End Survey. Each line records a player choice, provides two playable stage routes, and unlocks a different fact-gated finale.

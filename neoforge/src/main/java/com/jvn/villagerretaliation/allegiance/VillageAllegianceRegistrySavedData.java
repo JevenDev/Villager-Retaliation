@@ -250,7 +250,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             return resolveAt(level, pos);
         }
         Set<Long> cluster = connectedSources(sources, seeds);
-        Set<Long> footprint = expandedFootprint(cluster);
+        Set<Long> footprint = VillageFootprintResolver.resolve(
+                level, expandedFootprint(cluster), pos, DISCOVERY_RADIUS_BLOCKS);
         ResourceLocation dimension = level.dimension().location();
         LinkedHashSet<VillageAllegianceId> matches = activeRecords(dimension).stream()
                 .filter(record -> intersects(record.footprintSections(), footprint))
@@ -528,7 +529,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             return false;
         }
         Set<Long> cluster = connectedSources(occupied, seeds);
-        Set<Long> footprint = expandedFootprint(cluster);
+        Set<Long> footprint = VillageFootprintResolver.resolve(
+                level, expandedFootprint(cluster), record.center(), DISCOVERY_RADIUS_BLOCKS);
         LinkedHashSet<VillageAllegianceId> matches = activeRecords(level.dimension().location()).stream()
                 .filter(candidate -> intersects(candidate.footprintSections(), footprint))
                 .map(AllegianceRecord::id)
@@ -713,7 +715,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
         private AllegianceRecord observe(Set<Long> sources, Set<Long> footprint, BlockPos center, long gameTime) {
             Set<Long> mergedSources = union(this.sourceSections, sources);
-            Set<Long> mergedFootprint = expandedFootprint(mergedSources);
+            Set<Long> mergedFootprint = union(
+                    union(this.footprintSections, footprint), expandedFootprint(mergedSources));
             return new AllegianceRecord(
                     this.id, this.createdGameTime, VillageLifecycleState.ACTIVE, this.displayName, this.customName,
                     this.originDimension, this.originPosition, center, mergedSources, mergedFootprint,
@@ -725,6 +728,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             other.residents.forEach((id, resident) -> mergedResidents.merge(id, resident,
                     (first, second) -> first.lastSeenGameTime() >= second.lastSeenGameTime() ? first : second));
             Set<Long> mergedSources = union(this.sourceSections, other.sourceSections);
+            Set<Long> mergedFootprint = union(
+                    union(this.footprintSections, other.footprintSections), expandedFootprint(mergedSources));
             return new AllegianceRecord(
                     this.id,
                     Math.min(this.createdGameTime, other.createdGameTime),
@@ -735,7 +740,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                     this.originPosition,
                     centerOf(mergedSources, this.center),
                     mergedSources,
-                    expandedFootprint(mergedSources),
+                    mergedFootprint,
                     Math.max(this.lastSeenGameTime, other.lastSeenGameTime),
                     Math.min(this.emptyObservedTicks, other.emptyObservedTicks),
                     mergedResidents);

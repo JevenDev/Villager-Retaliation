@@ -1,6 +1,15 @@
 # Tracked Villages
 
-Tracked villages are server-authoritative identities built from occupied vanilla village POIs. Each record has a UUID, generated or custom name, canonical alias, POI-section footprint, resident roster, lifecycle, and last observed state.
+Tracked villages are server-authoritative identities seeded by occupied village POIs. Each record has a UUID, generated or custom name, canonical alias, section footprint, resident roster, lifecycle, and last observed state. The footprint combines POI influence, tagged worldgen structure pieces, and connected tagged terrain.
+
+### Data-driven footprint support
+
+Two ordinary datapack tags control non-POI coverage:
+
+- `villagerretaliation:village_footprint` is a `worldgen/structure` tag. It includes `#minecraft:village` by default, so every vanilla plains, desert, savanna, snowy, and taiga village piece—including road pieces—is covered.
+- `villagerretaliation:village_terrain` is a block tag containing `minecraft:dirt_path` by default. Sections containing these blocks extend the footprint only when they form a connected chain from the POI/structure footprint; unrelated paths elsewhere remain outside.
+
+Mods and modpacks can append structures or terrain blocks with normal `replace: false` tag files. Structure and terrain scans inspect loaded chunks only and do not force-load worldgen.
 
 ## Allegiance rules
 

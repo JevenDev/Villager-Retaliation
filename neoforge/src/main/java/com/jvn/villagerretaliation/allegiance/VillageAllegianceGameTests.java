@@ -16,10 +16,13 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
 import com.jvn.villagerretaliation.allegiance.VillageNamingService;
+import com.jvn.villagerretaliation.allegiance.VillageFootprintResolver;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.network.VillageBoundsSyncPayload;
+import com.jvn.villagerretaliation.util.VillagerRetaliationTags;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
@@ -32,6 +35,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -352,6 +357,40 @@ public final class VillageAllegianceGameTests {
                 true, helper.getLevel().dimension().location(), entries, 120);
         helper.assertValueEqual(payload.villages().size(), VillageBoundsSyncPayload.MAX_VILLAGES,
                 "preview stream clamps village count before encoding");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villageFootprintsIncludeTaggedStructuresAndConnectedTerrain(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        helper.assertTrue(Blocks.DIRT_PATH.defaultBlockState().is(VillagerRetaliationTags.Blocks.VILLAGE_TERRAIN),
+                "vanilla paths are included by the data-driven terrain tag");
+        var structureRegistry = level.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.STRUCTURE);
+        for (var village : List.of(
+                BuiltinStructures.VILLAGE_PLAINS,
+                BuiltinStructures.VILLAGE_DESERT,
+                BuiltinStructures.VILLAGE_SAVANNA,
+                BuiltinStructures.VILLAGE_SNOWY,
+                BuiltinStructures.VILLAGE_TAIGA)) {
+            helper.assertTrue(structureRegistry.getHolderOrThrow(village)
+                            .is(VillagerRetaliationTags.Structures.VILLAGE_FOOTPRINT),
+                    "every vanilla village structure is included by the footprint structure tag");
+        }
+
+        BlockPos basePos = helper.absolutePos(new BlockPos(2, 2, 2));
+        SectionPos base = SectionPos.of(basePos);
+        BlockPos connectedPath = new BlockPos(
+                SectionPos.sectionToBlockCoord(base.x() + 1), basePos.getY(), basePos.getZ());
+        BlockPos disconnectedPath = new BlockPos(
+                SectionPos.sectionToBlockCoord(base.x() + 3), basePos.getY(), basePos.getZ());
+        level.setBlock(connectedPath, Blocks.DIRT_PATH.defaultBlockState(), 3);
+        level.setBlock(disconnectedPath, Blocks.DIRT_PATH.defaultBlockState(), 3);
+        Set<Long> footprint = VillageFootprintResolver.resolve(
+                level, Set.of(base.asLong()), basePos, 64);
+        helper.assertTrue(footprint.contains(SectionPos.asLong(connectedPath)),
+                "a tagged terrain section connected to the village extends its footprint");
+        helper.assertFalse(footprint.contains(SectionPos.asLong(disconnectedPath)),
+                "an unrelated tagged path does not join the village across an empty gap");
         helper.succeed();
     }
 
