@@ -615,6 +615,8 @@ public final class VillagerRetaliationConfigModel {
     }
 
     public static final class DebugOverlay {
+        public boolean showVillageBounds = false;
+
         public boolean showVillagerReputationDebugOverlay = false;
 
         @RangeConstraint(min = 0.0D, max = 128.0D, decimalPlaces = 1)

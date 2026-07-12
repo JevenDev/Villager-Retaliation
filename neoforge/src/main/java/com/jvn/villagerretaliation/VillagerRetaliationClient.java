@@ -61,6 +61,10 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient::onKeyPressed);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer::onRenderLevelStage);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageBoundsDebugRenderer::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageBoundsDebugRenderer::onRenderGuiLayer);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageBoundsDebugRenderer::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.allegiance.VillageBoundsDebugRenderer::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPreviewRenderer::onRenderLevelStage);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPlacementClient::onMouseScroll);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintPlacementClient::onMouseButtonPressed);

@@ -216,6 +216,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> SKILL_GROWTH_PRIMARY_MAX = bind("trade.skillGrowthPrimaryMax", Integer.class);
     public static final ConfigValue<Double> SKILL_GROWTH_SECONDARY_CHANCE = bind("trade.skillGrowthSecondaryChance", Double.class);
     public static final ConfigValue<Integer> SKILL_GROWTH_SECONDARY_MAX = bind("trade.skillGrowthSecondaryMax", Integer.class);
+    public static final ConfigValue<Boolean> SHOW_VILLAGE_BOUNDS = bind("debugOverlay.showVillageBounds", Boolean.class);
     public static final ConfigValue<Boolean> SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY = bind("debugOverlay.showVillagerReputationDebugOverlay", Boolean.class);
     public static final ConfigValue<Double> REPUTATION_DEBUG_OVERLAY_MAX_DISTANCE = bind("debugOverlay.reputationDebugOverlayMaxDistance", Double.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_SHOW_TIER = bind("debugOverlay.reputationDebugOverlayShowTier", Boolean.class);

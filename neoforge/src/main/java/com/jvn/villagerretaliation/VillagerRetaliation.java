@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.allegiance.VillageNamingService;
+import com.jvn.villagerretaliation.allegiance.VillageBoundsDebugService;
 import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlockEntityTypes;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
@@ -58,6 +59,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onServerStarted)
                 .listener(VillagerRetaliationEvents::onServerStopping)
                 .listener(VillageAllegianceService::onServerStopping)
+                .listener(VillageBoundsDebugService::onServerStopping)
                 .listener(VillageCombatAuthorizationService::onServerStopping)
                 .listener(VillagerDisciplineService::onServerStopping)
                 .listener(VillagerRetaliationEvents::onAddReloadListeners)
@@ -76,6 +78,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onLivingDrops)
                 .listener(VillagerRetaliationEvents::onEntityTickPre)
                 .listener(VillagerRetaliationEvents::onEntityTickPost)
+                .listener(VillageBoundsDebugService::onEntityTickPost)
                 .listener(VillagerRetaliationEvents::onEntitySize)
                 .listener(VillagerRetaliationEvents::onPlayerLoggedIn)
                 .listener(VillagerRetaliationEvents::onServerTickPost)
@@ -94,6 +97,7 @@ public class VillagerRetaliation {
                 .listener(VillageAllegianceService::onEntityJoinLevel)
                 .listener(VillagerRetaliationEvents::onPlayerStartTracking)
                 .listener(VillagerRetaliationEvents::onPlayerLoggedOut)
+                .listener(VillageBoundsDebugService::onPlayerLoggedOut)
                 .listener(VillagerRetaliationEvents::onPlayerClone)
                 .listener(VillagerRetaliationEvents::onEntityInteract)
                 .listener(VillagerRetaliationEvents::onEntityInteractSpecific)
