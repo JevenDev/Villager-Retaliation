@@ -1,5 +1,10 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
+import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerChatBroadcastMode;
@@ -43,6 +48,7 @@ import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.ConstructionBlueprintPlacementPayload;
 import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
+import com.jvn.villagerretaliation.network.VillagerAllegianceActionPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
@@ -2262,6 +2268,46 @@ public final class VillagerInteractionService {
 
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(player.serverLevel(), villager);
         VillagerReputationNetworking.sendProfile(player, villager, profile);
+    }
+
+    public static void handleAllegianceAction(
+            ServerPlayer player,
+            int entityId,
+            VillagerAllegianceActionPayload.Action action) {
+        if (action != VillagerAllegianceActionPayload.Action.REASSIGN_TO_CURRENT_VILLAGE) {
+            return;
+        }
+        Villager villager = resolveVillager(player, entityId);
+        if (villager == null || villager.isBaby() || !VillagerConversationService.validate(player, villager)) {
+            return;
+        }
+        ServerLevel level = player.serverLevel();
+        VillagerReputationLevel reputation = VillagerReputationManager
+                .getReputationSnapshot(level, villager, player.getUUID()).level();
+        if (reputation.trustRank() < VillagerReputationLevel.REVERED.trustRank()) {
+            sendVillagerNotice(player, villager, "I would need to trust you much more before changing my home.");
+            return;
+        }
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Optional<VillageAllegianceId> current = registry.discoverAt(level, villager.blockPosition());
+        if (current.isEmpty() || registry.canonicalRecord(current.get())
+                .filter(record -> record.lifecycleState() == VillageLifecycleState.ACTIVE).isEmpty()) {
+            sendVillagerNotice(player, villager, "There is no active village here for me to join.");
+            return;
+        }
+        if (VillageAllegianceApi.canonicalPrimary(level, villager).filter(current.get()::equals).isPresent()) {
+            sendVillagerNotice(player, villager, "This is already my home village.");
+            return;
+        }
+        if (!VillageAllegianceService.reassignToCurrentVillage(level, villager)) {
+            sendVillagerNotice(player, villager, "I cannot change my allegiance right now.");
+            return;
+        }
+        String villageName = registry.canonicalRecord(current.get())
+                .map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
+                .orElse("this village");
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
+        sendVillagerNotice(player, villager, "From now on, I will call " + villageName + " my home.");
     }
 
     public static void handleConversationEndRequest(ServerPlayer player, int entityId) {

@@ -38,6 +38,8 @@ import com.jvn.villagerretaliation.network.HiredLoggingFilterPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingOptionPayload;
 import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerAllegianceActionPayload;
+import com.jvn.villagerretaliation.network.VillageAllegianceView;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
@@ -294,6 +296,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final List<String> knownDislikedGiftNames = new ArrayList<>();
     private final VillagerFamilyTreeSnapshot familyTree;
     private final VillagerRelationshipSnapshot relationships;
+    private final VillageAllegianceView allegiance;
     private final float cinematicBarSlant;
     private final VillagerInteractionScreenState state = new VillagerInteractionScreenState();
     private final EnumMap<DialoguePage, VillagerInteractionScreenState.OptionListPosition> rememberedPageOptionPositions =
@@ -414,6 +417,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
+            VillageAllegianceView allegiance,
             VillagerFamilyTreeSnapshot familyTree,
             VillagerRelationshipSnapshot relationships) {
         super(Component.translatable(GUI_KEY_PREFIX + "title"));
@@ -481,6 +485,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
         this.familyTree = familyTree == null ? VillagerFamilyTreeSnapshot.EMPTY : familyTree;
         this.relationships = relationships == null ? VillagerRelationshipSnapshot.EMPTY : relationships;
+        this.allegiance = allegiance == null ? VillageAllegianceView.EMPTY : allegiance;
         if (forcedDialogue) {
             this.page = DialoguePage.TALK;
         }
@@ -895,6 +900,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addProfileOptions();
         } else if (this.page == DialoguePage.SKILLS) {
             addSkillsOptions();
+        } else if (this.page == DialoguePage.ALLEGIANCE) {
+            addAllegianceOptions();
         } else if (this.page == DialoguePage.FAMILY) {
             addFamilyOptions();
         } else if (this.page == DialoguePage.ANCESTRY) {
@@ -1018,6 +1025,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         if (!this.baby) {
             addOption("root.profile", this::openProfilePage);
+            addOption("root.allegiance", this::openAllegiancePage);
             addOption("root.skills", this::openSkillsPage);
             this.options.add(DialogueOption.enabled(familyButtonText(), this::openFamilyPage));
             if (!this.recruitedPartyVillager && this.canTrade) {
@@ -1795,6 +1803,28 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.skillsProfilePanel = SkillsProfilePanel.PROFILE;
         requestProfileRefresh();
         openPage(DialoguePage.SKILLS);
+    }
+
+    private void openAllegiancePage() {
+        acceptVillagerDialogue(translate(
+                "allegiance.details",
+                this.allegiance.homeVillage(),
+                this.allegiance.currentVillage(),
+                this.allegiance.location(),
+                this.allegiance.lifecycle(),
+                this.allegiance.assignmentSource(),
+                this.allegiance.loyalty()), List.of());
+        openPage(DialoguePage.ALLEGIANCE);
+    }
+
+    private void addAllegianceOptions() {
+        if (this.allegiance.canReassign()) {
+            addOption("allegiance.reassign", () -> sendToServer(new VillagerAllegianceActionPayload(
+                    this.villagerEntityId,
+                    VillagerAllegianceActionPayload.Action.REASSIGN_TO_CURRENT_VILLAGE)));
+        } else {
+            addPassiveOption("allegiance.reassign_locked");
+        }
     }
 
     private void openSkillsPage() {
@@ -2901,6 +2931,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 translate("root.profile"),
                 translate("interaction_button.profile.description"),
                 this::openProfilePage,
+                true));
+        buttons.add(new InteractionMenuButton(
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_PROFILE_TEXTURE,
+                translate("root.allegiance"),
+                translate("interaction_button.allegiance.description"),
+                this::openAllegiancePage,
                 true));
         if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
             buttons.add(new InteractionMenuButton(
@@ -4850,7 +4886,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static int interactionPageDepth(DialoguePage page) {
         return switch (page) {
             case ROOT -> 0;
-            case TALK, ADVENTURES, PROFILE, SKILLS, GIFT, FAMILY, RELATIONSHIPS, RECRUIT -> 1;
+            case TALK, ADVENTURES, PROFILE, SKILLS, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT -> 1;
             case ANCESTRY, DESCENDANTS, STORAGE, PAYMENT, HIRE, CONTRACT, ROLE, WORK -> 2;
             case HIRE_DURATION,
                     END_CONTRACT_CONFIRMATION,
@@ -4878,6 +4914,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         ADVENTURES,
         PROFILE,
         SKILLS,
+        ALLEGIANCE,
         GIFT,
         FAMILY,
         ANCESTRY,

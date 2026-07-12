@@ -70,6 +70,7 @@ public record OpenVillagerInteractionPayload(
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
         List<String> knownDislikedGiftNames,
+        VillageAllegianceView allegiance,
         VillagerFamilyTreeSnapshot familyTree,
         VillagerRelationshipSnapshot relationships)
         implements CustomPacketPayload {
@@ -143,6 +144,7 @@ public record OpenVillagerInteractionPayload(
         DialogueOptionPayloadCodec.writeDialogueOptions(buffer, payload.dialogueOptions());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.knownLikedGiftNames());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.knownDislikedGiftNames());
+        VillageAllegianceView.encode(buffer, payload.allegiance());
         writeFamilyTree(buffer, payload.familyTree());
         writeRelationships(buffer, payload.relationships());
     }
@@ -202,6 +204,7 @@ public record OpenVillagerInteractionPayload(
                 DialogueOptionPayloadCodec.readDialogueOptions(buffer),
                 DialogueOptionPayloadCodec.readStringList(buffer),
                 DialogueOptionPayloadCodec.readStringList(buffer),
+                VillageAllegianceView.decode(buffer),
                 readFamilyTree(buffer),
                 readRelationships(buffer)
         );

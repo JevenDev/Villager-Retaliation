@@ -151,6 +151,7 @@ public final class VillagerInteractionClientHandler {
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
                 payload.knownDislikedGiftNames(),
+                payload.allegiance(),
                 payload.familyTree(),
                 payload.relationships()
         );

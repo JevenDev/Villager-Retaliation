@@ -1,5 +1,11 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceState;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceData;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
@@ -9,6 +15,7 @@ import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
+import com.jvn.villagerretaliation.network.VillageAllegianceView;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
@@ -29,6 +36,8 @@ import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
@@ -224,6 +233,7 @@ public final class VillagerInteractionScreenOpener {
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),
+                allegianceView(level, villager, reputation),
                 VillagerSocialGraphService.familySnapshot(level, villager),
                 VillagerSocialGraphService.relationshipSnapshot(level, villager)
         );
@@ -243,6 +253,51 @@ public final class VillagerInteractionScreenOpener {
                 villager.getVillagerData().getProfession(),
                 "villagerretaliation.gui.profession.unemployed"
         );
+    }
+
+    private static VillageAllegianceView allegianceView(
+            ServerLevel level,
+            Villager villager,
+            ReputationSnapshot reputation) {
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceData data = VillageAllegianceApi.get(villager).orElse(null);
+        Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> home = data != null && data.isKnown()
+                ? registry.canonicalRecord(data.primary())
+                : Optional.empty();
+        Optional<VillageAllegianceId> currentId = registry.discoverAt(level, villager.blockPosition());
+        Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> current = currentId.flatMap(registry::canonicalRecord);
+        String homeName = data == null || data.state() == AllegianceState.UNKNOWN
+                ? "Unknown"
+                : home.map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName).orElse("Wanderer");
+        String currentName = current.map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
+                .orElse("Outside a tracked village");
+        String location = home.map(record -> record.originDimension() + "  "
+                        + record.center().getX() + ", " + record.center().getY() + ", " + record.center().getZ())
+                .orElse("No village home");
+        String lifecycle = home.map(record -> title(record.lifecycleState().name())).orElse("Unaffiliated");
+        String source = data == null ? "Unknown" : title(data.assignmentSource().name());
+        String loyalty;
+        if (data == null || data.state() == AllegianceState.UNKNOWN) {
+            loyalty = "Unresolved";
+        } else if (!data.isKnown()) {
+            loyalty = "Wanderer — neutral to every village";
+        } else if (currentId.isPresent()
+                && registry.canonical(data.primary()).filter(currentId.get()::equals).isPresent()) {
+            loyalty = "Resident — defends this village";
+        } else {
+            loyalty = "Foreign resident — loyal to " + homeName;
+        }
+        boolean canReassign = !villager.isBaby()
+                && reputation.level().trustRank() >= VillagerReputationLevel.REVERED.trustRank()
+                && current.filter(record -> record.lifecycleState() == VillageLifecycleState.ACTIVE).isPresent()
+                && (data == null || !data.isKnown()
+                || registry.canonical(data.primary()).filter(currentId.orElseThrow()::equals).isEmpty());
+        return new VillageAllegianceView(homeName, currentName, location, lifecycle, source, loyalty, canReassign);
+    }
+
+    private static String title(String value) {
+        String normalized = value.toLowerCase(Locale.ROOT).replace('_', ' ');
+        return normalized.isEmpty() ? normalized : Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
     }
 
     private static boolean hasTradingProfession(Villager villager) {
