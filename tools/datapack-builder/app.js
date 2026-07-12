@@ -3530,7 +3530,7 @@ function sceneResourceIssueDetail(path, resource) {
   const schemaId = isScene ? "villagerretaliation:scene/v1" : "villagerretaliation:encounter/v1";
   const required = Array.isArray(schema?.required)
     ? schema.required
-    : isScene ? ["schema", "id", "ownership", "entry_step", "actors", "steps"] : ["schema", "id", "members"];
+    : isScene ? ["schema", "id", "ownership", "entry_step", "actors", "steps"] : ["schema", "id"];
   if (!resource || typeof resource !== "object" || Array.isArray(resource)) {
     return issueDetail(isScene ? "Scene resource" : "Encounter resource", "a JSON object", resource, "json-preview");
   }
@@ -3543,11 +3543,21 @@ function sceneResourceIssueDetail(path, resource) {
     return issueDetail(`${isScene ? "Scene" : "Encounter"} id`, "a namespaced resource location", resource.id, "json-preview");
   }
   if (!isScene) {
-    if (!Array.isArray(resource.members) || resource.members.length === 0) {
-      return issueDetail("Encounter members", "at least one allowlisted entity member", resource.members, "json-preview");
-    }
-    const invalidMember = resource.members.find((member) => !isValidResourceLocation(member?.entity, { requireNamespace: true }) || (member.count !== undefined && (!Number.isInteger(member.count) || member.count < 1 || member.count > 64)));
+    const explicitWaves = Array.isArray(resource.waves);
+    if (explicitWaves === Array.isArray(resource.members)) return issueDetail("Encounter composition", "exactly one of members or waves", { members: resource.members, waves: resource.waves }, "json-preview");
+    if (explicitWaves && (resource.waves.length < 1 || resource.waves.length > 32)) return issueDetail("Encounter waves", "between 1 and 32 waves", resource.waves, "json-preview");
+    if (explicitWaves && ["wave_count", "wave_interval_ticks", "wave_trigger"].some((key) => resource[key] !== undefined)) return issueDetail("Encounter wave shorthand", "omitted when waves is authored", resource, "json-preview");
+    const allMembers = explicitWaves ? resource.waves.flatMap((wave) => Array.isArray(wave?.members) ? wave.members : []) : resource.members;
+    if (!Array.isArray(allMembers) || allMembers.length === 0) return issueDetail("Encounter members", "at least one allowlisted entity member", allMembers, "json-preview");
+    const invalidMember = allMembers.find((member) => !isValidResourceLocation(member?.entity, { requireNamespace: true }) || (member.count !== undefined && (!Number.isInteger(member.count) || member.count < 1 || member.count > 64)));
     if (invalidMember) return issueDetail("Encounter member", "a namespaced entity and positive integer count", invalidMember, "json-preview");
+    if (explicitWaves) {
+      const ids = resource.waves.map((wave) => wave?.id);const duplicate = firstDuplicate(ids);
+      const invalidWave = resource.waves.find((wave) => !wave || typeof wave !== "object" || !/^[a-z][a-z0-9_.-]{0,63}$/.test(wave.id || "") || !Array.isArray(wave.members) || wave.members.length === 0 || (wave.delay_ticks !== undefined && (!Number.isInteger(wave.delay_ticks) || wave.delay_ticks < 0 || wave.delay_ticks > 12000)) || (wave.trigger !== undefined && !["all_defeated", "timer"].includes(wave.trigger)));
+      if (duplicate || invalidWave) return issueDetail("Encounter wave", "a unique stable id, members, bounded delay, and known trigger", duplicate || invalidWave, "json-preview");
+      const invalidHook = resource.waves.flatMap((wave) => wave.scene_actions || []).find((hook) => !/^[a-z][a-z0-9_.-]{0,63}$/.test(hook?.id || "") || !["notification", "dialogue"].includes(hook?.type) || typeof hook?.text !== "string" || hook.text.length < 1 || hook.text.length > 512);
+      if (invalidHook) return issueDetail("Encounter wave scene action", "a stable id, notification/dialogue type, and bounded text", invalidHook, "json-preview");
+    }
     if (resource.area !== undefined) {
       const area = resource.area;
       if (!area || typeof area !== "object" || Array.isArray(area)) return issueDetail("Encounter area", "an object", area, "json-preview");

@@ -38,30 +38,29 @@ public final class EncounterService {
         // Recover entities spawned before their UUID list was saved, but only inside the bounded anchor area and by exact durable owner tag.
         for(Entity entity:level.getEntities((Entity)null,new AABB(encounter.anchor()).inflate(recoveryRadius),value->ownedBy(value,encounter.id())))if(!encounter.spawned().contains(entity.getUUID()))encounter.addSpawn(entity.getUUID());
         notifyLocation(server,encounter,template,data);
-        updateBossBar(server,encounter,template);
 
-        List<EncounterTemplate.Member> desired=desiredMembers(template,encounter.partySize());
-        int waveSize=template.scaledCount(encounter.partySize());int spawned=encounter.spawned().size();
+        int spawned=encounter.spawned().size();ensureWaveIdentity(encounter,template,spawned);
+        if(encounter.currentWaveIndex()<0||encounter.currentWaveIndex()>=template.waveCount()||!template.wave(encounter.currentWaveIndex()).id().equals(encounter.currentWaveId())){encounter.fail("persisted wave identity no longer matches encounter template");data.changed();return Result.failed(encounter.diagnostic());}
+        updateBossBar(server,encounter,template);
         if(spawned>=encounter.expectedCount()){data.changed();return Result.active();}
-        int target=encounter.expectedCount();
-        if(template.spawnMode()==EncounterTemplate.SpawnMode.RAID_WAVES){
-            int completedWaves=spawned/waveSize;target=Math.min(encounter.expectedCount(),(completedWaves+1)*waveSize);
-            if(spawned>0&&spawned%waveSize==0){
-                boolean cleared=encounter.defeated().size()>=spawned;
-                if(template.waveTrigger()==EncounterTemplate.WaveTrigger.ALL_DEFEATED&&!cleared)return Result.waiting("waiting for wave "+completedWaves+" to be defeated");
-                if(encounter.nextWaveAt()==0L){encounter.scheduleNextWave(level.getGameTime()+template.waveIntervalTicks());data.changed();}
-                if(level.getGameTime()<encounter.nextWaveAt())return Result.waiting("waiting for wave "+(completedWaves+1));
-                encounter.nextGeneration();encounter.scheduleNextWave(0L);
-            }
+        int waveIndex=encounter.currentWaveIndex();EncounterTemplate.Wave wave=template.wave(waveIndex);int start=template.waveStart(waveIndex,encounter.partySize());int waveSize=template.scaledCount(wave,encounter.partySize());int target=start+waveSize;
+        if(spawned>=target&&waveIndex+1<template.waveCount()){
+            EncounterTemplate.Wave next=template.wave(waveIndex+1);if(next.trigger()==EncounterTemplate.WaveTrigger.ALL_DEFEATED&&encounter.defeated().size()<target)return Result.waiting("waiting for wave "+wave.id()+" to be defeated");
+            encounter.advanceWave(waveIndex+1,next.id());encounter.nextGeneration();data.changed();waveIndex++;wave=next;start=target;waveSize=template.scaledCount(wave,encounter.partySize());target=start+waveSize;
         }
+        if(!encounter.startedWaves().contains(wave.id())){if(wave.delayTicks()>0&&encounter.nextWaveAt()==0L){encounter.scheduleNextWave(level.getGameTime()+wave.delayTicks());data.changed();}if(level.getGameTime()<encounter.nextWaveAt())return Result.waiting("waiting to start wave "+wave.id());encounter.markWaveStarted(wave.id());encounter.scheduleNextWave(0L);fireWaveHooks(server,data,encounter,wave);data.changed();}
+        List<EncounterTemplate.Member> desired=desiredMembers(wave,template,encounter.partySize());
         for(int index=spawned;index<target;index++){
-            EncounterTemplate.Member member=desired.get(index%waveSize);Entity entity=spawn(level,member,encounter,template,index);
+            EncounterTemplate.Member member=desired.get(index-start);Entity entity=spawn(level,member,encounter,template,index);
             if(entity==null){encounter.fail("safe placement exhausted after "+template.placementAttempts()+" attempts for member "+index);hideBossBar(encounter.id());data.changed();return Result.failed(encounter.diagnostic());}
             encounter.addSpawn(entity.getUUID());data.changed();
         }
         updateBossBar(server,encounter,template);
         return Result.active();
     }
+
+    private static void ensureWaveIdentity(EncounterInstance encounter,EncounterTemplate template,int spawned){if(!encounter.currentWaveId().isBlank())return;int index=0;while(index+1<template.waveCount()){int boundary=template.waveStart(index+1,encounter.partySize());if(spawned<boundary)break;if(spawned>boundary){index++;continue;}EncounterTemplate.Wave next=template.wave(index+1);if(encounter.nextWaveAt()>0L||next.trigger()==EncounterTemplate.WaveTrigger.TIMER||encounter.defeated().size()>=boundary)index++;break;}encounter.initializeWave(index,template.wave(index).id());}
+    private static void fireWaveHooks(MinecraftServer server,SceneSavedData data,EncounterInstance encounter,EncounterTemplate.Wave wave){for(EncounterTemplate.WaveHook hook:wave.hooks()){String receipt=wave.id()+"/"+hook.id();if(!encounter.markWaveHookFired(receipt))continue;data.changed();Component message=Component.literal(hook.text());for(UUID participant:encounter.participants()){var player=server.getPlayerList().getPlayer(participant);if(player!=null)player.sendSystemMessage(message);}}}
 
     public static Result updateArea(MinecraftServer server,SceneSavedData data,EncounterInstance encounter,EncounterTemplate template,long gameTime){
         EncounterTemplate.Area area=template.area();if(area==null)return Result.active();boolean pause=false;
@@ -168,9 +167,9 @@ public final class EncounterService {
 
     private static void updateBossBar(MinecraftServer server,EncounterInstance encounter,EncounterTemplate template){
         if(template.spawnMode()!=EncounterTemplate.SpawnMode.RAID_WAVES||!template.bossBar()){hideBossBar(encounter.id());return;}
-        int waveSize=template.scaledCount(encounter.partySize());int wave=Math.max(1,Math.min(template.waveCount(),(encounter.spawned().size()+waveSize-1)/waveSize));
+        int wave=Math.max(0,Math.min(template.waveCount()-1,encounter.currentWaveIndex()));EncounterTemplate.Wave definition=template.wave(wave);
         ServerBossEvent bar=BOSS_BARS.computeIfAbsent(encounter.id(),ignored->new ServerBossEvent(Component.literal("Raid"),BossEvent.BossBarColor.RED,BossEvent.BossBarOverlay.NOTCHED_10));
-        bar.setName(Component.literal("Raid — Wave "+wave+"/"+template.waveCount()));
+        String title=definition.bossBarTitle().isBlank()?"Raid - Wave "+(wave+1)+"/"+template.waveCount():definition.bossBarTitle();bar.setName(Component.literal(title));
         bar.setProgress(Math.max(0.0F,Math.min(1.0F,(encounter.expectedCount()-encounter.defeated().size())/(float)Math.max(1,encounter.expectedCount()))));
         for(var player:new ArrayList<>(bar.getPlayers()))if(!encounter.participants().contains(player.getUUID()))bar.removePlayer(player);
         for(UUID participant:encounter.participants()){var player=server.getPlayerList().getPlayer(participant);if(player!=null)bar.addPlayer(player);}
@@ -179,7 +178,7 @@ public final class EncounterService {
 
     public static void hideBossBar(UUID encounterId){ServerBossEvent bar=BOSS_BARS.remove(encounterId);if(bar!=null)bar.removeAllPlayers();}
 
-    private static List<EncounterTemplate.Member> desiredMembers(EncounterTemplate template,int partySize){List<EncounterTemplate.Member> values=new ArrayList<>();for(var member:template.members())for(int i=0;i<member.count();i++)values.add(member);int extra=template.scaledCount(partySize)-values.size();for(int i=0;i<extra;i++)values.add(template.members().getFirst());return values;}
+    private static List<EncounterTemplate.Member> desiredMembers(EncounterTemplate.Wave wave,EncounterTemplate template,int partySize){List<EncounterTemplate.Member> values=new ArrayList<>();for(var member:wave.members())for(int i=0;i<member.count();i++)values.add(member);int extra=template.scaledCount(wave,partySize)-values.size();for(int i=0;i<extra;i++)values.add(wave.members().getFirst());return values;}
     private static ServerLevel level(MinecraftServer server,EncounterInstance e){return server.getLevel(ResourceKey.create(Registries.DIMENSION,e.anchorDimension()));}private static Entity find(MinecraftServer server,UUID id){for(ServerLevel level:server.getAllLevels()){Entity e=level.getEntity(id);if(e!=null)return e;}return null;}private static boolean ownedBy(Entity entity,UUID id){return entity.getPersistentData().hasUUID(OWNER)&&id.equals(entity.getPersistentData().getUUID(OWNER));}private static void release(Entity entity){entity.getPersistentData().remove(OWNER);entity.getPersistentData().remove(SCENE);entity.getPersistentData().remove("VillagerRetaliationSpawnGeneration");}
     public record Result(Status status,String diagnostic){public static Result active(){return new Result(Status.ACTIVE,"");}public static Result waiting(String m){return new Result(Status.WAITING,m);}public static Result completed(){return new Result(Status.COMPLETED,"");}public static Result failed(String m){return new Result(Status.FAILED,m);}}public enum Status{ACTIVE,WAITING,COMPLETED,FAILED}
 }

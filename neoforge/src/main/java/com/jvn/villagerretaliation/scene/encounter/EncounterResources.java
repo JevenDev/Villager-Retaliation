@@ -33,25 +33,45 @@ public final class EncounterResources {
         ResourceLocation id=parseId(source,string(root,"id",""));
         ResourceLocation controller=parseId(source,string(root,"controller","villagerretaliation:controlled"));
         if(controller==null||VillagerRetaliationRegistries.ENCOUNTER_TEMPLATES.get(controller).isEmpty())errors.add("unknown encounter controller "+controller);
-        List<EncounterTemplate.Member> members=new ArrayList<>();JsonElement raw=root.get("members");
-        if(raw==null||!raw.isJsonArray())errors.add("members must be an array");
-        else for(JsonElement value:raw.getAsJsonArray()){
-            if(!value.isJsonObject()){errors.add("encounter member must be an object");continue;}
-            JsonObject member=value.getAsJsonObject();ResourceLocation entity=ResourceLocation.tryParse(string(member,"entity",""));
-            if(entity==null||!BuiltInRegistries.ENTITY_TYPE.containsKey(entity)){errors.add("unknown entity type "+entity);continue;}
-            members.add(new EncounterTemplate.Member(entity,integer(member,"count",1),parseEquipment(member,errors)));
-        }
-        if(id==null)errors.add("valid namespaced id is required");if(members.isEmpty())errors.add("at least one valid member is required");
-        if(id==null||controller==null||members.isEmpty())return null;
-        try{return new EncounterTemplate(id,integer(root,"version",1),controller,members,integer(root,"extra_per_player",0),
-                integer(root,"max_party_size",4),integer(root,"placement_attempts",16),integer(root,"spawn_radius",8),
+        boolean hasWaves=root.has("waves");List<EncounterTemplate.Member> members=parseMembers(root.get("members"),Map.of(),errors,"encounter");
+        List<EncounterTemplate.Wave> waves=parseWaves(root,errors);
+        if(hasWaves&&root.has("members"))errors.add("members and waves are mutually exclusive");
+        if(hasWaves&&(root.has("wave_count")||root.has("wave_interval_ticks")||root.has("wave_trigger")))errors.add("explicit waves cannot use wave_count, wave_interval_ticks, or wave_trigger shorthand");
+        if(hasWaves&&!bool(root,"boss_bar",true)&&waves.stream().anyMatch(wave->!wave.bossBarTitle().isBlank()))errors.add("wave boss_bar_title is unreachable when boss_bar is false");
+        if(id==null)errors.add("valid namespaced id is required");if(members.isEmpty()&&waves.isEmpty())errors.add("at least one valid member or wave is required");
+        if(id==null||controller==null||(members.isEmpty()&&waves.isEmpty()))return null;
+        String defaultSpawn=hasWaves?"raid_waves":"group";
+        int extra=boundedInteger(root,"extra_per_player",0,0,64,"encounter",errors);int maxParty=boundedInteger(root,"max_party_size",4,1,16,"encounter",errors);
+        try{return new EncounterTemplate(id,integer(root,"version",1),controller,members,extra,
+                maxParty,integer(root,"placement_attempts",16),integer(root,"spawn_radius",8),
                 enumValue(EncounterTemplate.RespawnPolicy.class,string(root,"respawn_policy","never"),EncounterTemplate.RespawnPolicy.NEVER),
                 enumValue(EncounterTemplate.CleanupPolicy.class,string(root,"cleanup_policy","remove_survivors"),EncounterTemplate.CleanupPolicy.REMOVE_SURVIVORS),
                 enumValue(EncounterTemplate.CompletionCondition.class,string(root,"completion_condition","all_defeated"),EncounterTemplate.CompletionCondition.ALL_DEFEATED),
-                enumValue(EncounterTemplate.SpawnMode.class,string(root,"spawn_mode","group"),EncounterTemplate.SpawnMode.GROUP),
+                enumValue(EncounterTemplate.SpawnMode.class,string(root,"spawn_mode",defaultSpawn),hasWaves?EncounterTemplate.SpawnMode.RAID_WAVES:EncounterTemplate.SpawnMode.GROUP),
                 integer(root,"wave_count",1),integer(root,"wave_interval_ticks",100),
                 enumValue(EncounterTemplate.WaveTrigger.class,string(root,"wave_trigger","all_defeated"),EncounterTemplate.WaveTrigger.ALL_DEFEATED),
-                bool(root,"boss_bar",true),string(root,"location_message",""),parseArea(root,errors));}catch(IllegalArgumentException e){errors.add(e.getMessage());return null;}
+                bool(root,"boss_bar",true),string(root,"location_message",""),parseArea(root,errors),waves);}catch(IllegalArgumentException e){errors.add(e.getMessage());return null;}
+    }
+    private static List<EncounterTemplate.Wave> parseWaves(JsonObject root,List<String> errors){
+        if(!root.has("waves"))return List.of();JsonElement raw=root.get("waves");if(!raw.isJsonArray()){errors.add("waves must be an array");return List.of();}
+        if(raw.getAsJsonArray().size()<1||raw.getAsJsonArray().size()>32)errors.add("waves must contain between 1 and 32 entries");
+        List<EncounterTemplate.Wave> waves=new ArrayList<>();java.util.Set<String> ids=new java.util.LinkedHashSet<>();int index=0;
+        for(JsonElement value:raw.getAsJsonArray()){
+            if(!value.isJsonObject()){errors.add("wave["+index+"] must be an object");index++;continue;}JsonObject wave=value.getAsJsonObject();String waveId=string(wave,"id","");
+            for(String key:wave.keySet())if(!List.of("id","members","delay_ticks","trigger","boss_bar_title","equipment","scene_actions","dialogue_hook").contains(key))errors.add("unknown wave field "+key);
+            if(!ids.add(waveId))errors.add("duplicate wave id "+waveId);Map<EquipmentSlot,EncounterTemplate.Gear> defaults=parseEquipment(wave,errors);
+            List<EncounterTemplate.Member> waveMembers=parseMembers(wave.get("members"),defaults,errors,"wave "+waveId);List<EncounterTemplate.WaveHook> hooks=parseWaveHooks(wave,waveId,errors);
+            try{waves.add(new EncounterTemplate.Wave(waveId,waveMembers,boundedInteger(wave,"delay_ticks",0,0,12000,"wave "+waveId,errors),strictEnum(EncounterTemplate.WaveTrigger.class,wave,"trigger",EncounterTemplate.WaveTrigger.ALL_DEFEATED,errors),string(wave,"boss_bar_title",""),hooks));}catch(IllegalArgumentException e){errors.add(e.getMessage());}index++;
+        }return waves;
+    }
+    private static List<EncounterTemplate.Member> parseMembers(JsonElement raw,Map<EquipmentSlot,EncounterTemplate.Gear> defaults,List<String> errors,String owner){
+        List<EncounterTemplate.Member> members=new ArrayList<>();if(raw==null)return members;if(!raw.isJsonArray()){errors.add(owner+" members must be an array");return members;}
+        for(JsonElement value:raw.getAsJsonArray()){if(!value.isJsonObject()){errors.add(owner+" member must be an object");continue;}JsonObject member=value.getAsJsonObject();ResourceLocation entity=ResourceLocation.tryParse(string(member,"entity",""));if(entity==null||!BuiltInRegistries.ENTITY_TYPE.containsKey(entity)){errors.add("unknown entity type "+entity);continue;}Map<EquipmentSlot,EncounterTemplate.Gear> equipment=new LinkedHashMap<>(defaults);equipment.putAll(parseEquipment(member,errors));members.add(new EncounterTemplate.Member(entity,boundedInteger(member,"count",1,1,64,owner+" member",errors),equipment));}
+        return members;
+    }
+    private static List<EncounterTemplate.WaveHook> parseWaveHooks(JsonObject wave,String waveId,List<String> errors){
+        List<EncounterTemplate.WaveHook> hooks=new ArrayList<>();java.util.Set<String> ids=new java.util.LinkedHashSet<>();JsonElement raw=wave.get("scene_actions");if(raw!=null){if(!raw.isJsonArray())errors.add("wave "+waveId+" scene_actions must be an array");else for(JsonElement value:raw.getAsJsonArray()){if(!value.isJsonObject()){errors.add("wave scene action must be an object");continue;}JsonObject hook=value.getAsJsonObject();for(String key:hook.keySet())if(!List.of("id","type","text").contains(key))errors.add("unknown wave scene action field "+key);String id=string(hook,"id","");if(!ids.add(id))errors.add("duplicate wave hook id "+id);EncounterTemplate.HookType type=strictEnum(EncounterTemplate.HookType.class,hook,"type",null,errors);try{hooks.add(new EncounterTemplate.WaveHook(id,type,string(hook,"text","")));}catch(IllegalArgumentException e){errors.add(e.getMessage());}}}
+        if(wave.has("dialogue_hook")){if(!wave.get("dialogue_hook").isJsonObject())errors.add("wave "+waveId+" dialogue_hook must be an object");else{JsonObject hook=wave.getAsJsonObject("dialogue_hook");for(String key:hook.keySet())if(!List.of("id","text").contains(key))errors.add("unknown wave dialogue hook field "+key);String id=string(hook,"id","");if(!ids.add(id))errors.add("duplicate wave hook id "+id);try{hooks.add(new EncounterTemplate.WaveHook(id,EncounterTemplate.HookType.DIALOGUE,string(hook,"text","")));}catch(IllegalArgumentException e){errors.add(e.getMessage());}}}return hooks;
     }
     private static EncounterTemplate.Area parseArea(JsonObject root,List<String> errors){
         if(!root.has("area"))return null;
@@ -103,6 +123,7 @@ public final class EncounterResources {
     }
     private static EquipmentSlot equipmentSlot(String value){return switch(value.toLowerCase(Locale.ROOT)){case "mainhand","main_hand"->EquipmentSlot.MAINHAND;case "offhand","off_hand"->EquipmentSlot.OFFHAND;case "head"->EquipmentSlot.HEAD;case "chest"->EquipmentSlot.CHEST;case "legs"->EquipmentSlot.LEGS;case "feet"->EquipmentSlot.FEET;case "body"->EquipmentSlot.BODY;default->null;};}
     private static ResourceLocation parseId(ResourceLocation source,String value){return value.contains(":")?ResourceLocation.tryParse(value):value.isBlank()?null:ResourceLocation.fromNamespaceAndPath(source.getNamespace(),value);}
+    private static int boundedInteger(JsonObject object,String key,int fallback,int minimum,int maximum,String owner,List<String> errors){if(!object.has(key))return fallback;try{double raw=object.get(key).getAsDouble();if(!Double.isFinite(raw)||raw!=Math.rint(raw)||raw<minimum||raw>maximum)throw new NumberFormatException();return (int)raw;}catch(RuntimeException e){errors.add(owner+" "+key+" must be an integer between "+minimum+" and "+maximum);return fallback;}}
     private static String string(JsonObject o,String k,String f){return o.has(k)&&o.get(k).isJsonPrimitive()?o.get(k).getAsString():f;}private static int integer(JsonObject o,String k,int f){try{return o.has(k)?o.get(k).getAsInt():f;}catch(RuntimeException e){return f;}}private static float decimal(JsonObject o,String k,float f){try{return o.has(k)?o.get(k).getAsFloat():f;}catch(RuntimeException e){return f;}}private static boolean bool(JsonObject o,String k,boolean f){try{return o.has(k)?o.get(k).getAsBoolean():f;}catch(RuntimeException e){return f;}}private static <E extends Enum<E>>E enumValue(Class<E> t,String v,E f){try{return Enum.valueOf(t,v.toUpperCase(Locale.ROOT));}catch(IllegalArgumentException e){return f;}}
     private record Cache(MinecraftServer server,Map<ResourceLocation,EncounterTemplate> templates,Map<ResourceLocation,List<String>> diagnostics){}
 }

@@ -1,28 +1,39 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "villagerretaliation:standing_watch",
-  "version": 2,
+  "version": 3,
   "controller": "villagerretaliation:controlled",
-  "members": [
+  "waves": [
     {
-      "entity": "minecraft:zombie",
-      "count": 2
+      "id": "restless_dead",
+      "members": [
+        { "entity": "minecraft:zombie", "count": 2 }
+      ],
+      "delay_ticks": 0,
+      "trigger": "all_defeated",
+      "boss_bar_title": "Standing Watch - Restless Dead",
+      "scene_actions": [
+        { "id": "first_warning", "type": "notification", "text": "The first attackers are coming through the dark." }
+      ]
     },
     {
-      "entity": "minecraft:pillager",
-      "count": 1,
+      "id": "raider_captain",
+      "members": [
+        { "entity": "minecraft:pillager", "count": 1 }
+      ],
+      "delay_ticks": 80,
+      "trigger": "all_defeated",
+      "boss_bar_title": "Standing Watch - Raider Captain",
       "equipment": {
         "mainhand": {
           "item": "minecraft:crossbow",
           "drop_chance": 0.0
         }
-      }
+      },
+      "dialogue_hook": { "id": "captain_arrives", "text": "The captain is here. Hold the line!" }
     }
   ],
   "spawn_mode": "raid_waves",
-  "wave_count": 2,
-  "wave_interval_ticks": 80,
-  "wave_trigger": "all_defeated",
   "boss_bar": true,
   "extra_per_player": 0,
   "max_party_size": 4,

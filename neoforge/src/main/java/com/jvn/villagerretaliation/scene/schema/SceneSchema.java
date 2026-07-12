@@ -44,15 +44,17 @@ public final class SceneSchema {
         root.addProperty("$schema", "https://json-schema.org/draft/2020-12/schema");
         root.addProperty("$id", "https://jeven.dev/villager-retaliation/schema/encounter-v1.schema.json");
         root.addProperty("additionalProperties", false);
-        root.add("required", strings("schema", "id", "members"));
+        root.add("required", strings("schema", "id"));
+        JsonArray composition = new JsonArray();composition.add(requiredWithout("members", "waves"));composition.add(requiredWithout("waves", "members"));root.add("oneOf", composition);
         JsonObject properties = new JsonObject();
         properties.add("schema", constant("villagerretaliation:encounter/v1"));
         properties.add("id", resourceLocation());
         properties.add("version", integer(1));
         properties.add("controller", registeredIds(VillagerRetaliationRegistries.ENCOUNTER_TEMPLATES));
-        properties.add("members", array(member(), 1));
-        properties.add("extra_per_player", integer(0));
-        properties.add("max_party_size", integer(1));
+        properties.add("members", memberArray());
+        JsonObject waves = array(wave(), 1);waves.addProperty("maxItems", 32);properties.add("waves", waves);
+        properties.add("extra_per_player", boundedInteger(0, 64));
+        properties.add("max_party_size", boundedInteger(1, 16));
         properties.add("placement_attempts", boundedInteger(1, 64));
         properties.add("spawn_radius", boundedInteger(1, 32));
         properties.add("spawn_mode", enumValues(EncounterTemplate.SpawnMode.values()));
@@ -68,6 +70,15 @@ public final class SceneSchema {
         root.add("properties", properties);
         return root;
     }
+
+    private static JsonObject wave() {
+        JsonObject wave = object("Authored encounter wave");wave.addProperty("additionalProperties", false);wave.add("required", strings("id", "members"));JsonObject properties = new JsonObject();
+        properties.add("id", patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("members", memberArray());properties.add("delay_ticks", boundedInteger(0, 12000));properties.add("trigger", enumValues(EncounterTemplate.WaveTrigger.values()));JsonObject title=text();title.addProperty("maxLength",128);properties.add("boss_bar_title", title);properties.add("equipment", equipment());JsonObject hooks=array(waveHook(),0);hooks.addProperty("maxItems",32);properties.add("scene_actions",hooks);properties.add("dialogue_hook", dialogueHook());wave.add("properties", properties);return wave;
+    }
+
+    private static JsonObject waveHook(){JsonObject hook=object("Safe wave scene action");hook.addProperty("additionalProperties",false);hook.add("required",strings("id","type","text"));JsonObject properties=new JsonObject();properties.add("id",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));properties.add("type",enumValues(EncounterTemplate.HookType.values()));JsonObject text=text();text.addProperty("maxLength",512);properties.add("text",text);hook.add("properties",properties);return hook;}
+    private static JsonObject dialogueHook(){JsonObject hook=object("Wave dialogue hook");hook.addProperty("additionalProperties",false);hook.add("required",strings("id","text"));JsonObject properties=new JsonObject();properties.add("id",patternedText("^[a-z][a-z0-9_.-]{0,63}$"));JsonObject text=text();text.addProperty("maxLength",512);properties.add("text",text);hook.add("properties",properties);return hook;}
+    private static JsonObject requiredWithout(String required,String forbidden){JsonObject value=new JsonObject();value.add("required",strings(required));JsonObject not=new JsonObject();not.add("required",strings(forbidden));value.add("not",not);return value;}
 
     private static JsonObject encounterArea() {
         JsonObject area = object("Durable encounter area");
@@ -134,6 +145,7 @@ public final class SceneSchema {
         member.add("properties", properties);
         return member;
     }
+    private static JsonObject memberArray(){JsonObject members=array(member(),1);members.addProperty("maxItems",64);return members;}
 
     private static JsonObject equipment() {
         JsonObject equipment = object("Equipment by slot");

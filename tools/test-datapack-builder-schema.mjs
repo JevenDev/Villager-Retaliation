@@ -371,7 +371,11 @@ function testSceneResourceRoundTrip(app) {
   const encounter = {
     schema: "villagerretaliation:encounter/v1",
     id: "storypack:gate_ambush",
-    members: [{ entity: "minecraft:zombie", count: 3 }],
+    spawn_mode: "raid_waves",
+    waves: [
+      { id: "scouts", members: [{ entity: "minecraft:zombie", count: 2 }], boss_bar_title: "Scouts" },
+      { id: "captain", members: [{ entity: "minecraft:pillager" }], delay_ticks: 80, trigger: "all_defeated", equipment: { mainhand: { item: "minecraft:crossbow" } }, dialogue_hook: { id: "arrival", text: "Captain incoming." } }
+    ],
     area: { radius: 32, vertical_radius: 16, leave_behavior: "warn", leave_timeout_ticks: 200, mob_behavior: "return" }
   };
   assert(app.ingestKnownJson(scenePath, JSON.stringify(scene)), "Scene resource import failed.");
@@ -383,7 +387,10 @@ function testSceneResourceRoundTrip(app) {
   assert(JSON.stringify(jsonFile(files, encounterPath)) === JSON.stringify(encounter), "Encounter resource changed during export.");
   assert(!app.applyEditedFile(scenePath, JSON.stringify({ ...scene, schema: "wrong" })), "Invalid scene schema edit was accepted.");
   const invalidArea = { ...encounter, area: { radius: 0, leave_behavior: "wander" } };
-  assert(/area radius/i.test(app.sceneResourceIssueDetail(encounterPath, invalidArea)?.message || ""), "Invalid encounter area was not diagnosed.");
+  const invalidAreaDetail = app.sceneResourceIssueDetail(encounterPath, invalidArea);
+  assert(/area radius/i.test(invalidAreaDetail?.message || ""), `Invalid encounter area was not diagnosed (${invalidAreaDetail?.message || "no diagnostic"}).`);
+  const invalidWaves = { ...encounter, members: [{ entity: "minecraft:zombie" }] };
+  assert(/exactly one of members or waves/i.test(app.sceneResourceIssueDetail(encounterPath, invalidWaves)?.message || ""), "Incompatible encounter wave forms were not diagnosed.");
 }
 
 const app = createAppHarness();

@@ -423,8 +423,20 @@ function validateCinematicResources() {
   }
 
   for (const { file, data } of encounters.values()) {
-    assert(Array.isArray(data.members) && data.members.length > 0, file, "encounter has no members");
-    for (const member of data.members ?? []) {
+    const explicitWaves = Array.isArray(data.waves);
+    assert(explicitWaves !== Array.isArray(data.members), file, "encounter must define exactly one of members or waves");
+    if (explicitWaves) {
+      assert(data.waves.length >= 1 && data.waves.length <= 32, file, "encounter must have 1-32 authored waves");
+      const waveIds = new Set();
+      for (const wave of data.waves) {
+        assert(typeof wave.id === "string" && /^[a-z][a-z0-9_.-]{0,63}$/.test(wave.id), file, "encounter wave has an invalid stable id");
+        assert(!waveIds.has(wave.id), file, `encounter repeats wave id ${wave.id}`);waveIds.add(wave.id);
+        assert(Array.isArray(wave.members) && wave.members.length > 0, file, `encounter wave ${wave.id} has no members`);
+        assert(wave.delay_ticks === undefined || (Number.isInteger(wave.delay_ticks) && wave.delay_ticks >= 0 && wave.delay_ticks <= 12000), file, `encounter wave ${wave.id} has an unsafe delay`);
+        assert(wave.trigger === undefined || ["all_defeated", "timer"].includes(wave.trigger), file, `encounter wave ${wave.id} has an unknown trigger`);
+      }
+    }
+    for (const member of explicitWaves ? data.waves.flatMap((wave) => wave.members ?? []) : data.members ?? []) {
       assert(typeof member.entity === "string" && member.entity.length > 0, file, "encounter member entity is missing");
       assert(Number(member.count ?? 1) > 0, file, `encounter member ${member.entity} has a non-positive count`);
     }

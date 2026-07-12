@@ -3,9 +3,21 @@
   "id": "gate_story:gate_ambush",
   "version": 1,
   "controller": "villagerretaliation:controlled",
-  "members": [
-    { "entity": "minecraft:zombie", "count": 3 }
+  "waves": [
+    {
+      "id": "roadside_dead",
+      "members": [{ "entity": "minecraft:zombie", "count": 2 }],
+      "boss_bar_title": "Gate Ambush - Roadside Dead"
+    },
+    {
+      "id": "last_straggler",
+      "members": [{ "entity": "minecraft:zombie", "count": 1 }],
+      "delay_ticks": 40,
+      "trigger": "all_defeated",
+      "boss_bar_title": "Gate Ambush - Last Straggler"
+    }
   ],
+  "spawn_mode": "raid_waves",
   "extra_per_player": 1,
   "max_party_size": 4,
   "placement_attempts": 16,

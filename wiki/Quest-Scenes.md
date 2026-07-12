@@ -138,11 +138,15 @@ Every mob runs its normal vanilla spawn initialization first, so mobs such as pi
 | `group` | Spawns one raid-like group around the authored anchor. This is the backward-compatible default. |
 | `near_player` | Captures an online participant's current position when `start_encounter` runs and spawns within three blocks. An explicit anchor is not required. |
 | `fixed` | Spawns at the step's `dimension`, `x`, `y`, and `z` coordinates and tells participants where to go. |
-| `raid_waves` | Spawns `wave_count` copies of the scaled member group, retaining encounter ownership and progress across saves. |
+| `raid_waves` | Spawns either `wave_count` copies of `members` or an explicit `waves` array, retaining authored identity and progress across saves. |
 
 For `fixed`, customize the message with `location_message`; `{x}`, `{y}`, `{z}`, and `{dimension}` are replaced at runtime. If omitted, the player receives a default “Go to the encounter” coordinate message.
 
 For `raid_waves`, `wave_interval_ticks` controls the delay between waves. `wave_trigger` is `all_defeated` (the default raid-style behavior) or `timer`. A timer-triggered wave waits only for its interval; an all-defeated wave starts its interval after every mob in the previous wave has been defeated. Raid waves show a participant-only boss bar by default; set `"boss_bar": false` to disable it. The bar is restored after a reload and removed when the encounter ends or is cleaned up.
+
+The legacy `members` plus `wave_count` shape remains shorthand for identical waves. For distinct waves, omit those shorthand fields and author `waves` with 1-32 entries. Every wave requires a stable lowercase `id` and its own `members`; it may set `delay_ticks` (0-12000), `trigger`, `boss_bar_title`, and wave-level `equipment` defaults that individual members override. The current wave index and ID, its absolute delay deadline, started-wave IDs, and fired hook IDs are persisted. Changing or removing an active wave ID fails safely rather than silently substituting a different definition.
+
+`extra_per_player` is deterministic for both forms: after party size is captured at encounter creation, that many copies of each wave's first member are added for every additional participant up to `max_party_size`. Explicit waves may also use bounded, participant-only `scene_actions` of type `notification` or `dialogue`, plus a single `dialogue_hook`; every hook needs a stable ID and text of at most 512 characters. Hook IDs are recorded before delivery and are never fired again after reload.
 
 ```json
 {
@@ -155,6 +159,32 @@ For `raid_waves`, `wave_interval_ticks` controls the delay between waves. `wave_
   "wave_trigger": "all_defeated",
   "boss_bar": true,
   "spawn_radius": 12
+}
+```
+
+Distinct composition example:
+
+```json
+{
+  "schema": "villagerretaliation:encounter/v1",
+  "id": "example:gate_defense",
+  "spawn_mode": "raid_waves",
+  "waves": [
+    {
+      "id": "scouts",
+      "members": [{ "entity": "minecraft:zombie", "count": 3 }],
+      "boss_bar_title": "Gate Defense - Scouts"
+    },
+    {
+      "id": "captain",
+      "members": [{ "entity": "minecraft:pillager" }],
+      "delay_ticks": 100,
+      "trigger": "all_defeated",
+      "boss_bar_title": "Gate Defense - Captain",
+      "equipment": { "mainhand": { "item": "minecraft:crossbow" } },
+      "dialogue_hook": { "id": "captain_arrives", "text": "Their captain is here!" }
+    }
+  ]
 }
 ```
 
