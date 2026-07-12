@@ -1,12 +1,12 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "villagerretaliation:standing_watch",
-  "version": 1,
+  "version": 2,
   "controller": "villagerretaliation:controlled",
   "members": [
     {
       "entity": "minecraft:zombie",
-      "count": 3
+      "count": 2
     },
     {
       "entity": "minecraft:pillager",
@@ -19,7 +19,12 @@
       }
     }
   ],
-  "extra_per_player": 1,
+  "spawn_mode": "raid_waves",
+  "wave_count": 2,
+  "wave_interval_ticks": 80,
+  "wave_trigger": "all_defeated",
+  "boss_bar": true,
+  "extra_per_player": 0,
   "max_party_size": 4,
   "placement_attempts": 24,
   "spawn_radius": 10,

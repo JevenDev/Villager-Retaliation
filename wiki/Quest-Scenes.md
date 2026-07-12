@@ -75,10 +75,12 @@ Each step has `id`, `type`, optional `actors`, a `data` object, `next`, named `t
 | `quest_transition` | safe quest action fields such as `target_stage`, completion, or failure |
 | `scene_branch` | ordered `branches` containing registered `conditions` and a transition name, plus `default_transition`; the chosen name is persisted |
 | `scene_complete` / `scene_fail` | durable terminal result |
-| `start_encounter` | `template`, anchor actor or coordinates, and persisted difficulty inputs |
+| `start_encounter` | `template`, anchor actor or coordinates, optional `offset_x`/`offset_y`/`offset_z`, optional `surface_anchor`, and persisted difficulty inputs |
 | `wait_encounter` / `cancel_encounter` / `cleanup_encounter` | `encounter_step` naming the start step; omitted only when the scene owns exactly one encounter |
 
 Movement never force-loads a chunk. It waits for the actor/destination chunk, resumes navigation when available, and only teleports when both `path_failure_policy: "teleport"` and `allow_teleport: true` are authored.
+
+Encounter offsets are applied to an actor or coordinate anchor before that anchor is persisted. Set `surface_anchor: true` to replace the resulting Y coordinate with the motion-blocking surface height. This is useful for portable quests that need a fixed destination some distance from a dynamically located villager without hard-coding world coordinates.
 
 ## Encounters
 

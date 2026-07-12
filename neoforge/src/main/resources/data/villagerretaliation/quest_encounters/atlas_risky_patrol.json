@@ -9,6 +9,7 @@
       "count": 3
     }
   ],
+  "spawn_mode": "group",
   "extra_per_player": 1,
   "max_party_size": 4,
   "placement_attempts": 24,

@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:scene/v1",
   "id": "villagerretaliation:standing_watch",
-  "definition_version": 1,
+  "definition_version": 2,
   "metadata": {
     "title": "Standing Watch defense",
     "quest": "villagerretaliation:standing_watch"
@@ -49,7 +49,7 @@
         "watch_captain"
       ],
       "data": {
-        "text": "The watch bell rings. Hostiles are closing on the village—hold near the quest giver.",
+        "text": "The watch bell rings. Raiders are coming in two waves—hold the village line near the quest giver.",
         "offline_policy": "wait",
         "offline_poll_ticks": 20
       },

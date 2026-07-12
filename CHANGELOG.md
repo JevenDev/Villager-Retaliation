@@ -2,6 +2,7 @@
 
 - Added datapack-authored encounter equipment, enchantments, drop chances, and `group`, `near_player`, `fixed`, and persistent `raid_waves` spawn modes.
 - Added participant-only raid-wave boss bars, enabled by default and configurable with the encounter template's `boss_bar` field.
+- Updated Standing Watch into a two-wave village defense, moved Night Run's attack to a surfaced destination away from its quest giver, and made the remaining built-in encounter placement modes explicit.
 
 ## Unreleased
 
