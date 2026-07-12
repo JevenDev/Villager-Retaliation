@@ -1438,6 +1438,8 @@ public final class VillagerQuestService {
                     previousId, replacement.getUUID());
         }
         progress.rebindProvider(binding, level.getGameTime(), "operator_rebind");
+        SceneLifecycleIntegration.onQuestProviderRebind(level, player.getUUID(), questId, previousId, replacement,
+                "compatible_quest_provider_rebind");
         int pendingBeforeReplay = progress.pendingLifecycleEvents().size();
         resumePendingLifecycleEvents(context, compiled, progress);
         data.setDirty();

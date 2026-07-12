@@ -127,7 +127,7 @@ public final class BuiltinSceneStepExecutors {
             if(!c.step().actors().isEmpty())for(String alias:c.step().actors())if(actor(c,alias)==null){SceneStepResult missing=actorUnavailable(c,alias,"dialogue actor "+alias+" is unavailable");if(missing.outcome()!=SceneStepResult.Outcome.SKIP)return missing;}
             String text=string(c,"text","");if(text.isBlank())return SceneStepResult.fail("dialogue_text_missing","dialogue text is empty");
             List<UUID> recipients=new ArrayList<>(c.instance().participants());if(recipients.isEmpty()&&c.instance().owner().playerId()!=null)recipients.add(c.instance().owner().playerId());
-            for(UUID id:recipients){ServerPlayer player=c.server().getPlayerList().getPlayer(id);if(player==null)continue;
+            for(UUID id:recipients){ServerPlayer player=c.server().getPlayerList().getPlayer(id);if(player==null){String policy=string(c,"offline_policy","wait").toLowerCase(Locale.ROOT);if(policy.equals("skip"))continue;if(policy.equals("fail"))return SceneStepResult.fail("dialogue_recipient_offline","dialogue recipient "+id+" is offline");return SceneStepResult.waitUntil(c.gameTime()+Math.max(1,longValue(c,"offline_poll_ticks",20)),"waiting for dialogue recipient "+id);}
                 var applied=SceneReceiptGuard.applyOnce(c,"dialogue/"+id,SceneOperationReceipt.Kind.DIALOGUE_DELIVERY,()->player.sendSystemMessage(Component.literal(text)),"recipient="+id);
                 if(applied.status()==SceneReceiptGuard.Status.AMBIGUOUS_PREPARED)return SceneStepResult.block("dialogue_delivery_ambiguous","cannot prove whether dialogue was delivered before reload");
                 applied.receipt().completed(c.gameTime(),"recipient="+id);

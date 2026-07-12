@@ -277,23 +277,23 @@ public final class SceneRegistryGameTests {
         int[] effects={0};
         for(SceneOperationReceipt.Kind kind:List.of(SceneOperationReceipt.Kind.ITEM_GRANT,
                 SceneOperationReceipt.Kind.REPUTATION_CHANGE,SceneOperationReceipt.Kind.EXPERIENCE_GRANT,
-                SceneOperationReceipt.Kind.COUNTER_INCREMENT)){
+                SceneOperationReceipt.Kind.COUNTER_INCREMENT,SceneOperationReceipt.Kind.QUEST_TRANSITION)){
             SceneExecutionContext context=new SceneExecutionContext(helper.getLevel().getServer(),data,instance,definition,step,record,10L,true);
             helper.assertValueEqual(SceneReceiptGuard.applyOnce(context,kind.name(),kind,()->effects[0]++,"semantic-test").status(),
                     SceneReceiptGuard.Status.APPLIED,"first receipt application");
             helper.assertValueEqual(SceneReceiptGuard.applyOnce(context,kind.name(),kind,()->effects[0]++,"semantic-test").status(),
                     SceneReceiptGuard.Status.ALREADY_APPLIED,"repeated receipt application");
         }
-        helper.assertTrue(effects[0]==4,"receipts should apply item, reputation, XP, and counter effects exactly once each");
+        helper.assertTrue(effects[0]==5,"receipts should apply item, reputation, XP, counter, and quest-transition effects exactly once each");
         SceneInstance loaded=SceneInstance.load(instance.save());
-        helper.assertTrue(loaded.receipts().size()==4&&loaded.receipts().values().stream().allMatch(r->r.state()==SceneOperationReceipt.ReceiptState.APPLIED),
+        helper.assertTrue(loaded.receipts().size()==5&&loaded.receipts().values().stream().allMatch(r->r.state()==SceneOperationReceipt.ReceiptState.APPLIED),
                 "applied operation receipts should survive save/reload");
         var loadedRecord=loaded.stepRecords().get(loaded.currentStep());
         var loadedContext=new SceneExecutionContext(helper.getLevel().getServer(),data,loaded,definition,step,loadedRecord,12L,false);
         SceneOperationReceipt ambiguous=loadedContext.prepareReceipt("ambiguous",SceneOperationReceipt.Kind.LOOT_GRANT);
         helper.assertValueEqual(SceneReceiptGuard.applyOnce(loadedContext,"ambiguous",SceneOperationReceipt.Kind.LOOT_GRANT,()->effects[0]++,"").status(),
                 SceneReceiptGuard.Status.AMBIGUOUS_PREPARED,"ambiguous prepared receipt after reload");
-        helper.assertTrue(ambiguous.state()==SceneOperationReceipt.ReceiptState.PREPARED&&effects[0]==4,
+        helper.assertTrue(ambiguous.state()==SceneOperationReceipt.ReceiptState.PREPARED&&effects[0]==5,
                 "ambiguous recovery must block rather than duplicate an effect");
         helper.succeed();
     }
@@ -421,6 +421,34 @@ public final class SceneRegistryGameTests {
         EncounterInstance loaded=EncounterInstance.load(started.encounter().save());EncounterService.reconcileSpawn(helper.getLevel().getServer(),data,loaded,remove);helper.assertTrue(loaded.spawned().size()==owned&&!loaded.spawned().contains(unrelated.getUUID()),"reload reconciliation must not duplicate mobs or count unrelated nearby mobs");helper.assertTrue(loaded.partySize()==3&&loaded.expectedCount()==4,"party scaling inputs should remain stable after reload");
         EncounterService.cleanup(helper.getLevel().getServer(),data,started.encounter(),false);helper.assertTrue(started.encounter().state()==EncounterInstance.EncounterState.CLEANED,"abandonment cleanup should remove loaded owned survivors");
         var preserved=data.startEncounter(preserve,scene,"ambush/preserve",helper.getLevel().dimension().location(),anchor,"normal").encounter();EncounterService.reconcileSpawn(helper.getLevel().getServer(),data,preserved,preserve);UUID survivor=preserved.spawned().iterator().next();EncounterService.cleanup(helper.getLevel().getServer(),data,preserved,false);helper.assertTrue(preserved.state()==EncounterInstance.EncounterState.RELEASED&&helper.getLevel().getEntity(survivor)!=null,"preserve policy should release surviving mobs into the world");helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void missingActorsFollowRequiredAndOptionalPolicies(GameTestHelper helper) {
+        BuiltinSceneStepExecutors.register();
+        JsonObject requiredJson=JsonParser.parseString("""
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:missing_required","entry_step":"move","actors":[
+                 {"alias":"guide","type":"villagerretaliation:villager","binding_source":"unbound","missing_actor_policy":"block"}],"steps":[
+                 {"id":"move","type":"villagerretaliation:move_actor","actors":["guide"],"data":{"x":0,"y":64,"z":0},"next":"done"},
+                 {"id":"done","type":"villagerretaliation:scene_complete"}]}
+                """).getAsJsonObject();
+        JsonObject optionalJson=requiredJson.deepCopy();optionalJson.addProperty("id","villagerretaliation:missing_optional");JsonObject optionalActor=optionalJson.getAsJsonArray("actors").get(0).getAsJsonObject();optionalActor.addProperty("required",false);optionalActor.addProperty("replacement_policy","optional");optionalActor.addProperty("missing_actor_policy","skip");
+        for(var entry:List.of(Map.entry(compiledScene(requiredJson),com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.BLOCK),Map.entry(compiledScene(optionalJson),com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.SKIP))){var definition=entry.getKey();UUID owner=UUID.randomUUID();SceneSavedData data=new SceneSavedData();SceneInstance instance=data.start(definition,"missing/"+owner,new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,owner,null,null,""),null,Set.of(owner),Map.of(),0L).instance();var step=definition.steps().get("move");var result=SceneStepExecutors.get(step.type()).orElseThrow().apply(new SceneExecutionContext(helper.getLevel().getServer(),data,instance,definition,step,instance.currentRecord(step.type()),1L,true));helper.assertValueEqual(result.outcome(),entry.getValue(),"missing actor policy outcome");}
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void offlineDialogueWaitsAndPartyReconnectCannotDuplicateSceneOrReward(GameTestHelper helper) {
+        BuiltinSceneStepExecutors.register();JsonObject json=JsonParser.parseString("""
+                {"schema":"villagerretaliation:scene/v1","id":"villagerretaliation:offline_dialogue","ownership":"party","entry_step":"speak","actors":[],"steps":[
+                 {"id":"speak","type":"villagerretaliation:dialogue","data":{"text":"Regroup at the gate."},"next":"done"},
+                 {"id":"done","type":"villagerretaliation:scene_complete"}]}
+                """).getAsJsonObject();var definition=compiledScene(json);UUID party=UUID.randomUUID();UUID offline=UUID.randomUUID();SceneOwner owner=new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PARTY,null,party,null,"");SceneSavedData data=new SceneSavedData();var first=data.start(definition,"party/gate",owner,null,Set.of(offline),Map.of(),0L);var step=definition.steps().get("speak");var waiting=SceneStepExecutors.get(step.type()).orElseThrow().apply(new SceneExecutionContext(helper.getLevel().getServer(),data,first.instance(),definition,step,first.instance().currentRecord(step.type()),1L,true));helper.assertTrue(waiting.outcome()==com.jvn.villagerretaliation.scene.runtime.SceneStepResult.Outcome.WAIT&&first.instance().receipts().isEmpty(),"offline dialogue should wait without recording a false delivery");first.instance().prepareReceipt("party_reward",SceneOperationReceipt.Kind.LOOT_GRANT,2L).completed(2L,"claimed");var reconnect=data.start(definition,"party/gate",owner,null,Set.of(offline,UUID.randomUUID()),Map.of(),3L);helper.assertTrue(!reconnect.created()&&reconnect.instance().id().equals(first.instance().id())&&reconnect.instance().receipts().size()==1,"party reconnect or membership changes must not duplicate the scene or its reward receipt");helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void compatibleQuestProviderRebindUpdatesSceneHistory(GameTestHelper helper) {
+        Villager first=spawnVillager(helper,1,1);Villager second=spawnVillager(helper,2,1);JsonObject json=validScene();json.getAsJsonArray("actors").get(0).getAsJsonObject().addProperty("replacement_policy","compatible_replacement");var definition=compiledScene(json);SceneResources.installTestScenes(helper.getLevel().getServer(),List.of(definition));SceneSavedData data=SceneSavedData.get(helper.getLevel());UUID player=UUID.randomUUID();ResourceLocation quest=VillagerRetaliation.id("compatible_provider_scene");SceneActorBinding binding=SceneActorBinding.entity("guide",VillagerRetaliation.id("villager"),first.getUUID(),VillagerRetaliation.id("villager"),helper.getLevel().dimension().location(),first.blockPosition(),"First",true);SceneInstance scene=data.start(definition,"compatible/"+UUID.randomUUID(),new SceneOwner(com.jvn.villagerretaliation.scene.model.SceneResource.OwnershipMode.PLAYER,player,null,null,""),null,Set.of(player),Map.of("guide",binding),0L).instance();scene.linkQuest(quest);SceneLifecycleIntegration.onQuestProviderRebind(helper.getLevel(),player,quest,first.getUUID(),second,"semantic_test_rebind");SceneActorBinding rebound=scene.actorBindings().get("guide");helper.assertTrue(second.getUUID().equals(rebound.entityId())&&rebound.replacementHistory().size()==1,"compatible quest-provider rebind should update the scene binding and append history");helper.assertTrue(data.auditEntries().stream().anyMatch(a->scene.id().equals(a.sceneId())&&a.actorAlias().equals("guide")),"compatible provider rebind should append a scene audit entry");helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

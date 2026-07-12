@@ -58,7 +58,7 @@ Built-in actor types are:
 
 Binding sources are `owner_player`, `party_member`, `quest_provider`, `uuid`, `marker`, `encounter`, `owned_spawn`, and `unbound`. Replacement policies are `fixed`, `operator_rebindable`, `compatible_replacement`, `respawn_if_owned`, and `optional`. Missing policies are `block`, `fail`, `skip`, and `wait_until_timeout`; death policies are `fail`, `block`, `apply_missing_policy`, `respawn_if_owned`, and `continue_with_snapshot`.
 
-Bindings persist UUID/target identity, source, last dimension and position, display snapshot, generation, live/snapshot state, and full replacement history. A fixed narrative actor is never proximity-replaced. Provider actors reuse quest-provider identity and compatible rebind history. Use `/villagerretaliation scene rebind <scene-uuid> <alias> <entity>` for an `operator_rebindable` repair.
+Bindings persist UUID/target identity, source, last dimension and position, display snapshot, generation, live/snapshot state, and full replacement history. A fixed narrative actor is never proximity-replaced. Provider actors reuse quest-provider identity; a quest-provider rebind updates scene actors only when they explicitly use `compatible_replacement`, and appends both binding history and an audit entry. Use `/villagerretaliation scene rebind <scene-uuid> <alias> <entity>` for an `operator_rebindable` repair.
 
 ## Built-in steps
 
@@ -70,7 +70,7 @@ Each step has `id`, `type`, optional `actors`, a `data` object, `next`, named `t
 | `wait_condition` | registered `conditions`, `timeout_ticks`, `poll_ticks` |
 | `move_actor` | `actor`, `target_actor` or `dimension`/`x`/`y`/`z`, `speed`, `arrival_distance`, `timeout_ticks`, `path_failure_policy`, explicit `allow_teleport` |
 | `face_actor` / `face_position` | source `actor` and target actor or position |
-| `dialogue` | `text`, speaker aliases in `actors`; one delivery receipt per participant |
+| `dialogue` | `text`, speaker aliases in `actors`, `offline_policy` (`wait`, `fail`, or `skip`), `offline_poll_ticks`; one delivery receipt per participant |
 | `action_batch` | allowlisted `actions`, each with a stable `id`; arbitrary commands are rejected |
 | `quest_transition` | safe quest action fields such as `target_stage`, completion, or failure |
 | `scene_branch` | ordered `branches` containing registered `conditions` and a transition name, plus `default_transition`; the chosen name is persisted |
