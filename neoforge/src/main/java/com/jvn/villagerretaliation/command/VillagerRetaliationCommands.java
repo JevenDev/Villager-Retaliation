@@ -228,7 +228,15 @@ public final class VillagerRetaliationCommands {
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, String> targetArgument() {
-        return argument("target", StringArgumentType.string())
+        return namedVillagerArgument("target");
+    }
+
+    private static RequiredArgumentBuilder<CommandSourceStack, String> allegianceEntityArgument() {
+        return namedVillagerArgument("entity");
+    }
+
+    private static RequiredArgumentBuilder<CommandSourceStack, String> namedVillagerArgument(String argumentName) {
+        return argument(argumentName, StringArgumentType.string())
                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                         context.getSource().getLevel().getEntitiesOfClass(AbstractVillager.class, commandSuggestionArea(context.getSource()))
                                 .stream()
@@ -242,32 +250,32 @@ public final class VillagerRetaliationCommands {
     private static LiteralArgumentBuilder<CommandSourceStack> allegianceCommands() {
         return literal("allegiance")
                 .then(literal("inspect")
-                        .then(argument("entity", StringArgumentType.string())
+                        .then(allegianceEntityArgument()
                                 .executes(VillagerRetaliationCommands::inspectAllegiance)))
                 .then(literal("assign")
-                        .then(argument("entity", StringArgumentType.string())
+                        .then(allegianceEntityArgument()
                                 .then(argument("uuid", StringArgumentType.word())
                                         .executes(VillagerRetaliationCommands::assignAllegiance))))
                 .then(literal("unknown")
-                        .then(argument("entity", StringArgumentType.string())
+                        .then(allegianceEntityArgument()
                                 .executes(context -> setAllegianceState(context, false))))
                 .then(literal("unaffiliated")
-                        .then(argument("entity", StringArgumentType.string())
+                        .then(allegianceEntityArgument()
                                 .executes(context -> setAllegianceState(context, true))))
                 .then(literal("merge")
                         .then(argument("source", StringArgumentType.word())
                                 .then(argument("target", StringArgumentType.word())
                                         .executes(VillagerRetaliationCommands::mergeAllegiances))))
                 .then(literal("fork")
-                        .then(argument("entity", StringArgumentType.string())
+                        .then(allegianceEntityArgument()
                                 .executes(VillagerRetaliationCommands::forkAllegiance)))
                 .then(literal("migrate")
-                        .then(argument("entity", StringArgumentType.string())
+                        .then(allegianceEntityArgument()
                                 .executes(VillagerRetaliationCommands::migrateAllegiance)))
                 .then(literal("statistics")
                         .executes(VillagerRetaliationCommands::allegianceStatistics))
                 .then(literal("reset_abuse")
-                        .then(argument("entity", StringArgumentType.string())
+                        .then(allegianceEntityArgument()
                                 .then(argument("player", StringArgumentType.word())
                                         .executes(VillagerRetaliationCommands::resetAbuse))));
     }
@@ -392,6 +400,9 @@ public final class VillagerRetaliationCommands {
     private static Entity allegianceTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         String value = StringArgumentType.getString(context, "entity");
         Entity entity = parseEntityTarget(context.getSource(), value);
+        if (entity == null) {
+            entity = findVillagerByName(context.getSource(), value);
+        }
         if (entity == null) {
             context.getSource().sendFailure(Component.literal("No single loaded entity matched " + value));
         }
