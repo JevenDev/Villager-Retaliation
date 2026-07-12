@@ -72,7 +72,7 @@ public final class PartyService {
      */
     public static boolean canRecruitedVillagersAssistAgainst(LivingEntity target) {
         return target != null
-                && !(target instanceof AbstractVillager)
+                && (!(target instanceof AbstractVillager) || target instanceof Villager)
                 && !(target instanceof IronGolem);
     }
 

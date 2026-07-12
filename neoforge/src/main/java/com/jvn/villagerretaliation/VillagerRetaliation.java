@@ -1,6 +1,9 @@
 package com.jvn.villagerretaliation;
 
 import com.jvn.villagerretaliation.command.VillagerRetaliationCommands;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
+import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
+import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlockEntityTypes;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
@@ -53,6 +56,9 @@ public class VillagerRetaliation {
         ToucanEventBuses.game()
                 .listener(VillagerRetaliationEvents::onServerStarted)
                 .listener(VillagerRetaliationEvents::onServerStopping)
+                .listener(VillageAllegianceService::onServerStopping)
+                .listener(VillageCombatAuthorizationService::onServerStopping)
+                .listener(VillagerDisciplineService::onServerStopping)
                 .listener(VillagerRetaliationEvents::onAddReloadListeners)
                 .listener(VillagerSkillTradeEvents::onVillagerTrades)
                 .listener(VillagerSkillTradeEvents::onWandererTrades)
@@ -61,6 +67,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onLivingDamageFinalPre)
                 .listener(VillagerRetaliationEvents::onLivingDamage)
                 .listener(VillagerReputationEvents::onLivingDamage)
+                .listener(VillagerDisciplineService::onLivingDamage)
                 .listener(VillagerRetaliationEvents::onLivingDeath)
                 .listener(VillagerSocialGraphService::onLivingDeath)
                 .listener(VillagerReputationEvents::onLivingDeath)
@@ -70,13 +77,19 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onEntitySize)
                 .listener(VillagerRetaliationEvents::onPlayerLoggedIn)
                 .listener(VillagerRetaliationEvents::onServerTickPost)
+                .listener(VillageAllegianceService::onServerTickPost)
+                .listener(VillageCombatAuthorizationService::onServerTickPost)
                 .listener(VillagerReputationEvents::onServerTickPost)
                 .listener(VillagerSocialGraphService::onBabyEntitySpawn)
+                .listener(VillageAllegianceService::onBabyEntitySpawn)
                 .listener(VillagerSocialGraphService::onLivingConversionPost)
                 .listener(VillagerReputationEvents::onLivingConversionPost)
                 .listener(VillagerConversionPersistenceService::onLivingConversionPost)
+                .listener(VillageAllegianceService::onLivingConversionPost)
+                .listener(VillagerDisciplineService::onLivingConversionPost)
                 .listener(VillagerRetaliationEvents::onEntityJoinLevel)
                 .listener(VillagerSocialGraphService::onEntityJoinLevel)
+                .listener(VillageAllegianceService::onEntityJoinLevel)
                 .listener(VillagerRetaliationEvents::onPlayerStartTracking)
                 .listener(VillagerRetaliationEvents::onPlayerLoggedOut)
                 .listener(VillagerRetaliationEvents::onPlayerClone)

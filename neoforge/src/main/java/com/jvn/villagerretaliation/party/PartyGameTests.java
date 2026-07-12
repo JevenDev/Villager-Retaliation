@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.party;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.allegiance.VillagerAbuseSavedData;
+import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -15,6 +17,9 @@ import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
+import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.mojang.authlib.GameProfile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -26,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -35,9 +41,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -565,19 +573,23 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void recruitedVillagersNeverAssistAgainstVillageResidents(GameTestHelper helper) {
+    public static void civilianCandidateGateDefersVillagersButStillBlocksTradersAndGolems(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
-        IronGolem ironGolem = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(3, 2, 2));
-        var zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 2, 2));
+        WanderingTrader wanderingTrader = helper.spawn(EntityType.WANDERING_TRADER, new BlockPos(3, 2, 2));
+        IronGolem ironGolem = helper.spawn(EntityType.IRON_GOLEM, new BlockPos(4, 2, 2));
+        var zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(5, 2, 2));
         try {
-            helper.assertFalse(PartyService.canRecruitedVillagersAssistAgainst(villager),
-                    "party aggression must not target villagers");
+            helper.assertTrue(PartyService.canRecruitedVillagersAssistAgainst(villager),
+                    "villager candidates now defer to the centralized allegiance policy");
+            helper.assertFalse(PartyService.canRecruitedVillagersAssistAgainst(wanderingTrader),
+                    "party aggression must not target wandering traders");
             helper.assertFalse(PartyService.canRecruitedVillagersAssistAgainst(ironGolem),
                     "party aggression must not target village iron golems");
             helper.assertTrue(PartyService.canRecruitedVillagersAssistAgainst(zombie),
                     "party aggression must still target ordinary mobs");
         } finally {
             villager.discard();
+            wanderingTrader.discard();
             ironGolem.discard();
             zombie.discard();
         }
@@ -585,7 +597,83 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void recruitedVillagersIgnoreUnrelatedVillageCrimeReputation(GameTestHelper helper) {
+    public static void directPlayerHitStillDamagesOwnRecruitAndDirectReputation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, uniqueName("party_direct_recruit_hit"));
+        Villager recruited = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(player.getUUID(), now);
+        try {
+            PartySavedData.get(level).addVillager(
+                    party,
+                    villagerRecord(recruited.getUUID(), player.getUUID(), 0, now));
+            float healthBefore = recruited.getHealth();
+            int reputationBefore = VillagerReputationManager.getReputation(level, recruited, player.getUUID());
+
+            helper.assertTrue(recruited.hurt(level.damageSources().playerAttack(player), 2.0F),
+                    "own recruit must accept direct player damage");
+            helper.assertTrue(recruited.getHealth() < healthBefore,
+                    "own recruit health must decrease after the direct hit");
+            helper.assertTrue(
+                    VillagerReputationManager.getReputation(level, recruited, player.getUUID()) < reputationBefore,
+                    "own recruit direct reputation must decrease after the direct hit");
+        } finally {
+            PartyService.deleteParty(level, party.id());
+            recruited.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void thirdAbuseIncidentCommitsOneNonlethalDisciplinaryAttempt(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, uniqueName("party_discipline"));
+        movePlayer(helper, player, new BlockPos(3, 2, 2));
+        Villager recruited = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(player.getUUID(), now);
+        try {
+            PartySavedData.get(level).addVillager(
+                    party,
+                    villagerRecord(recruited.getUUID(), player.getUUID(), 0, now));
+            helper.assertValueEqual(VillagerDisciplineService.recordQualifyingHit(level, recruited, player), 1,
+                    "first warning count");
+            helper.assertFalse(VillagerDisciplineService.hasIncident(recruited.getUUID()),
+                    "first warning has no attack incident");
+            helper.assertValueEqual(VillagerDisciplineService.recordQualifyingHit(level, recruited, player), 2,
+                    "second warning count");
+            helper.assertFalse(VillagerDisciplineService.hasIncident(recruited.getUUID()),
+                    "second warning has no attack incident");
+            helper.assertValueEqual(VillagerDisciplineService.recordQualifyingHit(level, recruited, player), 3,
+                    "third warning count");
+            helper.assertTrue(VillagerDisciplineService.hasIncident(recruited.getUUID()),
+                    "third warning creates a bounded attack incident");
+
+            player.setHealth(1.5F);
+            helper.assertTrue(VillagerDisciplineService.tickVillager(recruited),
+                    "disciplinary incident should be handled");
+            helper.assertTrue(player.getHealth() >= 1.0F, "disciplinary damage must be nonlethal");
+            helper.assertFalse(VillagerDisciplineService.hasIncident(recruited.getUUID()),
+                    "committed attempt consumes the incident");
+            helper.assertTrue(recruited.getTarget() == null, "disciplinary target clears after one attempt");
+
+            VillagerAbuseSavedData serialized = new VillagerAbuseSavedData();
+            serialized.recordHit(recruited.getUUID(), player.getUUID(), 10L);
+            serialized.recordHit(recruited.getUUID(), player.getUUID(), 20L);
+            CompoundTag saved = serialized.save(new CompoundTag(), level.registryAccess());
+            VillagerAbuseSavedData loaded = VillagerAbuseSavedData.load(saved, level.registryAccess());
+            helper.assertValueEqual(loaded.record(recruited.getUUID(), player.getUUID()).hits(), 2,
+                    "abuse warnings survive SavedData serialization");
+        } finally {
+            VillagerDisciplineService.clearRuntimeState();
+            PartyService.deleteParty(level, party.id());
+            recruited.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyMembershipNoLongerBlanketSuppressesIndirectReputation(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer player = fakePlayer(level, uniqueName("party_reputation_exemption"));
         Villager recruited = spawnVillager(helper, new BlockPos(2, 2, 2));
@@ -601,17 +689,66 @@ public final class PartyGameTests {
                     level, recruited, player.getUUID(), -5, UUID.randomUUID());
             helper.assertValueEqual(
                     VillagerReputationManager.getReputation(level, recruited, player.getUUID()),
-                    0,
-                    "party villagers must ignore indirect penalties for unrelated village crimes");
+                    -15,
+                    "party membership alone must not suppress witnessed and gossip consequences");
 
             VillagerReputationManager.addDirectReputation(level, recruited, player.getUUID(), -4);
             helper.assertValueEqual(
                     VillagerReputationManager.getReputation(level, recruited, player.getUUID()),
-                    -4,
+                    -19,
                     "directly attacking the recruited villager must still damage its reputation");
         } finally {
             PartyService.deleteParty(level, party.id());
             recruited.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void socialVillageKeyIsPhysicalAndSurvivesUnresolvedRelocation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        VillagerSocialGraphSavedData socialGraph = new VillagerSocialGraphSavedData();
+        Villager relocated = null;
+        try {
+            villager.getBrain().setMemory(
+                    MemoryModuleType.HOME,
+                    GlobalPos.of(level.dimension(), villager.blockPosition()));
+            VillageMembership.clearCache();
+            socialGraph.ensureProfile(level, villager);
+            String originalVillage = socialGraph.knownVillage(villager.getUUID()).orElse("");
+            helper.assertTrue(VillageScopeKeys.isVillageKey(originalVillage),
+                    "resident profile must capture a physical village key");
+
+            // GameTests are packed into a shared grid, so move well beyond neighboring test villages.
+            BlockPos movedPos = villager.blockPosition().offset(16384, 0, 0);
+            level.getChunk(movedPos.getX() >> 4, movedPos.getZ() >> 4);
+            UUID villagerId = villager.getUUID();
+            villager.discard();
+            relocated = EntityType.VILLAGER.create(level);
+            if (relocated == null) {
+                throw new GameTestAssertException("Could not create relocated villager");
+            }
+            relocated.setUUID(villagerId);
+            relocated.moveTo(movedPos.getX() + 0.5D, movedPos.getY(), movedPos.getZ() + 0.5D, 0.0F, 0.0F);
+            relocated.getBrain().setMemory(MemoryModuleType.HOME, GlobalPos.of(level.dimension(), movedPos));
+            helper.assertTrue(level.addFreshEntity(relocated), "relocated villager must load at its new position");
+            VillageMembership.clearCache();
+            helper.assertTrue(VillageMembership.resolve(level, relocated).isEmpty(),
+                    "isolated relocation must have no currently resolvable physical village");
+            socialGraph.ensureProfile(level, relocated);
+            String refreshedVillage = socialGraph.knownVillage(villagerId).orElse("");
+
+            helper.assertTrue(VillageScopeKeys.isVillageKey(refreshedVillage),
+                    "relocated profile must retain its last physical village key");
+            helper.assertValueEqual(refreshedVillage, originalVillage,
+                    "social profile preserves the last nonblank village when current membership is unresolved");
+        } finally {
+            VillageMembership.clearCache();
+            villager.discard();
+            if (relocated != null) {
+                relocated.discard();
+            }
         }
         helper.succeed();
     }

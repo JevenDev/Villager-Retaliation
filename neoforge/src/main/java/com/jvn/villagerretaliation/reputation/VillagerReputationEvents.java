@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.reputation;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceEntityClassifier;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
@@ -474,6 +476,10 @@ public final class VillagerReputationEvents {
                 continue;
             }
             if (VillagerRetaliationConfig.VANILLA_GOSSIP_REQUIRES_LINE_OF_SIGHT.get() && !witness.hasLineOfSight(source)) {
+                continue;
+            }
+            if (AllegianceEntityClassifier.bearsAllegiance(source)
+                    && !VillageAllegianceRelations.sharesCommunity(level, source, witness)) {
                 continue;
             }
             witnesses.add(witness);

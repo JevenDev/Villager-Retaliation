@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "#villagerretaliation:village_allegiance_holders",
+    "minecraft:wandering_trader",
+    "minecraft:trader_llama"
+  ]
+}

@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.reputation;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
@@ -70,15 +72,22 @@ public final class VillagerGossipHooks {
     }
 
     private static List<Villager> gossipReceivers(ServerLevel level, Villager source, int receiverLimit, double radius) {
+        if (VillageAllegianceApi.canonicalPrimary(level, source).isEmpty()) {
+            return List.of();
+        }
         return VillageMembership.resolve(level, source)
-                .map(area -> nearestReceivers(source, area.membersMatching(receiver -> receiver != source && receiver.isAlive()), receiverLimit))
+                .map(area -> nearestReceivers(source, area.membersMatching(receiver -> receiver != source
+                        && receiver.isAlive()
+                        && VillageAllegianceRelations.sharesCommunity(level, source, receiver)), receiverLimit))
                 .filter(receivers -> !receivers.isEmpty())
                 .orElseGet(() -> {
                     AABB area = source.getBoundingBox().inflate(radius);
                     return nearestReceivers(source, level.getEntitiesOfClass(
                             Villager.class,
                             area,
-                            receiver -> receiver != source && receiver.isAlive()
+                            receiver -> receiver != source
+                                    && receiver.isAlive()
+                                    && VillageAllegianceRelations.sharesCommunity(level, source, receiver)
                     ), receiverLimit);
                 });
     }

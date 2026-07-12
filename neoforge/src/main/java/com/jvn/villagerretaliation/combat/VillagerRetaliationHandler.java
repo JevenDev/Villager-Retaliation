@@ -1,5 +1,12 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
+import com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision;
+import com.jvn.villagerretaliation.allegiance.AllegianceEntityClassifier;
+import com.jvn.villagerretaliation.allegiance.UnlawfulOrderService;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
+import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
+import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
@@ -125,11 +132,26 @@ public final class VillagerRetaliationHandler {
         LivingEntity damaged = event.getEntity();
         Optional<LivingEntity> resolvedAttacker =
                 VillagerRetaliationVillagerCombatUtil.resolveAttacker(damaged, event.getSource());
-        if (resolvedAttacker.filter(Villager.class::isInstance)
+        boolean disciplinary = resolvedAttacker
+                .map(attacker -> VillagerDisciplineService.isCommitting(attacker, damaged))
+                .orElse(false);
+        if (!disciplinary && resolvedAttacker.filter(Villager.class::isInstance)
                 .filter(attacker -> PartyService.areInSameParty(attacker, damaged))
                 .isPresent()) {
             event.setAmount(0.0F);
             return;
+        }
+        if (!disciplinary && damaged.level() instanceof ServerLevel level && resolvedAttacker.isPresent()) {
+            LivingEntity attacker = resolvedAttacker.get();
+            boolean authorized = VillageCombatAuthorizationService.isAuthorized(attacker, damaged);
+            AllegianceCombatContext damageContext = attacker instanceof Player
+                    ? AllegianceCombatContext.DIRECT_PLAYER_DAMAGE
+                    : AllegianceCombatContext.DAMAGE;
+            if (VillageAllegianceCombatPolicy.evaluate(
+                    level, attacker, damaged, damageContext, authorized).denied()) {
+                event.setAmount(0.0F);
+                return;
+            }
         }
         if (!(event.getEntity() instanceof Villager villager)) {
             return;
@@ -295,6 +317,10 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        if (VillagerDisciplineService.tickVillager(villager)) {
+            return;
+        }
+
         RETALIATION.restorePersistedAngerIfNeeded(villager);
         tryAcquireHostileTarget(villager);
 
@@ -315,6 +341,12 @@ public final class VillagerRetaliationHandler {
 
         ServerLevel level = retaliationTarget.level();
         LivingEntity target = retaliationTarget.target();
+        boolean authorizedTarget = VillageCombatAuthorizationService.isAuthorized(villager, target);
+        if (VillageAllegianceCombatPolicy.evaluate(
+                level, villager, target, AllegianceCombatContext.TARGET_CONTINUATION, authorizedTarget).denied()) {
+            clearAnger(villager);
+            return;
+        }
         long gameTime = retaliationTarget.gameTime();
         double distanceSqr = villager.distanceToSqr(target);
         if (isNaturalHostileTarget(villager, target)
@@ -561,6 +593,15 @@ public final class VillagerRetaliationHandler {
                 || !villager.canAttack(target)) {
             return false;
         }
+        if (villager.level() instanceof ServerLevel level
+                && VillageAllegianceCombatPolicy.evaluate(
+                        level,
+                        villager,
+                        target,
+                        AllegianceCombatContext.CUSTOM_TARGET,
+                        VillageCombatAuthorizationService.isAuthorized(villager, target)).denied()) {
+            return false;
+        }
         anger(villager, target, false, announceRetaliation);
         return true;
     }
@@ -778,8 +819,7 @@ public final class VillagerRetaliationHandler {
     private static void rallyPartyVillagers(Entity partyMember, LivingEntity target, boolean attackingWithParty) {
         if (!(partyMember.level() instanceof ServerLevel level)
                 || partyMember == target
-                || PartyService.areInSameParty(partyMember, target)
-                || !PartyService.canRecruitedVillagersAssistAgainst(target)) {
+                || PartyService.areInSameParty(partyMember, target)) {
             return;
         }
         PartyRecord party = PartyService.getPartyForEntity(partyMember).orElse(null);
@@ -798,6 +838,29 @@ public final class VillagerRetaliationHandler {
                     || !villager.isAlive()
                     || !canWitnessRetaliationEvent(villager, partyMember)
                     || !shouldRetaliateAgainstAttacker(villager, target)) {
+                continue;
+            }
+            AllegianceCombatContext context = attackingWithParty
+                    ? AllegianceCombatContext.PARTY_ATTACK
+                    : AllegianceCombatContext.PARTY_DEFEND;
+            boolean opposingParties = PartyService.getPartyForEntity(target)
+                    .map(targetParty -> !targetParty.id().equals(party.id()))
+                    .orElse(false);
+            var decision = VillageAllegianceCombatPolicy.evaluate(
+                    level, villager, target, context, opposingParties);
+            if (decision.denied()) {
+                if (AllegianceEntityClassifier.protectedCivilian(target)
+                        && (decision.reason() == AllegianceCombatDecision.Reason.SAME_CANONICAL_ALLEGIANCE
+                        || decision.reason() == AllegianceCombatDecision.Reason.PARENT_PROTECTION)) {
+                    UUID responsiblePlayer = partyMember instanceof Player
+                            ? partyMember.getUUID()
+                            : party.leaderId();
+                    UnlawfulOrderService.record(level, villager, responsiblePlayer, target.getUUID());
+                }
+                continue;
+            }
+            if (decision.action() == AllegianceCombatDecision.Action.ALLOW
+                    && !VillageCombatAuthorizationService.authorize(level, villager, target, context)) {
                 continue;
             }
             anger(villager, target);

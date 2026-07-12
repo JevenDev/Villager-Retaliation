@@ -1,5 +1,8 @@
 package com.jvn.villagerretaliation.event;
 
+import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
+import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
+import com.jvn.villagerretaliation.allegiance.UnlawfulOrderService;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationAttempt;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
@@ -174,6 +177,7 @@ public final class VillagerRetaliationEvents {
         DialogueTreeService.clearRuntimeState();
         VillagerQuestService.clearRuntimeState();
         HiredDebugPreviewService.clearRuntimeState();
+        UnlawfulOrderService.clearRuntimeState();
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -259,6 +263,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamageFinalPre(LivingDamageEvent.Pre event) {
+        VillagerDisciplineService.capFinalDamage(event);
         VillagerDownedService.onLivingDamagePre(event);
     }
 
@@ -710,6 +715,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        VillageCombatAuthorizationService.clearFor(event.getEntity());
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
             VillagerDownedService.onVillagerUnloaded(villager);
             Entity.RemovalReason reason = villager.getRemovalReason();

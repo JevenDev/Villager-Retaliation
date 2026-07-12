@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
@@ -61,6 +62,7 @@ public final class VillagerRetaliationRetaliationUtil {
             String persistentTagRoot
     ) {
         if (VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker)
+                && !VillageCombatAuthorizationService.isAuthorized(villager, attacker)
                 || !villager.isAlive()
                 || attacker == villager
                 || PartyService.areInSameParty(villager, attacker)) {
@@ -297,7 +299,8 @@ public final class VillagerRetaliationRetaliationUtil {
             return null;
         }
 
-        boolean targetCurrentlyHostile = !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target);
+        boolean targetCurrentlyHostile = !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target)
+                || VillageCombatAuthorizationService.isAuthorized(villager, target);
         if (!targetCurrentlyHostile) {
             if (villager.hasLineOfSight(target)) {
                 retaliationRuntime.refreshAngerTarget(villager, angerTarget, gameTime);
