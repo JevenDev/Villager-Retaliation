@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -100,6 +101,10 @@ public record VillageBoundsSyncPayload(
             lifecycle = lifecycle == null ? VillageLifecycleState.ACTIVE : lifecycle;
             sections = sections == null ? List.of() : List.copyOf(sections.stream()
                     .distinct().limit(MAX_SECTIONS_PER_VILLAGE).toList());
+        }
+
+        public boolean contains(BlockPos position) {
+            return position != null && this.sections.contains(SectionPos.asLong(position));
         }
     }
 }

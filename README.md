@@ -88,6 +88,12 @@ Anger fades over time, but reputation lasts. A fight may end after a short while
 
 Hostile villagers and wandering traders can also block trading. If you have not fallen too far, you may be able to pacify them with the right payment item.
 
+### Tracked Villages and Allegiance
+
+Villages now have durable identities, generated names, resident rosters, and POI-section footprints. Villagers born or spawned inside a tracked footprint keep that village as their permanent home; villagers created outside one are Wanderers and remain neutral to every village. Recruited Wanderers and foreign residents can fight for their party, while residents never attack their own canonical village—even after village merges.
+
+The interaction screen's Allegiance page shows a villager's home, current village, assignment history, lifecycle, and loyalty. At Revered or Royalty standing, a player can ask a villager to adopt the active village they are currently standing in. Trusted players can also use a banner on a village bell to name the village; the banner is not consumed.
+
 ### Dialogue and Interaction
 
 Villagers can feel more like actual NPCs instead of silent trade menus.
@@ -241,6 +247,8 @@ Main config file:
 
 Most major systems can be tuned or disabled, including retaliation, reputation, dialogue, gifts, notifications, social behavior, trade changes, profession combat, hostile mob targeting, loot, wandering trader behavior, and the optional debug overlay.
 
+`debugOverlay.showVillageBounds` is disabled by default. Enabling it subscribes the client to a bounded nearby-village preview, draws the tracked POI-section footprint in the same gold outline style as job-site debugging, and shows the canonical village name at the top of the HUD only while the player is inside that footprint. Disabling the option immediately unsubscribes and clears both displays.
+
 ## Commands and Testing
 
 Operator commands are included for testing reputation, relationships, dialogue matching, datapack diagnostics, quests, villager profiles, and villager skills.
@@ -253,6 +261,8 @@ Useful examples:
 /villagerretaliation dialogue explain <villager> <request> [option_id]
 /villagerretaliation quest debug providers [radius]
 /villagerretaliation skill get <villager>
+/villagerretaliation allegiance village inspect_here
+/villagerretaliation allegiance village rename_here <name>
 ```
 
 Debug-only family testing items are also available through commands:
@@ -281,6 +291,7 @@ For full pack-author documentation, examples, JSON references, and model notes, 
 ## Documentation
 
 - [Changelog](https://github.com/JevenDev/Villager-Retaliation/blob/1.21.1/CHANGELOG.md)
+- [Tracked Villages](docs/tracked-villages.md)
 - [Player Wiki](https://jevendev.github.io/Villager-Retaliation/)
 - [Pack Wiki Home](https://github.com/JevenDev/Villager-Retaliation/tree/1.21.1/wiki)
 - [Datapack Generator](https://jevendev.github.io/Villager-Retaliation/datapack-builder/)

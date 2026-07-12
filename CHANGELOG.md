@@ -26,13 +26,18 @@
 
 ### Fixed
 
-- Prevented recruited party villagers from helping players attack villagers, wandering traders, or village iron golems, including when those protected targets fight back.
-- Prevented unrelated village crime witness and gossip penalties from reducing the offending player's reputation with their recruited party villagers; directly attacking a recruit still reduces its reputation.
+- Fixed outside-spawned recruited villagers incorrectly inheriting a nearby village's grievance and confronting their own party leader.
 - Fixed villager trade-level XP previews drifting from the actual award during rapid or shift-click trading, including when server multiplier settings differ from the client.
 - Fixed low-XP trades consuming fractional trade-level XP banked by earlier trades without awarding that progress.
 
 ### Added
 
+- Added durable POI-backed village identities with generated names, canonical aliases, resident rosters, automatic connected-footprint merging, loaded-only empty-grace observation, and archival after 72,000 fully observed ticks.
+- Added permanent villager and natural-golem allegiance, neutral Wanderers for outside spawns, lazy v1 reset-on-load migration, conversion handling, and trusted reassignment from the Allegiance interaction page.
+- Added allegiance-aware combat and community response: recruits can fight Wanderers or foreign villages without the victim having a party, same-party and same-village damage is blocked, actual landed damage rallies only the victim's village, and foreign golems become reactive defense targets.
+- Added banner-on-bell village naming with server-side validation and a Revered-or-Royalty gate covering at least half of tracked living adult residents; operators can bypass the trust gate.
+- Added `debugOverlay.showVillageBounds`, a bounded subscription-based POI-section outline preview with canonical village names shown at the top center of the HUD while inside a synchronized footprint.
+- Added allegiance village administration commands for inspecting, listing, and renaming tracked villages.
 - Added separate horizontal and vertical excavation orders for hired miners. Horizontal excavation uses five-block reach, cuts and later removes temporary access stairs for tall spaces, avoids ladder shafts, and can patch unsafe floors with mined or user-supplied blocks.
 - Added 15 repeatable village commissions spanning early, mid, and late game, with distinct gathering, trading, building, mining, combat, structure-survey, Nether, End, Ancient City, and Wither objectives.
 - Added five four-quest branching questlines: Green Thumb, Deep Delvers, Redstone Works, Nether Routes, and End Survey. Each line records a player choice, provides two playable stage routes, and unlocks a different fact-gated finale.

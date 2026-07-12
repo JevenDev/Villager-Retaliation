@@ -239,7 +239,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
     public Optional<VillageAllegianceId> discoverAt(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null || !level.isVillage(pos)) {
-            return Optional.empty();
+            return resolveAt(level, pos);
         }
         Set<Long> sources = occupiedVillageSections(level, pos);
         long originSection = SectionPos.asLong(pos);
@@ -338,12 +338,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             if (record.sourceSections().isEmpty() || !entireFootprintLoaded(level, record)) {
                 continue;
             }
-            if (hasOccupiedSource(level, record)) {
-                if (record.lifecycleState() != VillageLifecycleState.ACTIVE || record.emptyObservedTicks() != 0L) {
-                    this.records.put(record.id(), record.withLifecycle(VillageLifecycleState.ACTIVE, 0L));
-                    setDirty();
-                }
-            } else {
+            if (!observeLoadedCluster(level, record)) {
                 observeEmpty(record.id(), observedTicks);
             }
         }
@@ -413,9 +408,12 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     public boolean merge(VillageAllegianceId source, VillageAllegianceId target) {
         Optional<VillageAllegianceId> sourceCanonical = canonical(source);
         Optional<VillageAllegianceId> targetCanonical = canonical(target);
-        if (sourceCanonical.isEmpty() || targetCanonical.isEmpty()
-                || sourceCanonical.get().equals(targetCanonical.get())) {
-            return sourceCanonical.isPresent() && sourceCanonical.equals(targetCanonical);
+        if (sourceCanonical.isEmpty() || targetCanonical.isEmpty()) {
+            return false;
+        }
+        if (sourceCanonical.get().equals(targetCanonical.get())) {
+            // Reversing a canonical identity into one of its aliases would create a cycle.
+            return !(source.equals(sourceCanonical.get()) && !target.equals(targetCanonical.get()));
         }
         return mergeCanonical(sourceCanonical.get(), targetCanonical.get());
     }
@@ -521,24 +519,28 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         return true;
     }
 
-    private static boolean hasOccupiedSource(ServerLevel level, AllegianceRecord record) {
-        PoiManager manager = level.getPoiManager();
-        Set<ChunkPos> chunks = record.sourceSections().stream()
-                .map(SectionPos::of)
-                .map(SectionPos::chunk)
+    private boolean observeLoadedCluster(ServerLevel level, AllegianceRecord record) {
+        Set<Long> occupied = occupiedVillageSections(level, record.center());
+        Set<Long> seeds = occupied.stream()
+                .filter(record.footprintSections()::contains)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
-        for (ChunkPos chunk : chunks) {
-            boolean found = manager.getInChunk(
-                            type -> type.is(PoiTypeTags.VILLAGE),
-                            chunk,
-                            PoiManager.Occupancy.IS_OCCUPIED)
-                    .map(poi -> SectionPos.asLong(poi.getPos()))
-                    .anyMatch(record.sourceSections()::contains);
-            if (found) {
-                return true;
-            }
+        if (seeds.isEmpty()) {
+            return false;
         }
-        return false;
+        Set<Long> cluster = connectedSources(occupied, seeds);
+        Set<Long> footprint = expandedFootprint(cluster);
+        LinkedHashSet<VillageAllegianceId> matches = activeRecords(level.dimension().location()).stream()
+                .filter(candidate -> intersects(candidate.footprintSections(), footprint))
+                .map(AllegianceRecord::id)
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        matches.add(record.id());
+        VillageAllegianceId resolved = autoMerge(matches);
+        AllegianceRecord current = this.records.get(resolved);
+        if (current != null) {
+            this.records.put(resolved, current.observe(cluster, footprint, centerOf(cluster, record.center()), level.getGameTime()));
+            setDirty();
+        }
+        return true;
     }
 
     private static Set<Long> connectedSources(Set<Long> all, Set<Long> seeds) {

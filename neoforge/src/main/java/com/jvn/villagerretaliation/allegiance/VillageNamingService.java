@@ -96,9 +96,8 @@ public final class VillageNamingService {
     public static TrustGate trustGate(
             ServerLevel level,
             ServerPlayer player,
-            VillageAllegianceRegistrySavedData.AllegianceRecord village) {
+        VillageAllegianceRegistrySavedData.AllegianceRecord village) {
         int adults = village.adultResidentCount();
-        int required = (adults + 1) / 2;
         int trusted = 0;
         VillagerReputationSavedData reputation = VillagerReputationSavedData.get(level);
         for (VillageAllegianceRegistrySavedData.ResidentRecord resident : village.residents().values()) {
@@ -112,6 +111,13 @@ public final class VillageNamingService {
             }
         }
         boolean operator = player.getServer().getPlayerList().isOp(player.getGameProfile());
+        return evaluateTrustGate(adults, trusted, operator);
+    }
+
+    public static TrustGate evaluateTrustGate(int adultResidents, int trustedResidents, boolean operator) {
+        int adults = Math.max(0, adultResidents);
+        int trusted = Math.clamp(trustedResidents, 0, adults);
+        int required = (adults + 1) / 2;
         return new TrustGate(operator || adults > 0 && trusted >= required, trusted, required);
     }
 

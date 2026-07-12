@@ -6,21 +6,31 @@ import com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision;
 import com.jvn.villagerretaliation.allegiance.AllegianceConfidence;
 import com.jvn.villagerretaliation.allegiance.AllegianceState;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceEntityData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
+import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
+import com.jvn.villagerretaliation.allegiance.VillageNamingService;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
+import com.jvn.villagerretaliation.network.VillageBoundsSyncPayload;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -199,6 +209,149 @@ public final class VillageAllegianceGameTests {
             actor.discard();
             target.discard();
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void registryArchivesAfterObservedGraceAndRebuildsWithNewIdentity(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        VillageAllegianceRegistrySavedData registry = new VillageAllegianceRegistrySavedData();
+        VillageAllegianceId original = registry.create(1L, level.dimension().location(), BlockPos.ZERO, "Old Crossing");
+        UUID resident = UUID.randomUUID();
+        registry.addOrUpdateResident(original, resident, true, 2L);
+        registry.observeEmpty(original, VillageAllegianceRegistrySavedData.ARCHIVE_GRACE_TICKS - 1L);
+        helper.assertValueEqual(registry.record(original).orElseThrow().lifecycleState(),
+                VillageLifecycleState.EMPTY_GRACE, "village remains in empty grace before 72,000 observed ticks");
+        registry.observeEmpty(original, 1L);
+        helper.assertValueEqual(registry.record(original).orElseThrow().lifecycleState(),
+                VillageLifecycleState.ARCHIVED, "village archives exactly at the loaded observation threshold");
+
+        VillageAllegianceId rebuilt = registry.create(72_001L, level.dimension().location(), BlockPos.ZERO, "New Crossing");
+        helper.assertFalse(rebuilt.equals(original), "rebuilding creates a new durable identity");
+        helper.assertTrue(registry.record(rebuilt).orElseThrow().lifecycleState() == VillageLifecycleState.ACTIVE,
+                "rebuilt identity starts active");
+        helper.assertTrue(VillageAllegianceRegistrySavedData.validateVillageName("  North   Reach ").orElseThrow()
+                .equals("North Reach"), "village names normalize whitespace");
+        helper.assertTrue(VillageAllegianceRegistrySavedData.validateVillageName("Bad\u00a7Name").isEmpty(),
+                "formatting codes are rejected");
+        helper.assertTrue(registry.rename(rebuilt, "North Reach"), "unique valid rename succeeds");
+        VillageAllegianceId other = registry.create(72_002L, level.dimension().location(), BlockPos.ZERO, "Other");
+        helper.assertFalse(registry.rename(other, "north reach"), "village names are unique case-insensitively");
+
+        VillageAllegianceRegistrySavedData restored = VillageAllegianceRegistrySavedData.load(
+                registry.save(new CompoundTag(), level.registryAccess()), level.registryAccess());
+        helper.assertTrue(restored.record(original).orElseThrow().residents().containsKey(resident),
+                "resident roster survives persistence even after archive");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void migrationCanonicalizesResidentsAndOutsideVillagersBecomeWanderers(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = createVillager(level);
+        villager.moveTo(helper.absolutePos(new BlockPos(2, 2, 2)), 0.0F, 0.0F);
+        VillageAllegianceEntityData.write(villager, new VillageAllegianceData(
+                1, AllegianceState.KNOWN, VillageAllegianceId.random(), AllegianceAssignmentSource.MIGRATION,
+                AllegianceConfidence.LEGACY_INFERRED, 1L, level.dimension().location(), villager.blockPosition(), List.of()));
+        helper.assertTrue(VillageAllegianceService.retryMigration(level, villager), "legacy migration completes");
+        helper.assertValueEqual(VillageAllegianceApi.get(villager).orElseThrow().state(), AllegianceState.UNAFFILIATED,
+                "an outside villager migrates to Wanderer instead of inheriting a nearby scope");
+
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceId alias = registry.create(level.getGameTime(), level.dimension().location(), villager.blockPosition(), "Alias Home");
+        VillageAllegianceId canonical = registry.create(level.getGameTime(), level.dimension().location(), villager.blockPosition(), "Canonical Home");
+        helper.assertTrue(registry.merge(alias, canonical), "test alias merge succeeds");
+        VillageAllegianceApi.assignKnown(level, villager, alias, AllegianceAssignmentSource.ADMIN);
+        helper.assertValueEqual(VillageAllegianceApi.get(villager).orElseThrow().primary(), canonical,
+                "loaded residents normalize directly to the canonical identity");
+        helper.assertTrue(registry.record(canonical).orElseThrow().residents().containsKey(villager.getUUID()),
+                "canonical roster tracks the normalized resident");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void reactiveGolemDefenseAndProjectileAuthorizationRecheckCanonicalLoyalty(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager actor = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager resident = spawnVillager(helper, new BlockPos(3, 2, 2));
+        IronGolem golem = EntityType.IRON_GOLEM.create(level);
+        Entity projectile = EntityType.SNOWBALL.create(level);
+        helper.assertTrue(golem != null && projectile != null, "test entities created");
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(UUID.randomUUID(), now);
+        PartySavedData.get(level).addVillager(party, partyVillagerRecord(actor.getUUID(), party.leaderId(), now));
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceId actorHome = registry.create(now, level.dimension().location(), actor.blockPosition(), "Golem Actor");
+        VillageAllegianceId villageHome = registry.create(now, level.dimension().location(), resident.blockPosition(), "Golem Village");
+        assign(level, actor, actorHome, List.of());
+        assign(level, resident, villageHome, List.of());
+        VillageAllegianceApi.assignKnown(level, golem, villageHome, AllegianceAssignmentSource.ADMIN);
+        try {
+            helper.assertValueEqual(VillageAllegianceCombatPolicy.evaluate(
+                            level, actor, golem, AllegianceCombatContext.PARTY_ATTACK, false).reason(),
+                    AllegianceCombatDecision.Reason.GOLEM_RESTRICTED,
+                    "party villagers cannot proactively attack a village golem");
+            helper.assertValueEqual(VillageAllegianceCombatPolicy.evaluate(
+                            level, actor, golem, AllegianceCombatContext.PARTY_DEFEND, false).action(),
+                    AllegianceCombatDecision.Action.ALLOW,
+                    "a foreign golem that lands hostility becomes a reactive defense target");
+            helper.assertTrue(VillageCombatAuthorizationService.authorize(
+                    level, actor, resident, AllegianceCombatContext.PARTY_ATTACK),
+                    "foreign resident receives party authorization");
+            VillageCombatAuthorizationService.associateProjectile(projectile, actor, resident);
+            helper.assertTrue(VillageCombatAuthorizationService.projectileAuthorized(projectile, actor, resident),
+                    "projectile inherits the bounded authorization");
+            registry.merge(villageHome, actorHome);
+            helper.assertValueEqual(VillageAllegianceCombatPolicy.evaluate(
+                            level, actor, resident, AllegianceCombatContext.DAMAGE,
+                            VillageCombatAuthorizationService.projectileAuthorized(projectile, actor, resident)).reason(),
+                    AllegianceCombatDecision.Reason.SAME_CANONICAL_ALLEGIANCE,
+                    "a merge invalidates projectile damage through canonical policy recheck");
+
+            VillageAllegianceEntityData.write(resident, VillageAllegianceData.unaffiliated(
+                    AllegianceAssignmentSource.ADMIN, now, level.dimension().location(), resident.blockPosition()));
+            helper.assertFalse(VillageAllegianceRelations.sharesCommunity(level, actor, resident),
+                    "Wanderers never receive village-scoped gossip or community loyalty");
+        } finally {
+            VillageCombatAuthorizationService.clearRuntimeState();
+            actor.discard();
+            resident.discard();
+            golem.discard();
+            projectile.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void namingTrustAndDebugFootprintLimitsStayBounded(GameTestHelper helper) {
+        helper.assertFalse(VillageNamingService.evaluateTrustGate(3, 1, false).allowed(),
+                "one trusted resident is not half of three adults");
+        helper.assertTrue(VillageNamingService.evaluateTrustGate(3, 2, false).allowed(),
+                "two trusted residents satisfy the rounded-up half gate");
+        helper.assertTrue(VillageNamingService.evaluateTrustGate(0, 0, true).allowed(),
+                "operators bypass an empty roster gate");
+
+        List<Long> oversized = new ArrayList<>();
+        for (int index = 0; index < 600; index++) {
+            oversized.add(SectionPos.asLong(index, 4, 0));
+        }
+        VillageBoundsSyncPayload.VillageEntry entry = new VillageBoundsSyncPayload.VillageEntry(
+                VillageAllegianceId.random(), "Bounded", new BlockPos(1, 65, 1),
+                VillageLifecycleState.ACTIVE, oversized);
+        helper.assertValueEqual(entry.sections().size(), VillageBoundsSyncPayload.MAX_SECTIONS_PER_VILLAGE,
+                "one footprint cannot exceed its codec section cap");
+        helper.assertTrue(entry.contains(new BlockPos(1, 65, 1)), "footprint containment uses the actual section set");
+        helper.assertFalse(entry.contains(new BlockPos(-33, 65, 1)), "outside section is not contained");
+        List<VillageBoundsSyncPayload.VillageEntry> entries = new ArrayList<>();
+        VillageBoundsSyncPayload.VillageEntry emptyEntry = new VillageBoundsSyncPayload.VillageEntry(
+                VillageAllegianceId.random(), "Empty", BlockPos.ZERO, VillageLifecycleState.EMPTY_GRACE, List.of());
+        for (int index = 0; index < 70; index++) {
+            entries.add(emptyEntry);
+        }
+        VillageBoundsSyncPayload payload = new VillageBoundsSyncPayload(
+                true, helper.getLevel().dimension().location(), entries, 120);
+        helper.assertValueEqual(payload.villages().size(), VillageBoundsSyncPayload.MAX_VILLAGES,
+                "preview stream clamps village count before encoding");
         helper.succeed();
     }
 

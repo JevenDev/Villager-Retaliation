@@ -132,9 +132,8 @@ public final class VillageBoundsDebugRenderer {
                 || !minecraft.level.dimension().location().equals(payloadDimension)) {
             return;
         }
-        long playerSection = SectionPos.asLong(minecraft.player.blockPosition());
         VillageGeometry containing = VILLAGES.stream()
-                .filter(village -> village.sections().contains(playerSection))
+                .filter(village -> village.sections().contains(SectionPos.asLong(minecraft.player.blockPosition())))
                 .findFirst().orElse(null);
         if (containing == null || containing.name().isBlank()) {
             return;
