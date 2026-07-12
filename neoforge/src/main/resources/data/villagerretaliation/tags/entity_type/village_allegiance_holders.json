@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:villager",
+    "minecraft:zombie_villager",
+    "minecraft:iron_golem"
+  ]
+}

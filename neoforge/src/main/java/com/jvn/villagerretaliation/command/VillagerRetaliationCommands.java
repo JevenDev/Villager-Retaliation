@@ -4,6 +4,15 @@ import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
+import com.jvn.villagerretaliation.allegiance.AllegianceConfidence;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceData;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceEntityData;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
+import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
@@ -152,6 +161,7 @@ public final class VillagerRetaliationCommands {
                         .then(questDebugCommands())
                         .then(sceneDebugCommands())
                         .then(debugCommands())
+                        .then(allegianceCommands())
                         .then(literal("profile")
                                 .then(literal("get")
                                         .then(targetArgument()
@@ -227,6 +237,174 @@ public final class VillagerRetaliationCommands {
                                 .distinct(),
                         builder
                 ));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> allegianceCommands() {
+        return literal("allegiance")
+                .then(literal("inspect")
+                        .then(argument("entity", StringArgumentType.string())
+                                .executes(VillagerRetaliationCommands::inspectAllegiance)))
+                .then(literal("assign")
+                        .then(argument("entity", StringArgumentType.string())
+                                .then(argument("uuid", StringArgumentType.word())
+                                        .executes(VillagerRetaliationCommands::assignAllegiance))))
+                .then(literal("unknown")
+                        .then(argument("entity", StringArgumentType.string())
+                                .executes(context -> setAllegianceState(context, false))))
+                .then(literal("unaffiliated")
+                        .then(argument("entity", StringArgumentType.string())
+                                .executes(context -> setAllegianceState(context, true))))
+                .then(literal("merge")
+                        .then(argument("source", StringArgumentType.word())
+                                .then(argument("target", StringArgumentType.word())
+                                        .executes(VillagerRetaliationCommands::mergeAllegiances))))
+                .then(literal("fork")
+                        .then(argument("entity", StringArgumentType.string())
+                                .executes(VillagerRetaliationCommands::forkAllegiance)))
+                .then(literal("migrate")
+                        .then(argument("entity", StringArgumentType.string())
+                                .executes(VillagerRetaliationCommands::migrateAllegiance)))
+                .then(literal("statistics")
+                        .executes(VillagerRetaliationCommands::allegianceStatistics))
+                .then(literal("reset_abuse")
+                        .then(argument("entity", StringArgumentType.string())
+                                .then(argument("player", StringArgumentType.word())
+                                        .executes(VillagerRetaliationCommands::resetAbuse))));
+    }
+
+    private static int inspectAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Entity entity = allegianceTarget(context);
+        if (entity == null) {
+            return 0;
+        }
+        ServerLevel level = context.getSource().getLevel();
+        VillageAllegianceData data = VillageAllegianceApi.get(entity).orElse(null);
+        if (data == null) {
+            context.getSource().sendSuccess(() -> Component.literal("Allegiance: missing (will resolve conservatively)"), false);
+            return 1;
+        }
+        String raw = data.primary() == null ? "-" : data.primary().toString();
+        String canonical = data.primary() == null
+                ? "-"
+                : VillageAllegianceRegistrySavedData.get(level).canonical(data.primary()).map(Object::toString).orElse("invalid");
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Allegiance state=" + data.state()
+                        + " raw=" + raw
+                        + " canonical=" + canonical
+                        + " source=" + data.assignmentSource()
+                        + " confidence=" + data.confidence()
+                        + " parents=" + data.protectedParents()), false);
+        return 1;
+    }
+
+    private static int assignAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Entity entity = allegianceTarget(context);
+        VillageAllegianceId id = parseAllegianceId(context.getSource(), StringArgumentType.getString(context, "uuid"));
+        if (entity == null || id == null) {
+            return 0;
+        }
+        VillageAllegianceApi.assignKnown(context.getSource().getLevel(), entity, id, AllegianceAssignmentSource.ADMIN);
+        context.getSource().sendSuccess(() -> Component.literal("Assigned allegiance " + id + " to " + entity.getDisplayName().getString()), true);
+        return 1;
+    }
+
+    private static int setAllegianceState(CommandContext<CommandSourceStack> context, boolean unaffiliated) throws CommandSyntaxException {
+        Entity entity = allegianceTarget(context);
+        if (entity == null) {
+            return 0;
+        }
+        ServerLevel level = context.getSource().getLevel();
+        VillageAllegianceData data = unaffiliated
+                ? VillageAllegianceData.unaffiliated(AllegianceAssignmentSource.ADMIN, level.getGameTime(), level.dimension().location(), entity.blockPosition())
+                : VillageAllegianceData.unknown(AllegianceAssignmentSource.ADMIN, AllegianceConfidence.AUTHORITATIVE,
+                        level.getGameTime(), level.dimension().location(), entity.blockPosition());
+        VillageAllegianceApi.assign(entity, data);
+        context.getSource().sendSuccess(() -> Component.literal("Set allegiance state to " + data.state()), true);
+        return 1;
+    }
+
+    private static int mergeAllegiances(CommandContext<CommandSourceStack> context) {
+        VillageAllegianceId source = parseAllegianceId(context.getSource(), StringArgumentType.getString(context, "source"));
+        VillageAllegianceId target = parseAllegianceId(context.getSource(), StringArgumentType.getString(context, "target"));
+        if (source == null || target == null) {
+            return 0;
+        }
+        boolean merged = VillageAllegianceRegistrySavedData.get(context.getSource().getLevel()).merge(source, target);
+        if (!merged) {
+            context.getSource().sendFailure(Component.literal("Allegiance merge rejected (invalid ID or alias cycle)."));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal("Aliased " + source + " -> " + target), true);
+        return 1;
+    }
+
+    private static int forkAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Entity entity = allegianceTarget(context);
+        if (entity == null) {
+            return 0;
+        }
+        ServerLevel level = context.getSource().getLevel();
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceId id = registry.create(level.getGameTime(), level.dimension().location(), entity.blockPosition(), "");
+        VillageAllegianceApi.assignKnown(level, entity, id, AllegianceAssignmentSource.ADMIN);
+        context.getSource().sendSuccess(() -> Component.literal("Forked selected entity to new allegiance " + id), true);
+        return 1;
+    }
+
+    private static int migrateAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Entity entity = allegianceTarget(context);
+        if (entity == null) {
+            return 0;
+        }
+        boolean resolved = VillageAllegianceService.retryMigration(context.getSource().getLevel(), entity);
+        context.getSource().sendSuccess(() -> Component.literal("Migration completed; resolved=" + resolved), false);
+        return resolved ? 1 : 0;
+    }
+
+    private static int allegianceStatistics(CommandContext<CommandSourceStack> context) {
+        var statistics = VillageAllegianceService.statistics();
+        var registry = VillageAllegianceRegistrySavedData.get(context.getSource().getLevel());
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Allegiances records=" + registry.records().size()
+                        + " aliases=" + registry.aliasCount()
+                        + " known=" + statistics.known()
+                        + " unknown=" + statistics.unknown()
+                        + " unaffiliated=" + statistics.unaffiliated()
+                        + " pending=" + statistics.pending()), false);
+        return registry.records().size();
+    }
+
+    private static int resetAbuse(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Entity entity = allegianceTarget(context);
+        UUID playerId;
+        try {
+            playerId = UUID.fromString(StringArgumentType.getString(context, "player"));
+        } catch (IllegalArgumentException exception) {
+            context.getSource().sendFailure(Component.literal("Invalid player UUID."));
+            return 0;
+        }
+        if (entity == null) {
+            return 0;
+        }
+        return VillagerDisciplineService.reset(context.getSource().getLevel(), entity.getUUID(), playerId) ? 1 : 0;
+    }
+
+    private static Entity allegianceTarget(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        String value = StringArgumentType.getString(context, "entity");
+        Entity entity = parseEntityTarget(context.getSource(), value);
+        if (entity == null) {
+            context.getSource().sendFailure(Component.literal("No single loaded entity matched " + value));
+        }
+        return entity;
+    }
+
+    private static VillageAllegianceId parseAllegianceId(CommandSourceStack source, String value) {
+        try {
+            return new VillageAllegianceId(UUID.fromString(value));
+        } catch (IllegalArgumentException exception) {
+            source.sendFailure(Component.literal("Invalid allegiance UUID: " + value));
+            return null;
+        }
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> debugCommands() {
