@@ -119,7 +119,10 @@ public record OpenVillagerInteractionPayload(
         buffer.writeInt(payload.walletCurrencyTextColor());
         buffer.writeBoolean(payload.forceCameraTowardsVillager());
         writeHiredRoles(buffer, payload.availableHiredRoles());
-        buffer.writeEnum(payload.activeHiredRole());
+        buffer.writeBoolean(payload.activeHiredRole() != null);
+        if (payload.activeHiredRole() != null) {
+            buffer.writeEnum(payload.activeHiredRole());
+        }
         buffer.writeBoolean(payload.activeBrewingOrder());
         buffer.writeBoolean(payload.activeBuilderTask());
         buffer.writeBoolean(payload.oneOffBuilderJob());
@@ -177,7 +180,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readInt(),
                 buffer.readBoolean(),
                 readHiredRoles(buffer),
-                buffer.readEnum(HiredVillagerRole.class),
+                buffer.readBoolean() ? buffer.readEnum(HiredVillagerRole.class) : null,
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),

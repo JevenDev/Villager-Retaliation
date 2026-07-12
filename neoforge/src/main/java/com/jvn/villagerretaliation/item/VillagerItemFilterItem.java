@@ -83,6 +83,9 @@ public final class VillagerItemFilterItem extends Item implements MenuProvider {
         if (!VillagerRetaliationItems.isItemFilter(filter)) {
             return;
         }
+        if (requestedMode == null && filter.getCount() != 1) {
+            return;
+        }
 
         if (requestedMode == null) {
             VillagerItemFilterData.toggleMode(filter);

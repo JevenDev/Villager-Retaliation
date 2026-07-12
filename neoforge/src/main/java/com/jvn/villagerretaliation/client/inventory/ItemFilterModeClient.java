@@ -20,7 +20,9 @@ public final class ItemFilterModeClient {
             return;
         }
         Slot slot = screen.getSlotUnderMouse();
-        if (slot == null || !VillagerRetaliationItems.isItemFilter(slot.getItem())) {
+        if (slot == null
+                || !VillagerRetaliationItems.isItemFilter(slot.getItem())
+                || slot.getItem().getCount() != 1) {
             return;
         }
         int menuSlotIndex = screen.getMenu().slots.indexOf(slot);
