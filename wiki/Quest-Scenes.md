@@ -287,6 +287,30 @@ To branch after creation, give the `start_encounter` step a transition named for
 
 If no matching transition is authored, normal `next`/success routing is unchanged. Quest tracker text can use `{encounter_variant}` and `{encounter_template}`; both resolve to empty text before an encounter exists. Scene inspection reports the source template, selected variant, resolved template, and seed.
 
+### Environmental setup and restoration
+
+Concrete encounter templates may add bounded, command-free environmental presentation and temporary world setup:
+
+```json
+"environment": {
+  "cues": [
+    { "id": "alarm", "type": "sound", "sound": "minecraft:block.bell.use", "volume": 1.0, "pitch": 0.8 },
+    { "id": "gate_column", "type": "glowing_column", "particle": "minecraft:end_rod", "offset_y": 1, "count": 32, "height": 8 }
+  ],
+  "temporary_blocks": [
+    { "id": "gate_light", "block": "minecraft:light", "offset_y": 3 }
+  ]
+}
+```
+
+`cues` contains at most 32 stable IDs. `sound` and `music` use registered sound IDs and are sent only to online encounter participants in the encounter dimension. `particles` and `glowing_column` use registered simple particle types; counts are 1-128 and columns are 1-64 blocks high. Offsets are relative to the durable encounter anchor and bounded to 64 blocks per axis. Cue IDs are persisted before delivery, so reloads never replay one-time presentation.
+
+`temporary_blocks` contains at most 64 entries and initially allowlists `barrier`, `light`, `structure_void`, and `glass`. A block may replace only a replaceable state in an already loaded chunk. Before mutation, the encounter saves the exact original state, intended placed state, dimension, position, and ownership status. Setup never force-loads chunks.
+
+Cleanup restores a block only while the world still contains the exact state placed by that encounter. If a player or another system changes it, cleanup records the block as preserved and never overwrites the edit. Prepared, applied, restored, and preserved decisions survive reloads. Cleanup remains pending while a required chunk is unloaded and the server maintenance pass resumes it after the chunk returns; completion, failure, cancellation, explicit cleanup, and operator cleanup all converge on the same idempotent restoration path.
+
+This first environmental pass intentionally does not mutate global weather or world time. Those presentation types require participant-scoped client state and conflict arbitration before they can be safe alongside overlapping encounters.
+
 The optional `area` is a cylinder centered on the encounter's durable anchor. `radius` is required and limited to 256 blocks; `vertical_radius` defaults to the radius and is limited to 128. `leave_behavior` is `ignore` (the backward-compatible default), `warn`, `pause`, or `fail`. A failing participant has `leave_timeout_ticks` (default 200, maximum 12000) to return. Warnings and absolute deadlines are saved, messages go only to the affected participant, offline players do not start or advance a new leave decision, and returning clears that excursion's state.
 
 `mob_behavior` is `ignore`, `return`, or `teleport`. `return` asks loaded owned mobs to navigate back without changing unrelated entities. `teleport` waits for the persisted `mob_timeout_ticks` deadline (default 200, maximum 12000) before returning a loaded mob to the anchor. Area checks never force-load the anchor, a participant, or an owned mob's chunk. Omitting `area` preserves encounter/v1 behavior exactly.

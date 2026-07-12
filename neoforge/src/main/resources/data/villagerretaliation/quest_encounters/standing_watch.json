@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "villagerretaliation:standing_watch",
-  "version": 8,
+  "version": 9,
   "controller": "villagerretaliation:controlled",
   "waves": [
     {
@@ -73,6 +73,32 @@
     "retry_delay_ticks": 200,
     "max_attempts": 3,
     "retain_defeated": false
+  },
+  "environment": {
+    "cues": [
+      {
+        "id": "alarm_bell",
+        "type": "sound",
+        "sound": "minecraft:block.bell.use",
+        "volume": 1.0,
+        "pitch": 0.8
+      },
+      {
+        "id": "watch_beacon",
+        "type": "glowing_column",
+        "particle": "minecraft:end_rod",
+        "offset_y": 1,
+        "count": 32,
+        "height": 8
+      }
+    ],
+    "temporary_blocks": [
+      {
+        "id": "watch_light",
+        "block": "minecraft:light",
+        "offset_y": 3
+      }
+    ]
   },
   "phases": [
     {

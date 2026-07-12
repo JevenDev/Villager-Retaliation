@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.scene.runtime.SceneScheduler;
 import com.jvn.villagerretaliation.scene.runtime.SceneStepEngine;
 import com.jvn.villagerretaliation.scene.executor.BuiltinSceneStepExecutors;
 import com.jvn.villagerretaliation.scene.executor.EncounterStepExecutors;
+import com.jvn.villagerretaliation.scene.encounter.EncounterService;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -63,6 +64,7 @@ public final class SceneRuntime {
         if (server == null) return;
         SceneSavedData data = SceneSavedData.get(server.overworld());
         scheduler(server).tick(server, data, server.overworld().getGameTime());
+        if(server.overworld().getGameTime()%20L==0L)EncounterService.maintainCleanup(server,data);
     }
     public static void wake(MinecraftServer server, SceneInstance instance) { if(server!=null&&instance!=null)scheduler(server).enqueue(instance); }
 
