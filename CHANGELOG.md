@@ -1,5 +1,6 @@
 # Changelog
 
+- Added participant-only, dimension-aware encounter navigation with coordinate privacy, durable discovery and arrival, distance and compass tracker values, temporary HUD markers, directional particles, and terminal cleanup.
 - Added bounded encounter-owned environmental cues and temporary blocks, including participant sounds/music, particles, glowing columns, persisted block ownership, reload-safe reconciliation, and cleanup that never overwrites later player edits.
 - Added deterministic weighted encounter variants on selector templates and `start_encounter` steps, with persisted seeds, selected IDs, resolved templates, recursive-reference diagnostics, scene branches, tracker placeholders, and operator inspection.
 - Added datapack-authored encounter failure handling for player or protected-actor death, with bounded fail, wave reset, full restart, timed pause, and receipt-guarded scene-branch actions plus durable attempts, deadlines, and retained progress.

@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "villagerretaliation:standing_watch",
-  "version": 9,
+  "version": 10,
   "controller": "villagerretaliation:controlled",
   "waves": [
     {
@@ -99,6 +99,18 @@
         "offset_y": 3
       }
     ]
+  },
+  "guidance": {
+    "coordinate_message": "The watch needs you in {dimension}. Follow the encounter marker; exact coordinates appear once you are within discovery range.",
+    "arrival_message": "You have reached the watch position. Hold the line.",
+    "discovery_radius": 64,
+    "arrival_radius": 8,
+    "distance_tracker": true,
+    "compass_target": true,
+    "directional_particles": true,
+    "hud_marker": true,
+    "exact_coordinates": "after_discovery",
+    "update_interval_ticks": 20
   },
   "phases": [
     {

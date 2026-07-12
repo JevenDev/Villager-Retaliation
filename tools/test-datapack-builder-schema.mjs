@@ -391,6 +391,7 @@ function testSceneResourceRoundTrip(app) {
     ],
     failure: { on_player_death: "reset_wave", on_protected_actor_death: "branch_scene", retry_delay_ticks: 20, max_attempts: 3, retain_defeated: false, branch_step: "done" },
     environment: { cues: [{ id: "alarm", type: "sound", sound: "minecraft:block.bell.use", volume: 1, pitch: 0.8 }, { id: "column", type: "glowing_column", particle: "minecraft:end_rod", count: 24, height: 8 }], temporary_blocks: [{ id: "gate_light", block: "minecraft:light", offset_y: 3 }] },
+    guidance: { coordinate_message: "Find {location}.", arrival_message: "Arrived at {coordinates}.", discovery_radius: 64, arrival_radius: 8, distance_tracker: true, compass_target: true, directional_particles: true, hud_marker: true, exact_coordinates: "after_discovery", update_interval_ticks: 20 },
     completion_objectives: { mode: "all", objectives: [{ id: "clear", type: "all_defeated" }, { id: "leader", type: "defeat_leader", member: "gate_captain" }] },
     area: { radius: 32, vertical_radius: 16, leave_behavior: "warn", leave_timeout_ticks: 200, mob_behavior: "return" }
   };
@@ -423,6 +424,8 @@ function testSceneResourceRoundTrip(app) {
   assert(/branch_step/i.test(app.sceneResourceIssueDetail(encounterPath, invalidFailure)?.message || ""), "Invalid encounter failure branch was not diagnosed.");
   const invalidEnvironment = structuredClone(encounter);invalidEnvironment.environment.temporary_blocks[0].block = "minecraft:diamond_block";
   assert(/temporary block/i.test(app.sceneResourceIssueDetail(encounterPath, invalidEnvironment)?.message || ""), "Unsafe encounter environment block was not diagnosed.");
+  const invalidGuidance = structuredClone(encounter);invalidGuidance.guidance.arrival_radius = 65;invalidGuidance.guidance.discovery_radius = 4;
+  assert(/guidance radii/i.test(app.sceneResourceIssueDetail(encounterPath, invalidGuidance)?.message || ""), "Unsafe encounter guidance radii were not diagnosed.");
   const selector = { schema: "villagerretaliation:encounter/v1", id: "storypack:roadblock_variants", variants: [{ id: "zombies", weight: 3, template: "storypack:zombies" }, { id: "skeletons", weight: 2, template: "storypack:skeletons" }] };
   assert(app.sceneResourceIssueDetail(encounterPath, selector) === null, "Valid encounter variant selector was rejected.");
   const invalidVariant = structuredClone(selector);invalidVariant.variants[1].id = "zombies";invalidVariant.variants[1].weight = 0;

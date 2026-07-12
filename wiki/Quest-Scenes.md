@@ -311,6 +311,31 @@ Cleanup restores a block only while the world still contains the exact state pla
 
 This first environmental pass intentionally does not mutate global weather or world time. Those presentation types require participant-scoped client state and conflict arbitration before they can be safe alongside overlapping encounters.
 
+### Navigation guidance
+
+Concrete templates can guide captured participants to the durable anchor for fixed-coordinate and authored-location encounters:
+
+```json
+"guidance": {
+  "coordinate_message": "Find {location}; it is {distance}m {direction}.",
+  "arrival_message": "You reached {coordinates}.",
+  "discovery_radius": 64,
+  "arrival_radius": 8,
+  "distance_tracker": true,
+  "compass_target": true,
+  "directional_particles": true,
+  "hud_marker": true,
+  "exact_coordinates": "after_discovery",
+  "update_interval_ticks": 20
+}
+```
+
+Guidance is participant-only and dimension-aware. `discovery_radius` is 1-512 blocks, `arrival_radius` is 1-64 and cannot exceed discovery range, and live presentation updates every 10-200 ticks. `distance_tracker` exposes a rounded block distance, `compass_target` exposes an eight-way compass bearing, `hud_marker` renders the enabled distance/bearing through Minecraft's temporary action-bar HUD, and `directional_particles` sends a short end-rod trail only to that participant. Cross-dimension guidance identifies the target dimension without calculating a misleading distance or bearing.
+
+`exact_coordinates` is `always`, `after_discovery` (default), or `never`. Messages support `{location}`, `{coordinates}`, `{x}`, `{y}`, `{z}`, `{dimension}`, `{distance}`, and `{direction}`; hidden coordinates resolve to `undiscovered` or `?`. Each participant's initial message, discovery, arrival, next update deadline, and cleanup acknowledgement are persisted. A participant who was offline receives their own initial guidance after returning, while one-time discovery and arrival messages never replay after reload.
+
+Quest tracker text can use `{encounter_distance}`, `{encounter_direction}`, `{encounter_coordinates}`, `{encounter_dimension}`, `{encounter_discovered}`, and `{encounter_arrived}`. Values respect the exact-coordinate policy and are empty when a feature is disabled or the target is in another dimension. Completion, failure, cancellation, and cleanup stop updates and remove the temporary HUD marker. The legacy fixed-mode `location_message` keeps its old one-time behavior when `guidance` is omitted; it cannot be combined with `guidance.coordinate_message`.
+
 The optional `area` is a cylinder centered on the encounter's durable anchor. `radius` is required and limited to 256 blocks; `vertical_radius` defaults to the radius and is limited to 128. `leave_behavior` is `ignore` (the backward-compatible default), `warn`, `pause`, or `fail`. A failing participant has `leave_timeout_ticks` (default 200, maximum 12000) to return. Warnings and absolute deadlines are saved, messages go only to the affected participant, offline players do not start or advance a new leave decision, and returning clears that excursion's state.
 
 `mob_behavior` is `ignore`, `return`, or `teleport`. `return` asks loaded owned mobs to navigate back without changing unrelated entities. `teleport` waits for the persisted `mob_timeout_ticks` deadline (default 200, maximum 12000) before returning a loaded mob to the anchor. Area checks never force-load the anchor, a participant, or an owned mob's chunk. Omitting `area` preserves encounter/v1 behavior exactly.

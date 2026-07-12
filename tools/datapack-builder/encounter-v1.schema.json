@@ -3002,6 +3002,59 @@
         }
       ]
     },
+    "guidance": {
+      "type": "object",
+      "title": "Participant-only navigation guidance to the durable encounter anchor",
+      "additionalProperties": false,
+      "properties": {
+        "coordinate_message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "arrival_message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "discovery_radius": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 512
+        },
+        "arrival_radius": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 64
+        },
+        "distance_tracker": {
+          "type": "boolean"
+        },
+        "compass_target": {
+          "type": "boolean"
+        },
+        "directional_particles": {
+          "type": "boolean"
+        },
+        "hud_marker": {
+          "type": "boolean"
+        },
+        "exact_coordinates": {
+          "type": "string",
+          "minLength": 1,
+          "enum": [
+            "always",
+            "after_discovery",
+            "never"
+          ]
+        },
+        "update_interval_ticks": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 200
+        }
+      }
+    },
     "wave_count": {
       "type": "integer",
       "minimum": 1,
@@ -3883,6 +3936,14 @@
       }
     },
     {
+      "not": {
+        "required": [
+          "location_message",
+          "guidance"
+        ]
+      }
+    },
+    {
       "if": {
         "required": [
           "variants"
@@ -3957,6 +4018,11 @@
                 {
                   "required": [
                     "environment"
+                  ]
+                },
+                {
+                  "required": [
+                    "guidance"
                   ]
                 },
                 {
