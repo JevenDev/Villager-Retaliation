@@ -224,6 +224,12 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_SHOW_ARMOR = bind("debugOverlay.reputationDebugOverlayShowArmor", Boolean.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_REQUIRE_ADVANCED_TOOLTIPS = bind("debugOverlay.reputationDebugOverlayRequireAdvancedTooltips", Boolean.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_ONLY_WHEN_SNEAKING = bind("debugOverlay.reputationDebugOverlayOnlyWhenSneaking", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_VILLAGER_DOWNED_STATE = bind("combat.enableVillagerDownedState", Boolean.class);
+    public static final ConfigValue<Boolean> PARTY_VILLAGERS_USE_DOWNED_STATE = bind("combat.partyVillagersUseDownedState", Boolean.class);
+    public static final ConfigValue<Integer> DOWNED_MINIMUM_TICKS = bind("combat.downedMinimumTicks", Integer.class);
+    public static final ConfigValue<Double> DOWNED_RECOVERY_HEALTH_PERCENT = bind("combat.downedRecoveryHealthPercent", Double.class);
+    public static final ConfigValue<Double> DOWNED_THREAT_RADIUS = bind("combat.downedThreatRadius", Double.class);
+    public static final ConfigValue<Integer> DOWNED_QUIET_TICKS = bind("combat.downedQuietTicks", Integer.class);
     public static final ConfigValue<Boolean> WEAPONSMITHS_FIGHT_BACK = bind("combat.weaponsmithsFightBack", Boolean.class);
     public static final ConfigValue<Boolean> TOOLSMITHS_FIGHT_BACK = bind("combat.toolsmithsFightBack", Boolean.class);
     public static final ConfigValue<Boolean> ARMORERS_FIGHT_BACK = bind("combat.armorersFightBack", Boolean.class);

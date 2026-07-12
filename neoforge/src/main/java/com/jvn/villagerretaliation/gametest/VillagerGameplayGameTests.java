@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.gametest;
 
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
+import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -30,6 +32,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -63,6 +66,75 @@ public final class VillagerGameplayGameTests {
     }
 
     private VillagerGameplayGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void unprotectedVillagerStillDiesFromLethalDamage(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+
+        villager.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
+
+        helper.assertTrue(villager.isDeadOrDying() || villager.isRemoved(), "unprotected villager should die");
+        helper.assertFalse(VillagerDownedService.isDowned(villager), "unprotected villager should not be downed");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void essentialVillagerDownsOnceAndRejectsRepeatedDamage(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.addTag(VillagerDeathProtectionResolver.ESSENTIAL_ENTITY_TAG);
+
+        villager.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
+        helper.assertTrue(VillagerDownedService.isDowned(villager), "essential villager should be downed");
+        helper.assertTrue(villager.isAlive(), "downed villager should remain alive");
+        helper.assertTrue(villager.getHealth() >= 1.0F, "downed villager should retain at least one health");
+        float healthAfterLethalHit = villager.getHealth();
+
+        villager.invulnerableTime = 0;
+        villager.hurt(helper.getLevel().damageSources().generic(), 5.0F);
+        helper.assertValueEqual(villager.getHealth(), healthAfterLethalHit, "repeated damage should not reduce health");
+        helper.assertTrue(VillagerDownedService.isDowned(villager), "repeated damage should keep the same downed state");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void downedStateSurvivesEntitySerializationAndRestoresPriorFlags(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager original = spawnVillager(helper, new BlockPos(1, 2, 1));
+        original.setCanPickUpLoot(true);
+        VillagerDownedService.enterDowned(
+                level,
+                original,
+                new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("test")));
+        CompoundTag saved = new CompoundTag();
+        original.saveWithoutId(saved);
+
+        Villager loaded = EntityType.VILLAGER.create(level);
+        if (loaded == null) {
+            throw new GameTestAssertException("Could not create serialized villager");
+        }
+        loaded.load(saved);
+        VillagerDownedService.onVillagerLoaded(loaded);
+        helper.assertTrue(VillagerDownedService.isDowned(loaded), "serialized villager should remain downed");
+        helper.assertTrue(loaded.isNoAi(), "loaded downed villager should remain incapacitated");
+
+        VillagerDownedService.recover(loaded);
+        helper.assertFalse(VillagerDownedService.isDowned(loaded), "recovery should clear persisted state");
+        helper.assertFalse(loaded.isNoAi(), "recovery should restore the prior AI flag");
+        helper.assertTrue(loaded.canPickUpLoot(), "recovery should restore the prior pickup flag");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void operatorKillBypassesEssentialProtection(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.addTag(VillagerDeathProtectionResolver.ESSENTIAL_ENTITY_TAG);
+
+        villager.hurt(helper.getLevel().damageSources().genericKill(), Float.MAX_VALUE);
+
+        helper.assertTrue(villager.isDeadOrDying() || villager.isRemoved(), "generic kill should bypass protection");
+        helper.assertFalse(VillagerDownedService.isDowned(villager), "generic kill should not enter the downed state");
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

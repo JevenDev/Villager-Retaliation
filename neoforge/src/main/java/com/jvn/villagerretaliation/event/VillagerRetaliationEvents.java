@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.scene.SceneRuntime;
 import com.jvn.villagerretaliation.scene.encounter.EncounterService;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -157,6 +158,7 @@ public final class VillagerRetaliationEvents {
         VillagerReputationManager.clearSyncState();
         VillagerReputationEvents.clearRuntimeState();
         VillagerCombatSurvivalService.clearRuntimeState();
+        VillagerDownedService.clearRuntimeState();
         VillagerConversationService.clearRuntimeState();
         VillagerRecruitmentService.clearRuntimeState();
         PartyVillagerContractService.clearRuntimeState();
@@ -245,6 +247,10 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationHandler.onLivingDamagePre(event);
     }
 
+    public static void onLivingDamageFinalPre(LivingDamageEvent.Pre event) {
+        VillagerDownedService.onLivingDamagePre(event);
+    }
+
     public static void onLivingDeath(LivingDeathEvent event) {
         EncounterService.onDeath(event.getEntity());
         SceneLifecycleIntegration.onActorDeath(event.getEntity());
@@ -280,6 +286,10 @@ public final class VillagerRetaliationEvents {
     public static void onEntityTickPre(EntityTickEvent.Pre event) {
         Entity entity = event.getEntity();
         if (entity instanceof Villager villager) {
+            VillagerDownedService.onVillagerTickPre(villager);
+            if (VillagerDownedService.isDowned(villager)) {
+                return;
+            }
             VillagerRecruitmentService.onVillagerTickPre(villager);
             HiredVillagerFocusService.onVillagerTickPre(villager);
             if (villager.level() instanceof ServerLevel level) {
@@ -359,6 +369,7 @@ public final class VillagerRetaliationEvents {
             com.jvn.villagerretaliation.party.PartyVillagerDropCollection.onItemEntityLoaded(itemEntity);
         }
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
+            VillagerDownedService.onVillagerLoaded(villager);
             PartyVillagerContractService.onVillagerLoaded(villager);
         }
     }
@@ -672,6 +683,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
+            VillagerDownedService.onVillagerUnloaded(villager);
             Entity.RemovalReason reason = villager.getRemovalReason();
             if (reason == Entity.RemovalReason.DISCARDED || reason == Entity.RemovalReason.KILLED) {
                 PartyVillagerContractService.onVillagerPermanentlyRemoved(villager);
