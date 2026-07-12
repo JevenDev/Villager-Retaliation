@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "gate_story:gate_ambush",
-  "version": 2,
+  "version": 3,
   "controller": "villagerretaliation:controlled",
   "waves": [
     {
@@ -37,6 +37,15 @@
     { "id": "east_road", "marker": "gate", "offset_x": 7, "offset_z": 5, "weight": 1 }
   ],
   "spawn_selection": "weighted",
+  "allies": [
+    {
+      "id": "captain_mara",
+      "actor": "captain_mara",
+      "invulnerable": true,
+      "cleanup_policy": "preserve",
+      "affects_completion": true
+    }
+  ],
   "phases": [
     {
       "id": "gatebreaker_arrives",

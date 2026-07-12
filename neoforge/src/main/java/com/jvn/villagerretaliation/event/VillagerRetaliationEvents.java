@@ -231,6 +231,11 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        if (EncounterService.shouldCancelFriendlyDamage(event.getEntity(), event.getSource().getEntity(), event.getSource().getDirectEntity())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+        }
         if (shouldCancelVillagerGolemDamage(event.getEntity(), event.getSource().getEntity(), event.getSource().getDirectEntity())) {
             event.setCanceled(true);
             event.setAmount(0.0F);

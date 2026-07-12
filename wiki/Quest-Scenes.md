@@ -193,6 +193,36 @@ Durations are 1-1,728,000 ticks. Horizontal `radius` and `vertical_radius` defau
 
 Completed and failed objective IDs, continuous-hold timestamps, destroyed actor aliases, and the custom-completion flag are saved with the encounter. The quest tracker reports custom-objective progress, and scene inspection includes the completed, failed, and active-timer sets.
 
+### Friendly participants
+
+The optional `allies` array declares 1-32 controlled friendly definitions, capped at 64 resulting entities. Each ally has a stable `id` and exactly one source. `entity` creates 1-16 living entities using the same safe equipment, presentation, and combat-attribute allowlists as hostile members. `actor` captures one live scene actor by UUID and rejects entity-only fields such as count, equipment, or attributes.
+
+```json
+"allies": [
+  {
+    "id": "village_guard",
+    "entity": "minecraft:iron_golem",
+    "revivable": true,
+    "revive_delay_ticks": 100,
+    "replacement_policy": "missing_if_loaded",
+    "cleanup_policy": "preserve",
+    "affects_completion": true
+  },
+  {
+    "id": "watch_captain",
+    "actor": "watch_captain",
+    "invulnerable": true,
+    "cleanup_policy": "preserve"
+  }
+]
+```
+
+`required_survival` fails the encounter when the ally dies or is confirmed missing in a loaded chunk. It is mutually exclusive with `revivable`, which recreates the ally after `revive_delay_ticks` (default 100, maximum 12,000). `replacement_policy` is `never` by default or `missing_if_loaded`; replacement never treats an unloaded chunk as proof of loss. Bound allies retain their captured entity type for revival or replacement without silently changing the owning scene's actor binding.
+
+`invulnerable` is applied only while the encounter owns the ally. Preservation restores the entity's prior invulnerability value. `cleanup_policy` is `remove` or `preserve`, independent of hostile cleanup; entity-defined allies default to removal, while bound scene actors safely default to preservation. `affects_completion` makes victory wait while that ally has a recoverable death or missing/replacement state and fails clearly when recovery is impossible; allies are never added to hostile kill counts. Enemy and ally UUIDs are stored in separate ledgers.
+
+Loaded ally mobs and encounter-owned hostile mobs receive direct, encounter-local targets. Same-side targets are cleared, but no scoreboard team, global targeting rule, nearby unrelated entity, or participant team membership is changed. Ally identities include definition/index keys, entity UUID and type, last loaded location, generation, recovery deadline, source kind, cleanup policy, and invulnerability restoration state.
+
 The optional `area` is a cylinder centered on the encounter's durable anchor. `radius` is required and limited to 256 blocks; `vertical_radius` defaults to the radius and is limited to 128. `leave_behavior` is `ignore` (the backward-compatible default), `warn`, `pause`, or `fail`. A failing participant has `leave_timeout_ticks` (default 200, maximum 12000) to return. Warnings and absolute deadlines are saved, messages go only to the affected participant, offline players do not start or advance a new leave decision, and returning clears that excursion's state.
 
 `mob_behavior` is `ignore`, `return`, or `teleport`. `return` asks loaded owned mobs to navigate back without changing unrelated entities. `teleport` waits for the persisted `mob_timeout_ticks` deadline (default 200, maximum 12000) before returning a loaded mob to the anchor. Area checks never force-load the anchor, a participant, or an owned mob's chunk. Omitting `area` preserves encounter/v1 behavior exactly.

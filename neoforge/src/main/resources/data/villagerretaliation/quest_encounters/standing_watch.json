@@ -1,7 +1,7 @@
 {
   "schema": "villagerretaliation:encounter/v1",
   "id": "villagerretaliation:standing_watch",
-  "version": 6,
+  "version": 7,
   "controller": "villagerretaliation:controlled",
   "waves": [
     {
@@ -55,6 +55,18 @@
     { "id": "south_line", "actor": "watch_captain", "offset_x": -8, "offset_z": 8, "weight": 1 }
   ],
   "spawn_selection": "sequential",
+  "allies": [
+    {
+      "id": "village_guard",
+      "entity": "minecraft:iron_golem",
+      "count": 1,
+      "revivable": true,
+      "revive_delay_ticks": 100,
+      "replacement_policy": "missing_if_loaded",
+      "cleanup_policy": "preserve",
+      "affects_completion": true
+    }
+  ],
   "phases": [
     {
       "id": "captain_enters",

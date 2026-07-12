@@ -381,6 +381,10 @@ function testSceneResourceRoundTrip(app) {
       { id: "east_gate", x: 12, y: 64, z: 8, dimension: "minecraft:overworld" }
     ],
     spawn_selection: "weighted",
+    allies: [
+      { id: "gate_guard", entity: "minecraft:iron_golem", revivable: true, revive_delay_ticks: 100, replacement_policy: "missing_if_loaded", cleanup_policy: "preserve", affects_completion: true },
+      { id: "captain_ally", actor: "captain_mara", invulnerable: true, cleanup_policy: "preserve" }
+    ],
     phases: [
       { id: "captain_arrives", trigger: { type: "wave_started", wave: "captain" }, actions: [{ id: "warn", type: "notification", text: "Captain incoming." }] },
       { id: "captain_falls", trigger: { type: "elite_defeated", member: "gate_captain" }, actions: [{ id: "remember", type: "fact", scope: "player", tag: "storypack:captain_defeated" }] }
@@ -411,6 +415,8 @@ function testSceneResourceRoundTrip(app) {
   assert(/trigger field|authored wave id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidPhase)?.message || ""), "Invalid encounter phase was not diagnosed.");
   const invalidObjectives = structuredClone(encounter);invalidObjectives.completion_objectives.objectives[1].member = "missing";
   assert(/authored member id/i.test(app.sceneResourceIssueDetail(encounterPath, invalidObjectives)?.message || ""), "Invalid encounter objective was not diagnosed.");
+  const invalidAlly = structuredClone(encounter);invalidAlly.allies[0].actor = "captain_mara";
+  assert(/exactly one entity or bound actor/i.test(app.sceneResourceIssueDetail(encounterPath, invalidAlly)?.message || ""), "Invalid controlled ally was not diagnosed.");
 }
 
 const app = createAppHarness();

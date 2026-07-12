@@ -2142,6 +2142,558 @@
       },
       "maxItems": 64
     },
+    "allies": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "title": "Controlled friendly encounter participant",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "entity": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+          },
+          "actor": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_.-]{0,63}$"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 16
+          },
+          "equipment": {
+            "type": "object",
+            "title": "Equipment by slot",
+            "additionalProperties": false,
+            "properties": {
+              "mainhand": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "offhand": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "head": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "chest": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "legs": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "feet": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "body": {
+                "type": "object",
+                "title": "Equipped item",
+                "additionalProperties": false,
+                "required": [
+                  "item"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                  },
+                  "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 99
+                  },
+                  "enchantments": {
+                    "type": "object",
+                    "title": "Enchantment levels",
+                    "propertyNames": {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "^[a-z0-9_.-]+:[a-z0-9_./-]+$"
+                    },
+                    "additionalProperties": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 255
+                    }
+                  },
+                  "drop_chance": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              }
+            }
+          },
+          "custom_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "name_visible": {
+            "type": "boolean"
+          },
+          "glowing": {
+            "type": "boolean"
+          },
+          "persistent": {
+            "type": "boolean"
+          },
+          "health": {
+            "type": "number",
+            "minimum": 1.0,
+            "maximum": 2048.0
+          },
+          "movement_speed": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 4.0
+          },
+          "attack_damage": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 2048.0
+          },
+          "armor": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 30.0
+          },
+          "knockback_resistance": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "attributes": {
+            "type": "object",
+            "title": "Allowlisted mob attributes",
+            "additionalProperties": false,
+            "properties": {
+              "minecraft:max_health": {
+                "type": "number",
+                "minimum": 1.0,
+                "maximum": 2048.0
+              },
+              "minecraft:movement_speed": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 4.0
+              },
+              "minecraft:attack_damage": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 2048.0
+              },
+              "minecraft:armor": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 30.0
+              },
+              "minecraft:knockback_resistance": {
+                "type": "number",
+                "minimum": 0.0,
+                "maximum": 1.0
+              }
+            }
+          },
+          "required_survival": {
+            "type": "boolean"
+          },
+          "invulnerable": {
+            "type": "boolean"
+          },
+          "revivable": {
+            "type": "boolean"
+          },
+          "revive_delay_ticks": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 12000
+          },
+          "replacement_policy": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "never",
+              "missing_if_loaded"
+            ]
+          },
+          "cleanup_policy": {
+            "type": "string",
+            "minLength": 1,
+            "enum": [
+              "remove",
+              "preserve"
+            ]
+          },
+          "affects_completion": {
+            "type": "boolean"
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "entity"
+            ],
+            "allOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "actor"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "required": [
+              "actor"
+            ],
+            "allOf": [
+              {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "entity"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "count"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "equipment"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "custom_name"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "name_visible"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "glowing"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "persistent"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "health"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "movement_speed"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "attack_damage"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "armor"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "knockback_resistance"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "attributes"
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "revive_delay_ticks"
+              ]
+            },
+            "then": {
+              "required": [
+                "revivable"
+              ],
+              "properties": {
+                "revivable": {
+                  "const": true
+                }
+              }
+            }
+          },
+          {
+            "not": {
+              "required": [
+                "required_survival",
+                "revivable"
+              ],
+              "properties": {
+                "required_survival": {
+                  "const": true
+                },
+                "revivable": {
+                  "const": true
+                }
+              }
+            }
+          }
+        ]
+      },
+      "maxItems": 32
+    },
     "wave_count": {
       "type": "integer",
       "minimum": 1,
