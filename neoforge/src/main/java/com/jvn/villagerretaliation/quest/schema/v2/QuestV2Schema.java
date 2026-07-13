@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
@@ -404,6 +405,7 @@ public final class QuestV2Schema {
         JsonObject properties = object();
         properties.add("type", stringEnum(actionTypes()));
         properties.add("action", stringEnum(actionTypes()));
+        properties.add("memory_scope", stringEnum(List.of("villager", "village", "both")));
         schema.add("properties", properties);
         schema.add("additionalProperties", booleanLiteral(true));
         return schema;

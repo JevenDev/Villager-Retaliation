@@ -2315,7 +2315,7 @@ public final class ForcedDialogueService {
                 && (!definition.requiresLineOfSight() || hasTheftLineOfSight(level, villager, player, pos))
                 && definitionMatchesReputation(level, villager, player, definition)
                 && definition.matchesRecentContainerThefts(VillageEventMemory.countForPlayer(
-                        VillageEventMemory.recentForVillage(level, villager),
+                        VillageEventMemory.recentForVillager(level, villager),
                         player.getUUID(),
                         VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT));
     }
@@ -2375,7 +2375,7 @@ public final class ForcedDialogueService {
             ServerPlayer player,
             ForcedDialogueSession session) {
         int priorContainerThefts = VillageEventMemory.countForPlayer(
-                VillageEventMemory.recentForVillage(level, witness),
+                VillageEventMemory.recentForVillager(level, witness),
                 player.getUUID(),
                 VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT);
         ForcedDialogueContext previous = session.context();
@@ -3058,7 +3058,7 @@ public final class ForcedDialogueService {
         }
         ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(player.getType());
         int priorRetaliations = VillageEventMemory.countForPlayer(
-                VillageEventMemory.recentForVillage(level, villager),
+                VillageEventMemory.recentForVillager(level, villager),
                 player.getUUID(),
                 VillageEventMemory.EventTag.VILLAGER_RETALIATION_STARTED
         );
@@ -3407,7 +3407,7 @@ public final class ForcedDialogueService {
             return false;
         }
         int priorContainerThefts = VillageEventMemory.countForPlayer(
-                VillageEventMemory.recentForVillage(level, witness),
+                VillageEventMemory.recentForVillager(level, witness),
                 player.getUUID(),
                 VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT);
         if (!definition.matchesRecentContainerThefts(priorContainerThefts)) {
@@ -3466,7 +3466,7 @@ public final class ForcedDialogueService {
             return false;
         }
         int priorContainerThefts = VillageEventMemory.countForPlayer(
-                VillageEventMemory.recentForVillage(level, witness),
+                VillageEventMemory.recentForVillager(level, witness),
                 player.getUUID(),
                 VillageEventMemory.EventTag.PLAYER_CONTAINER_THEFT);
         if (!definition.matchesRecentContainerThefts(priorContainerThefts)) {

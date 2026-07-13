@@ -1,8 +1,13 @@
 package com.jvn.villagerretaliation.village;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,7 +26,13 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public class VillageEventMemorySavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_village_events";
+    private static final int CURRENT_FORMAT_VERSION = 2;
+    private static final String TAG_FORMAT_VERSION = "FormatVersion";
     private static final String TAG_ENTRIES = "Entries";
+    private static final String TAG_VILLAGE_ENTRIES = "VillageEntries";
+    private static final String TAG_VILLAGER_ENTRIES = "VillagerEntries";
+    private static final String TAG_VILLAGE_ID = "VillageId";
+    private static final String TAG_VILLAGER_ID = "VillagerId";
     private static final String TAG_DIMENSION = "Dimension";
     private static final String TAG_TAG = "Tag";
     private static final String TAG_TAG_ID = "TagId";
@@ -47,83 +58,157 @@ public class VillageEventMemorySavedData extends SavedData {
     private static final String TAG_TARGET_NAME = "TargetName";
     private static final String TAG_TARGET_TYPE_ID = "TargetTypeId";
 
-    private final Map<ResourceKey<Level>, ArrayDeque<VillageEventMemory.MemoryEvent>> eventsByDimension = new HashMap<>();
+    private final Map<VillageAllegianceId, ArrayDeque<VillageEventMemory.MemoryEvent>> eventsByVillage = new HashMap<>();
+    private final Map<UUID, ArrayDeque<VillageEventMemory.MemoryEvent>> eventsByVillager = new HashMap<>();
+    private final List<VillageEventMemory.MemoryEvent> legacyEvents = new ArrayList<>();
+    private boolean legacyMigrationPending;
 
     public static VillageEventMemorySavedData get(ServerLevel level) {
-        return level.getServer().overworld().getDataStorage().computeIfAbsent(
+        VillageEventMemorySavedData data = level.getServer().overworld().getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(VillageEventMemorySavedData::new, VillageEventMemorySavedData::load, DataFixTypes.LEVEL),
                 DATA_NAME
         );
-    }
-
-    public static VillageEventMemorySavedData load(CompoundTag tag, HolderLookup.Provider provider) {
-        VillageEventMemorySavedData data = new VillageEventMemorySavedData();
-        ListTag entriesTag = tag.getList(TAG_ENTRIES, Tag.TAG_COMPOUND);
-        for (Tag rawEntry : entriesTag) {
-            if (!(rawEntry instanceof CompoundTag entryTag)) {
-                continue;
-            }
-            Optional<ResourceKey<Level>> dimension = readDimension(entryTag);
-            Optional<VillageEventMemory.MemoryEvent> event = readEvent(entryTag);
-            if (dimension.isEmpty() || event.isEmpty()) {
-                continue;
-            }
-            data.eventsByDimension
-                    .computeIfAbsent(dimension.get(), ignored -> new ArrayDeque<>())
-                    .addLast(event.get());
+        if (data.migrateLegacy(level)) {
+            VillageEventMemory.onLegacyMigration();
         }
         return data;
     }
 
-    @Override
-    public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
-        ListTag entriesTag = new ListTag();
-        for (Map.Entry<ResourceKey<Level>, ArrayDeque<VillageEventMemory.MemoryEvent>> dimensionEntry : this.eventsByDimension.entrySet()) {
-            ResourceKey<Level> dimension = dimensionEntry.getKey();
-            for (VillageEventMemory.MemoryEvent event : dimensionEntry.getValue()) {
-                if (event.tagId() == null || event.pos() == null) {
-                    continue;
-                }
-                CompoundTag entryTag = new CompoundTag();
-                entryTag.putString(TAG_DIMENSION, dimension.location().toString());
-                writeEvent(entryTag, event);
-                entriesTag.add(entryTag);
+    public static VillageEventMemorySavedData load(CompoundTag tag, HolderLookup.Provider provider) {
+        VillageEventMemorySavedData data = new VillageEventMemorySavedData();
+        int version = tag.getInt(TAG_FORMAT_VERSION);
+        if (version >= CURRENT_FORMAT_VERSION) {
+            readVillageEntries(tag.getList(TAG_VILLAGE_ENTRIES, Tag.TAG_COMPOUND), data);
+            readVillagerEntries(tag.getList(TAG_VILLAGER_ENTRIES, Tag.TAG_COMPOUND), data);
+            return data;
+        }
+
+        for (Tag rawEntry : tag.getList(TAG_ENTRIES, Tag.TAG_COMPOUND)) {
+            if (rawEntry instanceof CompoundTag entryTag) {
+                readEvent(entryTag).ifPresent(data.legacyEvents::add);
             }
         }
-        tag.put(TAG_ENTRIES, entriesTag);
+        data.legacyMigrationPending = !data.legacyEvents.isEmpty();
+        return data;
+    }
+
+    private static void readVillageEntries(ListTag entries, VillageEventMemorySavedData data) {
+        for (Tag rawEntry : entries) {
+            if (!(rawEntry instanceof CompoundTag entryTag) || !entryTag.hasUUID(TAG_VILLAGE_ID)) {
+                continue;
+            }
+            readEvent(entryTag).ifPresent(event -> data.eventsByVillage
+                    .computeIfAbsent(new VillageAllegianceId(entryTag.getUUID(TAG_VILLAGE_ID)), ignored -> new ArrayDeque<>())
+                    .addLast(event));
+        }
+    }
+
+    private static void readVillagerEntries(ListTag entries, VillageEventMemorySavedData data) {
+        for (Tag rawEntry : entries) {
+            if (!(rawEntry instanceof CompoundTag entryTag) || !entryTag.hasUUID(TAG_VILLAGER_ID)) {
+                continue;
+            }
+            readEvent(entryTag).ifPresent(event -> data.eventsByVillager
+                    .computeIfAbsent(entryTag.getUUID(TAG_VILLAGER_ID), ignored -> new ArrayDeque<>())
+                    .addLast(event));
+        }
+    }
+
+    @Override
+    public CompoundTag save(CompoundTag tag, HolderLookup.Provider provider) {
+        tag.putInt(TAG_FORMAT_VERSION, CURRENT_FORMAT_VERSION);
+        ListTag villageEntries = new ListTag();
+        for (Map.Entry<VillageAllegianceId, ArrayDeque<VillageEventMemory.MemoryEvent>> bucket : this.eventsByVillage.entrySet()) {
+            for (VillageEventMemory.MemoryEvent event : bucket.getValue()) {
+                CompoundTag entryTag = writeEntry(event);
+                entryTag.putUUID(TAG_VILLAGE_ID, bucket.getKey().value());
+                villageEntries.add(entryTag);
+            }
+        }
+        tag.put(TAG_VILLAGE_ENTRIES, villageEntries);
+
+        ListTag villagerEntries = new ListTag();
+        for (Map.Entry<UUID, ArrayDeque<VillageEventMemory.MemoryEvent>> bucket : this.eventsByVillager.entrySet()) {
+            for (VillageEventMemory.MemoryEvent event : bucket.getValue()) {
+                CompoundTag entryTag = writeEntry(event);
+                entryTag.putUUID(TAG_VILLAGER_ID, bucket.getKey());
+                villagerEntries.add(entryTag);
+            }
+        }
+        tag.put(TAG_VILLAGER_ENTRIES, villagerEntries);
         return tag;
     }
 
-    ArrayDeque<VillageEventMemory.MemoryEvent> events(ResourceKey<Level> dimension) {
-        return this.eventsByDimension.get(dimension);
+    private static CompoundTag writeEntry(VillageEventMemory.MemoryEvent event) {
+        CompoundTag tag = new CompoundTag();
+        writeEvent(tag, event);
+        return tag;
     }
 
-    ArrayDeque<VillageEventMemory.MemoryEvent> eventsForWrite(ResourceKey<Level> dimension) {
-        return this.eventsByDimension.computeIfAbsent(dimension, ignored -> new ArrayDeque<>());
+    ArrayDeque<VillageEventMemory.MemoryEvent> villageEvents(VillageAllegianceId villageId) {
+        return this.eventsByVillage.get(villageId);
     }
 
-    void removeDimensionIfEmpty(ResourceKey<Level> dimension) {
-        ArrayDeque<VillageEventMemory.MemoryEvent> events = this.eventsByDimension.get(dimension);
-        if (events != null && events.isEmpty()) {
-            this.eventsByDimension.remove(dimension);
-        }
+    ArrayDeque<VillageEventMemory.MemoryEvent> villageEventsForWrite(VillageAllegianceId villageId) {
+        return this.eventsByVillage.computeIfAbsent(villageId, ignored -> new ArrayDeque<>());
+    }
+
+    ArrayDeque<VillageEventMemory.MemoryEvent> villagerEvents(UUID villagerId) {
+        return this.eventsByVillager.get(villagerId);
+    }
+
+    ArrayDeque<VillageEventMemory.MemoryEvent> villagerEventsForWrite(UUID villagerId) {
+        return this.eventsByVillager.computeIfAbsent(villagerId, ignored -> new ArrayDeque<>());
+    }
+
+    Collection<ArrayDeque<VillageEventMemory.MemoryEvent>> villageBuckets() {
+        return this.eventsByVillage.values();
+    }
+
+    Collection<ArrayDeque<VillageEventMemory.MemoryEvent>> villagerBuckets() {
+        return this.eventsByVillager.values();
+    }
+
+    Map<VillageAllegianceId, ArrayDeque<VillageEventMemory.MemoryEvent>> villageBucketsById() {
+        return this.eventsByVillage;
+    }
+
+    void removeEmptyBuckets() {
+        this.eventsByVillage.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+        this.eventsByVillager.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
     void markChanged() {
         setDirty();
     }
 
-    private static Optional<ResourceKey<Level>> readDimension(CompoundTag tag) {
-        if (!tag.contains(TAG_DIMENSION, Tag.TAG_STRING)) {
-            return Optional.empty();
+    boolean migrateLegacy(ServerLevel accessLevel) {
+        if (!this.legacyMigrationPending) {
+            return false;
         }
-        ResourceLocation id = ResourceLocation.tryParse(tag.getString(TAG_DIMENSION));
-        return id == null ? Optional.empty() : Optional.of(ResourceKey.create(Registries.DIMENSION, id));
+        for (VillageEventMemory.MemoryEvent event : this.legacyEvents) {
+            if (event.sourceId() != null) {
+                this.eventsByVillager.computeIfAbsent(event.sourceId(), ignored -> new ArrayDeque<>()).addLast(event);
+            }
+            ServerLevel eventLevel = accessLevel.getServer().getLevel(event.dimension());
+            if (eventLevel == null) {
+                continue;
+            }
+            VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(eventLevel);
+            registry.resolveAt(eventLevel, event.pos())
+                    .flatMap(registry::canonical)
+                    .ifPresent(id -> this.eventsByVillage.computeIfAbsent(id, ignored -> new ArrayDeque<>()).addLast(event));
+        }
+        this.legacyEvents.clear();
+        this.legacyMigrationPending = false;
+        setDirty();
+        return true;
     }
 
     private static Optional<VillageEventMemory.MemoryEvent> readEvent(CompoundTag tag) {
         Optional<ResourceLocation> tagId = readTagId(tag);
-        if (tagId.isEmpty() || !tag.contains(TAG_GAME_TIME, Tag.TAG_LONG) || !hasPos(tag)) {
+        Optional<ResourceKey<Level>> dimension = readDimension(tag);
+        if (tagId.isEmpty() || dimension.isEmpty() || !tag.contains(TAG_GAME_TIME, Tag.TAG_LONG) || !hasPos(tag)) {
             return Optional.empty();
         }
         VillageEventMemory.EventTag legacyTag = readLegacyTag(tag).or(() -> VillageEventMemory.legacyTag(tagId.get())).orElse(null);
@@ -131,6 +216,7 @@ public class VillageEventMemorySavedData extends SavedData {
                 legacyTag,
                 tagId.get(),
                 tag.getLong(TAG_GAME_TIME),
+                dimension.get(),
                 new BlockPos(tag.getInt(TAG_X), tag.getInt(TAG_Y), tag.getInt(TAG_Z)),
                 readUuid(tag, TAG_SOURCE_ID),
                 readUuid(tag, TAG_PLAYER_ID),
@@ -140,6 +226,14 @@ public class VillageEventMemorySavedData extends SavedData {
                 readCuredVillager(tag),
                 readKilledVillager(tag)
         ));
+    }
+
+    private static Optional<ResourceKey<Level>> readDimension(CompoundTag tag) {
+        if (!tag.contains(TAG_DIMENSION, Tag.TAG_STRING)) {
+            return Optional.empty();
+        }
+        ResourceLocation id = ResourceLocation.tryParse(tag.getString(TAG_DIMENSION));
+        return id == null ? Optional.empty() : Optional.of(ResourceKey.create(Registries.DIMENSION, id));
     }
 
     private static Optional<ResourceLocation> readTagId(CompoundTag tag) {
@@ -237,6 +331,7 @@ public class VillageEventMemorySavedData extends SavedData {
         }
         tag.putString(TAG_TAG_ID, event.tagId().toString());
         tag.putLong(TAG_GAME_TIME, event.gameTime());
+        tag.putString(TAG_DIMENSION, event.dimension().location().toString());
         tag.putInt(TAG_X, event.pos().getX());
         tag.putInt(TAG_Y, event.pos().getY());
         tag.putInt(TAG_Z, event.pos().getZ());

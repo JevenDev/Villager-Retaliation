@@ -58,7 +58,8 @@ public final class VillagerActionExecutor {
             case EXPERIENCE -> awardExperience(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case REPUTATION -> changeReputation(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case GOSSIP -> spreadGossip(context, action.amount()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
-            case MEMORY -> rememberMemory(context, action.memoryTag()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
+            case MEMORY -> rememberMemory(context, action.memoryTag(), action.memoryScope())
+                    ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case LOOT -> giveLoot(context, action.lootTable()) ? VillagerActionResult.success() : VillagerActionResult.EMPTY;
             case SET_TAG -> executeSetFactTag(context, action, replacements);
             case CLEAR_TAG -> executeClearFactTag(context, action, replacements);
@@ -95,16 +96,23 @@ public final class VillagerActionExecutor {
     }
 
     public static boolean rememberMemory(DialogueContext context, ResourceLocation memoryTag) {
+        return rememberMemory(context, memoryTag, VillageEventMemory.MemoryScope.BOTH);
+    }
+
+    public static boolean rememberMemory(
+            DialogueContext context,
+            ResourceLocation memoryTag,
+            VillageEventMemory.MemoryScope memoryScope) {
         if (context == null || memoryTag == null) {
             return false;
         }
-        VillageEventMemory.remember(
+        return VillageEventMemory.remember(
                 context.level(),
                 memoryTag,
                 context.villager().blockPosition(),
                 context.villager(),
-                context.player());
-        return true;
+                context.player(),
+                memoryScope).changed();
     }
 
     public static boolean giveLoot(DialogueContext context, ResourceLocation lootTableId) {

@@ -21,6 +21,7 @@ public record VillagerActionDefinition(
         QuestAction questAction,
         int amount,
         ResourceLocation memoryTag,
+        VillageEventMemory.MemoryScope memoryScope,
         ResourceLocation lootTable,
         String notificationTrigger,
         String text,
@@ -39,6 +40,7 @@ public record VillagerActionDefinition(
     public VillagerActionDefinition {
         kind = kind == null ? Kind.NONE : kind;
         questAction = questAction == null ? QuestAction.NONE : questAction;
+        memoryScope = memoryScope == null ? VillageEventMemory.MemoryScope.BOTH : memoryScope;
         notificationTrigger = notificationTrigger == null ? "" : notificationTrigger;
         text = text == null ? "" : text;
         forcedDialogue = forcedDialogue == null ? "" : forcedDialogue;
@@ -147,6 +149,10 @@ public record VillagerActionDefinition(
                 DatapackJsonReader.readString(entry, "action"));
         int amount = readAmount(kind, entry);
         ResourceLocation memoryTag = readMemoryTag(location, context, entry);
+        VillageEventMemory.MemoryScope memoryScope = readMemoryScope(location, context, entry, kind);
+        if (kind == Kind.MEMORY && memoryScope == null) {
+            return java.util.Optional.empty();
+        }
         ResourceLocation lootTable = DatapackJsonReader.readResourceLocation(entry, "loot_table").orElse(null);
         String notificationTrigger = firstNonBlank(
                 DatapackJsonReader.readString(entry, "notification"),
@@ -191,6 +197,7 @@ public record VillagerActionDefinition(
                 questAction,
                 amount,
                 memoryTag,
+                memoryScope,
                 lootTable,
                 notificationTrigger,
                 text,
@@ -364,6 +371,25 @@ public record VillagerActionDefinition(
             DatapackDiagnostics.warnInvalidDialogueCondition(location, context, "memory action uses invalid tag \"" + value + "\".");
         }
         return tagId;
+    }
+
+    private static VillageEventMemory.MemoryScope readMemoryScope(
+            ResourceLocation location,
+            String context,
+            JsonObject entry,
+            Kind kind) {
+        if (kind != Kind.MEMORY || !entry.has("memory_scope")) {
+            return VillageEventMemory.MemoryScope.BOTH;
+        }
+        String value = DatapackJsonReader.readString(entry, "memory_scope");
+        VillageEventMemory.MemoryScope scope = VillageEventMemory.MemoryScope.parse(value).orElse(null);
+        if (scope == null) {
+            DatapackDiagnostics.warnInvalidDialogueCondition(
+                    location,
+                    context,
+                    "memory action uses invalid memory_scope \"" + value + "\"; expected villager, village, or both.");
+        }
+        return scope;
     }
 
     private static QuestFactScope readFactScope(JsonObject entry, Kind kind, ResourceLocation questId) {

@@ -411,7 +411,7 @@ Common action types:
 | `experience` | `amount` or `experience` |
 | `reputation` | `amount` or `reputation` |
 | `gossip` | `amount`, `gossip`, or `gossip_reputation` |
-| `memory` | `memory_event` |
+| `memory` | `memory_event`, optional `memory_scope`: `villager`, `village`, or `both` |
 | `loot` | `loot_table` |
 | `tracker` | `flash_tracker` |
 | `set_tag` | `tag` or `set_tag`, optional `scope`, optional `quest` |
@@ -421,6 +421,8 @@ Common action types:
 | `counter` | `key` or `counter`, optional `amount`, `by`, or `delta`, optional `scope`, optional `quest` |
 
 Quest facts default to `quest` scope when the action has a quest id or is inside a quest-owned trigger. Otherwise they default to `player` scope.
+
+Memory actions default `memory_scope` to `both`. `villager` remembers the event only for the acting villager, `village` writes only to the tracked village footprint containing the event, and `both` writes each available bucket. Quest reward shorthand using only `memory_event` also defaults to `both`.
 
 Use `action: "block"` when a dialogue choice or trigger should close a path immediately. The target quest becomes `branch_locked` and receives `villagerretaliation:quest_branch_locked`.
 

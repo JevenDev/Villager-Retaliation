@@ -2436,7 +2436,8 @@ public final class VillagerInteractionService {
                 reports.giftAdviceResultReport(),
                 contextSnapshots.familyTree(),
                 contextSnapshots.relationships(),
-                contextSnapshots.recentEvents(),
+                contextSnapshots.personalEvents(),
+                contextSnapshots.villageEvents(),
                 villager.getRandom(),
                 VillagerLocale.locale(player),
                 VillageScopeKeys.forVillager(level, villager)
@@ -2447,6 +2448,7 @@ public final class VillagerInteractionService {
         return new DialogueContextSnapshots(
                 VillagerSocialGraphService.familySnapshot(level, villager),
                 VillagerSocialGraphService.relationshipSnapshot(level, villager),
+                VillageEventMemory.lazyRecentForVillager(level, villager),
                 VillageEventMemory.lazyRecentForVillage(level, villager)
         );
     }
@@ -3122,7 +3124,8 @@ public final class VillagerInteractionService {
     private record DialogueContextSnapshots(
             VillagerFamilyTreeSnapshot familyTree,
             VillagerRelationshipSnapshot relationships,
-            List<VillageEventMemory.MemoryEvent> recentEvents) {
+            List<VillageEventMemory.MemoryEvent> personalEvents,
+            List<VillageEventMemory.MemoryEvent> villageEvents) {
     }
 
 }

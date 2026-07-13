@@ -541,6 +541,7 @@ public final class VillagerQuestGameTests {
                 VillagerActionDefinition.QuestAction.NONE,
                 0,
                 null,
+                com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.BOTH,
                 null,
                 "quest.test",
                 "Test",

@@ -3574,31 +3574,75 @@ public final class VillagerQuestService {
         if (memory.tags().isEmpty()) {
             return ConditionMatch.UNKNOWN;
         }
-        Optional<BlockPos> queryPos = savedVillageMemoryQueryPos(progress);
-        if (queryPos.isEmpty()) {
-            return ConditionMatch.UNKNOWN;
-        }
         ServerLevel memoryLevel = savedVillageMemoryLevel(fallbackLevel, progress);
         if (memoryLevel == null) {
             return ConditionMatch.UNKNOWN;
         }
         UUID playerId = player.getUUID();
-        for (VillageEventMemory.MemoryEvent event : VillageEventMemory.recentNear(memoryLevel, queryPos.get())) {
+        if (memory.source() != DialogueCondition.MemorySource.OTHER_VILLAGER
+                && hasMatchingOfflineMemory(
+                        VillageEventMemory.recentForVillager(memoryLevel, villagerId),
+                        memory,
+                        playerId,
+                        villagerId,
+                        false)) {
+            return ConditionMatch.MET;
+        }
+        if (memory.source() == DialogueCondition.MemorySource.THIS_VILLAGER) {
+            return ConditionMatch.UNMET;
+        }
+        var rosterVillage = VillageEventMemory.villageForVillager(memoryLevel, villagerId);
+        Optional<BlockPos> savedVillagePos = savedVillageMemoryQueryPos(progress);
+        List<VillageEventMemory.MemoryEvent> communalEvents = rosterVillage
+                .map(id -> VillageEventMemory.recentForVillage(memoryLevel, id))
+                .orElseGet(() -> savedVillagePos
+                        .map(pos -> VillageEventMemory.recentForVillageAt(memoryLevel, pos))
+                        .orElseGet(List::of));
+        if (rosterVillage.isEmpty() && savedVillagePos.isEmpty()) {
+            return memory.source() == DialogueCondition.MemorySource.ANY
+                    ? ConditionMatch.UNMET
+                    : ConditionMatch.UNKNOWN;
+        }
+        return hasMatchingOfflineMemory(
+                communalEvents,
+                memory,
+                playerId,
+                villagerId,
+                true)
+                ? ConditionMatch.MET
+                : ConditionMatch.UNMET;
+    }
+
+    public static boolean debugEventTagMemoryMatchesWithoutLiveContextForTests(
+            ServerPlayer player,
+            ServerLevel level,
+            VillagerQuestSavedData.QuestProgress progress,
+            DialogueCondition.Memory memory) {
+        UUID villagerId = progress == null ? null : progress.startedVillagerId();
+        return villagerId != null
+                && eventTagMemoryStateWithoutLiveContext(player, level, progress, memory, villagerId)
+                == ConditionMatch.MET;
+    }
+
+    private static boolean hasMatchingOfflineMemory(
+            List<VillageEventMemory.MemoryEvent> events,
+            DialogueCondition.Memory memory,
+            UUID playerId,
+            UUID villagerId,
+            boolean communal) {
+        for (VillageEventMemory.MemoryEvent event : events) {
             if (!memory.tags().contains(event.tagId())) {
                 continue;
             }
             if (memory.currentPlayerOnly() && !playerId.equals(event.playerId())) {
                 continue;
             }
-            if (memory.source() == DialogueCondition.MemorySource.THIS_VILLAGER && !villagerId.equals(event.sourceId())) {
+            if (communal && villagerId.equals(event.sourceId())) {
                 continue;
             }
-            if (memory.source() == DialogueCondition.MemorySource.OTHER_VILLAGER && villagerId.equals(event.sourceId())) {
-                continue;
-            }
-            return ConditionMatch.MET;
+            return true;
         }
-        return ConditionMatch.UNMET;
+        return false;
     }
 
     private static Optional<BlockPos> savedVillageMemoryQueryPos(VillagerQuestSavedData.QuestProgress progress) {
@@ -4894,7 +4938,8 @@ public final class VillagerQuestService {
                 VillagerActionDefinition.Kind.MEMORY,
                 0,
                 rewards.memoryEvent(),
-                null), replacements, definition.id());
+                null,
+                rewards.memoryScope()), replacements, definition.id());
         runRewardAction(context, rewardAction(
                 VillagerActionDefinition.Kind.LOOT,
                 0,
@@ -4922,12 +4967,22 @@ public final class VillagerQuestService {
             int amount,
             ResourceLocation memoryTag,
             ResourceLocation lootTable) {
+        return rewardAction(kind, amount, memoryTag, lootTable, VillageEventMemory.MemoryScope.BOTH);
+    }
+
+    private static VillagerActionDefinition rewardAction(
+            VillagerActionDefinition.Kind kind,
+            int amount,
+            ResourceLocation memoryTag,
+            ResourceLocation lootTable,
+            VillageEventMemory.MemoryScope memoryScope) {
         return new VillagerActionDefinition(
                 kind,
                 null,
                 VillagerActionDefinition.QuestAction.NONE,
                 amount,
                 memoryTag,
+                memoryScope,
                 lootTable,
                 "",
                 "",

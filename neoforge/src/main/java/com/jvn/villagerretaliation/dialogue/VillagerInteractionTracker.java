@@ -4,12 +4,15 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
-import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderSet;
@@ -23,8 +26,6 @@ import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 public final class VillagerInteractionTracker {
-    private static final int VILLAGE_ENCOUNTER_REGION_SIZE = 64;
-
     private VillagerInteractionTracker() {
     }
 
@@ -367,12 +368,14 @@ public final class VillagerInteractionTracker {
         if (data.getOrEmptyForRead(villager.getUUID(), player.getUUID()).hasMet()) {
             return false;
         }
-        return VillageMembership.resolve(level, villager)
-                .map(area -> !data.hasVillageEncounter(player.getUUID(), villageEncounterKey(level, area))
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        return encounterVillage(level, villager, registry)
+                .map(villageId -> !data.hasVillageEncounter(player.getUUID(), villageId, registry)
                         && !data.hasMetWithAny(
-                                area.members().stream().map(Villager::getUUID).toList(),
-                                player.getUUID()
-                        ))
+                        registry.canonicalRecord(villageId)
+                                .map(record -> record.residents().keySet())
+                                .orElse(Set.of()),
+                        player.getUUID()))
                 .orElse(false);
     }
 
@@ -506,20 +509,23 @@ public final class VillagerInteractionTracker {
         VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
         long day = level.getDayTime() / 24000L;
         boolean changed = entry.markSeenDay(day);
-        changed |= VillageMembership.resolve(level, villager)
-                .map(area -> data.rememberVillageEncounter(player.getUUID(), villageEncounterKey(level, area)))
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        changed |= encounterVillage(level, villager, registry)
+                .map(id -> data.rememberVillageEncounter(player.getUUID(), id))
                 .orElse(false);
         if (changed) {
             data.setDirty();
         }
     }
 
-    private static String villageEncounterKey(ServerLevel level, VillageMembership.VillageArea area) {
-        BlockPos center = area.centerBlock();
-        return level.dimension().location() + ":"
-                + Math.floorDiv(center.getX(), VILLAGE_ENCOUNTER_REGION_SIZE)
-                + ","
-                + Math.floorDiv(center.getZ(), VILLAGE_ENCOUNTER_REGION_SIZE);
+    private static Optional<VillageAllegianceId> encounterVillage(
+            ServerLevel level,
+            Villager villager,
+            VillageAllegianceRegistrySavedData registry) {
+        Optional<VillageAllegianceId> home = VillageAllegianceApi.canonicalPrimary(level, villager);
+        return home.isPresent()
+                ? home
+                : registry.resolveAt(level, villager.blockPosition()).flatMap(registry::canonical);
     }
 
     public static Optional<RecruitmentMemory> recruitmentMemory(ServerLevel level, Villager villager, ServerPlayer player) {

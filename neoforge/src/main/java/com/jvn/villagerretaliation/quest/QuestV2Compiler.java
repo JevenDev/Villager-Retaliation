@@ -611,6 +611,7 @@ public final class QuestV2Compiler {
                 case MEMORY -> {
                     if (action.memoryTag() != null) {
                         canonical.addProperty("memory_event", action.memoryTag().toString());
+                        canonical.addProperty("memory_scope", action.memoryScope().serializedName());
                     }
                 }
                 case LOOT -> {
@@ -832,6 +833,7 @@ public final class QuestV2Compiler {
             }
             if (action.memoryTag() != null) {
                 object.addProperty("memory_event", action.memoryTag().toString());
+                object.addProperty("memory_scope", action.memoryScope().serializedName());
             }
             if (action.lootTable() != null) {
                 object.addProperty("loot_table", action.lootTable().toString());

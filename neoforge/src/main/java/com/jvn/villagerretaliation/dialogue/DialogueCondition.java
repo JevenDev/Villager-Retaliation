@@ -1192,17 +1192,27 @@ public sealed interface DialogueCondition permits DialogueCondition.AllOf, Dialo
         private boolean matchesEventTag(DialogueContext context) {
             UUID playerId = context.player().getUUID();
             UUID villagerId = context.villager().getUUID();
-            for (VillageEventMemory.MemoryEvent event : context.recentEvents()) {
+            return switch (this.source) {
+                case THIS_VILLAGER -> matchesEventList(context.personalEvents(), playerId, villagerId, false);
+                case OTHER_VILLAGER -> matchesEventList(context.villageEvents(), playerId, villagerId, true);
+                case ANY -> matchesEventList(context.personalEvents(), playerId, villagerId, false)
+                        || matchesEventList(context.villageEvents(), playerId, villagerId, false);
+            };
+        }
+
+        private boolean matchesEventList(
+                List<VillageEventMemory.MemoryEvent> events,
+                UUID playerId,
+                UUID villagerId,
+                boolean excludeSpeaker) {
+            for (VillageEventMemory.MemoryEvent event : events) {
                 if (!this.tags.contains(event.tagId())) {
                     continue;
                 }
                 if (this.currentPlayerOnly && !playerId.equals(event.playerId())) {
                     continue;
                 }
-                if (this.source == MemorySource.THIS_VILLAGER && !villagerId.equals(event.sourceId())) {
-                    continue;
-                }
-                if (this.source == MemorySource.OTHER_VILLAGER && villagerId.equals(event.sourceId())) {
+                if (excludeSpeaker && villagerId.equals(event.sourceId())) {
                     continue;
                 }
                 return true;

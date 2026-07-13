@@ -1389,6 +1389,14 @@
             "variable",
             "xp"
           ]
+        },
+        "memory_scope": {
+          "type": "string",
+          "enum": [
+            "both",
+            "village",
+            "villager"
+          ]
         }
       }
     }

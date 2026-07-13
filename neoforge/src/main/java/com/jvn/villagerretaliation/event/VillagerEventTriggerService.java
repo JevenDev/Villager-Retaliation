@@ -200,8 +200,13 @@ public final class VillagerEventTriggerService {
                 }
                 case MEMORY -> {
                     if (action.memoryTag() != null) {
-                        VillageEventMemory.remember(level, action.memoryTag(), event.pos(), villager, player);
-                        ran = true;
+                        ran |= VillageEventMemory.remember(
+                                level,
+                                action.memoryTag(),
+                                event.pos(),
+                                villager,
+                                player,
+                                action.memoryScope()).changed();
                     }
                 }
                 case FORCED_DIALOGUE, QUEST, QUEST_TRANSITION, REPUTATION, GOSSIP, LOOT, SET_TAG, CLEAR_TAG, SET_VARIABLE, COUNTER, NONE -> {

@@ -1145,7 +1145,9 @@ public final class VillagerQuestResources {
                 DatapackJsonReader.readInt(rewards, "reputation", 0),
                 DatapackJsonReader.readInt(rewards, "gossip_reputation", 0),
                 DatapackJsonReader.readResourceLocation(rewards, "loot_table").orElse(null),
-                readMemoryEvent(rewards)
+                readMemoryEvent(rewards),
+                VillageEventMemory.MemoryScope.parse(DatapackJsonReader.readString(rewards, "memory_scope"))
+                        .orElse(VillageEventMemory.MemoryScope.BOTH)
         );
     }
 

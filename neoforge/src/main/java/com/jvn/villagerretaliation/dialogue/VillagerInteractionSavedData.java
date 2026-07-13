@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.dialogue;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -70,6 +72,8 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_SHARED_STORY_COUNTS = "SharedStoryCounts";
     private static final String TAG_VILLAGE_ENCOUNTERS = "VillageEncounters";
     private static final String TAG_VILLAGES = "Villages";
+    private static final String TAG_VILLAGE_IDS = "VillageIds";
+    private static final String TAG_VILLAGE_ID = "VillageId";
     private static final String TAG_TARGETS = "Targets";
     private static final String TAG_TARGET_KEY = "TargetKey";
     private static final String TAG_SHARED_STORIES = "SharedStories";
@@ -116,13 +120,16 @@ public class VillagerInteractionSavedData extends SavedData {
     private final GiftKnowledgeStore giftKnowledge = new GiftKnowledgeStore();
     private final Map<UUID, LinkedHashMap<String, Long>> sharedStoryCooldownsByPlayer = new HashMap<>();
     private final Map<UUID, Integer> sharedStoryCountsByPlayer = new HashMap<>();
-    private final Map<UUID, LinkedHashSet<String>> villageEncountersByPlayer = new HashMap<>();
+    private final Map<UUID, LinkedHashSet<VillageAllegianceId>> villageEncountersByPlayer = new HashMap<>();
+    private final Map<UUID, LinkedHashSet<String>> legacyVillageEncountersByPlayer = new HashMap<>();
 
     public static VillagerInteractionSavedData get(ServerLevel level) {
-        return level.getServer().overworld().getDataStorage().computeIfAbsent(
+        VillagerInteractionSavedData data = level.getServer().overworld().getDataStorage().computeIfAbsent(
                 new SavedData.Factory<>(VillagerInteractionSavedData::new, VillagerInteractionSavedData::load, DataFixTypes.LEVEL),
                 DATA_NAME
         );
+        data.migrateLegacyVillageEncounters(level);
+        return data;
     }
 
     public static VillagerInteractionSavedData load(CompoundTag tag, HolderLookup.Provider provider) {
@@ -344,10 +351,20 @@ public class VillagerInteractionSavedData extends SavedData {
             if (!(rawEncounters instanceof CompoundTag encountersTag) || !encountersTag.hasUUID(TAG_PLAYER)) {
                 continue;
             }
-            LinkedHashSet<String> villageKeys = new LinkedHashSet<>();
-            readStringSet(encountersTag.getList(TAG_VILLAGES, Tag.TAG_STRING), villageKeys);
-            if (!villageKeys.isEmpty()) {
-                data.villageEncountersByPlayer.put(encountersTag.getUUID(TAG_PLAYER), villageKeys);
+            UUID playerId = encountersTag.getUUID(TAG_PLAYER);
+            LinkedHashSet<VillageAllegianceId> villageIds = new LinkedHashSet<>();
+            for (Tag rawVillage : encountersTag.getList(TAG_VILLAGE_IDS, Tag.TAG_COMPOUND)) {
+                if (rawVillage instanceof CompoundTag villageTag && villageTag.hasUUID(TAG_VILLAGE_ID)) {
+                    villageIds.add(new VillageAllegianceId(villageTag.getUUID(TAG_VILLAGE_ID)));
+                }
+            }
+            if (!villageIds.isEmpty()) {
+                data.villageEncountersByPlayer.put(playerId, villageIds);
+            }
+            LinkedHashSet<String> legacyKeys = new LinkedHashSet<>();
+            readStringSet(encountersTag.getList(TAG_VILLAGES, Tag.TAG_STRING), legacyKeys);
+            if (!legacyKeys.isEmpty()) {
+                data.legacyVillageEncountersByPlayer.put(playerId, legacyKeys);
             }
         }
         return data;
@@ -554,13 +571,19 @@ public class VillagerInteractionSavedData extends SavedData {
         }
         tag.put(TAG_SHARED_STORY_COUNTS, sharedStoryCountsTag);
         ListTag villageEncountersTag = new ListTag();
-        for (Map.Entry<UUID, LinkedHashSet<String>> encountersEntry : this.villageEncountersByPlayer.entrySet()) {
+        for (Map.Entry<UUID, LinkedHashSet<VillageAllegianceId>> encountersEntry : this.villageEncountersByPlayer.entrySet()) {
             if (encountersEntry.getValue().isEmpty()) {
                 continue;
             }
             CompoundTag encountersTag = new CompoundTag();
             encountersTag.putUUID(TAG_PLAYER, encountersEntry.getKey());
-            encountersTag.put(TAG_VILLAGES, writeStringSet(encountersEntry.getValue()));
+            ListTag villageIds = new ListTag();
+            for (VillageAllegianceId villageId : encountersEntry.getValue()) {
+                CompoundTag villageTag = new CompoundTag();
+                villageTag.putUUID(TAG_VILLAGE_ID, villageId.value());
+                villageIds.add(villageTag);
+            }
+            encountersTag.put(TAG_VILLAGE_IDS, villageIds);
             villageEncountersTag.add(encountersTag);
         }
         tag.put(TAG_VILLAGE_ENCOUNTERS, villageEncountersTag);
@@ -575,25 +598,81 @@ public class VillagerInteractionSavedData extends SavedData {
         return tag;
     }
 
-    boolean hasVillageEncounter(UUID playerId, String villageKey) {
-        if (playerId == null || villageKey == null || villageKey.isBlank()) {
+    boolean hasVillageEncounter(
+            UUID playerId,
+            VillageAllegianceId villageId,
+            VillageAllegianceRegistrySavedData registry) {
+        if (playerId == null || villageId == null || registry == null) {
             return false;
         }
-        Set<String> villageKeys = this.villageEncountersByPlayer.get(playerId);
-        return villageKeys != null && villageKeys.contains(villageKey);
+        VillageAllegianceId canonical = registry.canonical(villageId).orElse(null);
+        Set<VillageAllegianceId> villageIds = this.villageEncountersByPlayer.get(playerId);
+        return canonical != null && villageIds != null && villageIds.stream()
+                .map(id -> registry.canonical(id).orElse(null))
+                .anyMatch(canonical::equals);
     }
 
-    boolean rememberVillageEncounter(UUID playerId, String villageKey) {
-        if (playerId == null || villageKey == null || villageKey.isBlank()) {
+    boolean rememberVillageEncounter(UUID playerId, VillageAllegianceId villageId) {
+        if (playerId == null || villageId == null) {
             return false;
         }
-        LinkedHashSet<String> villageKeys = this.villageEncountersByPlayer.computeIfAbsent(playerId, ignored -> new LinkedHashSet<>());
-        boolean changed = villageKeys.add(villageKey);
-        while (villageKeys.size() > MAX_VILLAGE_ENCOUNTERS_PER_PLAYER) {
-            villageKeys.remove(villageKeys.iterator().next());
+        LinkedHashSet<VillageAllegianceId> villageIds = this.villageEncountersByPlayer.computeIfAbsent(
+                playerId, ignored -> new LinkedHashSet<>());
+        boolean changed = villageIds.add(villageId);
+        while (villageIds.size() > MAX_VILLAGE_ENCOUNTERS_PER_PLAYER) {
+            villageIds.remove(villageIds.iterator().next());
             changed = true;
         }
         return changed;
+    }
+
+    void migrateLegacyVillageEncounters(ServerLevel level) {
+        migrateLegacyVillageEncounters(VillageAllegianceRegistrySavedData.get(level));
+    }
+
+    void migrateLegacyVillageEncounters(VillageAllegianceRegistrySavedData registry) {
+        if (this.legacyVillageEncountersByPlayer.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<UUID, LinkedHashSet<String>> entry : this.legacyVillageEncountersByPlayer.entrySet()) {
+            for (String legacyKey : entry.getValue()) {
+                resolveLegacyEncounter(registry, legacyKey)
+                        .ifPresent(id -> rememberVillageEncounter(entry.getKey(), id));
+            }
+        }
+        this.legacyVillageEncountersByPlayer.clear();
+        setDirty();
+    }
+
+    private static java.util.Optional<VillageAllegianceId> resolveLegacyEncounter(
+            VillageAllegianceRegistrySavedData registry,
+            String legacyKey) {
+        if (legacyKey == null) {
+            return java.util.Optional.empty();
+        }
+        int separator = legacyKey.lastIndexOf(':');
+        if (separator <= 0 || separator >= legacyKey.length() - 1) {
+            return java.util.Optional.empty();
+        }
+        ResourceLocation dimension = ResourceLocation.tryParse(legacyKey.substring(0, separator));
+        String[] region = legacyKey.substring(separator + 1).split(",");
+        if (dimension == null || region.length != 2) {
+            return java.util.Optional.empty();
+        }
+        try {
+            int regionX = Integer.parseInt(region[0]);
+            int regionZ = Integer.parseInt(region[1]);
+            List<VillageAllegianceId> matches = registry.activeRecords(dimension).stream()
+                    .filter(record -> Math.floorDiv(record.center().getX(), 64) == regionX)
+                    .filter(record -> Math.floorDiv(record.center().getZ(), 64) == regionZ)
+                    .map(VillageAllegianceRegistrySavedData.AllegianceRecord::id)
+                    .map(id -> registry.canonical(id).orElse(id))
+                    .distinct()
+                    .toList();
+            return matches.size() == 1 ? java.util.Optional.of(matches.getFirst()) : java.util.Optional.empty();
+        } catch (NumberFormatException ignored) {
+            return java.util.Optional.empty();
+        }
     }
 
     public InteractionEntry getOrCreate(UUID villagerId, UUID playerId) {

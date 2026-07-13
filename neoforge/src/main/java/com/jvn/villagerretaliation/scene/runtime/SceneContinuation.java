@@ -126,6 +126,7 @@ public final class SceneContinuation {
         tag.putString("QuestAction", action.questAction().name());
         tag.putInt("Amount", action.amount());
         putResource(tag, "Memory", action.memoryTag());
+        tag.putString("MemoryScope", action.memoryScope().name());
         putResource(tag, "Loot", action.lootTable());
         tag.putString("Notification", action.notificationTrigger());
         tag.putString("Text", action.text());
@@ -177,7 +178,8 @@ public final class SceneContinuation {
             lines.put(key, List.copyOf(values));
         }
         return new VillagerActionDefinition(enumValue(VillagerActionDefinition.Kind.class,tag.getString("Kind"),VillagerActionDefinition.Kind.NONE),ResourceLocation.tryParse(tag.getString("Quest")),
-                enumValue(VillagerActionDefinition.QuestAction.class,tag.getString("QuestAction"),VillagerActionDefinition.QuestAction.NONE),tag.getInt("Amount"),ResourceLocation.tryParse(tag.getString("Memory")),ResourceLocation.tryParse(tag.getString("Loot")),
+                enumValue(VillagerActionDefinition.QuestAction.class,tag.getString("QuestAction"),VillagerActionDefinition.QuestAction.NONE),tag.getInt("Amount"),ResourceLocation.tryParse(tag.getString("Memory")),
+                enumValue(com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.class,tag.getString("MemoryScope"),com.jvn.villagerretaliation.village.VillageEventMemory.MemoryScope.BOTH),ResourceLocation.tryParse(tag.getString("Loot")),
                 tag.getString("Notification"),tag.getString("Text"),tag.getString("Forced"),tag.getBoolean("Flash"),enumValue(QuestFactScope.class,tag.getString("FactScope"),QuestFactScope.PLAYER),
                 ResourceLocation.tryParse(tag.getString("FactTag")),tag.getString("FactKey"),tag.getString("FactValue"),lines,transition,ResourceLocation.tryParse(tag.getString("Scene")),tag.getString("Operation"),tag.getBoolean("Wait"),tag.getBoolean("Required"));
     }
