@@ -1,12 +1,15 @@
 package com.jvn.villagerretaliation.party;
 
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
+import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
@@ -64,6 +67,24 @@ public final class PartyVillagerDropCollection {
         return true;
     }
 
+    public static void onArrowEntityLoaded(AbstractArrow arrow) {
+        if (arrow == null || !(arrow.level() instanceof ServerLevel level)) {
+            return;
+        }
+        boolean consumedCrossbowProjectile =
+                HiredRangedAmmo.clearConsumedCrossbowProjectileMarker(arrow.getPickupItemStackOrigin());
+        if (!(arrow.getOwner() instanceof Villager villager)
+                || !PartyService.isRecruitedPartyVillager(level, villager.getUUID())
+                || !HiredRangedAmmo.isAmmo(arrow.getPickupItemStackOrigin())
+                || arrow.pickup != AbstractArrow.Pickup.DISALLOWED
+                && !(arrow.pickup == AbstractArrow.Pickup.CREATIVE_ONLY && consumedCrossbowProjectile)) {
+            return;
+        }
+        // Vanilla makes a player's consumed projectile recoverable while leaving
+        // intangible projectiles (Infinity and Multishot copies) CREATIVE_ONLY.
+        arrow.pickup = AbstractArrow.Pickup.ALLOWED;
+    }
+
     public static int collectAny(Villager villager, ItemEntity itemEntity) {
         if (villager == null || itemEntity == null || !itemEntity.isAlive() || itemEntity.hasPickUpDelay()) {
             return 0;
@@ -87,6 +108,31 @@ public final class PartyVillagerDropCollection {
             onItemEntityLoaded(itemEntity);
         }
         return moved;
+    }
+
+    public static boolean isRecoverableArrow(Villager villager, AbstractArrow arrow) {
+        return villager != null
+                && arrow != null
+                && arrow.isAlive()
+                && arrow.getOwner() == villager
+                && arrow.pickup == AbstractArrow.Pickup.ALLOWED
+                && (((AbstractArrowAccessor) arrow).villagerretaliation$isInGround() || arrow.isNoPhysics())
+                && arrow.shakeTime <= 0
+                && HiredRangedAmmo.isAmmo(arrow.getPickupItemStackOrigin());
+    }
+
+    public static int collectArrow(Villager villager, AbstractArrow arrow) {
+        if (!isRecoverableArrow(villager, arrow)) {
+            return 0;
+        }
+        ItemStack remainder = HiredJobInventory.getJobInventory(villager)
+                .insertPlainSupply(arrow.getPickupItemStackOrigin().copyWithCount(1));
+        if (!remainder.isEmpty()) {
+            return 0;
+        }
+        villager.take(arrow, 1);
+        arrow.discard();
+        return 1;
     }
 
     private static PartyDropCollectionMode mode(ServerLevel level, Villager villager) {

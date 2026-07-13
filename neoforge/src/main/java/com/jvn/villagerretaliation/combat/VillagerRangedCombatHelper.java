@@ -493,11 +493,15 @@ final class VillagerRangedCombatHelper {
     }
 
     private static ItemStack resolveDefaultCrossbowProjectile(AbstractVillager villager, ItemStack crossbow) {
-        ItemStack projectile = HiredRangedAmmo.requiresAmmo(villager, crossbow)
+        boolean consumesAmmo = HiredRangedAmmo.requiresAmmo(villager, crossbow);
+        ItemStack projectile = consumesAmmo
                 ? HiredRangedAmmo.consumeAmmo(villager)
                 : defaultMobProjectile(villager, crossbow);
         if (projectile.isEmpty()) {
             return ItemStack.EMPTY;
+        }
+        if (consumesAmmo) {
+            HiredRangedAmmo.markConsumedCrossbowProjectile(projectile);
         }
         projectile.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
         return projectile;

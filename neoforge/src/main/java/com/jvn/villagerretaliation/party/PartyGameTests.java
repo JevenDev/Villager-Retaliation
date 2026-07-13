@@ -13,8 +13,10 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
+import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
@@ -36,6 +38,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -55,6 +58,7 @@ import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.CrossbowItem;
@@ -62,6 +66,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.Level;
+import net.minecraft.util.Unit;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -1102,6 +1107,61 @@ public final class PartyGameTests {
                     villager.discard();
                 })
                 .thenSucceed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void pickUpDropsRecoversOwnConsumedArrowButNotMultishotCopy(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_arrow_pickup"));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+
+        ItemStack consumedAmmo = new ItemStack(Items.ARROW);
+        HiredRangedAmmo.markConsumedCrossbowProjectile(consumedAmmo);
+        consumedAmmo.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
+        Arrow consumedArrow = new Arrow(
+                level, villager, consumedAmmo, new ItemStack(Items.CROSSBOW));
+        consumedArrow.moveTo(villager.getX() + 0.75D, villager.getY(), villager.getZ());
+        ((AbstractArrowAccessor) consumedArrow).villagerretaliation$setInGround(true);
+        PartyVillagerDropCollection.onArrowEntityLoaded(consumedArrow);
+        helper.assertValueEqual(consumedArrow.pickup, AbstractArrow.Pickup.ALLOWED,
+                "a consumed arrow shot by a party villager should become recoverable");
+        level.addFreshEntity(consumedArrow);
+
+        ItemStack multishotAmmo = new ItemStack(Items.ARROW);
+        multishotAmmo.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
+        Arrow multishotCopy = new Arrow(
+                level, villager, multishotAmmo, new ItemStack(Items.CROSSBOW));
+        multishotCopy.moveTo(villager.getX() + 0.25D, villager.getY(), villager.getZ());
+        ((AbstractArrowAccessor) multishotCopy).villagerretaliation$setInGround(true);
+        PartyVillagerDropCollection.onArrowEntityLoaded(multishotCopy);
+        helper.assertValueEqual(multishotCopy.pickup, AbstractArrow.Pickup.CREATIVE_ONLY,
+                "an intangible Multishot copy should retain vanilla non-survival pickup eligibility");
+        level.addFreshEntity(multishotCopy);
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.PICK_UP_DROPS));
+        helper.runAfterDelay(1, () -> {
+            PartyQuickCommandService.onVillagerTickPost(villager);
+            helper.assertFalse(consumedArrow.isAlive(),
+                    "pick-up-drops mode should collect the party villager's recoverable arrow");
+            helper.assertTrue(multishotCopy.isAlive(),
+                    "pick-up-drops mode should ignore a closer Multishot copy");
+            helper.assertValueEqual(HiredJobInventory.getJobInventory(villager).countItem(Items.ARROW), 1,
+                    "the recovered arrow should return to party supplies");
+
+            PartyService.deleteParty(level, party.id());
+            PartyQuickCommandService.clearRuntimeState();
+            multishotCopy.discard();
+            villager.discard();
+            helper.succeed();
+        });
     }
 
     private static ItemStack findCrossbow(Villager villager, HiredJobInventory jobInventory) {

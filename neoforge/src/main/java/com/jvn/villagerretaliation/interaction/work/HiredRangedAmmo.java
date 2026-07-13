@@ -10,6 +10,8 @@ import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -23,6 +25,8 @@ import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
 public final class HiredRangedAmmo {
+    private static final String CONSUMED_CROSSBOW_PROJECTILE_TAG =
+            "VillagerRetaliationConsumedCrossbowProjectile";
     public static final String FAILURE_STORAGE_PATH = "ranged_ammo_storage_path_failed";
     public static final String FAILURE_INVENTORY_FULL = "ranged_ammo_inventory_full";
     public static final String FAILURE_MISSING = "missing_ranged_ammo";
@@ -98,6 +102,26 @@ public final class HiredRangedAmmo {
 
     public static ItemStack consumeAmmo(AbstractVillager villager) {
         return villager instanceof Villager regular ? consumeAmmo(regular) : ItemStack.EMPTY;
+    }
+
+    public static void markConsumedCrossbowProjectile(ItemStack stack) {
+        if (!stack.isEmpty()) {
+            CustomData.update(DataComponents.CUSTOM_DATA, stack,
+                    tag -> tag.putBoolean(CONSUMED_CROSSBOW_PROJECTILE_TAG, true));
+        }
+    }
+
+    public static boolean clearConsumedCrossbowProjectileMarker(ItemStack stack) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (!customData.copyTag().getBoolean(CONSUMED_CROSSBOW_PROJECTILE_TAG)) {
+            return false;
+        }
+        CustomData.update(DataComponents.CUSTOM_DATA, stack,
+                tag -> tag.remove(CONSUMED_CROSSBOW_PROJECTILE_TAG));
+        return true;
     }
 
     public static WorkResult ensureReady(ServerLevel level, Villager villager, HiredWorkContext context, double speed) {

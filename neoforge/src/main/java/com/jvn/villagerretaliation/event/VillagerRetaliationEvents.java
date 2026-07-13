@@ -372,6 +372,10 @@ public final class VillagerRetaliationEvents {
                 && !event.getLevel().isClientSide()) {
             com.jvn.villagerretaliation.party.PartyVillagerDropCollection.onItemEntityLoaded(itemEntity);
         }
+        if (event.getEntity() instanceof net.minecraft.world.entity.projectile.AbstractArrow arrow
+                && !event.getLevel().isClientSide()) {
+            com.jvn.villagerretaliation.party.PartyVillagerDropCollection.onArrowEntityLoaded(arrow);
+        }
         if (event.getEntity() instanceof Villager villager && event.getLevel() instanceof ServerLevel level) {
             HiredVillagerIndex.update(level, villager);
             VillagerDownedService.onVillagerLoaded(villager);

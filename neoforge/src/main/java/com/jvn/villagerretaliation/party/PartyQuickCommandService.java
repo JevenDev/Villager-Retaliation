@@ -29,6 +29,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 
@@ -593,31 +594,33 @@ public final class PartyQuickCommandService {
             Villager villager,
             RuntimeOrder order,
             PartyRecord party) {
-        ItemEntity item = order.activeEntityTarget() == null
+        Entity drop = order.activeEntityTarget() == null
                 ? null
-                : level.getEntity(order.activeEntityTarget()) instanceof ItemEntity found ? found : null;
-        if (!isGatherableDrop(item, order)) {
+                : level.getEntity(order.activeEntityTarget());
+        if (!isGatherableDrop(villager, drop, order)) {
             order.clearActiveTarget();
-            item = nearestUnclaimedDrop(level, villager, order);
-            if (item == null) {
+            drop = nearestUnclaimedDrop(level, villager, order);
+            if (drop == null) {
                 clearMovementOrderAndSync(villager, party);
                 return;
             }
-            order.setActiveEntityTarget(item.getUUID());
+            order.setActiveEntityTarget(drop.getUUID());
         }
 
-        if (villager.distanceToSqr(item) <= ITEM_PICKUP_DISTANCE_SQR) {
-            if (item.hasPickUpDelay()) {
+        if (villager.distanceToSqr(drop) <= ITEM_PICKUP_DISTANCE_SQR) {
+            if (drop instanceof ItemEntity item && item.hasPickUpDelay()) {
                 if (order.incrementTargetWaitTicks() > MAX_PICKUP_WAIT_TICKS) {
                     order.skipEntity(item.getUUID());
                     order.clearActiveTarget();
                 }
                 return;
             }
-            int countBefore = item.getItem().getCount();
-            int moved = PartyVillagerDropCollection.collectAny(villager, item);
+            int countBefore = drop instanceof ItemEntity item ? item.getItem().getCount() : 1;
+            int moved = drop instanceof ItemEntity item
+                    ? PartyVillagerDropCollection.collectAny(villager, item)
+                    : PartyVillagerDropCollection.collectArrow(villager, (AbstractArrow) drop);
             order.clearActiveTarget();
-            if (moved <= 0 || moved < countBefore && item.isAlive()) {
+            if (moved <= 0 || moved < countBefore && drop.isAlive()) {
                 clearMovementOrderAndSync(villager, party);
             }
             return;
@@ -628,18 +631,18 @@ public final class PartyQuickCommandService {
                 level,
                 villager,
                 order,
-                item.blockPosition(),
+                drop.blockPosition(),
                 GATHER_SPEED,
                 ITEM_PICKUP_DISTANCE_SQR);
         if (attemptedPathRefresh
                 && movement == HiredRouteNavigator.NodeMovement.FAILED
                 && order.incrementPathFailures() >= MAX_BACKGROUND_PATH_FAILURES) {
-            order.skipEntity(item.getUUID());
+            order.skipEntity(drop.getUUID());
             order.clearActiveTarget();
         }
     }
 
-    private static ItemEntity nearestUnclaimedDrop(ServerLevel level, Villager villager, RuntimeOrder order) {
+    private static Entity nearestUnclaimedDrop(ServerLevel level, Villager villager, RuntimeOrder order) {
         BlockPos center = order.targetPosition();
         if (center == null) {
             return null;
@@ -648,24 +651,36 @@ public final class PartyQuickCommandService {
                 DROP_SEARCH_HORIZONTAL_RADIUS,
                 DROP_SEARCH_VERTICAL_RADIUS,
                 DROP_SEARCH_HORIZONTAL_RADIUS);
-        ItemEntity nearest = null;
+        Entity nearest = null;
         double nearestDistance = Double.MAX_VALUE;
         for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, search, candidate ->
-                isGatherableDrop(candidate, order) && !isDropClaimedByOther(villager.getUUID(), candidate.getUUID()))) {
+                isGatherableDrop(villager, candidate, order)
+                        && !isDropClaimedByOther(villager.getUUID(), candidate.getUUID()))) {
             double distance = villager.distanceToSqr(item);
             if (distance < nearestDistance) {
                 nearest = item;
                 nearestDistance = distance;
             }
         }
+        for (AbstractArrow arrow : level.getEntitiesOfClass(AbstractArrow.class, search, candidate ->
+                isGatherableDrop(villager, candidate, order)
+                        && !isDropClaimedByOther(villager.getUUID(), candidate.getUUID()))) {
+            double distance = villager.distanceToSqr(arrow);
+            if (distance < nearestDistance) {
+                nearest = arrow;
+                nearestDistance = distance;
+            }
+        }
         return nearest;
     }
 
-    private static boolean isGatherableDrop(ItemEntity item, RuntimeOrder order) {
-        return item != null
-                && item.isAlive()
-                && !item.getItem().isEmpty()
-                && !order.skippedEntities().contains(item.getUUID());
+    private static boolean isGatherableDrop(Villager villager, Entity drop, RuntimeOrder order) {
+        return drop != null
+                && drop.isAlive()
+                && !order.skippedEntities().contains(drop.getUUID())
+                && (drop instanceof ItemEntity item && !item.getItem().isEmpty()
+                || drop instanceof AbstractArrow arrow
+                && PartyVillagerDropCollection.isRecoverableArrow(villager, arrow));
     }
 
     private static boolean isDropClaimedByOther(UUID villagerId, UUID itemId) {
