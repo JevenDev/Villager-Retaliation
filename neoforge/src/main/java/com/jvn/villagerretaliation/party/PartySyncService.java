@@ -117,6 +117,9 @@ public final class PartySyncService {
                 combatModeState(party),
                 attackModeState(party),
                 party.sharedVillagerInventories(),
+                PartyQuickCommandService.moveTargetDimension(party),
+                PartyQuickCommandService.moveTarget(party),
+                PartyQuickCommandService.isStandGuardActive(party),
                 List.copyOf(players),
                 List.copyOf(villagers));
     }

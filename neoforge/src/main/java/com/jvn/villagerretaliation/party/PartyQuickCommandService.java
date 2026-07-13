@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,7 +22,7 @@ import net.minecraft.world.item.Items;
 
 public final class PartyQuickCommandService {
     private static final double MAX_TARGET_DISTANCE = 64.0D;
-    private static final double ATTACK_TARGET_DISTANCE = 48.0D;
+    private static final double ATTACK_TARGET_DISTANCE = 96.0D;
     private static final double ARRIVAL_DISTANCE_SQR = 1.75D * 1.75D;
     private static final double FALL_BACK_ARRIVAL_DISTANCE_SQR = 2.5D * 2.5D;
     private static final double MOVE_SPEED = 0.72D;
@@ -50,6 +51,8 @@ public final class PartyQuickCommandService {
             return;
         }
 
+        boolean loweringShields = payload.command() == PartyQuickCommand.STAND_GUARD
+                && isStandGuardActive(party);
         int affected = switch (payload.command()) {
             case ATTACK -> attack(player, participants, payload.targetEntityId());
             case MOVE_TO -> moveTo(player, participants, payload.targetPosition());
@@ -68,7 +71,9 @@ public final class PartyQuickCommandService {
         PartySyncService.syncParty(player.getServer(), party.id());
         player.displayClientMessage(Component.translatable(
                 "villagerretaliation.party.quick_command.sent",
-                Component.translatable(translationKey(payload.command())),
+                Component.translatable(loweringShields
+                        ? "villagerretaliation.party.quick_command.lower_shields"
+                        : translationKey(payload.command())),
                 affected), true);
     }
 
@@ -108,10 +113,56 @@ public final class PartyQuickCommandService {
         }
 
         switch (order.type()) {
-            case MOVE_TO -> tickMoveTo(villager, order);
-            case FALL_BACK -> tickFallBack(level, villager, order);
-            case STAND_GUARD -> tickStandGuard(villager);
+            case MOVE_TO -> tickMoveTo(villager, order, party);
+            case FALL_BACK -> tickFallBack(level, villager, order, party);
+            case STAND_GUARD -> tickStandGuard(villager, party);
         }
+    }
+
+    public static boolean overridesRecruitmentMovement(Villager villager) {
+        if (villager == null) {
+            return false;
+        }
+        RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
+        return order != null && (order.type() == RuntimeOrderType.MOVE_TO
+                || order.type() == RuntimeOrderType.FALL_BACK
+                || order.type() == RuntimeOrderType.STAND_GUARD);
+    }
+
+    public static BlockPos moveTarget(PartyRecord party) {
+        if (party == null) {
+            return null;
+        }
+        for (PartyVillagerRecord record : party.villagers()) {
+            RuntimeOrder order = RUNTIME_ORDERS.get(record.villagerId());
+            if (order != null && order.type() == RuntimeOrderType.MOVE_TO && order.targetPosition() != null) {
+                return order.targetPosition().below();
+            }
+        }
+        return null;
+    }
+
+    public static ResourceLocation moveTargetDimension(PartyRecord party) {
+        if (party == null) {
+            return null;
+        }
+        for (PartyVillagerRecord record : party.villagers()) {
+            RuntimeOrder order = RUNTIME_ORDERS.get(record.villagerId());
+            if (order != null && order.type() == RuntimeOrderType.MOVE_TO) {
+                return order.targetDimension();
+            }
+        }
+        return null;
+    }
+
+    public static boolean isStandGuardActive(PartyRecord party) {
+        if (party == null) {
+            return false;
+        }
+        return party.villagers().stream().anyMatch(record -> {
+            RuntimeOrder order = RUNTIME_ORDERS.get(record.villagerId());
+            return order != null && order.type() == RuntimeOrderType.STAND_GUARD;
+        });
     }
 
     public static void onVillagerUnloaded(Villager villager) {
@@ -161,7 +212,9 @@ public final class PartyQuickCommandService {
                 continue;
             }
             VillagerRetaliationHandler.clearCustomTarget(villager);
-            RUNTIME_ORDERS.put(villager.getUUID(), RuntimeOrder.moveTo(target));
+            RUNTIME_ORDERS.put(villager.getUUID(), RuntimeOrder.moveTo(
+                    target,
+                    player.serverLevel().dimension().location()));
             affected++;
         }
         return affected;
@@ -223,12 +276,27 @@ public final class PartyQuickCommandService {
     }
 
     private static int standGuard(ServerPlayer player, List<PartyVillagerRecord> records) {
-        int affected = 0;
-        for (PartyVillagerRecord record : records) {
-            Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
-            if (villager == null) {
-                continue;
+        List<Villager> loaded = records.stream()
+                .map(record -> loadedVillager(player.serverLevel(), record.villagerId()))
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        boolean lowerShields = loaded.stream().anyMatch(villager -> {
+            RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
+            return order != null && order.type() == RuntimeOrderType.STAND_GUARD;
+        });
+        if (lowerShields) {
+            int affected = 0;
+            for (Villager villager : loaded) {
+                RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
+                if (order != null && order.type() == RuntimeOrderType.STAND_GUARD) {
+                    clearRuntimeOrder(villager);
+                    affected++;
+                }
             }
+            return affected;
+        }
+        int affected = 0;
+        for (Villager villager : loaded) {
             VillagerRetaliationHandler.clearCustomTarget(villager);
             RUNTIME_ORDERS.put(villager.getUUID(), RuntimeOrder.standGuard());
             affected++;
@@ -236,34 +304,38 @@ public final class PartyQuickCommandService {
         return affected;
     }
 
-    private static void tickMoveTo(Villager villager, RuntimeOrder order) {
+    private static void tickMoveTo(Villager villager, RuntimeOrder order, PartyRecord party) {
         BlockPos target = order.targetPosition();
         if (target == null || villager.distanceToSqr(
                 target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D) <= ARRIVAL_DISTANCE_SQR) {
-            clearRuntimeOrder(villager);
+            clearRuntimeOrderAndSync(villager, party);
             return;
         }
         VillagerRetaliationHandler.clearCustomTarget(villager);
         refreshPath(villager, order, target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D, MOVE_SPEED);
     }
 
-    private static void tickFallBack(ServerLevel level, Villager villager, RuntimeOrder order) {
+    private static void tickFallBack(
+            ServerLevel level,
+            Villager villager,
+            RuntimeOrder order,
+            PartyRecord party) {
         ServerPlayer commander = level.getServer().getPlayerList().getPlayer(order.commanderId());
         if (commander == null || commander.serverLevel() != level || !commander.isAlive()) {
-            clearRuntimeOrder(villager);
+            clearRuntimeOrderAndSync(villager, party);
             return;
         }
         if (villager.distanceToSqr(commander) <= FALL_BACK_ARRIVAL_DISTANCE_SQR) {
-            clearRuntimeOrder(villager);
+            clearRuntimeOrderAndSync(villager, party);
             return;
         }
         VillagerRetaliationHandler.clearCustomTarget(villager);
         refreshPath(villager, order, commander.getX(), commander.getY(), commander.getZ(), FALL_BACK_SPEED);
     }
 
-    private static void tickStandGuard(Villager villager) {
+    private static void tickStandGuard(Villager villager, PartyRecord party) {
         if (villager.getTarget() != null || villager.getLastHurtByMob() != null || villager.isAggressive()) {
-            clearRuntimeOrder(villager);
+            clearRuntimeOrderAndSync(villager, party);
             return;
         }
         VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
@@ -301,6 +373,13 @@ public final class PartyQuickCommandService {
                 && (villager.getUsedItemHand() == InteractionHand.OFF_HAND
                 || villager.getUsedItemHand() == InteractionHand.MAIN_HAND)) {
             villager.stopUsingItem();
+        }
+    }
+
+    private static void clearRuntimeOrderAndSync(Villager villager, PartyRecord party) {
+        clearRuntimeOrder(villager);
+        if (party != null && villager.level().getServer() != null) {
+            PartySyncService.syncParty(villager.level().getServer(), party.id());
         }
     }
 
@@ -384,24 +463,30 @@ public final class PartyQuickCommandService {
         private final RuntimeOrderType type;
         private final BlockPos targetPosition;
         private final UUID commanderId;
+        private final ResourceLocation targetDimension;
         private long nextPathRefreshGameTime;
 
-        private RuntimeOrder(RuntimeOrderType type, BlockPos targetPosition, UUID commanderId) {
+        private RuntimeOrder(
+                RuntimeOrderType type,
+                BlockPos targetPosition,
+                UUID commanderId,
+                ResourceLocation targetDimension) {
             this.type = type;
             this.targetPosition = targetPosition;
             this.commanderId = commanderId;
+            this.targetDimension = targetDimension;
         }
 
-        static RuntimeOrder moveTo(BlockPos target) {
-            return new RuntimeOrder(RuntimeOrderType.MOVE_TO, target.immutable(), null);
+        static RuntimeOrder moveTo(BlockPos target, ResourceLocation dimension) {
+            return new RuntimeOrder(RuntimeOrderType.MOVE_TO, target.immutable(), null, dimension);
         }
 
         static RuntimeOrder fallBack(UUID commanderId) {
-            return new RuntimeOrder(RuntimeOrderType.FALL_BACK, null, commanderId);
+            return new RuntimeOrder(RuntimeOrderType.FALL_BACK, null, commanderId, null);
         }
 
         static RuntimeOrder standGuard() {
-            return new RuntimeOrder(RuntimeOrderType.STAND_GUARD, null, null);
+            return new RuntimeOrder(RuntimeOrderType.STAND_GUARD, null, null, null);
         }
 
         RuntimeOrderType type() {
@@ -414,6 +499,10 @@ public final class PartyQuickCommandService {
 
         UUID commanderId() {
             return this.commanderId;
+        }
+
+        ResourceLocation targetDimension() {
+            return this.targetDimension;
         }
 
         long nextPathRefreshGameTime() {

@@ -344,6 +344,9 @@ public final class VillagerRecruitmentService {
             clearFollowTarget(villager);
             return;
         }
+        if (com.jvn.villagerretaliation.party.PartyQuickCommandService.overridesRecruitmentMovement(villager)) {
+            return;
+        }
 
         boolean partyVillager = PartyVillagerContractService.isActivePartyVillager(level, villager);
         UUID playerId = villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY);

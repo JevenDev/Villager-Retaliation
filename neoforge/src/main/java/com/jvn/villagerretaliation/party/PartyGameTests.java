@@ -296,6 +296,31 @@ public final class PartyGameTests {
             helper.assertValueEqual(VillagerCurrencyPayment.count(leader), 0, "exact initial recruitment cost");
             helper.assertValueEqual(record.commandMode(), PartyCommandMode.FOLLOW, "default follow command");
             helper.assertTrue(record.quickCommandsEnabled(), "new recruits default to quick-command participation");
+            PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                    PartyQuickCommand.STAND_GUARD));
+            helper.assertTrue(PartyQuickCommandService.isStandGuardActive(party),
+                    "stand guard quick command activates the runtime guard state");
+            PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                    PartyQuickCommand.STAND_GUARD));
+            helper.assertFalse(PartyQuickCommandService.isStandGuardActive(party),
+                    "repeating stand guard lowers shields and clears the runtime guard state");
+            BlockPos quickMoveTarget = villager.blockPosition().offset(1, 0, 0);
+            PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                    PartyQuickCommand.MOVE_TO,
+                    com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                    quickMoveTarget));
+            helper.assertTrue(PartyQuickCommandService.overridesRecruitmentMovement(villager),
+                    "move-to quick command overrides ordinary follow-distance movement");
+            BlockPos outlinedMoveTarget = PartyQuickCommandService.moveTarget(party);
+            helper.assertTrue(outlinedMoveTarget != null
+                            && !level.getBlockState(outlinedMoveTarget)
+                            .getCollisionShape(level, outlinedMoveTarget)
+                            .isEmpty(),
+                    "move-to quick command exposes the solid destination block beneath its stand position");
+            PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                    PartyQuickCommand.FOLLOW_ME));
+            helper.assertFalse(PartyQuickCommandService.overridesRecruitmentMovement(villager),
+                    "follow command clears the temporary move-to override");
             helper.assertValueEqual(record.contractEndGameTime() - record.contractStartGameTime(),
                     VillagerContractTime.DAY_TICKS, "one paid contract day");
             helper.assertValueEqual(record.emeraldsPaid(), 32, "per-villager prepaid amount");

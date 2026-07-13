@@ -82,6 +82,7 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onMouseButton);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onMouseScroll);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onRenderGui);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandTargetRenderer::onRenderLevelStage);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onComputeFov);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onComputeCameraAngles);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onClientTick);

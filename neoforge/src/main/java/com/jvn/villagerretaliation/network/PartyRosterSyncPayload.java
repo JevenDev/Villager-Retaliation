@@ -9,6 +9,8 @@ import com.jvn.villagerretaliation.party.PartyDropCollectionMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -21,6 +23,9 @@ public record PartyRosterSyncPayload(
         PartyCombatModeState combatMode,
         PartyAttackModeState attackMode,
         boolean sharedVillagerInventories,
+        ResourceLocation quickCommandMoveDimension,
+        BlockPos quickCommandMoveTarget,
+        boolean standGuardActive,
         List<PlayerEntry> players,
         List<VillagerEntry> villagers) implements CustomPacketPayload {
     private static final int MAX_PLAYERS = 4;
@@ -34,7 +39,7 @@ public record PartyRosterSyncPayload(
     public static PartyRosterSyncPayload empty() {
         return new PartyRosterSyncPayload(false, null, "", false,
                 PartyCombatModeState.ATTACK_WITH_PARTY, PartyAttackModeState.ALL,
-                true, List.of(), List.of());
+                true, null, null, false, List.of(), List.of());
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, PartyRosterSyncPayload payload) {
@@ -48,6 +53,14 @@ public record PartyRosterSyncPayload(
         buffer.writeEnum(payload.combatMode());
         buffer.writeEnum(payload.attackMode());
         buffer.writeBoolean(payload.sharedVillagerInventories());
+        boolean hasMoveTarget = payload.quickCommandMoveDimension() != null
+                && payload.quickCommandMoveTarget() != null;
+        buffer.writeBoolean(hasMoveTarget);
+        if (hasMoveTarget) {
+            buffer.writeResourceLocation(payload.quickCommandMoveDimension());
+            buffer.writeBlockPos(payload.quickCommandMoveTarget());
+        }
+        buffer.writeBoolean(payload.standGuardActive());
         buffer.writeVarInt(Math.min(MAX_PLAYERS, payload.players().size()));
         for (int i = 0; i < Math.min(MAX_PLAYERS, payload.players().size()); i++) {
             PlayerEntry player = payload.players().get(i);
@@ -83,6 +96,10 @@ public record PartyRosterSyncPayload(
         PartyCombatModeState combatMode = buffer.readEnum(PartyCombatModeState.class);
         PartyAttackModeState attackMode = buffer.readEnum(PartyAttackModeState.class);
         boolean sharedVillagerInventories = buffer.readBoolean();
+        boolean hasMoveTarget = buffer.readBoolean();
+        ResourceLocation quickCommandMoveDimension = hasMoveTarget ? buffer.readResourceLocation() : null;
+        BlockPos quickCommandMoveTarget = hasMoveTarget ? buffer.readBlockPos() : null;
+        boolean standGuardActive = buffer.readBoolean();
         int playerCount = VillagerPayloads.readCollectionSize(buffer, MAX_PLAYERS, "party players");
         List<PlayerEntry> players = new ArrayList<>(playerCount);
         for (int i = 0; i < playerCount; i++) {
@@ -110,6 +127,7 @@ public record PartyRosterSyncPayload(
         }
         return new PartyRosterSyncPayload(true, partyId, leaderName, recipientLeader,
                 combatMode, attackMode, sharedVillagerInventories,
+                quickCommandMoveDimension, quickCommandMoveTarget, standGuardActive,
                 List.copyOf(players), List.copyOf(villagers));
     }
 

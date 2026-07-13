@@ -1565,6 +1565,7 @@
   "villagerretaliation.party.quick_command.stay_here": "Stay Here",
   "villagerretaliation.party.quick_command.fall_back": "Fall Back",
   "villagerretaliation.party.quick_command.stand_guard": "Stand Guard",
+  "villagerretaliation.party.quick_command.lower_shields": "Lower Shields",
   "villagerretaliation.party.quick_command.sent": "%1$s: %2$s villager(s)",
   "villagerretaliation.party.quick_command.none_enabled": "No villagers are enabled for quick commands.",
   "villagerretaliation.party.quick_command.none_available": "No enabled villagers are currently available.",

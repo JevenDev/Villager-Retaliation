@@ -45,7 +45,8 @@ public final class PartyQuickCommandWheel {
             VillagerRetaliation.id("textures/gui/quick_command/inventory_slot.png");
     private static final double INNER_DEADZONE = 20.0D;
     private static final double FULL_CIRCLE = Math.PI * 2.0D;
-    private static final double TARGET_RANGE = 48.0D;
+    private static final double BLOCK_TARGET_RANGE = 48.0D;
+    private static final double ATTACK_TARGET_RANGE = 96.0D;
     private static final double ENTITY_SNAP_INFLATION = 0.85D;
 
     private static final List<WheelEntry> ENTRIES = List.of(
@@ -157,13 +158,15 @@ public final class PartyQuickCommandWheel {
             return CapturedTarget.EMPTY;
         }
         Vec3 eye = player.getEyePosition();
-        Vec3 end = eye.add(player.getViewVector(1.0F).scale(TARGET_RANGE));
-        int entityId = findSnappedEntity(player, eye, end)
+        Vec3 view = player.getViewVector(1.0F);
+        Vec3 attackEnd = eye.add(view.scale(ATTACK_TARGET_RANGE));
+        Vec3 blockEnd = eye.add(view.scale(BLOCK_TARGET_RANGE));
+        int entityId = findSnappedEntity(player, eye, attackEnd)
                 .map(Entity::getId)
                 .orElse(PartyQuickCommandRequestPayload.NO_ENTITY);
         HitResult hit = minecraft.level.clip(new ClipContext(
                 eye,
-                end,
+                blockEnd,
                 ClipContext.Block.COLLIDER,
                 ClipContext.Fluid.NONE,
                 player));
@@ -249,7 +252,7 @@ public final class PartyQuickCommandWheel {
                 Component.translatable("villagerretaliation.party.quick_command.title"),
                 centerX, centerY - WHEEL_RADIUS - 18, 0xFFFFFF);
         Component label = highlightedIndex >= 0
-                ? ENTRIES.get(highlightedIndex).label()
+                ? selectionLabel(ENTRIES.get(highlightedIndex))
                 : Component.translatable("villagerretaliation.party.quick_command.cancel");
         graphics.drawCenteredString(font, truncate(font, label.getString(), 118),
                 centerX, centerY + WHEEL_RADIUS + font.lineHeight, 0xFFFFFF);
@@ -319,6 +322,14 @@ public final class PartyQuickCommandWheel {
                 new ItemStack(item),
                 Component.translatable("villagerretaliation.party.quick_command."
                         + command.name().toLowerCase(java.util.Locale.ROOT)));
+    }
+
+    private static Component selectionLabel(WheelEntry entry) {
+        if (entry.command() == PartyQuickCommand.STAND_GUARD
+                && PartyRosterClient.roster().standGuardActive()) {
+            return Component.translatable("villagerretaliation.party.quick_command.lower_shields");
+        }
+        return entry.label();
     }
 
     private static String truncate(Font font, String text, int maxWidth) {
