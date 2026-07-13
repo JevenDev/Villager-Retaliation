@@ -1,5 +1,8 @@
 package com.jvn.villagerretaliation.party;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
+import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
@@ -26,12 +29,13 @@ public final class PartyQuickCommandService {
     private static final double MAX_TARGET_DISTANCE = 64.0D;
     private static final double ATTACK_TARGET_DISTANCE = 96.0D;
     private static final double ARRIVAL_DISTANCE_SQR = 1.75D * 1.75D;
-    private static final double FALL_BACK_ARRIVAL_DISTANCE_SQR = 2.5D * 2.5D;
+    private static final double REGROUP_ARRIVAL_DISTANCE_SQR = 2.5D * 2.5D;
     private static final double MOVE_SPEED = 0.72D;
-    private static final double FALL_BACK_SPEED = 0.9D;
+    private static final double REGROUP_SPEED = 0.9D;
     private static final long PATH_REFRESH_TICKS = 8L;
 
     private static final Map<UUID, RuntimeOrder> RUNTIME_ORDERS = new HashMap<>();
+    private static final Map<UUID, UUID> MANUAL_ATTACK_TARGETS = new HashMap<>();
     private static final Set<UUID> STAND_GUARD_VILLAGERS = new HashSet<>();
 
     private PartyQuickCommandService() {
@@ -59,10 +63,12 @@ public final class PartyQuickCommandService {
         int affected = switch (payload.command()) {
             case ATTACK -> attack(player, participants, payload.targetEntityId());
             case MOVE_TO -> moveTo(player, participants, payload.targetPosition());
-            case FOLLOW_ME -> followMe(player, party, participants);
-            case STAY_HERE -> stayHere(player, party, participants, payload.targetPosition());
-            case FALL_BACK -> fallBack(player, participants);
+            case STAY_HERE -> stayHere(player, participants);
+            case REGROUP -> regroup(player, party, participants);
             case STAND_GUARD -> standGuard(player, participants);
+            case RANGE -> setWeaponPreference(player, participants, PartyWeaponPreference.RANGED);
+            case MELEE -> setWeaponPreference(player, participants, PartyWeaponPreference.MELEE);
+            case HEAL -> heal(player, participants);
         };
         if (affected <= 0) {
             notice(player, targetRequired(payload.command())
@@ -89,6 +95,7 @@ public final class PartyQuickCommandService {
         }
         record.setQuickCommandsEnabled(enabled);
         if (!enabled) {
+            record.setRegrouping(false);
             Villager loaded = loadedVillager(player.getServer(), villagerId);
             if (loaded == null) {
                 clearAllOrders(villagerId);
@@ -106,9 +113,6 @@ public final class PartyQuickCommandService {
         }
         RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
         boolean standingGuard = STAND_GUARD_VILLAGERS.contains(villager.getUUID());
-        if (order == null && !standingGuard) {
-            return;
-        }
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
         if (record == null || !record.quickCommandsEnabled() || !villager.isAlive()) {
@@ -116,10 +120,22 @@ public final class PartyQuickCommandService {
             return;
         }
 
+        if (record.regrouping()) {
+            releaseRegroupSuppressionIfArrived(level, villager, party, record);
+        }
+        if (order == null && !standingGuard) {
+            return;
+        }
+
+        if (order != null
+                && order.type() == RuntimeOrderType.MOVE_TO
+                && VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)) {
+            return;
+        }
         if (order != null) {
             switch (order.type()) {
                 case MOVE_TO -> tickMoveTo(villager, order, party);
-                case FALL_BACK -> tickFallBack(level, villager, order, party);
+                case REGROUP -> tickRegroup(level, villager, order, party);
             }
         }
         if (standingGuard && STAND_GUARD_VILLAGERS.contains(villager.getUUID())) {
@@ -132,8 +148,48 @@ public final class PartyQuickCommandService {
             return false;
         }
         RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
-        return order != null && (order.type() == RuntimeOrderType.MOVE_TO
-                || order.type() == RuntimeOrderType.FALL_BACK);
+        return order != null
+                || VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)
+                || com.jvn.villagerretaliation.villager.VillagerRecoveryService.isForcingRecovery(villager);
+    }
+
+    public static boolean suppressesPartyTargetAcquisition(Villager villager) {
+        if (villager == null) {
+            return false;
+        }
+        RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
+        boolean persistedRegroup = villager.level() instanceof ServerLevel level
+                && PartyService.getPartyForVillager(level, villager.getUUID())
+                .map(party -> party.villager(villager.getUUID()))
+                .map(record -> record.quickCommandsEnabled() && record.regrouping())
+                .orElse(false);
+        return (order != null && order.type() == RuntimeOrderType.REGROUP || persistedRegroup)
+                || com.jvn.villagerretaliation.villager.VillagerRecoveryService.isForcingRecovery(villager);
+    }
+
+    public static void maintainManualAttackAuthorization(Villager villager) {
+        UUID targetId = villager == null ? null : MANUAL_ATTACK_TARGETS.get(villager.getUUID());
+        if (targetId == null || !(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+        Entity entity = level.getEntity(targetId);
+        if (!(entity instanceof LivingEntity target)
+                || !target.isAlive()
+                || !VillagerRetaliationHandler.hasRetaliationTarget(villager, target)) {
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            return;
+        }
+        if (VillageCombatAuthorizationService.isAuthorized(villager, target)) {
+            return;
+        }
+        var decision = VillageAllegianceCombatPolicy.evaluate(
+                level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false);
+        if (decision.denied()
+                || decision.action() == com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision.Action.ALLOW
+                && !VillageCombatAuthorizationService.authorize(level, villager, target)) {
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+        }
     }
 
     public static BlockPos moveTarget(PartyRecord party) {
@@ -178,6 +234,7 @@ public final class PartyQuickCommandService {
 
     public static void clearRuntimeState() {
         RUNTIME_ORDERS.clear();
+        MANUAL_ATTACK_TARGETS.clear();
         STAND_GUARD_VILLAGERS.clear();
     }
 
@@ -198,8 +255,20 @@ public final class PartyQuickCommandService {
             if (villager == null) {
                 continue;
             }
-            clearAllOrders(villager);
+            var decision = VillageAllegianceCombatPolicy.evaluate(
+                    player.serverLevel(), villager, target, AllegianceCombatContext.PARTY_ATTACK, false);
+            if (decision.denied()) {
+                continue;
+            }
+            if (decision.action() == com.jvn.villagerretaliation.allegiance.AllegianceCombatDecision.Action.ALLOW
+                    && !VillageCombatAuthorizationService.authorize(player.serverLevel(), villager, target)) {
+                continue;
+            }
             if (VillagerRetaliationHandler.engageCustomTarget(villager, target, false)) {
+                clearMovementOrder(villager.getUUID());
+                com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
+                record.setRegrouping(false);
+                MANUAL_ATTACK_TARGETS.put(villager.getUUID(), target.getUUID());
                 affected++;
             }
         }
@@ -213,10 +282,17 @@ public final class PartyQuickCommandService {
         }
         int affected = 0;
         for (PartyVillagerRecord record : records) {
+            record.setStaying(player.serverLevel().dimension().location(), target);
+            record.setRegrouping(false);
             Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
             if (villager == null) {
+                clearMovementOrder(record.villagerId());
+                MANUAL_ATTACK_TARGETS.remove(record.villagerId());
+                affected++;
                 continue;
             }
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
             VillagerRetaliationHandler.clearCustomTarget(villager);
             RUNTIME_ORDERS.put(villager.getUUID(), RuntimeOrder.moveTo(
                     target,
@@ -226,63 +302,88 @@ public final class PartyQuickCommandService {
         return affected;
     }
 
-    private static int followMe(
+    private static int regroup(
             ServerPlayer player,
             PartyRecord party,
             List<PartyVillagerRecord> records) {
-        for (PartyVillagerRecord record : records) {
-            record.setFollowing();
-            Villager villager = loadedVillager(player.getServer(), record.villagerId());
-            if (villager != null && villager.level() instanceof ServerLevel level) {
-                clearMovementOrder(villager.getUUID());
-                VillagerRecruitmentService.applyPartyFollowing(level, villager, party.leaderId());
-            } else {
-                clearMovementOrder(record.villagerId());
-            }
-        }
-        return records.size();
-    }
-
-    private static int stayHere(
-            ServerPlayer player,
-            PartyRecord party,
-            List<PartyVillagerRecord> records,
-            BlockPos requestedTarget) {
-        BlockPos target = validatedTarget(player, requestedTarget);
-        if (target == null) {
-            return 0;
-        }
-        for (PartyVillagerRecord record : records) {
-            record.setStaying(player.serverLevel().dimension().location(), target);
-            Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
-            if (villager != null) {
-                clearMovementOrder(villager.getUUID());
-                VillagerRetaliationHandler.clearCustomTarget(villager);
-                VillagerRecruitmentService.applyPartyStay(
-                        player.serverLevel(), villager, party.leaderId(), target);
-            } else {
-                clearMovementOrder(record.villagerId());
-            }
-        }
-        return records.size();
-    }
-
-    private static int fallBack(ServerPlayer player, List<PartyVillagerRecord> records) {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
-            RuntimeOrder activeOrder = RUNTIME_ORDERS.remove(record.villagerId());
+            record.setFollowing();
+            record.setRegrouping(true);
             Villager villager = loadedVillager(player.getServer(), record.villagerId());
-            if (activeOrder != null && activeOrder.type() == RuntimeOrderType.MOVE_TO) {
-                if (villager != null) {
-                    VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
-                }
-            }
-            if (villager == null || villager.level() != player.serverLevel()) {
+            if (villager == null) {
+                clearMovementOrder(record.villagerId());
+                MANUAL_ATTACK_TARGETS.remove(record.villagerId());
+                affected++;
                 continue;
             }
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
             VillagerRetaliationHandler.clearCustomTarget(villager);
-            RUNTIME_ORDERS.put(villager.getUUID(), RuntimeOrder.fallBack(player.getUUID()));
+            if (villager.level() == player.serverLevel()) {
+                RUNTIME_ORDERS.put(villager.getUUID(), RuntimeOrder.regroup(player.getUUID()));
+            } else {
+                clearMovementOrder(villager.getUUID());
+            }
+            if (villager.level() instanceof ServerLevel level) {
+                VillagerRecruitmentService.applyPartyFollowing(level, villager, party.leaderId());
+            }
             affected++;
+        }
+        return affected;
+    }
+
+    private static int stayHere(ServerPlayer player, List<PartyVillagerRecord> records) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            Villager villager = loadedVillager(player.getServer(), record.villagerId());
+            if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+                continue;
+            }
+            BlockPos target = villager.blockPosition().immutable();
+            record.setStaying(level.dimension().location(), target);
+            record.setRegrouping(false);
+            clearMovementOrder(villager.getUUID());
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            VillagerRecruitmentService.applyPartyStay(level, villager, player.getUUID(), target);
+            affected++;
+        }
+        return affected;
+    }
+
+    private static int setWeaponPreference(
+            ServerPlayer player,
+            List<PartyVillagerRecord> records,
+            PartyWeaponPreference preference) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            record.setWeaponPreference(preference);
+            Villager villager = loadedVillager(player.getServer(), record.villagerId());
+            if (villager != null) {
+                com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService.applyPreference(villager, preference);
+            }
+            affected++;
+        }
+        return affected;
+    }
+
+    private static int heal(ServerPlayer player, List<PartyVillagerRecord> records) {
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            Villager villager = loadedVillager(player.getServer(), record.villagerId());
+            if (villager == null || !villager.isAlive() || villager.getHealth() >= villager.getMaxHealth()) {
+                continue;
+            }
+            boolean urgent = VillagerRetaliationHandler.hasActiveRetaliationTarget(villager);
+            clearMovementOrder(villager.getUUID());
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            if (com.jvn.villagerretaliation.villager.VillagerRecoveryService.beginForcedRecovery(villager, urgent)) {
+                record.setRegrouping(false);
+                affected++;
+            }
         }
         return affected;
     }
@@ -324,22 +425,40 @@ public final class PartyQuickCommandService {
         refreshPath(villager, order, target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D, MOVE_SPEED);
     }
 
-    private static void tickFallBack(
+    private static void tickRegroup(
             ServerLevel level,
             Villager villager,
             RuntimeOrder order,
             PartyRecord party) {
         ServerPlayer commander = level.getServer().getPlayerList().getPlayer(order.commanderId());
         if (commander == null || commander.serverLevel() != level || !commander.isAlive()) {
-            clearMovementOrderAndSync(villager, party);
+            clearMovementOrder(villager.getUUID());
             return;
         }
-        if (villager.distanceToSqr(commander) <= FALL_BACK_ARRIVAL_DISTANCE_SQR) {
+        if (villager.distanceToSqr(commander) <= REGROUP_ARRIVAL_DISTANCE_SQR) {
+            PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+            if (record != null) record.setRegrouping(false);
+            PartyService.markChanged(level);
             clearMovementOrderAndSync(villager, party);
             return;
         }
         VillagerRetaliationHandler.clearCustomTarget(villager);
-        refreshPath(villager, order, commander.getX(), commander.getY(), commander.getZ(), FALL_BACK_SPEED);
+        refreshPath(villager, order, commander.getX(), commander.getY(), commander.getZ(), REGROUP_SPEED);
+    }
+
+    private static void releaseRegroupSuppressionIfArrived(
+            ServerLevel level,
+            Villager villager,
+            PartyRecord party,
+            PartyVillagerRecord record) {
+        ServerPlayer leader = level.getServer().getPlayerList().getPlayer(party.leaderId());
+        if (leader == null || leader.serverLevel() != level
+                || villager.distanceToSqr(leader) > REGROUP_ARRIVAL_DISTANCE_SQR) {
+            return;
+        }
+        record.setRegrouping(false);
+        PartyService.markChanged(level);
+        syncRuntimeState(villager, party);
     }
 
     private static void tickStandGuard(Villager villager, PartyRecord party) {
@@ -385,11 +504,13 @@ public final class PartyQuickCommandService {
 
     private static void clearAllOrders(UUID villagerId) {
         clearMovementOrder(villagerId);
+        MANUAL_ATTACK_TARGETS.remove(villagerId);
         STAND_GUARD_VILLAGERS.remove(villagerId);
     }
 
     private static void clearAllOrders(Villager villager) {
         clearMovementOrder(villager.getUUID());
+        MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
         clearStandGuard(villager);
     }
 
@@ -465,8 +586,7 @@ public final class PartyQuickCommandService {
 
     private static boolean targetRequired(PartyQuickCommand command) {
         return command == PartyQuickCommand.ATTACK
-                || command == PartyQuickCommand.MOVE_TO
-                || command == PartyQuickCommand.STAY_HERE;
+                || command == PartyQuickCommand.MOVE_TO;
     }
 
     private static String translationKey(PartyQuickCommand command) {
@@ -481,7 +601,7 @@ public final class PartyQuickCommandService {
 
     private enum RuntimeOrderType {
         MOVE_TO,
-        FALL_BACK
+        REGROUP
     }
 
     private static final class RuntimeOrder {
@@ -506,8 +626,8 @@ public final class PartyQuickCommandService {
             return new RuntimeOrder(RuntimeOrderType.MOVE_TO, target.immutable(), null, dimension);
         }
 
-        static RuntimeOrder fallBack(UUID commanderId) {
-            return new RuntimeOrder(RuntimeOrderType.FALL_BACK, null, commanderId, null);
+        static RuntimeOrder regroup(UUID commanderId) {
+            return new RuntimeOrder(RuntimeOrderType.REGROUP, null, commanderId, null);
         }
 
         RuntimeOrderType type() {

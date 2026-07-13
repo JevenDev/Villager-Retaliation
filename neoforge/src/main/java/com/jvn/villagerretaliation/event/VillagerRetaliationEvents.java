@@ -332,7 +332,10 @@ public final class VillagerRetaliationEvents {
                 ForcedDialogueService.maybeTriggerTradeRefreshReadyProximity(level, villager);
                 ForcedDialogueService.maybeTriggerPlayerItemProximity(level, villager);
             }
-            VillagerRetaliationHandler.onEntityTickPost(event);
+            boolean recovering = com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerTickPost(villager);
+            if (!recovering) {
+                VillagerRetaliationHandler.onEntityTickPost(event);
+            }
             VillagerFleeBehaviorHandler.onEntityTickPost(event);
             VillagerCombatSurvivalService.onVillagerTickPost(villager);
             com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerTickPost(villager);
@@ -384,6 +387,8 @@ public final class VillagerRetaliationEvents {
         }
         if (event.getTarget() instanceof Villager villager) {
             VillagerReputationNetworking.sendDownedState(player, villager, VillagerDownedService.isDowned(villager));
+            VillagerReputationNetworking.sendHunger(
+                    player, villager, com.jvn.villagerretaliation.villager.VillagerRecoveryService.foodLevel(villager));
         }
         if (VillagerPresetNameRegistry.isVillagerForm(event.getTarget())) {
             VillagerReputationNetworking.sendName(player, event.getTarget());
@@ -700,6 +705,7 @@ public final class VillagerRetaliationEvents {
         VillageCombatAuthorizationService.clearFor(event.getEntity());
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
             VillagerDownedService.onVillagerUnloaded(villager);
+            com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerUnloaded(villager);
             com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerUnloaded(villager);
             Entity.RemovalReason reason = villager.getRemovalReason();
             if (reason == Entity.RemovalReason.DISCARDED || reason == Entity.RemovalReason.KILLED) {

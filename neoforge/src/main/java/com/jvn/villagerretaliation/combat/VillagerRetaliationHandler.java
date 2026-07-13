@@ -308,13 +308,18 @@ public final class VillagerRetaliationHandler {
         }
         ServerLevel serverLevel = (ServerLevel) villager.level();
 
-        HiredJobInventory.maintainEquipmentSlots(villager);
+        if (!VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
+            HiredJobInventory.maintainEquipmentSlots(villager);
+        }
         VillagerArmorerCombatTactics.ensureSpawnShieldRoll(villager);
         if (!VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
                 && VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
             VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager);
         }
-        if (shouldMaintainProfessionMainHand(villager, serverLevel.getGameTime())) {
+        boolean maintainingSelectedLoadout = !VillagerInventoryAccess.hasOpenInventory(villager)
+                && !VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+                && VillagerCombatLoadoutService.maintainEquippedPreference(villager);
+        if (!maintainingSelectedLoadout && shouldMaintainProfessionMainHand(villager, serverLevel.getGameTime())) {
             ensureProfessionMainHand(villager);
         }
 
@@ -334,6 +339,7 @@ public final class VillagerRetaliationHandler {
         }
 
         RETALIATION.restorePersistedAngerIfNeeded(villager);
+        com.jvn.villagerretaliation.party.PartyQuickCommandService.maintainManualAttackAuthorization(villager);
         tryAcquirePartyKillOnSightTarget(villager);
         tryAcquireHostileTarget(villager);
 
@@ -600,6 +606,10 @@ public final class VillagerRetaliationHandler {
         return angerTarget != null && angerTarget.targetId().equals(target.getUUID());
     }
 
+    public static boolean hasActiveRetaliationTarget(Villager villager) {
+        return villager != null && RETALIATION.hasAnger(villager);
+    }
+
     private static void anger(Villager villager, LivingEntity attacker) {
         anger(villager, attacker, true, true);
     }
@@ -708,7 +718,9 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void tryAcquirePartyKillOnSightTarget(Villager villager) {
-        if (!villager.isAlive() || villager.isBaby()) {
+        if (!villager.isAlive()
+                || villager.isBaby()
+                || com.jvn.villagerretaliation.party.PartyQuickCommandService.suppressesPartyTargetAcquisition(villager)) {
             return;
         }
         ServerLevel level = (ServerLevel) villager.level();
@@ -874,8 +886,16 @@ public final class VillagerRetaliationHandler {
 
     private static boolean tryBorrowInventoryCombatWeapon(Villager villager) {
         if (VillagerInventoryAccess.hasOpenInventory(villager)
-                || VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
-                || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
+                || VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
+            return false;
+        }
+
+        if (VillagerCombatLoadoutService.ensurePreferredWeapon(villager)) {
+            RETALIATION.discardTemporaryWeapon(villager);
+            VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
+            return true;
+        }
+        if (VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
             return false;
         }
 
@@ -911,14 +931,23 @@ public final class VillagerRetaliationHandler {
             VillagerClericPotionHelper.clearAllState(villager);
         }
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
-        if (restoreWeapon && !preservePotionUse) {
+        boolean keepSelectedLoadout = VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)
+                && !VillagerInventoryAccess.hasOpenInventory(villager);
+        if (keepSelectedLoadout && !preservePotionUse) {
+            RETALIATION.restoreTemporaryWeapon(villager);
+            VillagerCombatLoadoutService.maintainEquippedPreference(villager);
+        } else if (restoreWeapon && !preservePotionUse) {
             RETALIATION.restoreTemporaryWeapon(villager);
             VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         } else {
             RETALIATION.discardTemporaryWeapon(villager);
             VillagerInventoryAccess.clearBorrowedCombatWeapon(villager);
         }
-        VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager);
+        if (keepSelectedLoadout) {
+            VillagerCombatLoadoutService.maintainEquippedPreference(villager);
+        } else {
+            VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager);
+        }
         RETALIATION.clearTransientState(villager);
         villager.setAggressive(false);
         villager.setChasing(false);
@@ -956,6 +985,7 @@ public final class VillagerRetaliationHandler {
                     || villager == partyMember
                     || villager.isBaby()
                     || !villager.isAlive()
+                    || com.jvn.villagerretaliation.party.PartyQuickCommandService.suppressesPartyTargetAcquisition(villager)
                     || !canWitnessRetaliationEvent(villager, partyMember)
                     || (attackingWithParty && !attackModeAllows(member.attackMode(), villager, target))
                     || !shouldRetaliateAgainstAttacker(villager, target)) {
@@ -1321,12 +1351,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (VillagerCombatRoles.isFarmer(villager)
-                && VillagerRetaliationConfig.FARMERS_USE_BREAD.get()
-                && villager.getHealth() < villager.getMaxHealth() * 0.6F) {
-            villager.heal(4.0F);
-            NEXT_SPECIAL_TICKS.put(villager.getUUID(), gameTime + 120L);
-        }
+        // Recovery consumables are handled by VillagerRecoveryService for every profession.
     }
 
     private static void handleSleepingCombatState(Villager villager) {
@@ -1350,6 +1375,15 @@ public final class VillagerRetaliationHandler {
         }
 
         if (VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
+            return;
+        }
+
+        if (VillagerCombatLoadoutService.ensurePreferredWeapon(villager)) {
+            RETALIATION.discardTemporaryWeapon(villager);
+            return;
+        }
+        if (VillagerCombatLoadoutService.preference(villager)
+                != com.jvn.villagerretaliation.party.PartyWeaponPreference.AUTO) {
             return;
         }
 
@@ -1392,6 +1426,7 @@ public final class VillagerRetaliationHandler {
 
     private static void ensureProfessionMainHand(Villager villager) {
         if (VillagerInventoryAccess.hasOpenInventory(villager)
+                || VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)
                 || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)
                 || RETALIATION.hasTemporaryWeapon(villager)
                 || VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
@@ -1533,7 +1568,8 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void returnBorrowedCombatWeaponIfActive(Villager villager) {
-        if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)) {
+        if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
+                && !VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
             VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         }
     }

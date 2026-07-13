@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.inventory;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.villager.VillagerHungerClientCache;
 import com.jvn.villagerretaliation.inventory.ProtectedVillagerProperty;
 import com.jvn.villagerretaliation.inventory.VillagerConfiscatedStolenItemTracker;
 import com.jvn.villagerretaliation.inventory.VillagerGiftReturnTracker;
@@ -68,11 +69,14 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
     private static final int STAT_TEXT_GAP = 3;
     private static final int HEALTH_COLOR = 0xFFFF1313;
     private static final int ARMOR_COLOR = 0xFFB8B9C4;
+    private static final int HUNGER_COLOR = 0xFFB88458;
     private static final int TEXT_OUTLINE_COLOR = 0xFF000000;
     private static final ResourceLocation HEALTH_ICON =
             VillagerRetaliation.id("textures/gui/villager_stats/villager_health_stat.png");
     private static final ResourceLocation ARMOR_ICON =
             VillagerRetaliation.id("textures/gui/villager_stats/villager_armor_stat.png");
+    private static final ResourceLocation HUNGER_ICON =
+            VillagerRetaliation.id("textures/gui/villager_stats/villager_hunger_stat.png");
 
     private static int renderingInventoryPreviewVillagerId = -1;
     private boolean playerInventoryBeside;
@@ -344,6 +348,8 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         renderStat(graphics, HEALTH_ICON, formatValue(livingEntity.getHealth()), HEALTH_COLOR, left, top);
         renderStat(graphics, ARMOR_ICON, Integer.toString(livingEntity.getArmorValue()), ARMOR_COLOR,
                 left, top + STAT_ICON_SIZE + STAT_ROW_GAP);
+        renderStat(graphics, HUNGER_ICON, Integer.toString(VillagerHungerClientCache.hunger(entity)), HUNGER_COLOR,
+                left, top + (STAT_ICON_SIZE + STAT_ROW_GAP) * 2);
     }
 
     private void renderStat(GuiGraphics graphics, ResourceLocation icon, String value, int color, int left, int top) {

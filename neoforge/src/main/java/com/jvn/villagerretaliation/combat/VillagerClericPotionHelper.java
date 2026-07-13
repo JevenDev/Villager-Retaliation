@@ -1,6 +1,9 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.TickThrottle;
@@ -20,7 +23,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.npc.WanderingTrader;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.item.ItemStack;
@@ -34,11 +37,13 @@ final class VillagerClericPotionHelper {
     private static final Map<UUID, PotionUseState> DRINKING_POTIONS = new HashMap<>();
     private static final Map<UUID, Long> HEALING_REDRINK_COOLDOWN_UNTIL = new HashMap<>();
     private static final double MAX_THROW_DISTANCE_SQR = 144.0D;
-    private static final int THROW_INTERVAL_TICKS = 60;
+    private static final int CARRIED_THROW_INTERVAL_TICKS = 60;
+    private static final int GENERATED_THROW_INTERVAL_TICKS = 300;
     private static final int COMBAT_SUPPORT_SCAN_INTERVAL_TICKS = 10;
     private static final int SUPPORT_TARGET_CACHE_TICKS = 10;
     private static final int PASSIVE_SUPPORT_SCAN_INTERVAL_TICKS = 20;
-    private static final int HEALING_REDRINK_COOLDOWN_TICKS = 40;
+    private static final int CARRIED_HEALING_REDRINK_COOLDOWN_TICKS = 40;
+    private static final int GENERATED_HEALING_REDRINK_COOLDOWN_TICKS = 300;
     private static final int FIRE_RESISTANCE_TICKS = 20 * 180;
     private static final int WATER_BREATHING_TICKS = 20 * 180;
     private static final int SWIFTNESS_TICKS = 20 * 180;
@@ -62,8 +67,7 @@ final class VillagerClericPotionHelper {
         }
 
         if (canUseMilkBucket(villager) && hasMilkCurableHarmfulEffect(villager)) {
-            startPotionDrinking(villager, ClericSelfPotion.MILK_BUCKET);
-            return true;
+            if (startPotionDrinking(villager, ClericSelfPotion.MILK_BUCKET)) return true;
         }
 
         if (!canUseClericPotions(villager)) {
@@ -72,8 +76,7 @@ final class VillagerClericPotionHelper {
 
         ClericSelfPotion selfPotion = chooseSelfPotion(villager, distanceSqr);
         if (selfPotion != ClericSelfPotion.NONE) {
-            startPotionDrinking(villager, selfPotion);
-            return true;
+            if (startPotionDrinking(villager, selfPotion)) return true;
         }
 
         PotionThrowPlan throwPlan = chooseThrowPlan(villager, target, level, distanceSqr);
@@ -102,8 +105,8 @@ final class VillagerClericPotionHelper {
             return true;
         }
 
-        throwSplashPotionLikeWitch(villager, aimTarget, level, throwPlan.potionStack());
-        ATTACK_DELAY.put(villager.getUUID(), THROW_INTERVAL_TICKS);
+        if (!throwSplashPotionLikeWitch(villager, aimTarget, level, throwPlan.potionStack())) return false;
+        ATTACK_DELAY.put(villager.getUUID(), throwCooldown(villager));
         return true;
     }
 
@@ -147,8 +150,7 @@ final class VillagerClericPotionHelper {
             return false;
         }
 
-        startPotionDrinking(villager, ClericSelfPotion.MILK_BUCKET);
-        return true;
+        return startPotionDrinking(villager, ClericSelfPotion.MILK_BUCKET);
     }
 
     static boolean tryOutOfCombatSupport(Villager villager, ServerLevel level) {
@@ -161,8 +163,7 @@ final class VillagerClericPotionHelper {
 
         ClericSelfPotion selfPotion = chooseSelfPotion(villager, 0.0D);
         if (selfPotion != ClericSelfPotion.NONE) {
-            startPotionDrinking(villager, selfPotion);
-            return true;
+            if (startPotionDrinking(villager, selfPotion)) return true;
         }
 
         int attackDelay = ATTACK_DELAY.getOrDefault(villager.getUUID(), 0);
@@ -193,13 +194,13 @@ final class VillagerClericPotionHelper {
             return true;
         }
 
-        throwSplashPotionLikeWitch(
+        if (!throwSplashPotionLikeWitch(
                 villager,
                 supportTarget,
                 level,
                 PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HEALING)
-        );
-        ATTACK_DELAY.put(villager.getUUID(), THROW_INTERVAL_TICKS);
+        )) return false;
+        ATTACK_DELAY.put(villager.getUUID(), throwCooldown(villager));
         return true;
     }
 
@@ -283,18 +284,21 @@ final class VillagerClericPotionHelper {
         villager.stopUsingItem();
         applySelfPotion(villager, potion);
         if (potion == ClericSelfPotion.HEALING && villager.level() instanceof ServerLevel serverLevel) {
-            HEALING_REDRINK_COOLDOWN_UNTIL.put(villager.getUUID(), serverLevel.getGameTime() + HEALING_REDRINK_COOLDOWN_TICKS);
+            HEALING_REDRINK_COOLDOWN_UNTIL.put(
+                    villager.getUUID(), serverLevel.getGameTime() + healingRedrinkCooldown(villager));
         }
         if (state != null) {
             VillagerRetaliationVillagerEquipment.restoreVisualMainHand(villager, state.resumeMainHand());
         }
     }
 
-    private static void startPotionDrinking(Villager villager, ClericSelfPotion potion) {
+    private static boolean startPotionDrinking(Villager villager, ClericSelfPotion potion) {
         ItemStack drinkStack = createDrinkStack(potion);
         if (drinkStack.isEmpty()) {
-            return;
+            return false;
         }
+        drinkStack = carriedOrGenerated(villager, drinkStack);
+        if (drinkStack.isEmpty()) return false;
 
         ItemStack resumeMainHand = villager.getMainHandItem().copy();
         VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
@@ -304,6 +308,7 @@ final class VillagerClericPotionHelper {
         int manualDrinkDuration = useDuration - 1;
         DRINKING_POTIONS.put(villager.getUUID(), new PotionUseState(potion, manualDrinkDuration, resumeMainHand));
         villager.playSound(SoundEvents.WITCH_DRINK, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
+        return true;
     }
 
     private static ClericSelfPotion chooseSelfPotion(Villager villager, double distanceSqr) {
@@ -383,8 +388,7 @@ final class VillagerClericPotionHelper {
     }
 
     private static boolean canUseMilkBucket(Villager villager) {
-        return canUseClericPotions(villager)
-                || VillagerCombatRoles.isFarmer(villager) && VillagerRetaliationConfig.FARMERS_USE_BREAD.get();
+        return canUseClericPotions(villager);
     }
 
     private static boolean canUseOutOfCombatMilk(Villager villager) {
@@ -466,7 +470,7 @@ final class VillagerClericPotionHelper {
         );
         bestTarget = bestSupportCandidate(
                 villager,
-                level.getEntitiesOfClass(WanderingTrader.class, searchArea),
+                level.getEntitiesOfClass(IronGolem.class, searchArea),
                 maxDistanceSqr,
                 healthThreshold,
                 requireLineOfSight,
@@ -518,8 +522,13 @@ final class VillagerClericPotionHelper {
             return false;
         }
         if (!(entity instanceof Villager)
-                && !(entity instanceof WanderingTrader)
+                && !(entity instanceof IronGolem)
                 && !(entity instanceof Player)) {
+            return false;
+        }
+        if ((entity instanceof Villager || entity instanceof IronGolem)
+                && villager.level() instanceof ServerLevel level
+                && !VillageAllegianceRelations.sameCanonical(level, villager, entity)) {
             return false;
         }
         if (entity instanceof Player player && !canSupportPlayer(villager, player)) {
@@ -595,14 +604,16 @@ final class VillagerClericPotionHelper {
     private static boolean isFriendlyCivilian(Villager villager, LivingEntity entity) {
         return entity != villager
                 && entity.isAlive()
-                && (entity instanceof Villager || entity instanceof WanderingTrader);
+                && (entity instanceof Villager || entity instanceof IronGolem);
     }
 
     private static boolean isFriendlySafePotion(ItemStack potionStack) {
         return VillagerRetaliationPotionUtil.isHealingPotion(potionStack);
     }
 
-    private static void throwSplashPotionLikeWitch(Villager villager, LivingEntity target, ServerLevel level, ItemStack potionStack) {
+    private static boolean throwSplashPotionLikeWitch(Villager villager, LivingEntity target, ServerLevel level, ItemStack potionStack) {
+        potionStack = carriedOrGenerated(villager, potionStack);
+        if (potionStack.isEmpty()) return false;
         ThrownPotion thrownPotion = new ThrownPotion(level, villager);
         thrownPotion.setItem(potionStack);
         double dx = target.getX() + target.getDeltaMovement().x - villager.getX();
@@ -615,8 +626,33 @@ final class VillagerClericPotionHelper {
         villager.playSound(SoundEvents.WITCH_THROW, 1.0F, 0.8F + villager.getRandom().nextFloat() * 0.4F);
         VillagerRetaliationVillagerEquipment.setVisualMainHand(
                 villager,
-                PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING)
+                potionStack
         );
+        return true;
+    }
+
+    private static ItemStack carriedOrGenerated(Villager villager, ItemStack planned) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || !PartyService.isRecruitedPartyVillager(level, villager.getUUID())) {
+            return planned;
+        }
+        return VillagerInventoryAccess.takeCarriedItem(
+                villager,
+                stack -> ItemStack.isSameItemSameComponents(stack, planned));
+    }
+
+    private static int throwCooldown(Villager villager) {
+        return villager.level() instanceof ServerLevel level
+                && PartyService.isRecruitedPartyVillager(level, villager.getUUID())
+                ? CARRIED_THROW_INTERVAL_TICKS
+                : GENERATED_THROW_INTERVAL_TICKS;
+    }
+
+    private static int healingRedrinkCooldown(Villager villager) {
+        return villager.level() instanceof ServerLevel level
+                && PartyService.isRecruitedPartyVillager(level, villager.getUUID())
+                ? CARRIED_HEALING_REDRINK_COOLDOWN_TICKS
+                : GENERATED_HEALING_REDRINK_COOLDOWN_TICKS;
     }
 
     private enum ClericSelfPotion {

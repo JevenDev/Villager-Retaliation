@@ -248,7 +248,6 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Double> COMBAT_WEAPON_DROP_CHANCE = bind("combat.combatWeaponDropChance", Double.class);
     public static final ConfigValue<Double> COMBAT_WEAPON_ENCHANT_CHANCE = bind("combat.combatWeaponEnchantChance", Double.class);
     public static final ConfigValue<Double> ARMORER_SHIELD_CHANCE_HARD = bind("combat.armorerShieldChanceHard", Double.class);
-    public static final ConfigValue<Boolean> FARMERS_USE_BREAD = bind("combat.farmersUseBread", Boolean.class);
     public static final ConfigValue<Boolean> CLERICS_USE_POTIONS = bind("combat.clericsUsePotions", Boolean.class);
     public static final ConfigValue<Double> PASSIVE_CLERIC_ALLY_HEAL_RANGE = bind("combat.passiveClericAllyHealRange", Double.class);
     public static final ConfigValue<Double> PASSIVE_CLERIC_ALLY_HEAL_HEALTH_THRESHOLD = bind("combat.passiveClericAllyHealHealthThreshold", Double.class);

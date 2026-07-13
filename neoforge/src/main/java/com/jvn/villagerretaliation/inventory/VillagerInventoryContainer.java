@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Predicate;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -313,16 +314,23 @@ final class VillagerInventoryContainer implements Container {
     }
 
     static boolean tryBorrowCombatWeapon(Villager villager) {
+        return tryBorrowCombatWeapon(villager, VillagerRetaliationVillagerWeapons::isUsableWeapon);
+    }
+
+    static boolean tryBorrowCombatWeapon(Villager villager, Predicate<ItemStack> predicate) {
         if (hasBorrowedCombatWeapon(villager)) {
-            return maintainBorrowedCombatWeapon(villager);
+            if (predicate.test(villager.getMainHandItem())) {
+                return maintainBorrowedCombatWeapon(villager);
+            }
+            returnBorrowedCombatWeapon(villager);
         }
         ItemStack displacedMainHand = villager.getMainHandItem().copy();
-        if (VillagerRetaliationVillagerWeapons.isUsableWeapon(displacedMainHand)) {
+        if (predicate.test(displacedMainHand)) {
             return false;
         }
 
         NonNullList<ItemStack> inventory = loadFullInventory(villager);
-        int selectedSlot = selectBestWeaponSlot(inventory);
+        int selectedSlot = selectBestWeaponSlot(inventory, predicate);
         if (selectedSlot < 0) {
             return false;
         }
@@ -417,6 +425,33 @@ final class VillagerInventoryContainer implements Container {
 
     static void clearBorrowedCombatWeapon(Villager villager) {
         villager.getPersistentData().remove(BORROWED_COMBAT_WEAPON_TAG);
+    }
+
+    static boolean hasCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
+        for (ItemStack stack : loadFullInventory(villager)) {
+            if (!stack.isEmpty() && predicate.test(stack)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static ItemStack takeFirstCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
+        NonNullList<ItemStack> inventory = loadFullInventory(villager);
+        for (int slot = 0; slot < inventory.size(); slot++) {
+            ItemStack stack = inventory.get(slot);
+            if (stack.isEmpty() || !predicate.test(stack)) {
+                continue;
+            }
+            ItemStack taken = stack.copyWithCount(1);
+            stack.shrink(1);
+            if (stack.isEmpty()) {
+                inventory.set(slot, ItemStack.EMPTY);
+            }
+            saveFullInventory(villager, inventory);
+            return taken;
+        }
+        return ItemStack.EMPTY;
     }
 
     static int countStoredGiftItem(Villager villager, UUID playerId, ItemStack target) {
@@ -770,11 +805,18 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private static int selectBestWeaponSlot(NonNullList<ItemStack> inventory) {
+        return selectBestWeaponSlot(inventory, VillagerRetaliationVillagerWeapons::isUsableWeapon);
+    }
+
+    private static int selectBestWeaponSlot(
+            NonNullList<ItemStack> inventory,
+            Predicate<ItemStack> predicate) {
         int bestSlot = -1;
         ItemStack bestWeapon = ItemStack.EMPTY;
         for (int slot = 0; slot < inventory.size(); slot++) {
             ItemStack candidate = inventory.get(slot);
-            if (VillagerRetaliationVillagerWeapons.isBetterWeaponChoice(candidate, bestWeapon)) {
+            if (predicate.test(candidate)
+                    && VillagerRetaliationVillagerWeapons.isBetterWeaponChoice(candidate, bestWeapon)) {
                 bestSlot = slot;
                 bestWeapon = candidate;
             }

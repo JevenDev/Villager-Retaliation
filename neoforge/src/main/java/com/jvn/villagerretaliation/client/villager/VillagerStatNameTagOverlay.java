@@ -73,7 +73,7 @@ public final class VillagerStatNameTagOverlay {
         List<Stat> stats = renderStats ? List.of(
                 new Stat(HEALTH_ICON, formatValue(villager.getHealth()), 0xFFFF1313, true),
                 new Stat(ARMOR_ICON, Integer.toString(villager.getArmorValue()), 0xFFB8B9C4, true),
-                new Stat(HUNGER_ICON, "0", 0xFFB88458, false)) : List.of();
+                new Stat(HUNGER_ICON, Integer.toString(VillagerHungerClientCache.hunger(villager)), 0xFFB88458, true)) : List.of();
         render(event, villager, event.getContent(), attachment,
                 stats.stream().filter(Stat::visible).toList(), renderStats, alpha);
     }

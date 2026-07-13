@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.List;
+import java.util.function.Predicate;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -130,6 +131,8 @@ public final class VillagerInventoryAccess {
                     buffer.writeBoolean(jobInventoryAccess);
                 }
         );
+        com.jvn.villagerretaliation.network.VillagerReputationNetworking.sendHunger(
+                player, villager, com.jvn.villagerretaliation.villager.VillagerRecoveryService.foodLevel(villager));
     }
 
     public static void dropExtraInventory(Villager villager) {
@@ -158,6 +161,29 @@ public final class VillagerInventoryAccess {
 
     public static boolean tryBorrowCombatWeapon(Villager villager) {
         return VillagerInventoryContainer.tryBorrowCombatWeapon(villager);
+    }
+
+    public static boolean tryBorrowCombatWeapon(Villager villager, Predicate<ItemStack> predicate) {
+        return VillagerInventoryContainer.tryBorrowCombatWeapon(villager, predicate);
+    }
+
+    public static boolean hasCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
+        if (HiredJobInventory.isJobInventoryAvailable(villager)
+                && !HiredJobInventory.getJobInventory(villager).findSupply(predicate).isEmpty()) {
+            return true;
+        }
+        return VillagerInventoryContainer.hasCarriedItem(villager, predicate);
+    }
+
+    public static ItemStack takeCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
+        if (HiredJobInventory.isJobInventoryAvailable(villager)) {
+            HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+            ItemStack available = jobInventory.findSupply(predicate);
+            if (!available.isEmpty() && jobInventory.consumeSupply(predicate, 1) > 0) {
+                return available.copyWithCount(1);
+            }
+        }
+        return VillagerInventoryContainer.takeFirstCarriedItem(villager, predicate);
     }
 
     public static void returnBorrowedCombatWeapon(Villager villager) {

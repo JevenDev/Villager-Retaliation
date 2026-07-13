@@ -71,6 +71,74 @@ public final class PartyGameTests {
     private PartyGameTests() {
     }
 
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void quickCommandStatePersistsWeaponPreferenceAndRegroupSuppression(GameTestHelper helper) {
+        long now = helper.getLevel().getGameTime();
+        PartyVillagerRecord record = villagerRecord(UUID.randomUUID(), UUID.randomUUID(), 0, now);
+        helper.assertValueEqual(record.weaponPreference(), PartyWeaponPreference.AUTO,
+                "legacy/default weapon preference should be AUTO");
+        record.setWeaponPreference(PartyWeaponPreference.RANGED);
+        record.setRegrouping(true);
+
+        PartyVillagerRecord loaded = PartyVillagerRecord.load(record.save());
+        helper.assertValueEqual(loaded.weaponPreference(), PartyWeaponPreference.RANGED,
+                "weapon preference should survive party record serialization");
+        helper.assertTrue(loaded.regrouping(),
+                "regroup acquisition suppression should survive unload/reload");
+
+        CompoundTag legacy = record.save();
+        legacy.remove("WeaponPreference");
+        legacy.remove("Regrouping");
+        PartyVillagerRecord legacyLoaded = PartyVillagerRecord.load(legacy);
+        helper.assertValueEqual(legacyLoaded.weaponPreference(), PartyWeaponPreference.AUTO,
+                "missing legacy preference should migrate to AUTO");
+        helper.assertFalse(legacyLoaded.regrouping(),
+                "legacy records should not begin with target suppression");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void rangeAndMeleeCommandsEquipWeaponsOutsideCombat(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_idle_loadout"));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+        HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+        jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        jobInventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.BOW));
+        jobInventory.markPlayerPlacedSupply(HiredJobInventory.HOTBAR_START);
+        jobInventory.setItem(HiredJobInventory.HOTBAR_START + 1, new ItemStack(Items.ARROW, 4));
+        jobInventory.markPlayerPlacedSupply(HiredJobInventory.HOTBAR_START + 1);
+
+        PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                PartyQuickCommand.MELEE));
+        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
+                        .isMeleeWeapon(villager.getMainHandItem()),
+                "melee should equip a carried melee weapon immediately while idle");
+        VillagerRetaliationHandler.clearCustomTarget(villager);
+        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
+                        .isMeleeWeapon(villager.getMainHandItem()),
+                "idle combat cleanup must retain the selected melee loadout");
+
+        PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                PartyQuickCommand.RANGE));
+        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
+                        .isBowWeapon(villager.getMainHandItem()),
+                "range should swap immediately to a carried bow while idle");
+        VillagerRetaliationHandler.clearCustomTarget(villager);
+        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
+                        .isBowWeapon(villager.getMainHandItem()),
+                "idle combat cleanup must retain the selected ranged loadout");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void partyLimitsOrderingAndIndexesSurviveSerialization(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
@@ -316,7 +384,7 @@ public final class PartyGameTests {
             helper.assertTrue(PartyQuickCommandService.isStandGuardActive(party),
                     "stay-here quick command retains stand guard stance");
             PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
-                    PartyQuickCommand.FOLLOW_ME));
+                    PartyQuickCommand.REGROUP));
             helper.assertValueEqual(record.commandMode(), PartyCommandMode.FOLLOW,
                     "follow quick command restores movement while guarding");
             helper.assertTrue(PartyQuickCommandService.isStandGuardActive(party),
@@ -339,9 +407,13 @@ public final class PartyGameTests {
                             .isEmpty(),
                     "move-to quick command exposes the solid destination block beneath its stand position");
             PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
-                    PartyQuickCommand.FOLLOW_ME));
+                    PartyQuickCommand.REGROUP));
+            helper.assertTrue(PartyQuickCommandService.overridesRecruitmentMovement(villager),
+                    "regroup should own movement while the villager rushes to the leader");
+            leader.moveTo(villager.getX(), villager.getY(), villager.getZ());
+            PartyQuickCommandService.onVillagerTickPost(villager);
             helper.assertFalse(PartyQuickCommandService.overridesRecruitmentMovement(villager),
-                    "follow command clears the temporary move-to override");
+                    "regroup should release its movement override within 2.5 blocks");
             helper.assertValueEqual(record.contractEndGameTime() - record.contractStartGameTime(),
                     VillagerContractTime.DAY_TICKS, "one paid contract day");
             helper.assertValueEqual(record.emeraldsPaid(), 32, "per-villager prepaid amount");
@@ -794,7 +866,7 @@ public final class PartyGameTests {
                 "regression setup should retain movement intent toward the move-to target");
 
         PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
-                PartyQuickCommand.FALL_BACK));
+                PartyQuickCommand.REGROUP));
         helper.assertTrue(villager.getNavigation().isDone(),
                 "fall-back should immediately stop the active move-to path");
         helper.assertFalse(villager.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET),

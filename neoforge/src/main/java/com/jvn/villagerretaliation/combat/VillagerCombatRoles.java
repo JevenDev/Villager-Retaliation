@@ -17,7 +17,6 @@ import net.minecraft.world.item.alchemy.Potions;
 
 public final class VillagerCombatRoles {
     public static final double PLAYER_FIST_DAMAGE = RetaliationCombatStats.PLAYER_FIST_DAMAGE;
-    private static final float FARMER_BREAD_WEAPON_CHANCE = 0.12F;
     private static final RetaliationActorPolicy<Villager> POLICY = new VillagerActorPolicy();
     private static final Map<VillagerProfession, BooleanSupplier> FIGHT_BACK_RULES = createFightBackRules();
     private static final Map<VillagerProfession, Function<Villager, ItemStack>> PREFERRED_WEAPON_RULES = createPreferredWeaponRules();
@@ -58,7 +57,7 @@ public final class VillagerCombatRoles {
         }
 
         if (profession == VillagerProfession.FARMER) {
-            return VillagerRetaliationConfig.FARMERS_USE_BREAD.get();
+            return true;
         }
         if (profession == VillagerProfession.CLERIC) {
             return VillagerRetaliationConfig.CLERICS_USE_POTIONS.get();
@@ -84,7 +83,7 @@ public final class VillagerCombatRoles {
             return ItemStack.EMPTY;
         }
         if (profession == VillagerProfession.FARMER) {
-            return VillagerRetaliationConfig.FARMERS_USE_BREAD.get() ? new ItemStack(Items.IRON_HOE) : ItemStack.EMPTY;
+            return new ItemStack(Items.IRON_HOE);
         }
 
         return preferredWeapon(villager);
@@ -168,14 +167,7 @@ public final class VillagerCombatRoles {
         rules.put(VillagerProfession.MASON, ignored -> new ItemStack(Items.IRON_PICKAXE));
         rules.put(VillagerProfession.BUTCHER, ignored -> new ItemStack(Items.IRON_AXE));
         rules.put(VillagerProfession.FLETCHER, VillagerCombatRoles::fletcherRangedWeapon);
-        rules.put(VillagerProfession.FARMER, villager -> {
-            if (!VillagerRetaliationConfig.FARMERS_USE_BREAD.get()) {
-                return ItemStack.EMPTY;
-            }
-            return villager.getRandom().nextFloat() < FARMER_BREAD_WEAPON_CHANCE
-                    ? new ItemStack(Items.BREAD)
-                    : new ItemStack(Items.IRON_HOE);
-        });
+        rules.put(VillagerProfession.FARMER, villager -> new ItemStack(Items.IRON_HOE));
         rules.put(VillagerProfession.CLERIC, ignored -> VillagerRetaliationConfig.CLERICS_USE_POTIONS.get()
                 ? PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING)
                 : ItemStack.EMPTY);

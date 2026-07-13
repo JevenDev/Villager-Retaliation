@@ -690,7 +690,6 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
         public double armorerShieldChanceHard = 0.35D;
 
-        public boolean farmersUseBread = true;
 
         public boolean clericsUsePotions = true;
 

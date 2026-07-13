@@ -32,6 +32,8 @@ public final class PartyVillagerRecord {
     private static final String TAG_KILL_ON_SIGHT = "KillOnSight";
     private static final String TAG_DROP_COLLECTION = "DropCollection";
     private static final String TAG_QUICK_COMMANDS_ENABLED = "QuickCommandsEnabled";
+    private static final String TAG_WEAPON_PREFERENCE = "WeaponPreference";
+    private static final String TAG_REGROUPING = "Regrouping";
 
     private final UUID villagerId;
     private final UUID recruiterId;
@@ -52,6 +54,8 @@ public final class PartyVillagerRecord {
     private PartyAttackMode attackMode = PartyAttackMode.ALL;
     private PartyDropCollectionMode dropCollectionMode = PartyDropCollectionMode.OFF;
     private boolean quickCommandsEnabled = true;
+    private PartyWeaponPreference weaponPreference = PartyWeaponPreference.AUTO;
+    private boolean regrouping;
 
     PartyVillagerRecord(
             UUID villagerId,
@@ -162,6 +166,14 @@ public final class PartyVillagerRecord {
         return this.quickCommandsEnabled;
     }
 
+    public PartyWeaponPreference weaponPreference() {
+        return this.weaponPreference;
+    }
+
+    public boolean regrouping() {
+        return this.regrouping;
+    }
+
     void setCombatMode(PartyCombatMode mode) {
         this.combatMode = mode == null ? PartyCombatMode.ATTACK_WITH_PARTY : mode;
     }
@@ -176,6 +188,14 @@ public final class PartyVillagerRecord {
 
     void setQuickCommandsEnabled(boolean enabled) {
         this.quickCommandsEnabled = enabled;
+    }
+
+    void setWeaponPreference(PartyWeaponPreference preference) {
+        this.weaponPreference = preference == null ? PartyWeaponPreference.AUTO : preference;
+    }
+
+    void setRegrouping(boolean regrouping) {
+        this.regrouping = regrouping;
     }
 
     public int remainingDays(long gameTime) {
@@ -195,12 +215,14 @@ public final class PartyVillagerRecord {
         this.commandMode = PartyCommandMode.FOLLOW;
         this.stayDimension = null;
         this.stayPosition = null;
+        this.regrouping = false;
     }
 
     void setStaying(ResourceLocation dimension, BlockPos position) {
         this.commandMode = PartyCommandMode.STAY;
         this.stayDimension = dimension;
         this.stayPosition = position == null ? null : position.immutable();
+        this.regrouping = false;
     }
 
     void extend(long newEndGameTime, int additionalDays, int additionalEmeralds) {
@@ -247,6 +269,8 @@ public final class PartyVillagerRecord {
         tag.putString(TAG_ATTACK_MODE, this.attackMode.name());
         tag.putString(TAG_DROP_COLLECTION, this.dropCollectionMode.name());
         tag.putBoolean(TAG_QUICK_COMMANDS_ENABLED, this.quickCommandsEnabled);
+        tag.putString(TAG_WEAPON_PREFERENCE, this.weaponPreference.name());
+        tag.putBoolean(TAG_REGROUPING, this.regrouping);
         return tag;
     }
 
@@ -287,6 +311,8 @@ public final class PartyVillagerRecord {
         record.setDropCollectionMode(PartyDropCollectionMode.byName(tag.getString(TAG_DROP_COLLECTION)));
         record.setQuickCommandsEnabled(!tag.contains(TAG_QUICK_COMMANDS_ENABLED)
                 || tag.getBoolean(TAG_QUICK_COMMANDS_ENABLED));
+        record.setWeaponPreference(PartyWeaponPreference.byName(tag.getString(TAG_WEAPON_PREFERENCE)));
+        record.setRegrouping(tag.getBoolean(TAG_REGROUPING));
         return record;
     }
 

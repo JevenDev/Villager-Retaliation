@@ -2,8 +2,10 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
@@ -53,7 +55,7 @@ public final class HiredRangedAmmo {
     }
 
     public static boolean hasAmmo(Villager villager) {
-        return !HiredJobInventory.getJobInventory(villager).findSupply(HiredRangedAmmo::isAmmo).isEmpty();
+        return VillagerInventoryAccess.hasCarriedItem(villager, HiredRangedAmmo::isAmmo);
     }
 
     public static boolean hasAmmoForEquippedWeapon(HiredWorkContext context) {
@@ -69,8 +71,9 @@ public final class HiredRangedAmmo {
         return isWeaponRequiringAmmo(weapon)
                 && villager instanceof Villager regular
                 && regular.level() instanceof ServerLevel level
-                && HiredVillagerContractService.isHired(level, regular)
-                && roleRequiresAmmo(HiredVillagerContractService.activeRole(level, regular));
+                && (PartyService.isRecruitedPartyVillager(level, regular.getUUID())
+                || HiredVillagerContractService.isHired(level, regular)
+                && roleRequiresAmmo(HiredVillagerContractService.activeRole(level, regular)));
     }
 
     public static boolean canUseRangedAttack(AbstractVillager villager, ItemStack weapon) {
@@ -90,15 +93,7 @@ public final class HiredRangedAmmo {
     }
 
     public static ItemStack consumeAmmo(Villager villager) {
-        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
-        ItemStack available = inventory.findSupply(HiredRangedAmmo::isAmmo);
-        if (available.isEmpty()) {
-            return ItemStack.EMPTY;
-        }
-        ItemStack projectile = available.copyWithCount(1);
-        return inventory.consumeSupply(HiredRangedAmmo::isAmmo, 1) > 0
-                ? projectile
-                : ItemStack.EMPTY;
+        return VillagerInventoryAccess.takeCarriedItem(villager, HiredRangedAmmo::isAmmo);
     }
 
     public static ItemStack consumeAmmo(AbstractVillager villager) {

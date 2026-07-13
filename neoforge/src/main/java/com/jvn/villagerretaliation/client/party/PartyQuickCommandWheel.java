@@ -47,15 +47,17 @@ public final class PartyQuickCommandWheel {
     private static final double FULL_CIRCLE = Math.PI * 2.0D;
     private static final double BLOCK_TARGET_RANGE = 48.0D;
     private static final double ATTACK_TARGET_RANGE = 96.0D;
-    private static final double ENTITY_SNAP_INFLATION = 0.85D;
+    private static final double ENTITY_SNAP_INFLATION = 0.0D;
 
     private static final List<WheelEntry> ENTRIES = List.of(
             entry(PartyQuickCommand.ATTACK, Items.IRON_SWORD),
             entry(PartyQuickCommand.MOVE_TO, Items.COMPASS),
-            entry(PartyQuickCommand.FOLLOW_ME, Items.LEAD),
             entry(PartyQuickCommand.STAY_HERE, Items.OAK_FENCE),
-            entry(PartyQuickCommand.FALL_BACK, Items.LEATHER_BOOTS),
-            entry(PartyQuickCommand.STAND_GUARD, Items.SHIELD)
+            entry(PartyQuickCommand.REGROUP, Items.LEAD),
+            entry(PartyQuickCommand.STAND_GUARD, Items.SHIELD),
+            entry(PartyQuickCommand.RANGE, Items.CROSSBOW),
+            entry(PartyQuickCommand.MELEE, Items.IRON_AXE),
+            entry(PartyQuickCommand.HEAL, Items.GOLDEN_APPLE)
     );
 
     private static boolean open;
@@ -161,7 +163,16 @@ public final class PartyQuickCommandWheel {
         Vec3 view = player.getViewVector(1.0F);
         Vec3 attackEnd = eye.add(view.scale(ATTACK_TARGET_RANGE));
         Vec3 blockEnd = eye.add(view.scale(BLOCK_TARGET_RANGE));
-        int entityId = findSnappedEntity(player, eye, attackEnd)
+        HitResult blockOcclusion = minecraft.level.clip(new ClipContext(
+                eye,
+                attackEnd,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                player));
+        double visibleAttackDistanceSqr = blockOcclusion.getType() == HitResult.Type.BLOCK
+                ? eye.distanceToSqr(blockOcclusion.getLocation())
+                : ATTACK_TARGET_RANGE * ATTACK_TARGET_RANGE;
+        int entityId = findSnappedEntity(player, eye, attackEnd, visibleAttackDistanceSqr)
                 .map(Entity::getId)
                 .orElse(PartyQuickCommandRequestPayload.NO_ENTITY);
         HitResult hit = minecraft.level.clip(new ClipContext(
@@ -177,7 +188,11 @@ public final class PartyQuickCommandWheel {
         return new CapturedTarget(entityId, position);
     }
 
-    private static Optional<LivingEntity> findSnappedEntity(LocalPlayer player, Vec3 eye, Vec3 end) {
+    private static Optional<LivingEntity> findSnappedEntity(
+            LocalPlayer player,
+            Vec3 eye,
+            Vec3 end,
+            double maximumDistanceSqr) {
         Vec3 travel = end.subtract(eye);
         AABB search = player.getBoundingBox().expandTowards(travel).inflate(ENTITY_SNAP_INFLATION + 1.0D);
         LivingEntity nearest = null;
@@ -193,7 +208,7 @@ public final class PartyQuickCommandWheel {
                 continue;
             }
             double distanceSqr = eye.distanceToSqr(intersection.get());
-            if (distanceSqr < nearestDistanceSqr) {
+            if (distanceSqr <= maximumDistanceSqr && distanceSqr < nearestDistanceSqr) {
                 nearest = living;
                 nearestDistanceSqr = distanceSqr;
             }

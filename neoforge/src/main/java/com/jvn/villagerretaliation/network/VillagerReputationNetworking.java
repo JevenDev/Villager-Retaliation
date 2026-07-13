@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "46";
+    private static final String PROTOCOL_VERSION = "47";
 
     private VillagerReputationNetworking() {
     }
@@ -75,6 +75,12 @@ public final class VillagerReputationNetworking {
                 VillageBoundsSyncPayload.TYPE,
                 VillageBoundsSyncPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.allegiance.VillageBoundsDebugRenderer",
+                "accept"
+        );
+        network.safePlayToClientThreaded(
+                VillagerHungerSyncPayload.TYPE,
+                VillagerHungerSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.villager.VillagerHungerClientCache",
                 "accept"
         );
         network.safePlayToClientThreaded(
@@ -620,6 +626,16 @@ public final class VillagerReputationNetworking {
                 profile.tradeLevelSkillAdjustedXpProgress(),
                 tradeLevelXpMultiplier(villager, profile)
         ));
+    }
+
+    public static void sendHunger(ServerPlayer player, Villager villager, int hunger) {
+        trySendToPlayer(player, new VillagerHungerSyncPayload(villager.getId(), hunger));
+    }
+
+    public static void syncHungerToTracking(Villager villager, int hunger) {
+        PacketDistributor.sendToPlayersTrackingEntity(
+                villager,
+                new VillagerHungerSyncPayload(villager.getId(), hunger));
     }
 
     private static double tradeLevelXpMultiplier(AbstractVillager villager, VillagerProfile profile) {

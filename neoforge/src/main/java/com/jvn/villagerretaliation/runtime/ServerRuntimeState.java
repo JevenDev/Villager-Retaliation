@@ -68,6 +68,7 @@ public final class ServerRuntimeState {
 
         VillagerCombatSurvivalService.clearRuntimeState();
         VillagerDownedService.clearRuntimeState();
+        com.jvn.villagerretaliation.villager.VillagerRecoveryService.clearRuntimeState();
         VillagerConversationService.clearRuntimeState();
         VillagerRecruitmentService.clearRuntimeState();
         PartyVillagerContractService.clearRuntimeState();

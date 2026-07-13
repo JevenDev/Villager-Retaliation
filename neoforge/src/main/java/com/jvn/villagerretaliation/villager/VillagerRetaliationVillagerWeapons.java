@@ -271,7 +271,7 @@ public final class VillagerRetaliationVillagerWeapons {
         return candidate.isEnchanted() && !current.isEnchanted();
     }
 
-    private static boolean isMeleeWeapon(ItemStack stack) {
+    public static boolean isMeleeWeapon(ItemStack stack) {
         return stack.is(Tags.Items.MELEE_WEAPON_TOOLS)
                 || stack.is(Tags.Items.MINING_TOOL_TOOLS)
                 || stack.is(Tags.Items.TOOLS_MACE)
