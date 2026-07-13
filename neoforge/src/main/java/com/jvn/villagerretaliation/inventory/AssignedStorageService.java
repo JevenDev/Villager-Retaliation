@@ -42,6 +42,10 @@ public final class AssignedStorageService {
     private AssignedStorageService() {
     }
 
+    public static void clearRuntimeState() {
+        STORAGE_FAILURES.clear();
+    }
+
     public static boolean hasAssignedStorage(ServerLevel level, Villager villager) {
         return !assignedStorage(level, villager).isEmpty();
     }

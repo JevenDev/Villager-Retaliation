@@ -446,6 +446,10 @@ public final class WanderingTraderRetaliationHandler {
             return;
         }
 
+        clearRuntimeState(trader);
+    }
+
+    private static void clearRuntimeState(WanderingTrader trader) {
         VillagerRangedCombatHelper.clearState(trader);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(trader);
         if (trader.isAlive()) {
@@ -460,5 +464,19 @@ public final class WanderingTraderRetaliationHandler {
             VillagerRetaliationVillagerWeapons.clearTrackedPickup(trader);
         }
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(trader.getUUID());
+    }
+
+    public static void clearRuntimeState(net.minecraft.server.MinecraftServer server) {
+        if (server != null) {
+            for (ServerLevel level : server.getAllLevels()) {
+                for (Entity entity : level.getAllEntities()) {
+                    if (entity instanceof WanderingTrader trader) {
+                        clearRuntimeState(trader);
+                    }
+                }
+            }
+        }
+        RETALIATION.clearRuntimeState();
+        NEXT_NATURAL_TARGET_SCAN_TICKS.clear();
     }
 }

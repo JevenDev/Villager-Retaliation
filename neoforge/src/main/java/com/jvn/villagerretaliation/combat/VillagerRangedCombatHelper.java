@@ -111,6 +111,13 @@ final class VillagerRangedCombatHelper {
         clearChargedCrossbows(villager);
     }
 
+    static void clearRuntimeState() {
+        SEE_TIME.clear();
+        ATTACK_DELAY.clear();
+        CROSSBOW_STATE.clear();
+        CROSSBOW_UPDATE_PATH_DELAY.clear();
+    }
+
     static boolean hasState(AbstractVillager villager) {
         UUID villagerId = villager.getUUID();
         return SEE_TIME.containsKey(villagerId)

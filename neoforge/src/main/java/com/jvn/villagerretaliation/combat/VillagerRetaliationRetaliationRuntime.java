@@ -173,6 +173,17 @@ final class VillagerRetaliationRetaliationRuntime<T extends AbstractVillager> {
         VillagerRetaliationRetaliationUtil.clearPathingState(villager);
     }
 
+    void clearRuntimeState() {
+        this.angerTargets.clear();
+        this.nextPersistedAngerRestoreTicks.clear();
+        this.nextAttackTicks.clear();
+        this.nextGroundWeaponScanTicks.clear();
+        this.pursuedGroundWeaponIds.clear();
+        this.groundWeaponPursuitStartTicks.clear();
+        this.groundWeaponPickupDisabledUntilTicks.clear();
+        this.temporaryWeapons.clear();
+    }
+
     private boolean hasGroundWeaponPursuitTimedOut(T villager, long gameTime) {
         UUID villagerId = villager.getUUID();
         Long startedAt = this.groundWeaponPursuitStartTicks.get(villagerId);

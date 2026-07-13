@@ -480,7 +480,8 @@ public final class VillagerReputationManager {
         LAST_SYNCED_REPUTATION.entrySet().removeIf(entry -> gameTime - entry.getValue().gameTime() > SYNC_CACHE_TTL_TICKS);
     }
 
-    public static void clearSyncState() {
+    public static void clearRuntimeState() {
+        PENDING_TIER_MESSAGES.clear();
         LAST_SYNCED_REPUTATION.clear();
         nextSyncCachePruneGameTime = 0L;
     }

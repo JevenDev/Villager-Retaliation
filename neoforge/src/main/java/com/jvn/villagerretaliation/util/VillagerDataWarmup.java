@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.event.VillagerEventTriggerService;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.interaction.VillagerGiftResources;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
+import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import com.jvn.villagerretaliation.loot.ProfessionLootResources;
 import com.jvn.villagerretaliation.notification.VillagerNotificationResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
@@ -87,6 +88,7 @@ public final class VillagerDataWarmup {
         VillagerNaturalJobArmorResources.clearCache();
         VillagerPacifyPaymentResources.clearCache();
         BuilderStructureCatalog.clearCache();
+        BuilderStructureScanner.clearCache();
         VillagerNotificationResources.clearCache();
         ForcedDialogueResources.clearCache();
         GeneratedContainerLootResources.clearCache();

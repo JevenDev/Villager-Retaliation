@@ -52,6 +52,15 @@ public final class VillagerAmbientIndicatorService {
     private VillagerAmbientIndicatorService() {
     }
 
+    public static void clearRuntimeState() {
+        NEXT_MURMUR_TICK.clear();
+        NEXT_ALERT_TICK.clear();
+        NEXT_SLEEP_TICK.clear();
+        RETALIATION_ANNOUNCEMENTS.clear();
+        FLEE_ANNOUNCEMENTS.clear();
+        ATTACK_LANDED_ANNOUNCEMENTS.clear();
+    }
+
     public static void maybeMurmurNearPlayers(ServerLevel level, AbstractVillager villager) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || !VillagerRetaliationConfig.ENABLE_AMBIENT_MURMURS.get()

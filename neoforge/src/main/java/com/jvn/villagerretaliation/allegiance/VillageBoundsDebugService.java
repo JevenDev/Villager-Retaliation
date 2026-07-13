@@ -11,7 +11,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -59,7 +58,7 @@ public final class VillageBoundsDebugService {
         }
     }
 
-    public static void onServerStopping(ServerStoppingEvent event) {
+    public static void clearRuntimeState() {
         SUBSCRIPTIONS.clear();
     }
 

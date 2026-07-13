@@ -63,6 +63,10 @@ final class VillagerSmithGolemRepairSupport {
         NEXT_REPAIR_TICKS.remove(villager.getUUID());
     }
 
+    static void clearRuntimeState() {
+        NEXT_REPAIR_TICKS.clear();
+    }
+
     private static IronGolem findNearbyDamagedIronGolem(Villager villager, ServerLevel level) {
         AABB area = villager.getBoundingBox().inflate(SEARCH_RADIUS);
         IronGolem bestTarget = null;

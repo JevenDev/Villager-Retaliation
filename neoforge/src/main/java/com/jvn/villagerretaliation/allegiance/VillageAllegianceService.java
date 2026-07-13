@@ -26,7 +26,6 @@ import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.BabyEntitySpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingConversionEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 public final class VillageAllegianceService {
@@ -398,10 +397,6 @@ public final class VillageAllegianceService {
         if (server != null) {
             VillageAllegianceRegistrySavedData.get(server.overworld()).clearRuntimeCache();
         }
-    }
-
-    public static void onServerStopping(ServerStoppingEvent event) {
-        clearRuntimeState(event.getServer());
     }
 
     private static boolean tryResolve(

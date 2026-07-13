@@ -592,6 +592,14 @@ public final class VillagerRetaliationHandler {
         anger(villager, attacker, false, false);
     }
 
+    public static boolean hasRetaliationTarget(Villager villager, LivingEntity target) {
+        if (villager == null || target == null) {
+            return false;
+        }
+        AngerTarget angerTarget = RETALIATION.angerTarget(villager);
+        return angerTarget != null && angerTarget.targetId().equals(target.getUUID());
+    }
+
     private static void anger(Villager villager, LivingEntity attacker) {
         anger(villager, attacker, true, true);
     }
@@ -700,7 +708,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void tryAcquirePartyKillOnSightTarget(Villager villager) {
-        if (RETALIATION.hasAnger(villager) || !villager.isAlive() || villager.isBaby()) {
+        if (!villager.isAlive() || villager.isBaby()) {
             return;
         }
         ServerLevel level = (ServerLevel) villager.level();
@@ -709,6 +717,10 @@ public final class VillagerRetaliationHandler {
         if (record == null
                 || record.combatMode() != PartyCombatMode.KILL_ON_SIGHT
                 || !ACTOR_POLICY.canFightBack(villager)) {
+            return;
+        }
+        if (RETALIATION.hasAnger(villager)) {
+            maintainPartyKillOnSightAuthorization(level, villager, party, record);
             return;
         }
         long gameTime = level.getGameTime();
@@ -730,16 +742,39 @@ public final class VillagerRetaliationHandler {
         if (nearest == null) {
             return;
         }
-        AllegianceCombatDecision decision = VillageAllegianceCombatPolicy.evaluate(
-                level, villager, nearest, AllegianceCombatContext.PARTY_ATTACK, false);
-        if (decision.denied()) {
-            return;
-        }
-        if (decision.action() == AllegianceCombatDecision.Action.ALLOW
-                && !VillageCombatAuthorizationService.authorize(level, villager, nearest)) {
+        if (!authorizePartyKillOnSightTarget(level, villager, nearest)) {
             return;
         }
         anger(villager, nearest, false, true);
+    }
+
+    private static void maintainPartyKillOnSightAuthorization(
+            ServerLevel level,
+            Villager villager,
+            PartyRecord party,
+            PartyVillagerRecord record) {
+        AngerTarget angerTarget = RETALIATION.angerTarget(villager);
+        if (angerTarget == null
+                || !(level.getEntity(angerTarget.targetId()) instanceof LivingEntity target)
+                || !isEligiblePartyKillOnSightTarget(level, villager, party, record, target)
+                || VillageCombatAuthorizationService.isAuthorized(villager, target)) {
+            return;
+        }
+        authorizePartyKillOnSightTarget(level, villager, target);
+    }
+
+    private static boolean authorizePartyKillOnSightTarget(
+            ServerLevel level,
+            Villager villager,
+            LivingEntity target) {
+        AllegianceCombatDecision decision = VillageAllegianceCombatPolicy.evaluate(
+                level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false);
+        if (decision.denied()) {
+            return false;
+        }
+        return decision.action() != AllegianceCombatDecision.Action.ALLOW
+                || VillageCombatAuthorizationService.isAuthorized(villager, target)
+                || VillageCombatAuthorizationService.authorize(level, villager, target);
     }
 
     private static boolean isEligiblePartyKillOnSightTarget(
@@ -1425,6 +1460,10 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
+        clearRuntimeState(villager);
+    }
+
+    private static void clearRuntimeState(Villager villager) {
         VillagerArmorerCombatTactics.resetState(villager);
         VillagerRangedCombatHelper.clearState(villager);
         VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
@@ -1451,6 +1490,34 @@ public final class VillagerRetaliationHandler {
         } else {
             VillagerRetaliationVillagerWeapons.clearTrackedPickup(villager);
         }
+    }
+
+    public static void clearRuntimeState(net.minecraft.server.MinecraftServer server) {
+        if (server != null) {
+            for (ServerLevel level : server.getAllLevels()) {
+                for (Entity entity : level.getAllEntities()) {
+                    if (entity instanceof Villager villager) {
+                        clearRuntimeState(villager);
+                    }
+                }
+            }
+        }
+        RETALIATION.clearRuntimeState();
+        NEXT_SPECIAL_TICKS.clear();
+        NEXT_NATURAL_TARGET_SCAN_TICKS.clear();
+        NEXT_PARTY_KOS_TARGET_SCAN_TICKS.clear();
+        NEXT_CREEPER_AVOIDANCE_SCAN_TICKS.clear();
+        NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.clear();
+        NEXT_ROYALTY_AGGRO_BYPASS_NOTICE_TICKS.clear();
+        WAVERING_UNARMED_COUNTERS.clear();
+        LOW_GUTS_RALLY_USED_UNTIL_TICKS.clear();
+        VillagerArmorerCombatTactics.clearRuntimeState();
+        VillagerRangedCombatHelper.clearRuntimeState();
+        VillagerClericPotionHelper.clearRuntimeState();
+        VillagerHostileTierHarass.clearRuntimeState();
+        VillagerSmithGolemRepairSupport.clearRuntimeState();
+        VillagerRetaliationRetaliationUtil.clearRuntimeState();
+        VillagerRetaliationVillagerWeapons.clearCache();
     }
 
     private static void clearRangedStateIfActive(Villager villager) {

@@ -371,6 +371,12 @@ public final class EncounterService {
     }
 
     public static void hideBossBar(UUID encounterId){ServerBossEvent bar=BOSS_BARS.remove(encounterId);if(bar!=null)bar.removeAllPlayers();}
+    public static void clearRuntimeState() {
+        BOSS_BARS.values().forEach(ServerBossEvent::removeAllPlayers);
+        MOB_BOSS_BARS.values().forEach(ServerBossEvent::removeAllPlayers);
+        BOSS_BARS.clear();
+        MOB_BOSS_BARS.clear();
+    }
 
     private static List<SpawnMember> desiredMembers(EncounterTemplate.Wave wave,EncounterTemplate template,int partySize){List<SpawnMember> values=new ArrayList<>();int group=0;for(var member:wave.members()){for(int i=0;i<member.count();i++)values.add(new SpawnMember(member,group));group++;}int extra=template.scaledCount(wave,partySize)-values.size();for(int i=0;i<extra;i++)values.add(new SpawnMember(wave.members().getFirst(),0));return values;}
     private static void recoverSpawn(EncounterInstance encounter,Entity entity){CompoundTag tag=entity.getPersistentData();if(!encounter.spawned().contains(entity.getUUID()))encounter.addSpawn(entity.getUUID());if(tag.contains(SPAWN_POINT,Tag.TAG_STRING))encounter.restoreSpawnPoint(tag.getInt(SPAWN_INDEX),tag.getString(SPAWN_POINT),tag.getInt(SPAWN_SEQUENCE));}

@@ -64,6 +64,10 @@ final class VillagerHostileTierHarass {
         NEXT_THROW_TICKS.remove(villager.getUUID());
     }
 
+    static void clearRuntimeState() {
+        NEXT_THROW_TICKS.clear();
+    }
+
     private static void shoot(
             Villager villager,
             ThrowableItemProjectile projectile,

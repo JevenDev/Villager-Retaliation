@@ -6,11 +6,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 public final class VillageCombatAuthorizationService {
@@ -90,10 +88,6 @@ public final class VillageCombatAuthorizationService {
         long now = event.getServer().overworld().getGameTime();
         AUTHORIZATIONS.entrySet().removeIf(entry -> entry.getValue().expiresGameTime() < now);
         PROJECTILES.entrySet().removeIf(entry -> entry.getValue().expiresGameTime() < now);
-    }
-
-    public static void onServerStopping(ServerStoppingEvent event) {
-        clearRuntimeState();
     }
 
     public static void clearRuntimeState() {

@@ -433,6 +433,11 @@ public final class VillagerRetaliationRetaliationUtil {
         GROUND_WEAPON_PURSUIT_STATES.remove(villager.getUUID());
     }
 
+    public static void clearRuntimeState() {
+        PATH_STATES.clear();
+        GROUND_WEAPON_PURSUIT_STATES.clear();
+    }
+
     public static <T extends AbstractVillager> boolean maintainTemporaryWeapon(
             T villager,
             Map<UUID, TemporaryWeaponState> temporaryWeapons

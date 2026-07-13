@@ -97,6 +97,15 @@ public final class VillagerReputationAdvancements {
     private VillagerReputationAdvancements() {
     }
 
+    public static void clearRuntimeState() {
+        TRADE_COUNTS.clear();
+        TRADED_VILLAGERS.clear();
+        RECENT_DIRECT_VILLAGER_HITS.clear();
+        HOSTILE_OR_WORSE_HISTORY.clear();
+        NEXT_DISCOVERY_SCAN.clear();
+        NEXT_BIOME_STORY_SCAN.clear();
+    }
+
     public static void onVillagerInteraction(ServerPlayer player) {
         award(player, COMMONFOLK);
     }

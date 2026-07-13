@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -16,7 +15,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.event.entity.living.LivingConversionEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 
 public final class VillagerDisciplineService {
     private static final long INCIDENT_TIMEOUT_TICKS = 80L;
@@ -106,10 +104,6 @@ public final class VillagerDisciplineService {
         }
         float maximum = Math.max(0.0F, player.getHealth() - 1.0F);
         event.setNewDamage(Math.min(event.getNewDamage(), maximum));
-    }
-
-    public static void onServerStopping(ServerStoppingEvent event) {
-        clearRuntimeState();
     }
 
     public static void clearRuntimeState() {

@@ -41,6 +41,10 @@ public final class BuilderStructureScanner {
     private BuilderStructureScanner() {
     }
 
+    public static void clearCache() {
+        CACHE.clear();
+    }
+
     public static Optional<StructurePlan> scan(ServerLevel level, BuilderStructureCatalog.Entry entry, Rotation rotation) {
         if (level == null || entry == null) {
             return Optional.empty();

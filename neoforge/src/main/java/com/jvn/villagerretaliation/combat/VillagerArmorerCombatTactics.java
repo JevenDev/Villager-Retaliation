@@ -179,6 +179,12 @@ final class VillagerArmorerCombatTactics {
         clearTacticState(villager, false);
     }
 
+    static void clearRuntimeState() {
+        SHIELD_DISABLED_UNTIL_TICKS.clear();
+        PENDING_COUNTER_SWINGS.clear();
+        COUNTER_ATTACK_READY_TICKS.clear();
+    }
+
     static double movementSpeedFactor(Villager villager) {
         return isActivelyBlocking(villager) ? BLOCKING_SPEED_FACTOR : 1.0D;
     }

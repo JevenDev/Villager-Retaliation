@@ -706,6 +706,11 @@ final class VillagerInventoryContainer implements Container {
         invalidateUsableWeaponCache(villager);
     }
 
+    static void clearRuntimeState() {
+        OPEN_INVENTORIES.clear();
+        USABLE_WEAPON_CACHE.clear();
+    }
+
     private static ItemStack addItemToPreferredSlot(Villager villager, ItemStack stack, int preferredSlot) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;

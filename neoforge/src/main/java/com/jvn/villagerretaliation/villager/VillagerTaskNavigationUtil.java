@@ -18,6 +18,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -46,7 +47,7 @@ public final class VillagerTaskNavigationUtil {
     // small floating-point margin around that boundary while remaining well
     // inside the adjacent-block entry gate.
     private static final double LADDER_FORCED_ENTRY_HORIZONTAL_SQR = 1.21D;
-    private static final int LADDER_VERTICAL_TARGET_DEADZONE = 1;
+    private static final int LADDER_VERTICAL_TARGET_DEADZONE = 0;
     private static final double LADDER_HORIZONTAL_SPEED_LIMIT = 0.15D;
     private static final double LADDER_CLIMB_SPEED = 0.20D;
     private static final double LADDER_DESCEND_SPEED = -0.15D;
@@ -509,14 +510,11 @@ public final class VillagerTaskNavigationUtil {
             return false;
         }
 
-        Vec3 motion = villager.getDeltaMovement();
         double yDelta = ladderExitY - villager.getY();
         double climb = yDelta >= 0.0D ? LADDER_CLIMB_SPEED : LADDER_DESCEND_SPEED;
         villager.setNoGravity(true);
-        villager.setDeltaMovement(
-                Math.clamp(motion.x, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT),
-                climb,
-                Math.clamp(motion.z, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT));
+        villager.move(MoverType.SELF, new Vec3(0.0D, climb, 0.0D));
+        villager.setDeltaMovement(Vec3.ZERO);
         villager.setOnGround(false);
         return true;
     }
@@ -995,17 +993,11 @@ public final class VillagerTaskNavigationUtil {
         villager.getMoveControl().setWantedPosition(centerX, targetY, centerZ, speed);
 
         if (dx * dx + dz * dz <= LADDER_FORCED_ENTRY_HORIZONTAL_SQR) {
-            Vec3 motion = villager.getDeltaMovement();
-            double horizontalX = Math.clamp(dx * 0.35D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT);
-            double horizontalZ = Math.clamp(dz * 0.35D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT);
             // Snap into the validated ladder block before the vanilla move
             // controller can keep treating its thin collision face as a path
             // endpoint. This transition is limited to the adjacent block.
             villager.moveTo(centerX, villager.getY(), centerZ, villager.getYRot(), villager.getXRot());
-            villager.setDeltaMovement(
-                    Math.clamp(horizontalX + motion.x * 0.25D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT),
-                    climb,
-                    Math.clamp(horizontalZ + motion.z * 0.25D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT));
+            villager.setDeltaMovement(0.0D, climb, 0.0D);
             villager.setNoGravity(true);
             villager.setOnGround(false);
         }

@@ -52,6 +52,11 @@ final class VillagerInventoryOverflowService {
     private VillagerInventoryOverflowService() {
     }
 
+    static void clearRuntimeState() {
+        PENDING_CONTAINER_CLOSES.clear();
+        LAST_PENDING_CONTAINER_CLOSE_CHECK_TICKS.clear();
+    }
+
     static void maybeOffloadInventoryOverflow(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level)) {
             return;

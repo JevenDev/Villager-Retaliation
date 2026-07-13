@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.party;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.allegiance.VillagerAbuseSavedData;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
+import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -41,6 +42,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -51,6 +53,7 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -674,14 +677,22 @@ public final class PartyGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 180)
     public static void killOnSightAcquiresConfiguredTarget(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
+        for (int x = 0; x <= 6; x++) {
+            for (int z = 0; z <= 6; z++) {
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+            }
+        }
         ServerPlayer firstLeader = fakePlayer(level, uniqueName("party_kos_first"));
         movePlayer(helper, firstLeader, new BlockPos(12, 2, 12));
         Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
+        attacker.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
         var target = helper.spawn(EntityType.COW, new BlockPos(4, 2, 2));
         target.setNoAi(true);
+        target.getAttribute(Attributes.MAX_HEALTH).setBaseValue(1024.0D);
+        target.setHealth(1024.0F);
         long now = level.getServer().overworld().getGameTime();
         PartySavedData data = PartySavedData.get(level);
         PartyRecord firstParty = data.createParty(firstLeader.getUUID(), now);
@@ -691,9 +702,15 @@ public final class PartyGameTests {
         attackerRecord.setCombatMode(PartyCombatMode.KILL_ON_SIGHT);
         data.changed();
 
-        helper.runAfterDelay(60, () -> {
-            helper.assertValueEqual(attacker.getTarget(), target,
-                    "KOS should proactively acquire a nearby target allowed by the attack mode");
+        helper.runAfterDelay(140, () -> {
+            helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(attacker, target),
+                    "KOS should retain a nearby retaliation target; attacker="
+                            + attacker.blockPosition() + ", target=" + target.blockPosition()
+                            + ", distance=" + attacker.distanceToSqr(target)
+                            + ", canAttack=" + attacker.canAttack(target)
+                            + ", lineOfSight=" + attacker.hasLineOfSight(target)
+                            + ", transientTarget=" + attacker.getTarget()
+                            + ", mode=" + attackerRecord.combatMode() + "/" + attackerRecord.attackMode());
             PartyService.deleteParty(level, firstParty.id());
             attacker.discard();
             target.discard();

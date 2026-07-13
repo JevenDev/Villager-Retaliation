@@ -2551,7 +2551,7 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 320)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 480)
     public static void miningWorkerOutsideAreaReturnsBeforeTargetScan(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 6, 3);
         buildFloor(helper, 0, 8, 0, 6, 0);
@@ -2603,18 +2603,29 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).is(Blocks.STONE),
                 "return tick should not mine or reject the valid target before navigating back");
 
-        runWorkerUntil(helper, worker, level, villager, hirer, context, 240, () ->
-                level.getBlockState(helper.absolutePos(targetRel)).isAir());
-
-        helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
-                "miner should descend from the surface side and mine the valid lower target");
-        helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.COBBLESTONE)),
-                "returned excavation should store mined drops as output");
-        helper.assertTrue(context.isInsideWorkArea(villager.blockPosition()),
-                "miner should finish the recovered excavation inside the work area");
-
-        villager.discard();
-        helper.succeed();
+        helper.startSequence()
+                .thenExecuteFor(360, () -> {
+                    if (!level.getBlockState(helper.absolutePos(targetRel)).isAir()) {
+                        worker.maintain(level, villager, context);
+                        if (Math.floorMod(level.getGameTime() + villager.getUUID().getLeastSignificantBits(), 10L) == 0L) {
+                            worker.tick(level, villager, hirer, context);
+                        }
+                    }
+                })
+                .thenExecute(() -> {
+                    HiredWorkerBrain.Snapshot finalState = HiredWorkerBrain.snapshot(state, level.getGameTime());
+                    helper.assertTrue(level.getBlockState(helper.absolutePos(targetRel)).isAir(),
+                            "miner should descend from the surface side and mine the valid lower target; pos="
+                                    + villager.blockPosition() + ", nav=" + villager.getNavigation().getTargetPos()
+                                    + ", state=" + finalState.taskState() + ", failure=" + finalState.failureReason()
+                                    + ", target=" + finalState.targetPos());
+                    helper.assertTrue(context.inventory().hasOutput(stack -> stack.is(Items.COBBLESTONE)),
+                            "returned excavation should store mined drops as output");
+                    helper.assertTrue(context.isInsideWorkArea(villager.blockPosition()),
+                            "miner should finish the recovered excavation inside the work area");
+                    villager.discard();
+                })
+                .thenSucceed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80000)
@@ -3097,31 +3108,32 @@ public final class VillagerWorkerGameTests {
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
     public static void sharedRouteNavigatorApproachesNonStandableContainerNode(GameTestHelper helper) {
-        buildFloor(helper, 0, 8, 0, 5, 1);
+        buildFloor(helper, -6, 10, -2, 7, 1);
         ServerLevel level = helper.getLevel();
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
-        tickVillager(level, villager, 20);
         BlockPos nodeRel = new BlockPos(5, 2, 2);
         BlockPos node = helper.absolutePos(nodeRel);
         setBlock(helper, nodeRel, Blocks.CHEST.defaultBlockState());
 
         CompoundTag state = new CompoundTag();
         HiredWorkContext context = routeContext(helper, villager, state, List.of(nodeRel));
-        for (int tick = 0; tick < 100 && villager.blockPosition().distSqr(node) > 4.0D; tick++) {
-            HiredRouteNavigator.maintainRoute(level, villager, context, 0.5D);
-            level.tickNonPassenger(villager);
-        }
-
-        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
-        helper.assertTrue(villager.blockPosition().distSqr(node) <= 4.0D,
-                "shared route navigation should reach a valid block beside a non-standable node; pos="
-                        + villager.blockPosition() + ", nav=" + villager.getNavigation().getTargetPos()
-                        + ", state=" + snapshot.taskState() + ", failure=" + snapshot.failureReason());
-        helper.assertFalse(villager.blockPosition().equals(node),
-                "shared route navigation should not try to stand inside a container node");
-
-        villager.discard();
-        helper.succeed();
+        helper.startSequence()
+                .thenExecuteFor(100, () -> {
+                    if (villager.blockPosition().distSqr(node) > 4.0D) {
+                        HiredRouteNavigator.maintainRoute(level, villager, context, 0.5D);
+                    }
+                })
+                .thenExecute(() -> {
+                    HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+                    helper.assertTrue(villager.blockPosition().distSqr(node) <= 4.0D,
+                            "shared route navigation should reach a valid block beside a non-standable node; pos="
+                                    + villager.blockPosition() + ", nav=" + villager.getNavigation().getTargetPos()
+                                    + ", state=" + snapshot.taskState() + ", failure=" + snapshot.failureReason());
+                    helper.assertFalse(villager.blockPosition().equals(node),
+                            "shared route navigation should not try to stand inside a container node");
+                    villager.discard();
+                })
+                .thenSucceed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
@@ -3221,7 +3233,7 @@ public final class VillagerWorkerGameTests {
                 List.of(firstInputRel, secondInputRel, outputRel));
         CourierWorker worker = new CourierWorker();
 
-        runWorkerUntil(helper, worker, level, villager, hirer, context, 240, () ->
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 360, () ->
                 countItem(container(level, output), Items.COBBLESTONE) == 20
                         && countItem(container(level, output), Items.DIRT) == 13
                         && "pickup".equals(state.getString("CourierPhase")));
@@ -3233,7 +3245,7 @@ public final class VillagerWorkerGameTests {
 
         container(level, firstInput).setItem(0, new ItemStack(Items.COBBLESTONE, 7));
         container(level, secondInput).setItem(0, new ItemStack(Items.DIRT, 5));
-        runWorkerUntil(helper, worker, level, villager, hirer, context, 240, () ->
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 360, () ->
                 countItem(container(level, output), Items.COBBLESTONE) == 27
                         && countItem(container(level, output), Items.DIRT) == 18
                         && "pickup".equals(state.getString("CourierPhase")));

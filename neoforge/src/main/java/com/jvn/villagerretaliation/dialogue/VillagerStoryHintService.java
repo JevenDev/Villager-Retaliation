@@ -47,6 +47,11 @@ public final class VillagerStoryHintService {
     private VillagerStoryHintService() {
     }
 
+    public static void clearRuntimeState() {
+        CARTOGRAPHER_MAP_GIFTS.clear();
+        mapGiftServer = null;
+    }
+
     public static Optional<VillagerDialogueService.DialogueResult> select(DialogueContext context) {
         HintQuality quality = HintQuality.forReputation(context.reputationLevel());
         if (quality == HintQuality.NONE || context.random().nextInt(100) >= quality.chancePercent) {

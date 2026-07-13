@@ -53,6 +53,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerGossipHooks;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.runtime.ServerRuntimeState;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
@@ -156,29 +157,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerStopping(ServerStoppingEvent event) {
-        VillagerDataWarmup.clearCaches();
-        VillagerTaskNavigationUtil.clearRuntimeState();
-        VillagerRetaliationVillagerRules.clearCachedChecks();
-        VillagerGossipHooks.clear();
-        VillagerReputationManager.clearSyncState();
-        VillagerReputationEvents.clearRuntimeState();
-        VillagerCombatSurvivalService.clearRuntimeState();
-        VillagerDownedService.clearRuntimeState();
-        VillagerConversationService.clearRuntimeState();
-        VillagerRecruitmentService.clearRuntimeState();
-        PartyVillagerContractService.clearRuntimeState();
-        com.jvn.villagerretaliation.party.PartyQuickCommandService.clearRuntimeState();
-        HiredVillagerWorkService.clearRuntimeState();
-        HiredVillagerIndex.clearRuntimeState();
-        HiredJobInventory.clearRuntimeState();
-        HiredOreBlockTracker.clearRuntimeState();
-        VillagerTradeMemory.clearRuntimeState();
-        VillagerSocialGraphService.clearRuntimeState();
-        ForcedDialogueService.clearRuntimeState();
-        DialogueTreeService.clearRuntimeState();
-        VillagerQuestService.clearRuntimeState();
-        HiredDebugPreviewService.clearRuntimeState();
-        UnlawfulOrderService.clearRuntimeState();
+        ServerRuntimeState.clear(event.getServer());
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {

@@ -17,6 +17,11 @@ public final class VillagerInventoryAccess {
     private VillagerInventoryAccess() {
     }
 
+    public static void clearRuntimeState() {
+        VillagerInventoryContainer.clearRuntimeState();
+        VillagerInventoryOverflowService.clearRuntimeState();
+    }
+
     public static boolean canAccess(ServerLevel level, Villager villager, ServerPlayer player) {
         return !villager.isBaby()
                 && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID()).trustRank()

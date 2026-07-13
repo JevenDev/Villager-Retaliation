@@ -120,6 +120,15 @@ final class VillagerClericPotionHelper {
         SUPPORT_TARGET_CACHE.remove(villager.getUUID());
     }
 
+    static void clearRuntimeState() {
+        ATTACK_DELAY.clear();
+        DRINKING_POTIONS.clear();
+        HEALING_REDRINK_COOLDOWN_UNTIL.clear();
+        NEXT_COMBAT_SUPPORT_SCAN_TICKS.clear();
+        NEXT_PASSIVE_SUPPORT_SCAN_TICKS.clear();
+        SUPPORT_TARGET_CACHE.clear();
+    }
+
     static boolean tickDrinkingIfActive(Villager villager) {
         if (!isDrinkingPotion(villager)) {
             return false;

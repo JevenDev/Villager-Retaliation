@@ -18,6 +18,10 @@ public final class PartyVillagerDropCollection {
     private PartyVillagerDropCollection() {
     }
 
+    public static void clearRuntimeState() {
+        LOADED_SLAIN_ENTITY_DROPS.clear();
+    }
+
     public static void markSlainEntityDrops(LivingDropsEvent event) {
         if (event == null) {
             return;

@@ -394,7 +394,8 @@ public final class VillageAllegianceGameTests {
             helper.assertTrue(target.getHealth() < beforeWandererHit,
                     "Wanderer party damage lands without village infighting rules");
         } finally {
-            VillageCombatAuthorizationService.clearRuntimeState();
+            VillageCombatAuthorizationService.clearFor(actor);
+            VillageCombatAuthorizationService.clearFor(target);
             actor.discard();
             target.discard();
         }
@@ -504,7 +505,10 @@ public final class VillageAllegianceGameTests {
             helper.assertFalse(VillageAllegianceRelations.sharesCommunity(level, actor, resident),
                     "Wanderers never receive village-scoped gossip or community loyalty");
         } finally {
-            VillageCombatAuthorizationService.clearRuntimeState();
+            VillageCombatAuthorizationService.clearFor(actor);
+            VillageCombatAuthorizationService.clearFor(resident);
+            VillageCombatAuthorizationService.clearFor(golem);
+            VillageCombatAuthorizationService.clearFor(projectile);
             actor.discard();
             resident.discard();
             golem.discard();
