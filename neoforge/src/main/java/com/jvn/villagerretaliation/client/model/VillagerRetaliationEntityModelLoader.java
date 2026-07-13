@@ -39,9 +39,6 @@ public final class VillagerRetaliationEntityModelLoader {
     );
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static String vanillaCemCompatibilityKey = "";
-    private static boolean vanillaCemCompatibility;
-
     private VillagerRetaliationEntityModelLoader() {
     }
 
@@ -66,18 +63,6 @@ public final class VillagerRetaliationEntityModelLoader {
         }
         LOGGER.info("Loading combat villager model from built-in JSON fallback");
         return loadCombatVillagerModel(resourceManager);
-    }
-
-    public static String combatVillagerModelSource(ResourceManager resourceManager) {
-        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, VillagerRetaliationClientAssets.COMBAT_VILLAGER_MODEL);
-        if (overrideResource.isPresent()) {
-            return "json:" + overrideResource.get().sourcePackId();
-        }
-        Optional<Resource> cemOverrideResource = findFirstResourcePackOverride(resourceManager, COMBAT_VILLAGER_CEM_MODELS);
-        if (isEntityModelFeaturesLoaded() && cemOverrideResource.isPresent()) {
-            return "emf:" + cemOverrideResource.get().sourcePackId();
-        }
-        return "json:" + MOD_RESOURCE_PACK_ID;
     }
 
     public static Optional<ModelPart> loadNonCombatVillagerModel(ResourceManager resourceManager) {
@@ -113,31 +98,12 @@ public final class VillagerRetaliationEntityModelLoader {
         return Optional.empty();
     }
 
-    public static String nonCombatVillagerModelSource(ResourceManager resourceManager) {
-        NonCombatModelMode mode = getNonCombatModelMode(resourceManager);
-        if (mode != NonCombatModelMode.CUSTOM) {
-            return "vanilla:" + mode.serializedName;
-        }
-
-        Optional<Resource> overrideResource = findResourcePackOverride(resourceManager, VillagerRetaliationClientAssets.NON_COMBAT_VILLAGER_MODEL);
-        return overrideResource
-                .map(resource -> "custom:" + resource.sourcePackId())
-                .orElse("custom:missing");
-    }
-
     public static boolean hasVanillaVillagerCemModel(ResourceManager resourceManager) {
         List<Resource> cemStack = resourceManager.getResourceStack(VillagerRetaliationClientAssets.VANILLA_VILLAGER_CEM_MODEL);
         List<Resource> textureStack = resourceManager.getResourceStack(VillagerRetaliationClientAssets.VANILLA_VILLAGER_SKIN);
-        String compatibilityKey = resourceStackKey(cemStack) + "|" + resourceStackKey(textureStack);
-        if (compatibilityKey.equals(vanillaCemCompatibilityKey)) {
-            return vanillaCemCompatibility;
-        }
-
-        vanillaCemCompatibilityKey = compatibilityKey;
-        vanillaCemCompatibility = isEntityModelFeaturesLoaded()
+        return isEntityModelFeaturesLoaded()
                 && findResourcePackOverride(cemStack).isPresent()
                 && hasTopTextureSize(textureStack, 64, 64);
-        return vanillaCemCompatibility;
     }
 
     public static ModelPart loadCombatVillagerModel(ResourceManager resourceManager) {
@@ -226,17 +192,6 @@ public final class VillagerRetaliationEntityModelLoader {
             LOGGER.warn("Failed to read villager texture dimensions from {}.", resource.sourcePackId(), exception);
             return false;
         }
-    }
-
-    private static String resourceStackKey(List<Resource> resourceStack) {
-        StringBuilder key = new StringBuilder();
-        for (Resource resource : resourceStack) {
-            if (!key.isEmpty()) {
-                key.append('>');
-            }
-            key.append(resource.sourcePackId());
-        }
-        return key.toString();
     }
 
     private static boolean isEntityModelFeaturesLoaded() {

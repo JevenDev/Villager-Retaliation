@@ -35,6 +35,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
     private final ModelPart leftArm;
     private final ModelPart rightLeg;
     private final ModelPart leftLeg;
+    private final ModelPart[] resettableParts;
     private final VillagerPoseProvider<T> poseProvider;
     private final VillagerDialogueMouthParts dialogueMouthParts;
 
@@ -54,6 +55,7 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         this.leftArm = root.getChild("LeftArm");
         this.rightLeg = root.getChild("RightLeg");
         this.leftLeg = root.getChild("LeftLeg");
+        this.resettableParts = root.getAllParts().toArray(ModelPart[]::new);
         this.poseProvider = poseProvider;
         this.dialogueMouthParts = VillagerDialogueMouthParts.find(root);
     }
@@ -91,7 +93,9 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
 
     @Override
     public void setupAnim(T villager, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-        this.root.getAllParts().forEach(ModelPart::resetPose);
+        for (ModelPart part : this.resettableParts) {
+            part.resetPose();
+        }
         this.head.yRot = netHeadYaw * ((float) Math.PI / 180F);
         this.head.xRot = headPitch * ((float) Math.PI / 180F);
 

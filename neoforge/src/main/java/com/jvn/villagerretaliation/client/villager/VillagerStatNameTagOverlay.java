@@ -8,8 +8,9 @@ import com.jvn.villagerretaliation.client.party.PartyRosterClient;
 import com.jvn.villagerretaliation.config.VillagerStatDisplayMode;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.WeakHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -17,11 +18,15 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.entity.EntityAttachment;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RenderNameTagEvent;
 import net.neoforged.neoforge.common.util.TriState;
 import org.joml.Matrix4f;
@@ -39,8 +44,13 @@ public final class VillagerStatNameTagOverlay {
             VillagerRetaliation.id("textures/gui/villager_stats/villager_armor_stat.png");
     private static final ResourceLocation HUNGER_ICON =
             VillagerRetaliation.id("textures/gui/villager_stats/villager_hunger_stat.png");
+    private static final Map<Villager, CachedNameplate> NAMEPLATES = new WeakHashMap<>();
 
     private VillagerStatNameTagOverlay() {
+    }
+
+    public static void registerReloadListener(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((ResourceManagerReloadListener) resourceManager -> NAMEPLATES.clear());
     }
 
     public static void onRenderNameTag(RenderNameTagEvent event) {
@@ -70,12 +80,20 @@ public final class VillagerStatNameTagOverlay {
             return;
         }
 
-        List<Stat> stats = renderStats ? List.of(
-                new Stat(HEALTH_ICON, formatValue(villager.getHealth()), 0xFFFF1313, true),
-                new Stat(ARMOR_ICON, Integer.toString(villager.getArmorValue()), 0xFFB8B9C4, true),
-                new Stat(HUNGER_ICON, Integer.toString(VillagerHungerClientCache.hunger(villager)), 0xFFB88458, true)) : List.of();
-        render(event, villager, event.getContent(), attachment,
-                stats.stream().filter(Stat::visible).toList(), renderStats, alpha);
+        EntityRenderer renderer = event.getEntityRenderer();
+        Font font = renderer.getFont();
+        CachedNameplate nameplate = NAMEPLATES.get(villager);
+        if (nameplate == null) {
+            nameplate = new CachedNameplate();
+            NAMEPLATES.put(villager, nameplate);
+        }
+        nameplate.update(
+                font,
+                event.getContent(),
+                villager.getHealth(),
+                villager.getArmorValue(),
+                VillagerHungerClientCache.hunger(villager));
+        render(event, villager, attachment, nameplate, renderStats, alpha);
     }
 
     private static boolean shouldRender(Villager villager) {
@@ -92,45 +110,61 @@ public final class VillagerStatNameTagOverlay {
         return switch (mode) {
             case ALWAYS -> true;
             case HIRED_ONLY -> VillagerNameClientCache.isHired(villager.getId());
-            case PARTY_ONLY -> PartyRosterClient.roster().active()
-                    && PartyRosterClient.roster().villagers().stream()
-                    .anyMatch(entry -> entry.villagerId().equals(villager.getUUID()));
+            case PARTY_ONLY -> isPartyMember(villager);
             case NEVER -> false;
         };
+    }
+
+    private static boolean isPartyMember(Villager villager) {
+        var roster = PartyRosterClient.roster();
+        if (!roster.active()) {
+            return false;
+        }
+        var entries = roster.villagers();
+        for (int i = 0, size = entries.size(); i < size; i++) {
+            if (entries.get(i).villagerId().equals(villager.getUUID())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static void render(
             RenderNameTagEvent event,
             Villager villager,
-            Component name,
             Vec3 attachment,
-            List<Stat> stats,
+            CachedNameplate nameplate,
             boolean renderStats,
             float alpha) {
-        EntityRenderer renderer = event.getEntityRenderer();
-        Font font = renderer.getFont();
-        int totalWidth = stats.stream().mapToInt(stat -> ICON_SIZE + ICON_TEXT_GAP + font.width(stat.value())).sum()
-                + STAT_GAP * (stats.size() - 1);
-
+        Font font = nameplate.font;
         PoseStack poseStack = event.getPoseStack();
         MultiBufferSource buffers = event.getMultiBufferSource();
-        MultiBufferSource fadedBuffers = alpha >= 0.999F ? buffers : new AlphaBufferSource(buffers, alpha);
+        MultiBufferSource fadedBuffers = alpha >= 0.999F ? buffers : nameplate.alphaBuffers.configure(buffers, alpha);
         poseStack.pushPose();
         poseStack.translate(attachment.x, attachment.y + (renderStats ? NAMEPLATE_RAISE : 0.0F), attachment.z);
         poseStack.mulPose(Minecraft.getInstance().getEntityRenderDispatcher().cameraOrientation());
         poseStack.scale(0.025F, -0.025F, 0.025F);
 
         Matrix4f pose = poseStack.last().pose();
-        renderName(font, fadedBuffers, pose, name, renderStats ? -font.lineHeight - 4.0F : 0.0F,
+        renderName(font, fadedBuffers, pose, nameplate.name, nameplate.nameWidth,
+                renderStats ? -font.lineHeight - 4.0F : 0.0F,
                 !villager.isDiscrete(), event.getPackedLight());
-        float x = -totalWidth / 2.0F;
-        for (Stat stat : stats) {
-            renderIcon(fadedBuffers, pose, stat.icon(), x, ROW_Y, alpha);
-            float textX = x + ICON_SIZE + ICON_TEXT_GAP;
-            renderOutlinedText(font, fadedBuffers, pose, stat.value(), textX, ROW_Y + 2.0F,
-                    stat.color(), event.getPackedLight());
-            x += ICON_SIZE + ICON_TEXT_GAP + font.width(stat.value()) + STAT_GAP;
+        if (renderStats) {
+            float x = -nameplate.totalStatWidth / 2.0F;
+            renderIcon(fadedBuffers, pose, HEALTH_ICON, x, ROW_Y, alpha);
+            renderOutlinedText(font, fadedBuffers, pose, nameplate.health, x + ICON_SIZE + ICON_TEXT_GAP,
+                    ROW_Y + 2.0F, 0xFFFF1313, event.getPackedLight());
+            x += ICON_SIZE + ICON_TEXT_GAP + nameplate.healthWidth + STAT_GAP;
+
+            renderIcon(fadedBuffers, pose, ARMOR_ICON, x, ROW_Y, alpha);
+            renderOutlinedText(font, fadedBuffers, pose, nameplate.armor, x + ICON_SIZE + ICON_TEXT_GAP,
+                    ROW_Y + 2.0F, 0xFFB8B9C4, event.getPackedLight());
+            x += ICON_SIZE + ICON_TEXT_GAP + nameplate.armorWidth + STAT_GAP;
+
+            renderIcon(fadedBuffers, pose, HUNGER_ICON, x, ROW_Y, alpha);
+            renderOutlinedText(font, fadedBuffers, pose, nameplate.hunger, x + ICON_SIZE + ICON_TEXT_GAP,
+                    ROW_Y + 2.0F, 0xFFB88458, event.getPackedLight());
         }
         poseStack.popPose();
     }
@@ -139,11 +173,12 @@ public final class VillagerStatNameTagOverlay {
             Font font,
             MultiBufferSource buffers,
             Matrix4f pose,
-            Component name,
+            FormattedCharSequence name,
+            int nameWidth,
             float y,
             boolean seeThrough,
             int packedLight) {
-        float x = -font.width(name) / 2.0F;
+        float x = -nameWidth / 2.0F;
         int backgroundAlpha = Math.round(Minecraft.getInstance().options.getBackgroundOpacity(0.25F) * 255.0F);
         int background = backgroundAlpha << 24;
         font.drawInBatch(name, x, y, 0x20FFFFFF, false, pose, buffers,
@@ -190,13 +225,13 @@ public final class VillagerStatNameTagOverlay {
             Font font,
             MultiBufferSource buffers,
             Matrix4f pose,
-            String text,
+            FormattedCharSequence text,
             float x,
             float y,
             int color,
             int packedLight) {
         font.drawInBatch8xOutline(
-                Component.literal(text).getVisualOrderText(),
+                text,
                 x,
                 y,
                 color,
@@ -206,14 +241,33 @@ public final class VillagerStatNameTagOverlay {
                 packedLight);
     }
 
-    private record AlphaBufferSource(MultiBufferSource delegate, float alpha) implements MultiBufferSource {
+    private static final class AlphaBufferSource implements MultiBufferSource {
+        private final AlphaVertexConsumer consumer = new AlphaVertexConsumer();
+        private MultiBufferSource delegate;
+        private float alpha;
+
+        private AlphaBufferSource configure(MultiBufferSource delegate, float alpha) {
+            this.delegate = delegate;
+            this.alpha = alpha;
+            return this;
+        }
+
         @Override
         public VertexConsumer getBuffer(RenderType renderType) {
-            return new AlphaVertexConsumer(this.delegate.getBuffer(renderType), this.alpha);
+            return this.consumer.configure(this.delegate.getBuffer(renderType), this.alpha);
         }
     }
 
-    private record AlphaVertexConsumer(VertexConsumer delegate, float alpha) implements VertexConsumer {
+    private static final class AlphaVertexConsumer implements VertexConsumer {
+        private VertexConsumer delegate;
+        private float alpha;
+
+        private AlphaVertexConsumer configure(VertexConsumer delegate, float alpha) {
+            this.delegate = delegate;
+            this.alpha = alpha;
+            return this;
+        }
+
         @Override
         public VertexConsumer addVertex(float x, float y, float z) {
             this.delegate.addVertex(x, y, z);
@@ -257,6 +311,55 @@ public final class VillagerStatNameTagOverlay {
                 : String.format(Locale.ROOT, "%.1f", value);
     }
 
-    private record Stat(ResourceLocation icon, String value, int color, boolean visible) {
+    private static final class CachedNameplate {
+        private final AlphaBufferSource alphaBuffers = new AlphaBufferSource();
+        private Font font;
+        private Language language;
+        private Component nameSnapshot;
+        private int healthBits;
+        private int armorValue;
+        private int hungerValue;
+        private FormattedCharSequence name;
+        private FormattedCharSequence health;
+        private FormattedCharSequence armor;
+        private FormattedCharSequence hunger;
+        private int nameWidth;
+        private int healthWidth;
+        private int armorWidth;
+        private int totalStatWidth;
+
+        private void update(Font font, Component name, float health, int armor, int hunger) {
+            int currentHealthBits = Float.floatToIntBits(health);
+            Language currentLanguage = Language.getInstance();
+            if (this.font == font
+                    && this.language == currentLanguage
+                    && this.healthBits == currentHealthBits
+                    && this.armorValue == armor
+                    && this.hungerValue == hunger
+                    && name.equals(this.nameSnapshot)) {
+                return;
+            }
+
+            this.font = font;
+            this.language = currentLanguage;
+            this.nameSnapshot = name.copy();
+            this.healthBits = currentHealthBits;
+            this.armorValue = armor;
+            this.hungerValue = hunger;
+            this.name = this.nameSnapshot.getVisualOrderText();
+            this.health = Component.literal(formatValue(health)).getVisualOrderText();
+            this.armor = Component.literal(Integer.toString(armor)).getVisualOrderText();
+            this.hunger = Component.literal(Integer.toString(hunger)).getVisualOrderText();
+            this.nameWidth = font.width(this.name);
+            this.healthWidth = font.width(this.health);
+            this.armorWidth = font.width(this.armor);
+            int hungerWidth = font.width(this.hunger);
+            this.totalStatWidth = ICON_SIZE * 3
+                    + ICON_TEXT_GAP * 3
+                    + STAT_GAP * 2
+                    + this.healthWidth
+                    + this.armorWidth
+                    + hungerWidth;
+        }
     }
 }
