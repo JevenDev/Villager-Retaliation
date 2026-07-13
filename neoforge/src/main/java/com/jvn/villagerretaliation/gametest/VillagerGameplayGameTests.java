@@ -59,6 +59,7 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -126,6 +127,26 @@ public final class VillagerGameplayGameTests {
                 PartyVillagerContractService.isActivePartyVillager(level, villager),
                 "downed transition should preserve the party contract");
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void downedHitboxMovesAwayFromAdjacentBlocks(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos villagerPos = helper.absolutePos(new BlockPos(2, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.moveTo(villagerPos.getX() + 0.65D, villagerPos.getY(), villagerPos.getZ() + 0.5D);
+        level.setBlock(villagerPos.east(), Blocks.STONE.defaultBlockState(), 3);
+        helper.assertTrue(level.noCollision(villager), "standing villager fixture should not intersect the wall");
+        double standingX = villager.getX();
+
+        VillagerDownedService.enterDowned(
+                level,
+                villager,
+                new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("test")));
+
+        helper.assertTrue(level.noCollision(villager), "expanded downed hitbox should remain outside the wall");
+        helper.assertTrue(villager.getX() < standingX, "downed resize should move the villager away from the wall");
         helper.succeed();
     }
 

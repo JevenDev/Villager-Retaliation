@@ -15,10 +15,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 
 public final class VillagerDownedService {
@@ -123,7 +126,7 @@ public final class VillagerDownedService {
             villager.stopRiding();
         }
         enforceIncapacitatedState(villager);
-        villager.refreshDimensions();
+        refreshDownedDimensionsSafely(villager);
         VillagerConversationService.endForVillager(villager, true);
         clearNearbyTargets(level, villager);
         SceneLifecycleIntegration.onActorDowned(villager);
@@ -174,7 +177,7 @@ public final class VillagerDownedService {
             }
             enforceIncapacitatedState(villager);
             villager.setHealth(Math.max(1.0F, villager.getHealth()));
-            villager.refreshDimensions();
+            refreshDownedDimensionsSafely(villager);
             VillagerSecondWindCompat.notifyStateChanged(villager);
         }
     }
@@ -248,6 +251,48 @@ public final class VillagerDownedService {
         villager.stopUsingItem();
         villager.setCanPickUpLoot(false);
         villager.setNoAi(true);
+    }
+
+    private static void refreshDownedDimensionsSafely(Villager villager) {
+        villager.refreshDimensions();
+        if (moveResizedHitboxOutOfBlocks(villager) || pose(villager) == VillagerDownedPose.SITTING) {
+            return;
+        }
+
+        state(villager).putString(POSE_KEY, VillagerDownedPose.SITTING.id().toString());
+        villager.refreshDimensions();
+        moveResizedHitboxOutOfBlocks(villager);
+    }
+
+    private static boolean moveResizedHitboxOutOfBlocks(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level) || level.noCollision(villager)) {
+            return true;
+        }
+
+        AABB bounds = villager.getBoundingBox();
+        EntityDimensions standingDimensions = villager.getDimensions(villager.getPose());
+        Vec3 center = bounds.getCenter();
+        double horizontalSearch = Math.max(1.0E-6D, bounds.getXsize() - standingDimensions.width() + 1.0E-6D);
+        double verticalSearch = Math.max(1.0E-6D, bounds.getYsize() - standingDimensions.height() + 1.0E-6D);
+        return level.findFreePosition(
+                        villager,
+                        Shapes.create(AABB.ofSize(center, horizontalSearch, verticalSearch, horizontalSearch)),
+                        center,
+                        bounds.getXsize(),
+                        bounds.getYsize(),
+                        bounds.getZsize())
+                .map(freeCenter -> {
+                    AABB freeBounds = bounds.move(
+                            freeCenter.x - center.x,
+                            freeCenter.y - center.y,
+                            freeCenter.z - center.z);
+                    if (!level.noCollision(villager, freeBounds)) {
+                        return false;
+                    }
+                    villager.setPos(freeCenter.x, freeCenter.y - bounds.getYsize() * 0.5D, freeCenter.z);
+                    return true;
+                })
+                .orElse(false);
     }
 
     private static boolean hasNearbyThreat(ServerLevel level, Villager villager) {

@@ -4,11 +4,12 @@ import com.jvn.villagerretaliation.network.VillagerDownedStatePayload;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedPose;
 import java.util.HashMap;
 import java.util.Map;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.EntityHitResult;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.event.entity.EntityEvent;
-import net.minecraft.client.Minecraft;
 
 public final class VillagerDownedClientCache {
     private static final Map<Integer, VillagerDownedPose> DOWNED_POSES = new HashMap<>();
@@ -17,12 +18,19 @@ public final class VillagerDownedClientCache {
     }
 
     public static void accept(VillagerDownedStatePayload payload) {
+        boolean recovered = false;
         if (payload.downed()) {
             DOWNED_POSES.put(payload.entityId(), VillagerDownedPose.fromId(payload.pose()).orElse(VillagerDownedPose.HANDS_AND_KNEES));
         } else {
-            DOWNED_POSES.remove(payload.entityId());
+            recovered = DOWNED_POSES.remove(payload.entityId()) != null;
         }
         Minecraft minecraft = Minecraft.getInstance();
+        if (recovered
+                && minecraft.options.keyUse.isDown()
+                && minecraft.hitResult instanceof EntityHitResult hitResult
+                && hitResult.getEntity().getId() == payload.entityId()) {
+            minecraft.options.keyUse.setDown(false);
+        }
         if (minecraft.level != null) {
             Entity entity = minecraft.level.getEntity(payload.entityId());
             if (entity != null) {
