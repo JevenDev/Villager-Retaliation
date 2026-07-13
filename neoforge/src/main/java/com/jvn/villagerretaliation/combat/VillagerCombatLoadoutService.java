@@ -53,7 +53,7 @@ public final class VillagerCombatLoadoutService {
         }
         boolean hasAmmo = HiredRangedAmmo.hasAmmo(villager);
         Predicate<ItemStack> preferred = preference == PartyWeaponPreference.RANGED
-                ? stack -> canUseSelectedRangedWeapon(stack, hasAmmo)
+                ? stack -> canUseSelectedRangedWeapon(villager, stack, hasAmmo)
                 : VillagerRetaliationVillagerWeapons::isMeleeWeapon;
         if (tryEquip(villager, preferred)) {
             return true;
@@ -62,7 +62,7 @@ public final class VillagerCombatLoadoutService {
         // Retain the preference, but fall back safely when its class or ammunition is absent.
         Predicate<ItemStack> fallback = preference == PartyWeaponPreference.RANGED
                 ? VillagerRetaliationVillagerWeapons::isMeleeWeapon
-                : stack -> canUseSelectedRangedWeapon(stack, hasAmmo);
+                : stack -> canUseSelectedRangedWeapon(villager, stack, hasAmmo);
         return tryEquip(villager, fallback);
     }
 
@@ -90,8 +90,10 @@ public final class VillagerCombatLoadoutService {
                 || VillagerRetaliationVillagerWeapons.isCrossbowWeapon(stack));
     }
 
-    private static boolean canUseSelectedRangedWeapon(ItemStack stack, boolean hasAmmo) {
+    private static boolean canUseSelectedRangedWeapon(Villager villager, ItemStack stack, boolean hasAmmo) {
         return isUsableRanged(stack)
-                && (hasAmmo || stack.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(stack));
+                && (hasAmmo || stack.getItem() instanceof CrossbowItem
+                && (CrossbowItem.isCharged(stack)
+                || VillagerRangedCombatHelper.hasLoadedCrossbowProjectile(villager)));
     }
 }

@@ -1048,13 +1048,13 @@ public final class PartyGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, batch = "crossbow_combat", timeoutTicks = 180)
+    @GameTest(template = EMPTY_TEMPLATE, batch = "crossbow_combat", setupTicks = 20, timeoutTicks = 180)
     public static void rangedPartyVillagerLoadsAndFiresCrossbowLikePillager(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_crossbow_cycle"));
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
-        Zombie target = EntityType.ZOMBIE.create(level);
+        Zombie target = EntityType.HUSK.create(level);
         if (target == null) {
             throw new GameTestAssertException("Could not create crossbow target");
         }
@@ -1090,9 +1090,20 @@ public final class PartyGameTests {
                 "party attack command should establish the crossbow target");
 
         helper.startSequence()
-                .thenWaitUntil(() -> helper.assertTrue(
-                        crossbowShotObserved(level, villager, target),
-                        "ranged party villager has not completed the crossbow load-and-fire cycle"))
+                .thenWaitUntil(() -> {
+                    level.tickNonPassenger(villager);
+                    helper.assertTrue(
+                            jobInventory.getItem(arrowSlot).isEmpty(),
+                            "ranged party villager has not loaded its crossbow: "
+                                    + crossbowCycleState(level, villager, target, jobInventory, arrowSlot));
+                })
+                .thenWaitUntil(() -> {
+                    level.tickNonPassenger(villager);
+                    helper.assertTrue(
+                            crossbowShotObserved(level, villager, target),
+                            "ranged party villager has not completed the crossbow load-and-fire cycle: "
+                                    + crossbowCycleState(level, villager, target, jobInventory, arrowSlot));
+                })
                 .thenExecute(() -> {
                     helper.assertTrue(jobInventory.getItem(arrowSlot).isEmpty(),
                             "loading the crossbow should consume exactly the required arrow");
@@ -1182,11 +1193,41 @@ public final class PartyGameTests {
 
     private static boolean crossbowShotObserved(ServerLevel level, Villager villager, Zombie target) {
         return target.getHealth() < target.getMaxHealth()
-                || !level.getEntitiesOfClass(
-                        AbstractArrow.class,
-                        villager.getBoundingBox().inflate(20.0D),
-                        arrow -> arrow.getOwner() == villager)
-                .isEmpty();
+                || !ownedCrossbowArrows(level, villager).isEmpty();
+    }
+
+    private static String crossbowCycleState(
+            ServerLevel level,
+            Villager villager,
+            Zombie target,
+            HiredJobInventory jobInventory,
+            int arrowSlot) {
+        ItemStack crossbow = findCrossbow(villager, jobInventory);
+        return "target=" + VillagerRetaliationHandler.hasRetaliationTarget(villager, target)
+                + ", mobTarget=" + (villager.getTarget() == target)
+                + ", aggressive=" + villager.isAggressive()
+                + ", noAi=" + villager.isNoAi()
+                + ", sleeping=" + villager.isSleeping()
+                + ", tickCount=" + villager.tickCount
+                + ", targetTickCount=" + target.tickCount
+                + ", using=" + villager.isUsingItem()
+                + ", useTicks=" + villager.getTicksUsingItem()
+                + ", charged=" + CrossbowItem.isCharged(crossbow)
+                + ", crossbowDamage=" + crossbow.getDamageValue()
+                + ", ownedArrows=" + ownedCrossbowArrows(level, villager).size()
+                + ", arrows=" + jobInventory.getItem(arrowSlot).getCount()
+                + ", mainHand=" + villager.getMainHandItem()
+                + ", preference=" + VillagerCombatLoadoutService.preference(villager)
+                + ", lineOfSight=" + villager.hasLineOfSight(target)
+                + ", distanceSqr=" + villager.distanceToSqr(target)
+                + ", villagerPos=" + villager.position();
+    }
+
+    private static List<AbstractArrow> ownedCrossbowArrows(ServerLevel level, Villager villager) {
+        return level.getEntitiesOfClass(
+                AbstractArrow.class,
+                villager.getBoundingBox().inflate(20.0D),
+                arrow -> arrow.getOwner() == villager);
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
