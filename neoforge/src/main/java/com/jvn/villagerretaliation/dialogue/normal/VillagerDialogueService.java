@@ -895,11 +895,7 @@ public final class VillagerDialogueService {
                 "retaliation_target_kind", targetKind,
                 "retaliation_target_type", targetTypeId,
                 "retaliation_witness", villagerName,
-                "retaliation_witness_possessive", toPossessive(villagerName),
-                "target", targetName,
-                "target_name", targetName,
-                "target_kind", targetKind,
-                "target_type", targetTypeId
+                "retaliation_witness_possessive", toPossessive(villagerName)
         );
     }
 
