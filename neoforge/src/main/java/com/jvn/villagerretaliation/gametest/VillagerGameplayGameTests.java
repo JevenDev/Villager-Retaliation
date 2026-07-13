@@ -501,8 +501,6 @@ public final class VillagerGameplayGameTests {
         UUID secondPlayer = UUID.randomUUID();
         ResourceLocation profile = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "profile_test");
         ResourceLocation reputation = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "reputation_test");
-        ServerboundRequestLimiter.clearRuntimeState();
-
         helper.assertTrue(ServerboundRequestLimiter.tryAcquire(firstPlayer, profile, 100L, 5L),
                 "the first request should be accepted");
         helper.assertFalse(ServerboundRequestLimiter.tryAcquire(firstPlayer, profile, 104L, 5L),
@@ -517,7 +515,8 @@ public final class VillagerGameplayGameTests {
         ServerboundRequestLimiter.clear(firstPlayer);
         helper.assertTrue(ServerboundRequestLimiter.tryAcquire(firstPlayer, profile, 104L, 5L),
                 "disconnect cleanup should release the player's request state");
-        ServerboundRequestLimiter.clearRuntimeState();
+        ServerboundRequestLimiter.clear(firstPlayer);
+        ServerboundRequestLimiter.clear(secondPlayer);
         helper.succeed();
     }
 
