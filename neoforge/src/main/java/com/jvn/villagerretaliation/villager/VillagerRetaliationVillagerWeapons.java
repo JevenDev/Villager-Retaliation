@@ -32,8 +32,10 @@ public final class VillagerRetaliationVillagerWeapons {
     public static final double WEAPON_PICKUP_REACH_SQR = 2.25D;
     private static final double WEAPON_SEARCH_RADIUS_SQR = WEAPON_SEARCH_RADIUS * WEAPON_SEARCH_RADIUS;
     private static final long WEAPON_SEARCH_CACHE_TICKS = 10L;
+    private static final long WEAPON_SEARCH_CACHE_PRUNE_INTERVAL_TICKS = 20L;
     private static final int MAX_WEAPON_SEARCH_CACHE_ENTRIES = 2048;
     private static final Map<UUID, CachedWeaponSearch> NEAREST_WEAPON_CACHE = new HashMap<>();
+    private static long nextWeaponCachePruneGameTime;
 
     private VillagerRetaliationVillagerWeapons() {
     }
@@ -84,6 +86,8 @@ public final class VillagerRetaliationVillagerWeapons {
             if (isCachedWeaponStillUsable(villager, cached.itemEntity())) {
                 return Optional.of(cached.itemEntity());
             }
+        } else if (cached != null) {
+            NEAREST_WEAPON_CACHE.remove(villagerId, cached);
         }
 
         ItemEntity bestWeapon = findNearestWeaponUncached(villager);
@@ -194,6 +198,7 @@ public final class VillagerRetaliationVillagerWeapons {
 
     public static void clearCache() {
         NEAREST_WEAPON_CACHE.clear();
+        nextWeaponCachePruneGameTime = 0L;
     }
 
     private static void storeOrDropDisplacedMainHand(AbstractVillager villager, ItemStack stack) {
@@ -309,6 +314,11 @@ public final class VillagerRetaliationVillagerWeapons {
     }
 
     private static void pruneNearestWeaponCache(long gameTime) {
+        if (gameTime < nextWeaponCachePruneGameTime
+                && NEAREST_WEAPON_CACHE.size() <= MAX_WEAPON_SEARCH_CACHE_ENTRIES) {
+            return;
+        }
+        nextWeaponCachePruneGameTime = gameTime + WEAPON_SEARCH_CACHE_PRUNE_INTERVAL_TICKS;
         NEAREST_WEAPON_CACHE.entrySet().removeIf(entry -> !entry.getValue().isValid(gameTime));
         if (NEAREST_WEAPON_CACHE.size() <= MAX_WEAPON_SEARCH_CACHE_ENTRIES) {
             return;
