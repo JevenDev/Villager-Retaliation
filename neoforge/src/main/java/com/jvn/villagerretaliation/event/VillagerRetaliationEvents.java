@@ -401,6 +401,13 @@ public final class VillagerRetaliationEvents {
             return;
         }
 
+        if (event.getTarget() instanceof Villager
+                && !VillagerInteractionService.hasEmptyHandForVillagerInteraction(player)) {
+            event.setCanceled(true);
+            event.setCancellationResult(InteractionResult.FAIL);
+            return;
+        }
+
         if (event.getTarget() instanceof Villager villager
                 && VillagerDownedService.isDowned(villager)) {
             if (player instanceof ServerPlayer serverPlayer) {
@@ -566,6 +573,13 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+        if (event.getTarget() instanceof Villager
+                && event.getEntity() instanceof Player player
+                && !VillagerInteractionService.hasEmptyHandForVillagerInteraction(player)) {
+            event.setCancellationResult(InteractionResult.FAIL);
+            event.setCanceled(true);
+            return;
+        }
         if (event.getTarget() instanceof Villager villager
                 && event.getEntity() instanceof ServerPlayer serverPlayer
                 && VillagerInteractionService.shouldHandleSleepingInteraction(villager, serverPlayer, event.getHand())) {

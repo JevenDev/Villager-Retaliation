@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -108,7 +109,6 @@ final class VillagerRangedCombatHelper {
                 villager.stopUsingItem();
             }
         }
-        clearChargedCrossbows(villager);
     }
 
     static void clearRuntimeState() {
@@ -289,7 +289,9 @@ final class VillagerRangedCombatHelper {
             double movementSpeed
     ) {
         UUID villagerId = villager.getUUID();
-        CrossbowState state = CROSSBOW_STATE.getOrDefault(villager.getUUID(), CrossbowState.UNCHARGED);
+        CrossbowState state = CROSSBOW_STATE.getOrDefault(
+                villagerId,
+                CrossbowItem.isCharged(rangedWeapon) ? CrossbowState.CHARGED : CrossbowState.UNCHARGED);
         boolean shouldPathToTarget = (!isWithinCrossbowAttackRange(villager, target, rangedWeapon)
                 || seeTime < CROSSBOW_MINIMUM_SEE_TIME)
                 && ATTACK_DELAY.getOrDefault(villagerId, 0) == 0;
@@ -421,7 +423,7 @@ final class VillagerRangedCombatHelper {
                 (float) (14 - level.getDifficulty().getId() * 4),
                 target
         );
-        villager.setItemInHand(hand, weapon.copy());
+        syncCrossbowStack(villager, hand, weapon);
         return true;
     }
 
@@ -457,7 +459,7 @@ final class VillagerRangedCombatHelper {
         ItemStack weapon = villager.getItemInHand(hand);
         if (weapon.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(weapon)) {
             weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
-            villager.setItemInHand(hand, weapon.copy());
+            syncCrossbowStack(villager, hand, weapon);
         }
     }
 
@@ -470,9 +472,24 @@ final class VillagerRangedCombatHelper {
                 return false;
             }
             weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(List.of(projectile)));
-            villager.setItemInHand(hand, weapon.copy());
+            syncCrossbowStack(villager, hand, weapon);
         }
         return true;
+    }
+
+    private static void syncCrossbowStack(AbstractVillager villager, InteractionHand hand, ItemStack weapon) {
+        ItemStack updated = weapon.copy();
+        villager.setItemInHand(hand, updated);
+        if (!(villager instanceof Villager regular) || !HiredJobInventory.isJobInventoryAvailable(regular)) {
+            return;
+        }
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(regular);
+        int slot = hand == InteractionHand.MAIN_HAND
+                ? HiredJobInventory.MAINHAND_SLOT
+                : HiredJobInventory.OFFHAND_SLOT;
+        if (ItemStack.isSameItem(inventory.getItem(slot), updated)) {
+            inventory.setItem(slot, updated.copy());
+        }
     }
 
     private static ItemStack resolveDefaultCrossbowProjectile(AbstractVillager villager, ItemStack crossbow) {

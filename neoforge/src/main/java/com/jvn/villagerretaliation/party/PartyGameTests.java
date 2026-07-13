@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.allegiance.VillagerAbuseSavedData;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
+import com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
@@ -1022,7 +1023,26 @@ public final class PartyGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 180)
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void villagerInteractionRequiresAtLeastOneEmptyPlayerHand(GameTestHelper helper) {
+        ServerPlayer player = fakePlayer(helper.getLevel(), uniqueName("interaction_empty_hand"));
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.APPLE));
+        player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+        helper.assertFalse(VillagerInteractionService.hasEmptyHandForVillagerInteraction(player),
+                "a main-hand item plus an off-hand shield should block villager interaction");
+
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        helper.assertTrue(VillagerInteractionService.hasEmptyHandForVillagerInteraction(player),
+                "an empty main hand should permit villager interaction");
+
+        player.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.APPLE));
+        player.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND, ItemStack.EMPTY);
+        helper.assertTrue(VillagerInteractionService.hasEmptyHandForVillagerInteraction(player),
+                "an empty off hand should permit villager interaction");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "crossbow_combat", timeoutTicks = 180)
     public static void rangedPartyVillagerLoadsAndFiresCrossbowLikePillager(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_crossbow_cycle"));
@@ -1038,8 +1058,10 @@ public final class PartyGameTests {
         level.addFreshEntity(target);
         long now = level.getGameTime();
         PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartyVillagerRecord record = villagerRecord(villager.getUUID(), leader.getUUID(), 0, now);
+        record.setWeaponPreference(PartyWeaponPreference.RANGED);
         PartySavedData.get(level).addVillager(
-                party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+                party, record);
         HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
         jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
         int crossbowSlot = HiredJobInventory.HOTBAR_START;
@@ -1049,8 +1071,7 @@ public final class PartyGameTests {
         jobInventory.setItem(arrowSlot, new ItemStack(Items.ARROW));
         jobInventory.markPlayerPlacedSupply(arrowSlot);
 
-        PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
-                PartyQuickCommand.RANGE));
+        VillagerCombatLoadoutService.applyPreference(villager, PartyWeaponPreference.RANGED);
         helper.assertTrue(villager.getMainHandItem().getItem() instanceof CrossbowItem,
                 "range mode should equip the available crossbow");
         PartyQuickCommandService.handle(
@@ -1059,21 +1080,19 @@ public final class PartyGameTests {
                         PartyQuickCommand.ATTACK,
                         target.getId(),
                         null));
+        helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(villager, target),
+                "party attack command should establish the crossbow target");
 
         helper.startSequence()
-                .thenWaitUntil(() -> helper.assertFalse(
-                        level.getEntitiesOfClass(
-                                AbstractArrow.class,
-                                villager.getBoundingBox().inflate(20.0D),
-                                arrow -> arrow.getOwner() == villager)
-                                .isEmpty(),
+                .thenWaitUntil(() -> helper.assertTrue(
+                        crossbowShotObserved(level, villager, target),
                         "ranged party villager has not completed the crossbow load-and-fire cycle"))
                 .thenExecute(() -> {
                     helper.assertTrue(jobInventory.getItem(arrowSlot).isEmpty(),
                             "loading the crossbow should consume exactly the required arrow");
                     helper.assertFalse(villager.isUsingItem(),
                             "the crossbow loading animation must end after the shot is prepared");
-                    helper.assertFalse(CrossbowItem.isCharged(villager.getMainHandItem()),
+                    helper.assertFalse(CrossbowItem.isCharged(findCrossbow(villager, jobInventory)),
                             "the crossbow should discharge after firing");
                     VillagerRetaliationHandler.clearCustomTarget(villager);
                     PartyService.deleteParty(level, party.id());
@@ -1082,6 +1101,31 @@ public final class PartyGameTests {
                     villager.discard();
                 })
                 .thenSucceed();
+    }
+
+    private static ItemStack findCrossbow(Villager villager, HiredJobInventory jobInventory) {
+        if (villager.getMainHandItem().getItem() instanceof CrossbowItem) {
+            return villager.getMainHandItem();
+        }
+        if (villager.getOffhandItem().getItem() instanceof CrossbowItem) {
+            return villager.getOffhandItem();
+        }
+        for (int slot = 0; slot < jobInventory.getContainerSize(); slot++) {
+            ItemStack stack = jobInventory.getItem(slot);
+            if (stack.getItem() instanceof CrossbowItem) {
+                return stack;
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
+    private static boolean crossbowShotObserved(ServerLevel level, Villager villager, Zombie target) {
+        return target.getHealth() < target.getMaxHealth()
+                || !level.getEntitiesOfClass(
+                        AbstractArrow.class,
+                        villager.getBoundingBox().inflate(20.0D),
+                        arrow -> arrow.getOwner() == villager)
+                .isEmpty();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

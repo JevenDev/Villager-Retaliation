@@ -138,6 +138,7 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && hasEmptyHandForVillagerInteraction(player)
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
                 && shouldInterceptVanillaInteraction(
                 player,
@@ -148,6 +149,7 @@ public final class VillagerInteractionService {
     public static boolean shouldSuppressClientVanillaInteraction(Villager villager, Player player, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND
                 || !VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                || !hasEmptyHandForVillagerInteraction(player)
                 || shouldBypassInteractionScreen(player.getItemInHand(hand))
                 || villager.isTrading()
                 || !villager.isAlive()
@@ -167,6 +169,7 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleSleepingInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && hasEmptyHandForVillagerInteraction(player)
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
                 && villager.isSleeping()
                 && shouldStayConversable(player, villager);
@@ -175,6 +178,7 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleClipboardInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && hasEmptyHandForVillagerInteraction(player)
                 && VillagerRetaliationItems.isClipboard(player.getItemInHand(hand))
                 && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
@@ -182,6 +186,7 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleConstructionBlueprintInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && hasEmptyHandForVillagerInteraction(player)
                 && ConstructionBlueprintItem.isBlueprint(player.getItemInHand(hand))
                 && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
@@ -189,6 +194,7 @@ public final class VillagerInteractionService {
     public static boolean shouldHandleItemFilterInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && hasEmptyHandForVillagerInteraction(player)
                 && VillagerRetaliationItems.isItemFilter(player.getItemInHand(hand))
                 && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
@@ -2689,6 +2695,11 @@ public final class VillagerInteractionService {
                 villager.getUUID()));
     }
 
+    public static boolean hasEmptyHandForVillagerInteraction(Player player) {
+        return player != null
+                && (player.getMainHandItem().isEmpty() || player.getOffhandItem().isEmpty());
+    }
+
     private static boolean shouldInterceptVanillaInteraction(
             ServerPlayer player,
             Villager villager,
@@ -3049,6 +3060,7 @@ public final class VillagerInteractionService {
     public static InteractionResult handleSleepingVillagerBedInteraction(ServerLevel level, ServerPlayer player, BlockPos pos, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND
                 || !VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                || !hasEmptyHandForVillagerInteraction(player)
                 || player.getItemInHand(hand).is(Items.VILLAGER_SPAWN_EGG)
                 || !level.getBlockState(pos).is(BlockTags.BEDS)) {
             return InteractionResult.PASS;
