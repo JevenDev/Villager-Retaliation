@@ -120,6 +120,10 @@ public final class VillagerRetaliationHandler {
         clearAnger(villager, false);
     }
 
+    public static void suppressCombatForPartyOrder(Villager villager) {
+        clearAnger(villager, false, false);
+    }
+
     public static void onEntityAttributeModification(EntityAttributeModificationEvent event) {
         if (!event.has(EntityType.VILLAGER, Attributes.ATTACK_DAMAGE)) {
             event.add(EntityType.VILLAGER, Attributes.ATTACK_DAMAGE, VillagerCombatRoles.PLAYER_FIST_DAMAGE);
@@ -335,6 +339,12 @@ public final class VillagerRetaliationHandler {
         }
 
         if (VillagerDisciplineService.tickVillager(villager)) {
+            return;
+        }
+
+        if (com.jvn.villagerretaliation.party.PartyQuickCommandService.overridesCombatTargeting(villager)) {
+            suppressCombatForPartyOrder(villager);
+            handlePassivePotionState(villager);
             return;
         }
 

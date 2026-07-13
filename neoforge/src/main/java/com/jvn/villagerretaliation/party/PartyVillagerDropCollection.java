@@ -54,18 +54,27 @@ public final class PartyVillagerDropCollection {
 
     public static boolean capturePickup(ServerLevel level, Villager villager, ItemEntity itemEntity) {
         PartyDropCollectionMode mode = mode(level, villager);
-        ItemStack groundStack = itemEntity.getItem();
         if (mode == PartyDropCollectionMode.OFF
                 || mode == PartyDropCollectionMode.SLAIN_ENTITIES
                 && !itemEntity.getPersistentData().getBoolean(SLAIN_ENTITY_DROP_TAG)) {
             return false;
         }
 
+        collectAny(villager, itemEntity);
+        return true;
+    }
+
+    public static int collectAny(Villager villager, ItemEntity itemEntity) {
+        if (villager == null || itemEntity == null || !itemEntity.isAlive() || itemEntity.hasPickUpDelay()) {
+            return 0;
+        }
+
+        ItemStack groundStack = itemEntity.getItem();
         ItemStack collected = groundStack.copy();
         ItemStack remainder = HiredJobInventory.getJobInventory(villager).insertPlainOutput(collected);
         int moved = groundStack.getCount() - remainder.getCount();
         if (moved <= 0) {
-            return true;
+            return 0;
         }
 
         villager.onItemPickup(itemEntity);
@@ -77,7 +86,7 @@ public final class PartyVillagerDropCollection {
             itemEntity.setItem(remainder);
             onItemEntityLoaded(itemEntity);
         }
-        return true;
+        return moved;
     }
 
     private static PartyDropCollectionMode mode(ServerLevel level, Villager villager) {

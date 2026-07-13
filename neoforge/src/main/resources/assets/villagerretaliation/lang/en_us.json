@@ -1581,6 +1581,8 @@
   "villagerretaliation.party.quick_command.range": "Range",
   "villagerretaliation.party.quick_command.melee": "Melee",
   "villagerretaliation.party.quick_command.heal": "Heal",
+  "villagerretaliation.party.quick_command.pick_up_drops": "Pick Up Drops",
+  "villagerretaliation.party.quick_command.loot_containers": "Loot Containers",
   "villagerretaliation.party.quick_command.lower_shields": "Lower Shields",
   "villagerretaliation.party.quick_command.sent": "%1$s: %2$s villager(s)",
   "villagerretaliation.party.quick_command.none_enabled": "No villagers are enabled for quick commands.",

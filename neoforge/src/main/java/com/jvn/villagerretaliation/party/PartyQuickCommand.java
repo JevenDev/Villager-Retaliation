@@ -8,5 +8,7 @@ public enum PartyQuickCommand {
     STAND_GUARD,
     RANGE,
     MELEE,
-    HEAL
+    HEAL,
+    PICK_UP_DROPS,
+    LOOT_CONTAINERS
 }

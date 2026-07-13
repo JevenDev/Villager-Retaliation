@@ -30,7 +30,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
-import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class PartyQuickCommandWheel {
@@ -43,6 +44,8 @@ public final class PartyQuickCommandWheel {
     private static final float SLOT_BACKGROUND_ALPHA = 186.0F / 255.0F;
     private static final ResourceLocation SLOT_TEXTURE =
             VillagerRetaliation.id("textures/gui/quick_command/inventory_slot.png");
+    private static final ResourceLocation GUI_LAYER =
+            VillagerRetaliation.id("party_quick_command_wheel");
     private static final double INNER_DEADZONE = 20.0D;
     private static final double FULL_CIRCLE = Math.PI * 2.0D;
     private static final double BLOCK_TARGET_RANGE = 48.0D;
@@ -57,7 +60,9 @@ public final class PartyQuickCommandWheel {
             entry(PartyQuickCommand.STAND_GUARD, Items.SHIELD),
             entry(PartyQuickCommand.RANGE, Items.CROSSBOW),
             entry(PartyQuickCommand.MELEE, Items.IRON_AXE),
-            entry(PartyQuickCommand.HEAL, Items.GOLDEN_APPLE)
+            entry(PartyQuickCommand.HEAL, Items.GOLDEN_APPLE),
+            entry(PartyQuickCommand.PICK_UP_DROPS, Items.HOPPER),
+            entry(PartyQuickCommand.LOOT_CONTAINERS, Items.CHEST)
     );
 
     private static boolean open;
@@ -106,10 +111,12 @@ public final class PartyQuickCommandWheel {
         }
     }
 
-    public static void onRenderGui(RenderGuiEvent.Post event) {
-        if (open) {
-            render(event.getGuiGraphics());
-        }
+    public static void registerGuiLayer(RegisterGuiLayersEvent event) {
+        event.registerBelow(VanillaGuiLayers.CHAT, GUI_LAYER, (graphics, partialTick) -> {
+            if (open) {
+                render(graphics);
+            }
+        });
     }
 
     private static boolean canUse(Minecraft minecraft) {

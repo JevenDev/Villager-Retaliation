@@ -4,9 +4,12 @@ import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
 import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
+import com.jvn.villagerretaliation.interaction.work.HiredPathResult;
 import com.jvn.villagerretaliation.interaction.work.HiredRouteNavigator;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
+import com.jvn.villagerretaliation.inventory.PartyContainerLootService;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.HashMap;
@@ -24,8 +27,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.AABB;
 
 public final class PartyQuickCommandService {
     private static final double MAX_TARGET_DISTANCE = 64.0D;
@@ -34,7 +39,13 @@ public final class PartyQuickCommandService {
     private static final double REGROUP_ARRIVAL_DISTANCE_SQR = 2.5D * 2.5D;
     private static final double MOVE_SPEED = 0.72D;
     private static final double REGROUP_SPEED = 0.9D;
+    private static final double GATHER_SPEED = 0.78D;
+    private static final double ITEM_PICKUP_DISTANCE_SQR = 1.5D * 1.5D;
+    private static final double DROP_SEARCH_HORIZONTAL_RADIUS = 32.0D;
+    private static final double DROP_SEARCH_VERTICAL_RADIUS = 12.0D;
     private static final long PATH_REFRESH_TICKS = 8L;
+    private static final int MAX_BACKGROUND_PATH_FAILURES = 12;
+    private static final int MAX_PICKUP_WAIT_TICKS = 100;
 
     private static final Map<UUID, RuntimeOrder> RUNTIME_ORDERS = new HashMap<>();
     private static final Map<UUID, UUID> MANUAL_ATTACK_TARGETS = new HashMap<>();
@@ -71,6 +82,8 @@ public final class PartyQuickCommandService {
             case RANGE -> setWeaponPreference(player, participants, PartyWeaponPreference.RANGED);
             case MELEE -> setWeaponPreference(player, participants, PartyWeaponPreference.MELEE);
             case HEAL -> heal(player, participants);
+            case PICK_UP_DROPS -> pickUpDrops(player, participants);
+            case LOOT_CONTAINERS -> lootContainers(player, participants, payload.targetPosition());
         };
         if (affected <= 0) {
             notice(player, targetRequired(payload.command())
@@ -134,10 +147,20 @@ public final class PartyQuickCommandService {
                 && VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)) {
             return;
         }
+        if (order != null
+                && order.type().background()
+                && com.jvn.villagerretaliation.villager.VillagerRecoveryService.isForcingRecovery(villager)) {
+            return;
+        }
+        if (order != null && order.type().background()) {
+            VillagerRetaliationHandler.suppressCombatForPartyOrder(villager);
+        }
         if (order != null) {
             switch (order.type()) {
                 case MOVE_TO -> tickMoveTo(level, villager, order, party);
                 case REGROUP -> tickRegroup(level, villager, order, party);
+                case PICK_UP_DROPS -> tickPickUpDrops(level, villager, order, party);
+                case LOOT_CONTAINERS -> tickLootContainers(level, villager, order, party);
             }
         }
         if (standingGuard && STAND_GUARD_VILLAGERS.contains(villager.getUUID())) {
@@ -165,8 +188,18 @@ public final class PartyQuickCommandService {
                 .map(party -> party.villager(villager.getUUID()))
                 .map(record -> record.quickCommandsEnabled() && record.regrouping())
                 .orElse(false);
-        return (order != null && order.type() == RuntimeOrderType.REGROUP || persistedRegroup)
+        return (order != null
+                && (order.type() == RuntimeOrderType.REGROUP || order.type().background())
+                || persistedRegroup)
                 || com.jvn.villagerretaliation.villager.VillagerRecoveryService.isForcingRecovery(villager);
+    }
+
+    public static boolean overridesCombatTargeting(Villager villager) {
+        if (villager == null) {
+            return false;
+        }
+        RuntimeOrder order = RUNTIME_ORDERS.get(villager.getUUID());
+        return order != null && order.type().background();
     }
 
     public static void maintainManualAttackAuthorization(Villager villager) {
@@ -299,6 +332,58 @@ public final class PartyQuickCommandService {
             RUNTIME_ORDERS.put(villager.getUUID(), RuntimeOrder.moveTo(
                     target,
                     player.serverLevel().dimension().location()));
+            affected++;
+        }
+        return affected;
+    }
+
+    private static int pickUpDrops(ServerPlayer player, List<PartyVillagerRecord> records) {
+        int affected = 0;
+        BlockPos center = player.blockPosition().immutable();
+        for (PartyVillagerRecord record : records) {
+            record.setRegrouping(false);
+            Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
+            if (villager == null) {
+                continue;
+            }
+            clearMovementOrder(villager);
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            RUNTIME_ORDERS.put(villager.getUUID(), RuntimeOrder.pickUpDrops(
+                    center,
+                    player.serverLevel().dimension().location()));
+            affected++;
+        }
+        return affected;
+    }
+
+    private static int lootContainers(
+            ServerPlayer player,
+            List<PartyVillagerRecord> records,
+            BlockPos requestedTarget) {
+        BlockPos center = validatedSearchCenter(player, requestedTarget);
+        if (center == null) {
+            return 0;
+        }
+        List<BlockPos> containers = PartyContainerLootService.findContainersNear(player.serverLevel(), center);
+        if (containers.isEmpty()) {
+            return 0;
+        }
+        int affected = 0;
+        for (PartyVillagerRecord record : records) {
+            record.setRegrouping(false);
+            Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
+            if (villager == null) {
+                continue;
+            }
+            clearMovementOrder(villager);
+            MANUAL_ATTACK_TARGETS.remove(villager.getUUID());
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            RUNTIME_ORDERS.put(villager.getUUID(), RuntimeOrder.lootContainers(
+                    center,
+                    player.getUUID(),
+                    player.serverLevel().dimension().location(),
+                    containers));
             affected++;
         }
         return affected;
@@ -503,6 +588,157 @@ public final class PartyQuickCommandService {
         }
     }
 
+    private static void tickPickUpDrops(
+            ServerLevel level,
+            Villager villager,
+            RuntimeOrder order,
+            PartyRecord party) {
+        ItemEntity item = order.activeEntityTarget() == null
+                ? null
+                : level.getEntity(order.activeEntityTarget()) instanceof ItemEntity found ? found : null;
+        if (!isGatherableDrop(item, order)) {
+            order.clearActiveTarget();
+            item = nearestUnclaimedDrop(level, villager, order);
+            if (item == null) {
+                clearMovementOrderAndSync(villager, party);
+                return;
+            }
+            order.setActiveEntityTarget(item.getUUID());
+        }
+
+        if (villager.distanceToSqr(item) <= ITEM_PICKUP_DISTANCE_SQR) {
+            if (item.hasPickUpDelay()) {
+                if (order.incrementTargetWaitTicks() > MAX_PICKUP_WAIT_TICKS) {
+                    order.skipEntity(item.getUUID());
+                    order.clearActiveTarget();
+                }
+                return;
+            }
+            int countBefore = item.getItem().getCount();
+            int moved = PartyVillagerDropCollection.collectAny(villager, item);
+            order.clearActiveTarget();
+            if (moved <= 0 || moved < countBefore && item.isAlive()) {
+                clearMovementOrderAndSync(villager, party);
+            }
+            return;
+        }
+
+        boolean attemptedPathRefresh = level.getGameTime() >= order.nextPathRefreshGameTime();
+        HiredRouteNavigator.NodeMovement movement = moveAlongSharedRoute(
+                level,
+                villager,
+                order,
+                item.blockPosition(),
+                GATHER_SPEED,
+                ITEM_PICKUP_DISTANCE_SQR);
+        if (attemptedPathRefresh
+                && movement == HiredRouteNavigator.NodeMovement.FAILED
+                && order.incrementPathFailures() >= MAX_BACKGROUND_PATH_FAILURES) {
+            order.skipEntity(item.getUUID());
+            order.clearActiveTarget();
+        }
+    }
+
+    private static ItemEntity nearestUnclaimedDrop(ServerLevel level, Villager villager, RuntimeOrder order) {
+        BlockPos center = order.targetPosition();
+        if (center == null) {
+            return null;
+        }
+        AABB search = new AABB(center).inflate(
+                DROP_SEARCH_HORIZONTAL_RADIUS,
+                DROP_SEARCH_VERTICAL_RADIUS,
+                DROP_SEARCH_HORIZONTAL_RADIUS);
+        ItemEntity nearest = null;
+        double nearestDistance = Double.MAX_VALUE;
+        for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, search, candidate ->
+                isGatherableDrop(candidate, order) && !isDropClaimedByOther(villager.getUUID(), candidate.getUUID()))) {
+            double distance = villager.distanceToSqr(item);
+            if (distance < nearestDistance) {
+                nearest = item;
+                nearestDistance = distance;
+            }
+        }
+        return nearest;
+    }
+
+    private static boolean isGatherableDrop(ItemEntity item, RuntimeOrder order) {
+        return item != null
+                && item.isAlive()
+                && !item.getItem().isEmpty()
+                && !order.skippedEntities().contains(item.getUUID());
+    }
+
+    private static boolean isDropClaimedByOther(UUID villagerId, UUID itemId) {
+        for (Map.Entry<UUID, RuntimeOrder> entry : RUNTIME_ORDERS.entrySet()) {
+            if (!entry.getKey().equals(villagerId)
+                    && itemId.equals(entry.getValue().activeEntityTarget())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void tickLootContainers(
+            ServerLevel level,
+            Villager villager,
+            RuntimeOrder order,
+            PartyRecord party) {
+        if (order.activeBlockTarget() == null) {
+            List<BlockPos> available = order.containerTargets().stream()
+                    .filter(pos -> !order.visitedBlocks().contains(pos))
+                    .filter(pos -> !isContainerClaimedByOther(villager.getUUID(), pos))
+                    .filter(pos -> PartyContainerLootService.isAvailable(level, pos))
+                    .toList();
+            HiredPathResult result = new HiredMoveToBlockFaceJob(level, villager, available, 16).search();
+            if (result.target() == null) {
+                clearMovementOrderAndSync(villager, party);
+                return;
+            }
+            order.setActiveBlockTarget(result.target().blockPos(), result.target().approachPos());
+        }
+
+        BlockPos containerPos = order.activeBlockTarget();
+        ServerPlayer commander = order.commanderId() == null
+                ? null
+                : level.getServer().getPlayerList().getPlayer(order.commanderId());
+        PartyContainerLootService.LootResult lootResult =
+                PartyContainerLootService.loot(level, villager, containerPos, commander);
+        if (lootResult != PartyContainerLootService.LootResult.OUT_OF_REACH) {
+            order.visitBlock(containerPos);
+            order.clearActiveTarget();
+            if (lootResult == PartyContainerLootService.LootResult.FULL) {
+                clearMovementOrderAndSync(villager, party);
+            }
+            return;
+        }
+
+        BlockPos approach = order.approachPosition();
+        boolean attemptedPathRefresh = level.getGameTime() >= order.nextPathRefreshGameTime();
+        HiredRouteNavigator.NodeMovement movement = moveAlongSharedRoute(
+                level,
+                villager,
+                order,
+                approach,
+                GATHER_SPEED,
+                ARRIVAL_DISTANCE_SQR);
+        if (attemptedPathRefresh
+                && movement == HiredRouteNavigator.NodeMovement.FAILED
+                && order.incrementPathFailures() >= MAX_BACKGROUND_PATH_FAILURES) {
+            order.visitBlock(containerPos);
+            order.clearActiveTarget();
+        }
+    }
+
+    private static boolean isContainerClaimedByOther(UUID villagerId, BlockPos containerPos) {
+        for (Map.Entry<UUID, RuntimeOrder> entry : RUNTIME_ORDERS.entrySet()) {
+            if (!entry.getKey().equals(villagerId)
+                    && containerPos.equals(entry.getValue().activeBlockTarget())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static void releaseRegroupSuppressionIfArrived(
             ServerLevel level,
             Villager villager,
@@ -581,6 +817,11 @@ public final class PartyQuickCommandService {
     }
 
     private static BlockPos validatedTarget(ServerPlayer player, BlockPos requested) {
+        BlockPos center = validatedSearchCenter(player, requested);
+        return center == null ? null : findStandablePosition(player.serverLevel(), center);
+    }
+
+    private static BlockPos validatedSearchCenter(ServerPlayer player, BlockPos requested) {
         if (requested == null || !player.serverLevel().isInWorldBounds(requested)
                 || player.distanceToSqr(
                         requested.getX() + 0.5D,
@@ -589,7 +830,7 @@ public final class PartyQuickCommandService {
                 || !player.serverLevel().isLoaded(requested)) {
             return null;
         }
-        return findStandablePosition(player.serverLevel(), requested);
+        return requested.immutable();
     }
 
     private static BlockPos findStandablePosition(ServerLevel level, BlockPos requested) {
@@ -636,7 +877,8 @@ public final class PartyQuickCommandService {
 
     private static boolean targetRequired(PartyQuickCommand command) {
         return command == PartyQuickCommand.ATTACK
-                || command == PartyQuickCommand.MOVE_TO;
+                || command == PartyQuickCommand.MOVE_TO
+                || command == PartyQuickCommand.LOOT_CONTAINERS;
     }
 
     private static String translationKey(PartyQuickCommand command) {
@@ -651,7 +893,13 @@ public final class PartyQuickCommandService {
 
     private enum RuntimeOrderType {
         MOVE_TO,
-        REGROUP
+        REGROUP,
+        PICK_UP_DROPS,
+        LOOT_CONTAINERS;
+
+        boolean background() {
+            return this == PICK_UP_DROPS || this == LOOT_CONTAINERS;
+        }
     }
 
     private static final class RuntimeOrder {
@@ -659,25 +907,52 @@ public final class PartyQuickCommandService {
         private final BlockPos targetPosition;
         private final UUID commanderId;
         private final ResourceLocation targetDimension;
+        private final List<BlockPos> containerTargets;
+        private final Set<BlockPos> visitedBlocks = new HashSet<>();
+        private final Set<UUID> skippedEntities = new HashSet<>();
+        private UUID activeEntityTarget;
+        private BlockPos activeBlockTarget;
+        private BlockPos approachPosition;
         private long nextPathRefreshGameTime;
+        private int pathFailures;
+        private int targetWaitTicks;
 
         private RuntimeOrder(
                 RuntimeOrderType type,
                 BlockPos targetPosition,
                 UUID commanderId,
-                ResourceLocation targetDimension) {
+                ResourceLocation targetDimension,
+                List<BlockPos> containerTargets) {
             this.type = type;
             this.targetPosition = targetPosition;
             this.commanderId = commanderId;
             this.targetDimension = targetDimension;
+            this.containerTargets = containerTargets == null ? List.of() : List.copyOf(containerTargets);
         }
 
         static RuntimeOrder moveTo(BlockPos target, ResourceLocation dimension) {
-            return new RuntimeOrder(RuntimeOrderType.MOVE_TO, target.immutable(), null, dimension);
+            return new RuntimeOrder(RuntimeOrderType.MOVE_TO, target.immutable(), null, dimension, List.of());
         }
 
         static RuntimeOrder regroup(UUID commanderId) {
-            return new RuntimeOrder(RuntimeOrderType.REGROUP, null, commanderId, null);
+            return new RuntimeOrder(RuntimeOrderType.REGROUP, null, commanderId, null, List.of());
+        }
+
+        static RuntimeOrder pickUpDrops(BlockPos center, ResourceLocation dimension) {
+            return new RuntimeOrder(RuntimeOrderType.PICK_UP_DROPS, center.immutable(), null, dimension, List.of());
+        }
+
+        static RuntimeOrder lootContainers(
+                BlockPos center,
+                UUID commanderId,
+                ResourceLocation dimension,
+                List<BlockPos> containers) {
+            return new RuntimeOrder(
+                    RuntimeOrderType.LOOT_CONTAINERS,
+                    center.immutable(),
+                    commanderId,
+                    dimension,
+                    containers);
         }
 
         RuntimeOrderType type() {
@@ -702,6 +977,74 @@ public final class PartyQuickCommandService {
 
         void setNextPathRefreshGameTime(long nextPathRefreshGameTime) {
             this.nextPathRefreshGameTime = nextPathRefreshGameTime;
+        }
+
+        List<BlockPos> containerTargets() {
+            return this.containerTargets;
+        }
+
+        Set<BlockPos> visitedBlocks() {
+            return this.visitedBlocks;
+        }
+
+        Set<UUID> skippedEntities() {
+            return this.skippedEntities;
+        }
+
+        UUID activeEntityTarget() {
+            return this.activeEntityTarget;
+        }
+
+        void setActiveEntityTarget(UUID target) {
+            this.activeEntityTarget = target;
+            resetTargetProgress();
+        }
+
+        BlockPos activeBlockTarget() {
+            return this.activeBlockTarget;
+        }
+
+        BlockPos approachPosition() {
+            return this.approachPosition;
+        }
+
+        void setActiveBlockTarget(BlockPos target, BlockPos approach) {
+            this.activeBlockTarget = target == null ? null : target.immutable();
+            this.approachPosition = approach == null ? null : approach.immutable();
+            resetTargetProgress();
+        }
+
+        int incrementPathFailures() {
+            return ++this.pathFailures;
+        }
+
+        int incrementTargetWaitTicks() {
+            return ++this.targetWaitTicks;
+        }
+
+        void skipEntity(UUID entityId) {
+            if (entityId != null) {
+                this.skippedEntities.add(entityId);
+            }
+        }
+
+        void visitBlock(BlockPos pos) {
+            if (pos != null) {
+                this.visitedBlocks.add(pos.immutable());
+            }
+        }
+
+        void clearActiveTarget() {
+            this.activeEntityTarget = null;
+            this.activeBlockTarget = null;
+            this.approachPosition = null;
+            resetTargetProgress();
+        }
+
+        private void resetTargetProgress() {
+            this.pathFailures = 0;
+            this.targetWaitTicks = 0;
+            this.nextPathRefreshGameTime = 0L;
         }
     }
 }

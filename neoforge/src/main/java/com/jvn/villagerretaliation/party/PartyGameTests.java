@@ -56,6 +56,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -1220,6 +1221,127 @@ public final class PartyGameTests {
         PartyService.deleteParty(level, party.id());
         PartyQuickCommandService.clearRuntimeState();
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyGatherDropsCollectsItemsAndMoveToOverridesIt(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_gather_drops"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party,
+                villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+
+        ItemEntity drop = new ItemEntity(
+                level,
+                villager.getX(),
+                villager.getY(),
+                villager.getZ(),
+                new ItemStack(Items.DIAMOND, 3));
+        drop.setNoPickUpDelay();
+        level.addFreshEntity(drop);
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.PICK_UP_DROPS));
+        Zombie gatherTarget = helper.spawn(EntityType.ZOMBIE, new BlockPos(4, 2, 2));
+        VillagerRetaliationHandler.forceAnger(villager, gatherTarget);
+        helper.assertTrue(
+                PartyQuickCommandService.suppressesPartyTargetAcquisition(villager),
+                "the gather-drops order should suppress party target acquisition");
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertFalse(
+                VillagerRetaliationHandler.hasActiveRetaliationTarget(villager),
+                "the gather-drops order should clear an active combat target");
+        helper.assertValueEqual(
+                HiredJobInventory.getJobInventory(villager).countItem(Items.DIAMOND),
+                3,
+                "the gather-drops order should collect every reachable ground stack");
+
+        BlockPos moveTarget = helper.absolutePos(new BlockPos(6, 2, 2));
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.PICK_UP_DROPS));
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.MOVE_TO,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        moveTarget));
+        helper.assertTrue(
+                PartyQuickCommandService.moveTarget(party) != null,
+                "move-to should replace an active gather-drops order");
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.PICK_UP_DROPS));
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.REGROUP));
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertFalse(
+                PartyQuickCommandService.overridesRecruitmentMovement(villager),
+                "regroup should replace a gather-drops order and finish once the villager reaches the leader");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
+        drop.discard();
+        gatherTarget.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyLootContainersEmptiesContainersNearPing(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_loot_containers"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party,
+                villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+        BlockPos chestPos = helper.absolutePos(new BlockPos(3, 2, 2));
+        level.setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
+        if (!(level.getBlockEntity(chestPos) instanceof Container chest)) {
+            throw new GameTestAssertException("Could not create loot-command chest");
+        }
+        chest.setItem(0, new ItemStack(Items.EMERALD, 5));
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.LOOT_CONTAINERS,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        chestPos));
+        Zombie lootTarget = helper.spawn(EntityType.ZOMBIE, new BlockPos(5, 2, 2));
+        VillagerRetaliationHandler.forceAnger(villager, lootTarget);
+        helper.assertTrue(
+                PartyQuickCommandService.suppressesPartyTargetAcquisition(villager),
+                "the loot-container order should suppress party target acquisition");
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertFalse(
+                VillagerRetaliationHandler.hasActiveRetaliationTarget(villager),
+                "the loot-container order should clear an active combat target");
+        helper.assertTrue(chest.isEmpty(),
+                "the loot-container order should remove items from a reachable container near the ping");
+        helper.assertValueEqual(
+                HiredJobInventory.getJobInventory(villager).countItem(Items.EMERALD),
+                5,
+                "looted container items should enter the villager's party/job inventory");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
+        lootTarget.discard();
         helper.succeed();
     }
 

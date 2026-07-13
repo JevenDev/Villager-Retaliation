@@ -1,5 +1,7 @@
 # Changelog
 
+- Added party quick commands that send participating villagers to gather nearby ground drops or loot containers around the ping location; Move To and Regroup supersede either gathering order.
+- Made active drop-gathering and container-looting orders override villager combat targeting, and placed the command wheel directly below the vanilla chat layer so translucent chat no longer masks it out.
 - Fixed shared-story dialogue resolving the location placeholder `{target}` as a recent retaliation target, such as calling a Pillager a place instead of naming the Pillager Outpost.
 - Tightened village footprints so POI padding stays horizontal and tagged paths extend bounds only when their actual blocks connect, eliminating empty sky/depth sections and unrelated section-level path bridges.
 - Made generated village names additive and data-driven through `data/villagerretaliation/village_names/`, and expanded the built-in prefix/suffix pool from 1,944 to 7,998 possible combinations.
