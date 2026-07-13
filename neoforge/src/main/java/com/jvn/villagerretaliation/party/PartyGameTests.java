@@ -300,6 +300,22 @@ public final class PartyGameTests {
                     PartyQuickCommand.STAND_GUARD));
             helper.assertTrue(PartyQuickCommandService.isStandGuardActive(party),
                     "stand guard quick command activates the runtime guard state");
+            helper.assertFalse(PartyQuickCommandService.overridesRecruitmentMovement(villager),
+                    "stand guard remains a stance and does not override follow movement");
+            PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                    PartyQuickCommand.STAY_HERE,
+                    com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                    villager.blockPosition()));
+            helper.assertValueEqual(record.commandMode(), PartyCommandMode.STAY,
+                    "stay-here quick command changes the underlying guard position behavior");
+            helper.assertTrue(PartyQuickCommandService.isStandGuardActive(party),
+                    "stay-here quick command retains stand guard stance");
+            PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                    PartyQuickCommand.FOLLOW_ME));
+            helper.assertValueEqual(record.commandMode(), PartyCommandMode.FOLLOW,
+                    "follow quick command restores movement while guarding");
+            helper.assertTrue(PartyQuickCommandService.isStandGuardActive(party),
+                    "follow quick command retains stand guard stance");
             PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
                     PartyQuickCommand.STAND_GUARD));
             helper.assertFalse(PartyQuickCommandService.isStandGuardActive(party),
