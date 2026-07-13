@@ -42,7 +42,11 @@ public final class VillagerTaskNavigationUtil {
     private static final double DOOR_REACH_DISTANCE_SQR = DOOR_REACH_DISTANCE * DOOR_REACH_DISTANCE;
     private static final double LADDER_CENTERING_DISTANCE_SQR = 0.36D;
     private static final double LADDER_ENTRY_DISTANCE_SQR = 2.25D;
-    private static final double LADDER_FORCED_ENTRY_HORIZONTAL_SQR = 0.64D;
+    // A villager approaching a ladder from the adjacent block can stop with its
+    // bounding box against the rung at just over 0.8 blocks from its center.
+    // Keep this large enough to bridge that final collision gap without pulling
+    // villagers from beyond the adjacent block.
+    private static final double LADDER_FORCED_ENTRY_HORIZONTAL_SQR = 1.0D;
     private static final int LADDER_VERTICAL_TARGET_DEADZONE = 1;
     private static final double LADDER_HORIZONTAL_SPEED_LIMIT = 0.15D;
     private static final double LADDER_CLIMB_SPEED = 0.20D;
