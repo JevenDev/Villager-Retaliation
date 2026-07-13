@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.allegiance.AllegianceState;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceEntityData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
@@ -268,13 +269,17 @@ public final class VillagerInteractionScreenOpener {
         Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> current = currentId.flatMap(registry::canonicalRecord);
         String homeName = data == null || data.state() == AllegianceState.UNKNOWN
                 ? "Unknown"
-                : home.map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName).orElse("Wanderer");
+                : data.isKnown() && home.isEmpty()
+                        ? "Orphaned village identity"
+                        : home.map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName).orElse("Wanderer");
         String currentName = current.map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
                 .orElse("Outside a tracked village");
         String location = home.map(record -> record.originDimension() + "  "
                         + record.center().getX() + ", " + record.center().getY() + ", " + record.center().getZ())
                 .orElse("No village home");
-        String lifecycle = home.map(record -> title(record.lifecycleState().name())).orElse("Unaffiliated");
+        String lifecycle = data != null && data.isKnown() && home.isEmpty()
+                ? "Orphaned — repair required"
+                : home.map(record -> title(record.lifecycleState().name())).orElse("Unaffiliated");
         String source = data == null ? "Unknown" : title(data.assignmentSource().name());
         String loyalty;
         if (data == null || data.state() == AllegianceState.UNKNOWN) {
@@ -297,7 +302,29 @@ public final class VillagerInteractionScreenOpener {
             loyalty += "\nReassignment: "
                     + com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService.describe(eligibility);
         }
-        return new VillageAllegianceView(homeName, currentName, location, lifecycle, source, loyalty, canReassign);
+        String history = VillageAllegianceEntityData.readHistory(villager).stream()
+                .skip(Math.max(0, VillageAllegianceEntityData.readHistory(villager).size() - 3))
+                .map(entry -> title(entry.source().name()) + ": "
+                        + historyVillageName(registry, entry.previousVillage(), entry.previousState())
+                        + " -> " + historyVillageName(registry, entry.newVillage(), entry.newState()))
+                .collect(java.util.stream.Collectors.joining("\n"));
+        if (history.isBlank()) {
+            history = "No recorded changes";
+        }
+        return new VillageAllegianceView(
+                homeName, currentName, location, lifecycle, source, history, loyalty, canReassign);
+    }
+
+    private static String historyVillageName(
+            VillageAllegianceRegistrySavedData registry,
+            VillageAllegianceId id,
+            AllegianceState state) {
+        if (id != null) {
+            return registry.canonicalRecord(id)
+                    .map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
+                    .orElse("Missing village");
+        }
+        return state == null ? "Unassigned" : title(state.name());
     }
 
     private static String title(String value) {

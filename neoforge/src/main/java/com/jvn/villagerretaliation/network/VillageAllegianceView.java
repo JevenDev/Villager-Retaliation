@@ -8,11 +8,12 @@ public record VillageAllegianceView(
         String location,
         String lifecycle,
         String assignmentSource,
+        String history,
         String loyalty,
         boolean canReassign) {
     private static final int TEXT_LIMIT = 256;
     public static final VillageAllegianceView EMPTY = new VillageAllegianceView(
-            "Unknown", "Outside a tracked village", "Unknown", "Unknown", "Unknown", "Unknown", false);
+            "Unknown", "Outside a tracked village", "Unknown", "Unknown", "Unknown", "No recorded changes", "Unknown", false);
 
     public static void encode(RegistryFriendlyByteBuf buffer, VillageAllegianceView view) {
         VillageAllegianceView safe = view == null ? EMPTY : view;
@@ -21,12 +22,14 @@ public record VillageAllegianceView(
         buffer.writeUtf(safe.location(), TEXT_LIMIT);
         buffer.writeUtf(safe.lifecycle(), TEXT_LIMIT);
         buffer.writeUtf(safe.assignmentSource(), TEXT_LIMIT);
+        buffer.writeUtf(safe.history(), TEXT_LIMIT);
         buffer.writeUtf(safe.loyalty(), TEXT_LIMIT);
         buffer.writeBoolean(safe.canReassign());
     }
 
     public static VillageAllegianceView decode(RegistryFriendlyByteBuf buffer) {
         return new VillageAllegianceView(
+                buffer.readUtf(TEXT_LIMIT),
                 buffer.readUtf(TEXT_LIMIT),
                 buffer.readUtf(TEXT_LIMIT),
                 buffer.readUtf(TEXT_LIMIT),

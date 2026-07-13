@@ -67,6 +67,8 @@ public final class VillageAllegianceGameTests {
         helper.assertValueEqual(restoredData.primary(), primary, "known primary id");
         helper.assertValueEqual(restoredData.protectedParents(), List.of(firstParent, secondParent),
                 "bounded deduplicated parent protections");
+        helper.assertValueEqual(VillageAllegianceEntityData.readHistory(restored).size(), 1,
+                "initial assignment creates one durable history entry");
 
         VillageAllegianceEntityData.write(source, VillageAllegianceData.unknown(
                 AllegianceAssignmentSource.MIGRATION, AllegianceConfidence.LEGACY_INFERRED,
@@ -92,6 +94,15 @@ public final class VillageAllegianceGameTests {
                 VillageAllegianceEntityData.read(roundTrip(level, source)).orElseThrow().state(),
                 AllegianceState.UNAFFILIATED,
                 "unaffiliated state round-trip");
+        UUID responsiblePlayer = UUID.randomUUID();
+        VillageAllegianceEntityData.annotateLatestHistoryActor(source, responsiblePlayer);
+        var latestHistory = VillageAllegianceEntityData.readHistory(roundTrip(level, source)).getLast();
+        helper.assertValueEqual(latestHistory.previousState(), AllegianceState.UNKNOWN,
+                "history records the previous allegiance state");
+        helper.assertValueEqual(latestHistory.newState(), AllegianceState.UNAFFILIATED,
+                "history records the new allegiance state");
+        helper.assertValueEqual(latestHistory.responsiblePlayer(), responsiblePlayer,
+                "trusted reassignment actors can be audited");
 
         CompoundTag malformed = new CompoundTag();
         malformed.putInt("DataVersion", VillageAllegianceData.CURRENT_VERSION + 1);
@@ -454,6 +465,14 @@ public final class VillageAllegianceGameTests {
                 "two trusted residents satisfy the rounded-up half gate");
         helper.assertTrue(VillageNamingService.evaluateTrustGate(0, 0, true).allowed(),
                 "operators bypass an empty roster gate");
+        VillageAllegianceRegistrySavedData rosterRegistry = new VillageAllegianceRegistrySavedData();
+        VillageAllegianceId rosterVillage = rosterRegistry.create(
+                0L, helper.getLevel().dimension().location(), BlockPos.ZERO, "Fresh Roster");
+        rosterRegistry.addOrUpdateResident(rosterVillage, UUID.randomUUID(), true, 0L);
+        helper.assertValueEqual(
+                rosterRegistry.record(rosterVillage).orElseThrow()
+                        .activeAdultResidents(VillageAllegianceRegistrySavedData.RESIDENT_ACTIVE_GRACE_TICKS + 1L).size(),
+                0, "stale roster entries do not count toward village trust gates");
 
         List<Long> oversized = new ArrayList<>();
         for (int index = 0; index < 600; index++) {
@@ -503,7 +522,7 @@ public final class VillageAllegianceGameTests {
         BlockPos disconnectedPath = new BlockPos(
                 SectionPos.sectionToBlockCoord(base.x() + 3), basePos.getY(), basePos.getZ());
         BlockPos diagonalPath = new BlockPos(
-                SectionPos.sectionToBlockCoord(base.x() + 1), basePos.getY(),
+                SectionPos.sectionToBlockCoord(base.x() - 1), basePos.getY(),
                 SectionPos.sectionToBlockCoord(base.z() + 1));
         level.setBlock(connectedPath, Blocks.DIRT_PATH.defaultBlockState(), 3);
         level.setBlock(disconnectedPath, Blocks.DIRT_PATH.defaultBlockState(), 3);

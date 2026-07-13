@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.npc.Villager;
 
 public final class VillageAllegianceRelations {
     private VillageAllegianceRelations() {
@@ -29,7 +30,11 @@ public final class VillageAllegianceRelations {
         if (data.isKnown()) {
             registry.canonical(data.primary()).ifPresent(ids::add);
         }
-        data.protectedParents().forEach(parent -> registry.canonical(parent).ifPresent(ids::add));
+        if (entity instanceof Villager villager && villager.isBaby()
+                && data.assignmentSource() == AllegianceAssignmentSource.BIRTH
+                && data.confidence() == AllegianceConfidence.INHERITED) {
+            data.protectedParents().forEach(parent -> registry.canonical(parent).ifPresent(ids::add));
+        }
         return Set.copyOf(ids);
     }
 }

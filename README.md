@@ -92,7 +92,7 @@ Hostile villagers and wandering traders can also block trading. If you have not 
 
 Villages now have durable identities, generated names, resident rosters, and footprints made from POIs, complete village structure pieces, and connected village terrain such as paths. Villagers born or spawned inside a tracked footprint keep that village as their permanent home; villagers created outside one are Wanderers and remain neutral to every village. Recruited Wanderers and foreign residents can fight for their party, while residents never attack their own canonical village—even after village merges.
 
-The interaction screen's Allegiance page shows a villager's home, current village, assignment history, lifecycle, and loyalty. At Revered or Royalty standing, a player can ask a villager to adopt the active village they are currently standing in. Trusted players can also use a banner on a village bell to name the village; the banner is not consumed.
+The interaction screen's Allegiance page shows a villager's home, current village, recent assignment history, lifecycle, loyalty, and reassignment readiness. Changing homes requires Revered or Royalty standing with the villager, a claimed bed or workstation in the destination, one resident day, acceptance from at least half of the village's active adults, and a second confirmation. Trusted players can also use a banner on a village bell to name the village; the banner is not consumed.
 
 ### Dialogue and Interaction
 

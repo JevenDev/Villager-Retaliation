@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceEntityData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
@@ -2317,6 +2318,7 @@ public final class VillagerInteractionService {
             return;
         }
         VillageAllegianceReassignmentService.complete(villager);
+        VillageAllegianceEntityData.annotateLatestHistoryActor(villager, player.getUUID());
         String villageName = registry.canonicalRecord(current.get())
                 .map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
                 .orElse("this village");

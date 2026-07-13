@@ -1,5 +1,6 @@
 # Changelog
 
+- Improved village allegiance assignment with durable uncertainty retries, evidence scoring, parent-aware inheritance, protected mixed parentage, shrinkable current footprints, conservative automatic merges, merge recovery, residency-based reassignment, confirmation prompts, bounded assignment history, stale-roster filtering, and explain/repair diagnostics.
 - Added global and per-villager party combat modes for kill on sight, attack with party, or self defense, plus target modes for animals, hostiles, players, other parties, or all targets. New parties and recruits default to attack with party.
 - Added a server-authoritative downed state for protected villagers. Active party members, quest-v2 providers, protected scene actors, and villagers tagged `villagerretaliation_essential` survive ordinary lethal damage, suspend AI and interactions, and recover after a configurable quiet period.
 - Added quest-v2 provider `death_protection` policies (`none`, `while_active`, and `after_start`) plus scene-v1 actor `lethal_damage_policy` values (`normal` and `downed`), including generated schemas, durable state, client synchronization, and an incapacitated whole-body pose.

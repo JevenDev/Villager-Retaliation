@@ -154,8 +154,28 @@ public final class VillageAllegianceService {
                 .distinct()
                 .sorted()
                 .toList();
+        if (parents.size() == 1) {
+            assignKnown(level, child, parents.getFirst(), AllegianceAssignmentSource.BIRTH,
+                    child.blockPosition(), AllegianceConfidence.INHERITED, parents);
+            return;
+        }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         Optional<VillageAllegianceId> discovered = registry.discoverAt(level, child.blockPosition());
+        if (parents.size() > 1) {
+            Optional<VillageAllegianceId> matchingParent = discovered
+                    .flatMap(registry::canonical)
+                    .filter(parents::contains);
+            if (matchingParent.isPresent()) {
+                assignKnown(level, child, matchingParent.get(), AllegianceAssignmentSource.BIRTH,
+                        child.blockPosition(), AllegianceConfidence.INHERITED, parents);
+            } else {
+                assignUnknown(level, child, AllegianceAssignmentSource.BIRTH,
+                        AllegianceConfidence.INHERITED, parents);
+                schedulePending(level, child, child.blockPosition(), AllegianceAssignmentSource.BIRTH, 0,
+                        level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS);
+            }
+            return;
+        }
         VillageAssignmentResolution resolution = VillageAssignmentResolver.resolve(
                 level, child, child.blockPosition(), discovered, parents);
         if (resolution.status() == VillageAssignmentResolution.Status.RESOLVED) {
@@ -222,7 +242,8 @@ public final class VillageAllegianceService {
     }
 
     public static boolean retryMigration(ServerLevel level, Entity entity) {
-        VillageAllegianceEntityData.clear(entity);
+        VillageAllegianceEntityData.clearForRepair(entity);
+        assignUnknown(level, entity, AllegianceAssignmentSource.ADMIN);
         if (tryResolve(level, entity, AllegianceAssignmentSource.ADMIN, false, entity.blockPosition())) {
             return true;
         }
@@ -273,6 +294,9 @@ public final class VillageAllegianceService {
                 && source == AllegianceAssignmentSource.BIRTH && !protectedParents.isEmpty()) {
             protectedParents = List.of();
             assignUnknown(level, entity, source, AllegianceConfidence.INHERITED, protectedParents);
+        }
+        if (source == AllegianceAssignmentSource.BIRTH && protectedParents.size() > 1) {
+            discovered = discovered.flatMap(registry::canonical).filter(protectedParents::contains);
         }
         VillageAssignmentResolution resolution = VillageAssignmentResolver.resolve(
                 level, entity, evidencePosition, discovered, protectedParents);
@@ -356,7 +380,8 @@ public final class VillageAllegianceService {
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         Optional<VillageAllegianceId> canonical = registry.canonical(data.primary());
         if (canonical.isEmpty()) {
-            assignUnaffiliated(level, entity, AllegianceAssignmentSource.MIGRATION);
+            // Keep the raw identity intact for diagnostics and explicit repair. Combat resolves it conservatively.
+            registry.removeResidentEverywhere(entity.getUUID());
             return;
         }
         if (!canonical.get().equals(data.primary()) || data.dataVersion() < VillageAllegianceData.CURRENT_VERSION) {

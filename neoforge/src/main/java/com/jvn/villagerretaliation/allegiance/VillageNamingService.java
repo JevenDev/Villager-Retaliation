@@ -97,13 +97,11 @@ public final class VillageNamingService {
             ServerLevel level,
             ServerPlayer player,
         VillageAllegianceRegistrySavedData.AllegianceRecord village) {
-        int adults = village.adultResidentCount();
+        var activeAdults = village.activeAdultResidents(level.getGameTime());
+        int adults = activeAdults.size();
         int trusted = 0;
         VillagerReputationSavedData reputation = VillagerReputationSavedData.get(level);
-        for (VillageAllegianceRegistrySavedData.ResidentRecord resident : village.residents().values()) {
-            if (!resident.adult()) {
-                continue;
-            }
+        for (VillageAllegianceRegistrySavedData.ResidentRecord resident : activeAdults) {
             VillagerReputationSavedData.ReputationEntry entry = reputation.get(resident.id(), player.getUUID());
             if (entry != null && VillagerReputationLevel.fromReputation(entry.reputation()).trustRank()
                     >= VillagerReputationLevel.REVERED.trustRank()) {

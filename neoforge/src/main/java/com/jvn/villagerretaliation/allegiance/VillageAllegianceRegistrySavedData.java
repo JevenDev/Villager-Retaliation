@@ -37,6 +37,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     private static final long AUTO_MERGE_OBSERVATION_SPACING_TICKS = 100L;
     private static final int AUTO_MERGE_REQUIRED_OBSERVATIONS = 3;
     public static final long ARCHIVE_GRACE_TICKS = 72_000L;
+    public static final long RESIDENT_ACTIVE_GRACE_TICKS = 72_000L;
 
     private final Map<VillageAllegianceId, AllegianceRecord> records = new LinkedHashMap<>();
     private final Map<VillageAllegianceId, VillageAllegianceId> aliases = new LinkedHashMap<>();
@@ -826,6 +827,14 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
 
         public int adultResidentCount() {
             return (int) this.residents.values().stream().filter(ResidentRecord::adult).count();
+        }
+
+        public List<ResidentRecord> activeAdultResidents(long gameTime) {
+            return this.residents.values().stream()
+                    .filter(ResidentRecord::adult)
+                    .filter(resident -> gameTime < resident.lastSeenGameTime()
+                            || gameTime - resident.lastSeenGameTime() <= RESIDENT_ACTIVE_GRACE_TICKS)
+                    .toList();
         }
 
         private AllegianceRecord observe(Set<Long> sources, Set<Long> footprint, BlockPos center, long gameTime) {

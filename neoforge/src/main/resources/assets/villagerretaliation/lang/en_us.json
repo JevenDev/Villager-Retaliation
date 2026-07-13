@@ -537,7 +537,7 @@
   "villagerretaliation.gui.interaction_button.stay_here.locked_description": "Requires trusted reputation.",
   "villagerretaliation.gui.interaction_button.move_freely.description": "Let them move around again.",
   "villagerretaliation.gui.root.goodbye": "Goodbye",
-  "villagerretaliation.gui.allegiance.details": "Home village: %s\nCurrent village: %s\nHome location: %s\nLifecycle: %s\nAssigned by: %s\nLoyalty: %s",
+  "villagerretaliation.gui.allegiance.details": "Home village: %s\nCurrent village: %s\nHome location: %s\nLifecycle: %s\nAssigned by: %s\nHistory: %s\nLoyalty: %s",
   "villagerretaliation.gui.allegiance.reassign": "Make This Village Your Home",
   "villagerretaliation.gui.allegiance.reassign_locked": "Reassignment Requires Trust, Residency, and Village Acceptance",
   "villagerretaliation.gui.village_naming.title": "Name This Village",

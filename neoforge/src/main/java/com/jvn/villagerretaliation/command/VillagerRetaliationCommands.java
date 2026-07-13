@@ -12,6 +12,8 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceEntityData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
+import com.jvn.villagerretaliation.allegiance.VillageAssignmentResolution;
+import com.jvn.villagerretaliation.allegiance.VillageAssignmentResolver;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
@@ -252,6 +254,9 @@ public final class VillagerRetaliationCommands {
                 .then(literal("inspect")
                         .then(allegianceEntityArgument()
                                 .executes(VillagerRetaliationCommands::inspectAllegiance)))
+                .then(literal("explain")
+                        .then(allegianceEntityArgument()
+                                .executes(VillagerRetaliationCommands::explainAllegiance)))
                 .then(literal("assign")
                         .then(allegianceEntityArgument()
                                 .then(argument("uuid", StringArgumentType.word())
@@ -273,6 +278,9 @@ public final class VillagerRetaliationCommands {
                         .then(allegianceEntityArgument()
                                 .executes(VillagerRetaliationCommands::forkAllegiance)))
                 .then(literal("migrate")
+                        .then(allegianceEntityArgument()
+                                .executes(VillagerRetaliationCommands::migrateAllegiance)))
+                .then(literal("repair")
                         .then(allegianceEntityArgument()
                                 .executes(VillagerRetaliationCommands::migrateAllegiance)))
                 .then(literal("statistics")
@@ -312,7 +320,37 @@ public final class VillagerRetaliationCommands {
                         + " canonical=" + canonical
                         + " source=" + data.assignmentSource()
                         + " confidence=" + data.confidence()
-                        + " parents=" + data.protectedParents()), false);
+                        + " parents=" + data.protectedParents()
+                        + " history=" + VillageAllegianceEntityData.readHistory(entity)), false);
+        return 1;
+    }
+
+    private static int explainAllegiance(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        Entity entity = allegianceTarget(context);
+        if (entity == null) {
+            return 0;
+        }
+        ServerLevel level = context.getSource().getLevel();
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceData data = VillageAllegianceApi.get(entity).orElse(null);
+        List<VillageAllegianceId> parents = data == null ? List.of() : data.protectedParents();
+        VillageAssignmentResolution resolution = VillageAssignmentResolver.resolve(
+                level, entity, entity.blockPosition(), registry.peekAt(level, entity.blockPosition()), parents);
+        var pending = VillageAllegianceEntityData.readPending(entity).orElse(null);
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Assignment status=" + resolution.status()
+                        + " observationComplete=" + resolution.observationComplete()
+                        + " pending=" + (pending == null ? "no" : "attempt " + pending.attempts()
+                        + " at " + pending.position().toShortString())), false);
+        for (VillageAssignmentResolution.Candidate candidate : resolution.candidates()) {
+            String name = registry.canonicalRecord(candidate.id())
+                    .map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
+                    .orElse("missing village");
+            context.getSource().sendSuccess(() -> Component.literal(
+                    name + " " + candidate.id() + " score=" + candidate.score()
+                            + " evidence=" + candidate.evidence()
+                            + " distance=" + Math.round(Math.sqrt(candidate.distanceSquared()))), false);
+        }
         return 1;
     }
 
@@ -425,7 +463,9 @@ public final class VillagerRetaliationCommands {
                         + " state=" + record.lifecycleState()
                         + " center=" + record.center().toShortString()
                         + " sections=" + record.footprintSections().size()
-                        + " adults=" + record.adultResidentCount()), false);
+                        + " historicalSections=" + record.historicalFootprintSections().size()
+                        + " adults=" + record.adultResidentCount()
+                        + " activeAdults=" + record.activeAdultResidents(level.getGameTime()).size()), false);
         return 1;
     }
 

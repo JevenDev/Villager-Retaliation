@@ -1817,6 +1817,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 this.allegiance.location(),
                 this.allegiance.lifecycle(),
                 this.allegiance.assignmentSource(),
+                this.allegiance.history(),
                 this.allegiance.loyalty()), List.of());
         openPage(DialoguePage.ALLEGIANCE);
     }

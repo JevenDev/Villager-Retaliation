@@ -13,15 +13,19 @@ Mods and modpacks can append structures or terrain blocks with normal `replace: 
 
 ## Allegiance rules
 
-- Villagers and naturally created iron golems spawned or born inside a tracked footprint receive that village permanently.
+- Villagers and naturally created iron golems spawned inside a tracked footprint receive that village permanently.
+- Newborn villagers inherit a shared parent village. Mixed-village parentage uses the physical village when it clearly matches one parent; otherwise both parent communities remain protected while assignment is unresolved.
 - Villagers spawned outside every tracked footprint are Wanderers. They are neutral to all villages and can be recruited against any village.
 - Recruited foreign residents can fight another village without the target belonging to a party.
 - Same-party and same-canonical-village combat is always rejected. A merge therefore invalidates an older combat authorization immediately.
 - Community retaliation begins only after damage lands and spreads only through the harmed resident's canonical village.
 - Conversion preserves current-version allegiance. Legacy v1 or missing data is classified lazily from the entity's position when it loads.
-- A Revered-or-higher player may repeatedly ask a villager to adopt the active village at the villager's current position.
+- An uncertain assignment remains pending across entity saves and retries until the surrounding chunks provide enough evidence to resolve it safely.
+- Reassignment requires Revered individual trust, a claimed bed or workstation in the destination, one resident day, acceptance from at least half of its active adult residents, and a repeated confirmation within 30 seconds.
 
-Connected POI footprints merge automatically. Empty records advance toward archival only while every footprint chunk is loaded and observed. After 72,000 observed ticks with no occupied source POI, the identity archives; rebuilding creates a new identity.
+Connected POI footprints merge automatically only after three spaced observations show the same occupied-POI connection. Terrain-only or diagonal section contact cannot merge identities. Current footprints may shrink as evidence changes while historical coverage remains available for diagnostics. Empty records advance toward archival only while every footprint chunk is loaded and observed. After 72,000 observed ticks with no occupied source POI, the identity archives; rebuilding creates a new identity.
+
+The Allegiance page shows the latest three assignment changes. The entity payload retains the latest eight, including the responsible player for trusted reassignment.
 
 ## Village naming
 
@@ -46,7 +50,10 @@ The preview never force-loads chunks, sends archived footprints, or updates play
 
 ```mcfunction
 /villagerretaliation allegiance inspect <villager>
+/villagerretaliation allegiance explain <villager>
+/villagerretaliation allegiance repair <villager>
 /villagerretaliation allegiance statistics
+/villagerretaliation allegiance undo_merge <source-uuid>
 /villagerretaliation allegiance village inspect_here
 /villagerretaliation allegiance village list
 /villagerretaliation allegiance village rename_here <name>

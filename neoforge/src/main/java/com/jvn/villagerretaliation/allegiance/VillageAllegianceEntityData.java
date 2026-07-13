@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -26,6 +27,14 @@ public final class VillageAllegianceEntityData {
     private static final String ORIGIN_Z = "OriginZ";
     private static final String PROTECTED_PARENTS = "ProtectedParents";
     private static final String ID = "Id";
+    private static final String HISTORY = "History";
+    private static final String PREVIOUS_STATE = "PreviousState";
+    private static final String PREVIOUS_VILLAGE = "PreviousVillage";
+    private static final String NEW_STATE = "NewState";
+    private static final String NEW_VILLAGE = "NewVillage";
+    private static final String GAME_TIME = "GameTime";
+    private static final String RESPONSIBLE_PLAYER = "ResponsiblePlayer";
+    private static final int MAX_HISTORY = 8;
     private static final String PENDING_ASSIGNMENT = "PendingAssignment";
     private static final String PENDING_DIMENSION = "Dimension";
     private static final String PENDING_ATTEMPTS = "Attempts";
@@ -44,6 +53,17 @@ public final class VillageAllegianceEntityData {
     public static void write(Entity entity, VillageAllegianceData data) {
         if (entity == null || data == null) {
             return;
+        }
+        Optional<VillageAllegianceData> previous = read(entity);
+        List<VillageAllegianceHistoryEntry> history = new ArrayList<>(readHistory(entity));
+        if (previous.isEmpty() || allegianceChanged(previous.get(), data)) {
+            history.add(new VillageAllegianceHistoryEntry(
+                    previous.map(VillageAllegianceData::state).orElse(null),
+                    previous.map(VillageAllegianceData::primary).orElse(null),
+                    data.state(), data.primary(), data.assignmentSource(), data.assignedGameTime(), null));
+            if (history.size() > MAX_HISTORY) {
+                history = new ArrayList<>(history.subList(history.size() - MAX_HISTORY, history.size()));
+            }
         }
         CompoundTag tag = new CompoundTag();
         tag.putInt(VERSION, VillageAllegianceData.CURRENT_VERSION);
@@ -67,6 +87,7 @@ public final class VillageAllegianceEntityData {
             parents.add(parentTag);
         }
         tag.put(PROTECTED_PARENTS, parents);
+        tag.put(HISTORY, writeHistory(history));
         entity.getPersistentData().put(ROOT_TAG, tag);
         if (entity instanceof Mob mob) {
             mob.setPersistenceRequired();
@@ -85,11 +106,27 @@ public final class VillageAllegianceEntityData {
                     data.originDimension(), data.originPosition(), data.protectedParents());
         }
         write(outcome, data);
+        CompoundTag outcomeRoot = outcome.getPersistentData().getCompound(ROOT_TAG);
+        outcomeRoot.put(HISTORY, writeHistory(readHistory(source)));
+        outcome.getPersistentData().put(ROOT_TAG, outcomeRoot);
     }
 
     public static void clear(Entity entity) {
         if (entity != null) {
             entity.getPersistentData().remove(ROOT_TAG);
+        }
+    }
+
+    public static void clearForRepair(Entity entity) {
+        if (entity == null) {
+            return;
+        }
+        List<VillageAllegianceHistoryEntry> history = readHistory(entity);
+        entity.getPersistentData().remove(ROOT_TAG);
+        if (!history.isEmpty()) {
+            CompoundTag root = new CompoundTag();
+            root.put(HISTORY, writeHistory(history));
+            entity.getPersistentData().put(ROOT_TAG, root);
         }
     }
 
@@ -142,6 +179,80 @@ public final class VillageAllegianceEntityData {
         CompoundTag root = entity.getPersistentData().getCompound(ROOT_TAG);
         root.remove(PENDING_ASSIGNMENT);
         entity.getPersistentData().put(ROOT_TAG, root);
+    }
+
+    public static List<VillageAllegianceHistoryEntry> readHistory(Entity entity) {
+        if (entity == null || !entity.getPersistentData().contains(ROOT_TAG, Tag.TAG_COMPOUND)) {
+            return List.of();
+        }
+        List<VillageAllegianceHistoryEntry> history = new ArrayList<>();
+        for (Tag raw : entity.getPersistentData().getCompound(ROOT_TAG).getList(HISTORY, Tag.TAG_COMPOUND)) {
+            if (!(raw instanceof CompoundTag tag)) {
+                continue;
+            }
+            AllegianceState newState = enumValue(AllegianceState.class, tag.getString(NEW_STATE));
+            AllegianceAssignmentSource source = enumValue(
+                    AllegianceAssignmentSource.class, tag.getString(SOURCE));
+            if (newState == null || source == null) {
+                continue;
+            }
+            history.add(new VillageAllegianceHistoryEntry(
+                    enumValue(AllegianceState.class, tag.getString(PREVIOUS_STATE)),
+                    tag.hasUUID(PREVIOUS_VILLAGE)
+                            ? new VillageAllegianceId(tag.getUUID(PREVIOUS_VILLAGE)) : null,
+                    newState,
+                    tag.hasUUID(NEW_VILLAGE) ? new VillageAllegianceId(tag.getUUID(NEW_VILLAGE)) : null,
+                    source,
+                    tag.getLong(GAME_TIME),
+                    tag.hasUUID(RESPONSIBLE_PLAYER) ? tag.getUUID(RESPONSIBLE_PLAYER) : null));
+        }
+        return List.copyOf(history);
+    }
+
+    public static void annotateLatestHistoryActor(Entity entity, UUID playerId) {
+        if (entity == null || playerId == null) {
+            return;
+        }
+        List<VillageAllegianceHistoryEntry> history = new ArrayList<>(readHistory(entity));
+        if (history.isEmpty()) {
+            return;
+        }
+        VillageAllegianceHistoryEntry latest = history.getLast();
+        history.set(history.size() - 1, new VillageAllegianceHistoryEntry(
+                latest.previousState(), latest.previousVillage(), latest.newState(), latest.newVillage(),
+                latest.source(), latest.gameTime(), playerId));
+        CompoundTag root = entity.getPersistentData().getCompound(ROOT_TAG);
+        root.put(HISTORY, writeHistory(history));
+        entity.getPersistentData().put(ROOT_TAG, root);
+    }
+
+    private static boolean allegianceChanged(VillageAllegianceData previous, VillageAllegianceData current) {
+        return previous.state() != current.state()
+                || !java.util.Objects.equals(previous.primary(), current.primary());
+    }
+
+    private static ListTag writeHistory(List<VillageAllegianceHistoryEntry> history) {
+        ListTag tags = new ListTag();
+        for (VillageAllegianceHistoryEntry entry : history) {
+            CompoundTag tag = new CompoundTag();
+            if (entry.previousState() != null) {
+                tag.putString(PREVIOUS_STATE, entry.previousState().name());
+            }
+            if (entry.previousVillage() != null) {
+                tag.putUUID(PREVIOUS_VILLAGE, entry.previousVillage().value());
+            }
+            tag.putString(NEW_STATE, entry.newState().name());
+            if (entry.newVillage() != null) {
+                tag.putUUID(NEW_VILLAGE, entry.newVillage().value());
+            }
+            tag.putString(SOURCE, entry.source().name());
+            tag.putLong(GAME_TIME, entry.gameTime());
+            if (entry.responsiblePlayer() != null) {
+                tag.putUUID(RESPONSIBLE_PLAYER, entry.responsiblePlayer());
+            }
+            tags.add(tag);
+        }
+        return tags;
     }
 
     private static VillageAllegianceData readPayload(CompoundTag tag, Entity entity) {
