@@ -1,5 +1,8 @@
 # Changelog
 
+- Added built-in optional Second Wind compatibility for every VR-protected villager. Second Wind can channel an early player revive, while VR remains authoritative and villagers continue to recover automatically instead of bleeding out.
+- Added a persisted fourth downed presentation using Second Wind's crawl posture alongside sitting, side-lying, and hands-and-knees variants.
+
 - Added party quick commands that send participating villagers to gather nearby ground drops or loot containers around the ping location; Move To and Regroup supersede either gathering order.
 - Made active drop-gathering and container-looting orders override villager combat targeting, and placed the command wheel directly below the vanilla chat layer so translucent chat no longer masks it out.
 - Fixed shared-story dialogue resolving the location placeholder `{target}` as a recent retaliation target, such as calling a Pillager a place instead of naming the Pillager Outpost.

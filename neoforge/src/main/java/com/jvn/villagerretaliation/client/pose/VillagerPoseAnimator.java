@@ -8,6 +8,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.item.Items;
+import com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache;
 
 public final class VillagerPoseAnimator {
     private VillagerPoseAnimator() {
@@ -22,11 +23,37 @@ public final class VillagerPoseAnimator {
             ModelPart leftArm,
             ModelPart rightLeg,
             ModelPart leftLeg) {
-        switch (VillagerDownedPose.forVillager(villager.getUUID())) {
+        switch (VillagerDownedClientCache.pose(villager)) {
             case SITTING -> applyDownedSittingPose(body, head, rightArm, leftArm, rightLeg, leftLeg);
             case SIDE_LYING -> applyDownedSideLyingPose(villager, root, body, head, rightArm, leftArm, rightLeg, leftLeg);
             case HANDS_AND_KNEES -> applyDownedHandsAndKneesPose(body, head, rightArm, leftArm, rightLeg, leftLeg);
+            case SECOND_WIND_CRAWL -> applySecondWindCrawlPose(root, body, head, rightArm, leftArm, rightLeg, leftLeg);
         }
+    }
+
+    private static void applySecondWindCrawlPose(
+            ModelPart root, ModelPart body, ModelPart head, ModelPart rightArm, ModelPart leftArm,
+            ModelPart rightLeg, ModelPart leftLeg) {
+        root.y = 18.0F;
+        root.z = 2.0F;
+        body.xRot = ((float) Math.PI / 2.0F) - 0.12F;
+        head.y = 4.0F;
+        head.z = -5.0F;
+        head.xRot = 0.34F;
+        rightArm.y = 5.0F;
+        rightArm.z = -3.5F;
+        rightArm.xRot = -0.45F;
+        rightArm.yRot = -0.12F;
+        leftArm.y = 5.0F;
+        leftArm.z = -3.5F;
+        leftArm.xRot = -0.15F;
+        leftArm.yRot = 0.12F;
+        rightLeg.y = 9.0F;
+        rightLeg.z = 4.5F;
+        rightLeg.xRot = 0.48F;
+        leftLeg.y = 9.0F;
+        leftLeg.z = 4.5F;
+        leftLeg.xRot = 0.18F;
     }
 
     private static void applyDownedSittingPose(

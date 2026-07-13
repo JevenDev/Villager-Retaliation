@@ -8,6 +8,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.model.geom.ModelLayers;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.world.entity.npc.Villager;
+import com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache;
 
 public class VillagerRetaliationVillagerRenderer extends AbstractVillagerRetaliationVillagerRenderer<Villager> {
     public VillagerRetaliationVillagerRenderer(EntityRendererProvider.Context context) {
@@ -33,6 +34,13 @@ public class VillagerRetaliationVillagerRenderer extends AbstractVillagerRetalia
     @Override
     protected float getShadowRadius(Villager villager) {
         float radius = super.getShadowRadius(villager);
+        if (VillagerDownedClientCache.isDowned(villager)) {
+            radius *= switch (VillagerDownedClientCache.pose(villager)) {
+                case SIDE_LYING -> 1.55F;
+                case SECOND_WIND_CRAWL, HANDS_AND_KNEES -> 1.3F;
+                case SITTING -> 1.05F;
+            };
+        }
         return villager.isBaby() ? radius * 0.5F : radius;
     }
 }

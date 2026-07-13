@@ -43,6 +43,12 @@ ordering="NONE"
 side="CLIENT"
 
 [[dependencies."${mod_id}"]]
+modId="secondwind"
+type="optional"
+ordering="AFTER"
+side="BOTH"
+
+[[dependencies."${mod_id}"]]
 modId="minecraft"
 type="required"
 versionRange="${minecraft_version_range}"

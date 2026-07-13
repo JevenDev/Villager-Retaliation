@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "47";
+    private static final String PROTOCOL_VERSION = "48";
 
     private VillagerReputationNetworking() {
     }
@@ -553,13 +553,15 @@ public final class VillagerReputationNetworking {
     }
 
     public static void sendDownedState(ServerPlayer player, net.minecraft.world.entity.npc.Villager villager, boolean downed) {
-        trySendToPlayer(player, new VillagerDownedStatePayload(villager.getId(), downed));
+        trySendToPlayer(player, new VillagerDownedStatePayload(villager.getId(), downed,
+                com.jvn.villagerretaliation.combat.downed.VillagerDownedService.pose(villager).id()));
     }
 
     public static void syncDownedStateToTracking(net.minecraft.world.entity.npc.Villager villager, boolean downed) {
         PacketDistributor.sendToPlayersTrackingEntity(
                 villager,
-                new VillagerDownedStatePayload(villager.getId(), downed));
+                new VillagerDownedStatePayload(villager.getId(), downed,
+                        com.jvn.villagerretaliation.combat.downed.VillagerDownedService.pose(villager).id()));
     }
 
     public static void sendName(ServerPlayer player, Entity villager) {

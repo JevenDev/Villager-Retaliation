@@ -84,6 +84,8 @@ While downed, AI, navigation, attacks, work, follow behavior, pickup, trading, g
 
 Recovery requires the configured minimum duration, no nearby natural hostile or mob directly targeting the villager within `downedThreatRadius`, and `downedQuietTicks` of quiet. Health returns to `downedRecoveryHealthPercent` of maximum (at least one), prior AI/pickup flags are restored, and `DOWNED` scene bindings return to `LIVE` and wake their scenes. If the original protection expires while the villager is downed, recovery still finishes normally.
 
+When Second Wind is installed, every villager protected by this resolver is also exposed through Second Wind's player revive channel. VR still owns the state: there is no bleedout deadline, and a villager that is not manually revived continues through the normal quiet-period recovery above. Compatible clients deterministically select sitting, side-lying, hands-and-knees, or Second Wind's crawl posture for each new downed record. Ordinary unprotected villagers are not opted in.
+
 `/kill` (`minecraft:generic_kill`), out-of-world damage, and damage tagged `minecraft:bypasses_invulnerability` bypass protection. Direct entity discard/removal also remains permanent; void damage is allowed to kill so a protected villager cannot fall forever.
 
 Quest-v2 provider contract:

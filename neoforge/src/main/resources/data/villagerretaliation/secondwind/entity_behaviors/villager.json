@@ -1,0 +1,19 @@
+{
+  "schema": "secondwind:entity_behavior/v1",
+  "target": "minecraft:villager",
+  "priority": 100,
+  "lifecycle": {
+    "type": "external",
+    "adapter": "villagerretaliation:villager"
+  },
+  "presentation": {
+    "show_timer": false,
+    "announce": false,
+    "poses": [
+      "villagerretaliation:sitting",
+      "villagerretaliation:side_lying",
+      "villagerretaliation:hands_and_knees",
+      "secondwind:crawl"
+    ]
+  }
+}

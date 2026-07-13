@@ -193,7 +193,7 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof Villager villager
                 && !villager.level().isClientSide()
                 && VillagerDownedService.isDowned(villager)) {
-            event.setNewSize(VillagerDownedPose.forVillager(villager.getUUID()).dimensions(event.getNewSize()));
+            event.setNewSize(VillagerDownedService.pose(villager).dimensions(event.getNewSize()));
         }
     }
 

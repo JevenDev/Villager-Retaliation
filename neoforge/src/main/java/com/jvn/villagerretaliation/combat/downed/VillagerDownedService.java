@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
+import com.jvn.villagerretaliation.compat.secondwind.VillagerSecondWindCompat;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import java.util.HashMap;
@@ -30,7 +31,8 @@ public final class VillagerDownedService {
     private static final String SOURCES_KEY = "ProtectionSources";
     private static final String PREVIOUS_NO_AI_KEY = "PreviousNoAi";
     private static final String PREVIOUS_PICKUP_KEY = "PreviousCanPickUpLoot";
-    private static final int DATA_VERSION = 1;
+    private static final String POSE_KEY = "Pose";
+    private static final int DATA_VERSION = 2;
     private static final long THREAT_SCAN_INTERVAL_TICKS = 20L;
     private static final Map<UUID, Long> NEXT_THREAT_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Float> PENDING_ABSORPTION_RESTORE = new HashMap<>();
@@ -110,6 +112,10 @@ public final class VillagerDownedService {
         state.putString(SOURCES_KEY, protection.diagnosticValue());
         state.putBoolean(PREVIOUS_NO_AI_KEY, villager.isNoAi());
         state.putBoolean(PREVIOUS_PICKUP_KEY, villager.canPickUpLoot());
+        VillagerDownedPose pose = VillagerSecondWindCompat.resolvePose(villager)
+                .flatMap(VillagerDownedPose::fromId)
+                .orElseGet(() -> VillagerDownedPose.forVillager(villager.getUUID()));
+        state.putString(POSE_KEY, pose.id().toString());
         villager.getPersistentData().put(STATE_KEY, state);
         NEXT_THREAT_SCAN_TICKS.remove(villager.getUUID());
         villager.setHealth(Math.max(1.0F, villager.getHealth()));
@@ -122,6 +128,7 @@ public final class VillagerDownedService {
         clearNearbyTargets(level, villager);
         SceneLifecycleIntegration.onActorDowned(villager);
         VillagerReputationNetworking.syncDownedStateToTracking(villager, true);
+        VillagerSecondWindCompat.notifyStateChanged(villager);
         return true;
     }
 
@@ -160,9 +167,15 @@ public final class VillagerDownedService {
 
     public static void onVillagerLoaded(Villager villager) {
         if (isDowned(villager)) {
+            CompoundTag state = state(villager);
+            if (!state.contains(POSE_KEY)) {
+                state.putString(POSE_KEY, VillagerDownedPose.forVillager(villager.getUUID()).id().toString());
+                state.putInt(VERSION_KEY, DATA_VERSION);
+            }
             enforceIncapacitatedState(villager);
             villager.setHealth(Math.max(1.0F, villager.getHealth()));
             villager.refreshDimensions();
+            VillagerSecondWindCompat.notifyStateChanged(villager);
         }
     }
 
@@ -188,6 +201,20 @@ public final class VillagerDownedService {
                 || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
     }
 
+    public static VillagerDownedPose pose(Villager villager) {
+        if (isDowned(villager)) {
+            String value = state(villager).getString(POSE_KEY);
+            if (!value.isBlank()) {
+                try {
+                    return VillagerDownedPose.fromId(net.minecraft.resources.ResourceLocation.parse(value))
+                            .orElseGet(() -> VillagerDownedPose.forVillager(villager.getUUID()));
+                } catch (IllegalArgumentException ignored) {
+                }
+            }
+        }
+        return VillagerDownedPose.forVillager(villager.getUUID());
+    }
+
     public static void recover(Villager villager) {
         if (!isDowned(villager)) {
             return;
@@ -207,6 +234,7 @@ public final class VillagerDownedService {
         villager.setAggressive(false);
         SceneLifecycleIntegration.onActorRecovered(villager);
         VillagerReputationNetworking.syncDownedStateToTracking(villager, false);
+        VillagerSecondWindCompat.notifyStateChanged(villager);
     }
 
     private static CompoundTag state(Villager villager) {

@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlockEntityTypes;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.compat.secondwind.VillagerSecondWindCompat;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.entity.VillagerRetaliationEntityTypes;
 import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
@@ -43,6 +44,7 @@ public class VillagerRetaliation {
 
     public VillagerRetaliation(IEventBus modEventBus, ModContainer modContainer) {
         VillagerRetaliationRegistries.registerBuiltIns();
+        VillagerSecondWindCompat.init();
         VillagerRetaliationConfig.init();
         VillagerRetaliationBlocks.register(modEventBus);
         VillagerRetaliationBlockEntityTypes.register(modEventBus);

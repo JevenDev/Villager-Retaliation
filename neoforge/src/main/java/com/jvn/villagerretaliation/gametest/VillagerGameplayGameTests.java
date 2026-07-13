@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedPose;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -162,6 +163,8 @@ public final class VillagerGameplayGameTests {
                 level,
                 original,
                 new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("test")));
+        original.getPersistentData().getCompound("VillagerRetaliationDownedState")
+                .putString("Pose", "secondwind:crawl");
         CompoundTag saved = new CompoundTag();
         original.saveWithoutId(saved);
 
@@ -173,6 +176,8 @@ public final class VillagerGameplayGameTests {
         VillagerDownedService.onVillagerLoaded(loaded);
         helper.assertTrue(VillagerDownedService.isDowned(loaded), "serialized villager should remain downed");
         helper.assertTrue(loaded.isNoAi(), "loaded downed villager should remain incapacitated");
+        helper.assertValueEqual(VillagerDownedService.pose(loaded), VillagerDownedPose.SECOND_WIND_CRAWL,
+                "serialized villager should preserve its selected downed pose");
         float downedWidth = loaded.getBbWidth();
         float downedHeight = loaded.getBbHeight();
 
