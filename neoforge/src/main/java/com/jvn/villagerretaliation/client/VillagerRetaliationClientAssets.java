@@ -34,6 +34,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/villager_inventory_container_button_right");
     public static final ResourceLocation VILLAGER_INVENTORY_PARTY_ICON_TEXTURE =
             texture("gui/villager_interaction_screen/villager_inventory_container_party_icon");
+    public static final ResourceLocation PLAYER_INVENTORY_PARTY_TAB_TEXTURE =
+            texture("gui/party/player_inventory_container_party_tab");
     public static final ResourceLocation ITEM_FILTER_CONTAINER_TEXTURE =
             texture("gui/item_filter/filter_container");
     public static final ResourceLocation INTERACTION_CONTAINER_TEXTURE =

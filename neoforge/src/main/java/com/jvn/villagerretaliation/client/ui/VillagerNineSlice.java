@@ -18,6 +18,21 @@ public record VillagerNineSlice(
     }
 
     public void render(GuiGraphics graphics, int left, int top, int width, int height, float alpha) {
+        render(graphics, left, top, width, height, alpha, true);
+    }
+
+    public void renderAtTextureScale(GuiGraphics graphics, int left, int top, int width, int height) {
+        render(graphics, left, top, width, height, 1.0F, false);
+    }
+
+    private void render(
+            GuiGraphics graphics,
+            int left,
+            int top,
+            int width,
+            int height,
+            float alpha,
+            boolean adaptiveSlices) {
         if (width <= 0 || height <= 0 || alpha <= 0.0F) {
             return;
         }
@@ -31,10 +46,10 @@ public record VillagerNineSlice(
                     top,
                     width,
                     height,
-                    VillagerAdaptiveGuiScale.unit(this.sliceLeft),
-                    VillagerAdaptiveGuiScale.unit(this.sliceRight),
-                    VillagerAdaptiveGuiScale.unit(this.sliceTop),
-                    VillagerAdaptiveGuiScale.unit(this.sliceBottom)
+                    adaptiveSlices ? VillagerAdaptiveGuiScale.unit(this.sliceLeft) : this.sliceLeft,
+                    adaptiveSlices ? VillagerAdaptiveGuiScale.unit(this.sliceRight) : this.sliceRight,
+                    adaptiveSlices ? VillagerAdaptiveGuiScale.unit(this.sliceTop) : this.sliceTop,
+                    adaptiveSlices ? VillagerAdaptiveGuiScale.unit(this.sliceBottom) : this.sliceBottom
             );
         } finally {
             graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);

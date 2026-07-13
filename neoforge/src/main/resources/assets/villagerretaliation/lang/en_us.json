@@ -1553,6 +1553,7 @@
   "villagerretaliation.party.action.disband": "Disband Party",
   "villagerretaliation.party.action.disband_confirm": "Disband",
   "villagerretaliation.party.action.manage": "Manage",
+  "villagerretaliation.party.action.manage.tooltip": "Open party management.",
   "villagerretaliation.party.disband.confirmation.title": "Disband this party?",
   "villagerretaliation.party.disband.confirmation.players": "All players will be removed and shared quests detached.",
   "villagerretaliation.party.disband.confirmation.villagers": "All recruited villagers will be dismissed.",

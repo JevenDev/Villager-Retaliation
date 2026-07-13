@@ -28,6 +28,7 @@
   ],
   "client": [
     "client.ChatComponentMixin",
+    "client.InventoryScreenMixin",
     "client.MerchantScreenMixin",
     "client.MerchantContainerMixin",
     "client.MerchantResultSlotMixin",
