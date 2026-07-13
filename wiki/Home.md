@@ -31,6 +31,7 @@ Every page includes at least one copyable example. Start small, test one system 
 | Builder structures | Structure templates hired builders can offer and build costs | `data/<namespace>/builder_structures/` | [Builder Structures](Builder-Structures.md) |
 | Story discovery | Structures and biomes used by `share_story` dialogue | `data/<namespace>/story_structures/` and `story_biomes/` | [Story Discovery](Story-Discovery.md) |
 | Villager names | Add to or replace the preset name pool | `data/villagerretaliation/villager_names/` | [Villager Names](Villager-Names.md) |
+| Village names | Add to or replace the generated village prefix and suffix pools | `data/villagerretaliation/village_names/` | [Village Names](Village-Names.md) |
 | GUI localization | Buttons, profile text, relationship rows, profession labels | `assets/villagerretaliation/lang/<locale>.json` | [Localization](Localization.md) |
 | Combat textures and models | Villager and trader combat visuals | `assets/...` | [Resource Pack Models](Resource-Pack-Models.md) |
 

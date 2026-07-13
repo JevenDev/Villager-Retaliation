@@ -18,6 +18,7 @@ Use a datapack for behavior and authored text:
       pacification/
       profession_loot/
       villager_names/
+      village_names/
     my_pack/
       builder_structures/
       dialogue/en_us/
@@ -55,6 +56,7 @@ These systems are intentionally fixed to the mod namespace:
 | Pacification | `villagerretaliation` |
 | Profession loot rules | `villagerretaliation` |
 | Villager names | `villagerretaliation` |
+| Village names | `villagerretaliation` |
 
 These systems can live in your own namespace:
 
@@ -94,7 +96,7 @@ Minecraft resolves exact resource paths first. Villager Retaliation then merges 
 | Dialogue trees | Yes | `replace: true` | `remove: true` with `id` |
 | Quests | Yes | `replace: true` | `remove: true` with `id` |
 | Forced dialogue | Yes | `replace: true` | `remove: true` with `id` |
-| Notifications, gifts, pacification, names | Loader-specific merge rules | Same-path replacement | Usually replace by file or entry `id` |
+| Notifications, gifts, pacification, villager names, village names | Loader-specific merge rules | Same-path replacement | Usually replace by file or entry `id` |
 
 Use your own file names when you want additive content:
 
@@ -103,6 +105,7 @@ data/my_pack/dialogue/en_us/my_pack/lines/rumors.json
 data/villagerretaliation/notifications/en_us/my_pack/world_text.json
 data/villagerretaliation/gifts/my_pack_preferences.json
 data/villagerretaliation/currency/default.json
+data/villagerretaliation/village_names/my_village_names.json
 ```
 
 Use a small control file when you want a complete overhaul:

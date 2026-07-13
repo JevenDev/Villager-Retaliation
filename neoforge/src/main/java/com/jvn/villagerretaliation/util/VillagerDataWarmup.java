@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.util;
 
+import com.jvn.villagerretaliation.allegiance.VillageNameResources;
 import com.jvn.villagerretaliation.combat.VillagerPacifyPaymentResources;
 import com.jvn.villagerretaliation.dialogue.resources.BiomeStoryResources;
 import com.jvn.villagerretaliation.dialogue.resources.DangerousStructureStoryResources;
@@ -56,6 +57,7 @@ public final class VillagerDataWarmup {
         EncounterResources.warm(server);
         VillagerEventTriggerService.warm(server);
         VillagerPresetNameRegistry.warm(server);
+        VillageNameResources.warm(server);
         VillagerInteractionSavedData.get(server.overworld());
         VillagerReputationSavedData.get(server.overworld());
         VillagerSocialGraphSavedData.get(server.overworld());
@@ -68,6 +70,7 @@ public final class VillagerDataWarmup {
 
     public static void clearCaches() {
         clearResourceCaches();
+        VillageNameResources.reset();
         VillageEventMemory.clear();
         VillagerEventTriggerService.clearRuntimeState();
         SceneRuntime.clearRuntimeState();
@@ -95,6 +98,7 @@ public final class VillagerDataWarmup {
         EncounterResources.clearCache();
         VillagerEventTriggerService.clearCache();
         VillagerPresetNameRegistry.clearCache();
+        VillageNameResources.clearCache();
         VillageMembership.clearCache();
         VillagerRetaliationVillagerWeapons.clearCache();
     }
