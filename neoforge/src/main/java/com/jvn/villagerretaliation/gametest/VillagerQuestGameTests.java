@@ -9,8 +9,10 @@ import com.jvn.villagerretaliation.action.ActionResult;
 import com.jvn.villagerretaliation.action.ActionStatus;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
 import com.jvn.villagerretaliation.action.VillagerActionRegistry;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
@@ -205,6 +207,25 @@ public final class VillagerQuestGameTests {
             helper.assertFalse(quest.objectives().isEmpty(), quest.id() + " has no objectives");
         }
 
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void questAvailabilityScansDoNotDiscoverVillages(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        int allegiancesBefore = registry.activeRecords(level.dimension().location()).size();
+
+        DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+        VillagerQuestService.embeddedDialogueOptions(context, DialogueDisposition.NEUTRAL);
+
+        helper.assertValueEqual(
+                registry.activeRecords(level.dimension().location()).size(),
+                allegiancesBefore,
+                "quest availability scans must not discover village footprints");
+        villager.discard();
         helper.succeed();
     }
 

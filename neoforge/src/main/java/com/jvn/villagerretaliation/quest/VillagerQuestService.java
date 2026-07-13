@@ -5481,7 +5481,7 @@ public final class VillagerQuestService {
         NearbyAvailableQuestCache cached = NEARBY_AVAILABLE_QUEST_CACHES.get(playerId);
         if (cached != null
                 && cached.dimension().equals(level.dimension())
-                && cached.playerPos().equals(player.blockPosition())
+                && cached.playerChunk() == player.chunkPosition().toLong()
                 && gameTime >= cached.gameTime()
                 && gameTime - cached.gameTime() < NEARBY_AVAILABLE_QUEST_CACHE_TICKS) {
             return cached.entries();
@@ -5489,7 +5489,7 @@ public final class VillagerQuestService {
         List<QuestTrackerSyncPayload.Entry> entries = buildNearbyAvailableQuestEntries(level, player, data);
         NEARBY_AVAILABLE_QUEST_CACHES.put(playerId, new NearbyAvailableQuestCache(
                 level.dimension(),
-                player.blockPosition(),
+                player.chunkPosition().toLong(),
                 gameTime,
                 entries));
         return entries;
@@ -7728,11 +7728,10 @@ public final class VillagerQuestService {
 
     private record NearbyAvailableQuestCache(
             ResourceKey<Level> dimension,
-            BlockPos playerPos,
+            long playerChunk,
             long gameTime,
             List<QuestTrackerSyncPayload.Entry> entries) {
         private NearbyAvailableQuestCache {
-            playerPos = playerPos == null ? BlockPos.ZERO : playerPos.immutable();
             entries = entries == null ? List.of() : List.copyOf(entries);
         }
     }

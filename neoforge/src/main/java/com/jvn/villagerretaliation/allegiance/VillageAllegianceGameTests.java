@@ -21,6 +21,8 @@ import com.jvn.villagerretaliation.allegiance.VillageFootprintResolver;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.network.VillageBoundsSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerRetaliationTags;
+import com.jvn.villagerretaliation.village.VillageMembership;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +41,7 @@ import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -495,6 +498,27 @@ public final class VillageAllegianceGameTests {
                 true, helper.getLevel().dimension().location(), entries, 120);
         helper.assertValueEqual(payload.villages().size(), VillageBoundsSyncPayload.MAX_VILLAGES,
                 "preview stream clamps village count before encoding");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villageScopeLookupsDoNotDiscoverAllegiances(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos center = helper.absolutePos(new BlockPos(2, 2, 2)).offset(1_000_000, 0, 1_000_000);
+        VillageMembership.VillageArea area = new VillageMembership.VillageArea(
+                level, Vec3.atCenterOf(center), 32.0D, List.of(), false);
+        VillageAllegianceRegistrySavedData allegianceRegistry = VillageAllegianceRegistrySavedData.get(level);
+        int allegiancesBefore = allegianceRegistry.activeRecords(level.dimension().location()).size();
+
+        String first = VillageScopeKeys.forArea(level, area);
+        String second = VillageScopeKeys.forArea(level, area);
+
+        helper.assertTrue(VillageScopeKeys.isVillageKey(first), "scope lookup returns a stable village key");
+        helper.assertValueEqual(second, first, "repeated scope lookups are stable");
+        helper.assertValueEqual(
+                allegianceRegistry.activeRecords(level.dimension().location()).size(),
+                allegiancesBefore,
+                "scope lookup must not discover an allegiance record");
         helper.succeed();
     }
 

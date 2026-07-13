@@ -453,7 +453,7 @@ public final class VillagerRetaliationCommands {
         ServerLevel level = context.getSource().getLevel();
         BlockPos position = BlockPos.containing(context.getSource().getPosition());
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-        var record = registry.discoverAt(level, position).flatMap(registry::canonicalRecord).orElse(null);
+        var record = registry.peekAt(level, position).flatMap(registry::canonicalRecord).orElse(null);
         if (record == null) {
             context.getSource().sendFailure(Component.literal("No tracked village contains this position."));
             return 0;

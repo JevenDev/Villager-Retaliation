@@ -51,7 +51,9 @@ public final class VillageScopeKeys {
             return "";
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-        return registry.discoverAt(level, area.centerBlock())
+        // Scope resolution is used by dialogue, quest, and social read paths. Never run
+        // footprint discovery here; the allegiance service owns that expensive operation.
+        return registry.peekAt(level, area.centerBlock())
                 .flatMap(registry::canonicalRecord)
                 .map(record -> forPosition(record.originDimension(), record.originPosition()))
                 .orElseGet(() -> VillageRegistrySavedData.get(level).keyFor(level, area.centerBlock()));

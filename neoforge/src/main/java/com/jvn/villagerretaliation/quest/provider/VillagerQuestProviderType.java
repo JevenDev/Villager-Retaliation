@@ -10,7 +10,6 @@ import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
-import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.EnumMap;
 import java.util.Map;
@@ -78,7 +77,7 @@ public final class VillagerQuestProviderType implements QuestProviderType {
                 context.villager().getVillagerData().getLevel(),
                 context.level().dimension(),
                 context.villager().blockPosition(),
-                VillageScopeKeys.forVillager(context.level(), context.villager()),
+                context.villageKey(),
                 skillsFromContext(context),
                 true);
     }

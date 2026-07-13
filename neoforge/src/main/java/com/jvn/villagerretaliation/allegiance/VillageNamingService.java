@@ -64,7 +64,7 @@ public final class VillageNamingService {
             return;
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-        Optional<VillageAllegianceId> current = registry.discoverAt(level, bell);
+        Optional<VillageAllegianceId> current = registry.peekAt(level, bell);
         Optional<VillageAllegianceId> requested = registry.canonical(payload.villageId());
         if (current.isEmpty() || requested.isEmpty() || !current.get().equals(requested.get())) {
             player.sendSystemMessage(Component.literal("That bell no longer belongs to the same village."));

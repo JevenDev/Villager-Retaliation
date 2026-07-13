@@ -72,6 +72,7 @@ import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
+import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.List;
 import java.util.Map;
@@ -2442,7 +2443,8 @@ public final class VillagerInteractionService {
                 contextSnapshots.relationships(),
                 contextSnapshots.recentEvents(),
                 villager.getRandom(),
-                VillagerLocale.locale(player)
+                VillagerLocale.locale(player),
+                VillageScopeKeys.forVillager(level, villager)
         );
     }
 

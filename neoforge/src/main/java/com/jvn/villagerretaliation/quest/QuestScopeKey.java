@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.quest;
 
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.resources.ResourceLocation;
@@ -59,7 +58,7 @@ public record QuestScopeKey(
             case WORLD -> WORLD;
             case QUEST -> quest(context.player().getUUID(), questId);
             case VILLAGER -> villager(context.villager().getUUID());
-            case VILLAGE -> village(VillageScopeKeys.forVillager(context.level(), context.villager()));
+            case VILLAGE -> village(context.villageKey());
         };
     }
 
@@ -78,7 +77,7 @@ public record QuestScopeKey(
             case PLAYER_WORLD -> playerWorld(context.player().getUUID());
             case WORLD -> WORLD;
             case VILLAGER -> villager(context.villager().getUUID());
-            case VILLAGE -> village(VillageScopeKeys.forVillager(context.level(), context.villager()));
+            case VILLAGE -> village(context.villageKey());
         };
     }
 

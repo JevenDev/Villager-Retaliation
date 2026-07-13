@@ -17,9 +17,10 @@ public final class QuestAvailabilityService {
             boolean bypassOfferRequirements,
             ParentCompletionLookup parentCompletionLookup,
             ScopedCompletionCounter scopedCompletionCounter) {
-        QuestExecutionContext executionContext =
-                QuestExecutionContext.fromDialogueContext(context, definition, "can_start");
-        if (!bypassOfferRequirements && !VillagerQuestProviderType.INSTANCE.matchesOffer(executionContext, definition)) {
+        // A live dialogue offer is fully described by DialogueContext. Building a
+        // QuestExecutionContext here also rebuilds the provider binding and village
+        // scope once per quest candidate, which made tracker scans multiplicative.
+        if (!bypassOfferRequirements && !definition.offer().matches(context)) {
             return false;
         }
         if (!parentCompletionLookup.parentCompleted(context, definition)) {
@@ -31,9 +32,7 @@ public final class QuestAvailabilityService {
         }
         if (!definition.rules().crossVillagerCompatible()
                 && progress.startedVillagerId() != null
-                && executionContext.providerBinding()
-                        .map(binding -> !binding.matchesProviderId(progress.startedVillagerId()))
-                        .orElse(true)) {
+                && !context.villager().getUUID().equals(progress.startedVillagerId())) {
             return false;
         }
         if (!withinStartLimit(definition, progress)
