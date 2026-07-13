@@ -12,6 +12,8 @@ import com.jvn.villagerretaliation.api.registry.RuntimeTypeDescriptor;
 import com.jvn.villagerretaliation.quest.QuestRegistryMetadata;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.action.VillagerActionDefinition;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.scene.compiler.SceneCompiler;
 import com.jvn.villagerretaliation.scene.compiler.SceneDiagnostic;
 import com.jvn.villagerretaliation.scene.compiler.SceneParser;
@@ -30,6 +32,7 @@ import com.jvn.villagerretaliation.scene.runtime.SceneExecutionContext;
 import com.jvn.villagerretaliation.scene.runtime.SceneOperationReceipt;
 import com.jvn.villagerretaliation.scene.runtime.SceneReceiptGuard;
 import com.jvn.villagerretaliation.scene.runtime.SceneRecoveryPolicy;
+import com.jvn.villagerretaliation.scene.runtime.SceneAuditEntry;
 import com.jvn.villagerretaliation.scene.executor.BuiltinSceneStepExecutors;
 import com.jvn.villagerretaliation.scene.executor.EncounterStepExecutors;
 import com.jvn.villagerretaliation.scene.encounter.EncounterInstance;
@@ -70,6 +73,64 @@ public final class SceneRegistryGameTests {
     private static final String EMPTY_TEMPLATE = "empty";
 
     private SceneRegistryGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dialogueSegmentsRespectPacketBoundsWithoutDroppingText(GameTestHelper helper) {
+        List<DialogueTextSegment> styled = new java.util.ArrayList<>();
+        for (int index = 0; index < 80; index++) {
+            styled.add(new DialogueTextSegment(
+                    "x",
+                    DialogueTextEffects.fromTag(index % 2 == 0 ? "bold" : "italic")));
+        }
+
+        List<DialogueTextSegment> bounded = DialogueTextSegment.forNetwork(styled);
+        helper.assertValueEqual(bounded.size(), 64, "packet style run limit");
+        helper.assertValueEqual(
+                DialogueTextSegment.plainText(bounded),
+                "x".repeat(80),
+                "folding excess style runs must preserve the dialogue tail");
+
+        String boundaryText = "a".repeat(511) + "😀";
+        String truncated = DialogueTextSegment.plainText(DialogueTextSegment.forNetwork(
+                List.of(new DialogueTextSegment(boundaryText, DialogueTextEffects.NONE))));
+        helper.assertTrue(truncated.length() <= 512, "network dialogue must fit its encoded character limit");
+        helper.assertFalse(!truncated.isEmpty() && Character.isHighSurrogate(truncated.charAt(truncated.length() - 1)),
+                "network dialogue must not end with half of a surrogate pair");
+        helper.assertValueEqual(DialogueTextSegment.plainText(null), "", "null segment list plain text");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void malformedSceneHistoryDoesNotPreventSaveRecovery(GameTestHelper helper) {
+        CompoundTag root = new CompoundTag();
+        root.putInt(SceneSaveMigrations.DATA_VERSION, SceneSavedData.CURRENT_DATA_VERSION);
+
+        net.minecraft.nbt.ListTag audit = new net.minecraft.nbt.ListTag();
+        audit.add(new CompoundTag());
+        UUID validSceneId = UUID.randomUUID();
+        audit.add(new SceneAuditEntry(
+                validSceneId, "guide", "missing", "rebound", "recovered", 10L, "test").save());
+        root.put("Audit", audit);
+
+        net.minecraft.nbt.ListTag tombstones = new net.minecraft.nbt.ListTag();
+        tombstones.add(new CompoundTag());
+        CompoundTag validTombstone = new CompoundTag();
+        validTombstone.putString("OperationKey", "test-operation");
+        validTombstone.putUUID("InstanceId", UUID.randomUUID());
+        validTombstone.putString("SceneId", "villagerretaliation:test_scene");
+        validTombstone.putString("Result", "SUCCESS");
+        tombstones.add(validTombstone);
+        root.put("Tombstones", tombstones);
+
+        SceneSavedData loaded = SceneSavedData.load(root, helper.getLevel().registryAccess());
+        helper.assertValueEqual(loaded.auditEntries().size(), 1, "valid audit entries after malformed record");
+        helper.assertValueEqual(loaded.auditEntries().getFirst().sceneId(), validSceneId,
+                "valid audit entry must survive malformed neighbor");
+        helper.assertValueEqual(loaded.tombstones().size(), 1, "valid tombstones after malformed record");
+        helper.assertValueEqual(loaded.tombstones().getFirst().operationKey(), "test-operation",
+                "valid tombstone must survive malformed neighbor");
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

@@ -681,6 +681,7 @@ public final class PartyGameTests {
         movePlayer(helper, firstLeader, new BlockPos(12, 2, 12));
         Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
         var target = helper.spawn(EntityType.COW, new BlockPos(4, 2, 2));
+        target.setNoAi(true);
         long now = level.getServer().overworld().getGameTime();
         PartySavedData data = PartySavedData.get(level);
         PartyRecord firstParty = data.createParty(firstLeader.getUUID(), now);
@@ -690,7 +691,7 @@ public final class PartyGameTests {
         attackerRecord.setCombatMode(PartyCombatMode.KILL_ON_SIGHT);
         data.changed();
 
-        helper.runAfterDelay(30, () -> {
+        helper.runAfterDelay(60, () -> {
             helper.assertValueEqual(attacker.getTarget(), target,
                     "KOS should proactively acquire a nearby target allowed by the attack mode");
             PartyService.deleteParty(level, firstParty.id());

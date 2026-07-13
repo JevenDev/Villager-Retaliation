@@ -7,6 +7,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 
 public record DialogueTextSegment(String text, DialogueTextEffects effects) {
     private static final int MAX_SEGMENTS = 64;
+    private static final int MAX_NETWORK_TEXT_LENGTH = 512;
 
     public DialogueTextSegment {
         text = text == null ? "" : text;
@@ -75,9 +76,14 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
     }
 
     public static String plainText(List<DialogueTextSegment> segments) {
+        if (segments == null || segments.isEmpty()) {
+            return "";
+        }
         StringBuilder builder = new StringBuilder();
         for (DialogueTextSegment segment : segments) {
-            builder.append(segment.text());
+            if (segment != null) {
+                builder.append(segment.text());
+            }
         }
         return builder.toString();
     }
@@ -110,22 +116,79 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
     }
 
     public static void writeList(RegistryFriendlyByteBuf buffer, List<DialogueTextSegment> segments) {
-        List<DialogueTextSegment> safeSegments = segments == null ? List.of() : segments;
-        buffer.writeVarInt(Math.min(safeSegments.size(), MAX_SEGMENTS));
-        for (int index = 0; index < Math.min(safeSegments.size(), MAX_SEGMENTS); index++) {
-            DialogueTextSegment segment = safeSegments.get(index);
-            buffer.writeUtf(segment.text(), 512);
+        List<DialogueTextSegment> safeSegments = forNetwork(segments);
+        buffer.writeVarInt(safeSegments.size());
+        for (DialogueTextSegment segment : safeSegments) {
+            buffer.writeUtf(segment.text(), MAX_NETWORK_TEXT_LENGTH);
             DialogueTextEffects.write(buffer, segment.effects());
         }
     }
 
     public static List<DialogueTextSegment> readList(RegistryFriendlyByteBuf buffer) {
-        int size = Math.min(buffer.readVarInt(), MAX_SEGMENTS);
+        int size = buffer.readVarInt();
+        if (size < 0 || size > MAX_SEGMENTS) {
+            throw new IllegalArgumentException(
+                    "dialogue text segment count " + size + " is outside 0.." + MAX_SEGMENTS);
+        }
         List<DialogueTextSegment> segments = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
-            segments.add(new DialogueTextSegment(buffer.readUtf(512), DialogueTextEffects.read(buffer)));
+            segments.add(new DialogueTextSegment(
+                    buffer.readUtf(MAX_NETWORK_TEXT_LENGTH),
+                    DialogueTextEffects.read(buffer)));
         }
         return List.copyOf(segments);
+    }
+
+    /**
+     * Fits styled text into the packet contract without dropping the dialogue tail.
+     * Excess style runs are folded into the final segment, while text beyond the
+     * payload's 512-character limit is truncated on a Unicode boundary.
+     */
+    public static List<DialogueTextSegment> forNetwork(List<DialogueTextSegment> segments) {
+        if (segments == null || segments.isEmpty()) {
+            return List.of();
+        }
+
+        List<DialogueTextSegment> bounded = new ArrayList<>();
+        int remainingCharacters = MAX_NETWORK_TEXT_LENGTH;
+        for (DialogueTextSegment segment : segments) {
+            if (segment == null || segment.text().isEmpty() || remainingCharacters <= 0) {
+                continue;
+            }
+            String text = truncate(segment.text(), remainingCharacters);
+            remainingCharacters -= text.length();
+            if (text.isEmpty()) {
+                continue;
+            }
+
+            DialogueTextEffects effects = segment.effects();
+            if (!bounded.isEmpty() && bounded.getLast().effects().equals(effects)) {
+                DialogueTextSegment previous = bounded.removeLast();
+                bounded.add(new DialogueTextSegment(previous.text() + text, effects));
+            } else if (bounded.size() < MAX_SEGMENTS) {
+                bounded.add(new DialogueTextSegment(text, effects));
+            } else {
+                DialogueTextSegment previous = bounded.removeLast();
+                bounded.add(new DialogueTextSegment(previous.text() + text, previous.effects()));
+            }
+        }
+        return List.copyOf(bounded);
+    }
+
+    private static String truncate(String value, int maxLength) {
+        if (value == null || maxLength <= 0) {
+            return "";
+        }
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        int end = maxLength;
+        if (end > 0
+                && Character.isHighSurrogate(value.charAt(end - 1))
+                && Character.isLowSurrogate(value.charAt(end))) {
+            end--;
+        }
+        return value.substring(0, end);
     }
 
     private static void flush(List<DialogueTextSegment> segments, StringBuilder current, DialogueTextEffects effects) {

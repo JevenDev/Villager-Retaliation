@@ -31,10 +31,24 @@ public record VillagerInteractionNoticePayload(
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, VillagerInteractionNoticePayload payload) {
+        List<DialogueTextSegment> textSegments = DialogueTextSegment.forNetwork(payload.textSegments());
+        String segmentedText = DialogueTextSegment.plainText(textSegments);
+        String text = payload.text() == null ? "" : payload.text();
+        if (textSegments.isEmpty() && !text.isEmpty()) {
+            textSegments = DialogueTextSegment.forNetwork(
+                    DialogueTextSegment.plain(text, DialogueTextEffects.NONE));
+            segmentedText = DialogueTextSegment.plainText(textSegments);
+        } else if (!segmentedText.equals(text)) {
+            // A mismatched caller-provided style list must not make the client
+            // render different dialogue from the packet's plain-text field.
+            textSegments = DialogueTextSegment.forNetwork(
+                    DialogueTextSegment.plain(text, DialogueTextEffects.NONE));
+            segmentedText = DialogueTextSegment.plainText(textSegments);
+        }
         buffer.writeVarInt(payload.entityId());
-        buffer.writeUtf(payload.text(), 512);
-        buffer.writeUtf(payload.speakerLabel(), 128);
-        DialogueTextSegment.writeList(buffer, payload.textSegments());
+        buffer.writeUtf(segmentedText, 512);
+        buffer.writeUtf(truncate(payload.speakerLabel(), 128), 128);
+        DialogueTextSegment.writeList(buffer, textSegments);
     }
 
     private static VillagerInteractionNoticePayload decode(RegistryFriendlyByteBuf buffer) {
@@ -49,5 +63,20 @@ public record VillagerInteractionNoticePayload(
     @Override
     public Type<? extends CustomPacketPayload> type() {
         return TYPE;
+    }
+
+    private static String truncate(String value, int maxLength) {
+        if (value == null || maxLength <= 0) {
+            return "";
+        }
+        if (value.length() <= maxLength) {
+            return value;
+        }
+        int end = maxLength;
+        if (Character.isHighSurrogate(value.charAt(end - 1))
+                && Character.isLowSurrogate(value.charAt(end))) {
+            end--;
+        }
+        return value.substring(0, end);
     }
 }

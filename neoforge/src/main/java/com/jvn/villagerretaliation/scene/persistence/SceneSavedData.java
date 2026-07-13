@@ -36,6 +36,7 @@ public final class SceneSavedData extends SavedData {
     public static final int DEFAULT_COMPACTION_WORK = 16;
     public static final long TERMINAL_RETENTION_TICKS = 7L * 24000L;
     private static final int MAX_TOMBSTONES = 4096;
+    private static final int MAX_AUDIT_ENTRIES = 2048;
     private static final String DATA_NAME = "villagerretaliation_scenes";
     private static final Logger LOGGER = LogUtils.getLogger();
     private final Map<UUID, SceneInstance> instances = new LinkedHashMap<>();
@@ -86,12 +87,41 @@ public final class SceneSavedData extends SavedData {
                 LOGGER.error("Could not read scene instance; preserving the rest of the scene save", exception);
             }
         }
-        for(Tag raw:migration.data().getList("Encounters",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag encounterTag){try{EncounterInstance encounter=EncounterInstance.load(encounterTag);data.encounters.put(encounter.id(),encounter);data.encounterOperations.put(encounter.sceneId()+"|"+encounter.operationId(),encounter.id());}catch(RuntimeException exception){LOGGER.error("Could not read encounter instance",exception);}}
-        for(Tag raw:migration.data().getList("Audit",Tag.TAG_COMPOUND))if(raw instanceof CompoundTag audit)data.auditEntries.add(SceneAuditEntry.load(audit));
+        for (Tag raw : migration.data().getList("Encounters", Tag.TAG_COMPOUND)) {
+            if (!(raw instanceof CompoundTag encounterTag)) {
+                continue;
+            }
+            try {
+                EncounterInstance encounter = EncounterInstance.load(encounterTag);
+                data.encounters.put(encounter.id(), encounter);
+                data.encounterOperations.put(
+                        encounter.sceneId() + "|" + encounter.operationId(),
+                        encounter.id());
+            } catch (RuntimeException exception) {
+                LOGGER.error("Could not read encounter instance; preserving the rest of the scene save", exception);
+            }
+        }
+        for (Tag raw : migration.data().getList("Audit", Tag.TAG_COMPOUND)) {
+            if (!(raw instanceof CompoundTag auditTag)) {
+                continue;
+            }
+            try {
+                data.appendAuditEntry(SceneAuditEntry.load(auditTag));
+            } catch (RuntimeException exception) {
+                LOGGER.error("Could not read scene audit entry; preserving the rest of the scene save", exception);
+            }
+        }
         for (Tag raw : migration.data().getList("Tombstones", Tag.TAG_COMPOUND)) {
-            if (raw instanceof CompoundTag tombstoneTag) {
+            if (!(raw instanceof CompoundTag tombstoneTag)) {
+                continue;
+            }
+            try {
                 OperationTombstone tombstone = OperationTombstone.load(tombstoneTag);
-                if (!tombstone.operationKey().isBlank()) data.tombstones.put(tombstone.operationKey(), tombstone);
+                if (!tombstone.operationKey().isBlank()) {
+                    data.putTombstone(tombstone);
+                }
+            } catch (RuntimeException exception) {
+                LOGGER.error("Could not read scene tombstone; preserving the rest of the scene save", exception);
             }
         }
         for (Tag raw : migration.data().getList("Continuations", Tag.TAG_COMPOUND)) {
@@ -201,7 +231,7 @@ public final class SceneSavedData extends SavedData {
             continuations.values().stream().filter(continuation -> continuation.sceneInstanceId().equals(scene.id())
                     && continuation.completionReceipt()).map(continuation -> "continuation:" + continuation.id())
                     .forEach(completedReceipts::add);
-            tombstones.put(key, new OperationTombstone(key, scene.id(), scene.sceneId(),
+            putTombstone(new OperationTombstone(key, scene.id(), scene.sceneId(),
                     scene.completionResult(), scene.updateGameTime(), gameTime,
                     Set.copyOf(completedReceipts)));
             instances.remove(scene.id());
@@ -276,7 +306,32 @@ public final class SceneSavedData extends SavedData {
         return continuation;
     }
     public Optional<EncounterInstance> encounterByOperation(UUID sceneId,String operationId){UUID id=encounterOperations.get(sceneId+"|"+operationId);return Optional.ofNullable(id==null?null:encounters.get(id));}
-    public void audit(SceneAuditEntry entry){auditEntries.add(entry);if(auditEntries.size()>2048)auditEntries.removeFirst();setDirty();}public List<SceneAuditEntry> auditEntries(){return List.copyOf(auditEntries);}
+
+    public void audit(SceneAuditEntry entry) {
+        appendAuditEntry(entry);
+        setDirty();
+    }
+
+    public List<SceneAuditEntry> auditEntries() {
+        return List.copyOf(auditEntries);
+    }
+
+    private void appendAuditEntry(SceneAuditEntry entry) {
+        if (entry == null) {
+            return;
+        }
+        auditEntries.add(entry);
+        while (auditEntries.size() > MAX_AUDIT_ENTRIES) {
+            auditEntries.removeFirst();
+        }
+    }
+
+    private void putTombstone(OperationTombstone tombstone) {
+        tombstones.put(tombstone.operationKey(), tombstone);
+        while (tombstones.size() > MAX_TOMBSTONES) {
+            tombstones.remove(tombstones.keySet().iterator().next());
+        }
+    }
     public void requestCleanup(SceneInstance instance) {
         if (instance == null) return;
         if (instance.state().terminal()) requestCompaction(instance);

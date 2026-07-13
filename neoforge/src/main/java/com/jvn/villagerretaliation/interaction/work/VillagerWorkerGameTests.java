@@ -2183,7 +2183,9 @@ public final class VillagerWorkerGameTests {
         for (int tick = 0; tick < 100 && !villager.blockPosition().equals(lowerDismount); tick++) {
             helper.assertTrue(
                     VillagerTaskNavigationUtil.moveTowardNearbyLadderThenClimb(level, villager, lowerDismount, 0.55D),
-                    "ladder helper should keep descending after reversing from storage height");
+                    "ladder helper should keep descending after reversing from storage height; pos="
+                            + villager.blockPosition() + ", route="
+                            + VillagerTaskNavigationUtil.ladderRouteDebug(level, villager, lowerDismount));
             VillagerTaskNavigationUtil.tickPathLadders(level, villager);
             level.tickNonPassenger(villager);
         }

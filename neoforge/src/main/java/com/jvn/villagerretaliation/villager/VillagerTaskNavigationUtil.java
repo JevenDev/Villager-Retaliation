@@ -40,13 +40,12 @@ import net.minecraft.world.phys.Vec3;
 public final class VillagerTaskNavigationUtil {
     private static final double DOOR_REACH_DISTANCE = 2.25D;
     private static final double DOOR_REACH_DISTANCE_SQR = DOOR_REACH_DISTANCE * DOOR_REACH_DISTANCE;
-    private static final double LADDER_CENTERING_DISTANCE_SQR = 0.36D;
     private static final double LADDER_ENTRY_DISTANCE_SQR = 2.25D;
     // A villager approaching a ladder from the adjacent block can stop with its
-    // bounding box against the rung at just over 0.8 blocks from its center.
-    // Keep this large enough to bridge that final collision gap without pulling
-    // villagers from beyond the adjacent block.
-    private static final double LADDER_FORCED_ENTRY_HORIZONTAL_SQR = 1.0D;
+    // bounding box against the rung at about one block from its center. Leave a
+    // small floating-point margin around that boundary while remaining well
+    // inside the adjacent-block entry gate.
+    private static final double LADDER_FORCED_ENTRY_HORIZONTAL_SQR = 1.21D;
     private static final int LADDER_VERTICAL_TARGET_DEADZONE = 1;
     private static final double LADDER_HORIZONTAL_SPEED_LIMIT = 0.15D;
     private static final double LADDER_CLIMB_SPEED = 0.20D;
@@ -479,14 +478,14 @@ public final class VillagerTaskNavigationUtil {
         double dx = centerX - villager.getX();
         double dz = centerZ - villager.getZ();
         if (!isStandingInLadder(level, villager.blockPosition())) {
-            if (dx * dx + dz * dz > LADDER_CENTERING_DISTANCE_SQR) {
-                villager.getMoveControl().setWantedPosition(centerX, villager.getY(), centerZ, speed);
-                return true;
-            }
-            if (!climbingUp && target.getY() < villager.blockPosition().getY()) {
+            double horizontalDistanceSqr = dx * dx + dz * dz;
+            if (horizontalDistanceSqr <= LADDER_FORCED_ENTRY_HORIZONTAL_SQR
+                    && needsLadderRoute(villager, target)) {
                 forceEnterAndClimbLadder(villager, ladder, target, speed);
                 return true;
             }
+            villager.getMoveControl().setWantedPosition(centerX, villager.getY(), centerZ, speed);
+            return true;
         }
 
         int verticalDelta = target.getY() - villager.blockPosition().getY();
@@ -724,7 +723,7 @@ public final class VillagerTaskNavigationUtil {
             return forceMoveOnLadderToward(level, villager, target, speed);
         }
         if (!needsLadderRoute(villager, target)) {
-            return false;
+            return moveDirectlyToNearbyTarget(villager, target, speed);
         }
         VillagerLadderRoutePlanner.Route route = nearestLadderRoute(level, villager, target);
         if (route == null) {
@@ -912,6 +911,22 @@ public final class VillagerTaskNavigationUtil {
         return false;
     }
 
+    private static boolean moveDirectlyToNearbyTarget(Villager villager, BlockPos target, double speed) {
+        Path path = villager.getNavigation().createPath(target, 0);
+        if (path != null && path.canReach() && moveToHiredPath(villager, path, target, speed, 0)) {
+            return true;
+        }
+        if (villager.distanceToSqr(target.getCenter()) > 16.0D) {
+            return false;
+        }
+        villager.getMoveControl().setWantedPosition(
+                target.getX() + 0.5D,
+                target.getY(),
+                target.getZ() + 0.5D,
+                speed);
+        return true;
+    }
+
     private static void rememberSurfaceEscapeSearch(ServerLevel level, Villager villager, BlockPos target, BlockPos escapeTarget) {
         SURFACE_ESCAPE_SEARCHES.put(villager.getUUID(), new SurfaceEscapeSearch(
                 villager.blockPosition().immutable(),
@@ -981,10 +996,16 @@ public final class VillagerTaskNavigationUtil {
 
         if (dx * dx + dz * dz <= LADDER_FORCED_ENTRY_HORIZONTAL_SQR) {
             Vec3 motion = villager.getDeltaMovement();
+            double horizontalX = Math.clamp(dx * 0.35D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT);
+            double horizontalZ = Math.clamp(dz * 0.35D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT);
+            // Snap into the validated ladder block before the vanilla move
+            // controller can keep treating its thin collision face as a path
+            // endpoint. This transition is limited to the adjacent block.
+            villager.moveTo(centerX, villager.getY(), centerZ, villager.getYRot(), villager.getXRot());
             villager.setDeltaMovement(
-                    Math.clamp(dx * 0.35D + motion.x * 0.25D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT),
+                    Math.clamp(horizontalX + motion.x * 0.25D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT),
                     climb,
-                    Math.clamp(dz * 0.35D + motion.z * 0.25D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT));
+                    Math.clamp(horizontalZ + motion.z * 0.25D, -LADDER_HORIZONTAL_SPEED_LIMIT, LADDER_HORIZONTAL_SPEED_LIMIT));
             villager.setNoGravity(true);
             villager.setOnGround(false);
         }
