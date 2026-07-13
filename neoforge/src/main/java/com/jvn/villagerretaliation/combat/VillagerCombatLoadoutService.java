@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.function.Predicate;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 
 /** Keeps a party villager's durable weapon preference separate from its current order. */
@@ -52,7 +53,7 @@ public final class VillagerCombatLoadoutService {
         }
         boolean hasAmmo = HiredRangedAmmo.hasAmmo(villager);
         Predicate<ItemStack> preferred = preference == PartyWeaponPreference.RANGED
-                ? stack -> hasAmmo && isUsableRanged(stack)
+                ? stack -> canUseSelectedRangedWeapon(stack, hasAmmo)
                 : VillagerRetaliationVillagerWeapons::isMeleeWeapon;
         if (tryEquip(villager, preferred)) {
             return true;
@@ -61,7 +62,7 @@ public final class VillagerCombatLoadoutService {
         // Retain the preference, but fall back safely when its class or ammunition is absent.
         Predicate<ItemStack> fallback = preference == PartyWeaponPreference.RANGED
                 ? VillagerRetaliationVillagerWeapons::isMeleeWeapon
-                : stack -> hasAmmo && isUsableRanged(stack);
+                : stack -> canUseSelectedRangedWeapon(stack, hasAmmo);
         return tryEquip(villager, fallback);
     }
 
@@ -87,5 +88,10 @@ public final class VillagerCombatLoadoutService {
     private static boolean isUsableRanged(ItemStack stack) {
         return (VillagerRetaliationVillagerWeapons.isBowWeapon(stack)
                 || VillagerRetaliationVillagerWeapons.isCrossbowWeapon(stack));
+    }
+
+    private static boolean canUseSelectedRangedWeapon(ItemStack stack, boolean hasAmmo) {
+        return isUsableRanged(stack)
+                && (hasAmmo || stack.getItem() instanceof CrossbowItem && CrossbowItem.isCharged(stack));
     }
 }

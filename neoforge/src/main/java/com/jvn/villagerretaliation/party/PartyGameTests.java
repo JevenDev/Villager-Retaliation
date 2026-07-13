@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
+import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
@@ -49,9 +50,12 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
+import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -972,6 +976,112 @@ public final class PartyGameTests {
                 "a submerged villager with a path should swim toward its upcoming route node");
         villager.discard();
         helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyMemberInteractionInterruptsCombatWithoutOpeningTrade(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_interaction_combat"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = EntityType.ZOMBIE.create(level);
+        if (target == null) {
+            throw new GameTestAssertException("Could not create interaction combat target");
+        }
+        BlockPos targetPos = helper.absolutePos(new BlockPos(4, 2, 2));
+        target.moveTo(targetPos.getX() + 0.5D, targetPos.getY(), targetPos.getZ() + 0.5D, 0.0F, 0.0F);
+        target.setNoAi(true);
+        level.addFreshEntity(target);
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+        villager.setTarget(target);
+        villager.setLastHurtByMob(target);
+
+        helper.assertTrue(
+                VillagerInteractionService.shouldHandleInteraction(villager, leader, net.minecraft.world.InteractionHand.MAIN_HAND),
+                "the custom interaction system should exclusively intercept a party-member click");
+        helper.assertTrue(VillagerInteractionService.canUseInteractionSystem(leader, villager),
+                "a party member should be allowed to interrupt its villager's active combat");
+        helper.assertValueEqual(
+                VillagerInteractionService.handleVillagerRightClick(villager, leader),
+                InteractionResult.CONSUME,
+                "party-member interaction should open the custom menu");
+        helper.assertFalse(villager.isTrading(),
+                "opening the party-member interaction menu must not also start vanilla trading");
+        helper.assertTrue(VillagerConversationService.isConversing(leader),
+                "the party-member interaction should establish a custom conversation session");
+        helper.assertTrue(villager.getTarget() == null && villager.getLastHurtByMob() == null,
+                "opening the interaction menu should suspend the party villager's combat state");
+
+        VillagerConversationService.endForPlayer(leader, false);
+        PartyService.deleteParty(level, party.id());
+        target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 180)
+    public static void rangedPartyVillagerLoadsAndFiresCrossbowLikePillager(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_crossbow_cycle"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = EntityType.ZOMBIE.create(level);
+        if (target == null) {
+            throw new GameTestAssertException("Could not create crossbow target");
+        }
+        BlockPos targetPos = helper.absolutePos(new BlockPos(7, 2, 2));
+        target.moveTo(targetPos.getX() + 0.5D, targetPos.getY(), targetPos.getZ() + 0.5D, 0.0F, 0.0F);
+        target.setNoAi(true);
+        level.addFreshEntity(target);
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+        HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+        jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        int crossbowSlot = HiredJobInventory.HOTBAR_START;
+        int arrowSlot = crossbowSlot + 1;
+        jobInventory.setItem(crossbowSlot, new ItemStack(Items.CROSSBOW));
+        jobInventory.markPlayerPlacedSupply(crossbowSlot);
+        jobInventory.setItem(arrowSlot, new ItemStack(Items.ARROW));
+        jobInventory.markPlayerPlacedSupply(arrowSlot);
+
+        PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                PartyQuickCommand.RANGE));
+        helper.assertTrue(villager.getMainHandItem().getItem() instanceof CrossbowItem,
+                "range mode should equip the available crossbow");
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.ATTACK,
+                        target.getId(),
+                        null));
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertFalse(
+                        level.getEntitiesOfClass(
+                                AbstractArrow.class,
+                                villager.getBoundingBox().inflate(20.0D),
+                                arrow -> arrow.getOwner() == villager)
+                                .isEmpty(),
+                        "ranged party villager has not completed the crossbow load-and-fire cycle"))
+                .thenExecute(() -> {
+                    helper.assertTrue(jobInventory.getItem(arrowSlot).isEmpty(),
+                            "loading the crossbow should consume exactly the required arrow");
+                    helper.assertFalse(villager.isUsingItem(),
+                            "the crossbow loading animation must end after the shot is prepared");
+                    helper.assertFalse(CrossbowItem.isCharged(villager.getMainHandItem()),
+                            "the crossbow should discharge after firing");
+                    VillagerRetaliationHandler.clearCustomTarget(villager);
+                    PartyService.deleteParty(level, party.id());
+                    PartyQuickCommandService.clearRuntimeState();
+                    target.discard();
+                    villager.discard();
+                })
+                .thenSucceed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

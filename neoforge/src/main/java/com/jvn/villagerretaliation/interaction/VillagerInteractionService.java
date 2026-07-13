@@ -61,6 +61,7 @@ import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
@@ -138,7 +139,10 @@ public final class VillagerInteractionService {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
-                && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
+                && shouldInterceptVanillaInteraction(
+                player,
+                villager,
+                VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
 
     public static boolean shouldSuppressClientVanillaInteraction(Villager villager, Player player, InteractionHand hand) {
@@ -224,7 +228,7 @@ public final class VillagerInteractionService {
             return InteractionResult.FAIL;
         }
 
-        if (isCombatBusy(villager) && canInterruptHiredWorkForInteraction(player, villager)) {
+        if (isCombatBusy(villager) && canInterruptCombatForInteraction(player, villager)) {
             VillagerRetaliationHandler.suspendCombatForInteraction(villager);
         }
 
@@ -2615,7 +2619,7 @@ public final class VillagerInteractionService {
     }
 
     static void prepareForInteractionSession(ServerPlayer player, Villager villager) {
-        if (isCombatBusy(villager) && canInterruptHiredWorkForInteraction(player, villager)) {
+        if (isCombatBusy(villager) && canInterruptCombatForInteraction(player, villager)) {
             VillagerRetaliationHandler.suspendCombatForInteraction(villager);
         }
     }
@@ -2665,7 +2669,7 @@ public final class VillagerInteractionService {
                 && !VillagerDownedService.isDowned(villager)
                 && (allowSleeping || !villager.isSleeping())
                 && !villager.isTrading()
-                && (!isCombatBusy(villager) || canInterruptHiredWorkForInteraction(player, villager))
+                && (!isCombatBusy(villager) || canInterruptCombatForInteraction(player, villager))
                 && !VillagerRetaliationHandler.isHostileTowards(villager, player)
                 && player.isAlive()
                 && !player.isSpectator()
@@ -2676,9 +2680,27 @@ public final class VillagerInteractionService {
         return villager.getTarget() != null || villager.getLastHurtByMob() != null;
     }
 
-    private static boolean canInterruptHiredWorkForInteraction(ServerPlayer player, Villager villager) {
+    private static boolean canInterruptCombatForInteraction(ServerPlayer player, Villager villager) {
         return villager.level() instanceof ServerLevel level
-                && HiredVillagerContractService.isHiredBy(level, villager, player);
+                && (HiredVillagerContractService.isHiredBy(level, villager, player)
+                || PartyService.arePlayerAndVillagerInSameParty(
+                level,
+                player.getUUID(),
+                villager.getUUID()));
+    }
+
+    private static boolean shouldInterceptVanillaInteraction(
+            ServerPlayer player,
+            Villager villager,
+            double maxDistance) {
+        return villager.isAlive()
+                && !VillagerDownedService.isDowned(villager)
+                && !villager.isSleeping()
+                && !villager.isTrading()
+                && !VillagerRetaliationHandler.isHostileTowards(villager, player)
+                && player.isAlive()
+                && !player.isSpectator()
+                && player.distanceToSqr(villager) <= maxDistance * maxDistance;
     }
 
     private static boolean shouldRefuseDespisedConversation(Villager villager, ServerPlayer player) {

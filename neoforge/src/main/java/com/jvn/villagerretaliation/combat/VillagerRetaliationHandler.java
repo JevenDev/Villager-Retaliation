@@ -891,9 +891,13 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
+        ItemStack weaponBeforePreference = VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager).copy();
         if (VillagerCombatLoadoutService.ensurePreferredWeapon(villager)) {
             RETALIATION.discardTemporaryWeapon(villager);
-            VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
+            ItemStack equippedWeapon = VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager);
+            if (!ItemStack.isSameItemSameComponents(weaponBeforePreference, equippedWeapon)) {
+                VillagerRangedCombatHelper.seedInitialAttackDelay(villager, equippedWeapon);
+            }
             return true;
         }
         if (VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
