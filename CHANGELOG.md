@@ -191,6 +191,7 @@ Beta.12-hotfix.1 is a focused stability follow-up for beta.12. It fixes duplicat
 
 ### Fixed
 
+- Low-guts apology confrontations now interrupt only isolated attacks: followers cannot confront or retaliate against their player for witnessed crimes, and an already-hostile village or repeated player attacks and kills flow directly into retaliation instead of more forced dialogue. Directly attacking a follower still dismisses the betrayed villager as before.
 - Fixed UI scale rendering issues for gui scale 1, 2, 4, and auto.
 - Fixed Mac user UI rendering (i think lol).
 - Fixed duplicate villager and wandering-trader skill trades caused by repeated trade registration against mutable or previously registered trade collections.

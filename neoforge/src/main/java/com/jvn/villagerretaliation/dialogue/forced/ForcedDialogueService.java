@@ -41,6 +41,7 @@ import com.jvn.villagerretaliation.event.VillagerEventTriggerSavedData;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.GeneratedContainerTooltipPayload;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
@@ -152,6 +153,7 @@ public final class ForcedDialogueService {
     private static final long SHARED_PARTICIPANT_SCAN_INTERVAL_TICKS = 20L;
     private static final long PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS = 80L;
     private static final long PLAYER_ITEM_PROXIMITY_COOLDOWN_TICKS = 20L * 30L;
+    private static final long LOW_GUTS_CONFRONTATION_ESCALATION_WINDOW_TICKS = 20L * 15L;
     private static final Map<UUID, RecentContainerClick> RECENT_CONTAINER_CLICKS = new HashMap<>();
     private static final Map<UUID, ContainerSnapshot> OPEN_CONTAINER_SNAPSHOTS = new HashMap<>();
     private static final Map<UUID, ForcedDialogueSession> FORCED_SESSIONS = new HashMap<>();
@@ -3102,6 +3104,13 @@ public final class ForcedDialogueService {
         if (candidates.isEmpty()) {
             return false;
         }
+        double confrontationRadius = candidates.stream()
+                .mapToDouble(ForcedDialogueDefinition::witnessRadius)
+                .max()
+                .orElse(0.0D);
+        if (isEscalatedLowGutsConflict(level, victim, player, confrontationRadius)) {
+            return false;
+        }
 
         for (ForcedDialogueDefinition definition : candidates) {
             Villager witness = findLowGutsRallyWitness(level, victim, player, definition).orElse(null);
@@ -4137,6 +4146,7 @@ public final class ForcedDialogueService {
         AABB area = victim.getBoundingBox().inflate(radius);
         return level.getEntitiesOfClass(Villager.class, area, villager -> villager.isAlive() && !villager.isBaby()).stream()
                 .filter(villager -> villager != victim)
+                .filter(villager -> !PartyService.areInSameParty(villager, player))
                 .filter(definition::matchesWitness)
                 .filter(villager -> villager.distanceToSqr(player) <= radiusSqr || villager.distanceToSqr(victim) <= radiusSqr)
                 .filter(villager -> VillagerInteractionService.canUseForcedInteractionSystem(player, villager))
@@ -4144,6 +4154,29 @@ public final class ForcedDialogueService {
                 .filter(villager -> !definition.requiresLineOfSight()
                         || villager.hasLineOfSight(player) && villager.hasLineOfSight(victim))
                 .min(Comparator.comparingDouble(villager -> villager.distanceToSqr(player)));
+    }
+
+    private static boolean isEscalatedLowGutsConflict(
+            ServerLevel level,
+            Villager victim,
+            ServerPlayer player,
+            double confrontationRadius) {
+        long oldestEscalatingEvent = level.getGameTime() - LOW_GUTS_CONFRONTATION_ESCALATION_WINDOW_TICKS;
+        boolean recentPlayerViolence = VillageEventMemory.recentForVillage(level, victim).stream()
+                .anyMatch(event -> player.getUUID().equals(event.playerId())
+                        && event.gameTime() >= oldestEscalatingEvent
+                        && (event.tag() == VillageEventMemory.EventTag.PLAYER_ATTACKED_VILLAGER
+                        || event.tag() == VillageEventMemory.EventTag.PLAYER_KILLED_VILLAGER
+                        || event.tag() == VillageEventMemory.EventTag.VILLAGER_DEATH
+                        || event.tag() == VillageEventMemory.EventTag.VILLAGER_RETALIATION_STARTED));
+        if (recentPlayerViolence) {
+            return true;
+        }
+
+        double radius = Math.max(confrontationRadius, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get());
+        AABB area = victim.getBoundingBox().inflate(radius);
+        return level.getEntitiesOfClass(Villager.class, area, villager -> villager.isAlive() && !villager.isBaby()).stream()
+                .anyMatch(villager -> VillagerRetaliationHandler.isHostileTowards(villager, player));
     }
 
     private static Map<String, String> lowGutsRallyReplacements(Villager victim, String victimName) {
