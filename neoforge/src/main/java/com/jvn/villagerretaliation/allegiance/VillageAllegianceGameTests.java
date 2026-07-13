@@ -402,7 +402,7 @@ public final class VillageAllegianceGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 140)
     public static void combatAuthorizationsExpireWithoutScanningLiveEntries(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Villager actor = spawnVillager(helper, new BlockPos(2, 2, 2));
@@ -410,23 +410,20 @@ public final class VillageAllegianceGameTests {
         long now = level.getServer().overworld().getGameTime();
         PartyRecord party = PartySavedData.get(level).createParty(UUID.randomUUID(), now);
         PartySavedData.get(level).addVillager(party, partyVillagerRecord(actor.getUUID(), party.leaderId(), now));
-        try {
-            VillageCombatAuthorizationService.clearRuntimeState();
-            helper.assertTrue(VillageCombatAuthorizationService.authorize(level, actor, target),
-                    "the fixture should create a combat authorization");
-            helper.assertValueEqual(VillageCombatAuthorizationService.authorizationCount(), 1,
-                    "the authorization should be live before its deadline");
+        helper.assertTrue(VillageCombatAuthorizationService.authorize(level, actor, target),
+                "the fixture should create a combat authorization");
+        helper.assertTrue(VillageCombatAuthorizationService.isAuthorized(actor, target),
+                "the authorization should be live before its deadline");
 
-            VillageCombatAuthorizationService.pruneExpired(now + 101L);
-
-            helper.assertValueEqual(VillageCombatAuthorizationService.authorizationCount(), 0,
+        helper.runAfterDelay(102L, () -> {
+            helper.assertFalse(VillageCombatAuthorizationService.isAuthorized(actor, target),
                     "the expiry queue should remove the authorization at its deadline");
-        } finally {
-            VillageCombatAuthorizationService.clearRuntimeState();
+            VillageCombatAuthorizationService.clearFor(actor);
+            VillageCombatAuthorizationService.clearFor(target);
             actor.discard();
             target.discard();
-        }
-        helper.succeed();
+            helper.succeed();
+        });
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

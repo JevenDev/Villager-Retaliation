@@ -106,7 +106,7 @@ public final class VillageCombatAuthorizationService {
         pruneExpired(event.getServer().overworld().getGameTime());
     }
 
-    public static void pruneExpired(long now) {
+    private static void pruneExpired(long now) {
         while (!AUTHORIZATION_EXPIRIES.isEmpty()
                 && AUTHORIZATION_EXPIRIES.peek().expiresGameTime() < now) {
             AuthorizationExpiry expiry = AUTHORIZATION_EXPIRIES.remove();
