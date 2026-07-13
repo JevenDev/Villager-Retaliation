@@ -6,6 +6,7 @@ public enum AllegianceAssignmentSource {
     NATURAL_SPAWN,
     CURE_COPY,
     CURE_INFERRED,
+    SETTLEMENT,
     COMMAND,
     QUEST,
     TRUST_REASSIGNMENT,

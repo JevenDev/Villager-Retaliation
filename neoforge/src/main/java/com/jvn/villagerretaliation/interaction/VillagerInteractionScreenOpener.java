@@ -4,9 +4,7 @@ import com.jvn.villagerretaliation.allegiance.AllegianceState;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
-import com.jvn.villagerretaliation.allegiance.VillageAllegianceEntityData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
-import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
@@ -37,7 +35,6 @@ import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -234,7 +231,7 @@ public final class VillagerInteractionScreenOpener {
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),
-                allegianceView(level, villager, player),
+                allegianceView(level, villager),
                 VillagerSocialGraphService.familySnapshot(level, villager),
                 VillagerSocialGraphService.relationshipSnapshot(level, villager)
         );
@@ -258,8 +255,7 @@ public final class VillagerInteractionScreenOpener {
 
     private static VillageAllegianceView allegianceView(
             ServerLevel level,
-            Villager villager,
-            ServerPlayer player) {
+            Villager villager) {
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         VillageAllegianceData data = VillageAllegianceApi.get(villager).orElse(null);
         Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> home = data != null && data.isKnown()
@@ -272,64 +268,17 @@ public final class VillagerInteractionScreenOpener {
                 : data.isKnown() && home.isEmpty()
                         ? "Orphaned village identity"
                         : home.map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName).orElse("Wanderer");
+        VillageAllegianceView.HomeStatus homeStatus = data == null || data.state() == AllegianceState.UNKNOWN
+                ? VillageAllegianceView.HomeStatus.UNKNOWN
+                : data.isKnown()
+                        ? VillageAllegianceView.HomeStatus.KNOWN
+                        : VillageAllegianceView.HomeStatus.WANDERER;
         String currentName = current.map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
                 .orElse("Outside a tracked village");
-        String location = home.map(record -> record.originDimension() + "  "
-                        + record.center().getX() + ", " + record.center().getY() + ", " + record.center().getZ())
-                .orElse("No village home");
-        String lifecycle = data != null && data.isKnown() && home.isEmpty()
-                ? "Orphaned — repair required"
-                : home.map(record -> title(record.lifecycleState().name())).orElse("Unaffiliated");
-        String source = data == null ? "Unknown" : title(data.assignmentSource().name());
-        String loyalty;
-        if (data == null || data.state() == AllegianceState.UNKNOWN) {
-            loyalty = "Unresolved";
-        } else if (!data.isKnown()) {
-            loyalty = "Wanderer — neutral to every village";
-        } else if (currentId.isPresent()
-                && registry.canonical(data.primary()).filter(currentId.get()::equals).isPresent()) {
-            loyalty = "Resident — defends this village";
-        } else {
-            loyalty = "Foreign resident — loyal to " + homeName;
-        }
-        com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService.Eligibility eligibility =
-                currentId.map(id -> com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService
-                                .eligibility(level, player, villager, id))
-                        .orElse(null);
-        boolean canReassign = eligibility != null && eligibility.allowed();
-        if (eligibility != null && eligibility.reason()
-                != com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService.Reason.ALREADY_HOME) {
-            loyalty += "\nReassignment: "
-                    + com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService.describe(eligibility);
-        }
-        String history = VillageAllegianceEntityData.readHistory(villager).stream()
-                .skip(Math.max(0, VillageAllegianceEntityData.readHistory(villager).size() - 3))
-                .map(entry -> title(entry.source().name()) + ": "
-                        + historyVillageName(registry, entry.previousVillage(), entry.previousState())
-                        + " -> " + historyVillageName(registry, entry.newVillage(), entry.newState()))
-                .collect(java.util.stream.Collectors.joining("\n"));
-        if (history.isBlank()) {
-            history = "No recorded changes";
-        }
+        boolean atHome = data != null && data.isKnown() && currentId.isPresent()
+                && registry.canonical(data.primary()).filter(currentId.get()::equals).isPresent();
         return new VillageAllegianceView(
-                homeName, currentName, location, lifecycle, source, history, loyalty, canReassign);
-    }
-
-    private static String historyVillageName(
-            VillageAllegianceRegistrySavedData registry,
-            VillageAllegianceId id,
-            AllegianceState state) {
-        if (id != null) {
-            return registry.canonicalRecord(id)
-                    .map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
-                    .orElse("Missing village");
-        }
-        return state == null ? "Unassigned" : title(state.name());
-    }
-
-    private static String title(String value) {
-        String normalized = value.toLowerCase(Locale.ROOT).replace('_', ' ');
-        return normalized.isEmpty() ? normalized : Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
+                homeName, currentName, homeStatus, current.isPresent(), atHome);
     }
 
     private static boolean hasTradingProfession(Villager villager) {

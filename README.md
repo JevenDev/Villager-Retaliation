@@ -90,9 +90,9 @@ Hostile villagers and wandering traders can also block trading. If you have not 
 
 ### Tracked Villages and Allegiance
 
-Villages now have durable identities, generated names, resident rosters, and footprints made from POIs, complete village structure pieces, and connected village terrain such as paths. Villagers born or spawned inside a tracked footprint keep that village as their permanent home; villagers created outside one are Wanderers and remain neutral to every village. Recruited Wanderers and foreign residents can fight for their party, while residents never attack their own canonical village—even after village merges.
+Villages now have durable identities, generated names, resident rosters, and footprints made from POIs, complete village structure pieces, and connected village terrain such as paths. Villagers born or spawned inside a tracked footprint make that village their home. Villagers created outside one are Wanderers; a Wanderer who remains in the same village for one full in-game day settles there automatically. Villagers who already have a home keep it when they travel, and party members never settle automatically.
 
-The interaction screen's Allegiance page shows a villager's home, current village, recent assignment history, lifecycle, loyalty, and reassignment readiness. Changing homes requires Revered or Royalty standing with the villager, a claimed bed or workstation in the destination, one resident day, acceptance from at least half of the village's active adults, and a second confirmation. Trusted players can also use a banner on a village bell to name the village; the banner is not consumed.
+The interaction screen's Home topic lets the player ask a villager where they call home and whether they belong to the current village. A Revered or Royalty player can ask a villager to adopt the current village, with a second confirmation. If the villager belongs to a party, the order is accepted only from a Revered or higher player in that same party. Trusted players can also use a banner on a village bell to name the village; the banner is not consumed.
 
 ### Dialogue and Interaction
 

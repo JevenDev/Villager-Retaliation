@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.allegiance.VillageNamingService;
 import com.jvn.villagerretaliation.allegiance.VillageFootprintResolver;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.network.VillageBoundsSyncPayload;
+import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationTags;
 import com.jvn.villagerretaliation.village.VillageMembership;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
@@ -33,6 +34,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
@@ -136,6 +138,27 @@ public final class VillageAllegianceGameTests {
         restored.ensureRecord(lateRecord, 5L, level.dimension().location(), BlockPos.ZERO);
         helper.assertValueEqual(restored.canonical(lateRecord).orElseThrow(), lateRecord,
                 "creating a record invalidates cached missing canonical paths");
+
+        BlockPos indexedPosition = helper.absolutePos(new BlockPos(3, 2, 3));
+        VillageAllegianceId indexedVillage = restored.create(
+                6L, level.dimension().location(), indexedPosition, "Indexed Village");
+        CompoundTag indexedSave = restored.save(new CompoundTag(), level.registryAccess());
+        for (Tag raw : indexedSave.getList("Records", Tag.TAG_COMPOUND)) {
+            if (raw instanceof CompoundTag record && record.hasUUID("Id")
+                    && record.getUUID("Id").equals(indexedVillage.value())) {
+                long section = SectionPos.asLong(indexedPosition);
+                record.putLongArray("SourceSections", new long[] {section});
+                record.putLongArray("FootprintSections", new long[] {section});
+                record.putLongArray("HistoricalFootprintSections", new long[] {section});
+            }
+        }
+        VillageAllegianceRegistrySavedData indexedRegistry = VillageAllegianceRegistrySavedData.load(
+                indexedSave, level.registryAccess());
+        helper.assertValueEqual(indexedRegistry.resolveAt(level, indexedPosition).orElseThrow(), indexedVillage,
+                "section index resolves a village without scanning every record");
+        helper.assertTrue(indexedRegistry.archive(indexedVillage), "indexed village archives");
+        helper.assertTrue(indexedRegistry.resolveAt(level, indexedPosition).isEmpty(),
+                "archiving invalidates the section index immediately");
         helper.succeed();
     }
 
@@ -185,7 +208,7 @@ public final class VillageAllegianceGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void newbornsInheritSharedHomesAndProtectMixedParents(GameTestHelper helper) {
+    public static void newbornsOutsideVillagesInheritAParentsHome(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         VillageAllegianceId firstHome = registry.create(
@@ -209,13 +232,43 @@ public final class VillageAllegianceGameTests {
         mixedChild.setBaby(true);
         VillageAllegianceService.assignBirthAllegiance(level, mixedChild, firstParent, secondParent);
         VillageAllegianceData mixed = VillageAllegianceApi.get(mixedChild).orElseThrow();
-        helper.assertValueEqual(mixed.state(), AllegianceState.UNKNOWN, "mixed parent allegiance remains unresolved");
-        helper.assertValueEqual(mixed.protectedParents(), List.of(firstHome, secondHome).stream().sorted().toList(),
-                "both parent communities remain protected");
+        helper.assertValueEqual(mixed.state(), AllegianceState.KNOWN,
+                "a child outside a village still inherits a parent's known home");
+        helper.assertValueEqual(mixed.primary(), firstHome,
+                "the first parent with a known home supplies the inherited home");
+        helper.assertValueEqual(mixed.protectedParents(), List.of(firstHome, secondHome),
+                "both parent communities remain protected while the child is a baby");
         helper.assertTrue(VillageAllegianceRelations.sharesCommunity(level, mixedChild, firstParent),
                 "mixed child is protected by the first parent community");
         helper.assertTrue(VillageAllegianceRelations.sharesCommunity(level, mixedChild, secondParent),
                 "mixed child is protected by the second parent community");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyVillagerHomeOrdersRejectOutsidePlayers(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager villager = createVillager(level);
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceId target = registry.create(
+                level.getGameTime(), level.dimension().location(), BlockPos.ZERO, "Party Destination");
+        PartySavedData partyData = PartySavedData.get(level);
+        PartyRecord party = partyData.createParty(UUID.randomUUID(), level.getGameTime());
+        partyData.addVillager(party, partyVillagerRecord(villager.getUUID(), party.leaderId(), level.getGameTime()));
+        VillagerReputationManager.setReputation(level, villager, player.getUUID(), Integer.MAX_VALUE);
+
+        helper.assertValueEqual(
+                VillageAllegianceReassignmentService.eligibility(level, player, villager, target).reason(),
+                VillageAllegianceReassignmentService.Reason.OUTSIDE_PARTY,
+                "even a revered outside player cannot choose a party villager's home");
+        helper.assertTrue(partyData.addPlayer(party, player.getUUID()),
+                "the test player can join the villager's party");
+        helper.assertTrue(VillageAllegianceReassignmentService.eligibility(level, player, villager, target).allowed(),
+                "a revered player in the same party can choose the villager's home");
+
+        partyData.removeParty(party.id());
+        villager.discard();
         helper.succeed();
     }
 

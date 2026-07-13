@@ -1810,26 +1810,50 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void openAllegiancePage() {
-        acceptVillagerDialogue(translate(
-                "allegiance.details",
-                this.allegiance.homeVillage(),
-                this.allegiance.currentVillage(),
-                this.allegiance.location(),
-                this.allegiance.lifecycle(),
-                this.allegiance.assignmentSource(),
-                this.allegiance.history(),
-                this.allegiance.loyalty()), List.of());
+        acceptVillagerDialogue(translate("allegiance.prompt"), List.of());
         openPage(DialoguePage.ALLEGIANCE);
     }
 
     private void addAllegianceOptions() {
-        if (this.allegiance.canReassign()) {
+        addOption("allegiance.ask_home", this::showHomeVillageDialogue);
+        addOption("allegiance.ask_here", this::showCurrentVillageDialogue);
+        if (!this.baby && this.allegiance.inVillage() && !this.allegiance.atHome()) {
             addOption("allegiance.reassign", () -> sendToServer(new VillagerAllegianceActionPayload(
                     this.villagerEntityId,
                     VillagerAllegianceActionPayload.Action.REASSIGN_TO_CURRENT_VILLAGE)));
-        } else {
-            addPassiveOption("allegiance.reassign_locked");
         }
+    }
+
+    private void showHomeVillageDialogue() {
+        String key = switch (this.allegiance.homeStatus()) {
+            case KNOWN -> this.allegiance.atHome()
+                    ? "allegiance.answer.home_here"
+                    : "allegiance.answer.home_away";
+            case WANDERER -> this.recruitedPartyVillager
+                    ? "allegiance.answer.wanderer_party"
+                    : this.allegiance.inVillage()
+                            ? "allegiance.answer.wanderer_settling"
+                            : "allegiance.answer.wanderer";
+            case UNKNOWN -> "allegiance.answer.unknown";
+        };
+        acceptVillagerDialogue(translate(key, this.allegiance.homeVillage()), List.of());
+    }
+
+    private void showCurrentVillageDialogue() {
+        String key;
+        if (!this.allegiance.inVillage()) {
+            key = "allegiance.answer.here_outside";
+        } else if (this.allegiance.atHome()) {
+            key = "allegiance.answer.here_home";
+        } else if (this.allegiance.homeStatus() == VillageAllegianceView.HomeStatus.KNOWN) {
+            key = "allegiance.answer.here_foreign";
+        } else if (this.recruitedPartyVillager) {
+            key = "allegiance.answer.here_party";
+        } else {
+            key = "allegiance.answer.here_visiting";
+        }
+        acceptVillagerDialogue(translate(
+                key, this.allegiance.currentVillage(), this.allegiance.homeVillage()), List.of());
     }
 
     private void openSkillsPage() {

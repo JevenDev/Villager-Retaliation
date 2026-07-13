@@ -1,6 +1,9 @@
 # Changelog
 
 - Made generated village names additive and data-driven through `data/villagerretaliation/village_names/`, and expanded the built-in prefix/suffix pool from 1,944 to 7,998 possible combinations.
+- Reworked village homes: spawned villagers join only when created inside a village, outside spawns become Wanderers, Wanderers settle after one continuous day, party members do not settle automatically, and Revered same-party players can explicitly choose a party villager's home.
+- Reworked newborn allegiance so birthplace takes priority, while babies born outside a village inherit the first parent's known home; replaced the technical Allegiance readout with player-facing questions and villager dialogue about home and local belonging.
+- Optimized village-home maintenance with indexed section lookups, priority-scheduled villagers and uncertainty retries, hard per-tick work budgets, O(1) same-village residency checks, and staggered lifecycle scans instead of periodic full entity sweeps.
 - Improved village allegiance assignment with durable uncertainty retries, evidence scoring, parent-aware inheritance, protected mixed parentage, shrinkable current footprints, conservative automatic merges, merge recovery, residency-based reassignment, confirmation prompts, bounded assignment history, stale-roster filtering, and explain/repair diagnostics.
 - Added global and per-villager party combat modes for kill on sight, attack with party, or self defense, plus target modes for animals, hostiles, players, other parties, or all targets. New parties and recruits default to attack with party.
 - Added a server-authoritative downed state for protected villagers. Active party members, quest-v2 providers, protected scene actors, and villagers tagged `villagerretaliation_essential` survive ordinary lethal damage, suspend AI and interactions, and recover after a configurable quiet period.

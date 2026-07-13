@@ -2285,14 +2285,9 @@ public final class VillagerInteractionService {
             return;
         }
         ServerLevel level = player.serverLevel();
-        VillagerReputationLevel reputation = VillagerReputationManager
-                .getReputationSnapshot(level, villager, player.getUUID()).level();
-        if (reputation.trustRank() < VillagerReputationLevel.REVERED.trustRank()) {
-            sendVillagerNotice(player, villager, "I would need to trust you much more before changing my home.");
-            return;
-        }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-        Optional<VillageAllegianceId> current = registry.discoverAt(level, villager.blockPosition());
+        Optional<VillageAllegianceId> current = VillageAllegianceService.activeVillageAt(
+                level, villager.blockPosition());
         if (current.isEmpty() || registry.canonicalRecord(current.get())
                 .filter(record -> record.lifecycleState() == VillageLifecycleState.ACTIVE).isEmpty()) {
             sendVillagerNotice(player, villager, "There is no active village here for me to join.");
@@ -2311,7 +2306,7 @@ public final class VillagerInteractionService {
         }
         if (!VillageAllegianceReassignmentService.confirmOrArm(level, player, villager, current.get())) {
             sendVillagerNotice(player, villager,
-                    "Changing my home will also change which village I defend. Ask me once more within 30 seconds to confirm.");
+                    "That would change where I belong and which village I defend. Ask me once more within 30 seconds if you are certain.");
             return;
         }
         if (!VillageAllegianceService.reassignToCurrentVillage(level, villager)) {

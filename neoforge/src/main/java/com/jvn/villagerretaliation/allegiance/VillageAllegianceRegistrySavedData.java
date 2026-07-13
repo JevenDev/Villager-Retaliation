@@ -44,6 +44,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     private final Map<VillageAllegianceId, Optional<VillageAllegianceId>> canonicalCache = new HashMap<>();
     private final Map<UUID, LinkedHashSet<VillageAllegianceId>> residentRecords = new HashMap<>();
     private final Map<MergeKey, MergeObservation> mergeObservations = new HashMap<>();
+    private final Map<ResourceLocation, Map<Long, List<VillageAllegianceId>>> footprintIndex = new HashMap<>();
+    private boolean footprintIndexDirty = true;
 
     public static VillageAllegianceRegistrySavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -175,7 +177,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             safeName = VillageNameGenerator.generate(id.value(), unavailableNames());
         }
         this.records.put(id, AllegianceRecord.create(id, gameTime, dimension, position, safeName, customName));
-        setDirty();
+        markFootprintChanged();
         return id;
     }
 
@@ -185,7 +187,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             this.records.put(id, AllegianceRecord.create(id, gameTime, dimension, position, name, false));
             // A missing alias target may have cached empty results for the whole path.
             this.canonicalCache.clear();
-            setDirty();
+            markFootprintChanged();
         }
     }
 
@@ -214,8 +216,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             return Optional.empty();
         }
         long section = SectionPos.asLong(pos);
-        return activeRecords(level.dimension().location()).stream()
-                .filter(record -> record.footprintSections().contains(section))
+        return indexedRecords(level.dimension().location(), section).stream()
                 .min(Comparator.comparingDouble(record -> record.center().distSqr(pos)))
                 .map(AllegianceRecord::id);
     }
@@ -230,8 +231,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             return List.of();
         }
         long section = SectionPos.asLong(pos);
-        return activeRecords(level.dimension().location()).stream()
-                .filter(record -> record.footprintSections().contains(section))
+        return indexedRecords(level.dimension().location(), section).stream()
                 .sorted(Comparator.comparingDouble(record -> record.center().distSqr(pos)))
                 .toList();
     }
@@ -264,8 +264,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
         AllegianceRecord current = this.records.get(resolved);
         if (current != null) {
-            this.records.put(resolved, current.observe(cluster, footprint, centerOf(cluster, pos), level.getGameTime()));
-            setDirty();
+            putObservedRecord(current, current.observe(
+                    cluster, footprint, centerOf(cluster, pos), level.getGameTime()));
         }
         return Optional.of(resolved);
     }
@@ -312,7 +312,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             return false;
         }
         this.records.put(current.id(), current.withLifecycle(VillageLifecycleState.ARCHIVED, current.emptyObservedTicks()));
-        setDirty();
+        markFootprintChanged();
         return true;
     }
 
@@ -325,8 +325,13 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         VillageLifecycleState state = total >= ARCHIVE_GRACE_TICKS
                 ? VillageLifecycleState.ARCHIVED
                 : VillageLifecycleState.EMPTY_GRACE;
-        this.records.put(current.id(), current.withLifecycle(state, total));
-        setDirty();
+        AllegianceRecord updated = current.withLifecycle(state, total);
+        this.records.put(current.id(), updated);
+        if (current.archived() != updated.archived()) {
+            markFootprintChanged();
+        } else {
+            setDirty();
+        }
     }
 
     public void refreshLoadedLifecycles(ServerLevel level, long observedTicks) {
@@ -335,12 +340,27 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
         ResourceLocation dimension = level.dimension().location();
         for (AllegianceRecord record : List.copyOf(activeRecords(dimension))) {
-            if (record.sourceSections().isEmpty() || !entireFootprintLoaded(level, record)) {
-                continue;
-            }
-            if (!observeLoadedCluster(level, record)) {
-                observeEmpty(record.id(), observedTicks);
-            }
+            refreshLoadedLifecycle(level, record.id(), observedTicks);
+        }
+    }
+
+    /** Refreshes one village so callers can distribute expensive POI/footprint work across ticks. */
+    public void refreshLoadedLifecycle(
+            ServerLevel level,
+            VillageAllegianceId villageId,
+            long observedTicks) {
+        if (level == null || villageId == null || observedTicks <= 0L) {
+            return;
+        }
+        AllegianceRecord record = canonicalRecord(villageId)
+                .filter(candidate -> !candidate.archived())
+                .filter(candidate -> level.dimension().location().equals(candidate.originDimension()))
+                .orElse(null);
+        if (record == null || record.sourceSections().isEmpty() || !entireFootprintLoaded(level, record)) {
+            return;
+        }
+        if (!observeLoadedCluster(level, record)) {
+            observeEmpty(record.id(), observedTicks);
         }
     }
 
@@ -467,7 +487,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         this.canonicalCache.clear();
         this.mergeObservations.clear();
         rebuildResidentIndex();
-        setDirty();
+        markFootprintChanged();
         return true;
     }
 
@@ -478,6 +498,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     public void clearRuntimeCache() {
         this.canonicalCache.clear();
         this.mergeObservations.clear();
+        this.footprintIndex.clear();
+        this.footprintIndexDirty = true;
     }
 
     private VillageAllegianceId autoMerge(Collection<VillageAllegianceId> ids) {
@@ -556,7 +578,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         this.aliases.put(source, target);
         this.mergeObservations.keySet().removeIf(key -> key.contains(source) || key.contains(target));
         this.canonicalCache.clear();
-        setDirty();
+        markFootprintChanged();
         return true;
     }
 
@@ -608,10 +630,64 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 matches, cluster, record.center(), level.getGameTime());
         AllegianceRecord current = this.records.get(resolved);
         if (current != null) {
-            this.records.put(resolved, current.observe(cluster, footprint, centerOf(cluster, record.center()), level.getGameTime()));
-            setDirty();
+            putObservedRecord(current, current.observe(
+                    cluster, footprint, centerOf(cluster, record.center()), level.getGameTime()));
         }
         return true;
+    }
+
+    private void putObservedRecord(AllegianceRecord previous, AllegianceRecord updated) {
+        this.records.put(updated.id(), updated);
+        boolean indexedShapeChanged = !previous.footprintSections().equals(updated.footprintSections())
+                || !java.util.Objects.equals(previous.originDimension(), updated.originDimension())
+                || previous.archived() != updated.archived();
+        if (indexedShapeChanged) {
+            markFootprintChanged();
+        } else {
+            setDirty();
+        }
+    }
+
+    private List<AllegianceRecord> indexedRecords(ResourceLocation dimension, long section) {
+        rebuildFootprintIndexIfNeeded();
+        List<VillageAllegianceId> ids = this.footprintIndex
+                .getOrDefault(dimension, Map.of())
+                .getOrDefault(section, List.of());
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        List<AllegianceRecord> result = new ArrayList<>(ids.size());
+        for (VillageAllegianceId id : ids) {
+            AllegianceRecord record = this.records.get(id);
+            if (record != null && !record.archived()) {
+                result.add(record);
+            }
+        }
+        return result;
+    }
+
+    private void rebuildFootprintIndexIfNeeded() {
+        if (!this.footprintIndexDirty) {
+            return;
+        }
+        this.footprintIndex.clear();
+        for (AllegianceRecord record : this.records.values()) {
+            if (record.archived() || record.originDimension() == null
+                    || canonical(record.id()).filter(record.id()::equals).isEmpty()) {
+                continue;
+            }
+            Map<Long, List<VillageAllegianceId>> dimensionIndex = this.footprintIndex.computeIfAbsent(
+                    record.originDimension(), ignored -> new HashMap<>());
+            for (long section : record.footprintSections()) {
+                dimensionIndex.computeIfAbsent(section, ignored -> new ArrayList<>()).add(record.id());
+            }
+        }
+        this.footprintIndexDirty = false;
+    }
+
+    private void markFootprintChanged() {
+        this.footprintIndexDirty = true;
+        setDirty();
     }
 
     private static Set<Long> connectedSources(Set<Long> all, Set<Long> seeds) {

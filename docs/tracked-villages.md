@@ -14,18 +14,21 @@ Mods and modpacks can append structures or terrain blocks with normal `replace: 
 ## Allegiance rules
 
 - Villagers and naturally created iron golems spawned inside a tracked footprint receive that village permanently.
-- Newborn villagers inherit a shared parent village. Mixed-village parentage uses the physical village when it clearly matches one parent; otherwise both parent communities remain protected while assignment is unresolved.
+- Newborn villagers born inside a village receive that village, regardless of their parents' homes. Outside a village, a baby inherits the first parent's known home; if neither parent has one, the baby is a Wanderer.
 - Villagers spawned outside every tracked footprint are Wanderers. They are neutral to all villages and can be recruited against any village.
+- A non-party Wanderer who remains inside the same active village for 24,000 ticks settles there automatically. Leaving, changing villages, joining a party, or a backward game-time change resets the settlement clock.
+- Villagers who already have a home never change it merely by traveling or claiming a local bed or workstation.
+- Party villagers never settle automatically. A party villager can adopt the current village only when ordered by a Revered or Royalty player in that same party; outside players cannot issue the order.
 - Recruited foreign residents can fight another village without the target belonging to a party.
 - Same-party and same-canonical-village combat is always rejected. A merge therefore invalidates an older combat authorization immediately.
 - Community retaliation begins only after damage lands and spreads only through the harmed resident's canonical village.
 - Conversion preserves current-version allegiance. Legacy v1 or missing data is classified lazily from the entity's position when it loads.
 - An uncertain assignment remains pending across entity saves and retries until the surrounding chunks provide enough evidence to resolve it safely.
-- Reassignment requires Revered individual trust, a claimed bed or workstation in the destination, one resident day, acceptance from at least half of its active adult residents, and a repeated confirmation within 30 seconds.
+- Deliberate reassignment requires Revered individual trust and a repeated confirmation within 30 seconds. The party restriction above is applied before trust is considered.
 
 Connected POI footprints merge automatically only after three spaced observations show the same occupied-POI connection. Terrain-only or diagonal section contact cannot merge identities. Current footprints may shrink as evidence changes while historical coverage remains available for diagnostics. Empty records advance toward archival only while every footprint chunk is loaded and observed. After 72,000 observed ticks with no occupied source POI, the identity archives; rebuilding creates a new identity.
 
-The Allegiance page shows the latest three assignment changes. The entity payload retains the latest eight, including the responsible player for trusted reassignment.
+The player-facing Home topic answers direct questions about the villager's home and the current village. Technical assignment history remains available to allegiance inspection commands, and the entity payload retains the latest eight changes, including the responsible player for trusted reassignment.
 
 ## Village naming
 

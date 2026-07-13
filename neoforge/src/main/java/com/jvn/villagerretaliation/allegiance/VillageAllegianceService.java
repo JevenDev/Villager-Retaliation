@@ -1,13 +1,19 @@
 package com.jvn.villagerretaliation.allegiance;
 
-import java.util.ArrayList;
+import com.jvn.villagerretaliation.party.PartyService;
+import java.util.ArrayDeque;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
 import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -16,6 +22,7 @@ import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
+import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.living.BabyEntitySpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingConversionEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
@@ -25,12 +32,28 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 public final class VillageAllegianceService {
     private static final long RETRY_INTERVAL_TICKS = 20L;
     private static final long MAX_RETRY_INTERVAL_TICKS = 200L;
-    private static final long LIFECYCLE_REFRESH_TICKS = 200L;
+    private static final long WANDERER_CHECK_INTERVAL_TICKS = 200L;
+    private static final long RESIDENT_REFRESH_INTERVAL_TICKS = 1_200L;
+    private static final long LIFECYCLE_REFRESH_TICKS = 1_200L;
+    private static final long LIFECYCLE_WORK_SPACING_TICKS = 5L;
+    private static final int MAX_PENDING_CHECKS_PER_TICK = 8;
+    private static final int MAX_VILLAGER_CHECKS_PER_TICK = 16;
+    private static final int MAX_LIFECYCLE_CHECKS_PER_TICK = 1;
     private static final Map<UUID, PendingAssignment> PENDING = new HashMap<>();
+    private static final PriorityQueue<PendingTask> PENDING_QUEUE = new PriorityQueue<>(
+            Comparator.comparingLong((PendingTask task) -> task.pending().nextAttemptGameTime())
+                    .thenComparing(PendingTask::entityId));
+    private static final Map<UUID, ScheduledVillager> SCHEDULED_VILLAGERS = new HashMap<>();
+    private static final PriorityQueue<ScheduledVillager> VILLAGER_QUEUE = new PriorityQueue<>(
+            Comparator.comparingLong(ScheduledVillager::nextCheckGameTime)
+                    .thenComparing(ScheduledVillager::villagerId));
+    private static final ArrayDeque<LifecycleTask> LIFECYCLE_QUEUE = new ArrayDeque<>();
+    private static final Set<LifecycleTask> QUEUED_LIFECYCLES = new HashSet<>();
     private static long migratedKnown;
     private static long migratedUnknown;
     private static long migratedUnaffiliated;
     private static long nextLifecycleRefresh;
+    private static long nextLifecycleWork;
 
     private VillageAllegianceService() {
     }
@@ -46,9 +69,17 @@ public final class VillageAllegianceService {
         Optional<VillageAllegianceData> existing = VillageAllegianceApi.get(entity);
         if (existing.filter(data -> data.dataVersion() >= VillageAllegianceData.CURRENT_VERSION).isPresent()) {
             VillageAllegianceData data = existing.get();
+            if (entity instanceof Villager villager
+                    && data.state() == AllegianceState.UNKNOWN
+                    && data.assignmentSource() == AllegianceAssignmentSource.BIRTH
+                    && !data.protectedParents().isEmpty()) {
+                recoverLegacyBirthAssignment(level, villager, data);
+                return;
+            }
             normalizeAndTrack(level, entity, data);
+            scheduleLoadedVillager(level, entity, data, false);
             if (data.state() == AllegianceState.UNKNOWN) {
-                VillageAllegianceEntityData.readPending(entity).ifPresent(pending -> PENDING.put(
+                VillageAllegianceEntityData.readPending(entity).ifPresent(pending -> putPending(
                         entity.getUUID(), PendingAssignment.from(pending)));
             }
             return;
@@ -73,6 +104,10 @@ public final class VillageAllegianceService {
             return;
         }
         BlockPos evidencePosition = entity.blockPosition().immutable();
+        if (entity instanceof Villager villager && source == AllegianceAssignmentSource.NATURAL_SPAWN) {
+            assignFreshVillager(level, villager, evidencePosition);
+            return;
+        }
         if (tryResolve(level, entity, source, false, evidencePosition)) {
             return;
         }
@@ -83,15 +118,30 @@ public final class VillageAllegianceService {
     public static void onServerTickPost(ServerTickEvent.Post event) {
         MinecraftServer server = event.getServer();
         long gameTime = server.overworld().getGameTime();
-        List<UUID> completed = new ArrayList<>();
-        for (Map.Entry<UUID, PendingAssignment> entry : List.copyOf(PENDING.entrySet())) {
-            PendingAssignment pending = entry.getValue();
-            if (gameTime < pending.nextAttemptGameTime()) {
+        processPendingAssignments(server, gameTime);
+        processScheduledVillagers(server, gameTime);
+
+        if (gameTime >= nextLifecycleRefresh) {
+            nextLifecycleRefresh = gameTime + LIFECYCLE_REFRESH_TICKS;
+            enqueueLifecycleRefreshes(server);
+        }
+        processLifecycleRefreshes(server, gameTime);
+    }
+
+    private static void processPendingAssignments(MinecraftServer server, long gameTime) {
+        int processed = 0;
+        while (processed < MAX_PENDING_CHECKS_PER_TICK
+                && !PENDING_QUEUE.isEmpty()
+                && PENDING_QUEUE.peek().pending().nextAttemptGameTime() <= gameTime) {
+            PendingTask task = PENDING_QUEUE.remove();
+            PendingAssignment pending = PENDING.get(task.entityId());
+            if (pending == null || !pending.equals(task.pending())) {
                 continue;
             }
-            Entity entity = findLoaded(server, entry.getKey());
+            processed++;
+            Entity entity = findLoaded(server, task.entityId());
             if (entity == null || !(entity.level() instanceof ServerLevel level)) {
-                completed.add(entry.getKey());
+                PENDING.remove(task.entityId());
                 continue;
             }
             if (!level.dimension().location().equals(pending.initialDimension())) {
@@ -103,33 +153,82 @@ public final class VillageAllegianceService {
                     .filter(data -> data.dataVersion() >= VillageAllegianceData.CURRENT_VERSION);
             if (explicit.isPresent() && explicit.get().state() != AllegianceState.UNKNOWN) {
                 normalizeAndTrack(level, entity, explicit.get());
-                completed.add(entry.getKey());
+                scheduleLoadedVillager(level, entity, explicit.get(), false);
+                PENDING.remove(task.entityId());
                 continue;
             }
             int attempts = pending.attempts() + 1;
             if (tryResolve(level, entity, pending.source(), false, pending.initialPosition())) {
-                completed.add(entry.getKey());
+                PENDING.remove(task.entityId());
             } else {
                 long delay = Math.min(MAX_RETRY_INTERVAL_TICKS, RETRY_INTERVAL_TICKS * Math.max(1L, attempts));
                 PendingAssignment updated = pending.withAttempt(attempts, gameTime + delay);
-                PENDING.put(entry.getKey(), updated);
+                putPending(task.entityId(), updated);
                 VillageAllegianceEntityData.writePending(entity, updated.toData());
             }
         }
-        completed.forEach(PENDING::remove);
+    }
 
-        if (gameTime >= nextLifecycleRefresh) {
-            nextLifecycleRefresh = gameTime + LIFECYCLE_REFRESH_TICKS;
-            for (ServerLevel level : server.getAllLevels()) {
-                VillageAllegianceRegistrySavedData.get(level).refreshLoadedLifecycles(level, LIFECYCLE_REFRESH_TICKS);
+    private static void processScheduledVillagers(MinecraftServer server, long gameTime) {
+        int processed = 0;
+        while (processed < MAX_VILLAGER_CHECKS_PER_TICK
+                && !VILLAGER_QUEUE.isEmpty()
+                && VILLAGER_QUEUE.peek().nextCheckGameTime() <= gameTime) {
+            ScheduledVillager scheduled = VILLAGER_QUEUE.remove();
+            if (SCHEDULED_VILLAGERS.get(scheduled.villagerId()) != scheduled) {
+                continue;
             }
-            VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(server.overworld());
-            for (UUID residentId : registry.residentIds()) {
-                Entity entity = findLoaded(server, residentId);
-                if (entity instanceof Villager villager && villager.level() instanceof ServerLevel level) {
-                    VillageAllegianceApi.get(villager).ifPresent(data -> normalizeAndTrack(level, villager, data));
+            processed++;
+            ServerLevel level = server.getLevel(scheduled.dimension());
+            Entity entity = level == null ? null : level.getEntity(scheduled.villagerId());
+            if (!(entity instanceof Villager villager)) {
+                SCHEDULED_VILLAGERS.remove(scheduled.villagerId(), scheduled);
+                continue;
+            }
+            VillageAllegianceData data = VillageAllegianceApi.get(villager).orElse(null);
+            if (data == null || data.state() == AllegianceState.UNKNOWN) {
+                SCHEDULED_VILLAGERS.remove(scheduled.villagerId(), scheduled);
+                continue;
+            }
+            if (data.isKnown()) {
+                normalizeAndTrack(level, villager, data);
+            } else {
+                updateWanderingResidency(level, villager, data);
+            }
+            VillageAllegianceData updated = VillageAllegianceApi.get(villager).orElse(data);
+            scheduleLoadedVillager(level, villager, updated, false);
+        }
+    }
+
+    private static void enqueueLifecycleRefreshes(MinecraftServer server) {
+        for (ServerLevel level : server.getAllLevels()) {
+            for (VillageAllegianceRegistrySavedData.AllegianceRecord record
+                    : VillageAllegianceRegistrySavedData.get(level).activeRecords(level.dimension().location())) {
+                LifecycleTask task = new LifecycleTask(level.dimension(), record.id());
+                if (QUEUED_LIFECYCLES.add(task)) {
+                    LIFECYCLE_QUEUE.addLast(task);
                 }
             }
+        }
+    }
+
+    private static void processLifecycleRefreshes(MinecraftServer server, long gameTime) {
+        if (gameTime < nextLifecycleWork) {
+            return;
+        }
+        int processed = 0;
+        while (processed < MAX_LIFECYCLE_CHECKS_PER_TICK && !LIFECYCLE_QUEUE.isEmpty()) {
+            LifecycleTask task = LIFECYCLE_QUEUE.removeFirst();
+            QUEUED_LIFECYCLES.remove(task);
+            ServerLevel level = server.getLevel(task.dimension());
+            if (level != null) {
+                VillageAllegianceRegistrySavedData.get(level).refreshLoadedLifecycle(
+                        level, task.villageId(), LIFECYCLE_REFRESH_TICKS);
+            }
+            processed++;
+        }
+        if (processed > 0) {
+            nextLifecycleWork = gameTime + LIFECYCLE_WORK_SPACING_TICKS;
         }
     }
 
@@ -152,48 +251,19 @@ public final class VillageAllegianceService {
                 .map(parent -> VillageAllegianceApi.canonicalPrimary(level, parent))
                 .flatMap(Optional::stream)
                 .distinct()
-                .sorted()
                 .toList();
-        if (parents.size() == 1) {
+        Optional<VillageAllegianceId> discovered = activeVillageAt(level, child.blockPosition());
+        if (discovered.isPresent()) {
+            assignKnown(level, child, discovered.get(), AllegianceAssignmentSource.BIRTH,
+                    child.blockPosition(), AllegianceConfidence.INHERITED, parents);
+            return;
+        }
+        if (!parents.isEmpty()) {
             assignKnown(level, child, parents.getFirst(), AllegianceAssignmentSource.BIRTH,
                     child.blockPosition(), AllegianceConfidence.INHERITED, parents);
             return;
         }
-        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-        Optional<VillageAllegianceId> discovered = registry.discoverAt(level, child.blockPosition());
-        if (parents.size() > 1) {
-            Optional<VillageAllegianceId> matchingParent = discovered
-                    .flatMap(registry::canonical)
-                    .filter(parents::contains);
-            if (matchingParent.isPresent()) {
-                assignKnown(level, child, matchingParent.get(), AllegianceAssignmentSource.BIRTH,
-                        child.blockPosition(), AllegianceConfidence.INHERITED, parents);
-            } else {
-                assignUnknown(level, child, AllegianceAssignmentSource.BIRTH,
-                        AllegianceConfidence.INHERITED, parents);
-                schedulePending(level, child, child.blockPosition(), AllegianceAssignmentSource.BIRTH, 0,
-                        level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS);
-            }
-            return;
-        }
-        VillageAssignmentResolution resolution = VillageAssignmentResolver.resolve(
-                level, child, child.blockPosition(), discovered, parents);
-        if (resolution.status() == VillageAssignmentResolution.Status.RESOLVED) {
-            assignKnown(level, child, resolution.selected(), AllegianceAssignmentSource.BIRTH,
-                    child.blockPosition(), AllegianceConfidence.INHERITED, parents);
-            return;
-        }
-        if (resolution.status() == VillageAssignmentResolution.Status.NONE
-                && resolution.observationComplete() && parents.isEmpty()) {
-            assignUnaffiliated(level, child, AllegianceAssignmentSource.BIRTH);
-            return;
-        }
-        assignUnknown(level, child, AllegianceAssignmentSource.BIRTH,
-                AllegianceConfidence.INHERITED, parents);
-        if (resolution.status() != VillageAssignmentResolution.Status.NONE || !resolution.observationComplete()) {
-            schedulePending(level, child, child.blockPosition(), AllegianceAssignmentSource.BIRTH, 0,
-                    level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS);
-        }
+        assignUnaffiliated(level, child, AllegianceAssignmentSource.BIRTH);
     }
 
     public static void onLivingConversionPost(LivingConversionEvent.Post event) {
@@ -224,6 +294,15 @@ public final class VillageAllegianceService {
         if (event.getEntity().level() instanceof ServerLevel level) {
             VillageAllegianceRegistrySavedData.get(level).removeResidentEverywhere(event.getEntity().getUUID());
             PENDING.remove(event.getEntity().getUUID());
+            unscheduleVillager(event.getEntity().getUUID());
+        }
+    }
+
+    public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (!event.getLevel().isClientSide()) {
+            UUID entityId = event.getEntity().getUUID();
+            PENDING.remove(entityId);
+            unscheduleVillager(entityId);
         }
     }
 
@@ -231,13 +310,60 @@ public final class VillageAllegianceService {
         if (level == null || villager == null) {
             return false;
         }
-        Optional<VillageAllegianceId> current = VillageAllegianceRegistrySavedData.get(level)
-                .discoverAt(level, villager.blockPosition());
+        Optional<VillageAllegianceId> current = activeVillageAt(level, villager.blockPosition());
         if (current.isEmpty()) {
             return false;
         }
         assignKnown(level, villager, current.get(), AllegianceAssignmentSource.TRUST_REASSIGNMENT,
                 villager.blockPosition());
+        return true;
+    }
+
+    /**
+     * Advances a Wanderer's settlement clock. A continuous day in one active village makes
+     * that village home, unless the villager is traveling as a party member.
+     */
+    public static boolean updateWanderingResidency(ServerLevel level, Villager villager) {
+        if (level == null || villager == null) {
+            return false;
+        }
+        VillageAllegianceData allegiance = VillageAllegianceApi.get(villager).orElse(null);
+        return updateWanderingResidency(level, villager, allegiance);
+    }
+
+    private static boolean updateWanderingResidency(
+            ServerLevel level,
+            Villager villager,
+            VillageAllegianceData allegiance) {
+        if (allegiance == null || allegiance.state() != AllegianceState.UNAFFILIATED
+                || PartyService.isRecruitedPartyVillager(level, villager.getUUID())) {
+            VillageAllegianceReassignmentService.resetResidency(villager);
+            return false;
+        }
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceReassignmentService.Residency residency =
+                VillageAllegianceReassignmentService.readResidency(villager).orElse(null);
+        Optional<VillageAllegianceId> current = residencyVillageAtCurrentPosition(
+                registry, villager.blockPosition(), residency).or(() -> activeVillageAt(level, villager.blockPosition()));
+        if (current.isEmpty()) {
+            VillageAllegianceReassignmentService.resetResidency(villager);
+            return false;
+        }
+        long now = level.getGameTime();
+        if (residency == null
+                || registry.canonical(residency.village()).filter(current.get()::equals).isEmpty()
+                || now < residency.sinceGameTime()) {
+            VillageAllegianceReassignmentService.writeResidency(villager,
+                    new VillageAllegianceReassignmentService.Residency(current.get(), now));
+            return false;
+        }
+        if (now - residency.sinceGameTime()
+                < VillageAllegianceReassignmentService.REQUIRED_RESIDENCY_TICKS) {
+            return false;
+        }
+        assignKnown(level, villager, current.get(), AllegianceAssignmentSource.SETTLEMENT,
+                villager.blockPosition());
+        VillageAllegianceReassignmentService.complete(villager);
         return true;
     }
 
@@ -258,11 +384,17 @@ public final class VillageAllegianceService {
 
     public static void clearRuntimeState(MinecraftServer server) {
         PENDING.clear();
+        PENDING_QUEUE.clear();
+        SCHEDULED_VILLAGERS.clear();
+        VILLAGER_QUEUE.clear();
+        LIFECYCLE_QUEUE.clear();
+        QUEUED_LIFECYCLES.clear();
         VillageAllegianceReassignmentService.clearRuntimeState();
         migratedKnown = 0L;
         migratedUnknown = 0L;
         migratedUnaffiliated = 0L;
         nextLifecycleRefresh = 0L;
+        nextLifecycleWork = 0L;
         if (server != null) {
             VillageAllegianceRegistrySavedData.get(server.overworld()).clearRuntimeCache();
         }
@@ -286,7 +418,7 @@ public final class VillageAllegianceService {
             return false;
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
-        Optional<VillageAllegianceId> discovered = registry.discoverAt(level, evidencePosition);
+        Optional<VillageAllegianceId> discovered = villageAt(level, evidencePosition);
         List<VillageAllegianceId> protectedParents = VillageAllegianceApi.get(entity)
                 .map(VillageAllegianceData::protectedParents)
                 .orElse(List.of());
@@ -318,6 +450,62 @@ public final class VillageAllegianceService {
             assignUnknown(level, entity, source);
         }
         return false;
+    }
+
+    private static void assignFreshVillager(ServerLevel level, Villager villager, BlockPos spawnPosition) {
+        if (PartyService.isRecruitedPartyVillager(level, villager.getUUID())) {
+            assignUnaffiliated(level, villager, AllegianceAssignmentSource.NATURAL_SPAWN);
+            return;
+        }
+        Optional<VillageAllegianceId> village = activeVillageAt(level, spawnPosition);
+        if (village.isPresent()) {
+            assignKnown(level, villager, village.get(), AllegianceAssignmentSource.NATURAL_SPAWN, spawnPosition);
+        } else {
+            assignUnaffiliated(level, villager, AllegianceAssignmentSource.NATURAL_SPAWN);
+        }
+    }
+
+    private static void recoverLegacyBirthAssignment(
+            ServerLevel level,
+            Villager villager,
+            VillageAllegianceData data) {
+        Optional<VillageAllegianceId> birthplace = data.originDimension() != null
+                && data.originDimension().equals(level.dimension().location())
+                ? activeVillageAt(level, data.originPosition())
+                : Optional.empty();
+        VillageAllegianceId home = birthplace.orElse(data.protectedParents().getFirst());
+        assignKnown(level, villager, home, AllegianceAssignmentSource.BIRTH,
+                data.originPosition(), AllegianceConfidence.INHERITED, data.protectedParents());
+    }
+
+    public static Optional<VillageAllegianceId> activeVillageAt(ServerLevel level, BlockPos position) {
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        return villageAt(level, position)
+                .flatMap(registry::canonical)
+                .filter(id -> registry.canonicalRecord(id)
+                        .filter(record -> record.lifecycleState() == VillageLifecycleState.ACTIVE)
+                        .isPresent());
+    }
+
+    private static Optional<VillageAllegianceId> villageAt(ServerLevel level, BlockPos position) {
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Optional<VillageAllegianceId> indexed = registry.peekAt(level, position);
+        return indexed.isPresent() || !level.isVillage(position)
+                ? indexed
+                : registry.discoverAt(level, position);
+    }
+
+    private static Optional<VillageAllegianceId> residencyVillageAtCurrentPosition(
+            VillageAllegianceRegistrySavedData registry,
+            BlockPos position,
+            VillageAllegianceReassignmentService.Residency residency) {
+        if (residency == null) {
+            return Optional.empty();
+        }
+        return registry.canonicalRecord(residency.village())
+                .filter(record -> record.lifecycleState() == VillageLifecycleState.ACTIVE)
+                .filter(record -> record.footprintSections().contains(net.minecraft.core.SectionPos.asLong(position)))
+                .map(VillageAllegianceRegistrySavedData.AllegianceRecord::id);
     }
 
     private static void assignKnown(
@@ -356,6 +544,7 @@ public final class VillageAllegianceService {
         PENDING.remove(entity.getUUID());
         if (entity instanceof Villager villager) {
             registry.addOrUpdateResident(canonical, villager.getUUID(), !villager.isBaby(), level.getGameTime());
+            scheduleLoadedVillager(level, villager, VillageAllegianceApi.get(villager).orElse(null), false);
         }
         migratedKnown++;
     }
@@ -412,6 +601,7 @@ public final class VillageAllegianceService {
                 source,
                 confidence,
                 level.getGameTime(), level.dimension().location(), entity.blockPosition(), protectedParents));
+        unscheduleVillager(entity.getUUID());
         migratedUnknown++;
     }
 
@@ -421,6 +611,7 @@ public final class VillageAllegianceService {
                 source, level.getGameTime(), level.dimension().location(), entity.blockPosition()));
         VillageAllegianceEntityData.clearPending(entity);
         PENDING.remove(entity.getUUID());
+        scheduleLoadedVillager(level, entity, VillageAllegianceApi.get(entity).orElse(null), true);
         migratedUnaffiliated++;
     }
 
@@ -436,8 +627,47 @@ public final class VillageAllegianceService {
         }
         PendingAssignment pending = new PendingAssignment(
                 level.dimension().location(), evidencePosition.immutable(), source, attempts, nextAttemptGameTime);
-        PENDING.put(entity.getUUID(), pending);
+        putPending(entity.getUUID(), pending);
         VillageAllegianceEntityData.writePending(entity, pending.toData());
+    }
+
+    public static void onExplicitAssignment(
+            ServerLevel level,
+            Entity entity,
+            VillageAllegianceData data) {
+        scheduleLoadedVillager(level, entity, data, data != null && data.state() == AllegianceState.UNAFFILIATED);
+    }
+
+    private static void scheduleLoadedVillager(
+            ServerLevel level,
+            Entity entity,
+            VillageAllegianceData data,
+            boolean immediate) {
+        if (!(entity instanceof Villager villager) || level == null || data == null
+                || data.state() == AllegianceState.UNKNOWN) {
+            if (entity != null) {
+                unscheduleVillager(entity.getUUID());
+            }
+            return;
+        }
+        long interval = data.state() == AllegianceState.UNAFFILIATED
+                ? WANDERER_CHECK_INTERVAL_TICKS
+                : RESIDENT_REFRESH_INTERVAL_TICKS;
+        long next = level.getServer().overworld().getGameTime() + (immediate ? 1L : interval);
+        ScheduledVillager scheduled = new ScheduledVillager(villager.getUUID(), level.dimension(), next);
+        SCHEDULED_VILLAGERS.put(villager.getUUID(), scheduled);
+        VILLAGER_QUEUE.add(scheduled);
+    }
+
+    private static void unscheduleVillager(UUID villagerId) {
+        if (villagerId != null) {
+            SCHEDULED_VILLAGERS.remove(villagerId);
+        }
+    }
+
+    private static void putPending(UUID entityId, PendingAssignment pending) {
+        PENDING.put(entityId, pending);
+        PENDING_QUEUE.add(new PendingTask(entityId, pending));
     }
 
     private static Entity findLoaded(MinecraftServer server, UUID id) {
@@ -469,6 +699,20 @@ public final class VillageAllegianceService {
             return new PendingAssignment(
                     data.dimension(), data.position(), data.source(), data.attempts(), data.nextAttemptGameTime());
         }
+    }
+
+    private record PendingTask(UUID entityId, PendingAssignment pending) {
+    }
+
+    private record ScheduledVillager(
+            UUID villagerId,
+            ResourceKey<net.minecraft.world.level.Level> dimension,
+            long nextCheckGameTime) {
+    }
+
+    private record LifecycleTask(
+            ResourceKey<net.minecraft.world.level.Level> dimension,
+            VillageAllegianceId villageId) {
     }
 
     public record MigrationStatistics(long known, long unknown, long unaffiliated, int pending) {
