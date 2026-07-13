@@ -1710,8 +1710,16 @@ public final class VillagerQuestGameTests {
                     QuestDebugTraceService.recent(player, 3).size(),
                     3,
                     "bounded quest trace query limit");
+            QuestDebugTraceService.setEnabled(player, true);
+            VillagerQuestService.clearRuntimeState(player);
+            helper.assertFalse(QuestDebugTraceService.isEnabled(player),
+                    "player cleanup should disable quest tracing");
+            helper.assertTrue(QuestDebugTraceService.recent(player, QuestDebugTraceService.capacity()).isEmpty(),
+                    "player cleanup should discard buffered quest traces");
         } finally {
             QuestDebugTraceService.clear(player);
+            QuestDebugTraceService.setEnabled(player, false);
+            VillagerQuestService.setClientEffectsSuppressedForTests(player, false);
         }
 
         List<QuestTrackerSyncPayload.QuestItem> manyItems = new ArrayList<>();

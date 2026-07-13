@@ -46,6 +46,20 @@ public final class QuestDebugTraceService {
         EVENTS.remove(player.getUUID());
     }
 
+    public static void clearRuntimeState() {
+        EVENTS.clear();
+        ENABLED_PLAYERS.clear();
+    }
+
+    public static void clearRuntimeState(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        UUID playerId = player.getUUID();
+        EVENTS.remove(playerId);
+        ENABLED_PLAYERS.remove(playerId);
+    }
+
     public static List<Event> recent(ServerPlayer player, int limit) {
         if (player == null) {
             return List.of();

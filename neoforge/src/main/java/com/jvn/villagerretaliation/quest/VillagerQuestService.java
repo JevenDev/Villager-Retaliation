@@ -281,16 +281,22 @@ public final class VillagerQuestService {
     }
 
     public static void clearRuntimeState() {
+        DISPATCHING_STAGE_TRIGGERS.remove();
+        CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS.clear();
         LAST_TRACKER_SYNCS.clear();
         NEARBY_AVAILABLE_QUEST_CACHES.clear();
         INVENTORY_ITEM_COUNT_CACHES.clear();
+        QuestDebugTraceService.clearRuntimeState();
     }
 
     public static void clearRuntimeState(ServerPlayer player) {
         if (player != null) {
-            LAST_TRACKER_SYNCS.remove(player.getUUID());
-            NEARBY_AVAILABLE_QUEST_CACHES.remove(player.getUUID());
-            INVENTORY_ITEM_COUNT_CACHES.remove(player.getUUID());
+            UUID playerId = player.getUUID();
+            CLIENT_EFFECTS_SUPPRESSED_FOR_TEST_PLAYERS.remove(playerId);
+            LAST_TRACKER_SYNCS.remove(playerId);
+            NEARBY_AVAILABLE_QUEST_CACHES.remove(playerId);
+            INVENTORY_ITEM_COUNT_CACHES.remove(playerId);
+            QuestDebugTraceService.clearRuntimeState(player);
         }
     }
 
