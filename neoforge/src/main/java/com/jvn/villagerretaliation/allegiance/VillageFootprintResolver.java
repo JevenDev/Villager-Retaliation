@@ -24,6 +24,10 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 /** Builds a loaded-only village footprint from POIs, tagged structures, and connected tagged terrain. */
 public final class VillageFootprintResolver {
+    private static final int[][] HORIZONTAL_NEIGHBORS = {
+            {-1, 0}, {1, 0}, {0, -1}, {0, 1}
+    };
+
     private VillageFootprintResolver() {
     }
 
@@ -32,20 +36,36 @@ public final class VillageFootprintResolver {
             Collection<Long> baseSections,
             BlockPos origin,
             int radiusBlocks) {
-        LinkedHashSet<Long> footprint = new LinkedHashSet<>(baseSections == null ? Set.of() : baseSections);
-        if (level == null || origin == null || footprint.isEmpty()) {
-            return Set.copyOf(footprint);
+        LinkedHashSet<Long> anchors = new LinkedHashSet<>(baseSections == null ? Set.of() : baseSections);
+        if (level == null || origin == null || anchors.isEmpty()) {
+            return Set.copyOf(anchors);
         }
         int chunkRadius = Math.floorDiv(Math.max(0, radiusBlocks), 16) + 1;
         ChunkPos originChunk = new ChunkPos(origin);
         for (Set<Long> structure : taggedStructureSections(level, originChunk, chunkRadius)) {
-            if (touches(footprint, structure)) {
-                footprint.addAll(structure);
+            if (touches(anchors, structure)) {
+                anchors.addAll(structure);
             }
         }
-        Set<Long> terrain = taggedTerrainSections(level, originChunk, chunkRadius);
-        footprint.addAll(connectedTerrain(terrain, footprint));
+        Set<Long> terrain = taggedTerrainBlocks(level, originChunk, chunkRadius);
+        Set<Long> connectedTerrain = connectedTerrainSections(terrain, anchors);
+        LinkedHashSet<Long> footprint = horizontalPadding(baseSections);
+        footprint.addAll(anchors);
+        footprint.addAll(connectedTerrain);
         return Set.copyOf(footprint);
+    }
+
+    private static LinkedHashSet<Long> horizontalPadding(Collection<Long> sections) {
+        LinkedHashSet<Long> footprint = new LinkedHashSet<>();
+        for (long packed : sections) {
+            SectionPos section = SectionPos.of(packed);
+            footprint.add(packed);
+            footprint.add(SectionPos.asLong(section.x() - 1, section.y(), section.z()));
+            footprint.add(SectionPos.asLong(section.x() + 1, section.y(), section.z()));
+            footprint.add(SectionPos.asLong(section.x(), section.y(), section.z() - 1));
+            footprint.add(SectionPos.asLong(section.x(), section.y(), section.z() + 1));
+        }
+        return footprint;
     }
 
     private static Collection<Set<Long>> taggedStructureSections(ServerLevel level, ChunkPos origin, int chunkRadius) {
@@ -90,8 +110,8 @@ public final class VillageFootprintResolver {
         return structures;
     }
 
-    private static Set<Long> taggedTerrainSections(ServerLevel level, ChunkPos origin, int chunkRadius) {
-        Set<Long> sections = new LinkedHashSet<>();
+    private static Set<Long> taggedTerrainBlocks(ServerLevel level, ChunkPos origin, int chunkRadius) {
+        Set<Long> blocks = new HashSet<>();
         for (int chunkX = origin.x - chunkRadius; chunkX <= origin.x + chunkRadius; chunkX++) {
             for (int chunkZ = origin.z - chunkRadius; chunkZ <= origin.z + chunkRadius; chunkZ++) {
                 if (!level.hasChunk(chunkX, chunkZ)) {
@@ -103,35 +123,85 @@ public final class VillageFootprintResolver {
                     LevelChunkSection section = chunkSections[index];
                     if (!section.hasOnlyAir()
                             && section.maybeHas(state -> state.is(VillagerRetaliationTags.Blocks.VILLAGE_TERRAIN))) {
-                        sections.add(SectionPos.asLong(chunkX, chunk.getMinSection() + index, chunkZ));
+                        int sectionY = chunk.getMinSection() + index;
+                        int minX = SectionPos.sectionToBlockCoord(chunkX);
+                        int minY = SectionPos.sectionToBlockCoord(sectionY);
+                        int minZ = SectionPos.sectionToBlockCoord(chunkZ);
+                        for (int localY = 0; localY < 16; localY++) {
+                            for (int localZ = 0; localZ < 16; localZ++) {
+                                for (int localX = 0; localX < 16; localX++) {
+                                    if (section.getBlockState(localX, localY, localZ)
+                                            .is(VillagerRetaliationTags.Blocks.VILLAGE_TERRAIN)) {
+                                        blocks.add(BlockPos.asLong(
+                                                minX + localX, minY + localY, minZ + localZ));
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
-        return sections;
+        return blocks;
     }
 
-    private static Set<Long> connectedTerrain(Collection<Long> candidates, Collection<Long> seeds) {
+    private static Set<Long> connectedTerrainSections(Collection<Long> candidates, Collection<Long> footprint) {
         Set<Long> remaining = new HashSet<>(candidates);
-        Set<Long> connected = new LinkedHashSet<>();
-        ArrayDeque<Long> pending = new ArrayDeque<>(seeds);
+        Set<Long> connectedSections = new LinkedHashSet<>();
+        ArrayDeque<Long> pending = new ArrayDeque<>();
+        remaining.removeIf(packed -> {
+            BlockPos pos = BlockPos.of(packed);
+            if (!touchesFootprint(pos, footprint)) {
+                return false;
+            }
+            pending.addLast(packed);
+            connectedSections.add(SectionPos.asLong(pos));
+            return true;
+        });
         while (!pending.isEmpty()) {
-            SectionPos current = SectionPos.of(pending.removeFirst());
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) != 1) {
-                            continue;
-                        }
-                        long neighbor = SectionPos.asLong(current.x() + dx, current.y() + dy, current.z() + dz);
-                        if (remaining.remove(neighbor) && connected.add(neighbor)) {
-                            pending.addLast(neighbor);
-                        }
+            BlockPos current = BlockPos.of(pending.removeFirst());
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int[] horizontal : HORIZONTAL_NEIGHBORS) {
+                    long neighbor = BlockPos.asLong(
+                            current.getX() + horizontal[0],
+                            current.getY() + dy,
+                            current.getZ() + horizontal[1]);
+                    if (remaining.remove(neighbor)) {
+                        pending.addLast(neighbor);
+                        connectedSections.add(SectionPos.asLong(BlockPos.of(neighbor)));
                     }
                 }
             }
         }
-        return connected;
+        return connectedSections;
+    }
+
+    private static boolean touchesFootprint(BlockPos pos, Collection<Long> footprint) {
+        int sectionY = SectionPos.blockToSectionCoord(pos.getY());
+        for (long packed : footprint) {
+            SectionPos section = SectionPos.of(packed);
+            if (section.y() != sectionY) {
+                continue;
+            }
+            int minX = SectionPos.sectionToBlockCoord(section.x());
+            int minZ = SectionPos.sectionToBlockCoord(section.z());
+            int distanceX = distanceToRange(pos.getX(), minX, minX + 15);
+            int distanceZ = distanceToRange(pos.getZ(), minZ, minZ + 15);
+            if (distanceX + distanceZ <= 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static int distanceToRange(int value, int min, int max) {
+        if (value < min) {
+            return min - value;
+        }
+        if (value > max) {
+            return value - max;
+        }
+        return 0;
     }
 
     private static boolean touches(Collection<Long> first, Collection<Long> second) {

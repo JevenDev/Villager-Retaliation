@@ -1,5 +1,6 @@
 # Changelog
 
+- Tightened village footprints so POI padding stays horizontal and tagged paths extend bounds only when their actual blocks connect, eliminating empty sky/depth sections and unrelated section-level path bridges.
 - Made generated village names additive and data-driven through `data/villagerretaliation/village_names/`, and expanded the built-in prefix/suffix pool from 1,944 to 7,998 possible combinations.
 - Reworked village homes: spawned villagers join only when created inside a village, outside spawns become Wanderers, Wanderers settle after one continuous day, party members do not settle automatically, and Revered same-party players can explicitly choose a party villager's home.
 - Reworked newborn allegiance so birthplace takes priority, while babies born outside a village inherit the first parent's known home; replaced the technical Allegiance readout with player-facing questions and villager dialogue about home and local belonging.

@@ -597,7 +597,7 @@ public final class VillageAllegianceGameTests {
         BlockPos connectedPath = new BlockPos(
                 SectionPos.sectionToBlockCoord(base.x() + 1), basePos.getY(), basePos.getZ());
         BlockPos disconnectedPath = new BlockPos(
-                SectionPos.sectionToBlockCoord(base.x() + 3), basePos.getY(), basePos.getZ());
+                SectionPos.sectionToBlockCoord(base.x() + 2), basePos.getY(), basePos.getZ());
         BlockPos diagonalPath = new BlockPos(
                 SectionPos.sectionToBlockCoord(base.x() - 1), basePos.getY(),
                 SectionPos.sectionToBlockCoord(base.z() + 1));
@@ -609,9 +609,13 @@ public final class VillageAllegianceGameTests {
         helper.assertTrue(footprint.contains(SectionPos.asLong(connectedPath)),
                 "a tagged terrain section connected to the village extends its footprint");
         helper.assertFalse(footprint.contains(SectionPos.asLong(disconnectedPath)),
-                "an unrelated tagged path does not join the village across an empty gap");
+                "adjacent terrain sections do not connect unless their tagged blocks do");
         helper.assertFalse(footprint.contains(SectionPos.asLong(diagonalPath)),
                 "corner-touching terrain alone does not extend a village footprint");
+        helper.assertFalse(footprint.contains(SectionPos.asLong(base.x(), base.y() + 1, base.z())),
+                "village padding does not create an empty section above the village");
+        helper.assertFalse(footprint.contains(SectionPos.asLong(base.x(), base.y() - 1, base.z())),
+                "village padding does not create an empty section below the village");
         helper.succeed();
     }
 

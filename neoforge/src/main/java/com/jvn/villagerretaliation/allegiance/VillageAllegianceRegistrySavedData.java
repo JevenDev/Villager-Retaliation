@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
@@ -250,7 +249,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
         Set<Long> cluster = connectedSources(sources, seeds);
         Set<Long> footprint = VillageFootprintResolver.resolve(
-                level, expandedFootprint(cluster), pos, DISCOVERY_RADIUS_BLOCKS);
+                level, cluster, pos, DISCOVERY_RADIUS_BLOCKS);
         ResourceLocation dimension = level.dimension().location();
         LinkedHashSet<VillageAllegianceId> matches = activeRecords(dimension).stream()
                 .filter(record -> intersects(record.footprintSections(), footprint))
@@ -620,7 +619,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
         Set<Long> cluster = connectedSources(occupied, seeds);
         Set<Long> footprint = VillageFootprintResolver.resolve(
-                level, expandedFootprint(cluster), record.center(), DISCOVERY_RADIUS_BLOCKS);
+                level, cluster, record.center(), DISCOVERY_RADIUS_BLOCKS);
         LinkedHashSet<VillageAllegianceId> matches = activeRecords(level.dimension().location()).stream()
                 .filter(candidate -> intersects(candidate.footprintSections(), footprint))
                 .map(AllegianceRecord::id)
@@ -720,12 +719,10 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         for (long packed : sourceSections) {
             SectionPos section = SectionPos.of(packed);
             footprint.add(packed);
-            for (Direction direction : Direction.values()) {
-                footprint.add(SectionPos.asLong(
-                        section.x() + direction.getStepX(),
-                        section.y() + direction.getStepY(),
-                        section.z() + direction.getStepZ()));
-            }
+            footprint.add(SectionPos.asLong(section.x() - 1, section.y(), section.z()));
+            footprint.add(SectionPos.asLong(section.x() + 1, section.y(), section.z()));
+            footprint.add(SectionPos.asLong(section.x(), section.y(), section.z() - 1));
+            footprint.add(SectionPos.asLong(section.x(), section.y(), section.z() + 1));
         }
         return Set.copyOf(footprint);
     }
