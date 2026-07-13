@@ -403,6 +403,33 @@ public final class VillageAllegianceGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void combatAuthorizationsExpireWithoutScanningLiveEntries(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager actor = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager target = spawnVillager(helper, new BlockPos(3, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(UUID.randomUUID(), now);
+        PartySavedData.get(level).addVillager(party, partyVillagerRecord(actor.getUUID(), party.leaderId(), now));
+        try {
+            VillageCombatAuthorizationService.clearRuntimeState();
+            helper.assertTrue(VillageCombatAuthorizationService.authorize(level, actor, target),
+                    "the fixture should create a combat authorization");
+            helper.assertValueEqual(VillageCombatAuthorizationService.authorizationCount(), 1,
+                    "the authorization should be live before its deadline");
+
+            VillageCombatAuthorizationService.pruneExpired(now + 101L);
+
+            helper.assertValueEqual(VillageCombatAuthorizationService.authorizationCount(), 0,
+                    "the expiry queue should remove the authorization at its deadline");
+        } finally {
+            VillageCombatAuthorizationService.clearRuntimeState();
+            actor.discard();
+            target.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void registryArchivesAfterObservedGraceAndRebuildsWithNewIdentity(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         VillageAllegianceRegistrySavedData registry = new VillageAllegianceRegistrySavedData();

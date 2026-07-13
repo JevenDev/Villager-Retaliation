@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.party.PartyService;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.PriorityQueue;
 import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -15,6 +16,10 @@ public final class VillageCombatAuthorizationService {
     private static final long AUTHORIZATION_TTL_TICKS = 100L;
     private static final Map<CombatPair, Authorization> AUTHORIZATIONS = new HashMap<>();
     private static final Map<UUID, ProjectileAuthorization> PROJECTILES = new HashMap<>();
+    private static final PriorityQueue<AuthorizationExpiry> AUTHORIZATION_EXPIRIES =
+            new PriorityQueue<>((first, second) -> Long.compare(first.expiresGameTime(), second.expiresGameTime()));
+    private static final PriorityQueue<ProjectileExpiry> PROJECTILE_EXPIRIES =
+            new PriorityQueue<>((first, second) -> Long.compare(first.expiresGameTime(), second.expiresGameTime()));
 
     private VillageCombatAuthorizationService() {
     }
@@ -29,8 +34,10 @@ public final class VillageCombatAuthorizationService {
             return false;
         }
         long expires = level.getServer().overworld().getGameTime() + AUTHORIZATION_TTL_TICKS;
-        AUTHORIZATIONS.put(new CombatPair(actor.getUUID(), target.getUUID()),
+        CombatPair pair = new CombatPair(actor.getUUID(), target.getUUID());
+        AUTHORIZATIONS.put(pair,
                 new Authorization(actorParty.id(), targetParty == null ? null : targetParty.id(), expires));
+        AUTHORIZATION_EXPIRIES.add(new AuthorizationExpiry(pair, expires));
         return true;
     }
 
@@ -38,8 +45,12 @@ public final class VillageCombatAuthorizationService {
         if (actor == null || target == null || !(actor.level() instanceof ServerLevel level)) {
             return false;
         }
-        Authorization authorization = AUTHORIZATIONS.get(new CombatPair(actor.getUUID(), target.getUUID()));
+        CombatPair pair = new CombatPair(actor.getUUID(), target.getUUID());
+        Authorization authorization = AUTHORIZATIONS.get(pair);
         if (authorization == null || authorization.expiresGameTime() < level.getServer().overworld().getGameTime()) {
+            if (authorization != null) {
+                AUTHORIZATIONS.remove(pair, authorization);
+            }
             return false;
         }
         PartyRecord actorParty = PartyService.getPartyForEntity(actor).orElse(null);
@@ -55,9 +66,11 @@ public final class VillageCombatAuthorizationService {
             return;
         }
         if (isAuthorized(actor, target)) {
+            long expires = level.getServer().overworld().getGameTime() + AUTHORIZATION_TTL_TICKS;
             PROJECTILES.put(projectile.getUUID(), new ProjectileAuthorization(
                     actor.getUUID(), target.getUUID(),
-                    level.getServer().overworld().getGameTime() + AUTHORIZATION_TTL_TICKS));
+                    expires));
+            PROJECTILE_EXPIRIES.add(new ProjectileExpiry(projectile.getUUID(), expires));
         }
     }
 
@@ -65,11 +78,16 @@ public final class VillageCombatAuthorizationService {
         if (projectile == null || actor == null || target == null || !(actor.level() instanceof ServerLevel level)) {
             return false;
         }
-        ProjectileAuthorization authorization = PROJECTILES.get(projectile.getUUID());
+        UUID projectileId = projectile.getUUID();
+        ProjectileAuthorization authorization = PROJECTILES.get(projectileId);
+        long now = level.getServer().overworld().getGameTime();
+        if (authorization != null && authorization.expiresGameTime() < now) {
+            PROJECTILES.remove(projectileId, authorization);
+            return false;
+        }
         return authorization != null
                 && authorization.actorId().equals(actor.getUUID())
                 && authorization.targetId().equals(target.getUUID())
-                && authorization.expiresGameTime() >= level.getServer().overworld().getGameTime()
                 && isAuthorized(actor, target);
     }
 
@@ -85,14 +103,33 @@ public final class VillageCombatAuthorizationService {
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
-        long now = event.getServer().overworld().getGameTime();
-        AUTHORIZATIONS.entrySet().removeIf(entry -> entry.getValue().expiresGameTime() < now);
-        PROJECTILES.entrySet().removeIf(entry -> entry.getValue().expiresGameTime() < now);
+        pruneExpired(event.getServer().overworld().getGameTime());
+    }
+
+    public static void pruneExpired(long now) {
+        while (!AUTHORIZATION_EXPIRIES.isEmpty()
+                && AUTHORIZATION_EXPIRIES.peek().expiresGameTime() < now) {
+            AuthorizationExpiry expiry = AUTHORIZATION_EXPIRIES.remove();
+            Authorization current = AUTHORIZATIONS.get(expiry.pair());
+            if (current != null && current.expiresGameTime() == expiry.expiresGameTime()) {
+                AUTHORIZATIONS.remove(expiry.pair());
+            }
+        }
+        while (!PROJECTILE_EXPIRIES.isEmpty()
+                && PROJECTILE_EXPIRIES.peek().expiresGameTime() < now) {
+            ProjectileExpiry expiry = PROJECTILE_EXPIRIES.remove();
+            ProjectileAuthorization current = PROJECTILES.get(expiry.projectileId());
+            if (current != null && current.expiresGameTime() == expiry.expiresGameTime()) {
+                PROJECTILES.remove(expiry.projectileId());
+            }
+        }
     }
 
     public static void clearRuntimeState() {
         AUTHORIZATIONS.clear();
         PROJECTILES.clear();
+        AUTHORIZATION_EXPIRIES.clear();
+        PROJECTILE_EXPIRIES.clear();
     }
 
     public static int authorizationCount() {
@@ -109,5 +146,11 @@ public final class VillageCombatAuthorizationService {
     }
 
     private record ProjectileAuthorization(UUID actorId, UUID targetId, long expiresGameTime) {
+    }
+
+    private record AuthorizationExpiry(CombatPair pair, long expiresGameTime) {
+    }
+
+    private record ProjectileExpiry(UUID projectileId, long expiresGameTime) {
     }
 }
