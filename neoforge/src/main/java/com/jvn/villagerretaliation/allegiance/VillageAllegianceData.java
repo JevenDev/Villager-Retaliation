@@ -34,9 +34,11 @@ public record VillageAllegianceData(
             }
         }
         protectedParents = List.copyOf(new ArrayList<>(normalized));
-        if (state != AllegianceState.KNOWN) {
+        if (state == AllegianceState.UNAFFILIATED) {
             primary = null;
             protectedParents = List.of();
+        } else if (state == AllegianceState.UNKNOWN) {
+            primary = null;
         } else if (primary == null) {
             throw new IllegalArgumentException("Known allegiance requires a primary id");
         }
@@ -61,9 +63,19 @@ public record VillageAllegianceData(
             long gameTime,
             ResourceLocation dimension,
             BlockPos position) {
+        return unknown(source, confidence, gameTime, dimension, position, List.of());
+    }
+
+    public static VillageAllegianceData unknown(
+            AllegianceAssignmentSource source,
+            AllegianceConfidence confidence,
+            long gameTime,
+            ResourceLocation dimension,
+            BlockPos position,
+            List<VillageAllegianceId> protectedParents) {
         return new VillageAllegianceData(
                 CURRENT_VERSION, AllegianceState.UNKNOWN, null, source, confidence,
-                gameTime, dimension, position, List.of());
+                gameTime, dimension, position, protectedParents);
     }
 
     public static VillageAllegianceData unaffiliated(

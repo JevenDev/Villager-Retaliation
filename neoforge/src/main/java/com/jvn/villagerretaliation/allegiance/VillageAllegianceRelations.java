@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.allegiance;
 
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 
@@ -9,12 +10,26 @@ public final class VillageAllegianceRelations {
     }
 
     public static boolean sameCanonical(ServerLevel level, Entity first, Entity second) {
-        Optional<VillageAllegianceId> firstId = VillageAllegianceApi.canonicalPrimary(level, first);
-        Optional<VillageAllegianceId> secondId = VillageAllegianceApi.canonicalPrimary(level, second);
-        return firstId.isPresent() && secondId.isPresent() && firstId.get().equals(secondId.get());
+        Set<VillageAllegianceId> firstIds = communities(level, first);
+        Set<VillageAllegianceId> secondIds = communities(level, second);
+        return firstIds.stream().anyMatch(secondIds::contains);
     }
 
     public static boolean sharesCommunity(ServerLevel level, Entity source, Entity receiver) {
         return source != null && receiver != null && sameCanonical(level, source, receiver);
+    }
+
+    private static Set<VillageAllegianceId> communities(ServerLevel level, Entity entity) {
+        VillageAllegianceData data = VillageAllegianceApi.get(entity).orElse(null);
+        if (data == null) {
+            return Set.of();
+        }
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Set<VillageAllegianceId> ids = new HashSet<>();
+        if (data.isKnown()) {
+            registry.canonical(data.primary()).ifPresent(ids::add);
+        }
+        data.protectedParents().forEach(parent -> registry.canonical(parent).ifPresent(ids::add));
+        return Set.copyOf(ids);
     }
 }

@@ -158,20 +158,21 @@ public final class VillageAllegianceEntityData {
         ResourceLocation dimension = ResourceLocation.tryParse(tag.getString(ORIGIN_DIMENSION));
         BlockPos position = new BlockPos(tag.getInt(ORIGIN_X), tag.getInt(ORIGIN_Y), tag.getInt(ORIGIN_Z));
         long assignedTime = tag.getLong(ASSIGNED_TIME);
+        List<VillageAllegianceId> parents = new ArrayList<>();
+        for (Tag raw : tag.getList(PROTECTED_PARENTS, Tag.TAG_COMPOUND)) {
+            if (raw instanceof CompoundTag parentTag && parentTag.hasUUID(ID)) {
+                parents.add(new VillageAllegianceId(parentTag.getUUID(ID)));
+            }
+        }
         if (state == AllegianceState.UNKNOWN) {
-            return VillageAllegianceData.unknown(source, confidence, assignedTime, dimension, position);
+            return VillageAllegianceData.unknown(
+                    source, confidence, assignedTime, dimension, position, parents);
         }
         if (state == AllegianceState.UNAFFILIATED) {
             return VillageAllegianceData.unaffiliated(source, assignedTime, dimension, position);
         }
         if (!tag.hasUUID(PRIMARY)) {
             return conservativeUnknown(entity);
-        }
-        List<VillageAllegianceId> parents = new ArrayList<>();
-        for (Tag raw : tag.getList(PROTECTED_PARENTS, Tag.TAG_COMPOUND)) {
-            if (raw instanceof CompoundTag parentTag && parentTag.hasUUID(ID)) {
-                parents.add(new VillageAllegianceId(parentTag.getUUID(ID)));
-            }
         }
         try {
             return VillageAllegianceData.known(

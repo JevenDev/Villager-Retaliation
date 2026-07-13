@@ -124,6 +124,41 @@ public final class VillageAllegianceGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void newbornsInheritSharedHomesAndProtectMixedParents(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceId firstHome = registry.create(
+                level.getGameTime(), level.dimension().location(), BlockPos.ZERO, "First Birth Home");
+        VillageAllegianceId secondHome = registry.create(
+                level.getGameTime(), level.dimension().location(), BlockPos.ZERO, "Second Birth Home");
+        Villager firstParent = createVillager(level);
+        Villager secondParent = createVillager(level);
+        Villager child = createVillager(level);
+        child.setBaby(true);
+        VillageAllegianceApi.assignKnown(level, firstParent, firstHome, AllegianceAssignmentSource.ADMIN);
+        VillageAllegianceApi.assignKnown(level, secondParent, firstHome, AllegianceAssignmentSource.ADMIN);
+
+        VillageAllegianceService.assignBirthAllegiance(level, child, firstParent, secondParent);
+        VillageAllegianceData inherited = VillageAllegianceApi.get(child).orElseThrow();
+        helper.assertValueEqual(inherited.primary(), firstHome, "shared parent home");
+        helper.assertValueEqual(inherited.confidence(), AllegianceConfidence.INHERITED, "inherited confidence");
+
+        VillageAllegianceApi.assignKnown(level, secondParent, secondHome, AllegianceAssignmentSource.ADMIN);
+        Villager mixedChild = createVillager(level);
+        mixedChild.setBaby(true);
+        VillageAllegianceService.assignBirthAllegiance(level, mixedChild, firstParent, secondParent);
+        VillageAllegianceData mixed = VillageAllegianceApi.get(mixedChild).orElseThrow();
+        helper.assertValueEqual(mixed.state(), AllegianceState.UNKNOWN, "mixed parent allegiance remains unresolved");
+        helper.assertValueEqual(mixed.protectedParents(), List.of(firstHome, secondHome).stream().sorted().toList(),
+                "both parent communities remain protected");
+        helper.assertTrue(VillageAllegianceRelations.sharesCommunity(level, mixedChild, firstParent),
+                "mixed child is protected by the first parent community");
+        helper.assertTrue(VillageAllegianceRelations.sharesCommunity(level, mixedChild, secondParent),
+                "mixed child is protected by the second parent community");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void explicitStatesKeepResidentRostersConsistent(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         Villager villager = createVillager(level);

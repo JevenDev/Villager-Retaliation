@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -137,7 +138,39 @@ public final class VillageAllegianceService {
                 || !(event.getParentA().level() instanceof ServerLevel level)) {
             return;
         }
-        if (!tryResolve(level, child, AllegianceAssignmentSource.BIRTH, false, child.blockPosition())) {
+        assignBirthAllegiance(level, child, event.getParentA(), event.getParentB());
+    }
+
+    /** Applies deterministic parent and physical-village evidence to a newborn villager. */
+    public static void assignBirthAllegiance(
+            ServerLevel level,
+            Villager child,
+            Entity firstParent,
+            Entity secondParent) {
+        List<VillageAllegianceId> parents = Stream.of(firstParent, secondParent)
+                .filter(java.util.Objects::nonNull)
+                .map(parent -> VillageAllegianceApi.canonicalPrimary(level, parent))
+                .flatMap(Optional::stream)
+                .distinct()
+                .sorted()
+                .toList();
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Optional<VillageAllegianceId> discovered = registry.discoverAt(level, child.blockPosition());
+        VillageAssignmentResolution resolution = VillageAssignmentResolver.resolve(
+                level, child, child.blockPosition(), discovered, parents);
+        if (resolution.status() == VillageAssignmentResolution.Status.RESOLVED) {
+            assignKnown(level, child, resolution.selected(), AllegianceAssignmentSource.BIRTH,
+                    child.blockPosition(), AllegianceConfidence.INHERITED, parents);
+            return;
+        }
+        if (resolution.status() == VillageAssignmentResolution.Status.NONE
+                && resolution.observationComplete() && parents.isEmpty()) {
+            assignUnaffiliated(level, child, AllegianceAssignmentSource.BIRTH);
+            return;
+        }
+        assignUnknown(level, child, AllegianceAssignmentSource.BIRTH,
+                AllegianceConfidence.INHERITED, parents);
+        if (resolution.status() != VillageAssignmentResolution.Status.NONE || !resolution.observationComplete()) {
             schedulePending(level, child, child.blockPosition(), AllegianceAssignmentSource.BIRTH, 0,
                     level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS);
         }
@@ -232,10 +265,24 @@ public final class VillageAllegianceService {
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         Optional<VillageAllegianceId> discovered = registry.discoverAt(level, evidencePosition);
+        List<VillageAllegianceId> protectedParents = VillageAllegianceApi.get(entity)
+                .map(VillageAllegianceData::protectedParents)
+                .orElse(List.of());
+        if (entity instanceof Villager villager && !villager.isBaby()
+                && source == AllegianceAssignmentSource.BIRTH && !protectedParents.isEmpty()) {
+            protectedParents = List.of();
+            assignUnknown(level, entity, source, AllegianceConfidence.INHERITED, protectedParents);
+        }
         VillageAssignmentResolution resolution = VillageAssignmentResolver.resolve(
-                level, entity, evidencePosition, discovered, List.of());
+                level, entity, evidencePosition, discovered, protectedParents);
         if (resolution.status() == VillageAssignmentResolution.Status.RESOLVED) {
-            assignKnown(level, entity, resolution.selected(), source, evidencePosition);
+            assignKnown(level, entity, resolution.selected(), source, evidencePosition,
+                    source == AllegianceAssignmentSource.BIRTH
+                            ? AllegianceConfidence.INHERITED
+                            : source == AllegianceAssignmentSource.MIGRATION
+                                    ? AllegianceConfidence.LEGACY_INFERRED
+                                    : AllegianceConfidence.AUTHORITATIVE,
+                    protectedParents);
             return true;
         }
         if (resolution.status() == VillageAssignmentResolution.Status.NONE && resolution.observationComplete()) {
@@ -254,19 +301,32 @@ public final class VillageAllegianceService {
             VillageAllegianceId id,
             AllegianceAssignmentSource source,
             BlockPos evidencePosition) {
+        assignKnown(level, entity, id, source, evidencePosition,
+                source == AllegianceAssignmentSource.MIGRATION
+                        ? AllegianceConfidence.LEGACY_INFERRED
+                        : AllegianceConfidence.AUTHORITATIVE,
+                List.of());
+    }
+
+    private static void assignKnown(
+            ServerLevel level,
+            Entity entity,
+            VillageAllegianceId id,
+            AllegianceAssignmentSource source,
+            BlockPos evidencePosition,
+            AllegianceConfidence confidence,
+            List<VillageAllegianceId> protectedParents) {
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         VillageAllegianceId canonical = registry.canonical(id).orElse(id);
         registry.ensureRecord(canonical, level.getGameTime(), level.dimension().location(), evidencePosition);
         VillageAllegianceEntityData.write(entity, VillageAllegianceData.known(
                 canonical,
                 source,
-                source == AllegianceAssignmentSource.MIGRATION
-                        ? AllegianceConfidence.LEGACY_INFERRED
-                        : AllegianceConfidence.AUTHORITATIVE,
+                confidence,
                 level.getGameTime(),
                 level.dimension().location(),
                 evidencePosition,
-                List.of()));
+                protectedParents));
         VillageAllegianceEntityData.clearPending(entity);
         PENDING.remove(entity.getUUID());
         if (entity instanceof Villager villager) {
@@ -276,6 +336,18 @@ public final class VillageAllegianceService {
     }
 
     private static void normalizeAndTrack(ServerLevel level, Entity entity, VillageAllegianceData data) {
+        if (entity instanceof Villager villager && !villager.isBaby()
+                && data.assignmentSource() == AllegianceAssignmentSource.BIRTH
+                && !data.protectedParents().isEmpty()) {
+            data = data.isKnown()
+                    ? VillageAllegianceData.known(
+                            data.primary(), data.assignmentSource(), data.confidence(), data.assignedGameTime(),
+                            data.originDimension(), data.originPosition(), List.of())
+                    : VillageAllegianceData.unknown(
+                            data.assignmentSource(), data.confidence(), data.assignedGameTime(),
+                            data.originDimension(), data.originPosition(), List.of());
+            VillageAllegianceEntityData.write(entity, data);
+        }
         if (!data.isKnown()) {
             VillageAllegianceRegistrySavedData.get(level).removeResidentEverywhere(entity.getUUID());
             return;
@@ -297,12 +369,23 @@ public final class VillageAllegianceService {
     }
 
     private static void assignUnknown(ServerLevel level, Entity entity, AllegianceAssignmentSource source) {
-        VillageAllegianceEntityData.write(entity, VillageAllegianceData.unknown(
-                source,
+        assignUnknown(level, entity, source,
                 source == AllegianceAssignmentSource.MIGRATION
                         ? AllegianceConfidence.LEGACY_INFERRED
                         : AllegianceConfidence.AUTHORITATIVE,
-                level.getGameTime(), level.dimension().location(), entity.blockPosition()));
+                List.of());
+    }
+
+    private static void assignUnknown(
+            ServerLevel level,
+            Entity entity,
+            AllegianceAssignmentSource source,
+            AllegianceConfidence confidence,
+            List<VillageAllegianceId> protectedParents) {
+        VillageAllegianceEntityData.write(entity, VillageAllegianceData.unknown(
+                source,
+                confidence,
+                level.getGameTime(), level.dimension().location(), entity.blockPosition(), protectedParents));
         migratedUnknown++;
     }
 

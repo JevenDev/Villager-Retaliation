@@ -42,6 +42,9 @@ public final class VillageAllegianceCombatPolicy {
         if (!AllegianceEntityClassifier.bearsAllegiance(actor)) {
             return AllegianceCombatDecision.pass(AllegianceCombatDecision.Reason.ORDINARY_BEHAVIOR);
         }
+        if (VillageAllegianceRelations.sameCanonical(level, actor, target)) {
+            return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.SAME_CANONICAL_ALLEGIANCE);
+        }
         VillageAllegianceData actorData = VillageAllegianceApi.get(actor).orElse(null);
         VillageAllegianceData targetData = VillageAllegianceApi.get(target).orElse(null);
         if (actorData == null || actorData.state() == AllegianceState.UNKNOWN) {
