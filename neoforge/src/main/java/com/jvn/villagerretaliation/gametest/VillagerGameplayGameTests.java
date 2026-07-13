@@ -43,6 +43,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import net.minecraft.world.entity.ai.behavior.ReactToBell;
 import net.minecraft.world.entity.ai.behavior.SetHiddenState;
@@ -124,6 +125,31 @@ public final class VillagerGameplayGameTests {
                 PartyVillagerContractService.isActivePartyVillager(level, villager),
                 "downed transition should preserve the party contract");
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void activePartyVillagerDownsInsteadOfConvertingFromZombieAttack(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, "VrZombieProofParty");
+        leader.getInventory().add(new ItemStack(Items.EMERALD, 32));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie zombie = spawnZombie(helper, new BlockPos(3, 2, 2));
+        leader.moveTo(villager.getX(), villager.getY(), villager.getZ(), 0.0F, 0.0F);
+        PartyVillagerContractService.ContractResult recruited = PartyVillagerContractService.recruit(leader, villager);
+        helper.assertTrue(recruited.success(), "party villager fixture should recruit");
+
+        zombie.getAttribute(Attributes.ATTACK_DAMAGE).setBaseValue(1000.0D);
+        helper.assertTrue(zombie.doHurtTarget(villager), "lethal zombie attack should land");
+
+        helper.assertTrue(VillagerDownedService.isDowned(villager), "party villager should enter the downed state");
+        helper.assertTrue(villager.isAlive(), "party villager should survive the lethal zombie attack");
+        helper.assertFalse(villager.isRemoved(), "party villager should not be replaced by a zombie villager");
+        helper.assertTrue(
+                PartyVillagerContractService.isActivePartyVillager(level, villager),
+                "zombie attack should preserve the party contract");
+        villager.discard();
+        zombie.discard();
         helper.succeed();
     }
 
