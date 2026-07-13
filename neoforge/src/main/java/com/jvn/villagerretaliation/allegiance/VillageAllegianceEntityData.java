@@ -26,6 +26,10 @@ public final class VillageAllegianceEntityData {
     private static final String ORIGIN_Z = "OriginZ";
     private static final String PROTECTED_PARENTS = "ProtectedParents";
     private static final String ID = "Id";
+    private static final String PENDING_ASSIGNMENT = "PendingAssignment";
+    private static final String PENDING_DIMENSION = "Dimension";
+    private static final String PENDING_ATTEMPTS = "Attempts";
+    private static final String PENDING_NEXT_ATTEMPT = "NextAttemptGameTime";
 
     private VillageAllegianceEntityData() {
     }
@@ -89,6 +93,57 @@ public final class VillageAllegianceEntityData {
         }
     }
 
+    public static void writePending(Entity entity, PendingAssignmentData pending) {
+        if (entity == null || pending == null) {
+            return;
+        }
+        CompoundTag root = entity.getPersistentData().getCompound(ROOT_TAG);
+        CompoundTag tag = new CompoundTag();
+        tag.putString(SOURCE, pending.source().name());
+        if (pending.dimension() != null) {
+            tag.putString(PENDING_DIMENSION, pending.dimension().toString());
+        }
+        tag.putInt(ORIGIN_X, pending.position().getX());
+        tag.putInt(ORIGIN_Y, pending.position().getY());
+        tag.putInt(ORIGIN_Z, pending.position().getZ());
+        tag.putInt(PENDING_ATTEMPTS, Math.max(0, pending.attempts()));
+        tag.putLong(PENDING_NEXT_ATTEMPT, pending.nextAttemptGameTime());
+        root.put(PENDING_ASSIGNMENT, tag);
+        entity.getPersistentData().put(ROOT_TAG, root);
+    }
+
+    public static Optional<PendingAssignmentData> readPending(Entity entity) {
+        if (entity == null || !entity.getPersistentData().contains(ROOT_TAG, Tag.TAG_COMPOUND)) {
+            return Optional.empty();
+        }
+        CompoundTag root = entity.getPersistentData().getCompound(ROOT_TAG);
+        if (!root.contains(PENDING_ASSIGNMENT, Tag.TAG_COMPOUND)) {
+            return Optional.empty();
+        }
+        CompoundTag tag = root.getCompound(PENDING_ASSIGNMENT);
+        AllegianceAssignmentSource source = enumValue(
+                AllegianceAssignmentSource.class, tag.getString(SOURCE));
+        ResourceLocation dimension = ResourceLocation.tryParse(tag.getString(PENDING_DIMENSION));
+        if (source == null || dimension == null) {
+            return Optional.empty();
+        }
+        return Optional.of(new PendingAssignmentData(
+                dimension,
+                new BlockPos(tag.getInt(ORIGIN_X), tag.getInt(ORIGIN_Y), tag.getInt(ORIGIN_Z)),
+                source,
+                Math.max(0, tag.getInt(PENDING_ATTEMPTS)),
+                tag.getLong(PENDING_NEXT_ATTEMPT)));
+    }
+
+    public static void clearPending(Entity entity) {
+        if (entity == null || !entity.getPersistentData().contains(ROOT_TAG, Tag.TAG_COMPOUND)) {
+            return;
+        }
+        CompoundTag root = entity.getPersistentData().getCompound(ROOT_TAG);
+        root.remove(PENDING_ASSIGNMENT);
+        entity.getPersistentData().put(ROOT_TAG, root);
+    }
+
     private static VillageAllegianceData readPayload(CompoundTag tag, Entity entity) {
         int version = tag.getInt(VERSION);
         if (version <= 0 || version > VillageAllegianceData.CURRENT_VERSION) {
@@ -147,6 +202,17 @@ public final class VillageAllegianceEntityData {
             return Enum.valueOf(type, value.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ignored) {
             return null;
+        }
+    }
+
+    public record PendingAssignmentData(
+            ResourceLocation dimension,
+            BlockPos position,
+            AllegianceAssignmentSource source,
+            int attempts,
+            long nextAttemptGameTime) {
+        public PendingAssignmentData {
+            position = position == null ? BlockPos.ZERO : position.immutable();
         }
     }
 }

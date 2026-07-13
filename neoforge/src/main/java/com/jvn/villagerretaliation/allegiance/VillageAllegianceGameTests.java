@@ -74,6 +74,16 @@ public final class VillageAllegianceGameTests {
                 AllegianceState.UNKNOWN,
                 "unknown state round-trip");
 
+        VillageAllegianceEntityData.writePending(source, new VillageAllegianceEntityData.PendingAssignmentData(
+                level.dimension().location(), new BlockPos(7, 8, 9),
+                AllegianceAssignmentSource.MIGRATION, 3, 120L));
+        Villager pendingRestored = roundTrip(level, source);
+        VillageAllegianceEntityData.PendingAssignmentData pending =
+                VillageAllegianceEntityData.readPending(pendingRestored).orElseThrow();
+        helper.assertValueEqual(pending.position(), new BlockPos(7, 8, 9), "pending evidence position");
+        helper.assertValueEqual(pending.attempts(), 3, "pending retry count");
+        helper.assertValueEqual(pending.nextAttemptGameTime(), 120L, "pending retry time");
+
         VillageAllegianceEntityData.write(source, VillageAllegianceData.unaffiliated(
                 AllegianceAssignmentSource.EXPLICIT_API, 44L, level.dimension().location(), BlockPos.ZERO));
         helper.assertValueEqual(

@@ -22,8 +22,8 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 public final class VillageAllegianceService {
-    private static final int MAX_ASSIGNMENT_ATTEMPTS = 5;
     private static final long RETRY_INTERVAL_TICKS = 20L;
+    private static final long MAX_RETRY_INTERVAL_TICKS = 200L;
     private static final long LIFECYCLE_REFRESH_TICKS = 200L;
     private static final Map<UUID, PendingAssignment> PENDING = new HashMap<>();
     private static long migratedKnown;
@@ -44,7 +44,12 @@ public final class VillageAllegianceService {
         }
         Optional<VillageAllegianceData> existing = VillageAllegianceApi.get(entity);
         if (existing.filter(data -> data.dataVersion() >= VillageAllegianceData.CURRENT_VERSION).isPresent()) {
-            normalizeAndTrack(level, entity, existing.get());
+            VillageAllegianceData data = existing.get();
+            normalizeAndTrack(level, entity, data);
+            if (data.state() == AllegianceState.UNKNOWN) {
+                VillageAllegianceEntityData.readPending(entity).ifPresent(pending -> PENDING.put(
+                        entity.getUUID(), PendingAssignment.from(pending)));
+            }
             return;
         }
 
@@ -70,9 +75,8 @@ public final class VillageAllegianceService {
         if (tryResolve(level, entity, source, false, evidencePosition)) {
             return;
         }
-        PENDING.put(entity.getUUID(), new PendingAssignment(
-                level.dimension().location().toString(), evidencePosition, source,
-                0, level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS));
+        schedulePending(level, entity, evidencePosition, source, 0,
+                level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS);
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
@@ -89,24 +93,26 @@ public final class VillageAllegianceService {
                 completed.add(entry.getKey());
                 continue;
             }
-            if (!level.dimension().location().toString().equals(pending.initialDimension())) {
-                assignUnaffiliated(level, entity, pending.source());
-                completed.add(entry.getKey());
-                continue;
+            if (!level.dimension().location().equals(pending.initialDimension())) {
+                pending = new PendingAssignment(
+                        level.dimension().location(), entity.blockPosition(), pending.source(),
+                        pending.attempts(), gameTime);
             }
             Optional<VillageAllegianceData> explicit = VillageAllegianceApi.get(entity)
                     .filter(data -> data.dataVersion() >= VillageAllegianceData.CURRENT_VERSION);
-            if (explicit.isPresent()) {
+            if (explicit.isPresent() && explicit.get().state() != AllegianceState.UNKNOWN) {
                 normalizeAndTrack(level, entity, explicit.get());
                 completed.add(entry.getKey());
                 continue;
             }
             int attempts = pending.attempts() + 1;
-            boolean finalAttempt = attempts >= MAX_ASSIGNMENT_ATTEMPTS;
-            if (tryResolve(level, entity, pending.source(), finalAttempt, pending.initialPosition())) {
+            if (tryResolve(level, entity, pending.source(), false, pending.initialPosition())) {
                 completed.add(entry.getKey());
             } else {
-                PENDING.put(entry.getKey(), pending.withAttempt(attempts, gameTime + RETRY_INTERVAL_TICKS));
+                long delay = Math.min(MAX_RETRY_INTERVAL_TICKS, RETRY_INTERVAL_TICKS * Math.max(1L, attempts));
+                PendingAssignment updated = pending.withAttempt(attempts, gameTime + delay);
+                PENDING.put(entry.getKey(), updated);
+                VillageAllegianceEntityData.writePending(entity, updated.toData());
             }
         }
         completed.forEach(PENDING::remove);
@@ -131,8 +137,9 @@ public final class VillageAllegianceService {
                 || !(event.getParentA().level() instanceof ServerLevel level)) {
             return;
         }
-        if (!tryResolve(level, child, AllegianceAssignmentSource.BIRTH, true, child.blockPosition())) {
-            assignUnaffiliated(level, child, AllegianceAssignmentSource.BIRTH);
+        if (!tryResolve(level, child, AllegianceAssignmentSource.BIRTH, false, child.blockPosition())) {
+            schedulePending(level, child, child.blockPosition(), AllegianceAssignmentSource.BIRTH, 0,
+                    level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS);
         }
     }
 
@@ -154,8 +161,9 @@ public final class VillageAllegianceService {
             return;
         }
         VillageAllegianceEntityData.clear(outcome);
-        if (!tryResolve(level, outcome, AllegianceAssignmentSource.CURE_INFERRED, true, outcome.blockPosition())) {
-            assignUnaffiliated(level, outcome, AllegianceAssignmentSource.CURE_INFERRED);
+        if (!tryResolve(level, outcome, AllegianceAssignmentSource.CURE_INFERRED, false, outcome.blockPosition())) {
+            schedulePending(level, outcome, outcome.blockPosition(), AllegianceAssignmentSource.CURE_INFERRED, 0,
+                    level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS);
         }
     }
 
@@ -182,7 +190,12 @@ public final class VillageAllegianceService {
 
     public static boolean retryMigration(ServerLevel level, Entity entity) {
         VillageAllegianceEntityData.clear(entity);
-        return tryResolve(level, entity, AllegianceAssignmentSource.ADMIN, true, entity.blockPosition());
+        if (tryResolve(level, entity, AllegianceAssignmentSource.ADMIN, false, entity.blockPosition())) {
+            return true;
+        }
+        schedulePending(level, entity, entity.blockPosition(), AllegianceAssignmentSource.ADMIN, 0,
+                level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS);
+        return false;
     }
 
     public static MigrationStatistics statistics() {
@@ -217,15 +230,20 @@ public final class VillageAllegianceService {
             }
             return false;
         }
-        Optional<VillageAllegianceId> village = VillageAllegianceRegistrySavedData.get(level)
-                .discoverAt(level, evidencePosition);
-        if (village.isPresent()) {
-            assignKnown(level, entity, village.get(), source, evidencePosition);
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        Optional<VillageAllegianceId> discovered = registry.discoverAt(level, evidencePosition);
+        VillageAssignmentResolution resolution = VillageAssignmentResolver.resolve(
+                level, entity, evidencePosition, discovered, List.of());
+        if (resolution.status() == VillageAssignmentResolution.Status.RESOLVED) {
+            assignKnown(level, entity, resolution.selected(), source, evidencePosition);
             return true;
         }
-        if (finalize) {
+        if (resolution.status() == VillageAssignmentResolution.Status.NONE && resolution.observationComplete()) {
             assignUnaffiliated(level, entity, source);
             return true;
+        }
+        if (VillageAllegianceApi.get(entity).isEmpty()) {
+            assignUnknown(level, entity, source);
         }
         return false;
     }
@@ -249,6 +267,8 @@ public final class VillageAllegianceService {
                 level.dimension().location(),
                 evidencePosition,
                 List.of()));
+        VillageAllegianceEntityData.clearPending(entity);
+        PENDING.remove(entity.getUUID());
         if (entity instanceof Villager villager) {
             registry.addOrUpdateResident(canonical, villager.getUUID(), !villager.isBaby(), level.getGameTime());
         }
@@ -290,7 +310,25 @@ public final class VillageAllegianceService {
         VillageAllegianceRegistrySavedData.get(level).removeResidentEverywhere(entity.getUUID());
         VillageAllegianceEntityData.write(entity, VillageAllegianceData.unaffiliated(
                 source, level.getGameTime(), level.dimension().location(), entity.blockPosition()));
+        VillageAllegianceEntityData.clearPending(entity);
+        PENDING.remove(entity.getUUID());
         migratedUnaffiliated++;
+    }
+
+    private static void schedulePending(
+            ServerLevel level,
+            Entity entity,
+            BlockPos evidencePosition,
+            AllegianceAssignmentSource source,
+            int attempts,
+            long nextAttemptGameTime) {
+        if (VillageAllegianceApi.get(entity).isEmpty()) {
+            assignUnknown(level, entity, source);
+        }
+        PendingAssignment pending = new PendingAssignment(
+                level.dimension().location(), evidencePosition.immutable(), source, attempts, nextAttemptGameTime);
+        PENDING.put(entity.getUUID(), pending);
+        VillageAllegianceEntityData.writePending(entity, pending.toData());
     }
 
     private static Entity findLoaded(MinecraftServer server, UUID id) {
@@ -304,13 +342,23 @@ public final class VillageAllegianceService {
     }
 
     private record PendingAssignment(
-            String initialDimension,
+            net.minecraft.resources.ResourceLocation initialDimension,
             BlockPos initialPosition,
             AllegianceAssignmentSource source,
             int attempts,
             long nextAttemptGameTime) {
         private PendingAssignment withAttempt(int attempts, long nextAttemptGameTime) {
             return new PendingAssignment(this.initialDimension, this.initialPosition, this.source, attempts, nextAttemptGameTime);
+        }
+
+        private VillageAllegianceEntityData.PendingAssignmentData toData() {
+            return new VillageAllegianceEntityData.PendingAssignmentData(
+                    this.initialDimension, this.initialPosition, this.source, this.attempts, this.nextAttemptGameTime);
+        }
+
+        private static PendingAssignment from(VillageAllegianceEntityData.PendingAssignmentData data) {
+            return new PendingAssignment(
+                    data.dimension(), data.position(), data.source(), data.attempts(), data.nextAttemptGameTime());
         }
     }
 

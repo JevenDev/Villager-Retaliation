@@ -30,6 +30,7 @@ public final class VillageAllegianceApi {
     /** Assigns an explicit allegiance payload without consulting physical village state. */
     public static void assign(Entity entity, VillageAllegianceData data) {
         VillageAllegianceEntityData.write(entity, data);
+        VillageAllegianceEntityData.clearPending(entity);
         if (entity == null || data == null || !(entity.level() instanceof ServerLevel level)) {
             return;
         }

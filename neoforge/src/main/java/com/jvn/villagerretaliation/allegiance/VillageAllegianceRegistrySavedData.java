@@ -209,6 +209,22 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 .map(AllegianceRecord::id);
     }
 
+    /** Read-only lookup used by UI and assignment diagnostics. */
+    public Optional<VillageAllegianceId> peekAt(ServerLevel level, BlockPos pos) {
+        return resolveAt(level, pos);
+    }
+
+    public List<AllegianceRecord> recordsAt(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null) {
+            return List.of();
+        }
+        long section = SectionPos.asLong(pos);
+        return activeRecords(level.dimension().location()).stream()
+                .filter(record -> record.footprintSections().contains(section))
+                .sorted(Comparator.comparingDouble(record -> record.center().distSqr(pos)))
+                .toList();
+    }
+
     public Optional<VillageAllegianceId> discoverAt(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null || !level.isVillage(pos)) {
             return resolveAt(level, pos);

@@ -264,7 +264,7 @@ public final class VillagerInteractionScreenOpener {
         Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> home = data != null && data.isKnown()
                 ? registry.canonicalRecord(data.primary())
                 : Optional.empty();
-        Optional<VillageAllegianceId> currentId = registry.discoverAt(level, villager.blockPosition());
+        Optional<VillageAllegianceId> currentId = registry.peekAt(level, villager.blockPosition());
         Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> current = currentId.flatMap(registry::canonicalRecord);
         String homeName = data == null || data.state() == AllegianceState.UNKNOWN
                 ? "Unknown"
