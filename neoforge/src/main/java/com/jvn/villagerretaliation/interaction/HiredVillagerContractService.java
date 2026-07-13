@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.Optional;
 import java.util.Map;
@@ -56,6 +57,8 @@ public final class HiredVillagerContractService {
     private static final String STATUS_AWAITING_AUTO_PAYMENT = "awaiting_auto_payment";
     private static final long DAY_TICKS = VillagerContractTime.DAY_TICKS;
     private static final long OVERFLOW_CLAIM_TICKS = 3L * DAY_TICKS;
+    private static final long CONTRACT_MAINTENANCE_INTERVAL_TICKS = 20L;
+    private static final long AUTO_PAYMENT_RETRY_INTERVAL_TICKS = 100L;
     private static final int HIRED_PROFESSION_LOCK_XP = 1;
 
     private HiredVillagerContractService() {
@@ -163,7 +166,9 @@ public final class HiredVillagerContractService {
         if (!(villager.level() instanceof ServerLevel level)
                 || villager.isBaby()
                 || !villager.isAlive()
-                || !hasContract(villager)) {
+                || !hasContract(villager)
+                || !TickThrottle.isSpreadTick(
+                        villager.getUUID(), level.getGameTime(), CONTRACT_MAINTENANCE_INTERVAL_TICKS)) {
             return;
         }
         maybeAutoRenew(level, villager);
@@ -557,6 +562,13 @@ public final class HiredVillagerContractService {
             expireContract(level, villager, tag, "Work stopped. Recurring payment was unpaid for more than a day.");
             return;
         }
+        long gameTime = level.getGameTime();
+        long lastAttempt = tag.getLong(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG);
+        if (tag.contains(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG, Tag.TAG_LONG)
+                && lastAttempt <= gameTime
+                && gameTime - lastAttempt < AUTO_PAYMENT_RETRY_INTERVAL_TICKS) {
+            return;
+        }
         if (!canAttemptAutoPaymentRenewal(level, villager, tag)) {
             HiredWorkerBrain.setState(HiredVillagerWorkService.state(villager), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setWorkStatus(villager, "Contract paused. Recurring payment is unpaid.");
@@ -578,6 +590,7 @@ public final class HiredVillagerContractService {
     }
 
     private static AutoPaymentResult tryAutoPaymentRenewal(ServerLevel level, Villager villager, CompoundTag tag) {
+        tag.putLong(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG, level.getGameTime());
         int dailyCost = currentRenewalDailyCost(level, villager, tag);
         if (!AssignedStorageService.hasLoadedAssignedPaymentStorage(level, villager)) {
             return AutoPaymentResult.UNAVAILABLE;
@@ -597,7 +610,6 @@ public final class HiredVillagerContractService {
         releaseEarnedHirePayment(level, villager, tag);
         extendActiveContract(level, tag, 1, dailyCost);
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
-        tag.putLong(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG, level.getGameTime());
         tag.remove(AWAITING_AUTO_PAYMENT_START_GAME_TIME_TAG);
         HiredWorkerBrain.setState(HiredVillagerWorkService.state(villager), HiredWorkerTaskState.IDLE, null);
         setWorkStatus(villager, "Contract renewed from assigned payment box.");

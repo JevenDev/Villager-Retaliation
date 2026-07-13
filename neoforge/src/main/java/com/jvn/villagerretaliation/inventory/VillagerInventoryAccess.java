@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.List;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
@@ -20,6 +21,10 @@ public final class VillagerInventoryAccess {
     public static void clearRuntimeState() {
         VillagerInventoryContainer.clearRuntimeState();
         VillagerInventoryOverflowService.clearRuntimeState();
+    }
+
+    public static void onServerTick(MinecraftServer server) {
+        VillagerInventoryOverflowService.tickContainerFeedback(server.getAllLevels());
     }
 
     public static boolean canAccess(ServerLevel level, Villager villager, ServerPlayer player) {

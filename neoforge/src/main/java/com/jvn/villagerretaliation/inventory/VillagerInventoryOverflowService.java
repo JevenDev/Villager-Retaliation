@@ -47,14 +47,12 @@ final class VillagerInventoryOverflowService {
     private static final String OWNER_UUID_TAG = "Villager";
     private static final String OWNER_NAME_TAG = "VillagerName";
     private static final Map<ContainerFeedbackKey, Long> PENDING_CONTAINER_CLOSES = new HashMap<>();
-    private static final Map<ResourceKey<Level>, Long> LAST_PENDING_CONTAINER_CLOSE_CHECK_TICKS = new HashMap<>();
 
     private VillagerInventoryOverflowService() {
     }
 
     static void clearRuntimeState() {
         PENDING_CONTAINER_CLOSES.clear();
-        LAST_PENDING_CONTAINER_CLOSE_CHECK_TICKS.clear();
     }
 
     static void maybeOffloadInventoryOverflow(Villager villager) {
@@ -62,7 +60,6 @@ final class VillagerInventoryOverflowService {
             return;
         }
 
-        closePendingContainersIfDue(level);
         if (villager.isBaby()
                 || VillagerInventoryContainer.hasOpenInventory(villager)
                 || !TickThrottle.isSpreadTick(villager.getUUID(), level.getGameTime(), SCAN_INTERVAL_TICKS)) {
@@ -128,25 +125,43 @@ final class VillagerInventoryOverflowService {
 
     private static List<ContainerCandidate> nearbyGeneratedVillageContainers(ServerLevel level, BlockPos center) {
         Map<BlockPos, ContainerCandidate> containers = new LinkedHashMap<>();
-        BlockPos min = center.offset(-SCAN_RADIUS, -SCAN_RADIUS, -SCAN_RADIUS);
-        BlockPos max = center.offset(SCAN_RADIUS, SCAN_RADIUS, SCAN_RADIUS);
-        for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (!(blockEntity instanceof Container container)) {
-                continue;
-            }
+        int minChunkX = (center.getX() - SCAN_RADIUS) >> 4;
+        int maxChunkX = (center.getX() + SCAN_RADIUS) >> 4;
+        int minChunkZ = (center.getZ() - SCAN_RADIUS) >> 4;
+        int maxChunkZ = (center.getZ() + SCAN_RADIUS) >> 4;
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                var chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
+                if (chunk == null) {
+                    continue;
+                }
+                for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
+                    BlockPos pos = blockEntity.getBlockPos();
+                    if (blockEntity.isRemoved()
+                            || !(blockEntity instanceof Container container)
+                            || !isInsideScanCube(center, pos)) {
+                        continue;
+                    }
 
-            ResourceLocation lootTable = GeneratedContainerSavedData.generatedContainerLootTable(level, pos).orElse(null);
-            if (!GeneratedContainerLootResources.isVillagePropertyLootTable(level.getServer(), lootTable)) {
-                continue;
+                    ResourceLocation lootTable = GeneratedContainerSavedData.generatedContainerLootTable(level, pos).orElse(null);
+                    if (!GeneratedContainerLootResources.isVillagePropertyLootTable(level.getServer(), lootTable)) {
+                        continue;
+                    }
+                    ContainerCandidate candidate = ContainerCandidate.resolve(level, pos.immutable(), container);
+                    containers.putIfAbsent(candidate.pos(), candidate);
+                }
             }
-            ContainerCandidate candidate = ContainerCandidate.resolve(level, pos.immutable(), container);
-            containers.putIfAbsent(candidate.pos(), candidate);
         }
 
         return containers.values().stream()
                 .sorted(Comparator.comparingDouble(candidate -> candidate.distanceToSqr(center)))
                 .toList();
+    }
+
+    private static boolean isInsideScanCube(BlockPos center, BlockPos pos) {
+        return Math.abs(pos.getX() - center.getX()) <= SCAN_RADIUS
+                && Math.abs(pos.getY() - center.getY()) <= SCAN_RADIUS
+                && Math.abs(pos.getZ() - center.getZ()) <= SCAN_RADIUS;
     }
 
     private static ItemStack markOwnedByVillager(ItemStack stack, Villager villager) {
@@ -243,9 +258,17 @@ final class VillagerInventoryOverflowService {
     }
 
     static void openUsedContainers(ServerLevel level, List<ContainerCandidate> usedContainers) {
-        closePendingContainersIfDue(level);
         for (ContainerCandidate candidate : usedContainers) {
             openContainerFeedback(level, candidate.pos());
+        }
+    }
+
+    static void tickContainerFeedback(Iterable<ServerLevel> levels) {
+        if (PENDING_CONTAINER_CLOSES.isEmpty()) {
+            return;
+        }
+        for (ServerLevel level : levels) {
+            closePendingContainers(level);
         }
     }
 
@@ -309,28 +332,13 @@ final class VillagerInventoryOverflowService {
         while (iterator.hasNext()) {
             Map.Entry<ContainerFeedbackKey, Long> entry = iterator.next();
             ContainerFeedbackKey key = entry.getKey();
-            if (key.dimension() != level.dimension() || entry.getValue() > gameTime) {
+            if (!key.dimension().equals(level.dimension()) || entry.getValue() > gameTime) {
                 continue;
             }
 
             closeContainerFeedback(level, key.pos());
             iterator.remove();
         }
-    }
-
-    private static void closePendingContainersIfDue(ServerLevel level) {
-        if (PENDING_CONTAINER_CLOSES.isEmpty()) {
-            return;
-        }
-
-        long gameTime = level.getGameTime();
-        Long lastCheck = LAST_PENDING_CONTAINER_CLOSE_CHECK_TICKS.get(level.dimension());
-        if (lastCheck != null && lastCheck == gameTime) {
-            return;
-        }
-
-        LAST_PENDING_CONTAINER_CLOSE_CHECK_TICKS.put(level.dimension(), gameTime);
-        closePendingContainers(level);
     }
 
     private static void closeContainerFeedback(ServerLevel level, BlockPos pos) {

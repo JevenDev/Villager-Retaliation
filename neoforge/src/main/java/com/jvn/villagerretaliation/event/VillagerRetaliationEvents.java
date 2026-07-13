@@ -171,6 +171,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
+        VillagerInventoryAccess.onServerTick(event.getServer());
         PartyVillagerContractService.onServerTick(event.getServer());
         SceneRuntime.tick(event.getServer());
         if (!BUILDER_CATALOG_SYNC_DIRTY.compareAndSet(true, false)) {
@@ -314,9 +315,6 @@ public final class VillagerRetaliationEvents {
             VillagerNaturalJobArmor.maybeRoll(villager);
             VillagerConversationService.tickVillager(villager);
             HiredVillagerContractService.onVillagerTickPost(villager);
-            if (villager.level() instanceof ServerLevel level) {
-                HiredVillagerIndex.update(level, villager);
-            }
             VillagerRecruitmentService.onVillagerTickPost(villager);
             HiredVillagerWorkService.onVillagerTickPost(villager);
             if (villager.level() instanceof ServerLevel level) {
@@ -368,7 +366,8 @@ public final class VillagerRetaliationEvents {
                 && !event.getLevel().isClientSide()) {
             com.jvn.villagerretaliation.party.PartyVillagerDropCollection.onItemEntityLoaded(itemEntity);
         }
-        if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
+        if (event.getEntity() instanceof Villager villager && event.getLevel() instanceof ServerLevel level) {
+            HiredVillagerIndex.update(level, villager);
             VillagerDownedService.onVillagerLoaded(villager);
             PartyVillagerContractService.onVillagerLoaded(villager);
         }
