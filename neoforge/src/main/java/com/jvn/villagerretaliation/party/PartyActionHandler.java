@@ -68,6 +68,8 @@ public final class PartyActionHandler {
             case SET_COMBAT_MODE -> setPolicies(player, payload.combatMode(), null, null);
             case SET_ATTACK_MODE -> setPolicies(player, null, payload.attackMode(), null);
             case SET_SHARED_VILLAGER_INVENTORIES -> setPolicies(player, null, null, payload.enabled());
+            case SET_QUICK_COMMANDS_ENABLED -> PartyQuickCommandService.setParticipation(
+                    player, payload.targetId(), payload.enabled());
         }
     }
 

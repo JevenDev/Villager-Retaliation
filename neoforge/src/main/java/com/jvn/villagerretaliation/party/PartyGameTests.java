@@ -124,6 +124,7 @@ public final class PartyGameTests {
         customized.setCombatMode(PartyCombatMode.ATTACK_WITH_PARTY);
         customized.setAttackMode(PartyAttackMode.PLAYERS);
         customized.setDropCollectionMode(PartyDropCollectionMode.SLAIN_ENTITIES);
+        customized.setQuickCommandsEnabled(false);
         helper.assertValueEqual(PartySyncService.combatModeState(party), PartyCombatModeState.CUSTOM,
                 "mixed per-villager combat modes should synchronize as custom");
         helper.assertValueEqual(PartySyncService.attackModeState(party), PartyAttackModeState.CUSTOM,
@@ -163,6 +164,12 @@ public final class PartyGameTests {
         helper.assertValueEqual(restored.villager(villagers.getFirst()).dropCollectionMode(),
                 PartyDropCollectionMode.SLAIN_ENTITIES,
                 "individual drop-collection setting persistence");
+        helper.assertFalse(restored.villager(villagers.getFirst()).quickCommandsEnabled(),
+                "individual quick-command participation persistence");
+        CompoundTag legacyQuickCommandVillager = customized.save();
+        legacyQuickCommandVillager.remove("QuickCommandsEnabled");
+        helper.assertTrue(PartyVillagerRecord.load(legacyQuickCommandVillager).quickCommandsEnabled(),
+                "legacy villagers default to quick-command participation");
         helper.assertValueEqual(restored.playerIds(), List.of(leader, second, third, fourth),
                 "player roster order with leader first");
         helper.assertValueEqual(restored.villagers().stream().map(PartyVillagerRecord::villagerId).toList(), villagers,
@@ -288,6 +295,7 @@ public final class PartyGameTests {
             PartyVillagerRecord record = party.villager(villager.getUUID());
             helper.assertValueEqual(VillagerCurrencyPayment.count(leader), 0, "exact initial recruitment cost");
             helper.assertValueEqual(record.commandMode(), PartyCommandMode.FOLLOW, "default follow command");
+            helper.assertTrue(record.quickCommandsEnabled(), "new recruits default to quick-command participation");
             helper.assertValueEqual(record.contractEndGameTime() - record.contractStartGameTime(),
                     VillagerContractTime.DAY_TICKS, "one paid contract day");
             helper.assertValueEqual(record.emeraldsPaid(), 32, "per-villager prepaid amount");

@@ -167,6 +167,7 @@ public final class VillagerRetaliationEvents {
         VillagerConversationService.clearRuntimeState();
         VillagerRecruitmentService.clearRuntimeState();
         PartyVillagerContractService.clearRuntimeState();
+        com.jvn.villagerretaliation.party.PartyQuickCommandService.clearRuntimeState();
         HiredVillagerWorkService.clearRuntimeState();
         HiredVillagerIndex.clearRuntimeState();
         HiredJobInventory.clearRuntimeState();
@@ -355,6 +356,7 @@ public final class VillagerRetaliationEvents {
             VillagerRetaliationHandler.onEntityTickPost(event);
             VillagerFleeBehaviorHandler.onEntityTickPost(event);
             VillagerCombatSurvivalService.onVillagerTickPost(villager);
+            com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerTickPost(villager);
             VillagerInventoryAccess.maybeOffloadInventoryOverflow(villager);
             VillagerWalletService.tickWallet(villager);
             VillagerSocialGraphService.onEntityTickPost(event);
@@ -718,6 +720,7 @@ public final class VillagerRetaliationEvents {
         VillageCombatAuthorizationService.clearFor(event.getEntity());
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
             VillagerDownedService.onVillagerUnloaded(villager);
+            com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerUnloaded(villager);
             Entity.RemovalReason reason = villager.getRemovalReason();
             if (reason == Entity.RemovalReason.DISCARDED || reason == Entity.RemovalReason.KILLED) {
                 PartyVillagerContractService.onVillagerPermanentlyRemoved(villager);

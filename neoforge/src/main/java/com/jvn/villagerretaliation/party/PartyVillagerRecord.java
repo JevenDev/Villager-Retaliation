@@ -31,6 +31,7 @@ public final class PartyVillagerRecord {
     private static final String TAG_ATTACK_MODE = "AttackMode";
     private static final String TAG_KILL_ON_SIGHT = "KillOnSight";
     private static final String TAG_DROP_COLLECTION = "DropCollection";
+    private static final String TAG_QUICK_COMMANDS_ENABLED = "QuickCommandsEnabled";
 
     private final UUID villagerId;
     private final UUID recruiterId;
@@ -50,6 +51,7 @@ public final class PartyVillagerRecord {
     private PartyCombatMode combatMode = PartyCombatMode.ATTACK_WITH_PARTY;
     private PartyAttackMode attackMode = PartyAttackMode.ALL;
     private PartyDropCollectionMode dropCollectionMode = PartyDropCollectionMode.OFF;
+    private boolean quickCommandsEnabled = true;
 
     PartyVillagerRecord(
             UUID villagerId,
@@ -156,6 +158,10 @@ public final class PartyVillagerRecord {
         return this.dropCollectionMode;
     }
 
+    public boolean quickCommandsEnabled() {
+        return this.quickCommandsEnabled;
+    }
+
     void setCombatMode(PartyCombatMode mode) {
         this.combatMode = mode == null ? PartyCombatMode.ATTACK_WITH_PARTY : mode;
     }
@@ -166,6 +172,10 @@ public final class PartyVillagerRecord {
 
     void setDropCollectionMode(PartyDropCollectionMode mode) {
         this.dropCollectionMode = mode == null ? PartyDropCollectionMode.OFF : mode;
+    }
+
+    void setQuickCommandsEnabled(boolean enabled) {
+        this.quickCommandsEnabled = enabled;
     }
 
     public int remainingDays(long gameTime) {
@@ -236,6 +246,7 @@ public final class PartyVillagerRecord {
         tag.putString(TAG_COMBAT_MODE, this.combatMode.name());
         tag.putString(TAG_ATTACK_MODE, this.attackMode.name());
         tag.putString(TAG_DROP_COLLECTION, this.dropCollectionMode.name());
+        tag.putBoolean(TAG_QUICK_COMMANDS_ENABLED, this.quickCommandsEnabled);
         return tag;
     }
 
@@ -274,6 +285,8 @@ public final class PartyVillagerRecord {
         record.setCombatMode(loadCombatMode(tag));
         record.setAttackMode(PartyAttackMode.byName(tag.getString(TAG_ATTACK_MODE)));
         record.setDropCollectionMode(PartyDropCollectionMode.byName(tag.getString(TAG_DROP_COLLECTION)));
+        record.setQuickCommandsEnabled(!tag.contains(TAG_QUICK_COMMANDS_ENABLED)
+                || tag.getBoolean(TAG_QUICK_COMMANDS_ENABLED));
         return record;
     }
 

@@ -69,6 +69,7 @@ public record PartyRosterSyncPayload(
             buffer.writeEnum(villager.combatMode());
             buffer.writeEnum(villager.attackMode());
             buffer.writeEnum(villager.dropCollectionMode());
+            buffer.writeBoolean(villager.quickCommandsEnabled());
         }
     }
 
@@ -104,7 +105,8 @@ public record PartyRosterSyncPayload(
                     buffer.readVarInt(),
                     buffer.readEnum(PartyCombatMode.class),
                     buffer.readEnum(PartyAttackMode.class),
-                    buffer.readEnum(PartyDropCollectionMode.class)));
+                    buffer.readEnum(PartyDropCollectionMode.class),
+                    buffer.readBoolean()));
         }
         return new PartyRosterSyncPayload(true, partyId, leaderName, recipientLeader,
                 combatMode, attackMode, sharedVillagerInventories,
@@ -129,6 +131,7 @@ public record PartyRosterSyncPayload(
             int remainingDays,
             PartyCombatMode combatMode,
             PartyAttackMode attackMode,
-            PartyDropCollectionMode dropCollectionMode) {
+            PartyDropCollectionMode dropCollectionMode,
+            boolean quickCommandsEnabled) {
     }
 }

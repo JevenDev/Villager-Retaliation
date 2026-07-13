@@ -75,6 +75,7 @@ public record PartyActionRequestPayload(
         DISBAND_PARTY,
         SET_COMBAT_MODE,
         SET_ATTACK_MODE,
-        SET_SHARED_VILLAGER_INVENTORIES
+        SET_SHARED_VILLAGER_INVENTORIES,
+        SET_QUICK_COMMANDS_ENABLED
     }
 }

@@ -106,7 +106,8 @@ public final class PartySyncService {
                     record.remainingDays(now),
                     record.combatMode(),
                     record.attackMode(),
-                    record.dropCollectionMode()));
+                    record.dropCollectionMode(),
+                    record.quickCommandsEnabled()));
         }
         return new PartyRosterSyncPayload(
                 true,
