@@ -237,6 +237,7 @@ public final class VillageAllegianceService {
 
     public static void clearRuntimeState(MinecraftServer server) {
         PENDING.clear();
+        VillageAllegianceReassignmentService.clearRuntimeState();
         migratedKnown = 0L;
         migratedUnknown = 0L;
         migratedUnaffiliated = 0L;

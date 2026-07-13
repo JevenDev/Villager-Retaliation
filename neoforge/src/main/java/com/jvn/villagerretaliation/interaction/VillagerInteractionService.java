@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
@@ -2299,10 +2300,23 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "This is already my home village.");
             return;
         }
+        VillageAllegianceReassignmentService.Eligibility eligibility =
+                VillageAllegianceReassignmentService.eligibility(level, player, villager, current.get());
+        if (!eligibility.allowed()) {
+            sendVillagerNotice(player, villager, VillageAllegianceReassignmentService.describe(eligibility));
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            return;
+        }
+        if (!VillageAllegianceReassignmentService.confirmOrArm(level, player, villager, current.get())) {
+            sendVillagerNotice(player, villager,
+                    "Changing my home will also change which village I defend. Ask me once more within 30 seconds to confirm.");
+            return;
+        }
         if (!VillageAllegianceService.reassignToCurrentVillage(level, villager)) {
             sendVillagerNotice(player, villager, "I cannot change my allegiance right now.");
             return;
         }
+        VillageAllegianceReassignmentService.complete(villager);
         String villageName = registry.canonicalRecord(current.get())
                 .map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
                 .orElse("this village");

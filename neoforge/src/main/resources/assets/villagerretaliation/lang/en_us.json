@@ -539,7 +539,7 @@
   "villagerretaliation.gui.root.goodbye": "Goodbye",
   "villagerretaliation.gui.allegiance.details": "Home village: %s\nCurrent village: %s\nHome location: %s\nLifecycle: %s\nAssigned by: %s\nLoyalty: %s",
   "villagerretaliation.gui.allegiance.reassign": "Make This Village Your Home",
-  "villagerretaliation.gui.allegiance.reassign_locked": "Reassignment Requires Revered Trust and an Active Village",
+  "villagerretaliation.gui.allegiance.reassign_locked": "Reassignment Requires Trust, Residency, and Village Acceptance",
   "villagerretaliation.gui.village_naming.title": "Name This Village",
   "villagerretaliation.gui.village_naming.name": "Village name",
   "villagerretaliation.gui.village_naming.save": "Save Name",

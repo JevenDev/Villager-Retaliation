@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceEntityData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceService;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
@@ -31,6 +32,7 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.IronGolem;
@@ -141,6 +143,30 @@ public final class VillageAllegianceGameTests {
                 "source roster survives merge restoration");
         helper.assertFalse(registry.record(target).orElseThrow().residents().containsKey(sourceResident),
                 "restored residents are removed from the former target");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void reassignmentResidencyPersistsAndConfirmationRequiresTwoRequests(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = createVillager(level);
+        VillageAllegianceId target = VillageAllegianceId.random();
+        VillageAllegianceReassignmentService.writeResidency(
+                villager, new VillageAllegianceReassignmentService.Residency(target, 42L));
+        Villager restored = roundTrip(level, villager);
+        helper.assertValueEqual(
+                VillageAllegianceReassignmentService.readResidency(restored).orElseThrow(),
+                new VillageAllegianceReassignmentService.Residency(target, 42L),
+                "residency clock survives entity persistence");
+
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        helper.assertFalse(VillageAllegianceReassignmentService.confirmOrArm(
+                level, player, restored, target), "first reassignment request only arms confirmation");
+        helper.assertTrue(VillageAllegianceReassignmentService.confirmOrArm(
+                level, player, restored, target), "second matching request confirms reassignment");
+        VillageAllegianceReassignmentService.complete(restored);
+        helper.assertTrue(VillageAllegianceReassignmentService.readResidency(restored).isEmpty(),
+                "completed reassignment clears the old residency clock");
         helper.succeed();
     }
 

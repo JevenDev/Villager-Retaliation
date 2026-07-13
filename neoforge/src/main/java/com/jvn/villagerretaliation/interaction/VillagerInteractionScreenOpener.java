@@ -233,7 +233,7 @@ public final class VillagerInteractionScreenOpener {
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),
-                allegianceView(level, villager, reputation),
+                allegianceView(level, villager, player),
                 VillagerSocialGraphService.familySnapshot(level, villager),
                 VillagerSocialGraphService.relationshipSnapshot(level, villager)
         );
@@ -258,7 +258,7 @@ public final class VillagerInteractionScreenOpener {
     private static VillageAllegianceView allegianceView(
             ServerLevel level,
             Villager villager,
-            ReputationSnapshot reputation) {
+            ServerPlayer player) {
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         VillageAllegianceData data = VillageAllegianceApi.get(villager).orElse(null);
         Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> home = data != null && data.isKnown()
@@ -287,11 +287,16 @@ public final class VillagerInteractionScreenOpener {
         } else {
             loyalty = "Foreign resident — loyal to " + homeName;
         }
-        boolean canReassign = !villager.isBaby()
-                && reputation.level().trustRank() >= VillagerReputationLevel.REVERED.trustRank()
-                && current.filter(record -> record.lifecycleState() == VillageLifecycleState.ACTIVE).isPresent()
-                && (data == null || !data.isKnown()
-                || registry.canonical(data.primary()).filter(currentId.orElseThrow()::equals).isEmpty());
+        com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService.Eligibility eligibility =
+                currentId.map(id -> com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService
+                                .eligibility(level, player, villager, id))
+                        .orElse(null);
+        boolean canReassign = eligibility != null && eligibility.allowed();
+        if (eligibility != null && eligibility.reason()
+                != com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService.Reason.ALREADY_HOME) {
+            loyalty += "\nReassignment: "
+                    + com.jvn.villagerretaliation.allegiance.VillageAllegianceReassignmentService.describe(eligibility);
+        }
         return new VillageAllegianceView(homeName, currentName, location, lifecycle, source, loyalty, canReassign);
     }
 
