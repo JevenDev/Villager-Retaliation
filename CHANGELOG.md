@@ -38,6 +38,7 @@
 
 ### Added
 
+- Expanded personal, job, and party villager inventories with nine-slot hotbars; assigned job tools now prefer mainhand then hotbar storage, while ordinary supplies, outputs, and party drops use the hotbar only for overflow.
 - Added durable POI-backed village identities with generated names, canonical aliases, resident rosters, automatic connected-footprint merging, loaded-only empty-grace observation, and archival after 72,000 fully observed ticks.
 - Added permanent villager and natural-golem allegiance, neutral Wanderers for outside spawns, lazy v1 reset-on-load migration, conversion handling, and trusted reassignment from the Allegiance interaction page.
 - Added allegiance-aware combat and community response: recruits can fight Wanderers or foreign villages without the victim having a party, same-party and same-village damage is blocked, actual landed damage rallies only the victim's village, and foreign golems become reactive defense targets.

@@ -36,6 +36,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private static final int OFFHAND_Y = 81;
     private static final int VILLAGER_INVENTORY_X = 11;
     private static final int VILLAGER_INVENTORY_Y = 103;
+    private static final int VILLAGER_HOTBAR_Y = 161;
     private static final int JOB_MAINHAND_SLOT = HiredJobInventory.MAINHAND_SLOT;
     private static final int JOB_OFFHAND_SLOT = HiredJobInventory.OFFHAND_SLOT;
     private static final int JOB_EQUIPMENT_SLOT_COUNT = JOB_OFFHAND_SLOT + 1;
@@ -354,6 +355,14 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                         VILLAGER_INVENTORY_Y + row * SLOT_SIZE
                 ));
             }
+        }
+        for (int column = 0; column < VillagerInventoryContainer.HOTBAR_SLOT_COUNT; column++) {
+            addSlot(new Slot(
+                    this.villagerInventory,
+                    VillagerInventoryContainer.ARMOR_SLOT_COUNT + VillagerInventoryContainer.HOTBAR_START + column,
+                    VILLAGER_INVENTORY_X + column * SLOT_SIZE,
+                    VILLAGER_HOTBAR_Y
+            ));
         }
 
         addSlot(new VillagerHandSlot(
@@ -793,7 +802,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     public enum ViewMode {
         PERSONAL(VillagerInventoryContainer.SLOT_COUNT),
         JOB(HiredJobInventory.SLOT_COUNT),
-        PARTY(HiredJobInventory.FILTER_SLOT);
+        PARTY(HiredJobInventory.PARTY_SLOT_COUNT);
 
         private final int slotCount;
 
@@ -877,6 +886,9 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         }
         if (slot == HiredJobInventory.FILTER_SLOT) {
             return OFFHAND_Y;
+        }
+        if (slot >= HiredJobInventory.HOTBAR_START && slot < HiredJobInventory.FILTER_SLOT) {
+            return VILLAGER_HOTBAR_Y;
         }
         int gridIndex = slot - JOB_EQUIPMENT_SLOT_COUNT;
         int row = gridIndex / 9;

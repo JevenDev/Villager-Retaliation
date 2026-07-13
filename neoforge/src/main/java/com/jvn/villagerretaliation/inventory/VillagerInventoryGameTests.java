@@ -141,7 +141,7 @@ public final class VillagerInventoryGameTests {
         VillagerItemFilterService.replaceFilter(villager, filter);
 
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
-        helper.assertValueEqual(inventory.getContainerSize(), 34, "job inventory should append exactly one slot");
+        helper.assertValueEqual(inventory.getContainerSize(), 43, "job inventory should include nine hotbar slots and one filter slot");
         helper.assertTrue(inventory.getItem(HiredJobInventory.FILTER_SLOT).is(VillagerRetaliationItems.ITEM_FILTER.get()),
                 "dedicated filter slot should contain the assigned copy");
         helper.assertFalse(inventory.isSupplySlot(HiredJobInventory.FILTER_SLOT),
@@ -171,7 +171,40 @@ public final class VillagerInventoryGameTests {
         helper.assertValueEqual(legacyLoaded.getItem(32).getCount(), 7,
                 "legacy slot 32 should retain its saved contents");
         helper.assertTrue(legacyLoaded.getItem(HiredJobInventory.FILTER_SLOT).isEmpty(),
-                "legacy 33-slot data should load with an empty appended filter slot");
+                "legacy 33-slot data should load with an empty filter slot");
+
+        Villager legacyFilterVillager = spawnVillager(helper, new BlockPos(4, 2, 1));
+        NonNullList<ItemStack> legacyFilterItems = NonNullList.withSize(34, ItemStack.EMPTY);
+        legacyFilterItems.set(6, new ItemStack(Items.LADDER, 4));
+        legacyFilterItems.set(32, new ItemStack(Items.IRON_INGOT, 5));
+        legacyFilterItems.set(33, filter.copy());
+        CompoundTag legacyFilterTag = ContainerHelper.saveAllItems(
+                new CompoundTag(), legacyFilterItems, true, helper.getLevel().registryAccess());
+        legacyFilterVillager.getPersistentData().put(JOB_INVENTORY_TAG, legacyFilterTag);
+        HiredJobInventory.clearRuntimeState(legacyFilterVillager);
+        HiredJobInventory migratedFilterInventory = HiredJobInventory.getJobInventory(legacyFilterVillager);
+        helper.assertTrue(migratedFilterInventory.getItem(HiredJobInventory.HOTBAR_START).isEmpty(),
+                "legacy filter slot should become the first empty hotbar slot");
+        helper.assertTrue(migratedFilterInventory.getItem(HiredJobInventory.FILTER_SLOT).is(VillagerRetaliationItems.ITEM_FILTER.get()),
+                "legacy filter should migrate to the new dedicated filter slot");
+        helper.assertValueEqual(migratedFilterInventory.getItem(32).getCount(), 5,
+                "legacy non-filter positions should remain unchanged");
+        helper.assertTrue(migratedFilterInventory.getItem(6).is(Items.LADDER),
+                "legacy supply items should remain in their existing positions");
+        helper.assertValueEqual(migratedFilterInventory.slotType(6), HiredJobInventorySlotType.SUPPLY,
+                "non-empty implicit legacy supply slots should retain their role");
+        helper.assertValueEqual(migratedFilterInventory.slotType(7), HiredJobInventorySlotType.OUTPUT,
+                "empty legacy supply reservations should adopt the new dynamic main-grid default");
+        helper.assertValueEqual(
+                legacyFilterVillager.getPersistentData().getCompound(JOB_INVENTORY_TAG).getInt("LayoutVersion"),
+                2,
+                "legacy filter migration should persist the current layout version");
+        HiredJobInventory.clearRuntimeState(legacyFilterVillager);
+        HiredJobInventory migratedFilterReloaded = HiredJobInventory.getJobInventory(legacyFilterVillager);
+        helper.assertTrue(migratedFilterReloaded.getItem(HiredJobInventory.HOTBAR_START).isEmpty(),
+                "reloading a migrated filter should not duplicate it into the hotbar");
+        helper.assertTrue(migratedFilterReloaded.getItem(HiredJobInventory.FILTER_SLOT).is(VillagerRetaliationItems.ITEM_FILTER.get()),
+                "migrated filter should remain in the dedicated slot after reload");
 
         ServerPlayer outsider = fakePlayer(helper.getLevel(), "VrFilterOutsider");
         VillagerInventoryMenu unauthorizedMenu = new VillagerInventoryMenu(
@@ -186,6 +219,7 @@ public final class VillagerInventoryGameTests {
 
         villager.discard();
         legacyVillager.discard();
+        legacyFilterVillager.discard();
         helper.succeed();
     }
 
@@ -412,11 +446,25 @@ public final class VillagerInventoryGameTests {
     public static void regularInventoryAddsItemsChecksCapacityAndRemovesEmptyExtraPersistence(GameTestHelper helper) {
         buildFloor(helper, 0, 4, 0, 4, 1);
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerInventoryContainer container = new VillagerInventoryContainer(villager);
+        helper.assertValueEqual(container.getContainerSize(), 42,
+                "personal inventory should include armor, 36 storage slots, and both hands");
 
         ItemStack firstRemainder = VillagerInventoryContainer.addItem(villager, new ItemStack(Items.WHEAT, 40));
         ItemStack secondRemainder = VillagerInventoryContainer.addItem(villager, new ItemStack(Items.WHEAT, 30));
         helper.assertTrue(firstRemainder.isEmpty() && secondRemainder.isEmpty(), "regular inventory should accept wheat stacks");
         helper.assertValueEqual(countStored(villager, Items.WHEAT), 70, "regular inventory should merge matching stacks");
+
+        NonNullList<ItemStack> mainGridFull = NonNullList.withSize(VillagerInventoryContainer.INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
+        for (int slot = 0; slot < VillagerInventoryContainer.HOTBAR_START; slot++) {
+            mainGridFull.set(slot, new ItemStack(Items.COBBLESTONE, 64));
+        }
+        VillagerInventoryContainer.saveFullInventory(villager, mainGridFull);
+        helper.assertTrue(VillagerInventoryContainer.addItem(villager, new ItemStack(Items.DIRT)).isEmpty(),
+                "regular inventory should use the hotbar after the main grid is full");
+        helper.assertTrue(VillagerInventoryContainer.loadFullInventory(villager)
+                        .get(VillagerInventoryContainer.HOTBAR_START).is(Items.DIRT),
+                "regular insertion should fill the first hotbar slot only after the main grid");
 
         NonNullList<ItemStack> fullInventory = NonNullList.withSize(VillagerInventoryContainer.INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
         for (int slot = 0; slot < fullInventory.size(); slot++) {
@@ -481,37 +529,32 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void regularInventoryMigratesLegacyOverflowOnlyOnce(GameTestHelper helper) {
+    public static void regularInventoryRestoresExpandedHotbarPersistence(GameTestHelper helper) {
         buildFloor(helper, 0, 4, 0, 4, 1);
         ServerLevel level = helper.getLevel();
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         int vanillaSlots = Math.min(
                 VillagerInventoryContainer.INVENTORY_SLOT_COUNT,
                 villager.getInventory().getContainerSize());
-        int currentExtraSlots = Math.max(0, VillagerInventoryContainer.INVENTORY_SLOT_COUNT - vanillaSlots);
-        NonNullList<ItemStack> legacyExtraInventory = NonNullList.withSize(currentExtraSlots + 1, ItemStack.EMPTY);
-        legacyExtraInventory.set(currentExtraSlots, new ItemStack(Items.EMERALD, 3));
-        CompoundTag legacyTag = ContainerHelper.saveAllItems(
+        int expandedExtraSlots = Math.max(0, VillagerInventoryContainer.INVENTORY_SLOT_COUNT - vanillaSlots);
+        NonNullList<ItemStack> expandedExtraInventory = NonNullList.withSize(expandedExtraSlots, ItemStack.EMPTY);
+        expandedExtraInventory.set(expandedExtraSlots - 1, new ItemStack(Items.EMERALD, 3));
+        CompoundTag expandedTag = ContainerHelper.saveAllItems(
                 new CompoundTag(),
-                legacyExtraInventory,
+                expandedExtraInventory,
                 true,
                 level.registryAccess());
-        villager.getPersistentData().put(EXTRA_INVENTORY_TAG, legacyTag);
+        villager.getPersistentData().put(EXTRA_INVENTORY_TAG, expandedTag);
 
         new VillagerInventoryContainer(villager);
-        helper.assertValueEqual(
-                countDroppedItems(level, villager.blockPosition(), Items.EMERALD),
-                3,
-                "legacy overflow should drop once on inventory load");
-        helper.assertFalse(
-                villager.getPersistentData().contains(EXTRA_INVENTORY_TAG, Tag.TAG_COMPOUND),
-                "legacy overflow migration should clear stale extra inventory");
+        helper.assertValueEqual(countStored(villager, Items.EMERALD), 3,
+                "expanded personal hotbar contents should load from extra inventory persistence");
+        helper.assertValueEqual(countDroppedItems(level, villager.blockPosition(), Items.EMERALD), 0,
+                "expanded personal hotbar contents should no longer be treated as legacy overflow");
 
         new VillagerInventoryContainer(villager);
-        helper.assertValueEqual(
-                countDroppedItems(level, villager.blockPosition(), Items.EMERALD),
-                3,
-                "legacy overflow should not duplicate on a second inventory load");
+        helper.assertValueEqual(countStored(villager, Items.EMERALD), 3,
+                "expanded personal hotbar contents should remain stable across repeated loads");
         villager.discard();
         helper.succeed();
     }
@@ -640,12 +683,125 @@ public final class VillagerInventoryGameTests {
                 true,
                 true);
         menu.getSlot(18).setByPlayer(new ItemStack(Items.COD, 4));
+        menu.getSlot(HiredJobInventory.HOTBAR_START).setByPlayer(new ItemStack(Items.DIRT, 3));
 
         HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
         helper.assertValueEqual(jobInventory.slotType(18), HiredJobInventorySlotType.SUPPLY, "player-placed grid item slot type");
         helper.assertTrue(jobInventory.findSupply(stack -> stack.is(Items.COD)).is(Items.COD), "player-placed grid item should count as supply");
+        helper.assertValueEqual(jobInventory.slotType(HiredJobInventory.HOTBAR_START), HiredJobInventorySlotType.SUPPLY,
+                "arbitrary player-placed hotbar item slot type");
+        helper.assertTrue(jobInventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.DIRT),
+                "job hotbar should accept arbitrary player-placed items");
+        helper.assertValueEqual(menu.getSlot(HiredJobInventory.HOTBAR_START).y, 161,
+                "job hotbar should align with the separated texture row");
 
         menu.removed(player);
+
+        VillagerInventoryMenu personalMenu = new VillagerInventoryMenu(
+                2,
+                player.getInventory(),
+                villager,
+                VillagerInventoryMenu.ViewMode.PERSONAL,
+                true,
+                true);
+        int personalHotbarMenuSlot = VillagerInventoryContainer.ARMOR_SLOT_COUNT
+                + VillagerInventoryContainer.HOTBAR_START;
+        helper.assertValueEqual(personalMenu.getSlot(personalHotbarMenuSlot).getSlotIndex(), personalHotbarMenuSlot,
+                "personal hotbar should expose the expanded storage index");
+        helper.assertValueEqual(personalMenu.getSlot(personalHotbarMenuSlot).y, 161,
+                "personal hotbar should align with the separated texture row");
+        personalMenu.removed(player);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void jobInventoryPrioritizesToolsAndUsesHotbarForOverflow(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+
+        helper.assertTrue(inventory.insertTool(new ItemStack(Items.IRON_PICKAXE)).isEmpty(),
+                "first assigned tool should fit in mainhand");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.MAINHAND_SLOT).is(Items.IRON_PICKAXE),
+                "first assigned tool should occupy mainhand");
+        for (int slot = HiredJobInventory.HOTBAR_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+            helper.assertTrue(inventory.insertTool(new ItemStack(Items.IRON_AXE)).isEmpty(),
+                    "additional assigned tool should fit in the hotbar");
+        }
+        for (int slot = HiredJobInventory.HOTBAR_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+            helper.assertTrue(inventory.getItem(slot).is(Items.IRON_AXE),
+                    "additional assigned tools should fill hotbar slots before the main grid");
+        }
+        helper.assertTrue(inventory.insertTool(new ItemStack(Items.IRON_SHOVEL)).isEmpty(),
+                "tool overflow should fit in the main grid");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.MAIN_GRID_START).is(Items.IRON_SHOVEL),
+                "tool overflow should begin at the first main-grid slot");
+
+        inventory.clearContent();
+        inventory.setItem(HiredJobInventory.MAIN_GRID_START, new ItemStack(Items.IRON_PICKAXE));
+        inventory.markPlayerPlacedSupply(HiredJobInventory.MAIN_GRID_START);
+        inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.DIAMOND_PICKAXE));
+        ItemStack equalScoreBest = inventory.equipBestTool(
+                stack -> stack.is(Items.IRON_PICKAXE) || stack.is(Items.DIAMOND_PICKAXE),
+                ignored -> 1.0D);
+        helper.assertTrue(equalScoreBest.is(Items.DIAMOND_PICKAXE),
+                "equal-scoring stored tools should prefer the hotbar over the main grid");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.MAIN_GRID_START).is(Items.IRON_PICKAXE),
+                "equal-score selection should not rearrange the existing main-grid tool");
+
+        inventory.clearContent();
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.WHEAT)).isEmpty(),
+                "ordinary supply should fit in the main grid");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.MAIN_GRID_START).is(Items.WHEAT),
+                "ordinary supplies should claim the main grid before the hotbar");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).isEmpty(),
+                "ordinary supplies should leave hotbar space available while the main grid has room");
+
+        inventory.clearContent();
+        fillMainJobGrid(inventory, Items.COBBLESTONE);
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.WHEAT)).isEmpty(),
+                "ordinary supply overflow should fit in the hotbar");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.WHEAT),
+                "ordinary supply overflow should use the first hotbar slot");
+
+        inventory.clearContent();
+        helper.assertTrue(inventory.insertOutput(new ItemStack(Items.BONE)).isEmpty(),
+                "ordinary output should fit in the main grid");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.MAIN_GRID_START).is(Items.BONE),
+                "ordinary outputs should claim the main grid before the hotbar");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).isEmpty(),
+                "ordinary outputs should leave hotbar space available while the main grid has room");
+
+        inventory.clearContent();
+        fillMainJobGrid(inventory, Items.COBBLESTONE);
+        helper.assertTrue(inventory.insertOutput(new ItemStack(Items.BONE)).isEmpty(),
+                "ordinary output overflow should fit in the hotbar");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.BONE),
+                "ordinary output overflow should use the first hotbar slot");
+        for (int slot = HiredJobInventory.HOTBAR_START + 1; slot < HiredJobInventory.FILTER_SLOT - 1; slot++) {
+            inventory.setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+        helper.assertTrue(inventory.canStoreOutputs(List.of(new ItemStack(Items.GRAVEL, 64))),
+                "output simulation should include the final available hotbar slot");
+        inventory.setItem(HiredJobInventory.FILTER_SLOT - 1, new ItemStack(Items.DIRT, 64));
+        helper.assertFalse(inventory.canStoreOutputs(List.of(new ItemStack(Items.GRAVEL, 64))),
+                "output simulation should reject items when the grid and hotbar are full");
+
+        inventory.clearContent();
+        fillMainJobGrid(inventory, Items.COBBLESTONE);
+        for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.HOTBAR_START; slot++) {
+            inventory.markPlayerPlacedSupply(slot);
+        }
+        for (int slot = HiredJobInventory.HOTBAR_START; slot < HiredJobInventory.FILTER_SLOT - 1; slot++) {
+            inventory.setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+        helper.assertTrue(inventory.canStoreSuppliesAfterDepositingOutputs(List.of(new ItemStack(Items.GRAVEL, 64))),
+                "supply simulation should include the final available hotbar slot");
+        inventory.setItem(HiredJobInventory.FILTER_SLOT - 1, new ItemStack(Items.DIRT, 64));
+        helper.assertFalse(inventory.canStoreSuppliesAfterDepositingOutputs(List.of(new ItemStack(Items.GRAVEL, 64))),
+                "supply simulation should reject items when the grid and hotbar are full");
+
         villager.discard();
         helper.succeed();
     }
@@ -727,12 +883,15 @@ public final class VillagerInventoryGameTests {
     public static void deathDropsPersonalAndJobInventory(GameTestHelper helper) {
         buildFloor(helper, 0, 4, 0, 4, 1);
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
-        helper.assertTrue(
-                VillagerInventoryContainer.addItem(villager, new ItemStack(Items.BREAD, 5)).isEmpty(),
-                "personal inventory should accept bread");
+        NonNullList<ItemStack> personalInventory = NonNullList.withSize(
+                VillagerInventoryContainer.INVENTORY_SLOT_COUNT,
+                ItemStack.EMPTY);
+        personalInventory.set(VillagerInventoryContainer.HOTBAR_START, new ItemStack(Items.BREAD, 5));
+        VillagerInventoryContainer.saveFullInventory(villager, personalInventory);
         HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
         jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_PICKAXE));
         helper.assertTrue(jobInventory.insertOutput(new ItemStack(Items.COAL, 3)).isEmpty(), "job output should fit");
+        jobInventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.BONE, 2));
 
         List<ItemEntity> drops = new ArrayList<>();
         LivingDropsEvent event = new LivingDropsEvent(villager, villager.damageSources().generic(), drops, false);
@@ -741,6 +900,7 @@ public final class VillagerInventoryGameTests {
         helper.assertValueEqual(countEventDrops(drops, Items.BREAD), 5, "death should drop personal inventory");
         helper.assertValueEqual(countEventDrops(drops, Items.IRON_PICKAXE), 1, "death should drop job equipment");
         helper.assertValueEqual(countEventDrops(drops, Items.COAL), 3, "death should drop job output");
+        helper.assertValueEqual(countEventDrops(drops, Items.BONE), 2, "death should drop job hotbar contents");
         helper.assertValueEqual(countStored(villager, Items.BREAD), 0, "personal inventory should clear after death drops");
         helper.assertTrue(HiredJobInventory.getJobInventory(villager).isEmpty(), "job inventory should clear after death drops");
 
@@ -757,6 +917,12 @@ public final class VillagerInventoryGameTests {
             }
         }
         return count;
+    }
+
+    private static void fillMainJobGrid(HiredJobInventory inventory, Item item) {
+        for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.HOTBAR_START; slot++) {
+            inventory.setItem(slot, new ItemStack(item, 64));
+        }
     }
 
     private static int countEventDrops(Iterable<ItemEntity> drops, Item item) {

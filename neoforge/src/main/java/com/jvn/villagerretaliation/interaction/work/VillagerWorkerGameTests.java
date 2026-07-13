@@ -1079,45 +1079,56 @@ public final class VillagerWorkerGameTests {
                 new ItemStack(Items.EMERALD),
                 villager,
                 "gametest");
-        inventory.setItem(18, protectedEmerald);
-        ItemStack removed = inventory.removeItem(18, 1);
+        inventory.setItem(HiredJobInventory.MAIN_GRID_START, protectedEmerald);
+        ItemStack removed = inventory.removeItem(HiredJobInventory.MAIN_GRID_START, 1);
         helper.assertTrue(removed.isEmpty(), "protected job items should not be removable by automation");
-        helper.assertValueEqual(inventory.slotType(18), HiredJobInventorySlotType.PROTECTED_PROPERTY, "protected slot type");
+        helper.assertValueEqual(inventory.slotType(HiredJobInventory.MAIN_GRID_START),
+                HiredJobInventorySlotType.PROTECTED_PROPERTY, "protected slot type");
 
         ItemStack outputRemainder = inventory.insertOutput(new ItemStack(Items.WHEAT, 3));
         helper.assertTrue(outputRemainder.isEmpty(), "output should fit into output slots");
-        helper.assertTrue(inventory.getItem(18).is(Items.EMERALD), "protected output slot should remain untouched");
-        helper.assertTrue(inventory.getItem(19).is(Items.WHEAT), "output should use the next output slot");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.MAIN_GRID_START).is(Items.EMERALD),
+                "protected output slot should remain untouched");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.MAIN_GRID_START + 1).is(Items.WHEAT),
+                "output should use the next main-grid slot");
 
-        for (int slot = 6; slot < 18; slot++) {
-            helper.assertTrue(inventory.getItem(slot).isEmpty(), "outputs should not occupy empty supply slot " + slot);
-            helper.assertValueEqual(inventory.slotType(slot), HiredJobInventorySlotType.SUPPLY, "supply slot type " + slot);
+        for (int slot = HiredJobInventory.HOTBAR_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+            helper.assertTrue(inventory.getItem(slot).isEmpty(), "outputs should not occupy hotbar slot " + slot);
+            helper.assertValueEqual(inventory.slotType(slot), HiredJobInventorySlotType.SUPPLY,
+                    "empty hotbar slot should retain supply preference " + slot);
         }
 
-        for (int i = 0; i < 13; i++) {
+        for (int i = 0; i < HiredJobInventory.MAIN_GRID_SLOT_COUNT - 2; i++) {
             helper.assertTrue(inventory.insertOutput(new ItemStack(Items.COBBLESTONE, 64)).isEmpty(), "output filler should fit " + i);
         }
         ItemStack overflowOutput = inventory.insertOutput(new ItemStack(Items.DIRT, 3));
-        helper.assertTrue(overflowOutput.isEmpty(), "outputs should spill into empty grid slots after preferred output slots fill");
-        helper.assertTrue(inventory.getItem(6).is(Items.DIRT), "output overflow should claim the first empty supply grid slot");
-        helper.assertValueEqual(inventory.slotType(6), HiredJobInventorySlotType.OUTPUT, "claimed overflow slot type");
+        helper.assertTrue(overflowOutput.isEmpty(), "outputs should spill into the hotbar after the main grid fills");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.DIRT),
+                "output overflow should claim the first hotbar slot");
+        helper.assertValueEqual(inventory.slotType(HiredJobInventory.HOTBAR_START),
+                HiredJobInventorySlotType.OUTPUT, "claimed output overflow slot type");
 
         inventory.clearContent();
-        for (int slot = 6; slot < 18; slot++) {
+        for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.HOTBAR_START; slot++) {
             inventory.setItem(slot, new ItemStack(Items.DIRT, 64));
         }
 
         ItemStack supplyRemainder = inventory.insertSupplyFromStorage(new ItemStack(Items.LADDER, 3));
-        helper.assertTrue(supplyRemainder.isEmpty(), "storage-sourced supplies should spill into empty output grid slots");
-        helper.assertTrue(inventory.getItem(18).is(Items.LADDER), "supply overflow should claim the first empty output grid slot");
-        helper.assertValueEqual(inventory.slotType(18), HiredJobInventorySlotType.SUPPLY, "claimed supply overflow slot type");
-        helper.assertTrue(HiredJobInventory.isJobItem(inventory.getItem(18)), "storage-sourced supplies should be tagged as job items");
+        helper.assertTrue(supplyRemainder.isEmpty(), "storage-sourced supplies should spill into an empty hotbar slot");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.LADDER),
+                "supply overflow should claim the first empty hotbar slot");
+        helper.assertValueEqual(inventory.slotType(HiredJobInventory.HOTBAR_START),
+                HiredJobInventorySlotType.SUPPLY, "claimed supply overflow slot type");
+        helper.assertTrue(HiredJobInventory.isJobItem(inventory.getItem(HiredJobInventory.HOTBAR_START)),
+                "storage-sourced supplies should be tagged as job items");
 
         inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_PICKAXE));
         ItemStack toolRemainder = inventory.insertToolFromStorage(new ItemStack(Items.DIAMOND_PICKAXE));
-        helper.assertTrue(toolRemainder.isEmpty(), "storage tools should use empty grid slots after preferred supply slots fill");
-        helper.assertTrue(inventory.getItem(19).is(Items.DIAMOND_PICKAXE), "tool overflow should use the next empty grid slot");
-        helper.assertValueEqual(inventory.slotType(19), HiredJobInventorySlotType.SUPPLY, "tool overflow slot type");
+        helper.assertTrue(toolRemainder.isEmpty(), "storage tools should use the next empty hotbar slot");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START + 1).is(Items.DIAMOND_PICKAXE),
+                "tool overflow should prioritize the hotbar");
+        helper.assertValueEqual(inventory.slotType(HiredJobInventory.HOTBAR_START + 1),
+                HiredJobInventorySlotType.SUPPLY, "tool overflow slot type");
         helper.assertTrue(villager.getMainHandItem().is(Items.IRON_PICKAXE), "gear slots should stay synced to villager equipment");
         villager.discard();
         helper.succeed();
@@ -3682,9 +3693,9 @@ public final class VillagerWorkerGameTests {
         villager.getBrain().setMemory(MemoryModuleType.JOB_SITE, GlobalPos.of(level.dimension(), helper.absolutePos(composterRel)));
         HiredJobInventory markerInventory = HiredJobInventory.getJobInventory(villager);
         helper.assertTrue(markerInventory.insertOutput(new ItemStack(Items.WHEAT, 12)).isEmpty(), "fixture output should fit");
-        ItemStack pollutedWheat = markerInventory.getItem(18).copy();
+        ItemStack pollutedWheat = markerInventory.getItem(HiredJobInventory.MAIN_GRID_START).copy();
         helper.assertTrue(HiredJobInventory.isJobItem(pollutedWheat), "fixture wheat should start with legacy job metadata");
-        markerInventory.setItem(18, ItemStack.EMPTY);
+        markerInventory.setItem(HiredJobInventory.MAIN_GRID_START, ItemStack.EMPTY);
         villager.getInventory().setItem(0, pollutedWheat);
 
         CompoundTag state = new CompoundTag();
@@ -3696,7 +3707,7 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(countItem(villager.getInventory(), Items.WHEAT), 0, "personal wheat should be swept from vanilla inventory");
         helper.assertValueEqual(countInventoryItem(context.inventory(), Items.WHEAT), 12, "harvested wheat should move into job inventory output");
         helper.assertFalse(
-                HiredJobInventory.isJobItem(context.inventory().getItem(18)),
+                HiredJobInventory.isJobItem(context.inventory().getItem(HiredJobInventory.MAIN_GRID_START)),
                 "harvested wheat should remain a vanilla-clean item stack");
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);
@@ -3740,7 +3751,7 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(countItem(villager.getInventory(), Items.WHEAT), 0, "hired farmer pickup should not touch personal wheat");
         helper.assertValueEqual(countInventoryItem(pickupInventory, Items.WHEAT), 5, "hired farmer pickup should route wheat to job inventory");
         helper.assertFalse(
-                HiredJobInventory.isJobItem(pickupInventory.getItem(18)),
+                HiredJobInventory.isJobItem(pickupInventory.getItem(HiredJobInventory.MAIN_GRID_START)),
                 "captured wheat should remain a vanilla-clean item stack");
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);
@@ -3778,7 +3789,7 @@ public final class VillagerWorkerGameTests {
                 12,
                 "surplus carrots should move into job inventory output");
         helper.assertFalse(
-                HiredJobInventory.isJobItem(context.inventory().getItem(18)),
+                HiredJobInventory.isJobItem(context.inventory().getItem(HiredJobInventory.MAIN_GRID_START + 1)),
                 "surplus carrots should remain a vanilla-clean item stack");
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);

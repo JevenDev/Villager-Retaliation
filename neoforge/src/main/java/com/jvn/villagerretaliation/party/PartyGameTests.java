@@ -357,6 +357,9 @@ public final class PartyGameTests {
                     "active party contracts must select the party inventory view");
             helper.assertValueEqual(partyInventoryMenu.workInventoryViewMode(), VillagerInventoryMenu.ViewMode.PARTY,
                     "personal-to-work tab switching must retain party mode");
+            helper.assertTrue(partyInventoryMenu.getSlot(HiredJobInventory.FILTER_SLOT - 1).container
+                            == HiredJobInventory.getJobInventory(villager),
+                    "party inventory must include the final hotbar slot");
             helper.assertTrue(partyInventoryMenu.getSlot(HiredJobInventory.FILTER_SLOT).container == leader.getInventory(),
                     "party inventory must omit the job filter slot");
             partyInventoryMenu.removed(leader);

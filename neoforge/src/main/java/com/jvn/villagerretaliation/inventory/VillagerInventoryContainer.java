@@ -23,8 +23,9 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 final class VillagerInventoryContainer implements Container {
     static final int ARMOR_SLOT_COUNT = 4;
-    static final int INVENTORY_SLOT_COUNT = 27;
-    private static final int LEGACY_INVENTORY_SLOT_COUNT = 36;
+    static final int INVENTORY_SLOT_COUNT = 36;
+    static final int HOTBAR_SLOT_COUNT = 9;
+    static final int HOTBAR_START = INVENTORY_SLOT_COUNT - HOTBAR_SLOT_COUNT;
     static final int HELD_SLOT = ARMOR_SLOT_COUNT + INVENTORY_SLOT_COUNT;
     static final int OFFHAND_SLOT = HELD_SLOT + 1;
     static final int SLOT_COUNT = OFFHAND_SLOT + 1;
@@ -223,7 +224,9 @@ final class VillagerInventoryContainer implements Container {
     }
 
     static void dropExtraInventory(Villager villager) {
-        NonNullList<ItemStack> extraInventory = loadExtraInventory(villager, Math.max(0, LEGACY_INVENTORY_SLOT_COUNT - vanillaInventorySlots(villager)));
+        NonNullList<ItemStack> extraInventory = loadExtraInventory(
+                villager,
+                Math.max(0, INVENTORY_SLOT_COUNT - vanillaInventorySlots(villager)));
         for (ItemStack stack : extraInventory) {
             if (!stack.isEmpty()) {
                 villager.spawnAtLocation(stack.copy());
@@ -494,7 +497,6 @@ final class VillagerInventoryContainer implements Container {
                 com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, stack.copy());
             }
         }
-        dropLegacyOverflowInventory(villager, event);
         HiredJobInventory.dropAll(villager, event);
 
         clearFullInventory(villager);
@@ -632,7 +634,6 @@ final class VillagerInventoryContainer implements Container {
 
     private void loadInventory() {
         boolean cleanedInvalidTradePayments = false;
-        boolean migratedLegacyOverflow = false;
         int vanillaSlots = vanillaInventorySlots();
         for (int slot = 0; slot < vanillaSlots; slot++) {
             ItemStack stack = this.villager.getInventory().getItem(slot).copy();
@@ -645,9 +646,8 @@ final class VillagerInventoryContainer implements Container {
         }
 
         int currentExtraSlots = Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots);
-        int legacyExtraSlots = Math.max(currentExtraSlots, LEGACY_INVENTORY_SLOT_COUNT - vanillaSlots);
-        NonNullList<ItemStack> loaded = loadExtraInventory(this.villager, legacyExtraSlots);
-        for (int slot = 0; slot < Math.min(loaded.size(), currentExtraSlots); slot++) {
+        NonNullList<ItemStack> loaded = loadExtraInventory(this.villager, currentExtraSlots);
+        for (int slot = 0; slot < loaded.size(); slot++) {
             ItemStack stack = loaded.get(slot);
             if (VillagerTradePaymentTracker.isInvalidStoredTradePayment(stack)) {
                 stack = ItemStack.EMPTY;
@@ -655,18 +655,7 @@ final class VillagerInventoryContainer implements Container {
             }
             this.inventory.set(vanillaSlots + slot, stack);
         }
-        for (int slot = currentExtraSlots; slot < loaded.size(); slot++) {
-            ItemStack overflow = loaded.get(slot);
-            if (VillagerTradePaymentTracker.isInvalidStoredTradePayment(overflow)) {
-                cleanedInvalidTradePayments = true;
-                continue;
-            }
-            if (!overflow.isEmpty()) {
-                this.villager.spawnAtLocation(overflow.copy());
-                migratedLegacyOverflow = true;
-            }
-        }
-        if (cleanedInvalidTradePayments || migratedLegacyOverflow) {
+        if (cleanedInvalidTradePayments) {
             setChanged();
         }
     }
@@ -741,19 +730,6 @@ final class VillagerInventoryContainer implements Container {
         fillEmptySlots(inventory, remainder);
         saveFullInventory(villager, inventory);
         return remainder;
-    }
-
-    private static void dropLegacyOverflowInventory(Villager villager, LivingDropsEvent event) {
-        int vanillaSlots = vanillaInventorySlots(villager);
-        int currentExtraSlots = Math.max(0, INVENTORY_SLOT_COUNT - vanillaSlots);
-        int legacyExtraSlots = Math.max(currentExtraSlots, LEGACY_INVENTORY_SLOT_COUNT - vanillaSlots);
-        NonNullList<ItemStack> legacyExtraInventory = loadExtraInventory(villager, legacyExtraSlots);
-        for (int slot = currentExtraSlots; slot < legacyExtraInventory.size(); slot++) {
-            ItemStack stack = legacyExtraInventory.get(slot);
-            if (!stack.isEmpty()) {
-                com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, stack.copy());
-            }
-        }
     }
 
     private static void mergeIntoExistingStacks(NonNullList<ItemStack> inventory, ItemStack remainder) {

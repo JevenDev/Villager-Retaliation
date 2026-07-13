@@ -28,16 +28,25 @@ import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
 public final class HiredJobInventory implements Container {
-    public static final int FILTER_SLOT = 33;
-    public static final int SLOT_COUNT = 34;
     public static final int MAINHAND_SLOT = 4;
     public static final int OFFHAND_SLOT = 5;
+    public static final int MAIN_GRID_START = OFFHAND_SLOT + 1;
+    public static final int MAIN_GRID_SLOT_COUNT = 27;
+    public static final int HOTBAR_START = MAIN_GRID_START + MAIN_GRID_SLOT_COUNT;
+    public static final int HOTBAR_SLOT_COUNT = 9;
+    public static final int FILTER_SLOT = HOTBAR_START + HOTBAR_SLOT_COUNT;
+    public static final int PARTY_SLOT_COUNT = FILTER_SLOT;
+    public static final int SLOT_COUNT = FILTER_SLOT + 1;
     private static final int ARMOR_SLOT_COUNT = 4;
+    private static final int LEGACY_FILTER_SLOT = 33;
+    private static final int LEGACY_SUPPLY_SLOT_END = 18;
+    private static final int CURRENT_LAYOUT_VERSION = 2;
     private static final String TAG = "VillagerRetaliationJobInventory";
     private static final String ITEMS_TAG = "Items";
     private static final String SLOT_TYPES_TAG = "SlotTypes";
     private static final String SLOT_TAG = "Slot";
     private static final String TYPE_TAG = "Type";
+    private static final String LAYOUT_VERSION_TAG = "LayoutVersion";
     private static final String JOB_ITEM_TAG = "VillagerRetaliationJobItem";
     private static final String JOB_ITEM_KIND_TAG = "Kind";
     private static final String JOB_ITEM_SOURCE_TAG = "Source";
@@ -54,6 +63,7 @@ public final class HiredJobInventory implements Container {
             EquipmentSlot.LEGS,
             EquipmentSlot.FEET
     };
+    private static final int[] TOOL_SLOT_SEARCH_ORDER = createToolSlotSearchOrder();
 
     private final Villager villager;
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
@@ -474,17 +484,22 @@ public final class HiredJobInventory implements Container {
     }
 
     public ItemStack findTool(Predicate<ItemStack> predicate) {
-        ItemStack mainhand = getItem(MAINHAND_SLOT);
-        if (!mainhand.isEmpty() && predicate.test(mainhand)) {
-            return mainhand;
+        for (int slot : TOOL_SLOT_SEARCH_ORDER) {
+            if (slot != MAINHAND_SLOT && !isSupplySlot(slot)) {
+                continue;
+            }
+            ItemStack stack = getItem(slot);
+            if (!stack.isEmpty() && predicate.test(stack)) {
+                return stack;
+            }
         }
-        return findSupply(predicate);
+        return ItemStack.EMPTY;
     }
 
     public ItemStack equipBestTool(Predicate<ItemStack> predicate, ToDoubleFunction<ItemStack> scorer) {
         int bestSlot = -1;
         double bestScore = Double.NEGATIVE_INFINITY;
-        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+        for (int slot : TOOL_SLOT_SEARCH_ORDER) {
             if (slot != MAINHAND_SLOT && !isSupplySlot(slot)) {
                 continue;
             }
@@ -637,10 +652,7 @@ public final class HiredJobInventory implements Container {
         } else {
             removeJobItemMarker(remainder);
         }
-        boolean changed = insertSupplyIntoSlots(remainder, false);
-        if (!remainder.isEmpty()) {
-            changed |= insertSupplyIntoSlots(remainder, true);
-        }
+        boolean changed = insertSupplyIntoPreferredRegions(remainder);
         if (remainder.isEmpty()) {
             setChanged();
             return ItemStack.EMPTY;
@@ -692,10 +704,7 @@ public final class HiredJobInventory implements Container {
             }
         }
 
-        boolean changed = insertToolIntoSlots(remainder, false);
-        if (!remainder.isEmpty()) {
-            changed |= insertToolIntoSlots(remainder, true);
-        }
+        boolean changed = insertToolIntoPreferredRegions(remainder);
         if (remainder.isEmpty()) {
             setChanged();
             return ItemStack.EMPTY;
@@ -724,10 +733,7 @@ public final class HiredJobInventory implements Container {
         } else {
             removeJobItemMarker(remainder);
         }
-        boolean changed = insertOutputIntoSlots(remainder, false);
-        if (!remainder.isEmpty()) {
-            changed |= insertOutputIntoSlots(remainder, true);
-        }
+        boolean changed = insertOutputIntoPreferredRegions(remainder);
         if (remainder.isEmpty()) {
             setChanged();
             return ItemStack.EMPTY;
@@ -908,10 +914,7 @@ public final class HiredJobInventory implements Container {
             return ItemStack.EMPTY;
         }
         ItemStack remainder = stack.copy();
-        simulateOutputInsertIntoSlots(simulatedItems, simulatedTypes, remainder, false);
-        if (!remainder.isEmpty()) {
-            simulateOutputInsertIntoSlots(simulatedItems, simulatedTypes, remainder, true);
-        }
+        simulateOutputInsertIntoPreferredRegions(simulatedItems, simulatedTypes, remainder);
         return remainder;
     }
 
@@ -924,16 +927,59 @@ public final class HiredJobInventory implements Container {
         }
         ItemStack remainder = stack.copy();
         markWithActiveContract(remainder);
-        simulateSupplyInsertIntoSlots(simulatedItems, simulatedTypes, remainder, false);
-        if (!remainder.isEmpty()) {
-            simulateSupplyInsertIntoSlots(simulatedItems, simulatedTypes, remainder, true);
-        }
+        simulateSupplyInsertIntoPreferredRegions(simulatedItems, simulatedTypes, remainder);
         return remainder;
     }
 
-    private boolean insertOutputIntoSlots(ItemStack remainder, boolean allowClaimEmptyGridSlot) {
+    private boolean insertOutputIntoPreferredRegions(ItemStack remainder) {
+        boolean changed = insertOutputIntoSlots(remainder, false, MAIN_GRID_START, HOTBAR_START);
+        if (!remainder.isEmpty()) {
+            changed |= insertOutputIntoSlots(remainder, true, MAIN_GRID_START, HOTBAR_START);
+        }
+        if (!remainder.isEmpty()) {
+            changed |= insertOutputIntoSlots(remainder, false, HOTBAR_START, FILTER_SLOT);
+        }
+        if (!remainder.isEmpty()) {
+            changed |= insertOutputIntoSlots(remainder, true, HOTBAR_START, FILTER_SLOT);
+        }
+        return changed;
+    }
+
+    private boolean insertSupplyIntoPreferredRegions(ItemStack remainder) {
+        boolean changed = insertSupplyIntoSlots(remainder, false, MAIN_GRID_START, HOTBAR_START);
+        if (!remainder.isEmpty()) {
+            changed |= insertSupplyIntoSlots(remainder, true, MAIN_GRID_START, HOTBAR_START);
+        }
+        if (!remainder.isEmpty()) {
+            changed |= insertSupplyIntoSlots(remainder, false, HOTBAR_START, FILTER_SLOT);
+        }
+        if (!remainder.isEmpty()) {
+            changed |= insertSupplyIntoSlots(remainder, true, HOTBAR_START, FILTER_SLOT);
+        }
+        return changed;
+    }
+
+    private boolean insertToolIntoPreferredRegions(ItemStack remainder) {
+        boolean changed = insertToolIntoSlots(remainder, false, HOTBAR_START, FILTER_SLOT);
+        if (!remainder.isEmpty()) {
+            changed |= insertToolIntoSlots(remainder, true, HOTBAR_START, FILTER_SLOT);
+        }
+        if (!remainder.isEmpty()) {
+            changed |= insertToolIntoSlots(remainder, false, MAIN_GRID_START, HOTBAR_START);
+        }
+        if (!remainder.isEmpty()) {
+            changed |= insertToolIntoSlots(remainder, true, MAIN_GRID_START, HOTBAR_START);
+        }
+        return changed;
+    }
+
+    private boolean insertOutputIntoSlots(
+            ItemStack remainder,
+            boolean allowClaimEmptyGridSlot,
+            int startInclusive,
+            int endExclusive) {
         boolean changed = false;
-        for (int slot = 0; slot < SLOT_COUNT && !remainder.isEmpty(); slot++) {
+        for (int slot = startInclusive; slot < endExclusive && !remainder.isEmpty(); slot++) {
             if (canInsertOutputIntoSlot(this.items, this.slotTypes, slot, allowClaimEmptyGridSlot)) {
                 changed |= insertStackIntoSlot(this.items, this.slotTypes, slot, remainder, HiredJobInventorySlotType.OUTPUT);
             }
@@ -941,9 +987,13 @@ public final class HiredJobInventory implements Container {
         return changed;
     }
 
-    private boolean insertSupplyIntoSlots(ItemStack remainder, boolean allowClaimEmptyGridSlot) {
+    private boolean insertSupplyIntoSlots(
+            ItemStack remainder,
+            boolean allowClaimEmptyGridSlot,
+            int startInclusive,
+            int endExclusive) {
         boolean changed = false;
-        for (int slot = 0; slot < SLOT_COUNT && !remainder.isEmpty(); slot++) {
+        for (int slot = startInclusive; slot < endExclusive && !remainder.isEmpty(); slot++) {
             if (canInsertSupplyIntoSlot(this.items, this.slotTypes, slot, allowClaimEmptyGridSlot)) {
                 changed |= insertStackIntoSlot(this.items, this.slotTypes, slot, remainder, HiredJobInventorySlotType.SUPPLY);
             }
@@ -951,9 +1001,13 @@ public final class HiredJobInventory implements Container {
         return changed;
     }
 
-    private boolean insertToolIntoSlots(ItemStack remainder, boolean allowClaimEmptyGridSlot) {
+    private boolean insertToolIntoSlots(
+            ItemStack remainder,
+            boolean allowClaimEmptyGridSlot,
+            int startInclusive,
+            int endExclusive) {
         boolean changed = false;
-        for (int slot = 0; slot < SLOT_COUNT && !remainder.isEmpty(); slot++) {
+        for (int slot = startInclusive; slot < endExclusive && !remainder.isEmpty(); slot++) {
             if (canInsertToolIntoSlot(this.items, this.slotTypes, slot, allowClaimEmptyGridSlot)) {
                 changed |= insertStackIntoSlot(this.items, this.slotTypes, slot, remainder, HiredJobInventorySlotType.SUPPLY);
             }
@@ -961,12 +1015,46 @@ public final class HiredJobInventory implements Container {
         return changed;
     }
 
+    private void simulateOutputInsertIntoPreferredRegions(
+            NonNullList<ItemStack> inventory,
+            HiredJobInventorySlotType[] types,
+            ItemStack remainder) {
+        simulateOutputInsertIntoSlots(inventory, types, remainder, false, MAIN_GRID_START, HOTBAR_START);
+        if (!remainder.isEmpty()) {
+            simulateOutputInsertIntoSlots(inventory, types, remainder, true, MAIN_GRID_START, HOTBAR_START);
+        }
+        if (!remainder.isEmpty()) {
+            simulateOutputInsertIntoSlots(inventory, types, remainder, false, HOTBAR_START, FILTER_SLOT);
+        }
+        if (!remainder.isEmpty()) {
+            simulateOutputInsertIntoSlots(inventory, types, remainder, true, HOTBAR_START, FILTER_SLOT);
+        }
+    }
+
+    private void simulateSupplyInsertIntoPreferredRegions(
+            NonNullList<ItemStack> inventory,
+            HiredJobInventorySlotType[] types,
+            ItemStack remainder) {
+        simulateSupplyInsertIntoSlots(inventory, types, remainder, false, MAIN_GRID_START, HOTBAR_START);
+        if (!remainder.isEmpty()) {
+            simulateSupplyInsertIntoSlots(inventory, types, remainder, true, MAIN_GRID_START, HOTBAR_START);
+        }
+        if (!remainder.isEmpty()) {
+            simulateSupplyInsertIntoSlots(inventory, types, remainder, false, HOTBAR_START, FILTER_SLOT);
+        }
+        if (!remainder.isEmpty()) {
+            simulateSupplyInsertIntoSlots(inventory, types, remainder, true, HOTBAR_START, FILTER_SLOT);
+        }
+    }
+
     private void simulateOutputInsertIntoSlots(
             NonNullList<ItemStack> inventory,
             HiredJobInventorySlotType[] types,
             ItemStack remainder,
-            boolean allowClaimEmptyGridSlot) {
-        for (int slot = 0; slot < SLOT_COUNT && !remainder.isEmpty(); slot++) {
+            boolean allowClaimEmptyGridSlot,
+            int startInclusive,
+            int endExclusive) {
+        for (int slot = startInclusive; slot < endExclusive && !remainder.isEmpty(); slot++) {
             if (canInsertOutputIntoSlot(inventory, types, slot, allowClaimEmptyGridSlot)) {
                 insertStackIntoSlot(inventory, types, slot, remainder, HiredJobInventorySlotType.OUTPUT);
             }
@@ -977,8 +1065,10 @@ public final class HiredJobInventory implements Container {
             NonNullList<ItemStack> inventory,
             HiredJobInventorySlotType[] types,
             ItemStack remainder,
-            boolean allowClaimEmptyGridSlot) {
-        for (int slot = 0; slot < SLOT_COUNT && !remainder.isEmpty(); slot++) {
+            boolean allowClaimEmptyGridSlot,
+            int startInclusive,
+            int endExclusive) {
+        for (int slot = startInclusive; slot < endExclusive && !remainder.isEmpty(); slot++) {
             if (canInsertSupplyIntoSlot(inventory, types, slot, allowClaimEmptyGridSlot)) {
                 insertStackIntoSlot(inventory, types, slot, remainder, HiredJobInventorySlotType.SUPPLY);
             }
@@ -1076,7 +1166,9 @@ public final class HiredJobInventory implements Container {
         if (tag.isEmpty()) {
             return;
         }
+        boolean migrateLegacyLayout = tag.getInt(LAYOUT_VERSION_TAG) < CURRENT_LAYOUT_VERSION;
         ContainerHelper.loadAllItems(tag, this.items, this.villager.level().registryAccess());
+        boolean[] persistedSlotTypes = new boolean[SLOT_COUNT];
         ListTag slotTypesTag = tag.getList(SLOT_TYPES_TAG, Tag.TAG_COMPOUND);
         for (Tag rawType : slotTypesTag) {
             if (!(rawType instanceof CompoundTag typeTag)) {
@@ -1085,7 +1177,11 @@ public final class HiredJobInventory implements Container {
             int slot = typeTag.getInt(SLOT_TAG);
             if (isValidSlot(slot)) {
                 this.slotTypes[slot] = HiredJobInventorySlotType.byId(typeTag.getString(TYPE_TAG));
+                persistedSlotTypes[slot] = true;
             }
+        }
+        if (migrateLegacyLayout) {
+            migrateLegacyLayout(persistedSlotTypes);
         }
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             if (equipmentSlotForJobSlot(slot) != null) {
@@ -1097,10 +1193,14 @@ public final class HiredJobInventory implements Container {
             }
         }
         reconcileStoredEquipmentWithLiveItems();
+        if (migrateLegacyLayout) {
+            save();
+        }
     }
 
     private void save() {
         CompoundTag tag = ContainerHelper.saveAllItems(new CompoundTag(), this.items, true, this.villager.level().registryAccess());
+        tag.putInt(LAYOUT_VERSION_TAG, CURRENT_LAYOUT_VERSION);
         ListTag slotTypesTag = new ListTag();
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
             if (equipmentSlotForJobSlot(slot) != null) {
@@ -1124,6 +1224,22 @@ public final class HiredJobInventory implements Container {
             tag.put(SLOT_TYPES_TAG, slotTypesTag);
         }
         this.villager.getPersistentData().put(TAG, tag);
+    }
+
+    private void migrateLegacyLayout(boolean[] persistedSlotTypes) {
+        for (int slot = MAIN_GRID_START; slot < LEGACY_SUPPLY_SLOT_END; slot++) {
+            if (!persistedSlotTypes[slot] && !this.items.get(slot).isEmpty()) {
+                this.slotTypes[slot] = HiredJobInventorySlotType.SUPPLY;
+            }
+        }
+        ItemStack legacyFilter = this.items.get(LEGACY_FILTER_SLOT);
+        if (!VillagerRetaliationItems.isItemFilter(legacyFilter) || !this.items.get(FILTER_SLOT).isEmpty()) {
+            return;
+        }
+        this.items.set(FILTER_SLOT, legacyFilter.copyWithCount(1));
+        this.items.set(LEGACY_FILTER_SLOT, ItemStack.EMPTY);
+        this.slotTypes[FILTER_SLOT] = HiredJobInventorySlotType.NORMAL;
+        this.slotTypes[LEGACY_FILTER_SLOT] = defaultType(LEGACY_FILTER_SLOT);
     }
 
     private void reconcileStoredEquipmentWithLiveItems() {
@@ -1345,10 +1461,23 @@ public final class HiredJobInventory implements Container {
         if (equipmentSlotForJobSlot(slot) != null) {
             return HiredJobInventorySlotType.GEAR;
         }
-        if (slot < 18) {
+        if (slot >= HOTBAR_START && slot < FILTER_SLOT) {
             return HiredJobInventorySlotType.SUPPLY;
         }
         return HiredJobInventorySlotType.OUTPUT;
+    }
+
+    private static int[] createToolSlotSearchOrder() {
+        int[] slots = new int[1 + HOTBAR_SLOT_COUNT + MAIN_GRID_SLOT_COUNT];
+        int index = 0;
+        slots[index++] = MAINHAND_SLOT;
+        for (int slot = HOTBAR_START; slot < FILTER_SLOT; slot++) {
+            slots[index++] = slot;
+        }
+        for (int slot = MAIN_GRID_START; slot < HOTBAR_START; slot++) {
+            slots[index++] = slot;
+        }
+        return slots;
     }
 
     private void markWithActiveContract(ItemStack stack) {
