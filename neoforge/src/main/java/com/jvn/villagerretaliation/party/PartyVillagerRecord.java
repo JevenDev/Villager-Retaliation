@@ -27,7 +27,9 @@ public final class PartyVillagerRecord {
     private static final String TAG_LAST_Y = "LastY";
     private static final String TAG_LAST_Z = "LastZ";
     private static final String TAG_ATTACK_WITH_PARTY = "AttackWithParty";
-    private static final String TAG_DEFEND_PARTY = "DefendParty";
+    private static final String TAG_COMBAT_MODE = "PartyCombatMode";
+    private static final String TAG_ATTACK_MODE = "AttackMode";
+    private static final String TAG_KILL_ON_SIGHT = "KillOnSight";
     private static final String TAG_DROP_COLLECTION = "DropCollection";
 
     private final UUID villagerId;
@@ -45,8 +47,8 @@ public final class PartyVillagerRecord {
     private String cachedProfession;
     private ResourceLocation lastKnownDimension;
     private BlockPos lastKnownPosition;
-    private boolean attackWithParty = true;
-    private boolean defendParty = true;
+    private PartyCombatMode combatMode = PartyCombatMode.ATTACK_WITH_PARTY;
+    private PartyAttackMode attackMode = PartyAttackMode.ALL;
     private PartyDropCollectionMode dropCollectionMode = PartyDropCollectionMode.OFF;
 
     PartyVillagerRecord(
@@ -142,24 +144,24 @@ public final class PartyVillagerRecord {
         return this.lastKnownPosition;
     }
 
-    public boolean attackWithParty() {
-        return this.attackWithParty;
+    public PartyCombatMode combatMode() {
+        return this.combatMode;
     }
 
-    public boolean defendParty() {
-        return this.defendParty;
+    public PartyAttackMode attackMode() {
+        return this.attackMode;
     }
 
     public PartyDropCollectionMode dropCollectionMode() {
         return this.dropCollectionMode;
     }
 
-    void setAttackWithParty(boolean enabled) {
-        this.attackWithParty = enabled;
+    void setCombatMode(PartyCombatMode mode) {
+        this.combatMode = mode == null ? PartyCombatMode.ATTACK_WITH_PARTY : mode;
     }
 
-    void setDefendParty(boolean enabled) {
-        this.defendParty = enabled;
+    void setAttackMode(PartyAttackMode mode) {
+        this.attackMode = mode == null ? PartyAttackMode.ALL : mode;
     }
 
     void setDropCollectionMode(PartyDropCollectionMode mode) {
@@ -231,8 +233,8 @@ public final class PartyVillagerRecord {
             tag.putInt(TAG_LAST_Y, this.lastKnownPosition.getY());
             tag.putInt(TAG_LAST_Z, this.lastKnownPosition.getZ());
         }
-        tag.putBoolean(TAG_ATTACK_WITH_PARTY, this.attackWithParty);
-        tag.putBoolean(TAG_DEFEND_PARTY, this.defendParty);
+        tag.putString(TAG_COMBAT_MODE, this.combatMode.name());
+        tag.putString(TAG_ATTACK_MODE, this.attackMode.name());
         tag.putString(TAG_DROP_COLLECTION, this.dropCollectionMode.name());
         return tag;
     }
@@ -269,8 +271,8 @@ public final class PartyVillagerRecord {
                         ? new BlockPos(tag.getInt(TAG_LAST_X), tag.getInt(TAG_LAST_Y), tag.getInt(TAG_LAST_Z))
                         : null
         );
-        record.setAttackWithParty(!tag.contains(TAG_ATTACK_WITH_PARTY) || tag.getBoolean(TAG_ATTACK_WITH_PARTY));
-        record.setDefendParty(!tag.contains(TAG_DEFEND_PARTY) || tag.getBoolean(TAG_DEFEND_PARTY));
+        record.setCombatMode(loadCombatMode(tag));
+        record.setAttackMode(PartyAttackMode.byName(tag.getString(TAG_ATTACK_MODE)));
         record.setDropCollectionMode(PartyDropCollectionMode.byName(tag.getString(TAG_DROP_COLLECTION)));
         return record;
     }
@@ -279,6 +281,18 @@ public final class PartyVillagerRecord {
         return tag.contains(TAG_STAY_X, Tag.TAG_INT)
                 && tag.contains(TAG_STAY_Y, Tag.TAG_INT)
                 && tag.contains(TAG_STAY_Z, Tag.TAG_INT);
+    }
+
+    private static PartyCombatMode loadCombatMode(CompoundTag tag) {
+        if (tag.contains(TAG_COMBAT_MODE, Tag.TAG_STRING)) {
+            return PartyCombatMode.byName(tag.getString(TAG_COMBAT_MODE));
+        }
+        if (tag.getBoolean(TAG_KILL_ON_SIGHT)) {
+            return PartyCombatMode.KILL_ON_SIGHT;
+        }
+        return !tag.contains(TAG_ATTACK_WITH_PARTY) || tag.getBoolean(TAG_ATTACK_WITH_PARTY)
+                ? PartyCombatMode.ATTACK_WITH_PARTY
+                : PartyCombatMode.SELF_DEFENSE;
     }
 
     private static boolean hasLastKnownPosition(CompoundTag tag) {

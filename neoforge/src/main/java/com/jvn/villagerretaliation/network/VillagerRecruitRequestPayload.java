@@ -100,8 +100,8 @@ public record VillagerRecruitRequestPayload(int entityId, Action action, HiredVi
         PROMPT_PARTY_DISMISS_CONFIRMATION,
         DECLINE_PARTY_DISMISS_CONFIRMATION,
         PARTY_DISMISS,
-        TOGGLE_PARTY_ATTACK_WITH_PARTY,
-        TOGGLE_PARTY_DEFEND_PARTY,
+        CYCLE_PARTY_COMBAT_MODE,
+        CYCLE_PARTY_ATTACK_MODE,
         CYCLE_PARTY_DROP_COLLECTION
     }
 }

@@ -19,7 +19,9 @@ public final class PartyRecord {
     private static final String TAG_VILLAGERS = "Villagers";
     private static final String TAG_SHARED_QUESTS = "SharedQuests";
     private static final String TAG_ATTACK_WITH_PARTY = "AttackWithParty";
-    private static final String TAG_DEFEND_PARTY = "DefendParty";
+    private static final String TAG_COMBAT_MODE = "PartyCombatMode";
+    private static final String TAG_ATTACK_MODE = "AttackMode";
+    private static final String TAG_KILL_ON_SIGHT = "KillOnSight";
     private static final String TAG_SHARED_VILLAGER_INVENTORIES = "SharedVillagerInventories";
 
     private final UUID id;
@@ -28,12 +30,12 @@ public final class PartyRecord {
     private final List<UUID> playerIds;
     private final List<PartyVillagerRecord> villagers;
     private final List<PartySharedQuestRecord> sharedQuests;
-    private boolean attackWithParty;
-    private boolean defendParty;
+    private PartyCombatMode combatMode;
+    private PartyAttackMode attackMode;
     private boolean sharedVillagerInventories;
 
     PartyRecord(UUID id, UUID leaderId, long createdGameTime) {
-        this(id, leaderId, createdGameTime, new ArrayList<>(List.of(leaderId)), new ArrayList<>(), new ArrayList<>(), true, true, true);
+        this(id, leaderId, createdGameTime, new ArrayList<>(List.of(leaderId)), new ArrayList<>(), new ArrayList<>(), PartyCombatMode.ATTACK_WITH_PARTY, PartyAttackMode.ALL, true);
     }
 
     private PartyRecord(
@@ -43,8 +45,8 @@ public final class PartyRecord {
             List<UUID> playerIds,
             List<PartyVillagerRecord> villagers,
             List<PartySharedQuestRecord> sharedQuests,
-            boolean attackWithParty,
-            boolean defendParty,
+            PartyCombatMode combatMode,
+            PartyAttackMode attackMode,
             boolean sharedVillagerInventories) {
         this.id = id;
         this.leaderId = leaderId;
@@ -52,8 +54,8 @@ public final class PartyRecord {
         this.playerIds = playerIds;
         this.villagers = villagers;
         this.sharedQuests = sharedQuests;
-        this.attackWithParty = attackWithParty;
-        this.defendParty = defendParty;
+        this.combatMode = combatMode == null ? PartyCombatMode.ATTACK_WITH_PARTY : combatMode;
+        this.attackMode = attackMode == null ? PartyAttackMode.ALL : attackMode;
         this.sharedVillagerInventories = sharedVillagerInventories;
         normalizePlayers();
     }
@@ -82,26 +84,26 @@ public final class PartyRecord {
         return Collections.unmodifiableList(this.sharedQuests);
     }
 
-    public boolean attackWithParty() {
-        return this.attackWithParty;
+    public PartyCombatMode combatMode() {
+        return this.combatMode;
     }
 
-    public boolean defendParty() {
-        return this.defendParty;
+    public PartyAttackMode attackMode() {
+        return this.attackMode;
     }
 
     public boolean sharedVillagerInventories() {
         return this.sharedVillagerInventories;
     }
 
-    void setAttackWithParty(boolean enabled) {
-        this.attackWithParty = enabled;
-        this.villagers.forEach(villager -> villager.setAttackWithParty(enabled));
+    void setCombatMode(PartyCombatMode mode) {
+        this.combatMode = mode == null ? PartyCombatMode.ATTACK_WITH_PARTY : mode;
+        this.villagers.forEach(villager -> villager.setCombatMode(this.combatMode));
     }
 
-    void setDefendParty(boolean enabled) {
-        this.defendParty = enabled;
-        this.villagers.forEach(villager -> villager.setDefendParty(enabled));
+    void setAttackMode(PartyAttackMode mode) {
+        this.attackMode = mode == null ? PartyAttackMode.ALL : mode;
+        this.villagers.forEach(villager -> villager.setAttackMode(this.attackMode));
     }
 
     void setSharedVillagerInventories(boolean enabled) {
@@ -142,8 +144,8 @@ public final class PartyRecord {
                 return false;
             }
         }
-        villager.setAttackWithParty(this.attackWithParty);
-        villager.setDefendParty(this.defendParty);
+        villager.setCombatMode(this.combatMode);
+        villager.setAttackMode(this.attackMode);
         this.villagers.add(villager);
         this.villagers.sort(java.util.Comparator.comparingInt(PartyVillagerRecord::recruitmentOrder));
         return true;
@@ -202,8 +204,8 @@ public final class PartyRecord {
             sharedQuestsTag.add(sharedQuest.save());
         }
         tag.put(TAG_SHARED_QUESTS, sharedQuestsTag);
-        tag.putBoolean(TAG_ATTACK_WITH_PARTY, this.attackWithParty);
-        tag.putBoolean(TAG_DEFEND_PARTY, this.defendParty);
+        tag.putString(TAG_COMBAT_MODE, this.combatMode.name());
+        tag.putString(TAG_ATTACK_MODE, this.attackMode.name());
         tag.putBoolean(TAG_SHARED_VILLAGER_INVENTORIES, this.sharedVillagerInventories);
         return tag;
     }
@@ -246,8 +248,8 @@ public final class PartyRecord {
                 players,
                 villagers,
                 sharedQuests,
-                !tag.contains(TAG_ATTACK_WITH_PARTY) || tag.getBoolean(TAG_ATTACK_WITH_PARTY),
-                !tag.contains(TAG_DEFEND_PARTY) || tag.getBoolean(TAG_DEFEND_PARTY),
+                loadCombatMode(tag),
+                PartyAttackMode.byName(tag.getString(TAG_ATTACK_MODE)),
                 !tag.contains(TAG_SHARED_VILLAGER_INVENTORIES) || tag.getBoolean(TAG_SHARED_VILLAGER_INVENTORIES));
     }
 
@@ -264,6 +266,18 @@ public final class PartyRecord {
             this.villagers.subList(PartyService.MAX_VILLAGERS, this.villagers.size()).clear();
         }
         pruneSharedQuests();
+    }
+
+    private static PartyCombatMode loadCombatMode(CompoundTag tag) {
+        if (tag.contains(TAG_COMBAT_MODE, Tag.TAG_STRING)) {
+            return PartyCombatMode.byName(tag.getString(TAG_COMBAT_MODE));
+        }
+        if (tag.getBoolean(TAG_KILL_ON_SIGHT)) {
+            return PartyCombatMode.KILL_ON_SIGHT;
+        }
+        return !tag.contains(TAG_ATTACK_WITH_PARTY) || tag.getBoolean(TAG_ATTACK_WITH_PARTY)
+                ? PartyCombatMode.ATTACK_WITH_PARTY
+                : PartyCombatMode.SELF_DEFENSE;
     }
 
     private void pruneSharedQuests() {

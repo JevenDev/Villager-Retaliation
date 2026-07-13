@@ -22,7 +22,7 @@ public final class PartySavedData extends SavedData {
     private static final String TAG_VERSION = "Version";
     private static final String TAG_PARTIES = "Parties";
     private static final String TAG_INVITATIONS = "Invitations";
-    private static final int CURRENT_VERSION = 4;
+    private static final int CURRENT_VERSION = 7;
 
     private final Map<UUID, PartyRecord> partiesById = new LinkedHashMap<>();
     private final Map<UUID, UUID> partyByPlayer = new HashMap<>();

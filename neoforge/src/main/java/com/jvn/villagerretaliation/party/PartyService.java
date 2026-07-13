@@ -78,8 +78,8 @@ public final class PartyService {
 
     public static PartyResult setPolicies(
             ServerPlayer leader,
-            Boolean attackWithParty,
-            Boolean defendParty,
+            PartyCombatMode combatMode,
+            PartyAttackMode attackMode,
             Boolean sharedVillagerInventories) {
         if (leader == null) {
             return PartyResult.failure("villagerretaliation.party.error.not_in_party");
@@ -89,17 +89,30 @@ public final class PartyService {
         if (party == null || !party.leaderId().equals(leader.getUUID())) {
             return PartyResult.failure("villagerretaliation.party.error.leader_only");
         }
-        if (attackWithParty != null) {
-            party.setAttackWithParty(attackWithParty);
+        if (combatMode != null) {
+            party.setCombatMode(combatMode);
+            clearPartyCombatTargets(leader.getServer(), party);
         }
-        if (defendParty != null) {
-            party.setDefendParty(defendParty);
+        if (attackMode != null) {
+            party.setAttackMode(attackMode);
         }
         if (sharedVillagerInventories != null) {
             party.setSharedVillagerInventories(sharedVillagerInventories);
         }
         data.changed();
         return PartyResult.success("villagerretaliation.party.settings_updated", party.id(), null);
+    }
+
+    private static void clearPartyCombatTargets(MinecraftServer server, PartyRecord party) {
+        for (PartyVillagerRecord record : party.villagers()) {
+            for (ServerLevel level : server.getAllLevels()) {
+                Entity entity = level.getEntity(record.villagerId());
+                if (entity instanceof Villager villager) {
+                    com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.clearCustomTarget(villager);
+                    break;
+                }
+            }
+        }
     }
 
     public static boolean isPartyPlayer(ServerLevel level, UUID playerId) {

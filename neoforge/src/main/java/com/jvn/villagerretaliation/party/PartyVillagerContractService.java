@@ -90,8 +90,8 @@ public final class PartyVillagerContractService {
                 villager.blockPosition()
         );
         if (currentParty != null) {
-            record.setAttackWithParty(currentParty.attackWithParty());
-            record.setDefendParty(currentParty.defendParty());
+            record.setCombatMode(currentParty.combatMode());
+            record.setAttackMode(currentParty.attackMode());
         }
 
         PartyService.PartyResult membership = PartyService.addVillager(level, player.getUUID(), record, now);
@@ -195,21 +195,22 @@ public final class PartyVillagerContractService {
         return ContractResult.success("villagerretaliation.party.villager_dismissed", context.party().id(), removed, 0, 0);
     }
 
-    public static ContractResult toggleAttackWithParty(ServerPlayer player, Villager villager) {
+    public static ContractResult cycleCombatMode(ServerPlayer player, Villager villager) {
         PartyVillagerContext context = authorizedContext(player, villager);
         if (context == null) {
             return ContractResult.failure("villagerretaliation.party.error.leader_only");
         }
-        context.record().setAttackWithParty(!context.record().attackWithParty());
+        context.record().setCombatMode(context.record().combatMode().next());
+        com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.clearCustomTarget(villager);
         return settingsChanged(context, "villagerretaliation.party.villager_settings_updated");
     }
 
-    public static ContractResult toggleDefendParty(ServerPlayer player, Villager villager) {
+    public static ContractResult cycleAttackMode(ServerPlayer player, Villager villager) {
         PartyVillagerContext context = authorizedContext(player, villager);
         if (context == null) {
             return ContractResult.failure("villagerretaliation.party.error.leader_only");
         }
-        context.record().setDefendParty(!context.record().defendParty());
+        context.record().setAttackMode(context.record().attackMode().next());
         return settingsChanged(context, "villagerretaliation.party.villager_settings_updated");
     }
 

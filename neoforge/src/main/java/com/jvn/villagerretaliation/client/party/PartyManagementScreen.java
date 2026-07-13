@@ -2,7 +2,10 @@ package com.jvn.villagerretaliation.client.party;
 
 import com.jvn.villagerretaliation.network.PartyActionRequestPayload;
 import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
-import com.jvn.villagerretaliation.party.PartyPolicyState;
+import com.jvn.villagerretaliation.party.PartyAttackMode;
+import com.jvn.villagerretaliation.party.PartyAttackModeState;
+import com.jvn.villagerretaliation.party.PartyCombatMode;
+import com.jvn.villagerretaliation.party.PartyCombatModeState;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -22,26 +25,15 @@ final class PartyManagementScreen extends Screen {
     protected void init() {
         PartyRosterSyncPayload roster = PartyRosterClient.roster();
         int centerX = this.width / 2;
-        int y = 30;
+        int y = 20;
         if (roster.active() && roster.recipientLeader()) {
-            y = addPolicyButton(centerX, y,
-                    PartyActionRequestPayload.Action.SET_ATTACK_WITH_PARTY,
-                    "villagerretaliation.party.manage.attack_with_party",
-                    "villagerretaliation.party.manage.attack_with_party.tooltip",
-                    roster.attackWithParty(),
-                    roster);
-            y = addPolicyButton(centerX, y,
-                    PartyActionRequestPayload.Action.SET_DEFEND_PARTY,
-                    "villagerretaliation.party.manage.defend_party",
-                    "villagerretaliation.party.manage.defend_party.tooltip",
-                    roster.defendParty(),
-                    roster);
+            y = addCombatModeButton(centerX, y, roster.combatMode());
+            y = addAttackModeButton(centerX, y, roster.attackMode());
             y = addBooleanPolicyButton(centerX, y,
                     PartyActionRequestPayload.Action.SET_SHARED_VILLAGER_INVENTORIES,
                     "villagerretaliation.party.manage.shared_inventories",
                     "villagerretaliation.party.manage.shared_inventories.tooltip",
-                    roster.sharedVillagerInventories(),
-                    roster);
+                    roster.sharedVillagerInventories());
             for (PartyRosterSyncPayload.PlayerEntry player : roster.players()) {
                 if (player.leader()) {
                     continue;
@@ -51,31 +43,31 @@ final class PartyManagementScreen extends Screen {
                         button -> send(PartyActionRequestPayload.Action.REMOVE_PLAYER, player.playerId()))
                         .bounds(centerX - 90, y, 180, 20)
                         .build());
-                y += 24;
+                y += 20;
             }
             addRenderableWidget(Button.builder(
                     Component.translatable("villagerretaliation.party.action.disband"),
                     button -> this.minecraft.setScreen(new PartyDisbandConfirmationScreen(this)))
-                    .bounds(centerX - 90, y + 6, 180, 20)
+                    .bounds(centerX - 90, y, 180, 20)
                     .build());
-            y += 30;
+            y += 22;
         } else if (roster.active()) {
             addRenderableWidget(Button.builder(
                     Component.translatable("villagerretaliation.party.action.leave"),
                     button -> send(PartyActionRequestPayload.Action.LEAVE_PARTY, null))
                     .bounds(centerX - 90, y, 180, 20)
                     .build());
-            y += 24;
+            y += 20;
         }
         addRenderableWidget(Button.builder(Component.translatable("gui.back"), button -> onClose())
-                .bounds(centerX - 50, y + 14, 100, 20)
+                .bounds(centerX - 50, y + 2, 100, 20)
                 .build());
     }
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(graphics, mouseX, mouseY, partialTick);
-        graphics.drawCenteredString(this.font, this.title, this.width / 2, 18, 0xFFFFFF);
+        graphics.drawCenteredString(this.font, this.title, this.width / 2, 7, 0xFFFFFF);
         super.render(graphics, mouseX, mouseY, partialTick);
     }
 
@@ -94,98 +86,100 @@ final class PartyManagementScreen extends Screen {
         }
     }
 
-    private int addPolicyButton(
-            int centerX,
-            int y,
-            PartyActionRequestPayload.Action action,
-            String labelKey,
-            String tooltipKey,
-            PartyPolicyState state,
-            PartyRosterSyncPayload roster) {
-        PartyPolicyState[] current = {state};
-        addRenderableWidget(Button.builder(
-                policyLabel(labelKey, state),
-                button -> {
-                    boolean enabled = current[0] != PartyPolicyState.ON;
-                    current[0] = enabled ? PartyPolicyState.ON : PartyPolicyState.OFF;
-                    button.setMessage(policyLabel(labelKey, current[0]));
-                    button.setTooltip(policyTooltip(tooltipKey, current[0], roster, action));
-                    PacketDistributor.sendToServer(new PartyActionRequestPayload(action, null, null, enabled));
-                })
-                .bounds(centerX - 100, y, 200, 20)
-                .tooltip(policyTooltip(tooltipKey, state, roster, action))
-                .build());
-        return y + 24;
-    }
-
     private int addBooleanPolicyButton(
             int centerX,
             int y,
             PartyActionRequestPayload.Action action,
             String labelKey,
             String tooltipKey,
-            boolean enabled,
-            PartyRosterSyncPayload roster) {
-        return addPolicyButton(
-                centerX,
-                y,
-                action,
-                labelKey,
-                tooltipKey,
-                enabled ? PartyPolicyState.ON : PartyPolicyState.OFF,
-                roster);
+            boolean enabled) {
+        boolean[] current = {enabled};
+        addRenderableWidget(Button.builder(
+                booleanPolicyLabel(labelKey, enabled),
+                button -> {
+                    current[0] = !current[0];
+                    button.setMessage(booleanPolicyLabel(labelKey, current[0]));
+                    PacketDistributor.sendToServer(new PartyActionRequestPayload(action, null, null, current[0]));
+                })
+                .bounds(centerX - 100, y, 200, 20)
+                .tooltip(Tooltip.create(Component.translatable(tooltipKey)))
+                .build());
+        return y + 20;
     }
 
-    private static Component policyLabel(String labelKey, PartyPolicyState state) {
-        Component value = state == PartyPolicyState.CUSTOM
-                ? Component.translatable("villagerretaliation.party.manage.custom")
-                : Component.translatable(state == PartyPolicyState.ON ? "options.on" : "options.off");
+    private int addCombatModeButton(int centerX, int y, PartyCombatModeState state) {
+        PartyCombatModeState[] current = {state};
+        addRenderableWidget(Button.builder(
+                combatModeLabel(state),
+                button -> {
+                    PartyCombatMode next = current[0].nextMode();
+                    current[0] = PartyCombatModeState.of(next);
+                    button.setMessage(combatModeLabel(current[0]));
+                    PacketDistributor.sendToServer(new PartyActionRequestPayload(
+                            PartyActionRequestPayload.Action.SET_COMBAT_MODE,
+                            null,
+                            null,
+                            false,
+                            null,
+                            next));
+                })
+                .bounds(centerX - 100, y, 200, 20)
+                .tooltip(Tooltip.create(Component.translatable(
+                        state == PartyCombatModeState.CUSTOM
+                                ? "villagerretaliation.party.manage.combat_mode.custom.tooltip"
+                                : "villagerretaliation.party.manage.combat_mode.tooltip")))
+                .build());
+        return y + 20;
+    }
+
+    private int addAttackModeButton(int centerX, int y, PartyAttackModeState state) {
+        PartyAttackModeState[] current = {state};
+        addRenderableWidget(Button.builder(
+                attackModeLabel(state),
+                button -> {
+                    PartyAttackMode next = current[0].nextMode();
+                    current[0] = PartyAttackModeState.of(next);
+                    button.setMessage(attackModeLabel(current[0]));
+                    PacketDistributor.sendToServer(new PartyActionRequestPayload(
+                            PartyActionRequestPayload.Action.SET_ATTACK_MODE,
+                            null,
+                            null,
+                            false,
+                            next,
+                            null));
+                })
+                .bounds(centerX - 100, y, 200, 20)
+                .tooltip(Tooltip.create(Component.translatable(
+                        state == PartyAttackModeState.CUSTOM
+                                ? "villagerretaliation.party.manage.attack_mode.custom.tooltip"
+                                : "villagerretaliation.party.manage.attack_mode.tooltip")))
+                .build());
+        return y + 20;
+    }
+
+    private static Component booleanPolicyLabel(String labelKey, boolean enabled) {
         return Component.translatable(
                 "villagerretaliation.party.manage.setting",
                 Component.translatable(labelKey),
+                Component.translatable(enabled ? "options.on" : "options.off"));
+    }
+
+    private static Component combatModeLabel(PartyCombatModeState state) {
+        Component value = Component.translatable(
+                "villagerretaliation.party.combat_mode." + state.name().toLowerCase(java.util.Locale.ROOT));
+        return Component.translatable(
+                "villagerretaliation.party.manage.setting",
+                Component.translatable("villagerretaliation.party.manage.combat_mode"),
                 value);
     }
 
-    private static Tooltip policyTooltip(
-            String tooltipKey,
-            PartyPolicyState state,
-            PartyRosterSyncPayload roster,
-            PartyActionRequestPayload.Action action) {
-        Component text = Component.translatable(tooltipKey);
-        if (state != PartyPolicyState.CUSTOM) {
-            return Tooltip.create(text);
-        }
-        String enabled = villagerNames(roster, action, true);
-        String disabled = villagerNames(roster, action, false);
-        return Tooltip.create(text.copy()
-                .append("\n")
-                .append(Component.translatable(
-                        "villagerretaliation.party.manage.custom.tooltip",
-                        enabled,
-                        disabled)));
+    private static Component attackModeLabel(PartyAttackModeState state) {
+        Component value = Component.translatable(
+                "villagerretaliation.party.attack_mode." + state.name().toLowerCase(java.util.Locale.ROOT));
+        return Component.translatable(
+                "villagerretaliation.party.manage.setting",
+                Component.translatable("villagerretaliation.party.manage.attack_mode"),
+                value);
     }
 
-    private static String villagerNames(
-            PartyRosterSyncPayload roster,
-            PartyActionRequestPayload.Action action,
-            boolean enabled) {
-        return String.join(", ", roster.villagers().stream()
-                .filter(villager -> policyEnabled(villager, action) == enabled)
-                .map(PartyManagementScreen::villagerName)
-                .toList());
-    }
-
-    private static boolean policyEnabled(
-            PartyRosterSyncPayload.VillagerEntry villager,
-            PartyActionRequestPayload.Action action) {
-        return action == PartyActionRequestPayload.Action.SET_ATTACK_WITH_PARTY
-                ? villager.attackWithParty()
-                : villager.defendParty();
-    }
-
-    private static String villagerName(PartyRosterSyncPayload.VillagerEntry villager) {
-        return villager.name().isBlank()
-                ? Component.translatable("entity.minecraft.villager").getString()
-                : villager.name();
-    }
 }

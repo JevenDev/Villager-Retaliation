@@ -19,6 +19,8 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.party.PartyAttackMode;
+import com.jvn.villagerretaliation.party.PartyCombatMode;
 import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
@@ -49,11 +51,16 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.OwnableEntity;
+import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Creeper;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -72,6 +79,8 @@ import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 public final class VillagerRetaliationHandler {
     private static final long NATURAL_TARGET_SCAN_INTERVAL_TICKS = 20L;
+    private static final long PARTY_KOS_TARGET_SCAN_INTERVAL_TICKS = 20L;
+    private static final double PARTY_KOS_TARGET_RADIUS = 16.0D;
     private static final long CREEPER_AVOIDANCE_SCAN_INTERVAL_TICKS = 10L;
     private static final long ROLE_MAINHAND_MAINTENANCE_INTERVAL_TICKS = 40L;
     private static final long ROYALTY_AGGRO_BYPASS_NOTICE_COOLDOWN_TICKS = 20L * 5L;
@@ -86,6 +95,7 @@ public final class VillagerRetaliationHandler {
     private static final RetaliationActorPolicy<Villager> ACTOR_POLICY = VillagerCombatRoles.policy();
     private static final Map<UUID, Long> NEXT_SPECIAL_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_NATURAL_TARGET_SCAN_TICKS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_PARTY_KOS_TARGET_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_CREEPER_AVOIDANCE_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS = new HashMap<>();
     private static final Map<PlayerVillagerKey, Long> NEXT_ROYALTY_AGGRO_BYPASS_NOTICE_TICKS = new HashMap<>();
@@ -323,6 +333,7 @@ public final class VillagerRetaliationHandler {
         }
 
         RETALIATION.restorePersistedAngerIfNeeded(villager);
+        tryAcquirePartyKillOnSightTarget(villager);
         tryAcquireHostileTarget(villager);
 
         ActiveRetaliationTarget retaliationTarget = VillagerRetaliationRetaliationUtil.resolveActiveRetaliationTarget(
@@ -659,6 +670,8 @@ public final class VillagerRetaliationHandler {
     private static void tryAcquireHostileTarget(Villager villager) {
         if (RETALIATION.hasAnger(villager)
                 || !villager.isAlive()
+                || (villager.level() instanceof ServerLevel level
+                        && PartyService.isRecruitedPartyVillager(level, villager.getUUID()))
                 || !VillagerRetaliationConfig.VILLAGERS_TARGET_HOSTILE_MOBS.get()) {
             return;
         }
@@ -683,6 +696,73 @@ public final class VillagerRetaliationHandler {
         VillagerRetaliationVillagerCombatUtil.findNearestNaturalHostile(villager, naturalDefenseRadius)
                 .filter(target -> !shouldAvoidVisibleCreeper(villager, target))
                 .ifPresent(target -> anger(villager, target));
+    }
+
+    private static void tryAcquirePartyKillOnSightTarget(Villager villager) {
+        if (RETALIATION.hasAnger(villager) || !villager.isAlive() || villager.isBaby()) {
+            return;
+        }
+        ServerLevel level = (ServerLevel) villager.level();
+        PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+        if (record == null
+                || record.combatMode() != PartyCombatMode.KILL_ON_SIGHT
+                || !ACTOR_POLICY.canFightBack(villager)) {
+            return;
+        }
+        long gameTime = level.getGameTime();
+        if (!TickThrottle.consume(
+                villager.getUUID(),
+                NEXT_PARTY_KOS_TARGET_SCAN_TICKS,
+                gameTime,
+                PARTY_KOS_TARGET_SCAN_INTERVAL_TICKS)) {
+            return;
+        }
+
+        LivingEntity nearest = level.getEntitiesOfClass(
+                        LivingEntity.class,
+                        villager.getBoundingBox().inflate(PARTY_KOS_TARGET_RADIUS),
+                        target -> isEligiblePartyKillOnSightTarget(level, villager, record, target))
+                .stream()
+                .min(java.util.Comparator.comparingDouble(villager::distanceToSqr))
+                .orElse(null);
+        if (nearest == null) {
+            return;
+        }
+        AllegianceCombatDecision decision = VillageAllegianceCombatPolicy.evaluate(
+                level, villager, nearest, AllegianceCombatContext.PARTY_ATTACK, false);
+        if (decision.denied()) {
+            return;
+        }
+        if (decision.action() == AllegianceCombatDecision.Action.ALLOW
+                && !VillageCombatAuthorizationService.authorize(level, villager, nearest)) {
+            return;
+        }
+        anger(villager, nearest, false, true);
+    }
+
+    private static boolean isEligiblePartyKillOnSightTarget(
+            ServerLevel level,
+            Villager villager,
+            PartyVillagerRecord record,
+            LivingEntity target) {
+        if (target == villager
+                || !target.isAlive()
+                || !villager.canAttack(target)
+                || target.isAlliedTo(villager)
+                || PartyService.areInSameParty(villager, target)
+                || (target instanceof AbstractVillager && !(target instanceof Villager))
+                || target instanceof IronGolem
+                || (target instanceof OwnableEntity ownable && ownable.getOwnerUUID() != null)
+                || (target instanceof TamableAnimal tamable && tamable.isTame())
+                || (!(target instanceof Villager)
+                        && VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target))
+                || !VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target)
+                || !attackModeAllows(record.attackMode(), villager, target)) {
+            return false;
+        }
+        return !VillageAllegianceCombatPolicy.evaluate(
+                level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false).denied();
     }
 
     private static boolean isNaturalHostileTarget(Villager villager, LivingEntity target) {
@@ -780,6 +860,7 @@ public final class VillagerRetaliationHandler {
         RETALIATION.clearPersistentAnger(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
+        NEXT_PARTY_KOS_TARGET_SCAN_TICKS.remove(villager.getUUID());
         VillagerHostileTierHarass.clearState(villager);
         VillagerArmorerCombatTactics.resetState(villager);
         VillagerRangedCombatHelper.clearState(villager);
@@ -828,8 +909,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
         for (PartyVillagerRecord member : party.villagers()) {
-            if ((attackingWithParty && !member.attackWithParty())
-                    || (!attackingWithParty && !member.defendParty())) {
+            if (member.combatMode() != PartyCombatMode.ATTACK_WITH_PARTY) {
                 continue;
             }
             Entity entity = level.getEntity(member.villagerId());
@@ -838,6 +918,7 @@ public final class VillagerRetaliationHandler {
                     || villager.isBaby()
                     || !villager.isAlive()
                     || !canWitnessRetaliationEvent(villager, partyMember)
+                    || (attackingWithParty && !attackModeAllows(member.attackMode(), villager, target))
                     || !shouldRetaliateAgainstAttacker(villager, target)) {
                 continue;
             }
@@ -862,6 +943,15 @@ public final class VillagerRetaliationHandler {
             }
             anger(villager, target);
         }
+    }
+
+    private static boolean attackModeAllows(PartyAttackMode mode, Villager villager, LivingEntity target) {
+        PartyAttackMode resolved = mode == null ? PartyAttackMode.ALL : mode;
+        return resolved.allows(
+                target instanceof Animal,
+                VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target),
+                target instanceof Player,
+                PartyService.getPartyForEntity(target).isPresent());
     }
 
     private static boolean isHiredHunter(ServerLevel level, Villager villager) {
@@ -1344,6 +1434,7 @@ public final class VillagerRetaliationHandler {
         RETALIATION.clearTransientState(villager);
         NEXT_SPECIAL_TICKS.remove(villager.getUUID());
         NEXT_NATURAL_TARGET_SCAN_TICKS.remove(villager.getUUID());
+        NEXT_PARTY_KOS_TARGET_SCAN_TICKS.remove(villager.getUUID());
         NEXT_CREEPER_AVOIDANCE_SCAN_TICKS.remove(villager.getUUID());
         NEXT_ROLE_MAINHAND_MAINTENANCE_TICKS.remove(villager.getUUID());
         VillagerHostileTierHarass.clearState(villager);

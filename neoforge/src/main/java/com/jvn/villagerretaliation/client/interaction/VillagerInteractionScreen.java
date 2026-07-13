@@ -11,6 +11,8 @@ import com.jvn.villagerretaliation.client.reputation.VillagerReputationIconSet;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.party.PartyAttackMode;
+import com.jvn.villagerretaliation.party.PartyCombatMode;
 import com.jvn.villagerretaliation.party.PartyDropCollectionMode;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
@@ -1094,19 +1096,21 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
             if (this.partyVillagerAuthorized) {
                 PartyRosterSyncPayload.VillagerEntry settings = partyVillagerSettings();
-                boolean attackWithParty = settings == null || settings.attackWithParty();
-                boolean defendParty = settings == null || settings.defendParty();
+                PartyCombatMode combatMode = settings == null
+                        ? PartyCombatMode.ATTACK_WITH_PARTY
+                        : settings.combatMode();
+                PartyAttackMode attackMode = settings == null ? PartyAttackMode.ALL : settings.attackMode();
                 PartyDropCollectionMode dropMode = settings == null
                         ? PartyDropCollectionMode.OFF
                         : settings.dropCollectionMode();
                 addPartySettingOption(
-                        "party.attack_with_party",
-                        attackWithParty ? "party.setting.on" : "party.setting.off",
-                        VillagerRecruitRequestPayload.Action.TOGGLE_PARTY_ATTACK_WITH_PARTY);
+                        "party.combat_mode",
+                        "party.combat_mode." + combatMode.name().toLowerCase(java.util.Locale.ROOT),
+                        VillagerRecruitRequestPayload.Action.CYCLE_PARTY_COMBAT_MODE);
                 addPartySettingOption(
-                        "party.defend_party",
-                        defendParty ? "party.setting.on" : "party.setting.off",
-                        VillagerRecruitRequestPayload.Action.TOGGLE_PARTY_DEFEND_PARTY);
+                        "party.attack_mode",
+                        "party.attack_mode." + attackMode.name().toLowerCase(java.util.Locale.ROOT),
+                        VillagerRecruitRequestPayload.Action.CYCLE_PARTY_ATTACK_MODE);
                 addPartySettingOption(
                         "party.collect_drops",
                         switch (dropMode) {

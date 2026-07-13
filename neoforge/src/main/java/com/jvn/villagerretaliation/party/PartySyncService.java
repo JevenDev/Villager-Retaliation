@@ -104,8 +104,8 @@ public final class PartySyncService {
                     record.commandMode(),
                     loaded != null && loaded.isAlive() && !record.villagerId().equals(unavailableVillagerId),
                     record.remainingDays(now),
-                    record.attackWithParty(),
-                    record.defendParty(),
+                    record.combatMode(),
+                    record.attackMode(),
                     record.dropCollectionMode()));
         }
         return new PartyRosterSyncPayload(
@@ -113,25 +113,29 @@ public final class PartySyncService {
                 party.id(),
                 profileName(server, party.leaderId()),
                 recipient.getUUID().equals(party.leaderId()),
-                policyState(party, true),
-                policyState(party, false),
+                combatModeState(party),
+                attackModeState(party),
                 party.sharedVillagerInventories(),
                 List.copyOf(players),
                 List.copyOf(villagers));
     }
 
-    static PartyPolicyState policyState(PartyRecord party, boolean attackPolicy) {
+    static PartyCombatModeState combatModeState(PartyRecord party) {
         if (party.villagers().isEmpty()) {
-            return (attackPolicy ? party.attackWithParty() : party.defendParty())
-                    ? PartyPolicyState.ON
-                    : PartyPolicyState.OFF;
+            return PartyCombatModeState.of(party.combatMode());
         }
-        boolean first = attackPolicy
-                ? party.villagers().getFirst().attackWithParty()
-                : party.villagers().getFirst().defendParty();
-        boolean mixed = party.villagers().stream().anyMatch(villager ->
-                (attackPolicy ? villager.attackWithParty() : villager.defendParty()) != first);
-        return mixed ? PartyPolicyState.CUSTOM : first ? PartyPolicyState.ON : PartyPolicyState.OFF;
+        PartyCombatMode first = party.villagers().getFirst().combatMode();
+        boolean mixed = party.villagers().stream().anyMatch(villager -> villager.combatMode() != first);
+        return mixed ? PartyCombatModeState.CUSTOM : PartyCombatModeState.of(first);
+    }
+
+    static PartyAttackModeState attackModeState(PartyRecord party) {
+        if (party.villagers().isEmpty()) {
+            return PartyAttackModeState.of(party.attackMode());
+        }
+        PartyAttackMode first = party.villagers().getFirst().attackMode();
+        boolean mixed = party.villagers().stream().anyMatch(villager -> villager.attackMode() != first);
+        return mixed ? PartyAttackModeState.CUSTOM : PartyAttackModeState.of(first);
     }
 
     private static String profileName(MinecraftServer server, UUID playerId) {
