@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
@@ -21,6 +22,7 @@ import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
+import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import com.mojang.authlib.GameProfile;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -496,6 +498,87 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerOnlyEatsBelowHalfHungerOutsideCombat(GameTestHelper helper) {
+        Villager halfHunger = spawnVillager(helper, new BlockPos(1, 2, 1));
+        setRecoveryState(halfHunger, 10, 0.0F);
+        VillagerInventoryAccess.addItem(halfHunger, new ItemStack(Items.BREAD));
+
+        helper.assertFalse(
+                VillagerRecoveryService.onVillagerTickPost(halfHunger),
+                "a healthy villager at half hunger should not begin recovery");
+        helper.assertTrue(
+                VillagerInventoryAccess.hasCarriedItem(halfHunger, stack -> stack.is(Items.BREAD)),
+                "food should remain stored at exactly half hunger");
+        helper.assertFalse(halfHunger.isUsingItem(), "villager should not eat at exactly half hunger");
+
+        Villager combatant = spawnVillager(helper, new BlockPos(3, 2, 1));
+        Zombie target = spawnZombie(helper, new BlockPos(5, 2, 1));
+        setRecoveryState(combatant, 9, 0.0F);
+        VillagerInventoryAccess.addItem(combatant, new ItemStack(Items.BREAD));
+        combatant.setTarget(target);
+
+        helper.assertFalse(
+                VillagerRecoveryService.onVillagerTickPost(combatant),
+                "a healthy villager should not leave combat to eat");
+        helper.assertTrue(
+                VillagerInventoryAccess.hasCarriedItem(combatant, stack -> stack.is(Items.BREAD)),
+                "combat should preserve the stored food");
+        helper.assertFalse(combatant.isUsingItem(), "villager should not eat during combat");
+
+        VillagerRecoveryService.onVillagerUnloaded(halfHunger);
+        VillagerRecoveryService.onVillagerUnloaded(combatant);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerFoodUseLastsForItemAnimation(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemStack bread = new ItemStack(Items.BREAD);
+        int useTicks = Math.max(2, bread.getUseDuration(villager)) - 1;
+        setRecoveryState(villager, 9, 0.0F);
+        VillagerInventoryAccess.addItem(villager, bread.copy());
+
+        helper.assertTrue(
+                VillagerRecoveryService.onVillagerTickPost(villager),
+                "starting a meal should reserve the tick from loadout maintenance");
+        helper.assertTrue(villager.isUsingItem(), "villager should begin the eating animation");
+        helper.assertTrue(villager.getMainHandItem().is(Items.BREAD), "food should remain visible while eating");
+        helper.assertValueEqual(VillagerRecoveryService.foodLevel(villager), 9, "food is not applied immediately");
+
+        for (int tick = 1; tick < useTicks; tick++) {
+            VillagerRecoveryService.onVillagerTickPost(villager);
+        }
+        helper.assertTrue(villager.isUsingItem(), "eating animation should remain active until its final tick");
+        helper.assertValueEqual(VillagerRecoveryService.foodLevel(villager), 9, "food waits for the full use duration");
+
+        VillagerRecoveryService.onVillagerTickPost(villager);
+        helper.assertFalse(villager.isUsingItem(), "eating animation should stop after its full duration");
+        helper.assertValueEqual(VillagerRecoveryService.foodLevel(villager), 14, "bread nutrition applies after eating");
+
+        VillagerRecoveryService.onVillagerUnloaded(villager);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerFoodUseRecoversInterruptedVisualState(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        setRecoveryState(villager, 9, 0.0F);
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.BREAD));
+        VillagerRecoveryService.onVillagerTickPost(villager);
+
+        VillagerRetaliationVillagerEquipment.setVisualMainHand(villager, new ItemStack(Items.IRON_SWORD));
+        villager.stopUsingItem();
+        VillagerRecoveryService.onVillagerTickPost(villager);
+
+        helper.assertTrue(villager.isUsingItem(), "an interrupted eating animation should resume");
+        helper.assertTrue(villager.getMainHandItem().is(Items.BREAD), "food visual should survive equipment maintenance");
+        helper.assertValueEqual(VillagerRecoveryService.foodLevel(villager), 9, "resuming should not consume food early");
+
+        VillagerRecoveryService.onVillagerUnloaded(villager);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void repeatableServerRequestsAreBoundedPerPlayerAndKind(GameTestHelper helper) {
         UUID firstPlayer = UUID.randomUUID();
         UUID secondPlayer = UUID.randomUUID();
@@ -559,6 +642,15 @@ public final class VillagerGameplayGameTests {
             throw new GameTestAssertException("Could not add villager to level");
         }
         return villager;
+    }
+
+    private static void setRecoveryState(Villager villager, int food, float saturation) {
+        CompoundTag tag = new CompoundTag();
+        tag.putInt("Food", food);
+        tag.putFloat("Saturation", saturation);
+        tag.putFloat("Exhaustion", 0.0F);
+        tag.putInt("HealTimer", 0);
+        villager.getPersistentData().put("VillagerRetaliationRecovery", tag);
     }
 
     private static WanderingTrader spawnWanderingTrader(GameTestHelper helper, BlockPos relativePos) {

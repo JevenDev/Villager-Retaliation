@@ -33,6 +33,7 @@ public final class VillagerRecoveryService {
     private static final String EXHAUSTION = "Exhaustion";
     private static final String HEAL_TIMER = "HealTimer";
     private static final int MAX_FOOD = 20;
+    private static final int EAT_FOOD_BELOW = MAX_FOOD / 2;
     private static final long SHORTAGE_COOLDOWN = 20L * 60L * 5L;
     private static final double NOTICE_DISTANCE_SQR = 16.0D * 16.0D;
     private static final Map<UUID, Boolean> FORCED_RECOVERY = new HashMap<>();
@@ -101,17 +102,22 @@ public final class VillagerRecoveryService {
         recovery = tickNaturalRegeneration(level, villager, recovery);
         save(villager, recovery);
 
+        boolean hasCombatTarget = VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)
+                || villager.getTarget() != null;
         UseState use = ACTIVE_USES.get(villager.getUUID());
         if (use != null) {
-            tickUse(level, villager, use);
-            return true;
+            if (isFood(use.stack())
+                    && (hasCombatTarget || COMBAT_RECOVERY.contains(villager.getUUID()))) {
+                cancelUse(villager, true);
+            } else {
+                tickUse(level, villager, use);
+                return true;
+            }
         }
         if (VillagerRetaliationPotionUtil.shouldSuppressCombatWhileUsingPotion(villager)) {
             return false;
         }
 
-        boolean hasCombatTarget = VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)
-                || villager.getTarget() != null;
         float healthRatio = villager.getHealth() / Math.max(1.0F, villager.getMaxHealth());
         if (hasCombatTarget && healthRatio < 0.5F) {
             COMBAT_RECOVERY.add(villager.getUUID());
@@ -130,10 +136,11 @@ public final class VillagerRecoveryService {
         }
 
         boolean urgent = FORCED_RECOVERY.getOrDefault(villager.getUUID(), false) || combatRecovery;
-        ItemStack consumable = selectConsumable(villager, recovery, urgent, healthRatio);
+        boolean inCombat = hasCombatTarget || combatRecovery;
+        ItemStack consumable = selectConsumable(villager, recovery, urgent, inCombat, healthRatio);
         if (!consumable.isEmpty()) {
             startUse(villager, consumable);
-            return urgent || forced;
+            return true;
         }
 
         boolean canNaturallyHeal = level.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION)
@@ -171,26 +178,30 @@ public final class VillagerRecoveryService {
             Villager villager,
             RecoveryState recovery,
             boolean urgent,
+            boolean inCombat,
             float healthRatio) {
+        boolean canEat = !inCombat && recovery.food() < EAT_FOOD_BELOW;
         if (urgent) {
-            if (healthRatio < 0.25F) {
+            if (canEat && healthRatio < 0.25F) {
                 ItemStack enchanted = take(villager, stack -> stack.is(Items.ENCHANTED_GOLDEN_APPLE));
                 if (!enchanted.isEmpty()) return enchanted;
             }
-            if (healthRatio < 0.5F) {
+            if (canEat && healthRatio < 0.5F) {
                 ItemStack apple = take(villager, stack -> stack.is(Items.GOLDEN_APPLE));
                 if (!apple.isEmpty()) return apple;
             }
             ItemStack potion = take(villager, VillagerRecoveryService::isRecoveryPotion);
             if (!potion.isEmpty()) return potion;
-            return take(villager, VillagerRecoveryService::isOrdinaryFood);
+            return canEat ? take(villager, VillagerRecoveryService::isOrdinaryFood) : ItemStack.EMPTY;
         }
 
-        if (recovery.food() < MAX_FOOD) {
+        if (canEat) {
             ItemStack food = take(villager, VillagerRecoveryService::isOrdinaryFood);
             if (!food.isEmpty()) return food;
         }
-        return take(villager, VillagerRecoveryService::isRecoveryPotion);
+        return healthRatio < 1.0F
+                ? take(villager, VillagerRecoveryService::isRecoveryPotion)
+                : ItemStack.EMPTY;
     }
 
     private static ItemStack take(Villager villager, Predicate<ItemStack> predicate) {
@@ -228,6 +239,7 @@ public final class VillagerRecoveryService {
     }
 
     private static void tickUse(ServerLevel level, Villager villager, UseState use) {
+        ensureUseVisualState(villager, use);
         if (use.ticksRemaining() > 1) {
             ACTIVE_USES.put(villager.getUUID(), use.withTicks(use.ticksRemaining() - 1));
             return;
@@ -260,6 +272,16 @@ public final class VillagerRecoveryService {
             }
         }
         VillagerRetaliationVillagerEquipment.restoreVisualMainHand(villager, use.resumeMainHand());
+    }
+
+    private static void ensureUseVisualState(Villager villager, UseState use) {
+        if (!ItemStack.isSameItemSameComponents(villager.getMainHandItem(), use.stack())) {
+            VillagerRetaliationVillagerEquipment.setVisualMainHand(villager, use.stack().copy());
+        }
+        if (!villager.isUsingItem()
+                || !ItemStack.isSameItemSameComponents(villager.getUseItem(), use.stack())) {
+            villager.startUsingItem(InteractionHand.MAIN_HAND);
+        }
     }
 
     private static void cancelUse(Villager villager, boolean restoreItem) {
