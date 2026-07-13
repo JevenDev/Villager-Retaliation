@@ -71,8 +71,17 @@ public final class HiredRouteNavigator {
             Villager villager,
             BlockPos target,
             double speed) {
+        return moveToRouteNode(level, villager, target, speed, ARRIVAL_DISTANCE_SQR);
+    }
+
+    public static NodeMovement moveToRouteNode(
+            ServerLevel level,
+            Villager villager,
+            BlockPos target,
+            double speed,
+            double arrivalDistanceSqr) {
         double distanceSqr = villager.blockPosition().distSqr(target);
-        if (distanceSqr <= ARRIVAL_DISTANCE_SQR) {
+        if (distanceSqr <= arrivalDistanceSqr) {
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             HiredPathMemory.clearNavigationProgress(villager);
             return NodeMovement.ARRIVED;
@@ -81,7 +90,7 @@ public final class HiredRouteNavigator {
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         if (!villager.getNavigation().isDone()
                 && navigationTarget != null
-                && navigationTarget.distSqr(target) <= ARRIVAL_DISTANCE_SQR) {
+                && navigationTarget.distSqr(target) <= arrivalDistanceSqr) {
             if (HiredPathMemory.observeNavigationProgress(level, villager, target, distanceSqr)) {
                 return NodeMovement.MOVING;
             }
@@ -96,7 +105,7 @@ public final class HiredRouteNavigator {
             walkTarget = target;
             path = HiredPathMemory.createPath(level, villager, target, CLOSE_ENOUGH_DISTANCE);
         } else {
-            RouteApproach approach = nearestReachableApproach(level, villager, target);
+            RouteApproach approach = nearestReachableApproach(level, villager, target, arrivalDistanceSqr);
             if (approach == null) {
                 return NodeMovement.FAILED;
             }
@@ -120,14 +129,15 @@ public final class HiredRouteNavigator {
     private static RouteApproach nearestReachableApproach(
             ServerLevel level,
             Villager villager,
-            BlockPos target) {
+            BlockPos target,
+            double arrivalDistanceSqr) {
         List<BlockPos> candidates = new ArrayList<>();
         for (BlockPos rawCandidate : BlockPos.betweenClosed(
                 target.offset(-2, -2, -2),
                 target.offset(2, 2, 2))) {
             BlockPos candidate = rawCandidate.immutable();
             if (!candidate.equals(target)
-                    && candidate.distSqr(target) <= ARRIVAL_DISTANCE_SQR
+                    && candidate.distSqr(target) <= arrivalDistanceSqr
                     && HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)) {
                 candidates.add(candidate);
             }

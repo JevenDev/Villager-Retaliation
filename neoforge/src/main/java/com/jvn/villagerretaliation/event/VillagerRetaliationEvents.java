@@ -323,6 +323,7 @@ public final class VillagerRetaliationEvents {
                 VillagerTaskNavigationUtil.tickVillagerWaterSafety(level, villager);
                 VillagerTaskNavigationUtil.tickPathDoors(level, villager);
                 VillagerTaskNavigationUtil.tickPathLadders(level, villager);
+                VillagerTaskNavigationUtil.tickHiredPathStepAssist(level, villager);
                 VillagerContainerClimbGuard.tick(villager);
             }
             rememberWeatherEventNearVillager(villager);

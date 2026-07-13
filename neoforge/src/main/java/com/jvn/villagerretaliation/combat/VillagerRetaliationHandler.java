@@ -391,6 +391,7 @@ public final class VillagerRetaliationHandler {
             VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
             return;
         }
+        wakeSleepingVillagerTargetForPartyAttacker(level, villager, target);
         if (!VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)) {
             clearAnger(villager);
             handlePassivePotionState(villager);
@@ -1020,6 +1021,7 @@ public final class VillagerRetaliationHandler {
                 target instanceof Animal,
                 VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target),
                 target instanceof Player,
+                target instanceof Villager,
                 PartyService.getPartyForEntity(target).isPresent());
     }
 
@@ -1365,6 +1367,17 @@ public final class VillagerRetaliationHandler {
         RETALIATION.restoreTemporaryWeapon(villager);
         VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+    }
+
+    private static void wakeSleepingVillagerTargetForPartyAttacker(
+            ServerLevel level,
+            Villager attacker,
+            LivingEntity target) {
+        if (target instanceof Villager targetVillager
+                && targetVillager.isSleeping()
+                && PartyService.isRecruitedPartyVillager(level, attacker.getUUID())) {
+            targetVillager.stopSleeping();
+        }
     }
 
     private static void equipCombatWeapon(Villager villager) {

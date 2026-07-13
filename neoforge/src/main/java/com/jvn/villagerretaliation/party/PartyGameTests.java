@@ -21,6 +21,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.village.VillageMembership;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
+import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.mojang.authlib.GameProfile;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -149,17 +150,23 @@ public final class PartyGameTests {
         UUID rejectedPlayer = UUID.randomUUID();
         long now = 1_000L;
 
-        helper.assertTrue(PartyAttackMode.ANIMALS.allows(true, false, false, false),
+        helper.assertTrue(PartyAttackMode.ANIMALS.allows(true, false, false, false, false),
                 "animal mode should allow animals");
-        helper.assertFalse(PartyAttackMode.ANIMALS.allows(false, true, false, false),
+        helper.assertFalse(PartyAttackMode.ANIMALS.allows(false, true, false, false, false),
                 "animal mode should reject hostiles");
-        helper.assertTrue(PartyAttackMode.HOSTILES.allows(false, true, false, false),
+        helper.assertTrue(PartyAttackMode.HOSTILES.allows(false, true, false, false, false),
                 "hostile mode should allow hostiles");
-        helper.assertTrue(PartyAttackMode.PLAYERS.allows(false, false, true, false),
+        helper.assertTrue(PartyAttackMode.PLAYERS.allows(false, false, true, false, false),
                 "player mode should allow players");
-        helper.assertTrue(PartyAttackMode.PARTIES.allows(false, false, false, true),
+        helper.assertTrue(PartyAttackMode.VILLAGERS.allows(false, false, false, true, false),
+                "villager mode should allow villagers");
+        helper.assertValueEqual(PartyAttackMode.byName("villagers"), PartyAttackMode.VILLAGERS,
+                "villager mode should survive its persisted name");
+        helper.assertValueEqual(PartyAttackMode.PLAYERS.next(), PartyAttackMode.VILLAGERS,
+                "attack-mode UI cycle should include villagers after players");
+        helper.assertTrue(PartyAttackMode.PARTIES.allows(false, false, false, false, true),
                 "party mode should allow members of other parties");
-        helper.assertTrue(PartyAttackMode.ALL.allows(false, false, false, false),
+        helper.assertTrue(PartyAttackMode.ALL.allows(false, false, false, false, false),
                 "all mode should preserve unrestricted party attacks");
 
         PartySavedData data = new PartySavedData();
@@ -788,6 +795,183 @@ public final class PartyGameTests {
             target.discard();
             helper.succeed();
         });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyAttackerWakesSleepingVillagerTarget(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        for (int x = 0; x <= 6; x++) {
+            for (int z = 0; z <= 6; z++) {
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+            }
+        }
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_sleeping_target"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager target = spawnVillager(helper, new BlockPos(4, 2, 2));
+        target.setNoAi(true);
+        target.startSleeping(target.blockPosition());
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party, villagerRecord(attacker.getUUID(), leader.getUUID(), 0, now));
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.ATTACK,
+                        target.getId(),
+                        null));
+        helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(attacker, target),
+                "attack command should establish the sleeping villager as the party target");
+        helper.assertTrue(target.isSleeping(), "regression setup should begin with the target in bed");
+
+        helper.runAfterDelay(5, () -> {
+            helper.assertFalse(target.isSleeping(),
+                    "a villager targeted by a party attacker should be pulled out of bed");
+            PartyService.deleteParty(level, party.id());
+            PartyQuickCommandService.clearRuntimeState();
+            attacker.discard();
+            target.discard();
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void moveToUsesSharedNodeRouteNavigation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        for (int x = 0; x <= 14; x++) {
+            for (int z = 0; z <= 4; z++) {
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+            }
+        }
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_shared_move_route"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        BlockPos target = helper.absolutePos(new BlockPos(13, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.MOVE_TO,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        target));
+        helper.startSequence()
+                .thenExecuteFor(20, () -> {
+                    if (villager.getNavigation().isDone()) {
+                        PartyQuickCommandService.onVillagerTickPost(villager);
+                    }
+                })
+                .thenExecute(() -> {
+                    helper.assertFalse(villager.getNavigation().isDone(),
+                            "move-to should start the shared node-route path");
+                    helper.assertTrue(VillagerTaskNavigationUtil.isHiredWalkTarget(villager),
+                            "move-to should use the same guarded walk-target pipeline as node jobs");
+                    PartyService.deleteParty(level, party.id());
+                    PartyQuickCommandService.clearRuntimeState();
+                    villager.discard();
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 180)
+    public static void sharedMoveRouteCrossesDirtPathGrassEdge(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        for (int x = 0; x <= 12; x++) {
+            for (int z = 0; z <= 4; z++) {
+                helper.setBlock(
+                        new BlockPos(x, 1, z),
+                        x <= 3 ? Blocks.DIRT_PATH : Blocks.GRASS_BLOCK);
+            }
+        }
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_path_grass_edge"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 2));
+        BlockPos pathSide = helper.absolutePos(new BlockPos(3, 2, 2));
+        BlockPos grassSide = helper.absolutePos(new BlockPos(4, 2, 2));
+        double routeX = grassSide.getX() - pathSide.getX();
+        double routeZ = grassSide.getZ() - pathSide.getZ();
+        villager.moveTo(
+                (pathSide.getX() + grassSide.getX() + 1.0D) * 0.5D - routeX * 0.05D,
+                pathSide.getY() - 0.0625D,
+                (pathSide.getZ() + grassSide.getZ() + 1.0D) * 0.5D - routeZ * 0.05D,
+                0.0F,
+                0.0F);
+        villager.setOnGround(true);
+        BlockPos target = helper.absolutePos(new BlockPos(10, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.MOVE_TO,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        target));
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        villager.horizontalCollision = true;
+        villager.setOnGround(true);
+        helper.assertTrue(VillagerTaskNavigationUtil.tickHiredPathStepAssist(level, villager),
+                "shared route should recognize the dirt-path/grass collision seam as a safe step assist");
+        helper.startSequence()
+                .thenWaitUntil(() -> {
+                    PartyQuickCommandService.onVillagerTickPost(villager);
+                    helper.assertTrue(villager.distanceToSqr(target.getCenter()) <= 4.0D,
+                            "shared route has not crossed the 1/16-block dirt-path/grass seam yet; pos="
+                                    + villager.position() + ", nav=" + villager.getNavigation().getTargetPos());
+                })
+                .thenExecute(() -> {
+                    PartyService.deleteParty(level, party.id());
+                    PartyQuickCommandService.clearRuntimeState();
+                    villager.discard();
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void submergedVillagerAlwaysFloatsAndKeepsBreathing(GameTestHelper helper) {
+        for (int x = 0; x <= 4; x++) {
+            for (int z = 0; z <= 4; z++) {
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+                for (int y = 2; y <= 4; y++) {
+                    boolean wall = x == 0 || x == 4 || z == 0 || z == 4;
+                    helper.setBlock(new BlockPos(x, y, z), wall ? Blocks.STONE : Blocks.WATER);
+                }
+            }
+        }
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setAirSupply(1);
+        villager.setDeltaMovement(0.0D, -0.1D, 0.0D);
+        VillagerTaskNavigationUtil.tickVillagerWaterSafety(helper.getLevel(), villager);
+
+        helper.assertValueEqual(villager.getAirSupply(), villager.getMaxAirSupply(),
+                "water safety should prevent drowning even without an active movement order");
+        helper.assertTrue(villager.getDeltaMovement().y > 0.0D,
+                "a submerged idle villager should always receive upward swimming motion");
+
+        BlockPos current = villager.blockPosition();
+        BlockPos swimTarget = current.east(2);
+        net.minecraft.world.level.pathfinder.Path swimPath = new net.minecraft.world.level.pathfinder.Path(
+                List.of(
+                        new net.minecraft.world.level.pathfinder.Node(current.getX(), current.getY(), current.getZ()),
+                        new net.minecraft.world.level.pathfinder.Node(
+                                swimTarget.getX(), swimTarget.getY(), swimTarget.getZ())),
+                swimTarget,
+                true);
+        helper.assertTrue(villager.getNavigation().moveTo(swimPath, 0.5D),
+                "regression setup should install an active water path");
+        VillagerTaskNavigationUtil.tickVillagerWaterSafety(helper.getLevel(), villager);
+        helper.assertTrue(villager.getMoveControl().hasWanted()
+                        && villager.getMoveControl().getWantedX() > villager.getX(),
+                "a submerged villager with a path should swim toward its upcoming route node");
+        villager.discard();
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

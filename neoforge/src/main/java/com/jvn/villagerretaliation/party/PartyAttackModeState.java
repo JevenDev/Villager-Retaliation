@@ -4,6 +4,7 @@ public enum PartyAttackModeState {
     ANIMALS,
     HOSTILES,
     PLAYERS,
+    VILLAGERS,
     PARTIES,
     ALL,
     CUSTOM;

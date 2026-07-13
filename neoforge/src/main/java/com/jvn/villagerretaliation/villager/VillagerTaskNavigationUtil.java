@@ -37,6 +37,7 @@ import net.minecraft.world.level.pathfinder.Node;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public final class VillagerTaskNavigationUtil {
     private static final double DOOR_REACH_DISTANCE = 2.25D;
@@ -83,6 +84,7 @@ public final class VillagerTaskNavigationUtil {
     private static final float HIRED_FARMING_WATER_PATH_COST = HIRED_WATER_PATH_COST;
     private static final float HIRED_FARMING_WATER_BORDER_PATH_COST = HIRED_WATER_BORDER_PATH_COST;
     private static final double WATER_TARGET_REACHED_DISTANCE_SQR = 2.25D;
+    private static final double DEFAULT_WATER_SWIM_SPEED = 0.5D;
     private static final double WATER_VERTICAL_SPEED_LIMIT = 0.08D;
     private static final double WATER_IDLE_FLOAT_SPEED = 0.04D;
     private static final int WATER_SURFACE_SCAN_DEPTH = 3;
@@ -90,6 +92,9 @@ public final class VillagerTaskNavigationUtil {
     private static final int WATER_STUCK_LIMIT = 2;
     private static final long WATER_ESCAPE_TICKS = 15L;
     private static final double WATER_STUCK_MIN_PROGRESS_SQR = 0.05D;
+    private static final double PATH_STEP_NODE_REACHED_DISTANCE_SQR = 0.64D;
+    private static final double PATH_STEP_HEIGHT_EPSILON = 0.001D;
+    private static final double PATH_STEP_MAX_HEIGHT_DIFFERENCE = 0.5D;
     private static final Map<UUID, Set<GlobalPos>> DOORS_TO_CLOSE = new HashMap<>();
     private static final Map<UUID, ActiveLadderClimb> ACTIVE_LADDER_CLIMBS = new HashMap<>();
     private static final Map<UUID, RecentLadderDismount> RECENT_LADDER_DISMOUNTS = new HashMap<>();
@@ -218,6 +223,66 @@ public final class VillagerTaskNavigationUtil {
         }
     }
 
+    public static boolean tickHiredPathStepAssist(ServerLevel level, Villager villager) {
+        if (!hasActiveHiredWalkTarget(villager)
+                || !villager.horizontalCollision
+                || !villager.onGround()
+                || villager.isInWater()) {
+            return false;
+        }
+        Path path = villager.getNavigation().getPath();
+        BlockPos nextNode = nextUnreachedPathNode(villager, path);
+        if (nextNode == null
+                || !level.hasChunkAt(nextNode)
+                || !level.hasChunkAt(nextNode.below())
+                || !level.getBlockState(nextNode).getCollisionShape(level, nextNode).isEmpty()
+                || !level.getBlockState(nextNode.above()).getCollisionShape(level, nextNode.above()).isEmpty()) {
+            return false;
+        }
+
+        BlockPos currentSupport = BlockPos.containing(
+                villager.getX(),
+                villager.getY() - PATH_STEP_HEIGHT_EPSILON,
+                villager.getZ());
+        BlockPos nextSupport = nextNode.below();
+        double currentTop = supportTop(level, currentSupport);
+        double nextTop = supportTop(level, nextSupport);
+        if (!Double.isFinite(currentTop) || !Double.isFinite(nextTop)) {
+            return false;
+        }
+        double heightDifference = Math.abs(nextTop - currentTop);
+        double maximumAssistHeight = Math.min(PATH_STEP_MAX_HEIGHT_DIFFERENCE, villager.maxUpStep());
+        if (heightDifference <= PATH_STEP_HEIGHT_EPSILON || heightDifference > maximumAssistHeight) {
+            return false;
+        }
+        villager.getJumpControl().jump();
+        return true;
+    }
+
+    private static BlockPos nextUnreachedPathNode(Villager villager, Path path) {
+        if (path == null || path.isDone()) {
+            return null;
+        }
+        int nodeIndex = path.getNextNodeIndex();
+        while (nodeIndex + 1 < path.getNodeCount()
+                && horizontalDistanceSqr(villager, path.getNode(nodeIndex).asBlockPos())
+                <= PATH_STEP_NODE_REACHED_DISTANCE_SQR) {
+            nodeIndex++;
+        }
+        return path.getNode(nodeIndex).asBlockPos();
+    }
+
+    private static double horizontalDistanceSqr(Villager villager, BlockPos target) {
+        double dx = villager.getX() - (target.getX() + 0.5D);
+        double dz = villager.getZ() - (target.getZ() + 0.5D);
+        return dx * dx + dz * dz;
+    }
+
+    private static double supportTop(ServerLevel level, BlockPos position) {
+        VoxelShape shape = level.getBlockState(position).getCollisionShape(level, position);
+        return shape.isEmpty() ? Double.NaN : position.getY() + shape.max(Direction.Axis.Y);
+    }
+
     public static void tickVillagerWaterSafety(ServerLevel level, Villager villager) {
         restoreVillagerGravity(villager);
         if (!villager.isInWater()) {
@@ -225,11 +290,10 @@ public final class VillagerTaskNavigationUtil {
             return;
         }
         keepVillagerBreathing(villager);
-        Path path = villager.getNavigation().getPath();
-        Node nextNode = path != null && !path.isDone() ? path.getNextNode() : null;
-        if (nextNode == null) {
-            floatIdleInWater(level, villager);
+        if (villager.getNavigation() instanceof GroundPathNavigation navigation) {
+            navigation.setCanFloat(true);
         }
+        moveInWaterTowardNavigationTarget(level, villager, DEFAULT_WATER_SWIM_SPEED);
     }
 
     public static void enableHiredWaterTraversal(Villager villager) {
@@ -284,15 +348,10 @@ public final class VillagerTaskNavigationUtil {
         }
         keepVillagerBreathing(villager);
         Path path = villager.getNavigation().getPath();
-        Node nextNode = path != null && !path.isDone() ? path.getNextNode() : null;
-        if (nextNode == null) {
+        BlockPos target = nextWaterPathTarget(villager, path);
+        if (target == null) {
             WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
             floatIdleInWater(level, villager);
-            return false;
-        }
-        BlockPos target = nextNode.asBlockPos();
-        if (target == null || villager.distanceToSqr(target.getCenter()) <= WATER_TARGET_REACHED_DISTANCE_SQR) {
-            WATER_MOVEMENT_PROGRESS.remove(villager.getUUID());
             return false;
         }
 
@@ -321,6 +380,22 @@ public final class VillagerTaskNavigationUtil {
 
         swimToward(villager, target, speed);
         return true;
+    }
+
+    private static BlockPos nextWaterPathTarget(Villager villager, Path path) {
+        if (path == null || path.isDone()) {
+            return null;
+        }
+        int nodeIndex = path.getNextNodeIndex();
+        while (nodeIndex + 1 < path.getNodeCount()
+                && villager.distanceToSqr(path.getNode(nodeIndex).asBlockPos().getCenter())
+                <= WATER_TARGET_REACHED_DISTANCE_SQR) {
+            nodeIndex++;
+        }
+        BlockPos target = path.getNode(nodeIndex).asBlockPos();
+        return villager.distanceToSqr(target.getCenter()) > WATER_TARGET_REACHED_DISTANCE_SQR
+                ? target
+                : null;
     }
 
     private static void keepVillagerBreathing(Villager villager) {

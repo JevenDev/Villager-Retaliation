@@ -4,6 +4,7 @@ public enum PartyAttackMode {
     ANIMALS,
     HOSTILES,
     PLAYERS,
+    VILLAGERS,
     PARTIES,
     ALL;
 
@@ -12,11 +13,12 @@ public enum PartyAttackMode {
         return modes[(this.ordinal() + 1) % modes.length];
     }
 
-    public boolean allows(boolean animal, boolean hostile, boolean player, boolean party) {
+    public boolean allows(boolean animal, boolean hostile, boolean player, boolean villager, boolean party) {
         return switch (this) {
             case ANIMALS -> animal;
             case HOSTILES -> hostile;
             case PLAYERS -> player;
+            case VILLAGERS -> villager;
             case PARTIES -> party;
             case ALL -> true;
         };
