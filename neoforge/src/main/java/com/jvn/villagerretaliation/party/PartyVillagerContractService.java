@@ -29,6 +29,7 @@ public final class PartyVillagerContractService {
     public static final int INITIAL_PAID_DAYS = 1;
     private static final String PARTY_ID_TAG = "VillagerRetaliationPartyId";
     private static final String PARTY_CONTRACT_ID_TAG = "VillagerRetaliationPartyContractId";
+    private static final String EXPIRED_PARTY_ID_TAG = "VillagerRetaliationExpiredPartyId";
     private static final long EXPIRATION_SCAN_INTERVAL_TICKS = 20L;
     private static long nextExpirationScanGameTime = Long.MIN_VALUE;
 
@@ -248,6 +249,13 @@ public final class PartyVillagerContractService {
         return villager != null && villager.getPersistentData().hasUUID(PARTY_ID_TAG);
     }
 
+    public static boolean hasExpiredContractWithParty(Villager villager, UUID partyId) {
+        return villager != null
+                && partyId != null
+                && villager.getPersistentData().hasUUID(EXPIRED_PARTY_ID_TAG)
+                && partyId.equals(villager.getPersistentData().getUUID(EXPIRED_PARTY_ID_TAG));
+    }
+
     public static Optional<UUID> leaderId(ServerLevel level, Villager villager) {
         return PartyService.getPartyForVillager(level, villager.getUUID()).map(PartyRecord::leaderId);
     }
@@ -268,6 +276,7 @@ public final class PartyVillagerContractService {
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
         if (record == null) {
             if (hasPartyEntityReference(villager)) {
+                rememberExpiredParty(villager);
                 cleanupEntity(villager);
             }
             return;
@@ -445,6 +454,7 @@ public final class PartyVillagerContractService {
         Villager loaded = findLoadedVillager(server, record.villagerId());
         if (loaded != null) {
             updateLastKnownLocation(record, loaded);
+            loaded.getPersistentData().putUUID(EXPIRED_PARTY_ID_TAG, party.id());
             cleanupEntity(loaded);
             closeJobInventories(server, loaded.getId());
         }
@@ -453,6 +463,7 @@ public final class PartyVillagerContractService {
     }
 
     private static void attachEntityState(ServerLevel level, Villager villager, UUID partyId, PartyVillagerRecord record) {
+        villager.getPersistentData().remove(EXPIRED_PARTY_ID_TAG);
         villager.getPersistentData().putUUID(PARTY_ID_TAG, partyId);
         villager.getPersistentData().putUUID(PARTY_CONTRACT_ID_TAG, record.contractId());
         villager.setPersistenceRequired();
@@ -480,6 +491,14 @@ public final class PartyVillagerContractService {
         villager.getPersistentData().remove(PARTY_ID_TAG);
         villager.getPersistentData().remove(PARTY_CONTRACT_ID_TAG);
         villager.setPersistenceRequired();
+    }
+
+    private static void rememberExpiredParty(Villager villager) {
+        if (villager.getPersistentData().hasUUID(PARTY_ID_TAG)) {
+            villager.getPersistentData().putUUID(
+                    EXPIRED_PARTY_ID_TAG,
+                    villager.getPersistentData().getUUID(PARTY_ID_TAG));
+        }
     }
 
     private static Villager findLoadedVillager(MinecraftServer server, UUID villagerId) {

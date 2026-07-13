@@ -270,8 +270,14 @@ public final class PartyQuickCommandService {
     private static int fallBack(ServerPlayer player, List<PartyVillagerRecord> records) {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
-            Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
-            if (villager == null) {
+            RuntimeOrder activeOrder = RUNTIME_ORDERS.remove(record.villagerId());
+            Villager villager = loadedVillager(player.getServer(), record.villagerId());
+            if (activeOrder != null && activeOrder.type() == RuntimeOrderType.MOVE_TO) {
+                if (villager != null) {
+                    VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+                }
+            }
+            if (villager == null || villager.level() != player.serverLevel()) {
                 continue;
             }
             VillagerRetaliationHandler.clearCustomTarget(villager);

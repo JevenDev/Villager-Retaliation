@@ -41,7 +41,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
@@ -693,6 +695,101 @@ public final class PartyGameTests {
             target.discard();
             helper.succeed();
         });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void killOnSightDoesNotTargetVillagerReleasedByContractExpiry(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_kos_expired_contract"));
+        movePlayer(helper, leader, new BlockPos(12, 2, 12));
+        Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager released = spawnVillager(helper, new BlockPos(4, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartySavedData data = PartySavedData.get(level);
+        PartyRecord party = data.createParty(leader.getUUID(), now);
+        PartyVillagerRecord attackerRecord = villagerRecord(attacker.getUUID(), leader.getUUID(), 0, now);
+        PartyVillagerRecord expiredRecord = new PartyVillagerRecord(
+                released.getUUID(),
+                leader.getUUID(),
+                UUID.randomUUID(),
+                1,
+                PartyCommandMode.FOLLOW,
+                null,
+                null,
+                now,
+                now,
+                1,
+                32,
+                "Released",
+                "minecraft:farmer",
+                Level.OVERWORLD.location(),
+                released.blockPosition());
+        data.addVillager(party, attackerRecord);
+        data.addVillager(party, expiredRecord);
+        attackerRecord.setAttackMode(PartyAttackMode.ALL);
+        attackerRecord.setCombatMode(PartyCombatMode.KILL_ON_SIGHT);
+        data.changed();
+        PartyVillagerContractService.clearRuntimeState();
+        PartyVillagerContractService.onServerTick(level.getServer());
+
+        helper.assertTrue(PartyService.getPartyForVillager(level, released.getUUID()).isEmpty(),
+                "expired contract should release the villager from the active roster");
+        helper.assertTrue(PartyVillagerContractService.hasExpiredContractWithParty(released, party.id()),
+                "released villager should remember the party whose contract expired");
+        helper.runAfterDelay(30, () -> {
+            helper.assertFalse(attacker.getTarget() == released,
+                    "KOS must not turn on a villager released by this party's contract expiry");
+            PartyService.deleteParty(level, party.id());
+            PartyVillagerContractService.clearRuntimeState();
+            attacker.discard();
+            released.discard();
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void fallBackCancelsActiveMoveToPath(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_fall_back_move_to"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+        BlockPos moveTarget = helper.absolutePos(new BlockPos(6, 2, 2));
+
+        PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                PartyQuickCommand.MOVE_TO,
+                com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                moveTarget));
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertTrue(PartyQuickCommandService.overridesRecruitmentMovement(villager)
+                        && PartyQuickCommandService.moveTarget(party) != null,
+                "move-to should establish an active targeted order for the regression setup");
+        villager.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(moveTarget), 0.72F, 0));
+        helper.assertTrue(villager.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET),
+                "regression setup should retain movement intent toward the move-to target");
+
+        PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                PartyQuickCommand.FALL_BACK));
+        helper.assertTrue(villager.getNavigation().isDone(),
+                "fall-back should immediately stop the active move-to path");
+        helper.assertFalse(villager.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET),
+                "fall-back should clear movement memory for the old move-to target");
+        helper.assertTrue(PartyQuickCommandService.moveTarget(party) == null,
+                "fall-back should clear the party move-to marker");
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertFalse(PartyQuickCommandService.overridesRecruitmentMovement(villager),
+                "nearby villagers should finish fall-back without resuming the old move-to order");
+        helper.assertTrue(villager.getNavigation().isDone(),
+                "completed fall-back should leave the old move-to navigation stopped");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

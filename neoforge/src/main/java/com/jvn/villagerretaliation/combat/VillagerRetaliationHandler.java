@@ -23,6 +23,7 @@ import com.jvn.villagerretaliation.party.PartyAttackMode;
 import com.jvn.villagerretaliation.party.PartyCombatMode;
 import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
@@ -722,7 +723,7 @@ public final class VillagerRetaliationHandler {
         LivingEntity nearest = level.getEntitiesOfClass(
                         LivingEntity.class,
                         villager.getBoundingBox().inflate(PARTY_KOS_TARGET_RADIUS),
-                        target -> isEligiblePartyKillOnSightTarget(level, villager, record, target))
+                        target -> isEligiblePartyKillOnSightTarget(level, villager, party, record, target))
                 .stream()
                 .min(java.util.Comparator.comparingDouble(villager::distanceToSqr))
                 .orElse(null);
@@ -744,6 +745,7 @@ public final class VillagerRetaliationHandler {
     private static boolean isEligiblePartyKillOnSightTarget(
             ServerLevel level,
             Villager villager,
+            PartyRecord party,
             PartyVillagerRecord record,
             LivingEntity target) {
         if (target == villager
@@ -751,6 +753,8 @@ public final class VillagerRetaliationHandler {
                 || !villager.canAttack(target)
                 || target.isAlliedTo(villager)
                 || PartyService.areInSameParty(villager, target)
+                || (target instanceof Villager targetVillager
+                        && PartyVillagerContractService.hasExpiredContractWithParty(targetVillager, party.id()))
                 || (target instanceof AbstractVillager && !(target instanceof Villager))
                 || target instanceof IronGolem
                 || (target instanceof OwnableEntity ownable && ownable.getOwnerUUID() != null)
