@@ -29,19 +29,22 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private static final int PLAYER_INVENTORY_COUNT = 27;
     private static final int PLAYER_HOTBAR_COUNT = 9;
 
-    private static final int ARMOR_X = 45;
-    private static final int ARMOR_Y = 8;
-    private static final int HELD_X = 115;
-    private static final int HELD_Y = 44;
-    private static final int OFFHAND_Y = 62;
-    private static final int VILLAGER_INVENTORY_X = 8;
-    private static final int VILLAGER_INVENTORY_Y = 84;
+    private static final int ARMOR_X = 48;
+    private static final int ARMOR_Y = 27;
+    private static final int HELD_X = 118;
+    private static final int HELD_Y = 63;
+    private static final int OFFHAND_Y = 81;
+    private static final int VILLAGER_INVENTORY_X = 11;
+    private static final int VILLAGER_INVENTORY_Y = 103;
     private static final int JOB_MAINHAND_SLOT = HiredJobInventory.MAINHAND_SLOT;
     private static final int JOB_OFFHAND_SLOT = HiredJobInventory.OFFHAND_SLOT;
     private static final int JOB_EQUIPMENT_SLOT_COUNT = JOB_OFFHAND_SLOT + 1;
-    private static final int PLAYER_INVENTORY_X = 8;
-    private static final int PLAYER_INVENTORY_Y = 156;
-    private static final int PLAYER_HOTBAR_Y = 214;
+    private static final int PLAYER_INVENTORY_BELOW_X = 12;
+    private static final int PLAYER_INVENTORY_BELOW_Y = 200;
+    private static final int PLAYER_HOTBAR_BELOW_Y = 258;
+    private static final int PLAYER_INVENTORY_BESIDE_X = 194;
+    private static final int PLAYER_INVENTORY_BESIDE_Y = 57;
+    private static final int PLAYER_HOTBAR_BESIDE_Y = 115;
     private static final int SLOT_SIZE = 18;
     private static final ResourceLocation EMPTY_SLOT_SWORD_ICON = ResourceLocation.withDefaultNamespace("item/empty_slot_sword");
     private static final ResourceLocation EMPTY_SLOT_FILTER_ICON =
@@ -68,6 +71,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private boolean giftReturnsProcessed;
     private boolean tradePaymentReturnsProcessed;
     private boolean stolenItemReturnsProcessed;
+    private boolean playerInventoryBeside;
 
     public VillagerInventoryMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
         this(containerId, playerInventory, clientData(data));
@@ -312,6 +316,19 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         addPlayerSlots(this.playerInventory);
     }
 
+    public void setPlayerInventoryBeside(boolean playerInventoryBeside) {
+        if (this.playerInventoryBeside == playerInventoryBeside) {
+            return;
+        }
+        this.playerInventoryBeside = playerInventoryBeside;
+        this.slots.clear();
+        AbstractContainerMenuAccessor accessor = (AbstractContainerMenuAccessor) this;
+        accessor.villagerretaliation$getLastSlots().clear();
+        accessor.villagerretaliation$getRemoteSlots().clear();
+        addVillagerSlots();
+        addPlayerSlots(this.playerInventory);
+    }
+
     private void addVillagerSlots() {
         if (this.viewMode.isWorkInventory()) {
             addJobSlots();
@@ -375,19 +392,22 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     }
 
     private void addPlayerSlots(Inventory playerInventory) {
+        int inventoryX = this.playerInventoryBeside ? PLAYER_INVENTORY_BESIDE_X : PLAYER_INVENTORY_BELOW_X;
+        int inventoryY = this.playerInventoryBeside ? PLAYER_INVENTORY_BESIDE_Y : PLAYER_INVENTORY_BELOW_Y;
+        int hotbarY = this.playerInventoryBeside ? PLAYER_HOTBAR_BESIDE_Y : PLAYER_HOTBAR_BELOW_Y;
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(
                         playerInventory,
                         9 + row * 9 + column,
-                        PLAYER_INVENTORY_X + column * SLOT_SIZE,
-                        PLAYER_INVENTORY_Y + row * SLOT_SIZE
+                        inventoryX + column * SLOT_SIZE,
+                        inventoryY + row * SLOT_SIZE
                 ));
             }
         }
 
         for (int column = 0; column < 9; column++) {
-            addSlot(new Slot(playerInventory, column, PLAYER_INVENTORY_X + column * SLOT_SIZE, PLAYER_HOTBAR_Y));
+            addSlot(new Slot(playerInventory, column, inventoryX + column * SLOT_SIZE, hotbarY));
         }
     }
 
@@ -838,7 +858,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             return HELD_X;
         }
         if (slot == HiredJobInventory.FILTER_SLOT) {
-            return HELD_X + SLOT_SIZE * 2;
+            return HELD_X + SLOT_SIZE * 2 + 1;
         }
         int gridIndex = slot - JOB_EQUIPMENT_SLOT_COUNT;
         int column = gridIndex % 9;
