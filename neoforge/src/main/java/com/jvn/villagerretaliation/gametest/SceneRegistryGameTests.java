@@ -102,6 +102,61 @@ public final class SceneRegistryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dialogueEffectTagsSurviveEveryPacketTextShape(GameTestHelper helper) {
+        String taggedText = "Harrison. The village has <shake>teeth</shake> too.";
+        String plainText = "Harrison. The village has teeth too.";
+        List<DialogueTextSegment> parsed = DialogueTextSegment.parse(taggedText, DialogueTextEffects.NONE);
+
+        List<DialogueTextSegment> forcedBroadcast = DialogueTextSegment.forNetwork(taggedText, parsed);
+        helper.assertValueEqual(
+                DialogueTextSegment.plainText(forcedBroadcast),
+                plainText,
+                "forced and nearby broadcasts must remove effect markup");
+        helper.assertTrue(
+                forcedBroadcast.stream().anyMatch(segment -> segment.text().equals("teeth") && segment.effects().shake()),
+                "forced and nearby broadcasts must retain shake segments");
+
+        List<DialogueTextSegment> directNotice = DialogueTextSegment.forNetwork(
+                "A <wave>warning</wave>.",
+                List.of());
+        helper.assertValueEqual(
+                DialogueTextSegment.plainText(directNotice),
+                "A warning.",
+                "notices without pre-parsed segments must remove effect markup");
+        helper.assertTrue(
+                directNotice.stream().anyMatch(segment -> segment.text().equals("warning") && segment.effects().wavy()),
+                "notices without pre-parsed segments must retain animated effects");
+
+        List<DialogueTextSegment> legacyPlainSegments = DialogueTextSegment.forNetwork(
+                taggedText,
+                DialogueTextSegment.plain(taggedText, DialogueTextEffects.NONE));
+        helper.assertValueEqual(
+                DialogueTextSegment.plainText(legacyPlainSegments),
+                plainText,
+                "legacy packets must not leak effect markup");
+        helper.assertTrue(
+                legacyPlainSegments.stream().anyMatch(segment -> segment.effects().shake()),
+                "legacy packets must recover their animated effects");
+
+        List<DialogueTextSegment> ordinaryDialogue = DialogueTextSegment.forNetwork(plainText, parsed);
+        helper.assertTrue(
+                ordinaryDialogue.stream().anyMatch(segment -> segment.effects().shake()),
+                "ordinary dialogue with canonical plain text must retain its effects");
+
+        List<DialogueTextSegment> mismatched = DialogueTextSegment.forNetwork(
+                "Authoritative text.",
+                List.of(new DialogueTextSegment("Different text.", DialogueTextEffects.fromTag("shake"))));
+        helper.assertValueEqual(
+                DialogueTextSegment.plainText(mismatched),
+                "Authoritative text.",
+                "genuinely mismatched style runs must not replace packet text");
+        helper.assertFalse(
+                mismatched.stream().anyMatch(segment -> segment.effects().active()),
+                "genuinely mismatched style runs must be discarded");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void malformedSceneHistoryDoesNotPreventSaveRecovery(GameTestHelper helper) {
         CompoundTag root = new CompoundTag();
         root.putInt(SceneSaveMigrations.DATA_VERSION, SceneSavedData.CURRENT_DATA_VERSION);

@@ -17,34 +17,20 @@ public record VillagerInteractionNoticePayload(
             VillagerPayloads.codec(VillagerInteractionNoticePayload::encode, VillagerInteractionNoticePayload::decode);
 
     public VillagerInteractionNoticePayload(int entityId, String text, String speakerLabel) {
-        this(entityId,
-                DialogueTextSegment.plainText(DialogueTextSegment.parse(text, DialogueTextEffects.NONE)),
-                speakerLabel,
-                DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
+        this(entityId, speakerLabel, parseText(text, DialogueTextEffects.NONE));
     }
 
     public VillagerInteractionNoticePayload(int entityId, String text, String speakerLabel, DialogueTextEffects textEffects) {
-        this(entityId,
-                DialogueTextSegment.plainText(DialogueTextSegment.parse(text, textEffects)),
-                speakerLabel,
-                DialogueTextSegment.parse(text, textEffects));
+        this(entityId, speakerLabel, parseText(text, textEffects));
+    }
+
+    private VillagerInteractionNoticePayload(int entityId, String speakerLabel, ParsedText parsedText) {
+        this(entityId, parsedText.text(), speakerLabel, parsedText.segments());
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, VillagerInteractionNoticePayload payload) {
-        List<DialogueTextSegment> textSegments = DialogueTextSegment.forNetwork(payload.textSegments());
+        List<DialogueTextSegment> textSegments = DialogueTextSegment.forNetwork(payload.text(), payload.textSegments());
         String segmentedText = DialogueTextSegment.plainText(textSegments);
-        String text = payload.text() == null ? "" : payload.text();
-        if (textSegments.isEmpty() && !text.isEmpty()) {
-            textSegments = DialogueTextSegment.forNetwork(
-                    DialogueTextSegment.plain(text, DialogueTextEffects.NONE));
-            segmentedText = DialogueTextSegment.plainText(textSegments);
-        } else if (!segmentedText.equals(text)) {
-            // A mismatched caller-provided style list must not make the client
-            // render different dialogue from the packet's plain-text field.
-            textSegments = DialogueTextSegment.forNetwork(
-                    DialogueTextSegment.plain(text, DialogueTextEffects.NONE));
-            segmentedText = DialogueTextSegment.plainText(textSegments);
-        }
         buffer.writeVarInt(payload.entityId());
         buffer.writeUtf(segmentedText, 512);
         buffer.writeUtf(truncate(payload.speakerLabel(), 128), 128);
@@ -78,5 +64,13 @@ public record VillagerInteractionNoticePayload(
             end--;
         }
         return value.substring(0, end);
+    }
+
+    private static ParsedText parseText(String text, DialogueTextEffects textEffects) {
+        List<DialogueTextSegment> segments = DialogueTextSegment.parse(text, textEffects);
+        return new ParsedText(DialogueTextSegment.plainText(segments), segments);
+    }
+
+    private record ParsedText(String text, List<DialogueTextSegment> segments) {
     }
 }

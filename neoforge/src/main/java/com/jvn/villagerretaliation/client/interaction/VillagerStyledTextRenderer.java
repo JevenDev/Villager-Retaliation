@@ -57,7 +57,12 @@ final class VillagerStyledTextRenderer {
     }
 
     static String plainText(FormattedCharSequence sequence) {
-        return collect(sequence).text();
+        StringBuilder text = new StringBuilder();
+        sequence.accept((index, style, codePoint) -> {
+            text.appendCodePoint(codePoint);
+            return true;
+        });
+        return text.toString();
     }
 
     static boolean containsAnimatedTextMarker(FormattedCharSequence sequence) {
@@ -77,7 +82,12 @@ final class VillagerStyledTextRenderer {
         if (segments == null || segments.isEmpty()) {
             return false;
         }
-        return segments.stream().anyMatch(segment -> usesAnimatedRenderer(segment.effects()));
+        for (DialogueTextSegment segment : segments) {
+            if (segment != null && usesAnimatedRenderer(segment.effects())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static boolean usesAnimatedRenderer(DialogueTextEffects effects) {
@@ -170,8 +180,9 @@ final class VillagerStyledTextRenderer {
             int tickCount) {
         int drawX = x;
         int charIndex = 0;
+        EffectCursor effectCursor = new EffectCursor(effectSegments);
         for (Glyph glyph : glyphs) {
-            DialogueTextEffects effects = effectsAt(effectSegments, charIndex);
+            DialogueTextEffects effects = effectCursor.effectsAt(charIndex);
             if (glyph.text().isBlank()) {
                 drawX += font.width(glyph.text());
                 charIndex += glyph.text().length();
@@ -192,18 +203,6 @@ final class VillagerStyledTextRenderer {
             drawX += font.width(glyph.text());
             charIndex += glyph.text().length();
         }
-    }
-
-    private static DialogueTextEffects effectsAt(List<DialogueTextSegment> segments, int charIndex) {
-        int cursor = 0;
-        for (DialogueTextSegment segment : segments) {
-            int end = cursor + segment.text().length();
-            if (charIndex >= cursor && charIndex < end) {
-                return segment.effects();
-            }
-            cursor = end;
-        }
-        return DialogueTextEffects.NONE;
     }
 
     private static int colorWithAlpha(
@@ -287,5 +286,32 @@ final class VillagerStyledTextRenderer {
     }
 
     private record Glyph(String text, Style style) {
+    }
+
+    private static final class EffectCursor {
+        private final List<DialogueTextSegment> segments;
+        private int segmentIndex;
+        private int segmentStart;
+
+        private EffectCursor(List<DialogueTextSegment> segments) {
+            this.segments = segments == null ? List.of() : segments;
+        }
+
+        private DialogueTextEffects effectsAt(int charIndex) {
+            while (this.segmentIndex < this.segments.size()) {
+                DialogueTextSegment segment = this.segments.get(this.segmentIndex);
+                if (segment == null) {
+                    this.segmentIndex++;
+                    continue;
+                }
+                int segmentEnd = this.segmentStart + segment.text().length();
+                if (charIndex < segmentEnd) {
+                    return segment.effects();
+                }
+                this.segmentStart = segmentEnd;
+                this.segmentIndex++;
+            }
+            return DialogueTextEffects.NONE;
+        }
     }
 }

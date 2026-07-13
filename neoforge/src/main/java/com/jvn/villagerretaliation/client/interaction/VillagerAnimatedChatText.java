@@ -22,7 +22,7 @@ final class VillagerAnimatedChatText {
         if (VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get()) {
             return;
         }
-        if (textSegments == null || textSegments.stream().noneMatch(segment -> VillagerStyledTextRenderer.usesAnimatedRenderer(segment.effects()))) {
+        if (!VillagerStyledTextRenderer.hasAnimatedEffects(textSegments)) {
             return;
         }
 

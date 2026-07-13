@@ -13,6 +13,10 @@ public final class VillagerChatTextFormatter {
 
     public static void onClientChatReceived(ClientChatReceivedEvent event) {
         if (VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get()) {
+            Component stripped = stripEffectMarkup(event.getMessage());
+            if (stripped != event.getMessage()) {
+                event.setMessage(stripped);
+            }
             return;
         }
 
@@ -36,5 +40,18 @@ public final class VillagerChatTextFormatter {
         Component formatted = VillagerStyledTextRenderer.component(segments, message.getStyle(), null);
         VillagerAnimatedChatText.remember(segments);
         return formatted;
+    }
+
+    private static Component stripEffectMarkup(Component message) {
+        String text = message.getString();
+        if (text.isBlank() || text.indexOf('<') < 0 || text.indexOf('>') < 0) {
+            return message;
+        }
+
+        String plainText = DialogueTextSegment.plainText(
+                DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
+        return plainText.equals(text)
+                ? message
+                : Component.literal(plainText).withStyle(message.getStyle());
     }
 }

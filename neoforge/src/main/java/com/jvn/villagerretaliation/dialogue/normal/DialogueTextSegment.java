@@ -27,6 +27,10 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
         }
 
         DialogueTextEffects safeBase = baseEffects == null ? DialogueTextEffects.NONE : baseEffects;
+        if (text.indexOf('<') < 0) {
+            return plain(text, safeBase);
+        }
+        String lowerText = text.toLowerCase(Locale.ROOT);
         List<DialogueTextSegment> segments = new ArrayList<>();
         List<DialogueTextEffects> stack = new ArrayList<>();
         stack.add(safeBase);
@@ -50,13 +54,13 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
             boolean closing = rawTag.startsWith("/");
             String tag = normalizeTag(closing ? rawTag.substring(1) : tagName(rawTag));
             String effectTag = normalizeTag(closing ? rawTag.substring(1) : rawTag);
-            DialogueTextEffects tagEffects = closing ? closingTagMarker(tag) : effectsForTag(effectTag);
-            if (tagEffects == null) {
+            DialogueTextEffects tagEffects = closing ? null : effectsForTag(effectTag);
+            if ((closing && !isKnownClosingTag(tag)) || (!closing && tagEffects == null)) {
                 current.append(text, open, close + 1);
                 index = close + 1;
                 continue;
             }
-            if (!closing && !hasClosingTag(text, close + 1, tag)) {
+            if (!closing && !hasClosingTag(lowerText, close + 1, tag)) {
                 current.append(text, open, close + 1);
                 index = close + 1;
                 continue;
@@ -64,7 +68,7 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
 
             flush(segments, current, currentEffects(stack));
             if (closing) {
-                popTag(stack, tagEffects);
+                popTag(stack);
             } else {
                 stack.add(currentEffects(stack).merge(tagEffects));
             }
@@ -175,6 +179,33 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
         return List.copyOf(bounded);
     }
 
+    /**
+     * Reconciles a packet's redundant text and style-run fields. The text field may
+     * still contain inline effect tags while the supplied segments already contain
+     * their parsed representation. In that case the styled segments are retained;
+     * a genuinely mismatched segment list is replaced by the authoritative text.
+     */
+    public static List<DialogueTextSegment> forNetwork(
+            String text,
+            List<DialogueTextSegment> segments) {
+        String safeText = text == null ? "" : text;
+        List<DialogueTextSegment> bounded = forNetwork(segments);
+        String boundedText = plainText(bounded);
+        if (!bounded.isEmpty() && boundedText.equals(safeText)) {
+            if (safeText.indexOf('<') < 0 || safeText.indexOf('>') < 0) {
+                return bounded;
+            }
+            List<DialogueTextSegment> parsed = forNetwork(parse(safeText, DialogueTextEffects.NONE));
+            return plainText(parsed).equals(safeText) ? bounded : parsed;
+        }
+
+        List<DialogueTextSegment> parsed = forNetwork(parse(safeText, DialogueTextEffects.NONE));
+        if (bounded.isEmpty() || !plainText(parsed).equals(boundedText)) {
+            return parsed;
+        }
+        return bounded;
+    }
+
     private static String truncate(String value, int maxLength) {
         if (value == null || maxLength <= 0) {
             return "";
@@ -205,7 +236,7 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
         }
     }
 
-    private static void popTag(List<DialogueTextEffects> stack, DialogueTextEffects tagEffects) {
+    private static void popTag(List<DialogueTextEffects> stack) {
         if (stack.size() <= 1) {
             return;
         }
@@ -221,18 +252,17 @@ public record DialogueTextSegment(String text, DialogueTextEffects effects) {
         return effects.active() ? effects : null;
     }
 
-    private static DialogueTextEffects closingTagMarker(String tag) {
+    private static boolean isKnownClosingTag(String tag) {
         return switch (tag) {
             case "i", "italic", "italics", "b", "bold", "u", "underline", "underlined",
                     "s", "strike", "strikethrough", "obfuscated", "obfuscate", "magic",
                     "wave", "wavy", "shake", "shaky", "pulse", "pulsing", "jump", "jumping",
-                    "bounce", "bouncy", "rainbow", "color", "gradient" -> DialogueTextEffects.fromTag("bold");
-            default -> DialogueTextEffects.fromTag(tag).active() ? DialogueTextEffects.fromTag("bold") : null;
+                    "bounce", "bouncy", "rainbow", "color", "gradient" -> true;
+            default -> DialogueTextEffects.fromTag(tag).active();
         };
     }
 
-    private static boolean hasClosingTag(String text, int start, String tag) {
-        String lowerText = text.toLowerCase(Locale.ROOT);
+    private static boolean hasClosingTag(String lowerText, int start, String tag) {
         for (String alias : aliasesFor(tag)) {
             if (lowerText.indexOf("</" + alias + ">", start) >= 0) {
                 return true;

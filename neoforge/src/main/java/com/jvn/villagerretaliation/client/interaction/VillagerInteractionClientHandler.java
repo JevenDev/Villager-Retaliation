@@ -236,6 +236,11 @@ public final class VillagerInteractionClientHandler {
         if (minecraft.player == null || text == null || text.isBlank()) {
             return;
         }
+        List<DialogueTextSegment> resolvedSegments = resolveChatSegments(text.strip(), textSegments);
+        String resolvedText = DialogueTextSegment.plainText(resolvedSegments);
+        if (resolvedText.isBlank()) {
+            return;
+        }
         String resolvedSpeaker = speakerLabel == null || speakerLabel.isBlank()
                 ? resolveVillagerSpeakerName(minecraft, entityId)
                 : speakerLabel;
@@ -251,10 +256,10 @@ public final class VillagerInteractionClientHandler {
         String displayedSpeaker = startsChatGroup ? resolvedSpeaker : "";
         List<DialogueTextSegment> displayedSegments = dialogueTextEffectsDisabled()
                 ? List.of()
-                : displayedChatSegments(text.strip(), displayedSpeaker, textSegments);
+                : displayedChatSegments(displayedSpeaker, resolvedSegments);
         addVillagerChatMessage(
                 minecraft,
-                formatVillagerChatMessage(text.strip(), currentChatGroupMessageIndex, displayedSpeaker, accentColor, textSegments),
+                formatVillagerChatMessage(resolvedText, currentChatGroupMessageIndex, displayedSpeaker, accentColor, resolvedSegments),
                 accentColor,
                 displayedSegments
         );
@@ -347,25 +352,28 @@ public final class VillagerInteractionClientHandler {
             message.append(Component.literal(text).withStyle(style -> style.withColor(color)));
             return message;
         }
-        List<DialogueTextSegment> safeSegments = textSegments == null || textSegments.isEmpty()
-                ? DialogueTextSegment.plain(text, DialogueTextEffects.NONE)
-                : textSegments;
-        message.append(VillagerStyledTextRenderer.component(safeSegments, Style.EMPTY, color));
+        message.append(VillagerStyledTextRenderer.component(textSegments, Style.EMPTY, color));
         return message;
     }
 
     private static List<DialogueTextSegment> displayedChatSegments(
-            String text,
             String speakerLabel,
             List<DialogueTextSegment> textSegments) {
         List<DialogueTextSegment> displayedSegments = new java.util.ArrayList<>();
         if (speakerLabel != null && !speakerLabel.isBlank()) {
             displayedSegments.add(new DialogueTextSegment(gui("chat.speaker_prefix", speakerLabel), DialogueTextEffects.NONE));
         }
-        displayedSegments.addAll(textSegments == null || textSegments.isEmpty()
-                ? DialogueTextSegment.plain(text, DialogueTextEffects.NONE)
-                : textSegments);
+        displayedSegments.addAll(textSegments);
         return List.copyOf(displayedSegments);
+    }
+
+    private static List<DialogueTextSegment> resolveChatSegments(
+            String text,
+            List<DialogueTextSegment> textSegments) {
+        List<DialogueTextSegment> resolved = DialogueTextSegment.forNetwork(text, textSegments);
+        return resolved.isEmpty()
+                ? DialogueTextSegment.plain(text, DialogueTextEffects.NONE)
+                : resolved;
     }
 
     private static boolean dialogueTextEffectsDisabled() {
