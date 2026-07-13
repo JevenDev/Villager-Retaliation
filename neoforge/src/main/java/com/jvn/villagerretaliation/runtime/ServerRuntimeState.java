@@ -24,6 +24,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.party.PartyQuickCommandService;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.party.PartyVillagerDropCollection;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
@@ -89,6 +90,7 @@ public final class ServerRuntimeState {
         ForcedDialogueService.clearRuntimeState();
         DialogueTreeService.clearRuntimeState();
         VillagerQuestService.clearRuntimeState();
+        ServerboundRequestLimiter.clearRuntimeState();
         HiredDebugPreviewService.clearRuntimeState();
         UnlawfulOrderService.clearRuntimeState();
 

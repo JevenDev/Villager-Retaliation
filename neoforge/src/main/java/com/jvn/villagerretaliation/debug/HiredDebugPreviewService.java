@@ -10,6 +10,8 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardRouteEntry;
 import com.jvn.villagerretaliation.network.HiredDebugPreviewSyncPayload;
+import com.jvn.villagerretaliation.network.HiredHitboxDebugPreviewPayload;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -89,6 +91,11 @@ public final class HiredDebugPreviewService {
     public static DebugPreviewSummary setHitboxDebugPreviewEnabled(ServerPlayer player, boolean enabled) {
         UUID playerId = player.getUUID();
         DebugPreviewState state = ENABLED_PLAYERS.get(playerId);
+        if (enabled && !ServerboundRequestLimiter.tryAcquire(
+                player, HiredHitboxDebugPreviewPayload.TYPE.id(), 20L)) {
+            return new DebugPreviewSummary(state != null && state.active(), 0, 0, 0,
+                    state == null ? DEFAULT_RADIUS : state.radius());
+        }
         if (state != null
                 && enabled
                 && state.hitboxDebugEnabled()

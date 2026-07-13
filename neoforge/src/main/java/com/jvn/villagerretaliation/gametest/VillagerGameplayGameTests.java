@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
@@ -34,6 +35,7 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -490,6 +492,32 @@ public final class VillagerGameplayGameTests {
 
         hostile.discard();
         trader.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void repeatableServerRequestsAreBoundedPerPlayerAndKind(GameTestHelper helper) {
+        UUID firstPlayer = UUID.randomUUID();
+        UUID secondPlayer = UUID.randomUUID();
+        ResourceLocation profile = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "profile_test");
+        ResourceLocation reputation = ResourceLocation.fromNamespaceAndPath("villagerretaliation", "reputation_test");
+        ServerboundRequestLimiter.clearRuntimeState();
+
+        helper.assertTrue(ServerboundRequestLimiter.tryAcquire(firstPlayer, profile, 100L, 5L),
+                "the first request should be accepted");
+        helper.assertFalse(ServerboundRequestLimiter.tryAcquire(firstPlayer, profile, 104L, 5L),
+                "a repeated request inside the interval should be rejected");
+        helper.assertTrue(ServerboundRequestLimiter.tryAcquire(firstPlayer, profile, 105L, 5L),
+                "the request should be accepted at the interval boundary");
+        helper.assertTrue(ServerboundRequestLimiter.tryAcquire(firstPlayer, reputation, 104L, 5L),
+                "different request kinds should be independent");
+        helper.assertTrue(ServerboundRequestLimiter.tryAcquire(secondPlayer, profile, 104L, 5L),
+                "different players should be independent");
+
+        ServerboundRequestLimiter.clear(firstPlayer);
+        helper.assertTrue(ServerboundRequestLimiter.tryAcquire(firstPlayer, profile, 104L, 5L),
+                "disconnect cleanup should release the player's request state");
+        ServerboundRequestLimiter.clearRuntimeState();
         helper.succeed();
     }
 

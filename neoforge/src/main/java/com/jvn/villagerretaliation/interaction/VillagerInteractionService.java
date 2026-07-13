@@ -54,6 +54,9 @@ import com.jvn.villagerretaliation.network.VillagerAllegianceActionPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
+import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerReputationRequestPayload;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
@@ -494,7 +497,8 @@ public final class VillagerInteractionService {
             ServerPlayer player,
             int entityId,
             VillagerMouseEasterEggPayload.Kind kind) {
-        if (kind == null) {
+        if (kind == null || !ServerboundRequestLimiter.tryAcquire(
+                player, VillagerMouseEasterEggPayload.TYPE.id(), 20L)) {
             return;
         }
         Optional<InteractionTargetContext> target = InteractionRequestValidator.requireDialogueConversation(player, entityId);
@@ -2232,6 +2236,9 @@ public final class VillagerInteractionService {
     }
 
     public static void handleReputationRequest(ServerPlayer player, int entityId) {
+        if (!ServerboundRequestLimiter.tryAcquire(player, VillagerReputationRequestPayload.TYPE.id(), 5L)) {
+            return;
+        }
         Entity entity = player.serverLevel().getEntity(entityId);
         if (!(entity instanceof Villager villager) || !villager.isAlive()) {
             return;
@@ -2250,6 +2257,9 @@ public final class VillagerInteractionService {
     }
 
     public static void handleProfileRequest(ServerPlayer player, int entityId) {
+        if (!ServerboundRequestLimiter.tryAcquire(player, VillagerProfileRequestPayload.TYPE.id(), 5L)) {
+            return;
+        }
         Entity entity = player.serverLevel().getEntity(entityId);
         if (!(entity instanceof AbstractVillager villager) || !villager.isAlive()) {
             return;

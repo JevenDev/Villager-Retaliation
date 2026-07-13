@@ -42,6 +42,7 @@ import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyActionHandler;
@@ -146,6 +147,7 @@ public final class VillagerRetaliationEvents {
                             player.getUUID()));
             VillagerQuestService.clearRuntimeState(player);
             HiredDebugPreviewService.clearRuntimeState(player);
+            ServerboundRequestLimiter.clear(player.getUUID());
         }
     }
 

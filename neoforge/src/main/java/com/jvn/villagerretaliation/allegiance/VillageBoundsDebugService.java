@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.allegiance;
 
 import com.jvn.villagerretaliation.network.VillageBoundsSyncPayload;
+import com.jvn.villagerretaliation.network.VillageBoundsSubscriptionPayload;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -30,6 +32,14 @@ public final class VillageBoundsDebugService {
         if (!enabled) {
             SUBSCRIPTIONS.remove(player.getUUID());
             PacketDistributor.sendToPlayer(player, VillageBoundsSyncPayload.disabled(player.level().dimension().location()));
+            return;
+        }
+        Subscription current = SUBSCRIPTIONS.get(player.getUUID());
+        ResourceLocation dimension = player.level().dimension().location();
+        if (current != null
+                && dimension.equals(current.dimension())
+                && !ServerboundRequestLimiter.tryAcquire(
+                        player, VillageBoundsSubscriptionPayload.TYPE.id(), REFRESH_TICKS)) {
             return;
         }
         SUBSCRIPTIONS.put(player.getUUID(), new Subscription(0L, null));
