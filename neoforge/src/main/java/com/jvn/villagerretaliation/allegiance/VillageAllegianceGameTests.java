@@ -124,6 +124,27 @@ public final class VillageAllegianceGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void directVillageMergesCanBeRestored(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        VillageAllegianceRegistrySavedData registry = new VillageAllegianceRegistrySavedData();
+        VillageAllegianceId source = registry.create(
+                1L, level.dimension().location(), BlockPos.ZERO, "Restorable Source");
+        VillageAllegianceId target = registry.create(
+                2L, level.dimension().location(), new BlockPos(32, 0, 0), "Restorable Target");
+        UUID sourceResident = UUID.randomUUID();
+        registry.addOrUpdateResident(source, sourceResident, true, 3L);
+        helper.assertTrue(registry.merge(source, target), "direct merge succeeds");
+        helper.assertTrue(registry.canonical(source).orElseThrow().equals(target), "source aliases to target");
+        helper.assertTrue(registry.undoMerge(source), "direct merge can be restored");
+        helper.assertValueEqual(registry.canonical(source).orElseThrow(), source, "source identity is active again");
+        helper.assertTrue(registry.record(source).orElseThrow().residents().containsKey(sourceResident),
+                "source roster survives merge restoration");
+        helper.assertFalse(registry.record(target).orElseThrow().residents().containsKey(sourceResident),
+                "restored residents are removed from the former target");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void newbornsInheritSharedHomesAndProtectMixedParents(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
@@ -455,14 +476,20 @@ public final class VillageAllegianceGameTests {
                 SectionPos.sectionToBlockCoord(base.x() + 1), basePos.getY(), basePos.getZ());
         BlockPos disconnectedPath = new BlockPos(
                 SectionPos.sectionToBlockCoord(base.x() + 3), basePos.getY(), basePos.getZ());
+        BlockPos diagonalPath = new BlockPos(
+                SectionPos.sectionToBlockCoord(base.x() + 1), basePos.getY(),
+                SectionPos.sectionToBlockCoord(base.z() + 1));
         level.setBlock(connectedPath, Blocks.DIRT_PATH.defaultBlockState(), 3);
         level.setBlock(disconnectedPath, Blocks.DIRT_PATH.defaultBlockState(), 3);
+        level.setBlock(diagonalPath, Blocks.DIRT_PATH.defaultBlockState(), 3);
         Set<Long> footprint = VillageFootprintResolver.resolve(
                 level, Set.of(base.asLong()), basePos, 64);
         helper.assertTrue(footprint.contains(SectionPos.asLong(connectedPath)),
                 "a tagged terrain section connected to the village extends its footprint");
         helper.assertFalse(footprint.contains(SectionPos.asLong(disconnectedPath)),
                 "an unrelated tagged path does not join the village across an empty gap");
+        helper.assertFalse(footprint.contains(SectionPos.asLong(diagonalPath)),
+                "corner-touching terrain alone does not extend a village footprint");
         helper.succeed();
     }
 

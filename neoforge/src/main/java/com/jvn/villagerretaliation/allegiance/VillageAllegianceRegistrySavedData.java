@@ -30,16 +30,19 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class VillageAllegianceRegistrySavedData extends SavedData {
     private static final String DATA_NAME = "villagerretaliation_village_allegiances";
-    private static final int FORMAT_VERSION = 2;
+    private static final int FORMAT_VERSION = 3;
     private static final int MAX_ALIAS_DEPTH = 32;
     private static final int DISCOVERY_RADIUS_BLOCKS = 128;
     private static final long RESIDENT_LAST_SEEN_REFRESH_TICKS = 1_200L;
+    private static final long AUTO_MERGE_OBSERVATION_SPACING_TICKS = 100L;
+    private static final int AUTO_MERGE_REQUIRED_OBSERVATIONS = 3;
     public static final long ARCHIVE_GRACE_TICKS = 72_000L;
 
     private final Map<VillageAllegianceId, AllegianceRecord> records = new LinkedHashMap<>();
     private final Map<VillageAllegianceId, VillageAllegianceId> aliases = new LinkedHashMap<>();
     private final Map<VillageAllegianceId, Optional<VillageAllegianceId>> canonicalCache = new HashMap<>();
     private final Map<UUID, LinkedHashSet<VillageAllegianceId>> residentRecords = new HashMap<>();
+    private final Map<MergeKey, MergeObservation> mergeObservations = new HashMap<>();
 
     public static VillageAllegianceRegistrySavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -66,9 +69,13 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                     recordTag.getBoolean("Archived") ? VillageLifecycleState.ARCHIVED : VillageLifecycleState.ACTIVE);
             Set<Long> sourceSections = longSet(recordTag.getLongArray("SourceSections"));
             Set<Long> footprintSections = longSet(recordTag.getLongArray("FootprintSections"));
+            Set<Long> historicalFootprintSections = longSet(recordTag.getLongArray("HistoricalFootprintSections"));
             if (footprintSections.isEmpty() && dimension != null && !state.equals(VillageLifecycleState.ARCHIVED)) {
                 sourceSections = Set.of(SectionPos.asLong(origin));
                 footprintSections = expandedFootprint(sourceSections);
+            }
+            if (historicalFootprintSections.isEmpty()) {
+                historicalFootprintSections = footprintSections;
             }
             Map<UUID, ResidentRecord> residents = new LinkedHashMap<>();
             for (Tag residentRaw : recordTag.getList("Residents", Tag.TAG_COMPOUND)) {
@@ -93,6 +100,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                     center,
                     sourceSections,
                     footprintSections,
+                    historicalFootprintSections,
                     recordTag.getLong("LastSeenGameTime"),
                     recordTag.getLong("EmptyObservedTicks"),
                     residents));
@@ -128,6 +136,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             writePos(recordTag, "Center", record.center());
             recordTag.putLongArray("SourceSections", record.sourceSections().stream().mapToLong(Long::longValue).toArray());
             recordTag.putLongArray("FootprintSections", record.footprintSections().stream().mapToLong(Long::longValue).toArray());
+            recordTag.putLongArray("HistoricalFootprintSections",
+                    record.historicalFootprintSections().stream().mapToLong(Long::longValue).toArray());
             recordTag.putLong("LastSeenGameTime", record.lastSeenGameTime());
             recordTag.putLong("EmptyObservedTicks", record.emptyObservedTicks());
             ListTag residentTags = new ListTag();
@@ -249,7 +259,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         if (matches.isEmpty()) {
             resolved = create(level.getGameTime(), dimension, pos, "");
         } else {
-            resolved = autoMerge(matches);
+            resolved = chooseObservedIdentity(matches, cluster, pos, level.getGameTime());
         }
         AllegianceRecord current = this.records.get(resolved);
         if (current != null) {
@@ -441,12 +451,32 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         return mergeCanonical(sourceCanonical.get(), targetCanonical.get());
     }
 
+    /** Reverses one direct merge using the still-retained source record. */
+    public boolean undoMerge(VillageAllegianceId source) {
+        VillageAllegianceId target = this.aliases.remove(source);
+        AllegianceRecord sourceRecord = this.records.get(source);
+        AllegianceRecord targetRecord = this.records.get(target);
+        if (target == null || sourceRecord == null || targetRecord == null) {
+            if (target != null) {
+                this.aliases.put(source, target);
+            }
+            return false;
+        }
+        this.records.put(target, targetRecord.withoutAbsorbed(sourceRecord));
+        this.canonicalCache.clear();
+        this.mergeObservations.clear();
+        rebuildResidentIndex();
+        setDirty();
+        return true;
+    }
+
     public int aliasCount() {
         return this.aliases.size();
     }
 
     public void clearRuntimeCache() {
         this.canonicalCache.clear();
+        this.mergeObservations.clear();
     }
 
     private VillageAllegianceId autoMerge(Collection<VillageAllegianceId> ids) {
@@ -466,6 +496,51 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         return survivor;
     }
 
+    private VillageAllegianceId chooseObservedIdentity(
+            Collection<VillageAllegianceId> matches,
+            Set<Long> occupiedCluster,
+            BlockPos observationPosition,
+            long gameTime) {
+        List<VillageAllegianceId> sourceBacked = matches.stream()
+                .map(this::canonical)
+                .flatMap(Optional::stream)
+                .distinct()
+                .filter(id -> intersects(this.records.get(id).sourceSections(), occupiedCluster))
+                .toList();
+        if (sourceBacked.size() > 1 && mergeEvidenceConfirmed(sourceBacked, gameTime)) {
+            return autoMerge(sourceBacked);
+        }
+        Collection<VillageAllegianceId> candidates = sourceBacked.isEmpty() ? matches : sourceBacked;
+        return candidates.stream()
+                .map(this::canonical)
+                .flatMap(Optional::stream)
+                .distinct()
+                .min(Comparator.comparingDouble(id -> this.records.get(id).center().distSqr(observationPosition)))
+                .orElseThrow();
+    }
+
+    private boolean mergeEvidenceConfirmed(List<VillageAllegianceId> ids, long gameTime) {
+        boolean confirmed = true;
+        for (int first = 0; first < ids.size(); first++) {
+            for (int second = first + 1; second < ids.size(); second++) {
+                MergeKey key = MergeKey.of(ids.get(first), ids.get(second));
+                MergeObservation previous = this.mergeObservations.get(key);
+                MergeObservation current;
+                if (previous == null) {
+                    current = new MergeObservation(1, gameTime);
+                } else if (gameTime - previous.lastObservedGameTime() >= AUTO_MERGE_OBSERVATION_SPACING_TICKS) {
+                    current = new MergeObservation(
+                            Math.min(AUTO_MERGE_REQUIRED_OBSERVATIONS, previous.observations() + 1), gameTime);
+                } else {
+                    current = previous;
+                }
+                this.mergeObservations.put(key, current);
+                confirmed &= current.observations() >= AUTO_MERGE_REQUIRED_OBSERVATIONS;
+            }
+        }
+        return confirmed;
+    }
+
     private boolean mergeCanonical(VillageAllegianceId source, VillageAllegianceId target) {
         AllegianceRecord sourceRecord = this.records.get(source);
         AllegianceRecord targetRecord = this.records.get(target);
@@ -478,6 +553,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             this.residentRecords.computeIfAbsent(residentId, ignored -> new LinkedHashSet<>()).add(target);
         }
         this.aliases.put(source, target);
+        this.mergeObservations.keySet().removeIf(key -> key.contains(source) || key.contains(target));
         this.canonicalCache.clear();
         setDirty();
         return true;
@@ -527,7 +603,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 .map(AllegianceRecord::id)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         matches.add(record.id());
-        VillageAllegianceId resolved = autoMerge(matches);
+        VillageAllegianceId resolved = chooseObservedIdentity(
+                matches, cluster, record.center(), level.getGameTime());
         AllegianceRecord current = this.records.get(resolved);
         if (current != null) {
             this.records.put(resolved, current.observe(cluster, footprint, centerOf(cluster, record.center()), level.getGameTime()));
@@ -686,6 +763,19 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
     }
 
+    private record MergeKey(VillageAllegianceId first, VillageAllegianceId second) {
+        private static MergeKey of(VillageAllegianceId first, VillageAllegianceId second) {
+            return first.compareTo(second) <= 0 ? new MergeKey(first, second) : new MergeKey(second, first);
+        }
+
+        private boolean contains(VillageAllegianceId id) {
+            return this.first.equals(id) || this.second.equals(id);
+        }
+    }
+
+    private record MergeObservation(int observations, long lastObservedGameTime) {
+    }
+
     public record ResidentRecord(UUID id, boolean adult, long lastSeenGameTime) {
     }
 
@@ -700,6 +790,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             BlockPos center,
             Set<Long> sourceSections,
             Set<Long> footprintSections,
+            Set<Long> historicalFootprintSections,
             long lastSeenGameTime,
             long emptyObservedTicks,
             Map<UUID, ResidentRecord> residents) {
@@ -710,6 +801,9 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             center = center == null ? originPosition : center.immutable();
             sourceSections = sourceSections == null ? Set.of() : Set.copyOf(sourceSections);
             footprintSections = footprintSections == null ? Set.of() : Set.copyOf(footprintSections);
+            historicalFootprintSections = historicalFootprintSections == null
+                    ? footprintSections
+                    : Set.copyOf(historicalFootprintSections);
             residents = residents == null ? Map.of() : Map.copyOf(residents);
             emptyObservedTicks = Math.max(0L, emptyObservedTicks);
         }
@@ -723,7 +817,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 boolean customName) {
             return new AllegianceRecord(
                     id, gameTime, VillageLifecycleState.ACTIVE, displayName, customName,
-                    dimension, position, position, Set.of(), Set.of(), gameTime, 0L, Map.of());
+                    dimension, position, position, Set.of(), Set.of(), Set.of(), gameTime, 0L, Map.of());
         }
 
         public boolean archived() {
@@ -735,12 +829,14 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
 
         private AllegianceRecord observe(Set<Long> sources, Set<Long> footprint, BlockPos center, long gameTime) {
-            Set<Long> mergedSources = union(this.sourceSections, sources);
-            Set<Long> mergedFootprint = union(
-                    union(this.footprintSections, footprint), expandedFootprint(mergedSources));
+            Set<Long> observedSources = Set.copyOf(sources);
+            Set<Long> observedFootprint = union(footprint, expandedFootprint(observedSources));
+            Set<Long> historicalFootprint = union(
+                    this.historicalFootprintSections, union(this.footprintSections, observedFootprint));
             return new AllegianceRecord(
                     this.id, this.createdGameTime, VillageLifecycleState.ACTIVE, this.displayName, this.customName,
-                    this.originDimension, this.originPosition, center, mergedSources, mergedFootprint,
+                    this.originDimension, this.originPosition, center, observedSources, observedFootprint,
+                    historicalFootprint,
                     gameTime, 0L, this.residents);
         }
 
@@ -751,6 +847,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             Set<Long> mergedSources = union(this.sourceSections, other.sourceSections);
             Set<Long> mergedFootprint = union(
                     union(this.footprintSections, other.footprintSections), expandedFootprint(mergedSources));
+            Set<Long> mergedHistory = union(
+                    union(this.historicalFootprintSections, other.historicalFootprintSections), mergedFootprint);
             return new AllegianceRecord(
                     this.id,
                     Math.min(this.createdGameTime, other.createdGameTime),
@@ -762,6 +860,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                     centerOf(mergedSources, this.center),
                     mergedSources,
                     mergedFootprint,
+                    mergedHistory,
                     Math.max(this.lastSeenGameTime, other.lastSeenGameTime),
                     Math.min(this.emptyObservedTicks, other.emptyObservedTicks),
                     mergedResidents);
@@ -771,14 +870,16 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             return new AllegianceRecord(
                     this.id, this.createdGameTime, this.lifecycleState, name, custom,
                     this.originDimension, this.originPosition, this.center, this.sourceSections,
-                    this.footprintSections, this.lastSeenGameTime, this.emptyObservedTicks, this.residents);
+                    this.footprintSections, this.historicalFootprintSections,
+                    this.lastSeenGameTime, this.emptyObservedTicks, this.residents);
         }
 
         private AllegianceRecord withLifecycle(VillageLifecycleState state, long emptyTicks) {
             return new AllegianceRecord(
                     this.id, this.createdGameTime, state, this.displayName, this.customName,
                     this.originDimension, this.originPosition, this.center, this.sourceSections,
-                    this.footprintSections, this.lastSeenGameTime, emptyTicks, this.residents);
+                    this.footprintSections, this.historicalFootprintSections,
+                    this.lastSeenGameTime, emptyTicks, this.residents);
         }
 
         private AllegianceRecord withResident(ResidentRecord resident) {
@@ -787,7 +888,8 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             return new AllegianceRecord(
                     this.id, this.createdGameTime, this.lifecycleState, this.displayName, this.customName,
                     this.originDimension, this.originPosition, this.center, this.sourceSections,
-                    this.footprintSections, this.lastSeenGameTime, this.emptyObservedTicks, updated);
+                    this.footprintSections, this.historicalFootprintSections,
+                    this.lastSeenGameTime, this.emptyObservedTicks, updated);
         }
 
         private AllegianceRecord withoutResident(UUID residentId) {
@@ -796,12 +898,32 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
             return new AllegianceRecord(
                     this.id, this.createdGameTime, this.lifecycleState, this.displayName, this.customName,
                     this.originDimension, this.originPosition, this.center, this.sourceSections,
-                    this.footprintSections, this.lastSeenGameTime, this.emptyObservedTicks, updated);
+                    this.footprintSections, this.historicalFootprintSections,
+                    this.lastSeenGameTime, this.emptyObservedTicks, updated);
+        }
+
+        private AllegianceRecord withoutAbsorbed(AllegianceRecord source) {
+            Set<Long> remainingSources = difference(this.sourceSections, source.sourceSections);
+            Set<Long> remainingFootprint = difference(this.footprintSections, source.footprintSections);
+            Map<UUID, ResidentRecord> remainingResidents = new LinkedHashMap<>(this.residents);
+            source.residents.keySet().forEach(remainingResidents::remove);
+            return new AllegianceRecord(
+                    this.id, this.createdGameTime, this.lifecycleState, this.displayName, this.customName,
+                    this.originDimension, this.originPosition,
+                    centerOf(remainingSources, this.originPosition),
+                    remainingSources, remainingFootprint, this.historicalFootprintSections,
+                    this.lastSeenGameTime, this.emptyObservedTicks, remainingResidents);
         }
 
         private static Set<Long> union(Set<Long> first, Set<Long> second) {
             Set<Long> result = new LinkedHashSet<>(first);
             result.addAll(second);
+            return Set.copyOf(result);
+        }
+
+        private static <T> Set<T> difference(Set<T> first, Set<T> second) {
+            Set<T> result = new LinkedHashSet<>(first);
+            result.removeAll(second);
             return Set.copyOf(result);
         }
     }

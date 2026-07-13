@@ -120,7 +120,7 @@ public final class VillageFootprintResolver {
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
                     for (int dz = -1; dz <= 1; dz++) {
-                        if (dx == 0 && dy == 0 && dz == 0) {
+                        if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) != 1) {
                             continue;
                         }
                         long neighbor = SectionPos.asLong(current.x() + dx, current.y() + dy, current.z() + dz);
@@ -140,8 +140,11 @@ public final class VillageFootprintResolver {
             SectionPos section = SectionPos.of(packed);
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        if (secondSet.contains(SectionPos.asLong(
+                for (int dz = -1; dz <= 1; dz++) {
+                    if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) > 1) {
+                        continue;
+                    }
+                    if (secondSet.contains(SectionPos.asLong(
                                 section.x() + dx, section.y() + dy, section.z() + dz))) {
                             return true;
                         }

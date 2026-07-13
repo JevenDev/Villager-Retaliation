@@ -266,6 +266,9 @@ public final class VillagerRetaliationCommands {
                         .then(argument("source", StringArgumentType.word())
                                 .then(argument("target", StringArgumentType.word())
                                         .executes(VillagerRetaliationCommands::mergeAllegiances))))
+                .then(literal("undo_merge")
+                        .then(argument("source", StringArgumentType.word())
+                                .executes(VillagerRetaliationCommands::undoAllegianceMerge)))
                 .then(literal("fork")
                         .then(allegianceEntityArgument()
                                 .executes(VillagerRetaliationCommands::forkAllegiance)))
@@ -388,6 +391,24 @@ public final class VillagerRetaliationCommands {
                         + " unaffiliated=" + statistics.unaffiliated()
                         + " pending=" + statistics.pending()), false);
         return registry.records().size();
+    }
+
+    private static int undoAllegianceMerge(CommandContext<CommandSourceStack> context) {
+        VillageAllegianceId source = parseAllegianceId(
+                context.getSource(), StringArgumentType.getString(context, "source"));
+        if (source == null) {
+            return 0;
+        }
+        VillageAllegianceRegistrySavedData registry =
+                VillageAllegianceRegistrySavedData.get(context.getSource().getLevel());
+        if (!registry.undoMerge(source)) {
+            context.getSource().sendFailure(Component.literal(
+                    "No direct merge for that source could be restored."));
+            return 0;
+        }
+        context.getSource().sendSuccess(() -> Component.literal(
+                "Restored " + source + " as its own village identity."), true);
+        return 1;
     }
 
     private static int inspectVillageHere(CommandContext<CommandSourceStack> context) {
