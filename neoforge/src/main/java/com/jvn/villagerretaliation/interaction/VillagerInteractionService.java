@@ -579,6 +579,20 @@ public final class VillagerInteractionService {
         openTrading(player, villager, true);
     }
 
+    public static void handleRoutineChatToggle(ServerPlayer player, int entityId, boolean muted) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRoutineChatConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        if (VillagerReputationManager.getReputationLevel(contextTarget.level(), villager, player.getUUID())
+                != VillagerReputationLevel.ROYALTY) {
+            return;
+        }
+        VillagerInteractionTracker.setRoutineChatMuted(contextTarget.level(), villager, player, muted);
+    }
+
     public static void handleTradeRefreshRequest(ServerPlayer player, int entityId, int offerIndex) {
         VillagerTradeRefreshService.handleRequest(player, entityId, offerIndex);
     }
@@ -2402,7 +2416,7 @@ public final class VillagerInteractionService {
                 reputation.level()
         ));
         VillagerAmbientIndicatorService.onConversationClosed(level, villager, player);
-        broadcastVillagerChat(level, villager, goodbyeText);
+        broadcastRoutineVillagerChat(level, villager, goodbyeText);
         trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), goodbyeText));
         VillagerConversationService.endForPlayer(player, false);
     }
@@ -2865,6 +2879,20 @@ public final class VillagerInteractionService {
         broadcastVillagerChat(level, villager, text, "");
     }
 
+    public static void broadcastRoutineVillagerChat(ServerLevel level, Villager villager, String text) {
+        broadcastVillagerChat(
+                level,
+                villager,
+                text,
+                "",
+                configuredVillagerChatBroadcastRadius(),
+                DialogueTextSegment.parse(text, DialogueTextEffects.NONE),
+                null,
+                false,
+                true
+        );
+    }
+
     public static void broadcastVillagerChat(ServerLevel level, Villager villager, String text, DialogueTextEffects textEffects) {
         broadcastVillagerChat(level, villager, text, DialogueTextSegment.parse(text, textEffects));
     }
@@ -2879,6 +2907,31 @@ public final class VillagerInteractionService {
 
     public static void sendPersonalVillagerChat(ServerPlayer player, Villager villager, String text) {
         sendPersonalVillagerChat(player, villager, text, DialogueTextSegment.parse(text, DialogueTextEffects.NONE));
+    }
+
+    public static void sendPersonalRoutineVillagerChat(ServerPlayer player, Villager villager, String text) {
+        if (text == null || text.isBlank()) {
+            return;
+        }
+        List<DialogueTextSegment> textSegments = DialogueTextSegment.parse(text, DialogueTextEffects.NONE);
+
+        if (!(villager.level() instanceof ServerLevel level) || !isRoutineChatSilencedFor(level, villager, player)) {
+            trySendToPlayer(player, new VillagerInteractionNoticePayload(villager.getId(), text, "", textSegments));
+        }
+        if (VillagerRetaliationConfig.SHOW_PERSONAL_INTERACTION_DIALOGUE_TO_NEARBY_PLAYERS.get()
+                && villager.level() instanceof ServerLevel level) {
+            broadcastVillagerChat(
+                    level,
+                    villager,
+                    text,
+                    "",
+                    configuredVillagerChatBroadcastRadius(),
+                    textSegments,
+                    player.getUUID(),
+                    false,
+                    true
+            );
+        }
     }
 
     public static void sendPersonalVillagerChat(
@@ -2981,6 +3034,29 @@ public final class VillagerInteractionService {
             List<DialogueTextSegment> textSegments,
             UUID excludedPlayerId,
             boolean forceLocalDistance) {
+        broadcastVillagerChat(
+                level,
+                villager,
+                text,
+                speakerLabel,
+                radius,
+                textSegments,
+                excludedPlayerId,
+                forceLocalDistance,
+                false
+        );
+    }
+
+    private static void broadcastVillagerChat(
+            ServerLevel level,
+            Villager villager,
+            String text,
+            String speakerLabel,
+            double radius,
+            List<DialogueTextSegment> textSegments,
+            UUID excludedPlayerId,
+            boolean forceLocalDistance,
+            boolean routineChat) {
         if (text == null || text.isBlank()) {
             return;
         }
@@ -3005,8 +3081,17 @@ public final class VillagerInteractionService {
                     || (usesDistance && nearbyPlayer.distanceToSqr(villager) > radiusSqr)) {
                 continue;
             }
+            if (routineChat && isRoutineChatSilencedFor(level, villager, nearbyPlayer)) {
+                continue;
+            }
             trySendToPlayer(nearbyPlayer, payload);
         }
+    }
+
+    private static boolean isRoutineChatSilencedFor(ServerLevel level, Villager villager, ServerPlayer player) {
+        return VillagerInteractionTracker.isRoutineChatMuted(level, villager, player)
+                && VillagerReputationManager.getReputationLevel(level, villager, player.getUUID())
+                == VillagerReputationLevel.ROYALTY;
     }
 
     private static VillagerChatBroadcastMode villagerChatBroadcastMode() {

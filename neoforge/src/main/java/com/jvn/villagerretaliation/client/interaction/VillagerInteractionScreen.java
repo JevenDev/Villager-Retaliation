@@ -48,6 +48,7 @@ import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
 import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerRoutineChatTogglePayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.mood.VillagerMood;
@@ -255,6 +256,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private VillagerMood primaryMood;
     private boolean followingPlayer;
     private boolean stayingHere;
+    private boolean routineChatMuted;
     private final boolean forcedDialogue;
     private final boolean clipboardMenu;
     private boolean hiredByPlayer;
@@ -379,6 +381,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             VillagerMood primaryMood,
             boolean followingPlayer,
             boolean stayingHere,
+            boolean routineChatMuted,
             boolean forcedDialogue,
             boolean clipboardMenu,
             boolean hiredByPlayer,
@@ -436,6 +439,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.primaryMood = primaryMood == null ? VillagerMood.NEUTRAL : primaryMood;
         this.followingPlayer = followingPlayer;
         this.stayingHere = stayingHere;
+        this.routineChatMuted = routineChatMuted;
         this.forcedDialogue = forcedDialogue;
         this.clipboardMenu = clipboardMenu;
         this.hiredByPlayer = hiredByPlayer;
@@ -1024,6 +1028,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("root.talk", this::openTalkPage);
         if (hasQuestOptions() && (!this.recruitedPartyVillager || !this.partyVillagerPartyMember)) {
             addOption("root.adventures", this::openAdventuresPage);
+        }
+        if (this.reputationLevel == VillagerReputationLevel.ROYALTY) {
+            addOption(this.routineChatMuted ? "root.speak" : "root.shush", this::toggleRoutineChat);
         }
         if (!this.baby) {
             addOption("root.profile", this::openProfilePage);
@@ -2004,6 +2011,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void requestTrade() {
         sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId));
+    }
+
+    private void toggleRoutineChat() {
+        this.routineChatMuted = !this.routineChatMuted;
+        sendToServer(new VillagerRoutineChatTogglePayload(this.villagerEntityId, this.routineChatMuted));
+        rebuildOptionsKeepingListPosition();
     }
 
     private void requestInventory() {

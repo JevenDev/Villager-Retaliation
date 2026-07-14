@@ -520,6 +520,8 @@
   "villagerretaliation.gui.hint.back": "Esc: back",
   "villagerretaliation.gui.hint.leave": "Esc: leave",
   "villagerretaliation.gui.root.talk": "Talk",
+  "villagerretaliation.gui.root.shush": "Ask Them to Be Quiet",
+  "villagerretaliation.gui.root.speak": "Let Them Speak Freely",
   "villagerretaliation.gui.root.adventures": "Adventures",
   "villagerretaliation.gui.root.trade": "Trade",
   "villagerretaliation.gui.root.gift": "Gift",

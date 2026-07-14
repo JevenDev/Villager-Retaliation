@@ -66,7 +66,7 @@ public final class VillagerInteractionScreenOpener {
         VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
         trySendToPlayer(player, payload);
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
-        VillagerInteractionService.sendPersonalVillagerChat(player, villager, greetingText);
+        VillagerInteractionService.sendPersonalRoutineVillagerChat(player, villager, greetingText);
     }
 
     public static void openForced(
@@ -191,6 +191,7 @@ public final class VillagerInteractionScreenOpener {
                 primaryMood,
                 VillagerRecruitmentService.isFollowing(villager, player),
                 VillagerRecruitmentService.isStayingHere(villager, player),
+                VillagerInteractionTracker.isRoutineChatMuted(level, villager, player),
                 forcedConversation,
                 clipboardMenu,
                 hiredByPlayer,

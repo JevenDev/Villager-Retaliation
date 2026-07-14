@@ -30,6 +30,7 @@ public record OpenVillagerInteractionPayload(
         VillagerMood primaryMood,
         boolean followingPlayer,
         boolean stayingHere,
+        boolean routineChatMuted,
         boolean forcedDialogue,
         boolean clipboardMenu,
         boolean hiredByPlayer,
@@ -101,6 +102,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeEnum(payload.primaryMood());
         buffer.writeBoolean(payload.followingPlayer());
         buffer.writeBoolean(payload.stayingHere());
+        buffer.writeBoolean(payload.routineChatMuted());
         buffer.writeBoolean(payload.forcedDialogue());
         buffer.writeBoolean(payload.clipboardMenu());
         buffer.writeBoolean(payload.hiredByPlayer());
@@ -162,6 +164,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readEnum(VillagerReputationLevel.class),
                 buffer.readEnum(DialogueDisposition.class),
                 buffer.readEnum(VillagerMood.class),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),

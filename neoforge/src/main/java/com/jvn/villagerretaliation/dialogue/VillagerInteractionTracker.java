@@ -518,6 +518,20 @@ public final class VillagerInteractionTracker {
         }
     }
 
+    public static boolean isRoutineChatMuted(ServerLevel level, Villager villager, ServerPlayer player) {
+        return VillagerInteractionSavedData.get(level)
+                .getOrEmptyForRead(villager.getUUID(), player.getUUID())
+                .routineChatMuted();
+    }
+
+    public static void setRoutineChatMuted(ServerLevel level, Villager villager, ServerPlayer player, boolean muted) {
+        VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
+        VillagerInteractionSavedData.InteractionEntry entry = data.getOrCreate(villager.getUUID(), player.getUUID());
+        if (entry.setRoutineChatMuted(muted)) {
+            data.setDirty();
+        }
+    }
+
     private static Optional<VillageAllegianceId> encounterVillage(
             ServerLevel level,
             Villager villager,

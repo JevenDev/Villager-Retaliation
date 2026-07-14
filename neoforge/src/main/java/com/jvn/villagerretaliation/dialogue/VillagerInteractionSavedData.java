@@ -31,6 +31,7 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_VILLAGER = "Villager";
     private static final String TAG_PLAYER = "Player";
     private static final String TAG_HAS_TALKED = "HasTalked";
+    private static final String TAG_ROUTINE_CHAT_MUTED = "RoutineChatMuted";
     private static final String TAG_LAST_SEEN_DAY = "LastSeenDay";
     private static final String TAG_RECENT_LINES = "RecentLines";
     private static final String TAG_LAST_POSITIVE_DIALOGUE_REPUTATION = "LastPositiveDialogueReputation";
@@ -144,6 +145,7 @@ public class VillagerInteractionSavedData extends SavedData {
 
             InteractionEntry entry = new InteractionEntry();
             entry.hasTalked = entryTag.getBoolean(TAG_HAS_TALKED);
+            entry.routineChatMuted = entryTag.getBoolean(TAG_ROUTINE_CHAT_MUTED);
             entry.lastSeenDay = readOptionalLong(entryTag, TAG_LAST_SEEN_DAY);
             entry.lastPositiveDialogueReputationGameTime = readOptionalLong(entryTag, TAG_LAST_POSITIVE_DIALOGUE_REPUTATION);
             entry.lastPositiveDialogueReputationDay = readOptionalLong(entryTag, TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY);
@@ -405,6 +407,7 @@ public class VillagerInteractionSavedData extends SavedData {
                 entryTag.putUUID(TAG_VILLAGER, villagerEntry.getKey());
                 entryTag.putUUID(TAG_PLAYER, playerEntry.getKey());
                 entryTag.putBoolean(TAG_HAS_TALKED, playerEntry.getValue().hasTalked);
+                entryTag.putBoolean(TAG_ROUTINE_CHAT_MUTED, playerEntry.getValue().routineChatMuted);
                 entryTag.putLong(TAG_LAST_SEEN_DAY, playerEntry.getValue().lastSeenDay);
                 entryTag.putLong(TAG_LAST_POSITIVE_DIALOGUE_REPUTATION, playerEntry.getValue().lastPositiveDialogueReputationGameTime);
                 entryTag.putLong(TAG_LAST_POSITIVE_DIALOGUE_REPUTATION_DAY, playerEntry.getValue().lastPositiveDialogueReputationDay);
@@ -1227,6 +1230,7 @@ public class VillagerInteractionSavedData extends SavedData {
 
     public static class InteractionEntry {
         private boolean hasTalked;
+        private boolean routineChatMuted;
         private long lastSeenDay = Long.MIN_VALUE;
         private long lastPositiveDialogueReputationGameTime = Long.MIN_VALUE;
         private long lastPositiveDialogueReputationDay = Long.MIN_VALUE;
@@ -1284,6 +1288,18 @@ public class VillagerInteractionSavedData extends SavedData {
 
         public void markTalked() {
             this.hasTalked = true;
+        }
+
+        public boolean routineChatMuted() {
+            return this.routineChatMuted;
+        }
+
+        public boolean setRoutineChatMuted(boolean muted) {
+            if (this.routineChatMuted == muted) {
+                return false;
+            }
+            this.routineChatMuted = muted;
+            return true;
         }
 
         public long lastSeenDay() {
@@ -1874,6 +1890,7 @@ public class VillagerInteractionSavedData extends SavedData {
 
         private boolean isEmpty() {
             return !this.hasTalked
+                    && !this.routineChatMuted
                     && this.lastSeenDay == Long.MIN_VALUE
                     && this.lastPositiveDialogueReputationGameTime == Long.MIN_VALUE
                     && this.lastPositiveDialogueReputationDay == Long.MIN_VALUE
