@@ -19,7 +19,10 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -54,8 +57,13 @@ public final class VillagerRecruitmentService {
     private static final String STAY_ANCHOR_X_KEY = "VillagerRetaliationStayAnchorX";
     private static final String STAY_ANCHOR_Y_KEY = "VillagerRetaliationStayAnchorY";
     private static final String STAY_ANCHOR_Z_KEY = "VillagerRetaliationStayAnchorZ";
-    private static final double FOLLOW_START_DISTANCE_SQR = 5.0D * 5.0D;
-    private static final double FOLLOW_STOP_DISTANCE_SQR = 2.5D * 2.5D;
+    private static final double FOLLOW_START_DISTANCE_SQR = 1.5D * 1.5D;
+    private static final double FOLLOW_STOP_DISTANCE_SQR = 0.75D * 0.75D;
+    private static final double FOLLOW_FORMATION_SCAN_RADIUS = 16.0D;
+    private static final int FOLLOW_FORMATION_COLUMNS = 3;
+    private static final double FOLLOW_FORMATION_BACK_DISTANCE = 2.75D;
+    private static final double FOLLOW_FORMATION_LATERAL_SPACING = 2.0D;
+    private static final double FOLLOW_FORMATION_ROW_SPACING = 1.75D;
     private static final double STAY_RETURN_START_DISTANCE_SQR = 2.25D * 2.25D;
     private static final double STAY_RETURN_STOP_DISTANCE_SQR = 1.25D * 1.25D;
     private static final double STAY_HERE_SPEED = 0.52D;
@@ -76,6 +84,7 @@ public final class VillagerRecruitmentService {
     private static final Map<UUID, Long> NEXT_LEFT_BEHIND_PROXIMITY_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Long> LAST_FOLLOWER_AI_SUPPRESSION_TICKS = new HashMap<>();
     private static final Map<UUID, FollowPathState> FOLLOW_PATH_STATES = new HashMap<>();
+    private static final Map<UUID, FollowFormationState> FOLLOW_FORMATION_STATES = new HashMap<>();
     private static final Map<RecruitmentDialogueKey, Long> LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES = new HashMap<>();
 
     private VillagerRecruitmentService() {
@@ -394,8 +403,9 @@ public final class VillagerRecruitmentService {
             return;
         }
 
-        Entity followTarget = player.getVehicle() == null ? player : player.getVehicle();
-        double distanceSqr = villager.distanceToSqr(player);
+        Entity pathAnchor = player.getVehicle() == null ? player : player.getVehicle();
+        FollowTarget followTarget = followTarget(level, villager, player, pathAnchor);
+        double distanceSqr = villager.distanceToSqr(followTarget.x(), followTarget.y(), followTarget.z());
         if (distanceSqr > FOLLOW_START_DISTANCE_SQR) {
             moveTowardFollowTarget(villager, followTarget, adaptiveFollowSpeed(distanceSqr));
         } else if (distanceSqr < FOLLOW_STOP_DISTANCE_SQR) {
@@ -475,6 +485,7 @@ public final class VillagerRecruitmentService {
         NEXT_LEFT_BEHIND_PROXIMITY_SCAN_TICKS.clear();
         LAST_FOLLOWER_AI_SUPPRESSION_TICKS.clear();
         FOLLOW_PATH_STATES.clear();
+        FOLLOW_FORMATION_STATES.clear();
         LAST_LEFT_BEHIND_PROXIMITY_GAME_TIMES.clear();
     }
 
@@ -534,7 +545,70 @@ public final class VillagerRecruitmentService {
         brain.setActiveActivityIfPossible(Activity.IDLE);
     }
 
-    private static boolean moveTowardFollowTarget(Villager villager, Entity followTarget, double speed) {
+    private static FollowTarget followTarget(
+            ServerLevel level,
+            Villager villager,
+            ServerPlayer player,
+            Entity pathAnchor) {
+        FollowFormationState state = FOLLOW_FORMATION_STATES.get(player.getUUID());
+        long gameTime = level.getGameTime();
+        if (state == null || state.gameTime() != gameTime) {
+            List<Villager> followers = new ArrayList<>(level.getEntitiesOfClass(
+                    Villager.class,
+                    player.getBoundingBox().inflate(FOLLOW_FORMATION_SCAN_RADIUS),
+                    candidate -> isFollowing(candidate, player)
+            ));
+            if (!followers.contains(villager)) {
+                followers.add(villager);
+            }
+            followers.sort(Comparator.comparing(Villager::getUUID));
+
+            Map<UUID, FollowFormationSlot> slots = new HashMap<>();
+            for (int index = 0; index < followers.size(); index++) {
+                slots.put(followers.get(index).getUUID(), formationSlot(index, followers.size()));
+            }
+            double forwardX;
+            double forwardZ;
+            double movementX = player.getDeltaMovement().x;
+            double movementZ = player.getDeltaMovement().z;
+            double movementLengthSqr = movementX * movementX + movementZ * movementZ;
+            if (movementLengthSqr > 0.01D) {
+                double movementLength = Math.sqrt(movementLengthSqr);
+                forwardX = movementX / movementLength;
+                forwardZ = movementZ / movementLength;
+            } else if (state != null) {
+                forwardX = state.forwardX();
+                forwardZ = state.forwardZ();
+            } else {
+                double yawRadians = player.getYRot() * Mth.DEG_TO_RAD;
+                forwardX = -Mth.sin((float) yawRadians);
+                forwardZ = Mth.cos((float) yawRadians);
+            }
+            state = new FollowFormationState(gameTime, slots, forwardX, forwardZ);
+            FOLLOW_FORMATION_STATES.put(player.getUUID(), state);
+        }
+
+        FollowFormationSlot slot = state.slots().getOrDefault(villager.getUUID(), formationSlot(0, 1));
+        double forwardX = state.forwardX();
+        double forwardZ = state.forwardZ();
+        double rightX = forwardZ;
+        double rightZ = -forwardX;
+        double x = pathAnchor.getX() - forwardX * slot.back() + rightX * slot.lateral();
+        double z = pathAnchor.getZ() - forwardZ * slot.back() + rightZ * slot.lateral();
+        return new FollowTarget(pathAnchor, x, pathAnchor.getY(), z);
+    }
+
+    private static FollowFormationSlot formationSlot(int index, int followerCount) {
+        int row = index / FOLLOW_FORMATION_COLUMNS;
+        int rowStart = row * FOLLOW_FORMATION_COLUMNS;
+        int rowSize = Math.min(FOLLOW_FORMATION_COLUMNS, Math.max(1, followerCount - rowStart));
+        int column = index - rowStart;
+        double lateral = (column - (rowSize - 1) * 0.5D) * FOLLOW_FORMATION_LATERAL_SPACING;
+        double back = FOLLOW_FORMATION_BACK_DISTANCE + row * FOLLOW_FORMATION_ROW_SPACING;
+        return new FollowFormationSlot(lateral, back);
+    }
+
+    private static boolean moveTowardFollowTarget(Villager villager, FollowTarget followTarget, double speed) {
         if (!(villager.level() instanceof ServerLevel level)) {
             return false;
         }
@@ -542,9 +616,9 @@ public final class VillagerRecruitmentService {
         UUID villagerId = villager.getUUID();
         long gameTime = level.getGameTime();
         FollowPathState state = FOLLOW_PATH_STATES.get(villagerId);
-        boolean targetChanged = state == null || !state.targetId().equals(followTarget.getUUID());
+        boolean targetChanged = state == null || !state.targetId().equals(followTarget.pathAnchor().getUUID());
         boolean targetMoved = state == null
-                || followTarget.distanceToSqr(state.targetX(), state.targetY(), state.targetZ()) >= FOLLOW_TARGET_MOVED_DISTANCE_SQR;
+                || distanceToSqr(followTarget, state.targetX(), state.targetY(), state.targetZ()) >= FOLLOW_TARGET_MOVED_DISTANCE_SQR;
         boolean shouldRecalculate = targetChanged
                 || targetMoved
                 || villager.getNavigation().isDone()
@@ -561,14 +635,17 @@ public final class VillagerRecruitmentService {
         int failedPathFindingPenalty = targetChanged || state == null ? 0 : state.failedPathFindingPenalty();
         long recalculationDelay = FOLLOW_PATH_RECALCULATION_MIN_TICKS
                 + villager.getRandom().nextInt(FOLLOW_PATH_RECALCULATION_RANDOM_TICKS);
-        double distanceSqr = villager.distanceToSqr(followTarget);
+        double distanceSqr = villager.distanceToSqr(followTarget.x(), followTarget.y(), followTarget.z());
         if (distanceSqr > 1024.0D) {
             recalculationDelay += 10L;
         } else if (distanceSqr > 256.0D) {
             recalculationDelay += 5L;
         }
 
-        boolean moved = villager.getNavigation().moveTo(followTarget, speed);
+        boolean moved = villager.getNavigation().moveTo(followTarget.x(), followTarget.y(), followTarget.z(), speed);
+        if (!moved) {
+            moved = villager.getNavigation().moveTo(followTarget.pathAnchor(), speed);
+        }
         if (moved) {
             failedPathFindingPenalty = 0;
         } else {
@@ -577,14 +654,21 @@ public final class VillagerRecruitmentService {
         }
 
         FOLLOW_PATH_STATES.put(villagerId, new FollowPathState(
-                followTarget.getUUID(),
-                followTarget.getX(),
-                followTarget.getY(),
-                followTarget.getZ(),
+                followTarget.pathAnchor().getUUID(),
+                followTarget.x(),
+                followTarget.y(),
+                followTarget.z(),
                 gameTime + recalculationDelay,
                 failedPathFindingPenalty
         ));
         return moved;
+    }
+
+    private static double distanceToSqr(FollowTarget target, double x, double y, double z) {
+        double deltaX = target.x() - x;
+        double deltaY = target.y() - y;
+        double deltaZ = target.z() - z;
+        return deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ;
     }
 
     private static double adaptiveFollowSpeed(double distanceSqr) {
@@ -644,6 +728,9 @@ public final class VillagerRecruitmentService {
 
     private static void clearFollowTarget(Villager villager) {
         UUID villagerId = villager.getUUID();
+        if (villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
+            FOLLOW_FORMATION_STATES.remove(villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY));
+        }
         NEXT_FOLLOW_TRAVEL_MEMORY_TICKS.remove(villagerId);
         NEXT_FOLLOW_REPUTATION_CHECK_TICKS.remove(villagerId);
         LAST_FOLLOWER_AI_SUPPRESSION_TICKS.remove(villagerId);
@@ -678,6 +765,7 @@ public final class VillagerRecruitmentService {
 
     private static void beginFollowing(ServerLevel level, Villager villager, UUID playerId) {
         BlockPos start = villager.blockPosition();
+        FOLLOW_FORMATION_STATES.remove(playerId);
         villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, playerId);
         villager.getPersistentData().putString(FOLLOW_MODE_KEY, FOLLOW_MODE_FOLLOW);
         villager.getPersistentData().putFloat(FOLLOW_START_HEALTH_KEY, villager.getHealth());
@@ -703,6 +791,7 @@ public final class VillagerRecruitmentService {
     }
 
     private static void beginStayingHere(Villager villager, UUID playerId, BlockPos anchor) {
+        FOLLOW_FORMATION_STATES.remove(playerId);
         villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, playerId);
         villager.getPersistentData().putString(FOLLOW_MODE_KEY, FOLLOW_MODE_STAY);
         villager.getPersistentData().putInt(STAY_ANCHOR_X_KEY, anchor.getX());
@@ -949,6 +1038,20 @@ public final class VillagerRecruitmentService {
             double targetZ,
             long nextRecalculationGameTime,
             int failedPathFindingPenalty
+    ) {
+    }
+
+    private record FollowTarget(Entity pathAnchor, double x, double y, double z) {
+    }
+
+    private record FollowFormationSlot(double lateral, double back) {
+    }
+
+    private record FollowFormationState(
+            long gameTime,
+            Map<UUID, FollowFormationSlot> slots,
+            double forwardX,
+            double forwardZ
     ) {
     }
 

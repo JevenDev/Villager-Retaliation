@@ -146,6 +146,16 @@ public final class PartyGameTests {
                         .isBowWeapon(villager.getMainHandItem()),
                 "idle combat cleanup must retain the selected ranged loadout");
 
+        PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                PartyQuickCommand.MELEE));
+        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
+                        .isMeleeWeapon(villager.getMainHandItem()),
+                "melee should re-equip the stored sword after switching to range");
+        VillagerRetaliationHandler.clearCustomTarget(villager);
+        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
+                        .isMeleeWeapon(villager.getMainHandItem()),
+                "idle combat cleanup must retain melee after switching back from range");
+
         PartyService.deleteParty(level, party.id());
         PartyQuickCommandService.clearRuntimeState();
         villager.discard();
