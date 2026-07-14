@@ -31,6 +31,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
@@ -421,6 +422,7 @@ public final class PartyQuickCommandService {
                 VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target),
                 target instanceof Player,
                 target instanceof Villager,
+                target instanceof IronGolem,
                 PartyService.getPartyForEntity(target).isPresent());
     }
 

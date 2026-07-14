@@ -1,9 +1,12 @@
 package com.jvn.villagerretaliation.raid;
 
-import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
+import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
+import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.village.VillagerRaidMemorySavedData;
 import java.util.LinkedHashSet;
@@ -19,6 +22,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -427,6 +431,45 @@ public final class PlayerRaidGameTests {
         data.remove(raid.id());
         raider.discard();
         defender.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void activePlayerRaidTargetsAlignedIronGolems(GameTestHelper helper) {
+        BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
+        Villager raider = EntityType.VILLAGER.create(helper.getLevel());
+        Villager defender = EntityType.VILLAGER.create(helper.getLevel());
+        IronGolem golem = EntityType.IRON_GOLEM.create(helper.getLevel());
+        helper.assertTrue(raider != null && defender != null && golem != null,
+                "raid combatants should be creatable");
+        raider.moveTo(center.getX() - 1.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        golem.moveTo(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        defender.moveTo(center.getX() + 5.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(raider), "raider should spawn");
+        helper.assertTrue(helper.getLevel().addFreshEntity(defender), "defender should spawn");
+        helper.assertTrue(helper.getLevel().addFreshEntity(golem), "golem should spawn");
+
+        VillageAllegianceId village = VillageAllegianceId.random();
+        VillageAllegianceApi.assignKnown(
+                helper.getLevel(), golem, village, AllegianceAssignmentSource.EXPLICIT_API);
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
+        UUID player = UUID.randomUUID();
+        PlayerRaidSavedData.RaidRecord raid = data.create(
+                village, helper.getLevel().dimension().location(), center,
+                Set.of(SectionPos.asLong(center)), "Golem Defense Village", player, UUID.randomUUID(),
+                Set.of(player), Set.of(raider.getUUID()), Set.of(defender.getUUID()), Set.of(), 42L);
+        raid.setPhase(PlayerRaidSavedData.Phase.ACTIVE, 43L);
+
+        helper.assertTrue(PlayerRaidService.areOpposingParticipants(raider, golem),
+                "an aligned village golem should count as a Player Raid defender");
+        PlayerRaidService.reconcileCombat(helper.getLevel().getServer(), raid);
+        helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(raider, golem),
+                "a raiding party villager should target the nearest aligned village golem");
+
+        data.remove(raid.id());
+        raider.discard();
+        defender.discard();
+        golem.discard();
         helper.succeed();
     }
 }

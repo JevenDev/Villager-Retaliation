@@ -829,10 +829,10 @@ public final class VillagerRetaliationHandler {
                 || (target instanceof Villager targetVillager
                         && PartyVillagerContractService.hasExpiredContractWithParty(targetVillager, party.id()))
                 || (target instanceof AbstractVillager && !(target instanceof Villager))
-                || target instanceof IronGolem
                 || (target instanceof OwnableEntity ownable && ownable.getOwnerUUID() != null)
                 || (target instanceof TamableAnimal tamable && tamable.isTame())
                 || (!(target instanceof Villager)
+                        && !(target instanceof IronGolem)
                         && VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target))
                 || !VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target)
                 || !attackModeAllows(record.attackMode(), villager, target)) {
@@ -1052,6 +1052,7 @@ public final class VillagerRetaliationHandler {
                 VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target),
                 target instanceof Player,
                 target instanceof Villager,
+                target instanceof IronGolem,
                 PartyService.getPartyForEntity(target).isPresent());
     }
 

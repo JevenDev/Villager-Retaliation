@@ -14,11 +14,21 @@ public enum PartyAttackMode {
     }
 
     public boolean allows(boolean animal, boolean hostile, boolean player, boolean villager, boolean party) {
+        return allows(animal, hostile, player, villager, false, party);
+    }
+
+    public boolean allows(
+            boolean animal,
+            boolean hostile,
+            boolean player,
+            boolean villager,
+            boolean ironGolem,
+            boolean party) {
         return switch (this) {
             case ANIMALS -> animal;
             case HOSTILES -> hostile;
             case PLAYERS -> player;
-            case VILLAGERS -> villager;
+            case VILLAGERS -> villager || ironGolem;
             case PARTIES -> party;
             case ALL -> true;
         };
