@@ -17,6 +17,9 @@ The initiating player's current party is snapshotted. Later party changes do not
 - Golems arrive in batches at activation and the 75%, 50%, and 25% defender thresholds. The fixed budget is calculated once, and dead golems are not replaced.
 - Raiders win when every snapshotted defender is dead or converted. Births and visiting villagers after declaration are not added.
 - The village wins if no living, non-spectator raider player remains inside its footprint for the configured abandonment time (30 seconds by default).
+- During the active siege, a raider player wearing a banner helmet can use a goat horn to make tracked defenders within 48 blocks glow for 3 seconds.
+
+Operators can settle the Player Raid involving them or containing their current position with `/villagerretaliation debug raid win` or `/villagerretaliation debug raid lose`.
 
 ## Configuration
 

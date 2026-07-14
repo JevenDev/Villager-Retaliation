@@ -41,12 +41,15 @@
 
 ### Fixed
 
+- Fixed active Player Raids becoming difficult to finish when a remaining defender is hidden or invisible; banner-helmet raiders can now reuse a goat horn to reveal nearby tracked defenders.
+- Fixed the party attack quick-wheel losing or rejecting its crosshair target, including Player Raid defenders excluded by a villager's normal attack mode.
 - Fixed outside-spawned recruited villagers incorrectly inheriting a nearby village's grievance and confronting their own party leader.
 - Fixed villager trade-level XP previews drifting from the actual award during rapid or shift-click trading, including when server multiplier settings differ from the client.
 - Fixed low-XP trades consuming fractional trade-level XP banked by earlier trades without awarding that progress.
 
 ### Added
 
+- Added `/villagerretaliation debug raid win` and `/villagerretaliation debug raid lose` operator commands for settling the relevant Player Raid.
 - Expanded personal, job, and party villager inventories with nine-slot hotbars; assigned job tools now prefer mainhand then hotbar storage, while ordinary supplies, outputs, and party drops use the hotbar only for overflow.
 - Added durable POI-backed village identities with generated names, canonical aliases, resident rosters, automatic connected-footprint merging, loaded-only empty-grace observation, and archival after 72,000 fully observed ticks.
 - Added permanent villager and natural-golem allegiance, neutral Wanderers for outside spawns, lazy v1 reset-on-load migration, conversion handling, and trusted reassignment from the Allegiance interaction page.

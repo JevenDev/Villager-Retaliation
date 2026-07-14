@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.mixin;
 
+import com.jvn.villagerretaliation.combat.AttributeMapExtension;
 import java.util.Map;
 import java.util.Set;
 import net.minecraft.core.Holder;

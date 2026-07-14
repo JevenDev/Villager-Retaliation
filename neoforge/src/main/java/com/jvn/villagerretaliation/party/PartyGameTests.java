@@ -867,14 +867,16 @@ public final class PartyGameTests {
         long now = level.getGameTime();
         PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
         PartyVillagerRecord attackerRecord = villagerRecord(attacker.getUUID(), leader.getUUID(), 0, now);
-        attackerRecord.setAttackMode(PartyAttackMode.HOSTILES);
         PartySavedData.get(level).addVillager(party, attackerRecord);
+        attackerRecord.setAttackMode(PartyAttackMode.HOSTILES);
         leader.lookAt(EntityAnchorArgument.Anchor.EYES, fartherValidTarget.getEyePosition());
 
         PartyQuickCommandService.handle(
                 leader,
                 new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
-                        PartyQuickCommand.ATTACK));
+                        PartyQuickCommand.ATTACK,
+                        closerInvalidTarget.getId(),
+                        null));
         helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(attacker, fartherValidTarget),
                 "crosshair attack should skip a closer entity rejected by HOSTILES mode");
         helper.assertFalse(VillagerRetaliationHandler.hasRetaliationTarget(attacker, closerInvalidTarget),

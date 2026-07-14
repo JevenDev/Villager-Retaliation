@@ -33,6 +33,7 @@ public record AllegianceCombatDecision(Action action, Reason reason) {
         GOLEM_RESTRICTED,
         NO_PARTY_AUTHORIZATION,
         AUTHORIZED_PARTY_CONFLICT,
+        PLAYER_RAID_OPPONENT,
         WANDERER_NEUTRALITY,
         NON_CIVILIAN_TARGET,
         ORDINARY_BEHAVIOR,

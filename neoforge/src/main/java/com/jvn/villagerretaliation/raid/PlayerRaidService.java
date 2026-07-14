@@ -36,6 +36,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
@@ -56,6 +57,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 public final class PlayerRaidService {
     private static final long DAY_TICKS = 24_000L;
     private static final long OUTCOME_DISPLAY_TICKS = 100L;
+    private static final double HORN_REVEAL_RADIUS = 48.0D;
+    private static final int HORN_REVEAL_TICKS = 60;
     private static final Map<UUID, ServerBossEvent> BOSS_BARS = new HashMap<>();
 
     private PlayerRaidService() {
@@ -67,7 +70,32 @@ public final class PlayerRaidService {
                 || !BannerHelmetData.hasAttachedBanner(player.getItemBySlot(EquipmentSlot.HEAD))) {
             return;
         }
+        if (tryRevealDefenders(player)) return;
         tryDeclare(player);
+    }
+
+    static boolean tryRevealDefenders(ServerPlayer player) {
+        PlayerRaidSavedData.RaidRecord raid = PlayerRaidSavedData.get(player.serverLevel())
+                .activeForParticipant(player.getUUID());
+        if (raid == null
+                || raid.phase() != PlayerRaidSavedData.Phase.ACTIVE
+                || !raid.raiderPlayers().contains(player.getUUID())
+                || !raid.dimension().equals(player.serverLevel().dimension().location())) {
+            return false;
+        }
+        AABB revealArea = player.getBoundingBox().inflate(HORN_REVEAL_RADIUS);
+        int revealed = 0;
+        for (UUID defenderId : raid.defenders()) {
+            Entity entity = player.serverLevel().getEntity(defenderId);
+            if (entity instanceof Villager villager && villager.isAlive() && revealArea.contains(villager.position())) {
+                villager.addEffect(new MobEffectInstance(MobEffects.GLOWING, HORN_REVEAL_TICKS));
+                revealed++;
+            }
+        }
+        player.sendSystemMessage(revealed == 0
+                ? Component.translatable("villagerretaliation.player_raid.horn_reveal_none")
+                : Component.translatable("villagerretaliation.player_raid.horn_reveal", revealed));
+        return true;
     }
 
     public static boolean tryDeclare(ServerPlayer initiator) {
@@ -264,7 +292,7 @@ public final class PlayerRaidService {
         List<LivingEntity> raiders = livingRaiders(server, raid);
         List<LivingEntity> defenders = livingDefenders(server, raid);
         for (LivingEntity defender : defenders) {
-            LivingEntity target = nearest(defender, raiders);
+            LivingEntity target = retainedOrNearest(defender, raiders);
             if (target == null) continue;
             if (defender instanceof Villager villager && !villager.isBaby()
                     && villager.getVillagerData().getProfession() != VillagerProfession.NITWIT) {
@@ -275,7 +303,7 @@ public final class PlayerRaidService {
             }
         }
         for (LivingEntity raider : raiders) {
-            LivingEntity target = nearest(raider, defenders);
+            LivingEntity target = retainedOrNearest(raider, defenders);
             if (target == null) continue;
             if (raider instanceof Villager villager) VillagerRetaliationHandler.forceAngerSilently(villager, target);
         }
@@ -368,6 +396,26 @@ public final class PlayerRaidService {
                 ? "villagerretaliation.player_raid.victory"
                 : "villagerretaliation.player_raid.defended", raid.villageName());
         server.getPlayerList().broadcastSystemMessage(message, false);
+    }
+
+    /** Operator hook used by the debug command to settle the relevant running Player Raid. */
+    public static PlayerRaidSavedData.RaidRecord debugFinishRaid(
+            ServerLevel sourceLevel, BlockPos sourcePosition, UUID participant, boolean raidersWon) {
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(sourceLevel);
+        PlayerRaidSavedData.RaidRecord raid = participant == null ? null : data.activeForParticipant(participant);
+        if (raid == null) {
+            long sourceSection = SectionPos.asLong(sourcePosition);
+            raid = data.raids().stream()
+                    .filter(PlayerRaidSavedData.RaidRecord::running)
+                    .filter(candidate -> candidate.dimension().equals(sourceLevel.dimension().location()))
+                    .filter(candidate -> candidate.footprint().contains(sourceSection))
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (raid == null) return null;
+        finish(sourceLevel.getServer(), data, raid, raidersWon,
+                sourceLevel.getServer().overworld().getGameTime());
+        return raid;
     }
 
     private static void updateBossBar(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid, long now) {
@@ -497,6 +545,27 @@ public final class PlayerRaidService {
         return false;
     }
 
+    /** True when two entities are living members of opposite sides of the same active Player Raid. */
+    public static boolean areOpposingParticipants(Entity first, Entity second) {
+        if (first == null || second == null || first == second
+                || !(first.level() instanceof ServerLevel level) || second.level() != level) {
+            return false;
+        }
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(level);
+        for (PlayerRaidSavedData.RaidRecord raid : data.raids()) {
+            if (raid.phase() != PlayerRaidSavedData.Phase.ACTIVE) continue;
+            boolean firstRaider = raid.raiderPlayers().contains(first.getUUID())
+                    || raid.raiderVillagers().contains(first.getUUID());
+            boolean secondRaider = raid.raiderPlayers().contains(second.getUUID())
+                    || raid.raiderVillagers().contains(second.getUUID());
+            if (firstRaider && raid.defenders().contains(second.getUUID())
+                    || secondRaider && raid.defenders().contains(first.getUUID())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean shouldForceHide(Villager villager) {
         if (villager == null || !(villager.level() instanceof ServerLevel level)
                 || (!villager.isBaby() && villager.getVillagerData().getProfession() != VillagerProfession.NITWIT)) {
@@ -512,6 +581,18 @@ public final class PlayerRaidService {
     private static LivingEntity nearest(LivingEntity origin, List<LivingEntity> choices) {
         return choices.stream().filter(candidate -> candidate.level() == origin.level() && candidate != origin)
                 .min(Comparator.comparingDouble(origin::distanceToSqr)).orElse(null);
+    }
+
+    private static LivingEntity retainedOrNearest(LivingEntity origin, List<LivingEntity> choices) {
+        if (origin instanceof Villager villager) {
+            for (LivingEntity candidate : choices) {
+                if (candidate.level() == origin.level()
+                        && VillagerRetaliationHandler.hasRetaliationTarget(villager, candidate)) {
+                    return candidate;
+                }
+            }
+        }
+        return nearest(origin, choices);
     }
 
     private static int existingAlignedGolems(ServerLevel level, PlayerRaidSavedData.RaidRecord raid) {

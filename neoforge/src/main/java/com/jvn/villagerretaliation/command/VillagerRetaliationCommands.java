@@ -41,6 +41,8 @@ import com.jvn.villagerretaliation.quest.VillagerQuestFacts;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
+import com.jvn.villagerretaliation.raid.PlayerRaidSavedData;
+import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.scene.SceneOperatorService;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -538,6 +540,11 @@ public final class VillagerRetaliationCommands {
 
     private static LiteralArgumentBuilder<CommandSourceStack> debugCommands() {
         return literal("debug")
+                .then(literal("raid")
+                        .then(literal("win")
+                                .executes(context -> debugFinishRaid(context, true)))
+                        .then(literal("lose")
+                                .executes(context -> debugFinishRaid(context, false))))
                 .then(literal("builder")
                         .then(literal("materials")
                                 .then(argument("structure", StringArgumentType.string())
@@ -545,6 +552,24 @@ public final class VillagerRetaliationCommands {
                                                 builderStructureIdSuggestions(context.getSource()),
                                                 builder))
                                         .executes(VillagerRetaliationCommands::placeBuilderMaterialsChests))));
+    }
+
+    private static int debugFinishRaid(CommandContext<CommandSourceStack> context, boolean raidersWon) {
+        CommandSourceStack source = context.getSource();
+        Entity sourceEntity = source.getEntity();
+        PlayerRaidSavedData.RaidRecord raid = PlayerRaidService.debugFinishRaid(
+                source.getLevel(),
+                BlockPos.containing(source.getPosition()),
+                sourceEntity == null ? null : sourceEntity.getUUID(),
+                raidersWon);
+        if (raid == null) {
+            source.sendFailure(Component.literal(
+                    "No running Player Raid involves you or contains your current position."));
+            return 0;
+        }
+        source.sendSuccess(() -> Component.literal("Ended the Player Raid at " + raid.villageName()
+                + (raidersWon ? " with a raider win." : " with a raider loss.")), true);
+        return 1;
     }
 
     private static int placeBuilderMaterialsChests(CommandContext<CommandSourceStack> context) {

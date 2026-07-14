@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.allegiance;
 
 import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
@@ -27,6 +28,9 @@ public final class VillageAllegianceCombatPolicy {
         }
         if (PartyService.areInSameParty(actor, target)) {
             return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.SAME_PARTY);
+        }
+        if (PlayerRaidService.areOpposingParticipants(actor, target)) {
+            return AllegianceCombatDecision.pass(AllegianceCombatDecision.Reason.PLAYER_RAID_OPPONENT);
         }
         AllegianceEntityClassifier.Classification targetClass = AllegianceEntityClassifier.classify(target);
         if (targetClass == AllegianceEntityClassifier.Classification.NEUTRAL_TRADER) {

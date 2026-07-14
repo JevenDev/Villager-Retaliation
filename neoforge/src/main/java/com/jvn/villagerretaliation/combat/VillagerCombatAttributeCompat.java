@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.combat;
 
-import com.jvn.villagerretaliation.mixin.AttributeMapExtension;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.Villager;

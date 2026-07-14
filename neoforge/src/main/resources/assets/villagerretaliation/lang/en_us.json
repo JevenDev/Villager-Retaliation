@@ -1643,6 +1643,8 @@
   "villagerretaliation.player_raid.bar_defended": "Player Raid — %s defended",
   "villagerretaliation.player_raid.victory": "%s has fallen to the player raid.",
   "villagerretaliation.player_raid.defended": "%s survived the player raid.",
+  "villagerretaliation.player_raid.horn_reveal": "The horn reveals %s nearby raid defenders.",
+  "villagerretaliation.player_raid.horn_reveal_none": "The horn finds no nearby raid defenders.",
   "text.config.villagerretaliation.option.playerRaids.enabled": "Enable Player Raids",
   "text.config.villagerretaliation.option.playerRaids.enabled.tooltip": "Allows a banner-helmet player to declare a raid by blowing a goat horn inside a tracked village.",
   "text.config.villagerretaliation.option.playerRaids.preparationTicks": "Preparation Ticks",

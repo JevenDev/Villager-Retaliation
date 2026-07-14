@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredRouteNavigator;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.inventory.PartyContainerLootService;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
+import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.HashMap;
@@ -43,6 +44,7 @@ import net.minecraft.world.phys.Vec3;
 public final class PartyQuickCommandService {
     private static final double MAX_TARGET_DISTANCE = 64.0D;
     private static final double ATTACK_TARGET_DISTANCE = 32.0D;
+    private static final double TRANSMITTED_TARGET_TOLERANCE = 0.3D;
     private static final double ARRIVAL_DISTANCE_SQR = 1.75D * 1.75D;
     private static final double REGROUP_ARRIVAL_DISTANCE_SQR = 2.5D * 2.5D;
     private static final double MOVE_SPEED = 0.72D;
@@ -82,7 +84,7 @@ public final class PartyQuickCommandService {
         boolean loweringShields = payload.command() == PartyQuickCommand.STAND_GUARD
                 && isStandGuardActive(party);
         int affected = switch (payload.command()) {
-            case ATTACK -> attack(player, participants);
+            case ATTACK -> attack(player, participants, payload.targetEntityId());
             case MOVE_TO -> moveTo(player, participants, payload.targetPosition());
             case STAY_HERE -> stayHere(player, participants);
             case REGROUP -> regroup(player, party, participants);
@@ -281,8 +283,11 @@ public final class PartyQuickCommandService {
         STAND_GUARD_VILLAGERS.clear();
     }
 
-    private static int attack(ServerPlayer player, List<PartyVillagerRecord> records) {
-        LivingEntity target = attackTargetAtCrosshair(player, records);
+    private static int attack(
+            ServerPlayer player,
+            List<PartyVillagerRecord> records,
+            int transmittedTargetId) {
+        LivingEntity target = attackTargetAtCrosshair(player, records, transmittedTargetId);
         if (target == null) {
             return 0;
         }
@@ -314,7 +319,8 @@ public final class PartyQuickCommandService {
 
     private static LivingEntity attackTargetAtCrosshair(
             ServerPlayer player,
-            List<PartyVillagerRecord> records) {
+            List<PartyVillagerRecord> records,
+            int transmittedTargetId) {
         ServerLevel level = player.serverLevel();
         Vec3 eye = player.getEyePosition();
         Vec3 rayEnd = eye.add(player.getViewVector(1.0F).scale(ATTACK_TARGET_DISTANCE));
@@ -327,6 +333,17 @@ public final class PartyQuickCommandService {
         Vec3 visibleEnd = blockHit.getType() == HitResult.Type.BLOCK
                 ? blockHit.getLocation()
                 : rayEnd;
+        Entity transmitted = transmittedTargetId == PartyQuickCommandRequestPayload.NO_ENTITY
+                ? null
+                : level.getEntity(transmittedTargetId);
+        if (transmitted instanceof LivingEntity captured
+                && captured != player
+                && captured.isAlive()
+                && captured.isPickable()
+                && canReceiveAnyAttackOrder(level, records, captured)
+                && captured.getBoundingBox().inflate(TRANSMITTED_TARGET_TOLERANCE).clip(eye, visibleEnd).isPresent()) {
+            return captured;
+        }
         AABB search = player.getBoundingBox()
                 .expandTowards(visibleEnd.subtract(eye))
                 .inflate(1.0D);
@@ -375,6 +392,9 @@ public final class PartyQuickCommandService {
             Villager villager,
             PartyVillagerRecord record,
             LivingEntity target) {
+        boolean playerRaidOpponents = villager != null
+                && target != null
+                && PlayerRaidService.areOpposingParticipants(villager, target);
         if (villager == null
                 || !villager.isAlive()
                 || target == null
@@ -383,10 +403,10 @@ public final class PartyQuickCommandService {
                 || !villager.canAttack(target)
                 || target.isAlliedTo(villager)
                 || PartyService.areInSameParty(villager, target)
-                || !attackModeAllows(record.attackMode(), villager, target)) {
+                || !playerRaidOpponents && !attackModeAllows(record.attackMode(), villager, target)) {
             return false;
         }
-        return !VillageAllegianceCombatPolicy.evaluate(
+        return playerRaidOpponents || !VillageAllegianceCombatPolicy.evaluate(
                 level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false).denied();
     }
 

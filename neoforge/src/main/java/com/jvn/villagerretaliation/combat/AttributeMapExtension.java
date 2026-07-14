@@ -1,4 +1,4 @@
-package com.jvn.villagerretaliation.mixin;
+package com.jvn.villagerretaliation.combat;
 
 import net.minecraft.core.Holder;
 import net.minecraft.world.entity.ai.attributes.Attribute;
