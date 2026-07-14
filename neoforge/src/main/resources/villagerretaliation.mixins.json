@@ -5,6 +5,7 @@
   "mixins": [
     "AbstractArrowAccessor",
     "AbstractContainerMenuAccessor",
+    "BannerHelmetContainerMenuMixin",
     "AvoidEntityGoalMixin",
     "BrewingStandBlockEntityAccessor",
     "EntityNameMixin",
@@ -28,6 +29,7 @@
   ],
   "client": [
     "client.ChatComponentMixin",
+    "client.BannerHelmetCustomHeadLayerMixin",
     "client.InventoryScreenMixin",
     "client.MerchantScreenMixin",
     "client.MerchantContainerMixin",

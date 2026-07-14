@@ -6,6 +6,7 @@
   "key.villagerretaliation.toggle_blueprint_placement_lock": "Toggle Blueprint Placement Lock",
   "key.villagerretaliation.toggle_villager_name_tags": "Toggle Villager Name Tags",
   "key.villagerretaliation.quick_command": "Party Quick Command",
+  "tooltip.villagerretaliation.attached_banner": "Banner: %s",
   "message.villagerretaliation.villager_name_tags.enabled": "Villager name tags shown",
   "message.villagerretaliation.villager_name_tags.disabled": "Villager name tags hidden",
   "item.villagerretaliation.villager_breeding_stick": "Villager Breeding Stick",

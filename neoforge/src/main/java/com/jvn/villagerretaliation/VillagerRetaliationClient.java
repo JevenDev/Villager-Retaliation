@@ -49,6 +49,7 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestItemHighlightClient::onRenderGuiLayer);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestItemHighlightClient::onContainerForeground);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestItemHighlightClient::onItemTooltip);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.item.BannerHelmetTooltip::onItemTooltip);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.reputation.VillagerWorldTextIndicatorClient::onRenderLevelStage);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache::onClientTick);
