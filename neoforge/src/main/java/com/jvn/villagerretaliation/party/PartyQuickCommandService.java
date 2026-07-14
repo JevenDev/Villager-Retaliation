@@ -44,7 +44,7 @@ import net.minecraft.world.phys.Vec3;
 public final class PartyQuickCommandService {
     private static final double MAX_TARGET_DISTANCE = 64.0D;
     private static final double ATTACK_TARGET_DISTANCE = 32.0D;
-    private static final double TRANSMITTED_TARGET_TOLERANCE = 0.3D;
+    private static final double TRANSMITTED_TARGET_TOLERANCE = 0.85D;
     private static final double ARRIVAL_DISTANCE_SQR = 1.75D * 1.75D;
     private static final double REGROUP_ARRIVAL_DISTANCE_SQR = 2.5D * 2.5D;
     private static final double MOVE_SPEED = 0.72D;
@@ -340,6 +340,7 @@ public final class PartyQuickCommandService {
                 && captured != player
                 && captured.isAlive()
                 && captured.isPickable()
+                && player.hasLineOfSight(captured)
                 && canReceiveAnyAttackOrder(level, records, captured)
                 && captured.getBoundingBox().inflate(TRANSMITTED_TARGET_TOLERANCE).clip(eye, visibleEnd).isPresent()) {
             return captured;

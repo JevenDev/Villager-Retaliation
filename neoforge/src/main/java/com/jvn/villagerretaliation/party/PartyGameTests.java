@@ -913,6 +913,43 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void attackAtCrosshairAllowsForgivingNearMiss(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        for (int x = 0; x <= 9; x++) {
+            for (int z = 0; z <= 4; z++) {
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+            }
+        }
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_crosshair_near_miss"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = helper.spawn(EntityType.ZOMBIE, new BlockPos(7, 2, 2));
+        target.setNoAi(true);
+
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartyVillagerRecord attackerRecord = villagerRecord(attacker.getUUID(), leader.getUUID(), 0, now);
+        attackerRecord.setAttackMode(PartyAttackMode.HOSTILES);
+        PartySavedData.get(level).addVillager(party, attackerRecord);
+        leader.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition().add(0.0D, 0.0D, 0.7D));
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.ATTACK,
+                        target.getId(),
+                        null));
+        helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(attacker, target),
+                "attack command should accept a visible target just outside its exact hitbox");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        attacker.discard();
+        target.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void moveToUsesSharedNodeRouteNavigation(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         for (int x = 0; x <= 14; x++) {
