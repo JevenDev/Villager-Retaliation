@@ -29,9 +29,11 @@ import com.jvn.villagerretaliation.villager.VillagerConversionPersistenceService
 import com.jvn.toucanlib.neoforge.event.ToucanEventBuses;
 import com.jvn.toucanlib.util.ToucanIds;
 import net.minecraft.resources.ResourceLocation;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.common.NeoForge;
 
 @Mod(VillagerRetaliation.MOD_ID)
 public class VillagerRetaliation {
@@ -69,10 +71,6 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onLivingDamage)
                 .listener(VillagerReputationEvents::onLivingDamage)
                 .listener(VillagerDisciplineService::onLivingDamage)
-                .listener(VillagerRetaliationEvents::onLivingDeath)
-                .listener(VillageAllegianceService::onLivingDeath)
-                .listener(VillagerSocialGraphService::onLivingDeath)
-                .listener(VillagerReputationEvents::onLivingDeath)
                 .listener(VillagerRetaliationEvents::onLivingDrops)
                 .listener(VillagerRetaliationEvents::onEntityTickPre)
                 .listener(VillagerRetaliationEvents::onEntityTickPost)
@@ -115,5 +113,12 @@ public class VillagerRetaliation {
                 .listener(ForcedDialogueService::onContainerClose)
                 .listener(VillagerRetaliationEvents::onEntityLeaveLevel)
                 .listener(VillageAllegianceService::onEntityLeaveLevel);
+
+        // Death is cancellable (for example, Second Wind converts it into a downed state).
+        // Run irreversible death bookkeeping only after other mods have had a chance to cancel it.
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerRetaliationEvents::onLivingDeath);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillageAllegianceService::onLivingDeath);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerSocialGraphService::onLivingDeath);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerReputationEvents::onLivingDeath);
     }
 }
