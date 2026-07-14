@@ -3238,6 +3238,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (lines.isEmpty()) {
             return;
         }
+        List<List<DialogueTextSegment>> styledLines = interactionDialogueLineSegments(
+                displayedDialogue,
+                displayedDialogueSegments(),
+                lines);
 
         int visibleLines = interactionDialogueVisibleLineCount();
         int maxScroll = maxInteractionDialogueLineScroll(lines);
@@ -3259,9 +3263,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     Math.min(
                             top + INTERACTION_DIALOGUE_BOTTOM + this.renderSlideOffsetY,
                             top + INTERACTION_DIALOGUE_TOP + (row + 1) * lineStep + 2 + this.renderSlideOffsetY));
-            drawOutlinedString(
+            drawOutlinedDialogueLine(
                     graphics,
                     lines.get(lineIndex),
+                    styledLines.get(lineIndex),
                     drawLeft,
                     lineTop,
                     INTERACTION_DIALOGUE_COLOR
@@ -3440,6 +3445,26 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         int start = text.indexOf(lineText, Math.min(cursor, text.length()));
         return start >= 0 ? start : text.indexOf(lineText);
+    }
+
+    private static List<List<DialogueTextSegment>> interactionDialogueLineSegments(
+            String dialogue,
+            List<DialogueTextSegment> segments,
+            List<String> lines) {
+        List<List<DialogueTextSegment>> styledLines = new ArrayList<>(lines.size());
+        int cursor = 0;
+        for (String line : lines) {
+            int lineStart = findDisplayedLineStart(dialogue, line, cursor);
+            if (lineStart < 0) {
+                styledLines.add(DialogueTextSegment.plain(line, DialogueTextEffects.NONE));
+                continue;
+            }
+
+            int lineEnd = lineStart + line.length();
+            styledLines.add(DialogueTextSegment.slice(segments, lineStart, lineEnd));
+            cursor = lineEnd;
+        }
+        return List.copyOf(styledLines);
     }
 
     private boolean trySkipDialogueTextAnimation(double mouseX, double mouseY) {
@@ -3649,6 +3674,34 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         graphics.drawString(this.font, text, x, y - 1, TEXT_OUTLINE_COLOR, false);
         graphics.drawString(this.font, text, x, y + 1, TEXT_OUTLINE_COLOR, false);
         graphics.drawString(this.font, text, x, y, color, false);
+    }
+
+    private void drawOutlinedDialogueLine(
+            GuiGraphics graphics,
+            String text,
+            List<DialogueTextSegment> segments,
+            int x,
+            int y,
+            int fallbackColor) {
+        graphics.drawString(this.font, text, x - 1, y, TEXT_OUTLINE_COLOR, false);
+        graphics.drawString(this.font, text, x + 1, y, TEXT_OUTLINE_COLOR, false);
+        graphics.drawString(this.font, text, x, y - 1, TEXT_OUTLINE_COLOR, false);
+        graphics.drawString(this.font, text, x, y + 1, TEXT_OUTLINE_COLOR, false);
+
+        Component styledText = VillagerStyledTextRenderer.component(
+                segments,
+                Style.EMPTY,
+                fallbackColor & 0x00FFFFFF);
+        VillagerStyledTextRenderer.renderLine(
+                graphics,
+                this.font,
+                styledText.getVisualOrderText(),
+                segments,
+                x,
+                y,
+                fallbackColor,
+                (fallbackColor >>> 24) & 0xFF,
+                Minecraft.getInstance().gui.getGuiTicks());
     }
 
     private void renderInteractionStatTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
