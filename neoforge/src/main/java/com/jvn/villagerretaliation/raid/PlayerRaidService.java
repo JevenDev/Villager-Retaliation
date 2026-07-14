@@ -288,9 +288,12 @@ public final class PlayerRaidService {
         villager.getBrain().setActiveActivityIfPossible(net.minecraft.world.entity.schedule.Activity.HIDE);
     }
 
-    private static void reconcileCombat(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
+    static void reconcileCombat(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
         List<LivingEntity> raiders = livingRaiders(server, raid);
         List<LivingEntity> defenders = livingDefenders(server, raid);
+        ServerLevel level = level(server, raid);
+        List<IronGolem> defendingGolems = level == null ? List.of() : livingDefendingGolems(level, raid);
+        defenders.addAll(defendingGolems);
         for (LivingEntity defender : defenders) {
             LivingEntity target = retainedOrNearest(defender, raiders);
             if (target == null) continue;
@@ -307,14 +310,10 @@ public final class PlayerRaidService {
             if (target == null) continue;
             if (raider instanceof Villager villager) VillagerRetaliationHandler.forceAngerSilently(villager, target);
         }
-        ServerLevel level = level(server, raid);
         if (level != null) {
-            AABB area = AABB.ofSize(Vec3.atCenterOf(raid.center()), 192.0D, 96.0D, 192.0D);
-            for (IronGolem golem : level.getEntitiesOfClass(IronGolem.class, area, IronGolem::isAlive)) {
-                if (VillageAllegianceApi.canonicalPrimary(level, golem).filter(raid.villageId()::equals).isPresent()) {
-                    LivingEntity target = nearest(golem, raiders);
-                    if (target != null) golem.setTarget(target);
-                }
+            for (IronGolem golem : defendingGolems) {
+                LivingEntity target = nearest(golem, raiders);
+                if (target != null) golem.setTarget(target);
             }
         }
     }
@@ -559,8 +558,11 @@ public final class PlayerRaidService {
                     || raid.raiderVillagers().contains(first.getUUID());
             boolean secondRaider = raid.raiderPlayers().contains(second.getUUID())
                     || raid.raiderVillagers().contains(second.getUUID());
-            if (firstRaider && raid.defenders().contains(second.getUUID())
-                    || secondRaider && raid.defenders().contains(first.getUUID())) {
+            boolean firstDefender = raid.defenders().contains(first.getUUID())
+                    || isDefendingGolem(level, raid, first);
+            boolean secondDefender = raid.defenders().contains(second.getUUID())
+                    || isDefendingGolem(level, raid, second);
+            if ((firstRaider && secondDefender) || (secondRaider && firstDefender)) {
                 return true;
             }
         }
@@ -597,10 +599,28 @@ public final class PlayerRaidService {
     }
 
     private static int existingAlignedGolems(ServerLevel level, PlayerRaidSavedData.RaidRecord raid) {
+        return livingDefendingGolems(level, raid).size();
+    }
+
+    private static List<IronGolem> livingDefendingGolems(
+            ServerLevel level,
+            PlayerRaidSavedData.RaidRecord raid) {
         AABB area = AABB.ofSize(Vec3.atCenterOf(raid.center()), 192.0D, 96.0D, 192.0D);
-        return (int) level.getEntitiesOfClass(IronGolem.class, area, IronGolem::isAlive).stream()
-                .filter(golem -> VillageAllegianceApi.canonicalPrimary(level, golem).filter(raid.villageId()::equals).isPresent())
-                .count();
+        return level.getEntitiesOfClass(
+                IronGolem.class,
+                area,
+                golem -> golem.isAlive() && isDefendingGolem(level, raid, golem));
+    }
+
+    private static boolean isDefendingGolem(
+            ServerLevel level,
+            PlayerRaidSavedData.RaidRecord raid,
+            Entity entity) {
+        return entity instanceof IronGolem golem
+                && raid.dimension().equals(level.dimension().location())
+                && VillageAllegianceApi.canonicalPrimary(level, golem)
+                .filter(raid.villageId()::equals)
+                .isPresent();
     }
 
     private static boolean nearRaider(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid, BlockPos pos, double radius) {

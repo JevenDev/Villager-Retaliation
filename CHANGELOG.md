@@ -42,6 +42,7 @@
 
 ### Fixed
 
+- Fixed recruited party villagers failing to target defending iron golems during active Player Raids; the Villagers attack mode now includes iron golems.
 - Fixed active Player Raids becoming difficult to finish when a remaining defender is hidden or invisible; banner-helmet raiders can now reuse a goat horn to reveal nearby tracked defenders.
 - Fixed the party attack quick-wheel losing or rejecting its crosshair target, including Player Raid defenders excluded by a villager's normal attack mode.
 - Fixed outside-spawned recruited villagers incorrectly inheriting a nearby village's grievance and confronting their own party leader.

@@ -182,6 +182,8 @@ public final class PartyGameTests {
                 "player mode should allow players");
         helper.assertTrue(PartyAttackMode.VILLAGERS.allows(false, false, false, true, false),
                 "villager mode should allow villagers");
+        helper.assertTrue(PartyAttackMode.VILLAGERS.allows(false, false, false, false, true, false),
+                "villager mode should also allow iron golems");
         helper.assertValueEqual(PartyAttackMode.byName("villagers"), PartyAttackMode.VILLAGERS,
                 "villager mode should survive its persisted name");
         helper.assertValueEqual(PartyAttackMode.PLAYERS.next(), PartyAttackMode.VILLAGERS,
