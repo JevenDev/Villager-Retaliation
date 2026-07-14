@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
+import com.jvn.villagerretaliation.village.VillagerRaidMemorySavedData;
 import java.util.List;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
@@ -37,6 +38,7 @@ public record DialogueOptionDefinition(
         boolean requiresUnreportedGiftAdviceResult,
         boolean requiresUnapologizedRememberedHarm,
         boolean requiresUnreportedVillageDefense,
+        boolean requiresRaidVictoryAcknowledgement,
         boolean requiresShareableStory,
         boolean requiresKnownFamily,
         boolean requiresKnownParent,
@@ -150,6 +152,7 @@ public record DialogueOptionDefinition(
                 false,
                 false,
                 false,
+                false,
                 List.of(),
                 false,
                 order
@@ -213,6 +216,12 @@ public record DialogueOptionDefinition(
             return false;
         }
         if (this.requiresUnreportedVillageDefense && !context.hasUnreportedVillageDefense()) {
+            return false;
+        }
+        if (this.requiresRaidVictoryAcknowledgement
+                && !VillagerRaidMemorySavedData.get(context.level()).hasUnacknowledgedVictory(
+                        context.villager().getUUID(),
+                        context.player().getUUID())) {
             return false;
         }
         if (this.requiresShareableStory && !context.hasShareableStory()) {
@@ -351,6 +360,7 @@ public record DialogueOptionDefinition(
                 false,
                 false,
                 false,
+                false,
                 List.of(),
                 false,
                 order
@@ -380,6 +390,7 @@ public record DialogueOptionDefinition(
                 VillagerPlayerItemCondition.empty(),
                 VillagerReputationCondition.empty(),
                 DialogueItemPayment.empty(),
+                false,
                 false,
                 false,
                 false,

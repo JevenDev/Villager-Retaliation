@@ -243,6 +243,7 @@ public record DialogueTreeDefinition(
                 false,
                 false,
                 false,
+                false,
                 List.of(),
                 false,
                 order

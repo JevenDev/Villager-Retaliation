@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.village.VillagerRaidMemorySavedData;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -68,6 +69,36 @@ public final class PlayerRaidGameTests {
         helper.assertValueEqual(restored.nextRaidMercyPleaAt(), 700L, "raid plea cooldown");
         helper.assertTrue(restored.mercyEnabled(), "new raid snapshots should retain mercy behavior");
         helper.assertValueEqual(restored.golemBudget(), 4, "fixed golem budget");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void partyRaidMemoryRoundTripsAndVictoryCanOnlyBeClaimedOnce(GameTestHelper helper) {
+        VillagerRaidMemorySavedData data = new VillagerRaidMemorySavedData();
+        UUID villager = UUID.randomUUID();
+        UUID player = UUID.randomUUID();
+        data.remember(villager, player, VillagerRaidMemorySavedData.RaidOutcome.VICTORY, 42L);
+
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        VillagerRaidMemorySavedData loaded = VillagerRaidMemorySavedData.load(
+                saved, helper.getLevel().registryAccess());
+
+        helper.assertTrue(loaded.hasUnacknowledgedVictory(villager, player),
+                "victory acknowledgement should survive save/load");
+        helper.assertValueEqual(
+                loaded.memory(villager, player).orElseThrow().outcome(),
+                VillagerRaidMemorySavedData.RaidOutcome.VICTORY,
+                "saved raid outcome");
+        helper.assertTrue(loaded.claimVictoryAcknowledgement(villager, player),
+                "first acknowledgement should claim the pending victory");
+        helper.assertFalse(loaded.claimVictoryAcknowledgement(villager, player),
+                "victory acknowledgement should only be claimable once");
+
+        loaded.remember(villager, player, VillagerRaidMemorySavedData.RaidOutcome.LOSS, 84L);
+        helper.assertValueEqual(
+                loaded.memory(villager, player).orElseThrow().outcome(),
+                VillagerRaidMemorySavedData.RaidOutcome.LOSS,
+                "latest shared raid outcome");
         helper.succeed();
     }
 

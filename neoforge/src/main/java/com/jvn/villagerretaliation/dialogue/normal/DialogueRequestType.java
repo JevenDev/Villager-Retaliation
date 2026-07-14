@@ -14,6 +14,7 @@ public enum DialogueRequestType {
     VILLAGE_EVENT_REPORT,
     APOLOGY,
     VILLAGE_DEFENSE_REPORT,
+    RAID_VICTORY_ACKNOWLEDGEMENT,
     STORY,
     SHARE_STORY,
     JOKE,

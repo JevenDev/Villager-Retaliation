@@ -737,6 +737,7 @@ public final class VillagerInteractionTracker {
                 case VILLAGE_EVENT_REPORT -> this.villageEventReportUseCount;
                 case APOLOGY -> this.apologyUseCount;
                 case VILLAGE_DEFENSE_REPORT -> this.villageDefenseReportUseCount;
+                case RAID_VICTORY_ACKNOWLEDGEMENT -> 0;
                 case STORY -> this.storyUseCount;
                 case SHARE_STORY -> this.shareStoryUseCount;
                 case JOKE -> this.jokeUseCount;

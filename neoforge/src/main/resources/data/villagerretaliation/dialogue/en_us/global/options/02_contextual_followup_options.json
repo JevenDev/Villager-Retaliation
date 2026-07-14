@@ -89,6 +89,15 @@
       "show_for_babies": false
     },
     {
+      "id": "raid_victory_acknowledgement",
+      "label": "We won that raid",
+      "type": "dialogue_option",
+      "request": "raid_victory_acknowledgement",
+      "order": -4,
+      "requires_raid_victory_acknowledgement": true,
+      "show_for_babies": false
+    },
+    {
       "id": "story_hint_report",
       "label": "I found that place",
       "type": "dialogue_option",

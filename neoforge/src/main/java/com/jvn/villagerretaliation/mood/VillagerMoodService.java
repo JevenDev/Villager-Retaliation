@@ -124,7 +124,7 @@ public final class VillagerMoodService {
         if (delta > 0) {
             mood = switch (requestType) {
                 case APOLOGY -> VillagerMood.HOPEFUL;
-                case COMBAT_SURVIVAL_REPORT, VILLAGE_DEFENSE_REPORT -> VillagerMood.PROUD;
+                case COMBAT_SURVIVAL_REPORT, VILLAGE_DEFENSE_REPORT, RAID_VICTORY_ACKNOWLEDGEMENT -> VillagerMood.PROUD;
                 default -> VillagerMood.CONTENT;
             };
             intensity = 24 + Math.min(24, delta * 3);

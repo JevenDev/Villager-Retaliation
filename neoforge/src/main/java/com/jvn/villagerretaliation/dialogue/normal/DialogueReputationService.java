@@ -16,6 +16,7 @@ public final class DialogueReputationService {
     private static final int COMBAT_SURVIVAL_REPORT_REPUTATION_GAIN = 12;
     private static final int APOLOGY_REPUTATION_GAIN = 4;
     private static final int VILLAGE_DEFENSE_REPORT_REPUTATION_GAIN = 8;
+    private static final int RAID_VICTORY_ACKNOWLEDGEMENT_REPUTATION_GAIN = 15;
 
     private DialogueReputationService() {
     }
@@ -140,6 +141,13 @@ public final class DialogueReputationService {
                     null
             )
                     : PlannedEffect.none();
+            case RAID_VICTORY_ACKNOWLEDGEMENT -> new PlannedEffect(
+                    RAID_VICTORY_ACKNOWLEDGEMENT_REPUTATION_GAIN,
+                    "raid_victory_acknowledgement",
+                    DialogueReputationEffect.CooldownCategory.NONE,
+                    false,
+                    null
+            );
             case STORY -> planStory(context);
             case JOKE -> planJoke(context);
             case INSULT -> planInsult(context, interactionState.firstConversation());
@@ -184,7 +192,8 @@ public final class DialogueReputationService {
                         VillagerRetaliationConfig.ENABLE_SOCIAL_ATTRIBUTE_REPUTATION_EFFECTS
                 );
             } else if (requestType == DialogueRequestType.COMBAT_SURVIVAL_REPORT
-                    || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT) {
+                    || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT
+                    || requestType == DialogueRequestType.RAID_VICTORY_ACKNOWLEDGEMENT) {
                 delta += VillagerSocialAttributeBehavior.positiveBonus(
                         context.level(),
                         context.villager(),
@@ -242,7 +251,8 @@ public final class DialogueReputationService {
                 || requestType == DialogueRequestType.VILLAGE_EVENT_REPORT
                 || requestType == DialogueRequestType.GIFT_ADVICE_FOLLOWUP
                 || requestType == DialogueRequestType.APOLOGY
-                || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT) {
+                || requestType == DialogueRequestType.VILLAGE_DEFENSE_REPORT
+                || requestType == DialogueRequestType.RAID_VICTORY_ACKNOWLEDGEMENT) {
             return false;
         }
         int limit = repeatedDialogueLimit(context.reputationLevel());

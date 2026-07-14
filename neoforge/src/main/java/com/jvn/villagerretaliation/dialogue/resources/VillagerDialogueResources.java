@@ -75,6 +75,7 @@ public final class VillagerDialogueResources {
             "requires_unreported_recruitment_followup", "requires_unreported_cured_recognition",
             "requires_recent_village_event", "requires_unreported_gift_advice_result",
             "requires_unapologized_remembered_harm", "requires_unreported_village_defense",
+            "requires_raid_victory_acknowledgement",
             "requires_shareable_story",
             "requires_known_family", "requires_known_parent", "requires_known_sibling", "requires_known_spouse", "requires_known_child",
             "requires_known_grandparent", "requires_known_grandchild", "requires_known_descendant", "requires_known_aunt_uncle",
@@ -846,6 +847,7 @@ public final class VillagerDialogueResources {
             boolean requiresUnreportedGiftAdviceResult = readBoolean(entry, "requires_unreported_gift_advice_result");
             boolean requiresUnapologizedRememberedHarm = readBoolean(entry, "requires_unapologized_remembered_harm");
             boolean requiresUnreportedVillageDefense = readBoolean(entry, "requires_unreported_village_defense");
+            boolean requiresRaidVictoryAcknowledgement = readBoolean(entry, "requires_raid_victory_acknowledgement");
             boolean requiresShareableStory = readBoolean(entry, "requires_shareable_story");
             boolean requiresKnownFamily = readBoolean(entry, "requires_known_family");
             boolean requiresKnownParent = readBoolean(entry, "requires_known_parent");
@@ -899,6 +901,7 @@ public final class VillagerDialogueResources {
                     requiresUnreportedGiftAdviceResult,
                     requiresUnapologizedRememberedHarm,
                     requiresUnreportedVillageDefense,
+                    requiresRaidVictoryAcknowledgement,
                     requiresShareableStory,
                     requiresKnownFamily,
                     requiresKnownParent,

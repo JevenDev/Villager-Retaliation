@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.dialogue.VillagerRaidDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
@@ -156,6 +157,8 @@ public final class VillagerDialogueRequestHandler {
             VillagerInteractionTracker.claimUnreportedRecruitmentFollowup(level, villager, player);
         } else if (requestType == DialogueRequestType.CURED_RECOGNITION) {
             VillagerInteractionTracker.claimUnreportedCuredRecognition(level, villager, player);
+        } else if (requestType == DialogueRequestType.RAID_VICTORY_ACKNOWLEDGEMENT) {
+            VillagerRaidDialogueService.claimVictoryAcknowledgement(level, villager, player);
         }
     }
 
@@ -215,6 +218,12 @@ public final class VillagerDialogueRequestHandler {
                             "share_story_missing",
                             VillagerDialogueResources.message(context, "share_story.missing").orElse("")
                     ));
+        }
+        if (requestType == DialogueRequestType.STORY) {
+            Optional<VillagerDialogueService.DialogueResult> raidStory = VillagerRaidDialogueService.selectRaidStory(context);
+            if (raidStory.isPresent()) {
+                return raidStory.get();
+            }
         }
         Optional<VillagerDialogueService.DialogueResult> questResult = VillagerQuestService.handleDialogueOption(context, dialogueOption);
         if (questResult.isPresent()) {

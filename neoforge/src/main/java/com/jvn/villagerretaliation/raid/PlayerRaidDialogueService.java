@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.village.VillagerRaidMemorySavedData;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -142,6 +143,16 @@ public final class PlayerRaidDialogueService {
     static void announceOutcome(
             MinecraftServer server, PlayerRaidSavedData.RaidRecord raid, boolean raidersWon) {
         if (raid.raiderVillagers().isEmpty() || raid.raiderPlayers().isEmpty()) return;
+        VillagerRaidMemorySavedData memories = VillagerRaidMemorySavedData.get(server.overworld());
+        VillagerRaidMemorySavedData.RaidOutcome outcome = raidersWon
+                ? VillagerRaidMemorySavedData.RaidOutcome.VICTORY
+                : VillagerRaidMemorySavedData.RaidOutcome.LOSS;
+        long gameTime = server.overworld().getGameTime();
+        for (UUID villagerId : raid.raiderVillagers()) {
+            for (UUID playerId : raid.raiderPlayers()) {
+                memories.remember(villagerId, playerId, outcome, gameTime);
+            }
+        }
         String messageKey = raidersWon ? VICTORY_MESSAGE_KEY : LOSS_MESSAGE_KEY;
         List<String> fallback = raidersWon ? VICTORY : LOSS;
         for (UUID villagerId : raid.raiderVillagers()) {
