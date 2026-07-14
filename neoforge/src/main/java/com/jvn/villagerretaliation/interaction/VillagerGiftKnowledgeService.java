@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.normal.GiftAdviceKind;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -35,6 +36,7 @@ public final class VillagerGiftKnowledgeService {
 
         Set<String> likedNames = new LinkedHashSet<>();
         Set<String> dislikedNames = new LinkedHashSet<>();
+        String locale = VillagerLocale.locale(player);
 
         for (VillagerGiftPreferences.GiftCandidate candidate : VillagerGiftPreferences.giftCandidates(level, profession)) {
             if (!appliesToProfession(level, candidate, profession)) {
@@ -44,9 +46,9 @@ public final class VillagerGiftKnowledgeService {
             boolean liked = candidate.positive();
             if (knowsGift(data, player, professionKey, itemId, liked)) {
                 if (liked) {
-                    likedNames.add(itemName(candidate.item()));
+                    likedNames.add(itemName(level, locale, candidate.item()));
                 } else {
-                    dislikedNames.add(itemName(candidate.item()));
+                    dislikedNames.add(itemName(level, locale, candidate.item()));
                 }
             }
         }
@@ -70,6 +72,7 @@ public final class VillagerGiftKnowledgeService {
         String itemId = itemId(discovered.item());
         boolean liked = selection.claimedLiked();
         String knowledgeKey = discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY;
+        String localizedItemName = itemName(level, context.locale(), discovered.item());
         if (selection.truthful()) {
             if (data.rememberGiftKnowledge(player.getUUID(), knowledgeKey, itemId, discovered.positive())) {
                 data.setDirty();
@@ -81,14 +84,14 @@ public final class VillagerGiftKnowledgeService {
                     context.villager(),
                     player,
                     itemId,
-                    itemName(discovered.item()),
+                    localizedItemName,
                     discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY
             );
         }
 
         return Optional.of(new GiftKnowledgeDiscovery(
                 giftAdviceKind(liked, discovered.professionSpecific()),
-                itemName(discovered.item()),
+                localizedItemName,
                 giftSubject(profession),
                 itemId,
                 discovered.professionSpecific() ? professionKey : GLOBAL_PROFESSION_KEY
@@ -148,6 +151,7 @@ public final class VillagerGiftKnowledgeService {
             ServerLevel level,
             VillagerProfession profession,
             String excludedItemId,
+            String locale,
             RandomSource random) {
         List<VillagerGiftPreferences.GiftCandidate> candidates = VillagerGiftPreferences.giftCandidates(level, profession).stream()
                 .filter(candidate -> appliesToProfession(level, candidate, profession))
@@ -157,7 +161,7 @@ public final class VillagerGiftKnowledgeService {
         if (candidates.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(itemName(candidates.get(random.nextInt(candidates.size())).item()));
+        return Optional.of(itemName(level, locale, candidates.get(random.nextInt(candidates.size())).item()));
     }
 
     private static List<VillagerGiftPreferences.GiftCandidate> unknownCandidates(
@@ -225,8 +229,8 @@ public final class VillagerGiftKnowledgeService {
         return BuiltInRegistries.ITEM.getKey(item).toString();
     }
 
-    private static String itemName(Item item) {
-        return new ItemStack(item).getHoverName().getString();
+    private static String itemName(ServerLevel level, String locale, Item item) {
+        return VillagerItemText.dialogueName(level.getServer(), locale, new ItemStack(item));
     }
 
     public record GiftKnowledgeSnapshot(List<String> likedGiftNames, List<String> dislikedGiftNames) {

@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.mood.VillagerMood;
@@ -23,9 +24,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.UUID;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public final class VillagerDialogueService {
     private static final long LONG_ABSENCE_MIN_DAYS = 3L;
@@ -623,7 +627,7 @@ public final class VillagerDialogueService {
         return VillagerDialogueResources.message(
                 context,
                 "gift_memory.direct." + gift.reaction().name().toLowerCase(Locale.ROOT),
-                Map.of("gift_item", gift.itemName())
+                Map.of("gift_item", rememberedGiftItemName(gift, context))
         ).orElse("");
     }
 
@@ -633,8 +637,26 @@ public final class VillagerDialogueService {
         return VillagerDialogueResources.message(
                 context,
                 "gift_memory.village." + gift.reaction().name().toLowerCase(Locale.ROOT),
-                Map.of("gift_item", gift.itemName(), "villager_name", villagerName)
+                Map.of("gift_item", rememberedGiftItemName(gift, context), "villager_name", villagerName)
         ).orElse("");
+    }
+
+    private static String rememberedGiftItemName(VillageEventMemory.GiftMemory gift, DialogueContext context) {
+        ResourceLocation itemId = gift.itemId() == null ? null : ResourceLocation.tryParse(gift.itemId());
+        if (itemId != null && BuiltInRegistries.ITEM.containsKey(itemId)) {
+            var item = BuiltInRegistries.ITEM.get(itemId);
+            if (item != Items.AIR) {
+                return VillagerItemText.dialogueName(
+                        context.level().getServer(),
+                        context.locale(),
+                        new ItemStack(item, Math.max(1, gift.itemCount())));
+            }
+        }
+        String itemName = gift.itemName();
+        if (itemName == null || itemName.isBlank()) {
+            return "gift";
+        }
+        return itemName.replaceFirst("^\\d+x\\s+", "");
     }
 
     private static String resolveRememberedVillagerName(DialogueContext context, UUID villagerId, String fallbackName) {
@@ -852,6 +874,7 @@ public final class VillagerDialogueService {
         VillageEventMemory.ContainerTheftMemory theft = event.containerTheft();
         String itemName = theft == null || theft.itemName() == null || theft.itemName().isBlank() ? "items" : theft.itemName();
         String itemId = theft == null || theft.itemId() == null ? "" : theft.itemId();
+        ResourceLocation parsedItemId = ResourceLocation.tryParse(itemId);
         String containerName = theft == null || theft.containerName() == null || theft.containerName().isBlank() ? "container" : theft.containerName();
         String lootTable = theft == null || theft.lootTable() == null ? "" : theft.lootTable();
         int count = theft == null ? 0 : Math.max(0, theft.itemCount());
@@ -865,7 +888,8 @@ public final class VillagerDialogueService {
                 "stolen_item_id", itemId,
                 "stolen_count", Integer.toString(count),
                 "stolen_item_count", Integer.toString(count),
-                "stolen_stack", count + "x " + itemName,
+                "stolen_stack", VillagerItemText.countedName(
+                        context.level().getServer(), context.locale(), count, parsedItemId, itemName),
                 "stolen_container", containerName,
                 "stolen_loot_table", lootTable,
                 "theft_witness", villagerName,

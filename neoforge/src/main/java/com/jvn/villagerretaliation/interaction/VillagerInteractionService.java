@@ -839,6 +839,8 @@ public final class VillagerInteractionService {
                 continuous,
                 HiredVillagerContractService.currentContractId(villager).orElse(null));
         String quantity = continuous ? "continuously" : Integer.toString(amount);
+        String orderDescription = BrewingWorker.orderDescription(
+                level, VillagerLocale.locale(player), route.get().output(), amount, continuous);
         HiredVillagerWorkService.stopWork(
                 level,
                 villager,
@@ -846,10 +848,12 @@ public final class VillagerInteractionService {
                 "interaction.work.brewing.order_summary",
                 Map.of(
                         "amount", quantity,
-                        "item", route.get().output().getHoverName().getString()));
+                        "item", route.get().output().getHoverName().getString(),
+                        "order", orderDescription));
         sendVillagerNotice(player, villager, "interaction.work.brewing.order_summary", Map.of(
                 "amount", quantity,
-                "item", route.get().output().getHoverName().getString()));
+                "item", route.get().output().getHoverName().getString(),
+                "order", orderDescription));
     }
 
     public static void handleBuilderOrderRequest(
@@ -2780,8 +2784,10 @@ public final class VillagerInteractionService {
                 player.serverLevel(),
                 villager,
                 "gift.received_item",
-                VillagerNotifications.replacements("item", itemName(stack), "villager", displayName(villager)),
-                "Received item: " + itemName(stack),
+                VillagerNotifications.replacements(
+                        "item", VillagerItemText.stackName(player.server, VillagerLocale.locale(player), stack),
+                        "villager", displayName(villager)),
+                "Received item: " + VillagerItemText.stackName(player.server, VillagerLocale.locale(player), stack),
                 VillagerReputationNoticeKind.RECEIVED_ITEM
         );
     }
@@ -2793,7 +2799,8 @@ public final class VillagerInteractionService {
 
         DialogueContext context = createDialogueContext(level, player, villager);
         String responseText = VillagerDialogueResources
-                .professionPriorityMessage(context, "gift_given", Map.of("gift_item", itemName(stack)))
+                .professionPriorityMessage(context, "gift_given", Map.of(
+                        "gift_item", VillagerItemText.dialogueName(level.getServer(), context.locale(), stack)))
                 .orElse("");
         sendPersonalVillagerChat(player, villager, responseText);
     }
@@ -2809,7 +2816,7 @@ public final class VillagerInteractionService {
                 .message(
                         context,
                         stolen ? "gift_taken_back.stolen" : "gift_taken_back.returned",
-                        Map.of("gift_item", itemName(displayedStack))
+                        Map.of("gift_item", VillagerItemText.dialogueName(level.getServer(), context.locale(), displayedStack))
                 )
                 .orElse("");
         focusVillagerOnPlayer(villager, player);
@@ -2828,7 +2835,7 @@ public final class VillagerInteractionService {
                 .message(
                         context,
                         stolen ? "trade_payment_taken_back.stolen" : "trade_payment_taken_back.returned",
-                        Map.of("trade_item", itemName(displayedStack))
+                        Map.of("trade_item", VillagerItemText.dialogueName(level.getServer(), context.locale(), displayedStack))
                 )
                 .orElse("");
         focusVillagerOnPlayer(villager, player);
@@ -3015,11 +3022,6 @@ public final class VillagerInteractionService {
                 .professionName(villager.getVillagerData().getProfession(), "")
                 .trim();
         return profession.isBlank() ? name : profession + " " + name;
-    }
-
-    private static String itemName(ItemStack stack) {
-        String name = stack.getHoverName().getString();
-        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
     }
 
     private static String displayName(Villager villager) {

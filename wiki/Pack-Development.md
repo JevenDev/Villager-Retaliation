@@ -13,6 +13,7 @@ Use a datapack for behavior and authored text:
     villagerretaliation/
       gifts/
       currency/
+      item_text/en_us/
       notifications/
       natural_job_armor/
       pacification/

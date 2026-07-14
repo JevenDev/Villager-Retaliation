@@ -1,9 +1,11 @@
 package com.jvn.villagerretaliation.trade;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -101,6 +103,7 @@ public final class VillagerSpecialOrderService {
             options.add(SpecialOrderOption.create(
                     level,
                     villager,
+                    VillagerLocale.locale(player),
                     definition,
                     effectiveWaitDays(definition),
                     effectiveCooldownDays(definition)));
@@ -172,7 +175,8 @@ public final class VillagerSpecialOrderService {
 
         SpecialOrderCost cost = effectiveCost(option.definition());
         if (!cost.isEmpty() && !canPay(player, cost)) {
-            return QueueResult.failed("trade_refresh.special_order_payment_missing", replacements(option, cost));
+            return QueueResult.failed("trade_refresh.special_order_payment_missing", replacements(
+                    level, VillagerLocale.locale(player), option, cost));
         }
         if (!cost.isEmpty()) {
             removePayment(player, cost);
@@ -195,7 +199,8 @@ public final class VillagerSpecialOrderService {
         setCooldown(villager, player.getUUID(), nextCooldownEndDay);
         VillagerTradeMemory.rememberDefinition(level, villager, VillagerProfessionUtil.id(villager.getVillagerData().getProfession()), definitionId);
         int queuedOrderCount = activeOrders + 1;
-        Map<String, String> replacements = new HashMap<>(replacements(option, cost));
+        Map<String, String> replacements = new HashMap<>(replacements(
+                level, VillagerLocale.locale(player), option, cost));
         replacements.put("active_orders", Integer.toString(queuedOrderCount));
         replacements.put("max_orders", Integer.toString(maxActiveOrders));
         return QueueResult.queued(queuedMessageKey(queuedOrderCount), replacements);
@@ -262,7 +267,8 @@ public final class VillagerSpecialOrderService {
             if (player != null
                     && order.hasUUID(PLAYER_KEY)
                     && order.getUUID(PLAYER_KEY).equals(player.getUUID())) {
-                playerReadyTradeItems.add(tradeItemName(level, villager, definition.get()));
+                playerReadyTradeItems.add(tradeItemName(
+                        level, villager, VillagerLocale.locale(player), definition.get()));
             }
             if (order.hasUUID(PLAYER_KEY)) {
                 setCooldown(villager, order.getUUID(PLAYER_KEY), order.getLong(COOLDOWN_END_DAY_KEY));
@@ -479,7 +485,11 @@ public final class VillagerSpecialOrderService {
                 : SpecialOrderCost.EMPTY;
     }
 
-    private static Map<String, String> replacements(SpecialOrderOption option, SpecialOrderCost cost) {
+    private static Map<String, String> replacements(
+            ServerLevel level,
+            String locale,
+            SpecialOrderOption option,
+            SpecialOrderCost cost) {
         return Map.of(
                 "trade_item", option.tradeItem(),
                 "trade_definition", option.definition().id().toString(),
@@ -487,7 +497,7 @@ public final class VillagerSpecialOrderService {
                 "wait_day_word", pluralWord(option.waitDays(), "day", "days"),
                 "cooldown_days", Integer.toString(option.cooldownDays()),
                 "cooldown_day_word", pluralWord(option.cooldownDays(), "day", "days"),
-                "extra_cost", costDescription(cost));
+                "extra_cost", costDescription(level, locale, cost));
     }
 
     public static String pluralWord(long count, String singular, String plural) {
@@ -503,11 +513,15 @@ public final class VillagerSpecialOrderService {
         };
     }
 
-    private static String optionLabel(SkillTradeDefinition definition, String tradeItem) {
+    private static String optionLabel(
+            ServerLevel level,
+            String locale,
+            SkillTradeDefinition definition,
+            String tradeItem) {
         SpecialOrderCost cost = effectiveCost(definition);
         StringBuilder label = new StringBuilder(tradeItem);
         if (!cost.isEmpty()) {
-            label.append(" - ").append(costDescription(cost));
+            label.append(" - ").append(costDescription(level, locale, cost));
         }
         return label.toString();
     }
@@ -524,13 +538,20 @@ public final class VillagerSpecialOrderService {
     }
 
     private static String tradeItemName(ServerLevel level, Villager villager, SkillTradeDefinition definition) {
+        return tradeItemName(level, villager, VillagerLocale.DEFAULT_LOCALE, definition);
+    }
+
+    private static String tradeItemName(
+            ServerLevel level,
+            Villager villager,
+            String locale,
+            SkillTradeDefinition definition) {
         if (definition.result().items().isEmpty()) {
             return definition.id().toString();
         }
         int count = tradeResultCount(level, villager, definition);
         ItemStack stack = new ItemStack(definition.result().items().getFirst(), count);
-        String name = stack.getHoverName().getString();
-        return count > 1 ? count + "x " + name : name;
+        return VillagerItemText.stackName(level.getServer(), locale, stack);
     }
 
     private static int tradeResultCount(ServerLevel level, Villager villager, SkillTradeDefinition definition) {
@@ -539,12 +560,12 @@ public final class VillagerSpecialOrderService {
         return SkillTradeQualityScaler.resultCount(context, definition.result().count());
     }
 
-    private static String costDescription(SpecialOrderCost cost) {
+    private static String costDescription(ServerLevel level, String locale, SpecialOrderCost cost) {
         if (cost == null || cost.isEmpty()) {
             return "";
         }
         ItemStack stack = new ItemStack(cost.item(), cost.count());
-        return stack.getCount() + "x " + stack.getHoverName().getString();
+        return VillagerItemText.stackName(level.getServer(), locale, stack);
     }
 
     private static boolean canPay(ServerPlayer player, SpecialOrderCost cost) {
@@ -675,13 +696,14 @@ public final class VillagerSpecialOrderService {
         private static SpecialOrderOption create(
                 ServerLevel level,
                 Villager villager,
+                String locale,
                 SkillTradeDefinition definition,
                 int waitDays,
                 int cooldownDays) {
-            String tradeItem = tradeItemName(level, villager, definition);
+            String tradeItem = tradeItemName(level, villager, locale, definition);
             return new SpecialOrderOption(
                     definition,
-                    optionLabel(definition, tradeItem),
+                    optionLabel(level, locale, definition, tradeItem),
                     tradeItem,
                     waitDays,
                     cooldownDays);

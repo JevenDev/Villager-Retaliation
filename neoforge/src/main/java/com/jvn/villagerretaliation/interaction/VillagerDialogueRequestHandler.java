@@ -20,17 +20,21 @@ import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public final class VillagerDialogueRequestHandler {
     private VillagerDialogueRequestHandler() {
@@ -242,10 +246,10 @@ public final class VillagerDialogueRequestHandler {
         String alternativeGift = report.liked()
                 ? ""
                 : VillagerGiftKnowledgeService
-                        .randomLikedGiftName(context.level(), testedProfession, report.itemId(), context.random())
+                        .randomLikedGiftName(context.level(), testedProfession, report.itemId(), context.locale(), context.random())
                         .orElse("something useful");
         Map<String, String> replacements = Map.of(
-                "gift_item", report.itemName() == null || report.itemName().isBlank() ? "that gift" : report.itemName(),
+                "gift_item", giftAdviceItemName(context, report),
                 "gift_subject", VillagerInteractionTextUtil.withIndefiniteArticle(professionName),
                 "tested_villager", report.testedVillagerName() == null || report.testedVillagerName().isBlank()
                         ? "them"
@@ -257,6 +261,20 @@ public final class VillagerDialogueRequestHandler {
                 .professionPriorityMessage(context, key, replacements)
                 .or(() -> VillagerDialogueResources.message(context, key, replacements))
                 .orElse("");
+    }
+
+    private static String giftAdviceItemName(
+            DialogueContext context,
+            VillagerInteractionTracker.GiftAdviceResultReport report) {
+        ResourceLocation itemId = report.itemId() == null ? null : ResourceLocation.tryParse(report.itemId());
+        if (itemId != null && BuiltInRegistries.ITEM.containsKey(itemId)) {
+            var item = BuiltInRegistries.ITEM.get(itemId);
+            if (item != Items.AIR) {
+                return VillagerItemText.dialogueName(
+                        context.level().getServer(), context.locale(), new ItemStack(item));
+            }
+        }
+        return report.itemName() == null || report.itemName().isBlank() ? "that gift" : report.itemName();
     }
 
     private static VillagerProfession professionFromKey(String key) {
@@ -295,7 +313,8 @@ public final class VillagerDialogueRequestHandler {
         if (itemPayment.requireSpace() && !remainder.isEmpty()) {
             return Optional.empty();
         }
-        return Optional.of(DialogueItemPaymentResult.from(itemPayment, removedStacks.get()));
+        return Optional.of(DialogueItemPaymentResult.from(
+                player.getServer(), VillagerLocale.locale(player), itemPayment, removedStacks.get()));
     }
 
     private static DialogueItemTransferTarget dialogueItemTransferTarget(
@@ -367,18 +386,13 @@ public final class VillagerDialogueRequestHandler {
                 .toList();
     }
 
-    private static String itemName(ItemStack stack) {
-        String name = stack.getHoverName().getString();
-        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
-    }
-
     private static String itemId(ItemStack stack) {
         return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
     }
 
-    private static String itemListName(List<ItemStack> stacks) {
+    private static String itemListName(MinecraftServer server, String locale, List<ItemStack> stacks) {
         return stacks.stream()
-                .map(VillagerDialogueRequestHandler::itemName)
+                .map(stack -> VillagerItemText.stackName(server, locale, stack))
                 .reduce((left, right) -> left + ", " + right)
                 .orElse("items");
     }
@@ -388,19 +402,27 @@ public final class VillagerDialogueRequestHandler {
             return new DialogueItemPaymentResult(Map.of());
         }
 
-        private static DialogueItemPaymentResult from(DialogueItemPayment itemPayment, List<ItemStack> removedStacks) {
+        private static DialogueItemPaymentResult from(
+                MinecraftServer server,
+                String locale,
+                DialogueItemPayment itemPayment,
+                List<ItemStack> removedStacks) {
             Map<String, String> replacements = new HashMap<>(itemPayment.removal().replacements());
             int count = removedStacks.stream().mapToInt(ItemStack::getCount).sum();
             ItemStack representative = removedStacks.isEmpty() ? ItemStack.EMPTY : removedStacks.getFirst();
-            String itemName = representative.isEmpty() ? "items" : itemName(representative.copyWithCount(1));
-            String itemStack = representative.isEmpty() ? "items" : itemName(representative);
+            String itemName = representative.isEmpty()
+                    ? "items"
+                    : VillagerItemText.dialogueName(server, locale, representative);
+            String itemStack = representative.isEmpty()
+                    ? "items"
+                    : VillagerItemText.stackName(server, locale, representative);
             String itemId = representative.isEmpty() ? "" : itemId(representative);
             replacements.put("given_count", Integer.toString(count));
             replacements.put("given_item_count", Integer.toString(count));
             replacements.put("given_item", itemName);
             replacements.put("given_item_id", itemId);
             replacements.put("given_stack", itemStack);
-            replacements.put("given_items", itemListName(removedStacks));
+            replacements.put("given_items", itemListName(server, locale, removedStacks));
             replacements.put("payment_item", itemName);
             replacements.put("payment_item_id", itemId);
             replacements.put("payment_stack", itemStack);

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.dialogue.forced.container;
 
 import com.jvn.villagerretaliation.config.ContainerWatchMode;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import com.jvn.villagerretaliation.util.VillagerRetaliationTags;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -187,14 +189,13 @@ public final class ForcedDialogueContainers {
                 .orElse(ItemStack.EMPTY);
     }
 
-    public static String stackName(ItemStack stack) {
-        String name = stack.getHoverName().getString();
-        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
+    public static String stackName(MinecraftServer server, String locale, ItemStack stack) {
+        return VillagerItemText.stackName(server, locale, stack);
     }
 
-    public static String stackListName(List<ItemStack> stacks) {
+    public static String stackListName(MinecraftServer server, String locale, List<ItemStack> stacks) {
         return stacks.stream()
-                .map(ForcedDialogueContainers::stackName)
+                .map(stack -> stackName(server, locale, stack))
                 .reduce((left, right) -> left + ", " + right)
                 .orElse("items");
     }

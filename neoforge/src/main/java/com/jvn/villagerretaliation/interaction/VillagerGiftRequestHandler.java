@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -67,6 +68,7 @@ public final class VillagerGiftRequestHandler {
         }
 
         ServerLevel level = target.level();
+        String locale = VillagerLocale.locale(player);
         Optional<VillagerTakenItemTracker.TakenItemOwner> takenItemOwner =
                 VillagerTakenItemTracker.owner(selectedStack);
         ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
@@ -83,7 +85,7 @@ public final class VillagerGiftRequestHandler {
                     villager,
                     player,
                     itemId(giftedStack),
-                    itemName(giftedStack),
+                    VillagerItemText.dialogueName(level.getServer(), locale, giftedStack),
                     VillagerGiftKnowledgeService.professionKey(profession),
                     VillagerInteractionTextUtil.professionName(profession, "villager").toLowerCase(java.util.Locale.ROOT),
                     VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
@@ -99,7 +101,9 @@ public final class VillagerGiftRequestHandler {
                 villager,
                 player,
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
-                itemName(giftedStack),
+                VillagerItemText.dialogueName(level.getServer(), locale, giftedStack),
+                itemId(giftedStack),
+                giftedStack.getCount(),
                 giftPreference.reaction(),
                 reputationValue
         );
@@ -139,8 +143,8 @@ public final class VillagerGiftRequestHandler {
             Optional<VillagerTakenItemTracker.TakenItemOwner> takenItemOwner,
             Villager villager) {
         Map<String, String> replacements = new java.util.HashMap<>(Map.of(
-                "gift_item", giftedStack.getHoverName().getString(),
-                "item", itemName(giftedStack),
+                "gift_item", VillagerItemText.dialogueName(context.level().getServer(), context.locale(), giftedStack),
+                "item", VillagerItemText.dialogueName(context.level().getServer(), context.locale(), giftedStack),
                 "gift_item_id", itemId(giftedStack),
                 "item_id", itemId(giftedStack)
         ));
@@ -238,15 +242,12 @@ public final class VillagerGiftRequestHandler {
                 player.serverLevel(),
                 villager,
                 trigger,
-                VillagerNotifications.replacements("item", itemName(giftedStack), "villager", displayName(villager)),
-                reaction + ": " + itemName(giftedStack),
+                VillagerNotifications.replacements(
+                        "item", VillagerItemText.stackName(player.server, VillagerLocale.locale(player), giftedStack),
+                        "villager", displayName(villager)),
+                reaction + ": " + VillagerItemText.stackName(player.server, VillagerLocale.locale(player), giftedStack),
                 kind
         );
-    }
-
-    private static String itemName(ItemStack stack) {
-        String name = stack.getHoverName().getString();
-        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
     }
 
     private static String itemId(ItemStack stack) {

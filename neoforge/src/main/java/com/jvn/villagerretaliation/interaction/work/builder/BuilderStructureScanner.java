@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work.builder;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -16,6 +17,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Item;
@@ -130,6 +132,13 @@ public final class BuilderStructureScanner {
     }
 
     public static String materialSummary(List<MaterialRequirement> materials, int limit) {
+        return materialSummary(null, materials, limit);
+    }
+
+    public static String materialSummary(
+            MinecraftServer server,
+            List<MaterialRequirement> materials,
+            int limit) {
         if (materials == null || materials.isEmpty()) {
             return "no carried materials";
         }
@@ -137,7 +146,10 @@ public final class BuilderStructureScanner {
         List<String> parts = new ArrayList<>();
         for (int i = 0; i < Math.min(safeLimit, materials.size()); i++) {
             MaterialRequirement material = materials.get(i);
-            parts.add(material.count() + "x " + material.itemName());
+            ItemStack stack = material.item().copyWithCount(material.count());
+            parts.add(server == null
+                    ? VillagerItemText.countedName(material.count(), material.itemName())
+                    : VillagerItemText.stackName(server, stack));
         }
         int hidden = materials.size() - parts.size();
         if (hidden > 0) {

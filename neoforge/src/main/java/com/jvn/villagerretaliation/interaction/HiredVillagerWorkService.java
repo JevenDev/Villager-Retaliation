@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
@@ -1341,7 +1342,7 @@ public final class HiredVillagerWorkService {
             case BREWING -> setStatus(
                     state,
                     BrewingWorker.orderSummaryKey(level, state),
-                    BrewingWorker.orderSummaryReplacements(level, state));
+                    BrewingWorker.orderSummaryReplacements(level, VillagerLocale.locale(player), state));
             case BUILDER -> {
                 if (BuilderTaskState.hasTask(state)) {
                     setStatus(state, "interaction.work.builder.status_summary", BuilderTaskState.replacements(state));

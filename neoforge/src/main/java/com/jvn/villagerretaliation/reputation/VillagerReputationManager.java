@@ -424,35 +424,8 @@ public final class VillagerReputationManager {
         }
     }
 
-    private static String collapsedTierChangeMessage(VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel, int count) {
-        boolean improved = newLevel.isMoreTrustedThan(previousLevel);
-        return count + "x " + (switch (newLevel) {
-            case ROYALTY -> improved
-                    ? "Villagers now treat you like royalty."
-                    : "Villagers no longer see you as royalty.";
-            case REVERED -> improved
-                    ? "Villagers now revere you."
-                    : "Villagers' reverence for you has faded.";
-            case RESPECTED -> improved
-                    ? "Villagers deeply respect you."
-                    : "Villagers' deep respect for you is slipping away.";
-            case TRUSTED -> improved
-                    ? "Villagers now trust you."
-                    : "Villagers' trust in you has weakened.";
-            case NEUTRAL -> "Villagers seem to feel neutral toward you again.";
-            case SUSPICIOUS -> improved
-                    ? "Villagers seem less suspicious of you."
-                    : "Villagers are becoming suspicious of you.";
-            case HOSTILE -> improved
-                    ? "Villagers no longer see you as completely unforgivable."
-                    : "Villagers are becoming hostile toward you.";
-            case DESPISED -> improved
-                    ? "Villagers' hatred for you has softened."
-                    : "Villagers come to despise you.";
-            case FEARED -> improved
-                    ? "Villagers no longer fear you completely."
-                    : "Villagers now fear you.";
-        });
+    private static String collapsedTierChangeMessage(String localizedMessage, int count) {
+        return localizedMessage + " (" + count + ")";
     }
 
     private static void spawnTierChangeParticles(ServerLevel level, AbstractVillager villager, VillagerReputationLevel previousLevel, VillagerReputationLevel newLevel) {
@@ -539,7 +512,7 @@ public final class VillagerReputationManager {
                 return this.notification;
             }
             return new ResolvedVillagerNotification(
-                    collapsedTierChangeMessage(this.previousLevel, this.newLevel, count),
+                    collapsedTierChangeMessage(this.notification.text(), count),
                     this.notification.textColor(),
                     this.notification.chatColor(),
                     this.notification.noticeKind(),

@@ -691,6 +691,7 @@ const knownPlaceholders = new Set([
   "objective_type",
   "offer_slot",
   "option",
+  "order",
   "overflow_count",
   "parent",
   "parent_possessive",

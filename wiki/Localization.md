@@ -33,6 +33,54 @@ Example translated message:
 
 Use the same `id` so the locale-specific entry replaces the fallback.
 
+## Item Counts In Dialogue
+
+Generated item phrases such as `two emeralds` are controlled by locale-scoped datapack files:
+
+```text
+data/<namespace>/item_text/en_us/items.json
+data/<namespace>/item_text/fr_fr/items.json
+```
+
+The built-in English definition uses numeric counts, but a locale can define any count categories it needs. Forms are tested in order and the final form is the fallback:
+
+```json
+{
+  "forms": [
+    { "id": "one", "count_pattern": "1", "format": "{item}" },
+    { "id": "few", "count_pattern": "(?:2|3|4)", "format": "{count} {item}" },
+    { "id": "other", "format": "{count} {item}" }
+  ],
+  "currency": {
+    "one": "emerald",
+    "few": "emeralds",
+    "other": "emeralds"
+  },
+  "items": {
+    "minecraft:bread": {
+      "one": "bread",
+      "few": "loaves of bread",
+      "other": "loaves of bread"
+    }
+  },
+  "rules": [
+    {
+      "forms": ["few", "other"],
+      "pattern": "(?i)(.*[^aeiou])y$",
+      "replacement": "$1ies"
+    }
+  ]
+}
+```
+
+- `count_pattern` is a regular expression matched against the integer count.
+- `format` supports `{count}` and `{item}`. A locale may omit `{count}` or spell out particular values with additional forms.
+- `currency` provides form-specific names for the configured currency item.
+- `items` provides form-specific names by item ID and is the preferred way to translate irregular or uncountable nouns.
+- `rules` are ordered regular-expression fallbacks. The first matching rule for the selected form wins.
+
+Files merge in resource order. The requested locale inherits `en_us`, then overrides the sections and entries it supplies. Run `/reload` after changing these files.
+
 ## 2. Resource-Pack Language Files
 
 Use a resource pack for GUI and generated labels:

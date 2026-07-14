@@ -1,0 +1,56 @@
+{
+  "forms": [
+    {
+      "id": "one",
+      "count_pattern": "1",
+      "format": "{item}"
+    },
+    {
+      "id": "other",
+      "format": "{count} {item}"
+    }
+  ],
+  "items": {
+    "minecraft:bread": { "other": "bread" },
+    "minecraft:charcoal": { "other": "charcoal" },
+    "minecraft:clay_ball": { "other": "clay" },
+    "minecraft:coal": { "other": "coal" },
+    "minecraft:cod": { "other": "cod" },
+    "minecraft:flint": { "other": "flint" },
+    "minecraft:glass": { "other": "glass" },
+    "minecraft:gunpowder": { "other": "gunpowder" },
+    "minecraft:leather": { "other": "leather" },
+    "minecraft:mutton": { "other": "mutton" },
+    "minecraft:paper": { "other": "paper" },
+    "minecraft:salmon": { "other": "salmon" },
+    "minecraft:string": { "other": "string" },
+    "minecraft:wheat": { "other": "wheat" }
+  },
+  "rules": [
+    {
+      "forms": ["other"],
+      "pattern": "(?i)^(.+?)(?= of )",
+      "replacement": "$1s"
+    },
+    {
+      "forms": ["other"],
+      "pattern": "(?i)(.*(?<!s)s)$",
+      "replacement": "$1"
+    },
+    {
+      "forms": ["other"],
+      "pattern": "(?i)(.*(?:ch|sh|ss|x|z))$",
+      "replacement": "$1es"
+    },
+    {
+      "forms": ["other"],
+      "pattern": "(?i)(.*[^aeiou])y$",
+      "replacement": "$1ies"
+    },
+    {
+      "forms": ["other"],
+      "pattern": "(?i)(.*)$",
+      "replacement": "$1s"
+    }
+  ]
+}

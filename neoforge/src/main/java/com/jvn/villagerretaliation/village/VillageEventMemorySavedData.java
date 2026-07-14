@@ -276,6 +276,8 @@ public class VillageEventMemorySavedData extends SavedData {
             return new VillageEventMemory.GiftMemory(
                     giftTag.getString(TAG_VILLAGER_NAME),
                     giftTag.getString(TAG_ITEM_NAME),
+                    giftTag.getString(TAG_ITEM_ID),
+                    Math.max(1, giftTag.getInt(TAG_ITEM_COUNT)),
                     VillagerGiftPreferences.GiftReaction.valueOf(giftTag.getString(TAG_REACTION)),
                     giftTag.getInt(TAG_REPUTATION_VALUE)
             );
@@ -357,6 +359,8 @@ public class VillageEventMemorySavedData extends SavedData {
         CompoundTag giftTag = new CompoundTag();
         giftTag.putString(TAG_VILLAGER_NAME, safe(gift.villagerName()));
         giftTag.putString(TAG_ITEM_NAME, safe(gift.itemName()));
+        giftTag.putString(TAG_ITEM_ID, safe(gift.itemId()));
+        giftTag.putInt(TAG_ITEM_COUNT, Math.max(1, gift.itemCount()));
         giftTag.putString(TAG_REACTION, gift.reaction().name());
         giftTag.putInt(TAG_REPUTATION_VALUE, gift.reputationValue());
         tag.put(TAG_GIFT, giftTag);

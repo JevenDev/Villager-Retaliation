@@ -72,6 +72,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
@@ -3013,11 +3014,13 @@ public final class ForcedDialogueService {
             return Optional.empty();
         }
 
-        Optional<TradeItemProximityMatch> mainHandMatch = matchingHeldTradeItem(villager, player.getMainHandItem(), "main_hand");
+        String locale = VillagerLocale.locale(player);
+        Optional<TradeItemProximityMatch> mainHandMatch = matchingHeldTradeItem(
+                villager, player.getMainHandItem(), "main_hand", locale);
         if (mainHandMatch.isPresent()) {
             return mainHandMatch;
         }
-        return matchingHeldTradeItem(villager, player.getOffhandItem(), "off_hand");
+        return matchingHeldTradeItem(villager, player.getOffhandItem(), "off_hand", locale);
     }
 
     private static boolean canReactToHeldTradeItem(Villager villager, ServerPlayer player) {
@@ -3028,7 +3031,11 @@ public final class ForcedDialogueService {
                 && VillagerInteractionService.canUseForcedInteractionSystem(player, villager);
     }
 
-    private static Optional<TradeItemProximityMatch> matchingHeldTradeItem(Villager villager, ItemStack heldStack, String slot) {
+    private static Optional<TradeItemProximityMatch> matchingHeldTradeItem(
+            Villager villager,
+            ItemStack heldStack,
+            String slot,
+            String locale) {
         if (heldStack.isEmpty()) {
             return Optional.empty();
         }
@@ -3040,11 +3047,13 @@ public final class ForcedDialogueService {
             }
             ItemStack costA = offer.getCostA();
             if (isHeldTradeCost(heldStack, costA)) {
-                return Optional.of(new TradeItemProximityMatch(heldStack, costA, offer.getResult(), slot, offerIndex));
+                return Optional.of(new TradeItemProximityMatch(
+                        villager.level().getServer(), locale, heldStack, costA, offer.getResult(), slot, offerIndex));
             }
             ItemStack costB = offer.getCostB();
             if (isHeldTradeCost(heldStack, costB)) {
-                return Optional.of(new TradeItemProximityMatch(heldStack, costB, offer.getResult(), slot, offerIndex));
+                return Optional.of(new TradeItemProximityMatch(
+                        villager.level().getServer(), locale, heldStack, costB, offer.getResult(), slot, offerIndex));
             }
         }
         return Optional.empty();
@@ -3436,8 +3445,10 @@ public final class ForcedDialogueService {
                 representativeStack.isEmpty() ? "items" : representativeStack.getHoverName().getString(),
                 representativeStack.isEmpty() ? "" : BuiltInRegistries.ITEM.getKey(representativeStack.getItem()).toString(),
                 representativeStack.isEmpty() ? removedCount : representativeStack.getCount(),
-                representativeStack.isEmpty() ? "items" : ForcedDialogueContainers.stackName(representativeStack),
-                removedStacks.isEmpty() ? "items" : ForcedDialogueContainers.stackListName(removedStacks),
+                representativeStack.isEmpty() ? "items" : ForcedDialogueContainers.stackName(
+                        level.getServer(), VillagerLocale.locale(player), representativeStack),
+                removedStacks.isEmpty() ? "items" : ForcedDialogueContainers.stackListName(
+                        level.getServer(), VillagerLocale.locale(player), removedStacks),
                 snapshot.containerName().getString(),
                 snapshot.lootTable() == null ? "" : snapshot.lootTable().toString(),
                 priorContainerThefts,
@@ -3498,8 +3509,10 @@ public final class ForcedDialogueService {
                 representativeStack.isEmpty() ? "items" : representativeStack.getHoverName().getString(),
                 representativeStack.isEmpty() ? "" : BuiltInRegistries.ITEM.getKey(representativeStack.getItem()).toString(),
                 representativeStack.isEmpty() ? removedCount : representativeStack.getCount(),
-                representativeStack.isEmpty() ? "items" : ForcedDialogueContainers.stackName(representativeStack),
-                removedStacks.isEmpty() ? "items" : ForcedDialogueContainers.stackListName(removedStacks),
+                representativeStack.isEmpty() ? "items" : ForcedDialogueContainers.stackName(
+                        level.getServer(), VillagerLocale.locale(player), representativeStack),
+                removedStacks.isEmpty() ? "items" : ForcedDialogueContainers.stackListName(
+                        level.getServer(), VillagerLocale.locale(player), removedStacks),
                 snapshot.containerName().getString(),
                 snapshot.lootTable() == null ? "" : snapshot.lootTable().toString(),
                 priorContainerThefts,
@@ -4459,6 +4472,8 @@ public final class ForcedDialogueService {
     }
 
     private record TradeItemProximityMatch(
+            MinecraftServer server,
+            String locale,
             ItemStack heldStack,
             ItemStack costStack,
             ItemStack resultStack,
@@ -4468,13 +4483,13 @@ public final class ForcedDialogueService {
             String heldItemName = this.heldStack.getHoverName().getString();
             String heldItemId = BuiltInRegistries.ITEM.getKey(this.heldStack.getItem()).toString();
             String costItemName = this.costStack.getHoverName().getString();
-            String costStackName = ForcedDialogueContainers.stackName(this.costStack);
+            String costStackName = ForcedDialogueContainers.stackName(this.server, this.locale, this.costStack);
             String resultItemName = this.resultStack.isEmpty()
                     ? "something"
                     : this.resultStack.getHoverName().getString();
             String resultStackName = this.resultStack.isEmpty()
                     ? "something"
-                    : ForcedDialogueContainers.stackName(this.resultStack);
+                    : ForcedDialogueContainers.stackName(this.server, this.locale, this.resultStack);
             Map<String, String> replacements = new HashMap<>();
             replacements.put("player_item", heldItemName);
             replacements.put("held_item", heldItemName);

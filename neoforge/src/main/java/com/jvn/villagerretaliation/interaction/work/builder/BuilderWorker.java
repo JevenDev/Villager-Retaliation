@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction.work.builder;
 
+import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
@@ -372,18 +373,23 @@ public final class BuilderWorker extends AbstractBlockWorker {
         for (BuilderStructureScanner.MaterialRequirement material : materials) {
             int available = countAvailableMaterial(villager, inventory, material.item());
             if (available < material.count()) {
-                missing.add((material.count() - available) + "x " + material.itemName());
+                missing.add(VillagerItemText.stackName(
+                        villager.level().getServer(),
+                        material.item().copyWithCount(material.count() - available)));
             }
         }
         return new MissingMaterials(missing);
     }
 
     private static MissingMaterials missingMaterialDeficits(
+            ServerLevel level,
             List<BuilderStructureScanner.MaterialRequirement> deficits) {
         List<String> missing = new ArrayList<>();
         for (BuilderStructureScanner.MaterialRequirement material : deficits) {
             if (material.count() > 0) {
-                missing.add(material.count() + "x " + material.itemName());
+                missing.add(VillagerItemText.stackName(
+                        level.getServer(),
+                        material.item().copyWithCount(material.count())));
             }
         }
         return new MissingMaterials(missing);
@@ -559,7 +565,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return null;
         }
 
-        MissingMaterials missingSummary = missingMaterialDeficits(missing);
+        MissingMaterials missingSummary = missingMaterialDeficits(level, missing);
         BuilderTaskState.setMissingMaterials(context.state(), missingSummary.summary());
         List<BuilderStructureScanner.MaterialRequirement> storageMissing = missing;
         Predicate<ItemStack> storageMaterialFilter = stack -> matchesAnyMaterial(storageMissing, stack);
@@ -596,7 +602,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                 BuilderTaskState.clearMissingMaterials(context.state());
                 return null;
             }
-            missingSummary = missingMaterialDeficits(missing);
+            missingSummary = missingMaterialDeficits(level, missing);
             BuilderTaskState.setMissingMaterials(context.state(), missingSummary.summary());
             List<BuilderStructureScanner.MaterialRequirement> updatedStorageMissing = missing;
             storageMaterialFilter = stack -> matchesAnyMaterial(updatedStorageMissing, stack);
@@ -666,7 +672,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             HiredWorkerBrain.setFailure(context, "builder_material_storage_unreachable", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
             HiredWorkerBrain.setStorageTarget(context, storage);
-            return WorkResult.idle("interaction.work.builder.materials_unreachable", materialReplacements(context.state(), missing));
+            return WorkResult.idle("interaction.work.builder.materials_unreachable", materialReplacements(level, context.state(), missing));
         }
 
         faceBlock(villager, storage);
@@ -711,7 +717,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
         BuilderTaskState.setMissingMaterials(
                 context.state(),
-                missingMaterialDeficits(stillMissing).summary());
+                missingMaterialDeficits(level, stillMissing).summary());
         if (changedStorageInventory) {
             stopAfterBuilderStorageAction(villager);
             HiredWorkerBrain.clearFailure(context);
@@ -760,7 +766,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
             }
             BuilderTaskState.setMissingMaterials(
                     context.state(),
-                    missingMaterialDeficits(stillMissing).summary());
+                    missingMaterialDeficits(level, stillMissing).summary());
         }
 
         List<BuilderStructureScanner.MaterialRequirement> remainingStorageMissing = stillMissing;
@@ -774,7 +780,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
                     level,
                     villager,
                     context,
-                    missingMaterialDeficits(stillMissing),
+                    missingMaterialDeficits(level, stillMissing),
                     plan,
                     origin);
         }
@@ -898,7 +904,7 @@ public final class BuilderWorker extends AbstractBlockWorker {
         }
         BuilderTaskState.setMissingMaterials(
                 context.state(),
-                missingMaterialDeficits(stillMissing).summary());
+                missingMaterialDeficits(level, stillMissing).summary());
         if (changedStorageInventory) {
             stopAfterBuilderStorageAction(villager);
             HiredWorkerBrain.clearFailure(context);
@@ -1155,16 +1161,17 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return BuilderTaskState.replacements(state);
         }
         return Map.of(
-                "materials", "1x " + block.requiredItem().getHoverName().getString(),
+                "materials", VillagerItemText.countedName(1, block.requiredItem().getHoverName().getString()),
                 "structure", BuilderTaskState.structureLabel(state),
                 "storage_radius", Integer.toString(builderMaterialStorageRadius()));
     }
 
     private static Map<String, String> materialReplacements(
+            ServerLevel level,
             CompoundTag state,
             List<BuilderStructureScanner.MaterialRequirement> materials) {
         return Map.of(
-                "materials", BuilderStructureScanner.materialSummary(materials, 5),
+                "materials", BuilderStructureScanner.materialSummary(level.getServer(), materials, 5),
                 "structure", BuilderTaskState.structureLabel(state),
                 "storage_radius", Integer.toString(builderMaterialStorageRadius()));
     }
@@ -2669,7 +2676,8 @@ public final class BuilderWorker extends AbstractBlockWorker {
             if (block == null || !block.requiresMaterial()) {
                 return new MissingMaterials(List.of());
             }
-            return new MissingMaterials(List.of("1x " + block.requiredItem().getHoverName().getString()));
+            return new MissingMaterials(List.of(
+                    VillagerItemText.countedName(1, block.requiredItem().getHoverName().getString())));
         }
 
         public boolean ready() {

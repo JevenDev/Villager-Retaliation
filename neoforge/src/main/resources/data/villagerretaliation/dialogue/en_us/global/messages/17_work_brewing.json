@@ -652,16 +652,16 @@
     {
       "key": "interaction.work.brewing.order_summary",
       "lines": [
-        "Brewing {amount} x {item}.",
-        "All right. Brewing {amount} x {item}.",
-        "Here's where I am with it: Brewing {amount} x {item}.",
-        "For now, that is the situation. Brewing {amount} x {item}.",
-        "Just so you know. Brewing {amount} x {item}.",
-        "Plainly put: Brewing {amount} x {item}.",
-        "That's all I have for now: Brewing {amount} x {item}.",
-        "Understood. Brewing {amount} x {item}.",
-        "Nothing else to add yet. Brewing {amount} x {item}.",
-        "For the moment: Brewing {amount} x {item}."
+        "Brewing {order}.",
+        "All right. Brewing {order}.",
+        "Here's where I am with it: Brewing {order}.",
+        "For now, that is the situation. Brewing {order}.",
+        "Just so you know. Brewing {order}.",
+        "Plainly put: Brewing {order}.",
+        "That's all I have for now: Brewing {order}.",
+        "Understood. Brewing {order}.",
+        "Nothing else to add yet. Brewing {order}.",
+        "For the moment: Brewing {order}."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.order_summary.040"
     },

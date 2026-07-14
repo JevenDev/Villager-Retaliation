@@ -5,8 +5,10 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -239,7 +241,8 @@ public final class VillagerConfiscatedStolenItemTracker {
         return VillagerDialogueResources.message(
                 VillagerInteractionService.createDialogueContext(level, player, villager),
                 warningMessageKey(offenseCount),
-                Map.of("item_stack", itemName(stack))
+                Map.of("item_stack", VillagerItemText.stackName(
+                        level.getServer(), VillagerLocale.locale(player), stack))
         ).orElse("");
     }
 
@@ -290,11 +293,6 @@ public final class VillagerConfiscatedStolenItemTracker {
 
     private static void stripStolenItemTracking(ItemStack stack, String sourceKind) {
         LEDGER.stripTracking(stack, sourceKind);
-    }
-
-    private static String itemName(ItemStack stack) {
-        String name = stack.getHoverName().getString();
-        return stack.getCount() > 1 ? stack.getCount() + "x " + name : name;
     }
 
     record StolenItemSnapshot(List<TrackedVillagerItemLedger.StackCount> counts) {

@@ -537,7 +537,7 @@
     }
 
     function isNamespaceRootDataPath(path) {
-      return /^[a-z0-9_.-]+\/(?:dialogue|dialogue_trees|forced_dialogue|notifications|gifts|pacification|quests|quest_scenes|quest_encounters|villager_names|story_structures|story_biomes)\/.+\.json$/i.test(path);
+      return /^[a-z0-9_.-]+\/(?:dialogue|dialogue_trees|forced_dialogue|notifications|gifts|item_text|pacification|quests|quest_scenes|quest_encounters|villager_names|story_structures|story_biomes)\/.+\.json$/i.test(path);
     }
 
     function isTextPath(path) {

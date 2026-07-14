@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work.brewing;
 
+import com.jvn.villagerretaliation.interaction.VillagerItemText;
+import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
@@ -111,11 +113,37 @@ public final class BrewingWorker extends AbstractBlockWorker {
     }
 
     public static Map<String, String> orderSummaryReplacements(ServerLevel level, CompoundTag state) {
+        return orderSummaryReplacements(level, VillagerLocale.DEFAULT_LOCALE, state);
+    }
+
+    public static Map<String, String> orderSummaryReplacements(ServerLevel level, String locale, CompoundTag state) {
         return targetRoute(level, state)
                 .map(route -> Map.of(
                         "amount", state.getBoolean(CONTINUOUS_TAG) ? "continuously" : Integer.toString(state.getInt(REMAINING_TAG)),
-                        "item", route.output().getHoverName().getString()))
+                        "item", route.output().getHoverName().getString(),
+                        "order", orderDescription(
+                                level,
+                                locale,
+                                route.output(),
+                                state.getInt(REMAINING_TAG),
+                                state.getBoolean(CONTINUOUS_TAG))))
                 .orElse(Map.of());
+    }
+
+    public static String orderDescription(ServerLevel level, ItemStack output, int amount, boolean continuous) {
+        return orderDescription(level, VillagerLocale.DEFAULT_LOCALE, output, amount, continuous);
+    }
+
+    public static String orderDescription(
+            ServerLevel level,
+            String locale,
+            ItemStack output,
+            int amount,
+            boolean continuous) {
+        if (continuous) {
+            return VillagerItemText.dialogueName(level.getServer(), locale, output) + " continuously";
+        }
+        return VillagerItemText.stackName(level.getServer(), locale, output.copyWithCount(Math.max(1, amount)));
     }
 
     public static String missingMaterials(CompoundTag state) {

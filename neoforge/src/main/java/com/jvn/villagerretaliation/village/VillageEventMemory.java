@@ -112,6 +112,8 @@ public final class VillageEventMemory {
             Entity player,
             String villagerName,
             String itemName,
+            String itemId,
+            int itemCount,
             VillagerGiftPreferences.GiftReaction reaction,
             int reputationValue) {
         remember(level, new MemoryEvent(
@@ -121,7 +123,7 @@ public final class VillageEventMemory {
                 pos.immutable(),
                 villager == null ? null : villager.getUUID(),
                 player == null ? null : player.getUUID(),
-                new GiftMemory(villagerName, itemName, reaction, reputationValue),
+                new GiftMemory(villagerName, itemName, itemId, itemCount, reaction, reputationValue),
                 null,
                 null,
                 null,
@@ -807,7 +809,13 @@ public final class VillageEventMemory {
         }
     }
 
-    public record GiftMemory(String villagerName, String itemName, VillagerGiftPreferences.GiftReaction reaction, int reputationValue) {
+    public record GiftMemory(
+            String villagerName,
+            String itemName,
+            String itemId,
+            int itemCount,
+            VillagerGiftPreferences.GiftReaction reaction,
+            int reputationValue) {
     }
 
     public record ContainerTheftMemory(
