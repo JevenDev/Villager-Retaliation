@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.allegiance.UnlawfulOrderService;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
+import com.jvn.villagerretaliation.combat.VillagerCombatAttributeCompat;
 import com.jvn.villagerretaliation.combat.VillagerPacificationAttempt;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
@@ -363,6 +364,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (event.getEntity() instanceof LivingEntity livingEntity) {
+            VillagerCombatAttributeCompat.ensureCombatAttributes(livingEntity);
+        }
         if (!event.getLevel().isClientSide()) {
             EncounterService.onEntityJoin(event.getEntity());
             SceneLifecycleIntegration.onEntityReturn(event.getEntity());

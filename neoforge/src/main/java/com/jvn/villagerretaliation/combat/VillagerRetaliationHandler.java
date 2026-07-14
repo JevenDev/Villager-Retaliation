@@ -482,8 +482,7 @@ public final class VillagerRetaliationHandler {
         if (canMeleeHit && allowMeleeAttack && meleeAttackReady) {
             var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(villager);
             villager.swing(attackHand, true);
-            syncMeleeAttackAttributes(villager);
-            if (villager.doHurtTarget(target)) {
+            if (syncMeleeAttackAttributes(villager) && villager.doHurtTarget(target)) {
                 VillagerEquipmentDurability.postMeleeHit(villager, target, attackHand);
             }
             RETALIATION.setNextAttackTick(
@@ -1167,16 +1166,17 @@ public final class VillagerRetaliationHandler {
                 || VillagerRetaliationVillagerRules.canStandGroundAgainstHostileMobs(villager);
     }
 
-    private static void syncMeleeAttackAttributes(Villager villager) {
+    private static boolean syncMeleeAttackAttributes(Villager villager) {
         AttributeInstance attackDamage = villager.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (attackDamage == null) {
-            return;
+        if (attackDamage == null || villager.getAttribute(Attributes.ATTACK_KNOCKBACK) == null) {
+            return false;
         }
 
         double desiredBaseDamage = ACTOR_POLICY.meleeAttackDamageBase(villager);
         if (attackDamage.getBaseValue() != desiredBaseDamage) {
             attackDamage.setBaseValue(desiredBaseDamage);
         }
+        return true;
     }
 
     private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius) {

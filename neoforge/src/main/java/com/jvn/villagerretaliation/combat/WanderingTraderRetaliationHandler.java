@@ -189,8 +189,9 @@ public final class WanderingTraderRetaliationHandler {
         if (canMeleeHit && RETALIATION.isAttackReady(trader, gameTime)) {
             var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(trader);
             trader.swing(attackHand, true);
-            syncMeleeAttackAttributes(trader);
-            trader.doHurtTarget(target);
+            if (syncMeleeAttackAttributes(trader)) {
+                trader.doHurtTarget(target);
+            }
             RETALIATION.setNextAttackTick(trader, gameTime + ACTOR_POLICY.attackCooldown(trader));
         }
     }
@@ -381,16 +382,17 @@ public final class WanderingTraderRetaliationHandler {
         VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(trader);
     }
 
-    private static void syncMeleeAttackAttributes(WanderingTrader trader) {
+    private static boolean syncMeleeAttackAttributes(WanderingTrader trader) {
         AttributeInstance attackDamage = trader.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (attackDamage == null) {
-            return;
+        if (attackDamage == null || trader.getAttribute(Attributes.ATTACK_KNOCKBACK) == null) {
+            return false;
         }
 
         double desiredBaseDamage = ACTOR_POLICY.meleeAttackDamageBase(trader);
         if (attackDamage.getBaseValue() != desiredBaseDamage) {
             attackDamage.setBaseValue(desiredBaseDamage);
         }
+        return true;
     }
 
     private static void angerNearbyTraders(Entity sourceEntity, LivingEntity attacker, double radius) {

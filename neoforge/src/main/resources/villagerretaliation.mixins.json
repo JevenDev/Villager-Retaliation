@@ -5,6 +5,7 @@
   "mixins": [
     "AbstractArrowAccessor",
     "AbstractContainerMenuAccessor",
+    "AttributeMapMixin",
     "BannerHelmetContainerMenuMixin",
     "AvoidEntityGoalMixin",
     "BrewingStandBlockEntityAccessor",
