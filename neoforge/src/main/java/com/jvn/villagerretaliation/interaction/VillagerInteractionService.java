@@ -441,6 +441,9 @@ public final class VillagerInteractionService {
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
+        if (com.jvn.villagerretaliation.raid.PlayerRaidDialogueService.handleDialogueRequest(player, entityId, optionId)) {
+            return;
+        }
         if (handleItemFilterDialogueRequest(player, entityId, optionId)) {
             return;
         }
@@ -2343,6 +2346,9 @@ public final class VillagerInteractionService {
     }
 
     public static void handleConversationEndRequest(ServerPlayer player, int entityId) {
+        if (com.jvn.villagerretaliation.raid.PlayerRaidDialogueService.handleConversationEndRequest(player, entityId)) {
+            return;
+        }
         Villager villager = resolveVillager(player, entityId);
         if (villager == null) {
             Entity entity = player.serverLevel().getEntity(entityId);

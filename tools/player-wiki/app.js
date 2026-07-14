@@ -42,6 +42,14 @@ const PAGES = [
     render: renderCombat
   },
   {
+    id: "player-raids",
+    title: "Player Raids",
+    group: "Core Systems",
+    icon: "flag",
+    description: "How to declare a village siege, who joins each side, and how the village defends itself.",
+    render: renderPlayerRaids
+  },
+  {
     id: "gifts",
     title: "Gifts And Keepsakes",
     group: "Player Guides",
@@ -1003,6 +1011,31 @@ function renderCombat() {
     `)}
     ${section("Environmental Blame", `
       <p>If a player places lava, uses flint and steel, or uses a fire charge, nearby lava or fire damage can be attributed to that player for a short window (2 real-time minutes by default). Village witnesses can connect that damage to the player for retaliation, reputation, and related systems instead of treating it as ordinary environmental harm.</p>
+    `)}
+  `;
+}
+
+function renderPlayerRaids() {
+  return `
+    ${section("Declaring A Raid", `
+      <p>Attach a banner to a helmet, wear it inside a tracked village, and begin using a goat horn. The player and their current party are snapshotted as raiders. The raid cannot overlap a vanilla raid, another Player Raid involving the village or a participant, or a defended-village cooldown.</p>
+    `)}
+    ${section("When A Party Member Calls It Home", `
+      <p>Recruited villagers from the target village permanently leave the party and confront the initiating player in a chained conversation before preparations begin. They call the raiders traitors, rejoin their neighbors, and count among the defenders.</p>
+      <p>Every villager recorded as belonging to that village sets every raider player's reputation to at most -250. Reputation already below -250 loses another 250.</p>
+    `)}
+    ${section("Preparation And Defenses", `
+      ${simpleList([
+        "The red raid bar fills for 10 seconds by default, then shows the number of snapshotted villagers remaining.",
+        "Adult non-nitwits fill empty equipment slots with difficulty-weighted militia weapons and armor.",
+        "Babies and nitwits hide while capable villagers engage the raiders.",
+        "Aligned iron golems arrive in fixed-budget batches at activation and the 75%, 50%, and 25% defender thresholds.",
+        "Raid equipment and surviving summoned golems remain after the outcome."
+      ].map(escapeHtml))}
+    `)}
+    ${section("Winning Or Abandoning", `
+      <p>Raiders win once every snapshotted defender is dead or converted. Villagers born later and visitors are not added to the objective, and golems never count as remaining villagers.</p>
+      <p>The village wins if no living, non-spectator raider player stays inside the village footprint for 30 seconds by default. A surviving village then receives a three-day cooldown.</p>
     `)}
   `;
 }

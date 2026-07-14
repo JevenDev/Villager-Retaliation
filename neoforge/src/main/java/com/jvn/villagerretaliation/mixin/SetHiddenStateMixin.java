@@ -29,6 +29,7 @@ public abstract class SetHiddenStateMixin {
                         instance.present(MemoryModuleType.HEARD_BELL_TIME))
                 .apply(instance, (hidingPlace, heardBell) -> (level, entity, gameTime) -> {
                     if (entity instanceof Villager villager
+                            && !com.jvn.villagerretaliation.raid.PlayerRaidService.shouldForceHide(villager)
                             && VillagerRetaliationVillagerRules.shouldSuppressVanillaFleeBehavior(villager)) {
                         hiddenTicks.setValue(0);
                         heardBell.erase();

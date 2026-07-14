@@ -1,0 +1,47 @@
+{
+  "replace": false,
+  "loadouts": [
+    {
+      "id": "village_militia",
+      "excluded_professions": ["minecraft:nitwit"],
+      "difficulty_pools": {
+        "peaceful": {
+          "weapons": ["minecraft:stone_sword", "minecraft:bow"],
+          "armor_chance": 0.35,
+          "enchant_chance": 0.01,
+          "armor_sets": [
+            {"weight": 1, "head": "minecraft:leather_helmet", "chest": "minecraft:leather_chestplate", "legs": "minecraft:leather_leggings", "feet": "minecraft:leather_boots"}
+          ]
+        },
+        "easy": {
+          "weapons": ["minecraft:stone_sword", "minecraft:iron_axe", "minecraft:bow"],
+          "armor_chance": 0.5,
+          "enchant_chance": 0.04,
+          "armor_sets": [
+            {"weight": 3, "head": "minecraft:leather_helmet", "chest": "minecraft:leather_chestplate", "legs": "minecraft:leather_leggings", "feet": "minecraft:leather_boots"},
+            {"weight": 1, "head": "minecraft:chainmail_helmet", "chest": "minecraft:chainmail_chestplate", "legs": "minecraft:chainmail_leggings", "feet": "minecraft:chainmail_boots"}
+          ]
+        },
+        "normal": {
+          "weapons": ["minecraft:iron_sword", "minecraft:iron_axe", "minecraft:bow", "minecraft:crossbow"],
+          "armor_chance": 0.7,
+          "enchant_chance": 0.08,
+          "armor_sets": [
+            {"weight": 3, "head": "minecraft:chainmail_helmet", "chest": "minecraft:chainmail_chestplate", "legs": "minecraft:chainmail_leggings", "feet": "minecraft:chainmail_boots"},
+            {"weight": 2, "head": "minecraft:iron_helmet", "chest": "minecraft:iron_chestplate", "legs": "minecraft:iron_leggings", "feet": "minecraft:iron_boots"}
+          ]
+        },
+        "hard": {
+          "weapons": ["minecraft:iron_sword", "minecraft:iron_axe", "minecraft:bow", "minecraft:crossbow"],
+          "armor_chance": 0.9,
+          "enchant_chance": 0.14,
+          "armor_sets": [
+            {"weight": 4, "head": "minecraft:chainmail_helmet", "chest": "minecraft:chainmail_chestplate", "legs": "minecraft:chainmail_leggings", "feet": "minecraft:chainmail_boots"},
+            {"weight": 7, "head": "minecraft:iron_helmet", "chest": "minecraft:iron_chestplate", "legs": "minecraft:iron_leggings", "feet": "minecraft:iron_boots"},
+            {"weight": 1, "head": "minecraft:diamond_helmet", "chest": "minecraft:diamond_chestplate", "legs": "minecraft:diamond_leggings", "feet": "minecraft:diamond_boots"}
+          ]
+        }
+      }
+    }
+  ]
+}

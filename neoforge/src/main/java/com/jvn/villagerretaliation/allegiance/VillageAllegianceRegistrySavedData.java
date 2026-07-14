@@ -910,6 +910,14 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                     .toList();
         }
 
+        /** Residents recently observed in this village, including babies and nitwits. */
+        public List<ResidentRecord> activeResidents(long gameTime) {
+            return this.residents.values().stream()
+                    .filter(resident -> gameTime < resident.lastSeenGameTime()
+                            || gameTime - resident.lastSeenGameTime() <= RESIDENT_ACTIVE_GRACE_TICKS)
+                    .toList();
+        }
+
         private AllegianceRecord observe(Set<Long> sources, Set<Long> footprint, BlockPos center, long gameTime) {
             Set<Long> observedSources = Set.copyOf(sources);
             Set<Long> observedFootprint = union(footprint, expandedFootprint(observedSources));

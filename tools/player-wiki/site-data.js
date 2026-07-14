@@ -43,7 +43,7 @@ window.VR_WIKI_DATA = {
     },
     {
       "level": "Feared",
-      "threshold": "-750 or below",
+      "threshold": "-1000 or below",
       "effect": "The worst tier. Nearby villagers visibly react and systems become least forgiving."
     }
   ],
@@ -65631,10 +65631,10 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 34915,
+    "dialogueLinesEstimate": 35005,
     "dialogueLineBreakdown": {
-      "dialogue": 33321,
-      "forcedDialogue": 270,
+      "dialogue": 33366,
+      "forcedDialogue": 315,
       "dialogueTrees": 0,
       "questModules": 1324
     }

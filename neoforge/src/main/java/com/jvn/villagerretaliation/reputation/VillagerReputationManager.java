@@ -196,6 +196,27 @@ public final class VillagerReputationManager {
         return true;
     }
 
+    /** Updates an offline or unloaded villager identity without requiring an entity instance. */
+    public static boolean setReputation(
+            ServerLevel level, UUID villagerId, UUID playerId, int reputation, BlockPos lastKnownPosition) {
+        VillagerReputationSavedData data = VillagerReputationSavedData.get(level);
+        VillagerReputationSavedData.ReputationEntry entry = data.getOrCreate(villagerId, playerId);
+        if (entry.reputation() == reputation) {
+            return false;
+        }
+        entry.setReputation(reputation);
+        entry.setLastInteractionGameTime(level.getGameTime());
+        entry.setLastKnownVillagerPosition(lastKnownPosition);
+        data.setDirty();
+        return true;
+    }
+
+    public static int getReputation(ServerLevel level, UUID villagerId, UUID playerId) {
+        VillagerReputationSavedData.ReputationEntry entry =
+                VillagerReputationSavedData.get(level).get(villagerId, playerId);
+        return entry == null ? 0 : entry.reputation();
+    }
+
     public static boolean hasStoredReputation(ServerLevel level, UUID villagerId, UUID playerId) {
         return VillagerReputationSavedData.get(level).hasEntry(villagerId, playerId);
     }

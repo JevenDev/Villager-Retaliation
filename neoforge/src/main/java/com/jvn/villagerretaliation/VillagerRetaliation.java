@@ -21,6 +21,8 @@ import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
+import com.jvn.villagerretaliation.raid.PlayerRaidDialogueService;
+import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.recipe.VillagerRetaliationRecipes;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
@@ -81,6 +83,8 @@ public class VillagerRetaliation {
                 .listener(VillageAllegianceService::onServerTickPost)
                 .listener(VillageCombatAuthorizationService::onServerTickPost)
                 .listener(VillagerReputationEvents::onServerTickPost)
+                .listener(PlayerRaidService::onServerTickPost)
+                .listener(PlayerRaidService::onUseItemStart)
                 .listener(VillagerSocialGraphService::onBabyEntitySpawn)
                 .listener(VillageAllegianceService::onBabyEntitySpawn)
                 .listener(VillagerSocialGraphService::onLivingConversionPost)
@@ -88,12 +92,14 @@ public class VillagerRetaliation {
                 .listener(VillagerConversionPersistenceService::onLivingConversionPost)
                 .listener(VillageAllegianceService::onLivingConversionPost)
                 .listener(VillagerDisciplineService::onLivingConversionPost)
+                .listener(PlayerRaidService::onLivingConversionPost)
                 .listener(VillagerRetaliationEvents::onEntityJoinLevel)
                 .listener(VillagerSocialGraphService::onEntityJoinLevel)
                 .listener(VillageAllegianceService::onEntityJoinLevel)
                 .listener(VillagerRetaliationEvents::onPlayerStartTracking)
                 .listener(VillagerRetaliationEvents::onPlayerLoggedOut)
                 .listener(VillageBoundsDebugService::onPlayerLoggedOut)
+                .listener(PlayerRaidDialogueService::onPlayerLoggedOut)
                 .listener(VillagerRetaliationEvents::onPlayerClone)
                 .listener(VillagerRetaliationEvents::onEntityInteract)
                 .listener(VillagerRetaliationEvents::onEntityInteractSpecific)
@@ -120,5 +126,6 @@ public class VillagerRetaliation {
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillageAllegianceService::onLivingDeath);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerSocialGraphService::onLivingDeath);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerReputationEvents::onLivingDeath);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, PlayerRaidService::onLivingDeath);
     }
 }

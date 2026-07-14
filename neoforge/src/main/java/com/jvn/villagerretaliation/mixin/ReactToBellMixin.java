@@ -27,6 +27,7 @@ public abstract class ReactToBellMixin {
                         return true;
                     }
                     if (entity instanceof Villager villager
+                            && !com.jvn.villagerretaliation.raid.PlayerRaidService.shouldForceHide(villager)
                             && VillagerRetaliationVillagerRules.shouldSuppressVanillaFleeBehavior(villager)) {
                         heardBell.erase();
                         VillagerRetaliationVillagerBrainUtil.suppressVanillaFleeState(level, villager);

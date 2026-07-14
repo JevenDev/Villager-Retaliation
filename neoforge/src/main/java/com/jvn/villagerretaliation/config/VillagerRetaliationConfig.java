@@ -180,6 +180,15 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> HOSTILE_THRESHOLD = bind("reputation.hostileThreshold", Integer.class);
     public static final ConfigValue<Integer> DESPISED_THRESHOLD = bind("reputation.despisedThreshold", Integer.class);
     public static final ConfigValue<Integer> FEARED_THRESHOLD = bind("reputation.fearedThreshold", Integer.class);
+    public static final ConfigValue<Boolean> ENABLE_PLAYER_RAIDS = bind("playerRaids.enabled", Boolean.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_PREPARATION_TICKS = bind("playerRaids.preparationTicks", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_ABANDONMENT_TICKS = bind("playerRaids.abandonmentTicks", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_VILLAGE_COOLDOWN_DAYS = bind("playerRaids.villageCooldownDays", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_BOSS_BAR_RANGE = bind("playerRaids.bossBarRange", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_DEFENDERS_PER_GOLEM = bind("playerRaids.defendersPerGolem", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_MINIMUM_GOLEMS = bind("playerRaids.minimumGolems", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_MAXIMUM_GOLEMS = bind("playerRaids.maximumGolems", Integer.class);
+    public static final ConfigValue<Integer> PLAYER_RAID_RAIDERS_PER_BONUS_GOLEM = bind("playerRaids.raidersPerBonusGolem", Integer.class);
     public static final ConfigValue<Double> WITNESS_RADIUS = bind("reputation.witnessRadius", Double.class);
     public static final ConfigValue<Double> GOSSIP_RADIUS = bind("reputation.gossipRadius", Double.class);
     public static final ConfigValue<Double> DESPISED_SIGHT_RADIUS = bind("reputation.despisedSightRadius", Double.class);
@@ -267,6 +276,12 @@ public final class VillagerRetaliationConfig {
     }
 
     public static void init() {
+        // beta.12 used -750 as the default. Move only that exact legacy value so
+        // deliberately customized thresholds remain untouched.
+        if (FEARED_THRESHOLD.get() == -750) {
+            FEARED_THRESHOLD.set(-1000);
+            CONFIG.save();
+        }
     }
 
     private static ConfigWrapper<?> loadConfig() {

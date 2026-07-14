@@ -52,6 +52,10 @@ public final class VillagerRetaliationConfigModel {
     public Reputation reputation = new Reputation();
 
     @Nest
+    @SectionHeader("playerRaids")
+    public PlayerRaids playerRaids = new PlayerRaids();
+
+    @Nest
     @SectionHeader("trade")
     public Trade trade = new Trade();
 
@@ -518,7 +522,7 @@ public final class VillagerRetaliationConfigModel {
         public int despisedThreshold = -400;
 
         @RangeConstraint(min = -10000, max = 10000)
-        public int fearedThreshold = -750;
+        public int fearedThreshold = -1000;
 
         @RangeConstraint(min = 0.0D, max = 128.0D, decimalPlaces = 1)
         public double witnessRadius = 24.0D;
@@ -546,6 +550,34 @@ public final class VillagerRetaliationConfigModel {
 
         @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
         public double reputationTradePriceScale = 0.25D;
+    }
+
+    public static final class PlayerRaids {
+        public boolean enabled = true;
+
+        @RangeConstraint(min = 20, max = 20 * 60)
+        public int preparationTicks = 200;
+
+        @RangeConstraint(min = 20, max = 20 * 60 * 10)
+        public int abandonmentTicks = 600;
+
+        @RangeConstraint(min = 0, max = 365)
+        public int villageCooldownDays = 3;
+
+        @RangeConstraint(min = 0, max = 128)
+        public int bossBarRange = 32;
+
+        @RangeConstraint(min = 1, max = 64)
+        public int defendersPerGolem = 8;
+
+        @RangeConstraint(min = 1, max = 16)
+        public int minimumGolems = 1;
+
+        @RangeConstraint(min = 1, max = 32)
+        public int maximumGolems = 6;
+
+        @RangeConstraint(min = 1, max = 16)
+        public int raidersPerBonusGolem = 2;
     }
 
     public static final class Trade {

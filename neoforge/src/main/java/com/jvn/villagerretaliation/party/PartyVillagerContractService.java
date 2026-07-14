@@ -493,6 +493,25 @@ public final class PartyVillagerContractService {
         villager.setPersistenceRequired();
     }
 
+    /** Permanently releases a recruited villager who defends their home from a player raid. */
+    public static boolean releaseForHomeVillageRaid(MinecraftServer server, UUID villagerId) {
+        if (server == null || villagerId == null) {
+            return false;
+        }
+        ServerLevel storageLevel = server.overworld();
+        PartyRecord party = PartyService.getPartyForVillager(storageLevel, villagerId).orElse(null);
+        if (party == null || PartyService.removeVillager(storageLevel, villagerId) == null) {
+            return false;
+        }
+        Villager loaded = findLoadedVillager(server, villagerId);
+        if (loaded != null) {
+            cleanupEntity(loaded);
+            closeJobInventories(server, loaded.getId());
+        }
+        PartySyncService.syncParty(server, party.id());
+        return true;
+    }
+
     private static void rememberExpiredParty(Villager villager) {
         if (villager.getPersistentData().hasUUID(PARTY_ID_TAG)) {
             villager.getPersistentData().putUUID(

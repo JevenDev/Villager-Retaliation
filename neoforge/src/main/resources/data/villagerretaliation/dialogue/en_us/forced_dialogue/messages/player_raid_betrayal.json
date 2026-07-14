@@ -1,0 +1,71 @@
+{
+  "metadata": {
+    "tags": ["content.dialogue", "section.messages", "event.player_raid_betrayal"],
+    "topic": "forced_dialogue.player_raid_betrayal"
+  },
+  "messages": [
+    {
+      "id": "forced.player_raid_betrayal.primary.line",
+      "key": "forced.player_raid_betrayal.primary.line",
+      "lines": [
+        "You march beneath that banner against my home? Traitor.",
+        "I followed you in trust, and you answer by threatening my village. Traitor.",
+        "Lower that horn. Those are my people, and you have betrayed us.",
+        "So this is what your banner means: treachery against my home.",
+        "You brought me here to watch you destroy my neighbors? Traitor.",
+        "My contract ends where your attack on my home begins.",
+        "I know every door in this village, and I will defend every one from you.",
+        "You called me companion, then raised a war banner over my family.",
+        "That horn declares more than a raid. It declares your betrayal.",
+        "I will not stand beside someone who threatens the village that raised me.",
+        "You mistook my loyalty for permission to burn my own home.",
+        "The party is over. From this moment, I stand with my village.",
+        "You have chosen plunder over friendship, and my answer is no.",
+        "I recognize that banner now: it belongs to a traitor.",
+        "If you cross into my village as a raider, you cross me as an enemy."
+      ]
+    },
+    {
+      "id": "forced.player_raid_betrayal.chained.line",
+      "key": "forced.player_raid_betrayal.chained.line",
+      "lines": [
+        "And you thought I would follow? This is my home too.",
+        "You betrayed more than one companion today. I stand with the village.",
+        "Do not count me among your raiders. Count me among your opposition.",
+        "I heard the horn, and I heard the lie behind every promise you made us.",
+        "My neighbors are not targets. Turn back, or face me with them.",
+        "Another contract broken by your own treachery. I choose my people.",
+        "We shared a road, but I will not share this crime.",
+        "You recruited us from this village only to return as its enemy.",
+        "There will be no divided loyalty. My home comes first.",
+        "The banner on your head cannot command me to betray my family.",
+        "I leave your party freely, because you have made yourself our foe.",
+        "Every one of us remembers where we came from. You should have remembered too.",
+        "You have forced my choice, and I choose the village.",
+        "Whatever bond we had ends at the boundary of my threatened home.",
+        "You will find no ally in me while that raid horn echoes here."
+      ]
+    },
+    {
+      "id": "forced.player_raid_betrayal.turn.line",
+      "key": "forced.player_raid_betrayal.turn.line",
+      "lines": [
+        "The whole village knows what you are now. We will defend it together.",
+        "Enough words. You face villagers, militia, and iron from this moment on.",
+        "Your reputation here is ash. Now leave, or fight every one of us.",
+        "The doors are barred, the defenders are armed, and we are ready for you.",
+        "You wanted a raid. What you have awakened is a village united against you.",
+        "No neighbor will shelter you after this betrayal. We stand as one.",
+        "Children, get inside. Defenders, to arms. The traitors have shown themselves.",
+        "The warning is given. Our golems and our people will answer your attack.",
+        "From the smallest house to the tallest bell, this village rejects you.",
+        "You are no guest and no friend here now. You are the raider.",
+        "Remember this moment: you chose to make enemies of an entire village.",
+        "We have counted our people, armed our defenders, and marked every traitor.",
+        "There is still time to flee. There is no time left to pretend loyalty.",
+        "The village will not scatter for you. It will close ranks.",
+        "Your horn has finished speaking. Now the village answers."
+      ]
+    }
+  ]
+}

@@ -413,7 +413,7 @@ const dialogueTreeActionTypes = new Set(["quest", "experience", "reputation", "g
 const questFactScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "quest", "quest_progress", "player_quest", "villager", "issuer", "quest_giver", "village", "settlement"]);
 const questCompletionScopes = new Set(["player", "player_world", "per_player", "world", "global", "server", "villager", "issuer", "quest_giver", "village", "settlement"]);
 const questBranchLockEvents = new Set(["started", "start", "accepted", "begin", "begun", "completed", "complete", "turn_in", "turnin", "finish", "finished"]);
-const forcedDialogueTriggers = new Set(["container_theft", "container_opened", "container_broken", "retaliation_started", "low_guts_rally", "player_item_proximity", "trade_refresh", "quest"]);
+const forcedDialogueTriggers = new Set(["container_theft", "container_opened", "container_broken", "retaliation_started", "low_guts_rally", "player_raid_betrayal", "player_item_proximity", "trade_refresh", "quest"]);
 const forcedDialogueOutputModes = new Set(["forced_dialogue", "chat"]);
 const dialogueTreeActionKeys = new Set([
   "type",

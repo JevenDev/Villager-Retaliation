@@ -914,7 +914,7 @@ public final class ForcedDialogueResources {
                     "forced dialogue",
                     entryContext(entry, index),
                     trigger,
-                    "Use forced dialogue triggers: container_theft, container_opened, container_broken, retaliation_started, low_guts_rally, player_item_proximity, trade_refresh, or quest.");
+                    "Use forced dialogue triggers: container_theft, container_opened, container_broken, retaliation_started, low_guts_rally, player_raid_betrayal, player_item_proximity, trade_refresh, or quest.");
         }
     }
 
@@ -976,6 +976,7 @@ public final class ForcedDialogueResources {
         CONTAINER_BROKEN,
         RETALIATION_STARTED,
         LOW_GUTS_RALLY,
+        PLAYER_RAID_BETRAYAL,
         PLAYER_ITEM_PROXIMITY,
         TRADE_REFRESH,
         QUEST

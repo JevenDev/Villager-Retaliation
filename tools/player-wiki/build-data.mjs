@@ -812,7 +812,7 @@ const data = {
     { level: "Suspicious", threshold: "-75 or below", effect: "Villagers become colder and trade pressure can worsen." },
     { level: "Hostile", threshold: "-100 or below", effect: "Villagers may refuse interaction and can be pacified if the tier is not too low." },
     { level: "Despised", threshold: "-250 or below", effect: "Villagers can become dangerous, may refuse pacification, and may attack on sight when enabled." },
-    { level: "Feared", threshold: "-750 or below", effect: "The worst tier. Nearby villagers visibly react and systems become least forgiving." }
+    { level: "Feared", threshold: "-1000 or below", effect: "The worst tier. Nearby villagers visibly react and systems become least forgiving." }
   ],
   quests: buildQuests(),
   gifts: buildGifts(),

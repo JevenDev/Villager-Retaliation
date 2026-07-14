@@ -47,7 +47,7 @@ Default reputation tiers:
 | Suspicious | -75 or below |
 | Hostile | -100 or below |
 | Despised | -250 or below |
-| Feared | -750 or below |
+| Feared | -1000 or below |
 
 Higher trust can improve how villagers treat you, reduce anger, unlock warmer dialogue, support gift rewards, and open up more helpful interactions. Lower trust can make villagers cold, suspicious, unwilling to trade, harder to pacify, or openly dangerous.
 

@@ -19,6 +19,8 @@ import com.jvn.villagerretaliation.loot.ProfessionLootResources;
 import com.jvn.villagerretaliation.notification.VillagerNotificationResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestResources;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.raid.PlayerRaidLoadoutResources;
+import com.jvn.villagerretaliation.raid.PlayerRaidSavedData;
 import com.jvn.villagerretaliation.scene.SceneResources;
 import com.jvn.villagerretaliation.scene.SceneRuntime;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
@@ -46,6 +48,7 @@ public final class VillagerDataWarmup {
         SkillTradeResources.warm(server);
         VillagerCurrencyResources.warm(server);
         VillagerNaturalJobArmorResources.warm(server);
+        PlayerRaidLoadoutResources.warm(server);
         VillagerPacifyPaymentResources.warm(server);
         BuilderStructureCatalog.warm(server);
         VillagerNotificationResources.warm(server);
@@ -66,6 +69,7 @@ public final class VillagerDataWarmup {
         VillagerEventTriggerSavedData.get(server.overworld());
         VillageEventMemorySavedData.get(server.overworld());
         SceneSavedData.get(server.overworld());
+        PlayerRaidSavedData.get(server.overworld());
         SceneRuntime.initialize(server);
     }
 
@@ -86,6 +90,7 @@ public final class VillagerDataWarmup {
         SkillTradeResources.clearCache();
         VillagerCurrencyResources.clearCache();
         VillagerNaturalJobArmorResources.clearCache();
+        PlayerRaidLoadoutResources.clearCache();
         VillagerPacifyPaymentResources.clearCache();
         BuilderStructureCatalog.clearCache();
         BuilderStructureScanner.clearCache();

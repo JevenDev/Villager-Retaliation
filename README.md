@@ -26,6 +26,7 @@ Play kindly and a village can become warmer, more helpful, and more personal. Pu
 - Villagers can fight back when attacked
 - Nearby adult witnesses can rally after public crimes
 - Reputation is tracked per villager, per player
+- Banner-helmet players can blow a goat horn inside a village to begin a persistent Player Raid with their snapshotted party
 - Trading, gifts, quests, village defense, and good history can build trust
 - Attacks, theft, watched-container damage, and village harm can damage trust
 - Hostile villagers can refuse trade, harass you, flee, or attack depending on settings and reputation
@@ -58,7 +59,7 @@ Default reputation tiers:
 | Suspicious | -75 or below |
 | Hostile | -100 or below |
 | Despised | -250 or below |
-| Feared | -750 or below |
+| Feared | -1000 or below |
 
 Higher trust can improve how villagers treat you, reduce anger, unlock warmer dialogue, support gift rewards, and open up more helpful interactions. Lower trust can make villagers cold, suspicious, unwilling to trade, harder to pacify, or openly dangerous.
 
@@ -280,7 +281,7 @@ Use the [player wiki](https://jevendev.github.io/Villager-Retaliation/) for ques
 
 Villager Retaliation! also has built-in datapack and resource-pack support for creators who want to tune the experience without writing Java.
 
-Datapacks can add or replace villager dialogue, dialogue trees, quests, forced dialogue events, chat event lines, notification text, ambient world text, gift preferences, pacification payments, profession loot, natural job armor, skill trades, story discoveries, preset villager names, and generated village name pools. Forced dialogue can cover watched-container events, retaliation-started barks, nearby player item reactions through `player_item_proximity`, trade-refresh option sets, and quest-triggered locked scenes. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
+Datapacks can add or replace villager dialogue, dialogue trees, quests, forced dialogue events, chat event lines, notification text, ambient world text, gift preferences, pacification payments, profession loot, natural job armor, Player Raid militia loadouts, skill trades, story discoveries, preset villager names, and generated village name pools. Forced dialogue can cover watched-container events, retaliation-started barks, Player Raid betrayals through `player_raid_betrayal`, nearby player item reactions through `player_item_proximity`, trade-refresh option sets, and quest-triggered locked scenes. These systems are data-driven so addon packs and modpacks can make villages feel warmer, harsher, funnier, stranger, or more tied to their own worldbuilding.
 
 Modded village worldgen can participate in tracked footprints by extending `villagerretaliation:village_footprint` in the structure-tag registry and `villagerretaliation:village_terrain` in the block-tag registry. Structure pieces are included as authored; terrain-tag sections join only when connected to the POI/structure footprint.
 

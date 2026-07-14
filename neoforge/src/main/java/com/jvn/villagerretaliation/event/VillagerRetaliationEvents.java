@@ -159,6 +159,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerStopping(ServerStoppingEvent event) {
+        com.jvn.villagerretaliation.raid.PlayerRaidService.clearRuntimeState();
         ServerRuntimeState.clear(event.getServer());
     }
 
@@ -970,8 +971,10 @@ public final class VillagerRetaliationEvents {
     }
 
     private static boolean shouldCancelVillagerGolemDamage(Entity victim, Entity attacker, Entity directAttacker) {
-        return VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(victim, attacker)
-                || VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(victim, directAttacker);
+        return (VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(victim, attacker)
+                    && !com.jvn.villagerretaliation.raid.PlayerRaidService.allowsVillagerGolemCombat(victim, attacker))
+                || (VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(victim, directAttacker)
+                    && !com.jvn.villagerretaliation.raid.PlayerRaidService.allowsVillagerGolemCombat(victim, directAttacker));
     }
 
     private static void clearIronGolemTargetingVillagers(Entity entity) {
@@ -980,7 +983,8 @@ public final class VillagerRetaliationEvents {
         }
 
         LivingEntity target = ironGolem.getTarget();
-        if (target == null || !VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(ironGolem, target)) {
+        if (target == null || !VillagerRetaliationVillagerCombatUtil.isVillagerGolemConflict(ironGolem, target)
+                || com.jvn.villagerretaliation.raid.PlayerRaidService.allowsVillagerGolemCombat(ironGolem, target)) {
             return;
         }
 
