@@ -11,11 +11,13 @@ import com.jvn.villagerretaliation.interaction.work.HiredRouteNavigator;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.inventory.PartyContainerLootService;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -27,15 +29,20 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 
 public final class PartyQuickCommandService {
     private static final double MAX_TARGET_DISTANCE = 64.0D;
-    private static final double ATTACK_TARGET_DISTANCE = 96.0D;
+    private static final double ATTACK_TARGET_DISTANCE = 32.0D;
     private static final double ARRIVAL_DISTANCE_SQR = 1.75D * 1.75D;
     private static final double REGROUP_ARRIVAL_DISTANCE_SQR = 2.5D * 2.5D;
     private static final double MOVE_SPEED = 0.72D;
@@ -75,7 +82,7 @@ public final class PartyQuickCommandService {
         boolean loweringShields = payload.command() == PartyQuickCommand.STAND_GUARD
                 && isStandGuardActive(party);
         int affected = switch (payload.command()) {
-            case ATTACK -> attack(player, participants, payload.targetEntityId());
+            case ATTACK -> attack(player, participants);
             case MOVE_TO -> moveTo(player, participants, payload.targetPosition());
             case STAY_HERE -> stayHere(player, participants);
             case REGROUP -> regroup(player, party, participants);
@@ -274,21 +281,15 @@ public final class PartyQuickCommandService {
         STAND_GUARD_VILLAGERS.clear();
     }
 
-    private static int attack(ServerPlayer player, List<PartyVillagerRecord> records, int entityId) {
-        Entity entity = entityId == PartyQuickCommandRequestPayload.NO_ENTITY
-                ? null
-                : player.serverLevel().getEntity(entityId);
-        if (!(entity instanceof LivingEntity target)
-                || !target.isAlive()
-                || target == player
-                || player.distanceToSqr(target) > ATTACK_TARGET_DISTANCE * ATTACK_TARGET_DISTANCE
-                || !player.hasLineOfSight(target)) {
+    private static int attack(ServerPlayer player, List<PartyVillagerRecord> records) {
+        LivingEntity target = attackTargetAtCrosshair(player, records);
+        if (target == null) {
             return 0;
         }
         int affected = 0;
         for (PartyVillagerRecord record : records) {
             Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
-            if (villager == null) {
+            if (!canReceiveAttackOrder(player.serverLevel(), villager, record, target)) {
                 continue;
             }
             var decision = VillageAllegianceCombatPolicy.evaluate(
@@ -309,6 +310,97 @@ public final class PartyQuickCommandService {
             }
         }
         return affected;
+    }
+
+    private static LivingEntity attackTargetAtCrosshair(
+            ServerPlayer player,
+            List<PartyVillagerRecord> records) {
+        ServerLevel level = player.serverLevel();
+        Vec3 eye = player.getEyePosition();
+        Vec3 rayEnd = eye.add(player.getViewVector(1.0F).scale(ATTACK_TARGET_DISTANCE));
+        HitResult blockHit = level.clip(new ClipContext(
+                eye,
+                rayEnd,
+                ClipContext.Block.COLLIDER,
+                ClipContext.Fluid.NONE,
+                player));
+        Vec3 visibleEnd = blockHit.getType() == HitResult.Type.BLOCK
+                ? blockHit.getLocation()
+                : rayEnd;
+        AABB search = player.getBoundingBox()
+                .expandTowards(visibleEnd.subtract(eye))
+                .inflate(1.0D);
+
+        LivingEntity nearest = null;
+        double nearestDistanceSqr = Double.MAX_VALUE;
+        for (Entity entity : level.getEntities(player, search, candidate ->
+                candidate instanceof LivingEntity living
+                        && living.isAlive()
+                        && candidate.isPickable())) {
+            LivingEntity candidate = (LivingEntity) entity;
+            if (!canReceiveAnyAttackOrder(level, records, candidate)) {
+                continue;
+            }
+            AABB bounds = candidate.getBoundingBox();
+            Optional<Vec3> intersection = bounds.contains(eye)
+                    ? Optional.of(eye)
+                    : bounds.clip(eye, visibleEnd);
+            if (intersection.isEmpty()) {
+                continue;
+            }
+            double distanceSqr = eye.distanceToSqr(intersection.get());
+            if (distanceSqr < nearestDistanceSqr) {
+                nearest = candidate;
+                nearestDistanceSqr = distanceSqr;
+            }
+        }
+        return nearest;
+    }
+
+    private static boolean canReceiveAnyAttackOrder(
+            ServerLevel level,
+            List<PartyVillagerRecord> records,
+            LivingEntity target) {
+        for (PartyVillagerRecord record : records) {
+            Villager villager = loadedVillager(level, record.villagerId());
+            if (canReceiveAttackOrder(level, villager, record, target)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean canReceiveAttackOrder(
+            ServerLevel level,
+            Villager villager,
+            PartyVillagerRecord record,
+            LivingEntity target) {
+        if (villager == null
+                || !villager.isAlive()
+                || target == null
+                || target == villager
+                || !target.isAlive()
+                || !villager.canAttack(target)
+                || target.isAlliedTo(villager)
+                || PartyService.areInSameParty(villager, target)
+                || !attackModeAllows(record.attackMode(), villager, target)) {
+            return false;
+        }
+        return !VillageAllegianceCombatPolicy.evaluate(
+                level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false).denied();
+    }
+
+    private static boolean attackModeAllows(
+            PartyAttackMode mode,
+            Villager villager,
+            LivingEntity target) {
+        PartyAttackMode resolved = mode == null ? PartyAttackMode.ALL : mode;
+        return resolved.allows(
+                target instanceof Animal,
+                VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target),
+                target instanceof Player,
+                target instanceof Villager,
+                PartyService.getPartyForEntity(target).isPresent());
     }
 
     private static int moveTo(ServerPlayer player, List<PartyVillagerRecord> records, BlockPos requestedTarget) {

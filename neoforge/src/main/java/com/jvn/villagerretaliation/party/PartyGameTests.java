@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.component.DataComponents;
@@ -826,6 +827,7 @@ public final class PartyGameTests {
         PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
         PartySavedData.get(level).addVillager(
                 party, villagerRecord(attacker.getUUID(), leader.getUUID(), 0, now));
+        leader.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
 
         PartyQuickCommandService.handle(
                 leader,
@@ -846,6 +848,56 @@ public final class PartyGameTests {
             target.discard();
             helper.succeed();
         });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void attackAtCrosshairUsesModeFilteredRaycastAndStopsAtBlocks(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        for (int x = 0; x <= 9; x++) {
+            helper.setBlock(new BlockPos(x, 1, 2), Blocks.STONE);
+        }
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_crosshair_attack"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager closerInvalidTarget = spawnVillager(helper, new BlockPos(4, 2, 2));
+        Zombie fartherValidTarget = helper.spawn(EntityType.ZOMBIE, new BlockPos(7, 2, 2));
+        closerInvalidTarget.setNoAi(true);
+        fartherValidTarget.setNoAi(true);
+
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartyVillagerRecord attackerRecord = villagerRecord(attacker.getUUID(), leader.getUUID(), 0, now);
+        attackerRecord.setAttackMode(PartyAttackMode.HOSTILES);
+        PartySavedData.get(level).addVillager(party, attackerRecord);
+        leader.lookAt(EntityAnchorArgument.Anchor.EYES, fartherValidTarget.getEyePosition());
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.ATTACK));
+        helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(attacker, fartherValidTarget),
+                "crosshair attack should skip a closer entity rejected by HOSTILES mode");
+        helper.assertFalse(VillagerRetaliationHandler.hasRetaliationTarget(attacker, closerInvalidTarget),
+                "crosshair attack must not attach to a mode-invalid entity");
+
+        VillagerRetaliationHandler.clearCustomTarget(attacker);
+        PartyQuickCommandService.clearRuntimeState();
+        helper.setBlock(new BlockPos(6, 3, 2), Blocks.STONE);
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.ATTACK,
+                        fartherValidTarget.getId(),
+                        null));
+        helper.assertFalse(VillagerRetaliationHandler.hasRetaliationTarget(attacker, fartherValidTarget),
+                "crosshair attack must not use a transmitted entity through a blocking wall");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        attacker.discard();
+        closerInvalidTarget.discard();
+        fartherValidTarget.discard();
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
@@ -1068,6 +1120,7 @@ public final class PartyGameTests {
         record.setWeaponPreference(PartyWeaponPreference.RANGED);
         PartySavedData.get(level).addVillager(
                 party, record);
+        leader.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
         HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
         jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
         int crossbowSlot = HiredJobInventory.HOTBAR_START;

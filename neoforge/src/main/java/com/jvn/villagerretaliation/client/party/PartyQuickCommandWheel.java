@@ -49,7 +49,7 @@ public final class PartyQuickCommandWheel {
     private static final double INNER_DEADZONE = 20.0D;
     private static final double FULL_CIRCLE = Math.PI * 2.0D;
     private static final double BLOCK_TARGET_RANGE = 48.0D;
-    private static final double ATTACK_TARGET_RANGE = 96.0D;
+    private static final double ATTACK_TARGET_RANGE = 32.0D;
     private static final double ENTITY_SNAP_INFLATION = 0.0D;
 
     private static final List<WheelEntry> ENTRIES = List.of(
