@@ -75,6 +75,7 @@ import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -209,7 +210,8 @@ public final class VillagerInteractionService {
         }
 
         if (player.isInvisible()) {
-            if (villager.getTarget() == player || VillagerRetaliationHandler.hasRetaliationTarget(villager, player)) {
+            if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(player)
+                    && (villager.getTarget() == player || VillagerRetaliationHandler.hasRetaliationTarget(villager, player))) {
                 VillagerRetaliationHandler.clearCustomTarget(villager);
             }
             sendVillagerNotice(player, villager, "interaction.invisible_trade");

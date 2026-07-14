@@ -64,7 +64,7 @@ public final class VillagerRetaliationRetaliationUtil {
         if (VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker)
                 && !VillageCombatAuthorizationService.isAuthorized(villager, attacker)
                 || !villager.isAlive()
-                || attacker.isInvisible()
+                || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(attacker)
                 || attacker == villager
                 || PartyService.areInSameParty(villager, attacker)) {
             return false;
@@ -208,7 +208,8 @@ public final class VillagerRetaliationRetaliationUtil {
             return false;
         }
 
-        if (angerTarget.targetId().equals(player.getUUID()) && player.isInvisible()) {
+        if (angerTarget.targetId().equals(player.getUUID())
+                && VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(player)) {
             clearAnger.run();
             return false;
         }
@@ -292,7 +293,7 @@ public final class VillagerRetaliationRetaliationUtil {
             clearAnger.run();
             return null;
         }
-        if (target.isInvisible()) {
+        if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)) {
             clearAnger.run();
             return null;
         }

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.allegiance;
 
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -67,7 +68,7 @@ public final class VillagerDisciplineService {
         Entity entity = incident.player() != null ? incident.player() : level.getEntity(incident.playerId());
         if (!(entity instanceof ServerPlayer player)
                 || !player.isAlive()
-                || player.isInvisible()
+                || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(player)
                 || level.getGameTime() > incident.expiresGameTime()
                 || villager.distanceToSqr(player) > MAX_PURSUIT_DISTANCE_SQR) {
             finish(villager);

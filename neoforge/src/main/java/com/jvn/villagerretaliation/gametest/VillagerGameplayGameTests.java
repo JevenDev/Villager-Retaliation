@@ -45,6 +45,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
@@ -702,6 +703,28 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void visibleArmorAllowsRetaliationAgainstInvisiblePlayer(GameTestHelper helper) {
+        ServerPlayer player = fakePlayer(helper.getLevel(), "VrArmoredInvisibleTarget");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+        player.setInvisible(true);
+
+        VillagerRetaliationHandler.forceAngerSilently(villager, player);
+
+        helper.assertTrue(
+                VillagerRetaliationHandler.hasActiveRetaliationTarget(villager),
+                "visible armor should let a villager retaliate against its invisible wearer");
+        helper.assertTrue(
+                VillagerRetaliationHandler.isHostileTowards(villager, player),
+                "an armored invisible attacker should remain hostile while retaliation is active");
+        VillagerRetaliationHandler.clearCustomTarget(villager);
+        player.setInvisible(false);
+        player.setItemSlot(EquipmentSlot.CHEST, ItemStack.EMPTY);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void invisibleTradingUsesAnonymousPrices(GameTestHelper helper) {
         ServerPlayer player = fakePlayer(helper.getLevel(), "VrInvisiblePrices");
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
@@ -714,6 +737,7 @@ public final class VillagerGameplayGameTests {
         );
         offer.addToSpecialPriceDiff(-5);
         villager.getOffers().add(offer);
+        player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.IRON_HELMET));
         player.setInvisible(true);
 
         VillagerReputationTradePricing.refreshPricesForPlayer(helper.getLevel(), villager, player);
@@ -723,6 +747,7 @@ public final class VillagerGameplayGameTests {
                 0,
                 "anonymous trading should remove every player-specific price adjustment");
         player.setInvisible(false);
+        player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
         villager.discard();
         helper.succeed();
     }

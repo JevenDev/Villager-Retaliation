@@ -311,7 +311,8 @@ public final class VillagerRetaliationHandler {
             return;
         }
         ServerLevel serverLevel = (ServerLevel) villager.level();
-        if (villager.getTarget() instanceof LivingEntity target && target.isInvisible()) {
+        if (villager.getTarget() instanceof LivingEntity target
+                && VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)) {
             clearAnger(villager);
         }
 
@@ -526,9 +527,14 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
-        if (player.isInvisible()) {
+        if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(player)) {
             RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager));
             return false;
+        }
+
+        if (player.isInvisible()) {
+            return villager.getTarget() == player
+                    || RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager));
         }
 
         if (isRoyaltyFor(villager, player)) {
@@ -637,7 +643,7 @@ public final class VillagerRetaliationHandler {
                 || target == null
                 || !villager.isAlive()
                 || !target.isAlive()
-                || target.isInvisible()
+                || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)
                 || villager == target
                 || PartyService.areInSameParty(villager, target)
                 || !villager.canAttack(target)) {
@@ -816,7 +822,7 @@ public final class VillagerRetaliationHandler {
             LivingEntity target) {
         if (target == villager
                 || !target.isAlive()
-                || target.isInvisible()
+                || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)
                 || !villager.canAttack(target)
                 || target.isAlliedTo(villager)
                 || PartyService.areInSameParty(villager, target)
@@ -983,7 +989,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean shouldRetaliateAgainstAttacker(Villager villager, LivingEntity attacker) {
-        if (attacker.isInvisible()
+        if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(attacker)
                 || villager != null && PartyService.areInSameParty(villager, attacker)) {
             return false;
         }

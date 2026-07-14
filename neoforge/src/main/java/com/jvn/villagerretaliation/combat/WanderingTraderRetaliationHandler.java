@@ -121,7 +121,8 @@ public final class WanderingTraderRetaliationHandler {
         if (trader.level().isClientSide) {
             return;
         }
-        if (trader.getTarget() instanceof LivingEntity target && target.isInvisible()) {
+        if (trader.getTarget() instanceof LivingEntity target
+                && VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)) {
             clearAnger(trader);
         }
 
@@ -204,9 +205,14 @@ public final class WanderingTraderRetaliationHandler {
             return false;
         }
 
-        if (player.isInvisible()) {
+        if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(player)) {
             RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader));
             return false;
+        }
+
+        if (player.isInvisible()) {
+            return trader.getTarget() == player
+                    || RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader));
         }
 
         if (!RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader))
@@ -360,7 +366,7 @@ public final class WanderingTraderRetaliationHandler {
     }
 
     private static boolean shouldRetaliateAgainstAttacker(LivingEntity attacker) {
-        return !attacker.isInvisible()
+        return !VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(attacker)
                 && (VillagerRetaliationConfig.WANDERING_TRADERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
                 || !isHostileMobAttacker(attacker));
     }

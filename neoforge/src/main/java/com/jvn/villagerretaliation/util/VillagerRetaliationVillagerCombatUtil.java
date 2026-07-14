@@ -91,7 +91,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
         AABB searchArea = villager.getBoundingBox().inflate(radius);
         TargetingConditions targetingConditions = TargetingConditions.forCombat()
                 .range(radius)
-                .selector(target -> target.isAlive() && !target.isInvisible());
+                .selector(target -> target.isAlive() && !isConcealedFromVillagers(target));
         Creeper closestVisible = level.getNearestEntity(
                 Creeper.class,
                 targetingConditions,
@@ -141,7 +141,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
     }
 
     public static boolean shouldIgnoreAttacker(LivingEntity attacker) {
-        if (attacker.isInvisible()
+        if (isConcealedFromVillagers(attacker)
                 || attacker instanceof AbstractVillager
                 || attacker instanceof IronGolem
                 || attacker instanceof NeutralMob) {
@@ -151,6 +151,18 @@ public final class VillagerRetaliationVillagerCombatUtil {
         return attacker instanceof Player player
                 && (player.isSpectator()
                 || VillagerRetaliationConfig.NEARBY_VILLAGERS_IGNORE_CREATIVE_PLAYERS.get() && player.isCreative());
+    }
+
+    public static boolean isConcealedFromVillagers(LivingEntity entity) {
+        if (!entity.isInvisible()) {
+            return false;
+        }
+        for (var armorStack : entity.getArmorSlots()) {
+            if (!armorStack.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static boolean isVillagerGolemConflict(Entity first, Entity second) {
@@ -195,7 +207,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
     public static boolean isNaturalHostileTarget(AbstractVillager villager, LivingEntity target) {
         return target != villager
                 && target.isAlive()
-                && !target.isInvisible()
+                && !isConcealedFromVillagers(target)
                 && !(target instanceof Creeper)
                 && !(target instanceof Slime)
                 && !target.isAlliedTo(villager)
