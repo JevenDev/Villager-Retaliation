@@ -25,7 +25,44 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 /** Runtime controller for the chained betrayal declaration conversation. */
 public final class PlayerRaidDialogueService {
     private static final String CONTINUE = "player_raid.continue";
+    private static final String VICTORY_MESSAGE_KEY = "interaction.party.player_raid_victory";
+    private static final String LOSS_MESSAGE_KEY = "interaction.party.player_raid_loss";
     private static final Map<UUID, Session> SESSIONS = new HashMap<>();
+
+    private static final List<String> VICTORY = List.of(
+            "The last defender is down. This raid is ours.",
+            "We held our ground and broke theirs. That is a victory.",
+            "Hard fighting, clean finish. We saw it through together.",
+            "Their defense is finished. We can leave with our heads high.",
+            "The village has fallen, and every one of us earned the road out.",
+            "That was no easy fight, but our party proved stronger.",
+            "The battle is over. Remember who stood beside you when it mattered.",
+            "We came under one banner and leave beneath it victorious.",
+            "Their line broke before ours did. The raid is won.",
+            "Count us all before we move on. Victory means more when everyone returns.",
+            "We took every blow they offered and still finished the fight.",
+            "The defenders gave everything. Today, everything was not enough.",
+            "Our party held together from the first horn to the last strike.",
+            "No defenders remain between us and victory.",
+            "Catch your breath. We won this raid, and we won it together."
+    );
+    private static final List<String> LOSS = List.of(
+            "The defenders held. There is no victory for us here today.",
+            "We lost this one. Regroup before the village takes anything else from us.",
+            "Their line did not break, and ours could not stay. The raid is over.",
+            "We leave without victory, but at least we still leave together.",
+            "That village was ready for us. Next time, we must be readier.",
+            "The raid failed. Save your strength for a fight we can finish.",
+            "We pushed hard and gained nothing. It is time to fall back.",
+            "Their defenders earned this field. We should remember how.",
+            "The horn called us in, but it cannot turn this defeat into a victory.",
+            "We were beaten, not broken. Get everyone home and tend the wounds.",
+            "This fight is lost. Do not lose anyone else trying to deny it.",
+            "We could not finish the raid. We can still learn from why.",
+            "The village stands, and we are the ones retreating. That is the truth of it.",
+            "No excuses. Their defense outlasted our attack.",
+            "We leave empty-handed today. Let the loss make us wiser."
+    );
 
     private static final List<String> PRIMARY = List.of(
             "You march beneath that banner against my home? Traitor.",
@@ -100,6 +137,32 @@ public final class PlayerRaidDialogueService {
         if (openCurrent(player, session)) return true;
         SESSIONS.remove(player.getUUID());
         return false;
+    }
+
+    static void announceOutcome(
+            MinecraftServer server, PlayerRaidSavedData.RaidRecord raid, boolean raidersWon) {
+        if (raid.raiderVillagers().isEmpty() || raid.raiderPlayers().isEmpty()) return;
+        String messageKey = raidersWon ? VICTORY_MESSAGE_KEY : LOSS_MESSAGE_KEY;
+        List<String> fallback = raidersWon ? VICTORY : LOSS;
+        for (UUID villagerId : raid.raiderVillagers()) {
+            Entity entity = find(server, villagerId);
+            if (!(entity instanceof Villager villager) || !villager.isAlive()) continue;
+            for (UUID playerId : raid.raiderPlayers()) {
+                ServerPlayer player = server.getPlayerList().getPlayer(playerId);
+                if (player == null) continue;
+                String line = VillagerDialogueResources.globalMessage(
+                                server,
+                                player.getRandom(),
+                                messageKey,
+                                VillagerLocale.locale(player),
+                                Map.of(
+                                        "village", raid.villageName(),
+                                        "villager", VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                                        "player", player.getDisplayName().getString()))
+                        .orElseGet(() -> fallback.get(player.getRandom().nextInt(fallback.size())));
+                VillagerInteractionService.sendPersonalVillagerChat(player, villager, line);
+            }
+        }
     }
 
     public static boolean handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {

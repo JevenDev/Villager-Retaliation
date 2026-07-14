@@ -17,6 +17,7 @@ The initiating player's current party is snapshotted. Later party changes do not
 - Golems arrive in batches at activation and the 75%, 50%, and 25% defender thresholds. The fixed budget is calculated once, and dead golems are not replaced.
 - Raiders win when every snapshotted defender is dead or converted. Births and visiting villagers after declaration are not added.
 - The village wins if no living, non-spectator raider player remains inside its footprint for the configured abandonment time (30 seconds by default).
+- At either outcome, each surviving recruited raider villager delivers one of 15 victory or 15 loss reactions to online raider players.
 - During the active siege, a raider player wearing a banner helmet can use a goat horn to make tracked defenders within 48 blocks glow for 3 seconds.
 
 Operators can settle the Player Raid involving them or containing their current position with `/villagerretaliation debug raid win` or `/villagerretaliation debug raid lose`.
@@ -66,3 +67,5 @@ Each file supports `replace` and a `loadouts` array. A loadout has a stable `id`
 Profiles are checked in datapack order and the first profession match is used. Empty slots only are filled. Missing difficulty pools fall back to the first pool in that profile.
 
 The forced-dialogue trigger name is `player_raid_betrayal`. The built-in resource exposes the `primary`, `chained`, and `turn` definition IDs, each with 15 line variations, under `data/villagerretaliation/forced_dialogue/events/player_raid_betrayal.json`.
+
+Party-villager outcome reactions use the global message keys `interaction.party.player_raid_victory` and `interaction.party.player_raid_loss`. Packs can override their line pools through normal localized dialogue message resources.

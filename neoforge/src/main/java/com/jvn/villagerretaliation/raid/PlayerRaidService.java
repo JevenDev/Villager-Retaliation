@@ -396,6 +396,7 @@ public final class PlayerRaidService {
                 ? "villagerretaliation.player_raid.victory"
                 : "villagerretaliation.player_raid.defended", raid.villageName());
         server.getPlayerList().broadcastSystemMessage(message, false);
+        PlayerRaidDialogueService.announceOutcome(server, raid, raidersWon);
     }
 
     /** Operator hook used by the debug command to settle the relevant running Player Raid. */

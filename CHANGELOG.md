@@ -1,5 +1,6 @@
 # Changelog
 
+- Added 15 victory reactions and 15 loss reactions for recruited party villagers at the end of Player Raids.
 - Added built-in optional Second Wind compatibility for every VR-protected villager. Second Wind can channel an early player revive, while VR remains authoritative and villagers continue to recover automatically instead of bleeding out.
 - Added a persisted fourth downed presentation using Second Wind's crawl posture alongside sitting, side-lying, and hands-and-knees variants.
 - Prevented a held Second Wind revive input from immediately opening the recovered villager's interaction menu.

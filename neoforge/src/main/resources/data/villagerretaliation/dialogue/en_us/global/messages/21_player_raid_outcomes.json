@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages",
+      "event.player_raid"
+    ],
+    "topic": "global.interaction.player_raid_outcomes"
+  },
+  "messages": [
+    {
+      "key": "interaction.party.player_raid_victory",
+      "lines": [
+        "The last defender is down. This raid is ours.",
+        "We held our ground and broke theirs. That is a victory.",
+        "Hard fighting, clean finish. We saw it through together.",
+        "Their defense is finished. We can leave with our heads high.",
+        "The village has fallen, and every one of us earned the road out.",
+        "That was no easy fight, but our party proved stronger.",
+        "The battle is over. Remember who stood beside you when it mattered.",
+        "We came under one banner and leave beneath it victorious.",
+        "Their line broke before ours did. The raid is won.",
+        "Count us all before we move on. Victory means more when everyone returns.",
+        "We took every blow they offered and still finished the fight.",
+        "The defenders gave everything. Today, everything was not enough.",
+        "Our party held together from the first horn to the last strike.",
+        "No defenders remain between us and victory.",
+        "Catch your breath. We won this raid, and we won it together."
+      ],
+      "id": "global.messages.21_player_raid_outcomes.messages.interaction.party.player_raid_victory.000"
+    },
+    {
+      "key": "interaction.party.player_raid_loss",
+      "lines": [
+        "The defenders held. There is no victory for us here today.",
+        "We lost this one. Regroup before the village takes anything else from us.",
+        "Their line did not break, and ours could not stay. The raid is over.",
+        "We leave without victory, but at least we still leave together.",
+        "That village was ready for us. Next time, we must be readier.",
+        "The raid failed. Save your strength for a fight we can finish.",
+        "We pushed hard and gained nothing. It is time to fall back.",
+        "Their defenders earned this field. We should remember how.",
+        "The horn called us in, but it cannot turn this defeat into a victory.",
+        "We were beaten, not broken. Get everyone home and tend the wounds.",
+        "This fight is lost. Do not lose anyone else trying to deny it.",
+        "We could not finish the raid. We can still learn from why.",
+        "The village stands, and we are the ones retreating. That is the truth of it.",
+        "No excuses. Their defense outlasted our attack.",
+        "We leave empty-handed today. Let the loss make us wiser."
+      ],
+      "id": "global.messages.21_player_raid_outcomes.messages.interaction.party.player_raid_loss.001"
+    }
+  ]
+}
