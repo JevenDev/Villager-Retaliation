@@ -30,16 +30,27 @@ public final class VillagerConversationService {
     }
 
     public static boolean start(ServerPlayer player, Villager villager) {
-        return start(player, villager, false);
+        return start(player, villager, false, false);
     }
 
     public static boolean startForced(ServerPlayer player, Villager villager) {
-        return start(player, villager, true);
+        return start(player, villager, true, false);
     }
 
-    private static boolean start(ServerPlayer player, Villager villager, boolean forced) {
+    /** Starts a forced scene whose caller owns disposition/hostility authorization. */
+    public static boolean startForcedIgnoringDisposition(ServerPlayer player, Villager villager) {
+        return start(player, villager, true, true);
+    }
+
+    private static boolean start(
+            ServerPlayer player,
+            Villager villager,
+            boolean forced,
+            boolean ignoreDisposition) {
         boolean canStart = forced
-                ? VillagerInteractionService.canUseForcedInteractionSystem(player, villager)
+                ? ignoreDisposition
+                        ? VillagerInteractionService.canUseForcedInteractionSystemIgnoringDisposition(player, villager)
+                        : VillagerInteractionService.canUseForcedInteractionSystem(player, villager)
                 : VillagerInteractionService.canUseInteractionSystem(player, villager);
         if (!canStart) {
             return false;
@@ -170,7 +181,12 @@ public final class VillagerConversationService {
         SESSIONS_BY_PLAYER.remove(player.getUUID());
         PLAYER_BY_VILLAGER.remove(session.villagerId());
         if (notifyClient) {
-            PacketDistributor.sendToPlayer(player, new VillagerConversationEndedPayload(session.villagerEntityId(), ""));
+            try {
+                PacketDistributor.sendToPlayer(
+                        player, new VillagerConversationEndedPayload(session.villagerEntityId(), ""));
+            } catch (UnsupportedOperationException ignored) {
+                // GameTest mock players and unnegotiated connections cannot accept custom client payloads.
+            }
         }
     }
 

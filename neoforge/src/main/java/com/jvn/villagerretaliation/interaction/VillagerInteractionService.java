@@ -451,6 +451,9 @@ public final class VillagerInteractionService {
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
+        if (com.jvn.villagerretaliation.raid.PlayerRaidMercyService.handleDialogueRequest(player, entityId, optionId)) {
+            return;
+        }
         if (com.jvn.villagerretaliation.raid.PlayerRaidDialogueService.handleDialogueRequest(player, entityId, optionId)) {
             return;
         }
@@ -2360,6 +2363,9 @@ public final class VillagerInteractionService {
     }
 
     public static void handleConversationEndRequest(ServerPlayer player, int entityId) {
+        if (com.jvn.villagerretaliation.raid.PlayerRaidMercyService.handleConversationEndRequest(player, entityId)) {
+            return;
+        }
         if (com.jvn.villagerretaliation.raid.PlayerRaidDialogueService.handleConversationEndRequest(player, entityId)) {
             return;
         }
@@ -2642,6 +2648,18 @@ public final class VillagerInteractionService {
 
     public static boolean canUseForcedInteractionSystem(ServerPlayer player, Villager villager) {
         return canUseInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get());
+    }
+
+    /** Eligibility for server-authorized forced scenes that intentionally permit hostile disposition. */
+    public static boolean canUseForcedInteractionSystemIgnoringDisposition(ServerPlayer player, Villager villager) {
+        double maxDistance = VillagerRetaliationConfig.MAX_FORCED_DIALOGUE_DISTANCE.get();
+        return villager.isAlive()
+                && !VillagerDownedService.isDowned(villager)
+                && !villager.isSleeping()
+                && !villager.isTrading()
+                && player.isAlive()
+                && !player.isSpectator()
+                && player.distanceToSqr(villager) <= maxDistance * maxDistance;
     }
 
     static void prepareForInteractionSession(ServerPlayer player, Villager villager) {
@@ -3170,7 +3188,7 @@ public final class VillagerInteractionService {
         );
     }
 
-    static void focusVillagerOnPlayer(Villager villager, ServerPlayer player) {
+    public static void focusVillagerOnPlayer(Villager villager, ServerPlayer player) {
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
     }
 

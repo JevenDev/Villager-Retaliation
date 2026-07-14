@@ -1,0 +1,87 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages",
+      "event.player_raid_mercy"
+    ],
+    "topic": "global.interaction.player_raid_mercy"
+  },
+  "messages": [
+    {
+      "key": "interaction.player_raid.mercy.plea.baby",
+      "lines": [
+        "Please don't hurt me.",
+        "I didn't fight you. Please let me live.",
+        "Please... I just want to go home.",
+        "The fighting is over. Please spare me.",
+        "I don't want to die here."
+      ],
+      "id": "global.messages.22_player_raid_mercy.plea.baby"
+    },
+    {
+      "key": "interaction.player_raid.mercy.plea.nitwit",
+      "lines": [
+        "I never raised a weapon against you. Please spare me.",
+        "The defenders are gone. You have won. Let me live.",
+        "I cannot stop you. I can only ask for mercy.",
+        "Please. There has been enough killing.",
+        "Leave me my life, and I will remember what happened here."
+      ],
+      "id": "global.messages.22_player_raid_mercy.plea.nitwit"
+    },
+    {
+      "key": "interaction.player_raid.mercy.spared.baby",
+      "lines": [
+        "I won't forget this.",
+        "Thank you... but I will always remember today.",
+        "You let me live. I can never forgive what I saw."
+      ],
+      "id": "global.messages.22_player_raid_mercy.spared.baby"
+    },
+    {
+      "key": "interaction.player_raid.mercy.spared.nitwit",
+      "lines": [
+        "You spared me, but you destroyed everything I knew.",
+        "I will live. I will also remember.",
+        "Mercy does not erase what happened here."
+      ],
+      "id": "global.messages.22_player_raid_mercy.spared.nitwit"
+    },
+    {
+      "key": "interaction.player_raid.mercy.kill.baby",
+      "lines": [
+        "Then... do it yourself.",
+        "Please change your mind.",
+        "I don't want to die."
+      ],
+      "id": "global.messages.22_player_raid_mercy.kill.baby"
+    },
+    {
+      "key": "interaction.player_raid.mercy.kill.nitwit",
+      "lines": [
+        "Then finish your own decision.",
+        "If that is your answer, I have nothing left to say.",
+        "You have already won. This is your choice now."
+      ],
+      "id": "global.messages.22_player_raid_mercy.kill.nitwit"
+    },
+    {
+      "key": "interaction.player_raid.mercy.option.spare",
+      "lines": ["Spare"],
+      "id": "global.messages.22_player_raid_mercy.option.spare"
+    },
+    {
+      "key": "interaction.player_raid.mercy.option.kill",
+      "lines": ["Kill"],
+      "id": "global.messages.22_player_raid_mercy.option.kill"
+    },
+    {
+      "key": "interaction.player_raid.mercy.option.silence",
+      "lines": ["Say nothing"],
+      "id": "global.messages.22_player_raid_mercy.option.silence"
+    }
+  ]
+}

@@ -86,6 +86,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                     residents.put(residentId, new ResidentRecord(
                             residentId,
                             residentTag.getBoolean("Adult"),
+                            residentTag.getBoolean("Nitwit"),
                             residentTag.getLong("LastSeenGameTime")));
                 }
             }
@@ -147,6 +148,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
                 CompoundTag residentTag = new CompoundTag();
                 residentTag.putUUID("Id", resident.id());
                 residentTag.putBoolean("Adult", resident.adult());
+                residentTag.putBoolean("Nitwit", resident.nitwit());
                 residentTag.putLong("LastSeenGameTime", resident.lastSeenGameTime());
                 residentTags.add(residentTag);
             }
@@ -363,7 +365,12 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         }
     }
 
-    public void addOrUpdateResident(VillageAllegianceId id, UUID residentId, boolean adult, long gameTime) {
+    public void addOrUpdateResident(
+            VillageAllegianceId id,
+            UUID residentId,
+            boolean adult,
+            boolean nitwit,
+            long gameTime) {
         AllegianceRecord current = canonicalRecord(id).orElse(null);
         if (current == null || residentId == null) {
             return;
@@ -387,16 +394,22 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
         ResidentRecord existing = current.residents().get(residentId);
         boolean refreshLastSeen = existing == null
                 || existing.adult() != adult
+                || existing.nitwit() != nitwit
                 || gameTime < existing.lastSeenGameTime()
                 || gameTime - existing.lastSeenGameTime() >= RESIDENT_LAST_SEEN_REFRESH_TICKS;
         if (refreshLastSeen) {
-            this.records.put(current.id(), current.withResident(new ResidentRecord(residentId, adult, gameTime)));
+            this.records.put(current.id(), current.withResident(new ResidentRecord(residentId, adult, nitwit, gameTime)));
             changed = true;
         }
         this.residentRecords.put(residentId, new LinkedHashSet<>(Set.of(current.id())));
         if (changed) {
             setDirty();
         }
+    }
+
+    /** Compatibility overload for integrations that do not yet provide profession state. */
+    public void addOrUpdateResident(VillageAllegianceId id, UUID residentId, boolean adult, long gameTime) {
+        addOrUpdateResident(id, residentId, adult, false, gameTime);
     }
 
     public void removeResident(VillageAllegianceId id, UUID residentId) {
@@ -850,7 +863,7 @@ public final class VillageAllegianceRegistrySavedData extends SavedData {
     private record MergeObservation(int observations, long lastObservedGameTime) {
     }
 
-    public record ResidentRecord(UUID id, boolean adult, long lastSeenGameTime) {
+    public record ResidentRecord(UUID id, boolean adult, boolean nitwit, long lastSeenGameTime) {
     }
 
     public record AllegianceRecord(

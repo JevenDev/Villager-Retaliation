@@ -27,6 +27,7 @@ Play kindly and a village can become warmer, more helpful, and more personal. Pu
 - Nearby adult witnesses can rally after public crimes
 - Reputation is tracked per villager, per player
 - Banner-helmet players can blow a goat horn inside a village to begin a persistent Player Raid with their snapshotted party
+- Player Raids end with a mercy stage where surviving babies and nitwits can be spared or left to be killed manually
 - Trading, gifts, quests, village defense, and good history can build trust
 - Attacks, theft, watched-container damage, and village harm can damage trust
 - Hostile villagers can refuse trade, harass you, flee, or attack depending on settings and reputation

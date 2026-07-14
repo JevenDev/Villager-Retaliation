@@ -6,6 +6,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 
 /** Server-side integration API for durable village allegiance data. */
 public final class VillageAllegianceApi {
@@ -46,7 +47,12 @@ public final class VillageAllegianceApi {
         registry.ensureRecord(data.primary(), level.getGameTime(), dimension, data.originPosition());
         registry.canonical(data.primary()).ifPresent(id -> {
             if (entity instanceof Villager villager) {
-                registry.addOrUpdateResident(id, villager.getUUID(), !villager.isBaby(), level.getGameTime());
+                registry.addOrUpdateResident(
+                        id,
+                        villager.getUUID(),
+                        !villager.isBaby(),
+                        villager.getVillagerData().getProfession() == VillagerProfession.NITWIT,
+                        level.getGameTime());
             }
         });
     }

@@ -231,6 +231,7 @@ public final class PlayerRaidDialogueService {
 
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer player)) return;
+        PlayerRaidMercyService.onPlayerLoggedOut(player);
         Session session = SESSIONS.remove(player.getUUID());
         if (session != null) PlayerRaidService.beginPreparation(player.getServer(), session.raidId);
     }

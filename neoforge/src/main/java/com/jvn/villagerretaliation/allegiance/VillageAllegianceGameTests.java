@@ -402,6 +402,24 @@ public final class VillageAllegianceGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void residentNitwitClassificationPersists(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        VillageAllegianceRegistrySavedData registry = new VillageAllegianceRegistrySavedData();
+        VillageAllegianceId village = registry.create(
+                1L, level.dimension().location(), BlockPos.ZERO, "Nitwit Roster Village");
+        UUID residentId = UUID.randomUUID();
+        registry.addOrUpdateResident(village, residentId, true, true, 2L);
+        CompoundTag saved = registry.save(new CompoundTag(), level.registryAccess());
+        VillageAllegianceRegistrySavedData restored = VillageAllegianceRegistrySavedData.load(
+                saved, level.registryAccess());
+        VillageAllegianceRegistrySavedData.ResidentRecord resident =
+                restored.record(village).orElseThrow().residents().get(residentId);
+        helper.assertTrue(resident != null && resident.adult() && resident.nitwit(),
+                "resident roster should preserve adult nitwit status for unloaded raid snapshots");
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 140)
     public static void combatAuthorizationsExpireWithoutScanningLiveEntries(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();

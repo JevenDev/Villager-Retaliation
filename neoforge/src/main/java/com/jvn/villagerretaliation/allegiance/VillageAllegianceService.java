@@ -20,6 +20,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.ZombieVillager;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
@@ -538,7 +539,12 @@ public final class VillageAllegianceService {
         VillageAllegianceEntityData.clearPending(entity);
         PENDING.remove(entity.getUUID());
         if (entity instanceof Villager villager) {
-            registry.addOrUpdateResident(canonical, villager.getUUID(), !villager.isBaby(), level.getGameTime());
+            registry.addOrUpdateResident(
+                    canonical,
+                    villager.getUUID(),
+                    !villager.isBaby(),
+                    villager.getVillagerData().getProfession() == VillagerProfession.NITWIT,
+                    level.getGameTime());
             scheduleLoadedVillager(level, villager, VillageAllegianceApi.get(villager).orElse(null), false);
         }
         migratedKnown++;
@@ -574,7 +580,12 @@ public final class VillageAllegianceService {
                     data.originDimension(), data.originPosition(), List.of()));
         }
         if (entity instanceof Villager villager) {
-            registry.addOrUpdateResident(canonical.get(), villager.getUUID(), !villager.isBaby(), level.getGameTime());
+            registry.addOrUpdateResident(
+                    canonical.get(),
+                    villager.getUUID(),
+                    !villager.isBaby(),
+                    villager.getVillagerData().getProfession() == VillagerProfession.NITWIT,
+                    level.getGameTime());
         }
     }
 

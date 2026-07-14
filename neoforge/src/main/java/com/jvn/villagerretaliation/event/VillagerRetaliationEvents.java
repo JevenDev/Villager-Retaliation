@@ -452,6 +452,16 @@ public final class VillagerRetaliationEvents {
         }
 
         if (event.getTarget() instanceof Villager villager
+                && player instanceof ServerPlayer serverPlayer
+                && com.jvn.villagerretaliation.raid.PlayerRaidService.shouldHandleMercyInteraction(
+                        villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(
+                    com.jvn.villagerretaliation.raid.PlayerRaidService.handleMercyInteraction(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
+
+        if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer
                 && VillagerRetaliationItems.isClipboard(interactionStack)
                 && !HiredStorageClipboardItem.mode(interactionStack).isStorageAssignmentMode()) {
@@ -586,6 +596,15 @@ public final class VillagerRetaliationEvents {
                 && event.getEntity() instanceof Player player
                 && !VillagerInteractionService.hasEmptyHandForVillagerInteraction(player)) {
             event.setCancellationResult(InteractionResult.FAIL);
+            event.setCanceled(true);
+            return;
+        }
+        if (event.getTarget() instanceof Villager villager
+                && event.getEntity() instanceof ServerPlayer serverPlayer
+                && com.jvn.villagerretaliation.raid.PlayerRaidService.shouldHandleMercyInteraction(
+                        villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(
+                    com.jvn.villagerretaliation.raid.PlayerRaidService.handleMercyInteraction(villager, serverPlayer));
             event.setCanceled(true);
             return;
         }

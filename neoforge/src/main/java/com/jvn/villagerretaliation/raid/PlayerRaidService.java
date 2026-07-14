@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -44,6 +45,8 @@ import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
@@ -78,23 +81,35 @@ public final class PlayerRaidService {
         PlayerRaidSavedData.RaidRecord raid = PlayerRaidSavedData.get(player.serverLevel())
                 .activeForParticipant(player.getUUID());
         if (raid == null
-                || raid.phase() != PlayerRaidSavedData.Phase.ACTIVE
+                || (raid.phase() != PlayerRaidSavedData.Phase.ACTIVE
+                    && raid.phase() != PlayerRaidSavedData.Phase.MERCY)
                 || !raid.raiderPlayers().contains(player.getUUID())
                 || !raid.dimension().equals(player.serverLevel().dimension().location())) {
             return false;
         }
         AABB revealArea = player.getBoundingBox().inflate(HORN_REVEAL_RADIUS);
         int revealed = 0;
-        for (UUID defenderId : raid.defenders()) {
+        Set<UUID> revealTargets = raid.phase() == PlayerRaidSavedData.Phase.MERCY
+                ? raid.mercyCandidates()
+                : raid.defenders();
+        for (UUID defenderId : revealTargets) {
             Entity entity = player.serverLevel().getEntity(defenderId);
             if (entity instanceof Villager villager && villager.isAlive() && revealArea.contains(villager.position())) {
                 villager.addEffect(new MobEffectInstance(MobEffects.GLOWING, HORN_REVEAL_TICKS));
                 revealed++;
             }
         }
+        boolean mercy = raid.phase() == PlayerRaidSavedData.Phase.MERCY;
+        String messageKey = mercy
+                ? revealed == 0
+                        ? "villagerretaliation.player_raid.horn_reveal_mercy_none"
+                        : "villagerretaliation.player_raid.horn_reveal_mercy"
+                : revealed == 0
+                        ? "villagerretaliation.player_raid.horn_reveal_none"
+                        : "villagerretaliation.player_raid.horn_reveal";
         player.sendSystemMessage(revealed == 0
-                ? Component.translatable("villagerretaliation.player_raid.horn_reveal_none")
-                : Component.translatable("villagerretaliation.player_raid.horn_reveal", revealed));
+                ? Component.translatable(messageKey)
+                : Component.translatable(messageKey, revealed));
         return true;
     }
 
@@ -129,10 +144,24 @@ public final class PlayerRaidService {
             return false;
         }
 
+        List<Villager> loadedResidents = loadedVillageVillagers(level, villageId);
+        Map<UUID, Villager> loadedById = new HashMap<>();
+        loadedResidents.forEach(villager -> loadedById.put(villager.getUUID(), villager));
         Set<UUID> defenders = new LinkedHashSet<>();
-        village.activeResidents(now).forEach(resident -> defenders.add(resident.id()));
-        loadedVillageVillagers(level, villageId).forEach(villager -> defenders.add(villager.getUUID()));
-        if (defenders.isEmpty()) {
+        Set<UUID> mercyCandidates = new LinkedHashSet<>();
+        Set<UUID> babyMercyCandidates = new LinkedHashSet<>();
+        for (VillageAllegianceRegistrySavedData.ResidentRecord resident : village.activeResidents(now)) {
+            Villager loaded = loadedById.get(resident.id());
+            if (loaded != null) classifyResident(loaded, defenders, mercyCandidates, babyMercyCandidates);
+            else classifyResident(resident, defenders, mercyCandidates, babyMercyCandidates);
+        }
+        for (Villager loaded : loadedResidents) {
+            defenders.remove(loaded.getUUID());
+            mercyCandidates.remove(loaded.getUUID());
+            babyMercyCandidates.remove(loaded.getUUID());
+            classifyResident(loaded, defenders, mercyCandidates, babyMercyCandidates);
+        }
+        if (defenders.isEmpty() && mercyCandidates.isEmpty()) {
             initiator.sendSystemMessage(Component.translatable("villagerretaliation.player_raid.no_defenders"));
             return false;
         }
@@ -148,7 +177,13 @@ public final class PlayerRaidService {
             for (PartyVillagerRecord member : party.villagers()) {
                 if (village.residents().containsKey(member.villagerId())) {
                     defectors.add(member.villagerId());
-                    defenders.add(member.villagerId());
+                    if (!defenders.contains(member.villagerId()) && !mercyCandidates.contains(member.villagerId())) {
+                        Villager loaded = loadedById.get(member.villagerId());
+                        VillageAllegianceRegistrySavedData.ResidentRecord resident =
+                                village.residents().get(member.villagerId());
+                        if (loaded != null) classifyResident(loaded, defenders, mercyCandidates, babyMercyCandidates);
+                        else classifyResident(resident, defenders, mercyCandidates, babyMercyCandidates);
+                    }
                 }
                 else raiderVillagers.add(member.villagerId());
             }
@@ -156,6 +191,7 @@ public final class PlayerRaidService {
         Set<UUID> participants = new LinkedHashSet<>(raiderPlayers);
         participants.addAll(raiderVillagers);
         participants.addAll(defenders);
+        participants.addAll(mercyCandidates);
         for (UUID participant : participants) {
             if (data.activeForParticipant(participant) != null) {
                 initiator.sendSystemMessage(Component.translatable("villagerretaliation.player_raid.party_busy"));
@@ -166,13 +202,15 @@ public final class PlayerRaidService {
         PlayerRaidSavedData.RaidRecord raid = data.create(
                 villageId, level.dimension().location(), village.center(), village.footprintSections(),
                 village.displayName(), initiator.getUUID(), party == null ? null : party.id(),
-                raiderPlayers, raiderVillagers, defenders, defectors, now);
+                raiderPlayers, raiderVillagers, defenders, mercyCandidates, babyMercyCandidates, defectors, now);
         Set<UUID> villageWitnesses = new LinkedHashSet<>(village.residents().keySet());
         villageWitnesses.addAll(defenders);
+        villageWitnesses.addAll(mercyCandidates);
         applyBetrayal(level, raid, villageWitnesses);
         defectors.forEach(id -> PartyVillagerContractService.releaseForHomeVillageRaid(level.getServer(), id));
         initiator.sendSystemMessage(Component.translatable(
-                "villagerretaliation.player_raid.declared", village.displayName(), defenders.size()));
+                "villagerretaliation.player_raid.declared",
+                village.displayName(), defenders.size() + mercyCandidates.size()));
         if (!PlayerRaidDialogueService.begin(initiator, raid)) {
             beginPreparation(level.getServer(), raid.id());
         }
@@ -186,7 +224,7 @@ public final class PlayerRaidService {
         long now = server.overworld().getGameTime();
         raid.setPhase(PlayerRaidSavedData.Phase.PREPARING, now);
         raid.setAbsenceStarted(-1L);
-        prepareDefenders(server, raid);
+        prepareDefenders(server, data, raid);
         data.changed();
     }
 
@@ -195,6 +233,7 @@ public final class PlayerRaidService {
         long now = server.overworld().getGameTime();
         if (now % 5L != 0L) return;
         PlayerRaidDialogueService.reconcile(server);
+        PlayerRaidMercyService.reconcile(server);
         PlayerRaidSavedData data = PlayerRaidSavedData.get(server.overworld());
         for (PlayerRaidSavedData.RaidRecord raid : new ArrayList<>(data.raids())) {
             tickRaid(server, data, raid, now);
@@ -219,10 +258,6 @@ public final class PlayerRaidService {
                     || now - raid.phaseStarted() >= 1_200L) beginPreparation(server, raid.id());
             return;
         }
-        if (raid.defenders().isEmpty()) {
-            finish(server, data, raid, true, now);
-            return;
-        }
         if (hasPresentRaiderPlayer(server, raid)) {
             if (raid.absenceStarted() != -1L) {
                 raid.setAbsenceStarted(-1L);
@@ -236,18 +271,27 @@ public final class PlayerRaidService {
             return;
         }
         if (raid.phase() == PlayerRaidSavedData.Phase.PREPARING) {
-            if (now % 20L == 0L) prepareDefenders(server, raid);
+            if (now % 20L == 0L) prepareDefenders(server, data, raid);
             if (now - raid.phaseStarted() >= VillagerRetaliationConfig.PLAYER_RAID_PREPARATION_TICKS.get()) {
                 activate(level, data, raid, now);
             }
             return;
         }
+        if (raid.phase() == PlayerRaidSavedData.Phase.MERCY) {
+            if (raid.mercyCandidates().isEmpty()) finish(server, data, raid, true, now);
+            else PlayerRaidMercyService.tick(server, data, raid, now);
+            return;
+        }
+        reclassifyLoadedNoncombatants(server, data, raid);
+        if (resolveDefenderObjective(server, data, raid, now)) return;
         reconcileCombat(server, raid);
         reconcileGolemMilestones(level, data, raid);
     }
 
     private static void activate(
             ServerLevel level, PlayerRaidSavedData data, PlayerRaidSavedData.RaidRecord raid, long now) {
+        reclassifyLoadedNoncombatants(level.getServer(), data, raid);
+        if (resolveDefenderObjective(level.getServer(), data, raid, now)) return;
         int combatants = raid.raiderPlayers().size() + raid.raiderVillagers().size();
         raid.setGolemBudget(calculateGolemBudget(
                 raid.initialDefenderCount(), combatants, existingAlignedGolems(level, raid),
@@ -261,17 +305,27 @@ public final class PlayerRaidService {
         reconcileCombat(level.getServer(), raid);
     }
 
-    private static void prepareDefenders(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
+    private static void prepareDefenders(
+            MinecraftServer server,
+            PlayerRaidSavedData data,
+            PlayerRaidSavedData.RaidRecord raid) {
         ServerLevel level = level(server, raid);
         if (level == null) return;
+        reclassifyLoadedNoncombatants(server, data, raid);
         for (UUID defenderId : raid.defenders()) {
             Entity entity = find(server, defenderId);
             if (!(entity instanceof Villager villager) || villager.level() != level) continue;
-            if (villager.isBaby() || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT) {
+            if (!raid.mercyEnabled()
+                    && (villager.isBaby()
+                        || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT)) {
                 hideVillager(level, villager);
             } else {
                 PlayerRaidLoadoutService.equip(villager);
             }
+        }
+        for (UUID candidateId : raid.mercyCandidates()) {
+            Entity entity = find(server, candidateId);
+            if (entity instanceof Villager villager && villager.level() == level) hideVillager(level, villager);
         }
     }
 
@@ -286,6 +340,103 @@ public final class PlayerRaidService {
                 .orElse(villager.blockPosition());
         villager.getBrain().setMemory(MemoryModuleType.HIDING_PLACE, GlobalPos.of(level.dimension(), hiding));
         villager.getBrain().setActiveActivityIfPossible(net.minecraft.world.entity.schedule.Activity.HIDE);
+    }
+
+    private static void reclassifyLoadedNoncombatants(
+            MinecraftServer server,
+            PlayerRaidSavedData data,
+            PlayerRaidSavedData.RaidRecord raid) {
+        if (!raid.mercyEnabled()) return;
+        boolean changed = false;
+        for (UUID defenderId : raid.defenders()) {
+            Entity entity = find(server, defenderId);
+            if (!(entity instanceof Villager villager)
+                    || (!villager.isBaby()
+                        && villager.getVillagerData().getProfession() != VillagerProfession.NITWIT)) {
+                continue;
+            }
+            PlayerRaidSavedData.MercyKind kind = villager.isBaby()
+                    ? PlayerRaidSavedData.MercyKind.BABY
+                    : PlayerRaidSavedData.MercyKind.NITWIT;
+            if (raid.reclassifyDefenderAsMercyCandidate(defenderId, kind)) {
+                hideVillager((ServerLevel) villager.level(), villager);
+                changed = true;
+            }
+        }
+        if (changed) data.changed();
+    }
+
+    private static void enterMercy(
+            MinecraftServer server,
+            PlayerRaidSavedData data,
+            PlayerRaidSavedData.RaidRecord raid,
+            long now) {
+        raid.setPhase(PlayerRaidSavedData.Phase.MERCY, now);
+        releaseRaidCombatState(server, raid);
+        PlayerRaidMercyService.initialize(server, data, raid, now);
+        data.changed();
+    }
+
+    static boolean resolveDefenderObjective(
+            MinecraftServer server,
+            PlayerRaidSavedData data,
+            PlayerRaidSavedData.RaidRecord raid,
+            long now) {
+        if (!raid.defenders().isEmpty()) return false;
+        if (raid.mercyCandidates().isEmpty()) finish(server, data, raid, true, now);
+        else enterMercy(server, data, raid, now);
+        return true;
+    }
+
+    static void releaseMercyCandidate(MinecraftServer server, Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)) return;
+        VillagerRetaliationHandler.clearCustomTarget(villager);
+        villager.setAggressive(false);
+        VillagerRetaliationVillagerBrainUtil.suppressVanillaFleeState(level, villager);
+    }
+
+    private static void releaseRaidCombatState(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
+        for (UUID raiderId : raid.raiderVillagers()) {
+            Entity entity = find(server, raiderId);
+            if (entity instanceof Villager villager) VillagerRetaliationHandler.clearCustomTarget(villager);
+        }
+        for (UUID candidateId : raid.mercyCandidates()) {
+            Entity entity = find(server, candidateId);
+            if (entity instanceof Villager villager) releaseMercyCandidate(server, villager);
+        }
+        ServerLevel level = level(server, raid);
+        if (level == null) return;
+        AABB area = AABB.ofSize(Vec3.atCenterOf(raid.center()), 192.0D, 96.0D, 192.0D);
+        for (IronGolem golem : level.getEntitiesOfClass(IronGolem.class, area, IronGolem::isAlive)) {
+            LivingEntity target = golem.getTarget();
+            if (target != null
+                    && (raid.raiderPlayers().contains(target.getUUID())
+                        || raid.raiderVillagers().contains(target.getUUID()))
+                    && VillageAllegianceApi.canonicalPrimary(level, golem).filter(raid.villageId()::equals).isPresent()) {
+                golem.setTarget(null);
+            }
+        }
+    }
+
+    static void completeMercyIfResolved(MinecraftServer server, UUID raidId) {
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(server.overworld());
+        PlayerRaidSavedData.RaidRecord raid = data.raid(raidId);
+        if (raid != null
+                && raid.phase() == PlayerRaidSavedData.Phase.MERCY
+                && raid.mercyCandidates().isEmpty()) {
+            finish(server, data, raid, true, server.overworld().getGameTime());
+        }
+    }
+
+    public static boolean shouldHandleMercyInteraction(
+            Villager villager,
+            ServerPlayer player,
+            InteractionHand hand) {
+        return PlayerRaidMercyService.shouldHandleInteraction(villager, player, hand);
+    }
+
+    public static InteractionResult handleMercyInteraction(Villager villager, ServerPlayer player) {
+        return PlayerRaidMercyService.openVerdict(player, villager);
     }
 
     private static void reconcileCombat(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
@@ -378,13 +529,24 @@ public final class PlayerRaidService {
     private static void removeDefender(ServerLevel level, UUID id) {
         PlayerRaidSavedData data = PlayerRaidSavedData.get(level);
         for (PlayerRaidSavedData.RaidRecord raid : data.raids()) {
-            if (raid.running() && raid.removeDefender(id)) data.changed();
+            if (!raid.running()) continue;
+            boolean removed = raid.removeDefender(id) | raid.removeMercyCandidate(id);
+            if (!removed) continue;
+            data.changed();
+            if (raid.phase() == PlayerRaidSavedData.Phase.MERCY && raid.mercyCandidates().isEmpty()) {
+                finish(level.getServer(), data, raid, true, level.getServer().overworld().getGameTime());
+            } else if (raid.phase() == PlayerRaidSavedData.Phase.ACTIVE && raid.defenders().isEmpty()) {
+                resolveDefenderObjective(
+                        level.getServer(), data, raid, level.getServer().overworld().getGameTime());
+            }
         }
     }
 
     private static void finish(
             MinecraftServer server, PlayerRaidSavedData data, PlayerRaidSavedData.RaidRecord raid,
             boolean raidersWon, long now) {
+        releaseRaidCombatState(server, raid);
+        PlayerRaidMercyService.onRaidFinished(server, raid.id());
         raid.setPhase(raidersWon ? PlayerRaidSavedData.Phase.RAIDER_VICTORY : PlayerRaidSavedData.Phase.DEFENDER_VICTORY, now);
         raid.setOutcomeCleanupAt(now + OUTCOME_DISPLAY_TICKS);
         if (!raidersWon) {
@@ -438,6 +600,12 @@ public final class PlayerRaidService {
         } else if (raid.phase() == PlayerRaidSavedData.Phase.DEFENDER_VICTORY) {
             progress = raid.defenders().size() / (float) Math.max(1, raid.initialDefenderCount());
             bar.setName(Component.translatable("villagerretaliation.player_raid.bar_defended", raid.villageName()));
+        } else if (raid.phase() == PlayerRaidSavedData.Phase.MERCY) {
+            progress = raid.mercyCandidates().size() / (float) Math.max(1, raid.initialMercyCandidateCount());
+            bar.setName(Component.translatable(
+                    "villagerretaliation.player_raid.mercy_remaining",
+                    raid.villageName(),
+                    raid.mercyCandidates().size()));
         } else {
             progress = raid.defenders().size() / (float) Math.max(1, raid.initialDefenderCount());
             bar.setName(Component.translatable("villagerretaliation.player_raid.remaining", raid.villageName(), raid.defenders().size()));
@@ -568,15 +736,17 @@ public final class PlayerRaidService {
     }
 
     public static boolean shouldForceHide(Villager villager) {
-        if (villager == null || !(villager.level() instanceof ServerLevel level)
-                || (!villager.isBaby() && villager.getVillagerData().getProfession() != VillagerProfession.NITWIT)) {
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) return false;
+        PlayerRaidSavedData.RaidRecord raid = PlayerRaidSavedData.get(level).activeForParticipant(villager.getUUID());
+        if (raid == null
+                || (raid.phase() != PlayerRaidSavedData.Phase.PREPARING
+                    && raid.phase() != PlayerRaidSavedData.Phase.ACTIVE)) {
             return false;
         }
-        PlayerRaidSavedData.RaidRecord raid = PlayerRaidSavedData.get(level).activeForParticipant(villager.getUUID());
-        return raid != null
-                && raid.defenders().contains(villager.getUUID())
-                && (raid.phase() == PlayerRaidSavedData.Phase.PREPARING
-                    || raid.phase() == PlayerRaidSavedData.Phase.ACTIVE);
+        if (raid.mercyEnabled()) return raid.mercyCandidates().contains(villager.getUUID());
+        return raid.defenders().contains(villager.getUUID())
+                && (villager.isBaby()
+                    || villager.getVillagerData().getProfession() == VillagerProfession.NITWIT);
     }
 
     private static LivingEntity nearest(LivingEntity origin, List<LivingEntity> choices) {
@@ -618,6 +788,39 @@ public final class PlayerRaidService {
                         && VillageAllegianceApi.canonicalPrimary(level, villager).filter(villageId::equals).isPresent());
     }
 
+    static void classifyResident(
+            Villager villager,
+            Set<UUID> defenders,
+            Set<UUID> mercyCandidates,
+            Set<UUID> babyMercyCandidates) {
+        if (villager == null) return;
+        UUID id = villager.getUUID();
+        if (villager.isBaby()) {
+            mercyCandidates.add(id);
+            babyMercyCandidates.add(id);
+        } else if (villager.getVillagerData().getProfession() == VillagerProfession.NITWIT) {
+            mercyCandidates.add(id);
+        } else {
+            defenders.add(id);
+        }
+    }
+
+    static void classifyResident(
+            VillageAllegianceRegistrySavedData.ResidentRecord resident,
+            Set<UUID> defenders,
+            Set<UUID> mercyCandidates,
+            Set<UUID> babyMercyCandidates) {
+        if (resident == null) return;
+        if (!resident.adult()) {
+            mercyCandidates.add(resident.id());
+            babyMercyCandidates.add(resident.id());
+        } else if (resident.nitwit()) {
+            mercyCandidates.add(resident.id());
+        } else {
+            defenders.add(resident.id());
+        }
+    }
+
     private static ServerLevel level(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
         return server.getLevel(ResourceKey.create(Registries.DIMENSION, raid.dimension()));
     }
@@ -639,5 +842,6 @@ public final class PlayerRaidService {
         BOSS_BARS.values().forEach(ServerBossEvent::removeAllPlayers);
         BOSS_BARS.clear();
         PlayerRaidDialogueService.clearRuntimeState();
+        PlayerRaidMercyService.clearRuntimeState();
     }
 }
