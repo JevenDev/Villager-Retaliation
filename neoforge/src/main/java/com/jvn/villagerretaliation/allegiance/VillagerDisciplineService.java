@@ -67,6 +67,7 @@ public final class VillagerDisciplineService {
         Entity entity = incident.player() != null ? incident.player() : level.getEntity(incident.playerId());
         if (!(entity instanceof ServerPlayer player)
                 || !player.isAlive()
+                || player.isInvisible()
                 || level.getGameTime() > incident.expiresGameTime()
                 || villager.distanceToSqr(player) > MAX_PURSUIT_DISTANCE_SQR) {
             finish(villager);

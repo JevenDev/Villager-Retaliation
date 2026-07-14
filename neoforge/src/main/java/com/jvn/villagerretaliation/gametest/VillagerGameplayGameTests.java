@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.gametest;
 
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
+import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
@@ -20,6 +21,7 @@ import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
+import com.jvn.villagerretaliation.reputation.VillagerReputationTradePricing;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
@@ -59,6 +61,8 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.trading.ItemCost;
+import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
@@ -652,6 +656,74 @@ public final class VillagerGameplayGameTests {
                 "disconnect cleanup should release the player's request state");
         ServerboundRequestLimiter.clear(firstPlayer);
         ServerboundRequestLimiter.clear(secondPlayer);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void invisibleEntitiesCannotBecomeRetaliationTargets(GameTestHelper helper) {
+        ServerPlayer player = fakePlayer(helper.getLevel(), "VrInvisibleTarget");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        player.setInvisible(true);
+
+        helper.assertFalse(
+                VillagerRetaliationHandler.engageCustomTarget(villager, player, false),
+                "an invisible entity should be rejected as a custom retaliation target");
+        VillagerRetaliationHandler.forceAngerSilently(villager, player);
+        helper.assertFalse(
+                VillagerRetaliationHandler.hasActiveRetaliationTarget(villager),
+                "direct anger should not acquire an invisible entity");
+
+        player.setInvisible(false);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void invisibilityClearsExistingRetaliation(GameTestHelper helper) {
+        ServerPlayer player = fakePlayer(helper.getLevel(), "VrInvisibleEscape");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        player.setInvisible(false);
+        VillagerRetaliationHandler.forceAngerSilently(villager, player);
+        helper.assertTrue(
+                VillagerRetaliationHandler.hasActiveRetaliationTarget(villager),
+                "the visible player should be acquired before becoming invisible");
+
+        player.setInvisible(true);
+        helper.assertFalse(
+                VillagerRetaliationHandler.isHostileTowards(villager, player),
+                "an invisible player should not remain hostile");
+        helper.assertFalse(
+                VillagerRetaliationHandler.hasActiveRetaliationTarget(villager),
+                "checking hostility should clear the concealed retaliation target");
+
+        player.setInvisible(false);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void invisibleTradingUsesAnonymousPrices(GameTestHelper helper) {
+        ServerPlayer player = fakePlayer(helper.getLevel(), "VrInvisiblePrices");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        MerchantOffer offer = new MerchantOffer(
+                new ItemCost(Items.EMERALD, 10),
+                new ItemStack(Items.BREAD),
+                12,
+                2,
+                0.05F
+        );
+        offer.addToSpecialPriceDiff(-5);
+        villager.getOffers().add(offer);
+        player.setInvisible(true);
+
+        VillagerReputationTradePricing.refreshPricesForPlayer(helper.getLevel(), villager, player);
+
+        helper.assertValueEqual(
+                offer.getSpecialPriceDiff(),
+                0,
+                "anonymous trading should remove every player-specific price adjustment");
+        player.setInvisible(false);
+        villager.discard();
         helper.succeed();
     }
 

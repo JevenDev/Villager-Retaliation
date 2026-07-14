@@ -311,6 +311,9 @@ public final class VillagerRetaliationHandler {
             return;
         }
         ServerLevel serverLevel = (ServerLevel) villager.level();
+        if (villager.getTarget() instanceof LivingEntity target && target.isInvisible()) {
+            clearAnger(villager);
+        }
 
         if (!VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
             HiredJobInventory.maintainEquipmentSlots(villager);
@@ -523,6 +526,11 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
+        if (player.isInvisible()) {
+            RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager));
+            return false;
+        }
+
         if (isRoyaltyFor(villager, player)) {
             clearAnger(villager);
             return false;
@@ -629,6 +637,7 @@ public final class VillagerRetaliationHandler {
                 || target == null
                 || !villager.isAlive()
                 || !target.isAlive()
+                || target.isInvisible()
                 || villager == target
                 || PartyService.areInSameParty(villager, target)
                 || !villager.canAttack(target)) {
@@ -807,6 +816,7 @@ public final class VillagerRetaliationHandler {
             LivingEntity target) {
         if (target == villager
                 || !target.isAlive()
+                || target.isInvisible()
                 || !villager.canAttack(target)
                 || target.isAlliedTo(villager)
                 || PartyService.areInSameParty(villager, target)
@@ -973,7 +983,8 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean shouldRetaliateAgainstAttacker(Villager villager, LivingEntity attacker) {
-        if (villager != null && PartyService.areInSameParty(villager, attacker)) {
+        if (attacker.isInvisible()
+                || villager != null && PartyService.areInSameParty(villager, attacker)) {
             return false;
         }
         return VillagerRetaliationConfig.VILLAGERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()

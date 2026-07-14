@@ -528,7 +528,7 @@ public final class VillagerReputationEvents {
         AABB area = villager.getBoundingBox().inflate(radius);
         List<NearbyPlayerReputation> players = new ArrayList<>();
         for (Player player : level.getEntitiesOfClass(Player.class, area)) {
-            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+            if (!player.isAlive() || player.isInvisible() || player.isCreative() || player.isSpectator()) {
                 continue;
             }
             double distanceSqr = villager.distanceToSqr(player);

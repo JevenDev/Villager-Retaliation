@@ -121,6 +121,9 @@ public final class WanderingTraderRetaliationHandler {
         if (trader.level().isClientSide) {
             return;
         }
+        if (trader.getTarget() instanceof LivingEntity target && target.isInvisible()) {
+            clearAnger(trader);
+        }
 
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()) {
             clearAnger(trader);
@@ -198,6 +201,11 @@ public final class WanderingTraderRetaliationHandler {
 
     public static boolean blockTradingIfHostile(WanderingTrader trader, Player player) {
         if (trader.level().isClientSide || !trader.isAlive() || !player.isAlive()) {
+            return false;
+        }
+
+        if (player.isInvisible()) {
+            RETALIATION.isHostileTowards(trader, player, () -> clearAnger(trader));
             return false;
         }
 
@@ -320,7 +328,7 @@ public final class WanderingTraderRetaliationHandler {
         double radius = VillagerRetaliationConfig.DESPISED_SIGHT_RADIUS.get();
         AABB area = trader.getBoundingBox().inflate(radius);
         for (Player player : level.getEntitiesOfClass(Player.class, area)) {
-            if (!player.isAlive() || player.isCreative() || player.isSpectator()) {
+            if (!player.isAlive() || player.isInvisible() || player.isCreative() || player.isSpectator()) {
                 continue;
             }
             if (!trader.hasLineOfSight(player)) {
@@ -352,8 +360,9 @@ public final class WanderingTraderRetaliationHandler {
     }
 
     private static boolean shouldRetaliateAgainstAttacker(LivingEntity attacker) {
-        return VillagerRetaliationConfig.WANDERING_TRADERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
-                || !isHostileMobAttacker(attacker);
+        return !attacker.isInvisible()
+                && (VillagerRetaliationConfig.WANDERING_TRADERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
+                || !isHostileMobAttacker(attacker));
     }
 
     private static boolean isHostileMobAttacker(LivingEntity attacker) {

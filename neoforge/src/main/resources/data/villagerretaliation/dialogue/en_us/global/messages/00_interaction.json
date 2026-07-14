@@ -465,6 +465,23 @@
       "id": "global.messages.00_interaction.messages.interaction.no_trades.024"
     },
     {
+      "key": "interaction.invisible_trade",
+      "lines": [
+        "I cannot see who is there, but emeralds are emeralds.",
+        "An invisible customer? Fine. Keep your hands where I can hear them.",
+        "I do not know who I am trading with, so everyone pays the same price.",
+        "No face, no favors, no grudges. Let us trade.",
+        "Whoever you are, the prices stay ordinary while you are unseen.",
+        "I cannot recognize you like this. We can still do business.",
+        "A voice, a handful of emeralds, and no face. Strange, but workable.",
+        "I will trade, but do not expect a familiar face's price.",
+        "Unseen or not, count your emeralds carefully.",
+        "I cannot tell friend from foe under that potion. Standard prices only."
+      ],
+      "show_for_babies": false,
+      "id": "global.messages.00_interaction.messages.interaction.invisible_trade.026"
+    },
+    {
       "key": "dialogue.fallback",
       "lines": [
         "<i>They stare at you, unsure what to say.</i>",

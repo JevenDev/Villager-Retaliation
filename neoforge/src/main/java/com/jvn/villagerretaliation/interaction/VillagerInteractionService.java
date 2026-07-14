@@ -137,7 +137,7 @@ public final class VillagerInteractionService {
 
     public static boolean shouldHandleInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
-                && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                && (VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get() || player.isInvisible())
                 && hasEmptyHandForVillagerInteraction(player)
                 && !shouldBypassInteractionScreen(player.getItemInHand(hand))
                 && shouldInterceptVanillaInteraction(
@@ -148,7 +148,7 @@ public final class VillagerInteractionService {
 
     public static boolean shouldSuppressClientVanillaInteraction(Villager villager, Player player, InteractionHand hand) {
         if (hand != InteractionHand.MAIN_HAND
-                || !VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
+                || (!VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get() && !player.isInvisible())
                 || !hasEmptyHandForVillagerInteraction(player)
                 || shouldBypassInteractionScreen(player.getItemInHand(hand))
                 || villager.isTrading()
@@ -206,6 +206,14 @@ public final class VillagerInteractionService {
         }
         if (villager.isSleeping()) {
             return handleSleepingVillagerInteraction(villager, player);
+        }
+
+        if (player.isInvisible()) {
+            if (villager.getTarget() == player || VillagerRetaliationHandler.hasRetaliationTarget(villager, player)) {
+                VillagerRetaliationHandler.clearCustomTarget(villager);
+            }
+            sendVillagerNotice(player, villager, "interaction.invisible_trade");
+            return openTrading(player, villager, true);
         }
 
         if (player.isShiftKeyDown() && VillagerRecruitmentService.isFollowing(villager, player)) {

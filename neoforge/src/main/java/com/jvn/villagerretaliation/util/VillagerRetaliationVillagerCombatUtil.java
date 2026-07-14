@@ -91,7 +91,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
         AABB searchArea = villager.getBoundingBox().inflate(radius);
         TargetingConditions targetingConditions = TargetingConditions.forCombat()
                 .range(radius)
-                .selector(LivingEntity::isAlive);
+                .selector(target -> target.isAlive() && !target.isInvisible());
         Creeper closestVisible = level.getNearestEntity(
                 Creeper.class,
                 targetingConditions,
@@ -141,7 +141,10 @@ public final class VillagerRetaliationVillagerCombatUtil {
     }
 
     public static boolean shouldIgnoreAttacker(LivingEntity attacker) {
-        if (attacker instanceof AbstractVillager || attacker instanceof IronGolem || attacker instanceof NeutralMob) {
+        if (attacker.isInvisible()
+                || attacker instanceof AbstractVillager
+                || attacker instanceof IronGolem
+                || attacker instanceof NeutralMob) {
             return true;
         }
 
@@ -192,6 +195,7 @@ public final class VillagerRetaliationVillagerCombatUtil {
     public static boolean isNaturalHostileTarget(AbstractVillager villager, LivingEntity target) {
         return target != villager
                 && target.isAlive()
+                && !target.isInvisible()
                 && !(target instanceof Creeper)
                 && !(target instanceof Slime)
                 && !target.isAlliedTo(villager)

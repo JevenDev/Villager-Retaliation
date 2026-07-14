@@ -27,7 +27,7 @@ public final class VillagerAggressionPolicy {
     }
 
     public static boolean shouldAggroFromWitnessedPlayerCrime(AbstractVillager witness, Player player, int pendingReputationChange) {
-        if (witness.isBaby() || !(witness.level() instanceof ServerLevel level)) {
+        if (player.isInvisible() || witness.isBaby() || !(witness.level() instanceof ServerLevel level)) {
             return false;
         }
         int reputation = VillagerReputationManager.getReputation(level, witness, player.getUUID());
@@ -48,7 +48,8 @@ public final class VillagerAggressionPolicy {
     }
 
     public static boolean shouldAttackOnSight(AbstractVillager villager, Player player) {
-        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+        if (player.isInvisible()
+                || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || !VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.get()
                 || !(villager.level() instanceof ServerLevel level)
                 || villager.isBaby()
@@ -75,7 +76,8 @@ public final class VillagerAggressionPolicy {
     }
 
     public static boolean shouldFleeFromPlayer(Villager villager, Player player) {
-        if (!(villager.level() instanceof ServerLevel level)
+        if (player.isInvisible()
+                || !(villager.level() instanceof ServerLevel level)
                 || !VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
             return false;
         }
