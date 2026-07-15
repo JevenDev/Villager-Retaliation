@@ -5,7 +5,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -108,12 +107,6 @@ public final class AssignedStorageSavedData extends SavedData {
             }
         }
         return matches;
-    }
-
-    public Optional<AssignedContainerRecord> assignedAt(ResourceKey<Level> dimension, BlockPos pos) {
-        return this.byContainer.values().stream()
-                .filter(record -> record.dimension().equals(dimension) && record.pos().equals(pos))
-                .findFirst();
     }
 
     public AssignmentResult assign(AssignedContainerRecord record) {

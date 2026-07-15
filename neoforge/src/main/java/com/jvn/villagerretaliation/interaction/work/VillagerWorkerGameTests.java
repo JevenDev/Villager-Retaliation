@@ -26,6 +26,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
@@ -1470,6 +1471,103 @@ public final class VillagerWorkerGameTests {
         AssignedStorageService.removeAllAssignedStorage(level, otherVillager);
         villager.discard();
         otherVillager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void staleStorageValidationPreservesSharedAssignments(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrSharedStorageValidation");
+        Villager staleVillager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager paymentVillager = spawnVillager(helper, new BlockPos(2, 2, 4));
+        BlockPos storageRel = new BlockPos(4, 2, 2);
+        BlockPos storage = helper.absolutePos(storageRel);
+        setBlock(helper, storageRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, storage);
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                staleVillager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), storage)),
+                AssignedStorageService.GENERAL_PURPOSE).assigned(), 1, "initial general storage assignment");
+
+        setBlock(helper, storageRel, VillagerRetaliationBlocks.PAYMENT_BOX.get().defaultBlockState());
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                paymentVillager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), storage)),
+                AssignedStorageService.PAYMENT_PURPOSE).assigned(), 1, "shared payment storage assignment");
+
+        AssignedStorageService.countItemsInNonPaymentStorage(staleVillager, ignored -> true);
+
+        helper.assertTrue(
+                AssignedStorageService.assignedStorage(level, staleVillager).isEmpty(),
+                "validation should remove the stale general assignment");
+        helper.assertValueEqual(
+                AssignedStorageService.assignedPaymentStorage(level, paymentVillager).size(),
+                1,
+                "validation should preserve another villager's valid assignment at the same block");
+        helper.assertTrue(
+                AssignedStorageService.hasLoadedAssignedPaymentStorage(level, paymentVillager),
+                "the preserved payment assignment should remain usable");
+
+        AssignedStorageService.removeAssignedContainer(level, storage);
+        staleVillager.discard();
+        paymentVillager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void assignedStoragePriorityStaysMonotonicAfterRemoval(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrStoragePriority");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        List<BlockPos> storagePositions = List.of(
+                new BlockPos(3, 2, 2),
+                new BlockPos(5, 2, 2),
+                new BlockPos(3, 2, 4));
+        for (BlockPos storageRel : storagePositions) {
+            setBlock(helper, storageRel, Blocks.CHEST.defaultBlockState());
+            AssignedStorageService.removeAssignedContainer(level, helper.absolutePos(storageRel));
+        }
+        BlockPos first = helper.absolutePos(storagePositions.get(0));
+        BlockPos second = helper.absolutePos(storagePositions.get(1));
+        BlockPos third = helper.absolutePos(storagePositions.get(2));
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), first),
+                        new AssignedStorageService.StoragePosition(level.dimension(), second)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 2, "initial output assignments");
+
+        AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
+        var firstRecord = data.assignedTo(villager.getUUID(), AssignedStorageService.OUTPUT_PURPOSE).stream()
+                .filter(record -> record.pos().equals(first))
+                .findFirst()
+                .orElseThrow();
+        helper.assertTrue(data.removeAssignment(firstRecord), "first output assignment should be removable");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), third)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "replacement output assignment");
+
+        var remaining = data.assignedTo(villager.getUUID(), AssignedStorageService.OUTPUT_PURPOSE);
+        helper.assertValueEqual(
+                remaining.stream().filter(record -> record.pos().equals(second)).findFirst().orElseThrow().priority(),
+                1,
+                "surviving assignment priority");
+        helper.assertValueEqual(
+                remaining.stream().filter(record -> record.pos().equals(third)).findFirst().orElseThrow().priority(),
+                2,
+                "new assignment should follow the highest existing priority");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
         helper.succeed();
     }
 

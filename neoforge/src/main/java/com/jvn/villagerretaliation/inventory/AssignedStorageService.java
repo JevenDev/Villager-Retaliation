@@ -89,7 +89,10 @@ public final class AssignedStorageService {
         int alreadyAssigned = 0;
         int invalid = 0;
         String normalizedPurpose = normalizePurpose(purpose);
-        int priorityBase = data.assignedTo(villager.getUUID(), normalizedPurpose).size();
+        int priorityBase = data.assignedTo(villager.getUUID(), normalizedPurpose).stream()
+                .mapToInt(AssignedContainerRecord::priority)
+                .max()
+                .orElse(-1) + 1;
         for (StoragePosition position : positions) {
             if (!position.dimension().equals(villager.level().dimension())) {
                 invalid++;
@@ -1058,11 +1061,11 @@ public final class AssignedStorageService {
             }
             BlockEntity blockEntity = level.getBlockEntity(record.pos());
             if (!(blockEntity instanceof Container container)) {
-                data.removeAssignedAt(record.dimension(), record.pos());
+                data.removeAssignment(record);
                 continue;
             }
             if (!isValidContainerForPurpose(level, record.pos(), record.purpose())) {
-                data.removeAssignedAt(record.dimension(), record.pos());
+                data.removeAssignment(record);
                 continue;
             }
             data.updateValidation(record, "valid");
