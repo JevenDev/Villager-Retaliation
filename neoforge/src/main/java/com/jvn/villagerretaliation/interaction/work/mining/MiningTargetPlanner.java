@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -79,11 +80,12 @@ final class MiningTargetPlanner {
             ServerLevel level,
             Villager villager,
             HiredWorkContext context) {
+        LongSet protectedBarriers = MiningHazardManager.protectedBarrierPositions(context);
         HiredWorkAreaScan.Result scan = HiredWorkAreaScan.collect(
                 context,
                 MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG,
                 MAX_EXCAVATION_SCAN_POSITIONS,
-                pos -> isValidExcavationTarget(level, villager, context, pos));
+                pos -> isValidExcavationTarget(level, villager, context, pos, protectedBarriers));
         if (!scan.candidates().isEmpty()) {
             context.state().remove(MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG);
             HiredWorkerBrain.setLastTargetScanResult(context, "excavation_targets_found");
@@ -114,13 +116,25 @@ final class MiningTargetPlanner {
             Villager villager,
             HiredWorkContext context,
             BlockPos pos) {
+        return isValidExcavationTarget(level, villager, context, pos, null);
+    }
+
+    private boolean isValidExcavationTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos pos,
+            LongSet protectedBarriers) {
         HiredMiningMode mode = HiredMiningMode.fromState(context.state());
         boolean horizontal = mode.excavatesHorizontally();
         boolean neededShaftTarget = !horizontal && MiningExcavationSupport.isNeededLadderShaftTarget(level, context, pos);
         return context.isInsideWorkArea(pos)
                 && (!horizontal || !MiningHorizontalStairPlan.isReservedSupport(context, villager, pos))
                 && !this.worker.isTemporarilyAvoidedTargetForPlanner(level, villager, pos)
-                && (neededShaftTarget || MiningBlockRules.isMineableExcavationBlock(level, context, pos))
+                && (neededShaftTarget
+                || (protectedBarriers == null
+                ? MiningBlockRules.isMineableExcavationBlock(level, context, pos)
+                : MiningBlockRules.isMineableExcavationBlock(level, pos, protectedBarriers)))
                 && (horizontal || MiningBlockRules.isCurrentExcavationLayer(level, context, pos))
                 && (horizontal || MiningExcavationSupport.canMineCurrentLayerTarget(level, context, pos))
                 && !MiningBlockRules.hasAdjacentExcavationFluid(level, pos);
@@ -216,6 +230,7 @@ final class MiningTargetPlanner {
                     MAX_TARGETS);
             return shaftExtension;
         }
+        LongSet protectedBarriers = MiningHazardManager.protectedBarrierPositions(context);
         return HiredTargetSearch.find(
                 level,
                 context,
@@ -226,7 +241,8 @@ final class MiningTargetPlanner {
                     }
                     return active;
                 },
-                target -> isValidExcavationTarget(level, villager, context, target.blockPos()),
+                target -> isValidExcavationTarget(
+                        level, villager, context, target.blockPos(), protectedBarriers),
                 filter -> {
                     HiredPathTarget planned = plannedExcavationTarget(level, villager, context, filter);
                     if (planned != null) {
@@ -234,7 +250,7 @@ final class MiningTargetPlanner {
                     }
                     return planned;
                 },
-                pos -> isValidExcavationTarget(level, villager, context, pos),
+                pos -> isValidExcavationTarget(level, villager, context, pos, protectedBarriers),
                 MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG,
                 MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG,
                 MAX_EXCAVATION_SCAN_POSITIONS,

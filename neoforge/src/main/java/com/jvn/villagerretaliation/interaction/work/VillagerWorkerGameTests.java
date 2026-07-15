@@ -1700,6 +1700,36 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80)
+    public static void miningOreTrackerIndexesLoadedChunksAndTracksRecentExposure(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        BlockPos oreRel = new BlockPos(3, 2, 2);
+        BlockPos ore = helper.absolutePos(oreRel);
+        setBlock(helper, oreRel, Blocks.COAL_ORE.defaultBlockState());
+        HiredOreBlockTracker.clearRuntimeState();
+
+        helper.assertTrue(
+                HiredOreBlockTracker.nearbyOreBlocks(level, ore, 4, 4).contains(ore),
+                "loaded-chunk ore index should discover an existing ore block");
+
+        HiredOreBlockTracker.onBlockBroken(level, ore.west());
+        helper.assertTrue(
+                HiredOreBlockTracker.recentlyExposedOreBlocks(level, ore, 4, 4).contains(ore),
+                "breaking an adjacent block should record the newly exposed ore");
+        helper.assertFalse(
+                HiredOreBlockTracker.recentlyExposedOreBlocks(level, ore.east(6), 1, 4).contains(ore),
+                "recent exposure queries should remain bounded to their requested radius");
+
+        level.setBlock(ore, Blocks.AIR.defaultBlockState(), 3);
+        helper.assertFalse(
+                HiredOreBlockTracker.nearbyOreBlocks(level, ore, 4, 4).contains(ore),
+                "ore index queries should evict blocks that no longer contain ore");
+
+        HiredOreBlockTracker.clearRuntimeState();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 420)
     public static void miningWorkerDepositsAndReturnsToExposedOreWorkArea(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 5, 1);
@@ -1781,6 +1811,52 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(fullOutput.status(), "interaction.work.mining.output_full_blocked", "full output status");
         helper.assertTrue(level.getBlockState(helper.absolutePos(new BlockPos(3, 2, 2))).is(Blocks.COAL_ORE),
                 "miner should not break ore when output cannot fit");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void miningWorkerRechecksOutputCapacityBeforeBreakingCachedTarget(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerMiningCapacityRecheck");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        BlockPos oreRel = new BlockPos(3, 2, 2);
+        BlockPos ore = helper.absolutePos(oreRel);
+        setBlock(helper, oreRel, Blocks.COAL_ORE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 4), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        MiningWorker worker = new MiningWorker();
+
+        worker.tick(level, villager, hirer, context);
+        helper.assertValueEqual(state.getLong("MiningOutputCapacityCheckedTarget"), ore.asLong(),
+                "miner should cache the capacity preflight for its active target");
+
+        for (int slot = 6; slot < HiredJobInventory.SLOT_COUNT; slot++) {
+            context.inventory().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+        }
+        context.inventory().setItem(6, new ItemStack(Items.COBBLESTONE, 63));
+        helper.assertTrue(context.hasOutputSpace(),
+                "a partially filled output stack should leave generic output space");
+        helper.assertFalse(context.canStoreOutputs(List.of(new ItemStack(Items.COAL))),
+                "the remaining output space should not accept the target drop");
+
+        for (int tick = 0; tick < 80
+                && HiredWorkerBrain.snapshot(state, level.getGameTime()).taskState()
+                != HiredWorkerTaskState.PAUSED_FULL_INVENTORY; tick++) {
+            worker.tick(level, villager, hirer, context);
+            level.tickNonPassenger(villager);
+        }
+
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertValueEqual(snapshot.taskState(), HiredWorkerTaskState.PAUSED_FULL_INVENTORY,
+                "completion should recheck capacity after a cached preflight");
+        helper.assertTrue(level.getBlockState(ore).is(Blocks.COAL_ORE),
+                "miner should leave the ore intact when its actual drop no longer fits");
+
+        HiredOreBlockTracker.clearRuntimeState();
         villager.discard();
         helper.succeed();
     }

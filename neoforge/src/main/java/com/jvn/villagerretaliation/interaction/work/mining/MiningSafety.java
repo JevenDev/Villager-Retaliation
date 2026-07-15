@@ -37,11 +37,6 @@ public final class MiningSafety {
         return !hasImmediateHeatHazard(level, pos);
     }
 
-    public static boolean isSafeExcavationApproach(ServerLevel level, BlockPos pos) {
-        return HiredMoveToBlockFaceJob.isValidApproachPosition(level, pos)
-                && isSafePathPosition(level, pos);
-    }
-
     public static boolean isUnsafeMiningTarget(
             ServerLevel level,
             Villager villager,

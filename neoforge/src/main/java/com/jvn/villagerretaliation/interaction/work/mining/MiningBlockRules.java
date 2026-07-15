@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction.work.mining;
 
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -50,6 +51,14 @@ public final class MiningBlockRules {
                 && isMineableExcavationBlock(level, pos);
     }
 
+    static boolean isMineableExcavationBlock(
+            ServerLevel level,
+            BlockPos pos,
+            LongSet protectedBarriers) {
+        return (protectedBarriers == null || !protectedBarriers.contains(pos.asLong()))
+                && isMineableExcavationBlock(level, pos);
+    }
+
     public static boolean isCurrentExcavationLayer(ServerLevel level, HiredWorkContext context, BlockPos pos) {
         Integer layerY = currentExcavationLayer(level, context);
         return layerY != null && pos.getY() == layerY;
@@ -59,12 +68,13 @@ public final class MiningBlockRules {
         if (MiningWorkerState.hasFreshExcavationLayerCache(level, context)) {
             return MiningWorkerState.cachedExcavationLayer(context);
         }
+        LongSet protectedBarriers = MiningHazardManager.protectedBarrierPositions(context);
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         for (int y = context.workMax().getY(); y >= context.workMin().getY(); y--) {
             for (int x = context.workMin().getX(); x <= context.workMax().getX(); x++) {
                 for (int z = context.workMin().getZ(); z <= context.workMax().getZ(); z++) {
                     pos.set(x, y, z);
-                    if (isMineableExcavationBlock(level, context, pos)) {
+                    if (isMineableExcavationBlock(level, pos, protectedBarriers)) {
                         MiningWorkerState.rememberExcavationLayer(level, context, y);
                         return y;
                     }

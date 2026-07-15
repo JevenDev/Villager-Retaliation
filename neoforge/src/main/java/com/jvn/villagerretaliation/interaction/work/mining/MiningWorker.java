@@ -215,16 +215,20 @@ public final class MiningWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, miningReturnTarget(level, villager, context, mode));
             return WorkResult.progressed("interaction.work.status.returning_bounds");
         }
-        WorkResult outputCapacityResult = depositBeforeMiningIfTargetDropsDoNotFit(
-                level,
-                villager,
-                context,
-                target,
-                targetState,
-                tool,
-                mode);
-        if (outputCapacityResult != null) {
-            return outputCapacityResult;
+        List<ItemStack> drops = null;
+        if (!MiningWorkerState.hasCheckedOutputCapacity(context, target.blockPos())) {
+            drops = miningDrops(level, villager, target.blockPos(), targetState, tool);
+            WorkResult outputCapacityResult = depositBeforeMiningIfTargetDropsDoNotFit(
+                    level,
+                    villager,
+                    context,
+                    target,
+                    drops,
+                    mode);
+            if (outputCapacityResult != null) {
+                return outputCapacityResult;
+            }
+            MiningWorkerState.rememberOutputCapacityCheck(context, target.blockPos());
         }
 
         prepareBreakingTarget(level, context, villager, target);
@@ -267,13 +271,9 @@ public final class MiningWorker extends AbstractBlockWorker {
             return WorkResult.progressed(miningStatusKey(mode, "working_target"));
         }
 
-        List<ItemStack> drops = Block.getDrops(
-                targetState,
-                level,
-                target.blockPos(),
-                level.getBlockEntity(target.blockPos()),
-                villager,
-                tool);
+        if (drops == null) {
+            drops = miningDrops(level, villager, target.blockPos(), targetState, tool);
+        }
         setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, target.blockPos());
         if (!context.canStoreOutputs(drops)) {
             DepositResult depositResult = depositOutputsForFullInventory(level, context, villager, 0.55D);
@@ -296,7 +296,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
 
         context.setProgressTicks(0);
-        if (!breakAndStoreMinedBlock(level, context, villager, target, tool, mode)) {
+        if (!breakAndStoreMinedBlock(level, context, villager, target, tool, drops, mode)) {
             HiredWorkPlan.removeTarget(context, target.blockPos());
             clearActiveBreakingTarget(level, context, villager);
             MiningWorkerState.clearExcavationLayerCache(context);
@@ -455,16 +455,8 @@ public final class MiningWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             HiredPathTarget target,
-            BlockState targetState,
-            ItemStack tool,
+            List<ItemStack> drops,
             HiredMiningMode mode) {
-        List<ItemStack> drops = Block.getDrops(
-                targetState,
-                level,
-                target.blockPos(),
-                level.getBlockEntity(target.blockPos()),
-                villager,
-                tool);
         List<ItemStack> requiredCapacity = drops;
         if (mode.usesExcavationShaft()
                 && MiningExcavationSupport.needsLadderRouteOutputReserve(level, context, target.blockPos())) {
@@ -1115,6 +1107,7 @@ public final class MiningWorker extends AbstractBlockWorker {
             Villager villager,
             HiredPathTarget target,
             ItemStack tool,
+            List<ItemStack> drops,
             HiredMiningMode mode) {
         if (!context.isInsideWorkArea(target.blockPos())
                 || !context.isLoaded(level, target.blockPos())
@@ -1124,7 +1117,6 @@ public final class MiningWorker extends AbstractBlockWorker {
             return false;
         }
         BlockState state = level.getBlockState(target.blockPos());
-        List<ItemStack> drops = Block.getDrops(state, level, target.blockPos(), level.getBlockEntity(target.blockPos()), villager, tool);
         if (!context.canStoreOutputs(drops)) {
             return false;
         }
@@ -1146,6 +1138,15 @@ public final class MiningWorker extends AbstractBlockWorker {
         damageTool(context, villager, tool, level, state, target.blockPos());
         HiredPathMemory.rememberRecent(level, target.blockPos());
         return true;
+    }
+
+    private static List<ItemStack> miningDrops(
+            ServerLevel level,
+            Villager villager,
+            BlockPos target,
+            BlockState state,
+            ItemStack tool) {
+        return Block.getDrops(state, level, target, level.getBlockEntity(target), villager, tool);
     }
 
     private static boolean isStillValidMiningTarget(

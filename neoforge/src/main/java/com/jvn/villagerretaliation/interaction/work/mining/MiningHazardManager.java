@@ -9,6 +9,9 @@ import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.longs.LongSets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -139,8 +142,23 @@ final class MiningHazardManager {
         return false;
     }
 
-    static int permanentBarrierCount(HiredWorkContext context) {
-        return context == null ? 0 : context.state().getLongArray(PERMANENT_BARRIERS_TAG).length;
+    static LongSet protectedBarrierPositions(HiredWorkContext context) {
+        if (context == null) {
+            return LongSets.emptySet();
+        }
+        long[] planned = context.state().getLongArray(PLAN_POSITIONS_TAG);
+        long[] permanent = context.state().getLongArray(PERMANENT_BARRIERS_TAG);
+        if (planned.length == 0 && permanent.length == 0) {
+            return LongSets.emptySet();
+        }
+        LongSet positions = new LongOpenHashSet(planned.length + permanent.length);
+        for (long packed : planned) {
+            positions.add(packed);
+        }
+        for (long packed : permanent) {
+            positions.add(packed);
+        }
+        return positions;
     }
 
     static boolean isPermanentBarrier(HiredWorkContext context, BlockPos pos) {
@@ -163,15 +181,15 @@ final class MiningHazardManager {
         }
 
         List<HazardSeed> seeds = new ArrayList<>();
+        LongSet protectedBarriers = protectedBarrierPositions(context);
         for (int x = context.workMin().getX(); x <= context.workMax().getX(); x++) {
             for (int z = context.workMin().getZ(); z <= context.workMax().getZ(); z++) {
                 BlockPos target = new BlockPos(x, layerY, z);
-                if (isProtectedBarrier(context, target)
+                if (protectedBarriers.contains(target.asLong())
                         || !MiningBlockRules.isMineableExcavationBlock(level, target)) {
                     continue;
                 }
-                collectFluidSeeds(level, target, seeds);
-                if (seeds.stream().noneMatch(seed -> seed.target().equals(target))) {
+                if (!collectFluidSeeds(level, target, seeds)) {
                     BlockPos landing = target.below();
                     if (MiningSafety.needsFallGuard(level, landing)
                             && canReplaceWithFill(level, landing)) {
@@ -216,7 +234,8 @@ final class MiningHazardManager {
         return new HazardPlan(first.kind(), new ArrayList<>(sealFaces), 0, true);
     }
 
-    private static void collectFluidSeeds(ServerLevel level, BlockPos target, List<HazardSeed> seeds) {
+    private static boolean collectFluidSeeds(ServerLevel level, BlockPos target, List<HazardSeed> seeds) {
+        boolean found = false;
         for (Direction direction : Direction.values()) {
             BlockPos neighbor = target.relative(direction);
             if (!level.hasChunkAt(neighbor)) {
@@ -225,8 +244,10 @@ final class MiningHazardManager {
             HazardKind kind = HazardKind.fromFluid(level.getFluidState(neighbor));
             if (kind != null) {
                 seeds.add(new HazardSeed(target.immutable(), neighbor.immutable(), kind));
+                found = true;
             }
         }
+        return found;
     }
 
     private static ConnectedFluid collectConnectedFluid(

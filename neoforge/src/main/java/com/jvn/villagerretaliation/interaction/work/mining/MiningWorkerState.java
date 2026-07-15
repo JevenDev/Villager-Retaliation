@@ -20,6 +20,7 @@ final class MiningWorkerState {
     private static final String MINING_ANCHOR_POS_TAG = "MiningAnchorPos";
     private static final String MINING_ANCHOR_EXPIRES_GAME_TIME_TAG = "MiningAnchorExpiresGameTime";
     private static final String LAST_BREAK_PROGRESS_GAME_TIME_TAG = "LastMiningBreakProgressGameTime";
+    private static final String OUTPUT_CAPACITY_CHECKED_TARGET_TAG = "MiningOutputCapacityCheckedTarget";
     private static final String CURRENT_EXCAVATION_LAYER_PRESENT_TAG = "CurrentExcavationLayerPresent";
     private static final String CURRENT_EXCAVATION_LAYER_Y_TAG = "CurrentExcavationLayerY";
     private static final String CURRENT_EXCAVATION_LAYER_EXPIRES_GAME_TIME_TAG = "CurrentExcavationLayerExpiresGameTime";
@@ -101,6 +102,7 @@ final class MiningWorkerState {
     private static void resetTransient(HiredWorkContext context) {
         context.state().remove(LAST_MINED_BLOCK_POS_TAG);
         context.state().remove(LAST_BREAK_PROGRESS_GAME_TIME_TAG);
+        context.state().remove(OUTPUT_CAPACITY_CHECKED_TARGET_TAG);
         context.state().remove(NEXT_FULL_SCAN_GAME_TIME_TAG);
         context.state().remove(EXCAVATION_SCAN_CURSOR_TAG);
         clearMiningAnchor(context);
@@ -122,6 +124,15 @@ final class MiningWorkerState {
 
     static void rememberLastMined(HiredWorkContext context, BlockPos pos) {
         context.state().putLong(LAST_MINED_BLOCK_POS_TAG, pos.asLong());
+    }
+
+    static boolean hasCheckedOutputCapacity(HiredWorkContext context, BlockPos target) {
+        return context.state().contains(OUTPUT_CAPACITY_CHECKED_TARGET_TAG)
+                && context.state().getLong(OUTPUT_CAPACITY_CHECKED_TARGET_TAG) == target.asLong();
+    }
+
+    static void rememberOutputCapacityCheck(HiredWorkContext context, BlockPos target) {
+        context.state().putLong(OUTPUT_CAPACITY_CHECKED_TARGET_TAG, target.asLong());
     }
 
     static BlockPos lastMinedBlock(HiredWorkContext context) {

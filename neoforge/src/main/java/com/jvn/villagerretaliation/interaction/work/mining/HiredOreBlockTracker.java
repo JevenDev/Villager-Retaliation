@@ -22,6 +22,7 @@ import net.neoforged.neoforge.event.level.ChunkEvent;
 public final class HiredOreBlockTracker {
     private static final Map<ServerLevel, OreIndex> INDEXES = new HashMap<>();
     private static final long RECENT_EXPOSURE_TICKS = 20L * 30L;
+    private static final long RECENT_EXPOSURE_PRUNE_TICKS = 100L;
 
     private HiredOreBlockTracker() {
     }
@@ -32,7 +33,10 @@ public final class HiredOreBlockTracker {
 
     public static void onChunkUnload(ChunkEvent.Unload event) {
         if (event.getLevel() instanceof ServerLevel level) {
-            index(level).forgetChunk(event.getChunk().getPos().toLong());
+            OreIndex index = INDEXES.get(level);
+            if (index != null) {
+                index.forgetChunk(event.getChunk().getPos().toLong());
+            }
         }
     }
 
@@ -54,12 +58,6 @@ public final class HiredOreBlockTracker {
         OreIndex index = index(level);
         index.remove(pos);
         index.rememberPotentialExposureAround(level, pos);
-    }
-
-    public static List<BlockPos> nearbyOreBlocks(ServerLevel level, BlockPos center, int radius) {
-        int safeRadius = Math.max(1, radius);
-        int verticalRadius = Math.min(safeRadius, 8);
-        return index(level).nearbyOreBlocks(level, center, safeRadius, verticalRadius);
     }
 
     public static List<BlockPos> nearbyOreBlocks(ServerLevel level, BlockPos center, int radius, int verticalRadius) {
@@ -98,25 +96,13 @@ public final class HiredOreBlockTracker {
     private static final class OreIndex {
         private final Map<Long, Set<Long>> oreBlocksByChunk = new HashMap<>();
         private final Set<Long> fullyIndexedChunks = new HashSet<>();
-        private final Map<Long, Long> recentlyExposedOreBlocks = new HashMap<>();
+        private final Map<Long, Map<Long, Long>> recentlyExposedOreBlocksByChunk = new HashMap<>();
+        private long nextRecentExposurePruneGameTime;
 
-        void indexChunk(ServerLevel level, LevelChunk chunk) {
+        void indexChunk(LevelChunk chunk) {
             Set<Long> oreBlocks = new HashSet<>();
-            ChunkPos chunkPos = chunk.getPos();
-            long chunkKey = chunkPos.toLong();
-            int minX = chunkPos.getMinBlockX();
-            int minZ = chunkPos.getMinBlockZ();
-            int maxY = level.getMaxBuildHeight();
-            for (int y = level.getMinBuildHeight(); y < maxY; y++) {
-                for (int x = minX; x < minX + 16; x++) {
-                    for (int z = minZ; z < minZ + 16; z++) {
-                        BlockPos pos = new BlockPos(x, y, z);
-                        if (isTrackedOre(chunk.getBlockState(pos))) {
-                            oreBlocks.add(pos.asLong());
-                        }
-                    }
-                }
-            }
+            long chunkKey = chunk.getPos().toLong();
+            chunk.findBlocks(HiredOreBlockTracker::isTrackedOre, (pos, state) -> oreBlocks.add(pos.asLong()));
             this.oreBlocksByChunk.put(chunkKey, oreBlocks);
             this.fullyIndexedChunks.add(chunkKey);
         }
@@ -124,7 +110,7 @@ public final class HiredOreBlockTracker {
         void forgetChunk(long chunkKey) {
             this.oreBlocksByChunk.remove(chunkKey);
             this.fullyIndexedChunks.remove(chunkKey);
-            this.recentlyExposedOreBlocks.keySet().removeIf(packedPos -> ChunkPos.asLong(BlockPos.of(packedPos)) == chunkKey);
+            this.recentlyExposedOreBlocksByChunk.remove(chunkKey);
         }
 
         void add(BlockPos pos) {
@@ -136,11 +122,11 @@ public final class HiredOreBlockTracker {
         void remove(BlockPos pos) {
             Set<Long> oreBlocks = this.oreBlocksByChunk.get(ChunkPos.asLong(pos));
             if (oreBlocks == null) {
-                this.recentlyExposedOreBlocks.remove(pos.asLong());
+                removeRecentExposure(pos);
                 return;
             }
             oreBlocks.remove(pos.asLong());
-            this.recentlyExposedOreBlocks.remove(pos.asLong());
+            removeRecentExposure(pos);
         }
 
         void rememberPotentialExposureAround(ServerLevel level, BlockPos origin) {
@@ -149,7 +135,9 @@ public final class HiredOreBlockTracker {
                 BlockPos candidate = origin.relative(direction).immutable();
                 if (level.hasChunkAt(candidate) && isTrackedOre(level.getBlockState(candidate))) {
                     add(candidate);
-                    this.recentlyExposedOreBlocks.put(candidate.asLong(), expiresGameTime);
+                    this.recentlyExposedOreBlocksByChunk
+                            .computeIfAbsent(ChunkPos.asLong(candidate), ignored -> new HashMap<>())
+                            .put(candidate.asLong(), expiresGameTime);
                 }
             }
         }
@@ -190,24 +178,65 @@ public final class HiredOreBlockTracker {
 
         List<BlockPos> recentlyExposedOreBlocks(ServerLevel level, BlockPos center, int radius, int verticalRadius) {
             long now = level.getGameTime();
+            pruneExpiredRecentExposures(now);
+            int minChunkX = SectionPos.blockToSectionCoord(center.getX() - radius);
+            int maxChunkX = SectionPos.blockToSectionCoord(center.getX() + radius);
+            int minChunkZ = SectionPos.blockToSectionCoord(center.getZ() - radius);
+            int maxChunkZ = SectionPos.blockToSectionCoord(center.getZ() + radius);
             int minY = Math.max(level.getMinBuildHeight(), center.getY() - verticalRadius);
             int maxY = Math.min(level.getMaxBuildHeight() - 1, center.getY() + verticalRadius);
             int radiusSqr = radius * radius;
             List<BlockPos> matches = new ArrayList<>();
 
-            this.recentlyExposedOreBlocks.entrySet().removeIf(entry ->
-                    entry.getValue() <= now || isStale(level, BlockPos.of(entry.getKey())));
-            for (long packedPos : this.recentlyExposedOreBlocks.keySet()) {
-                BlockPos pos = BlockPos.of(packedPos);
-                if (pos.getY() >= minY
-                        && pos.getY() <= maxY
-                        && center.distSqr(pos) <= radiusSqr) {
-                    matches.add(pos);
+            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+                for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                    long chunkKey = ChunkPos.asLong(chunkX, chunkZ);
+                    Map<Long, Long> recent = this.recentlyExposedOreBlocksByChunk.get(chunkKey);
+                    if (recent == null) {
+                        continue;
+                    }
+                    recent.entrySet().removeIf(entry ->
+                            entry.getValue() <= now || isStale(level, BlockPos.of(entry.getKey())));
+                    if (recent.isEmpty()) {
+                        this.recentlyExposedOreBlocksByChunk.remove(chunkKey);
+                        continue;
+                    }
+                    for (long packedPos : recent.keySet()) {
+                        BlockPos pos = BlockPos.of(packedPos);
+                        if (pos.getY() >= minY
+                                && pos.getY() <= maxY
+                                && center.distSqr(pos) <= radiusSqr) {
+                            matches.add(pos);
+                        }
+                    }
                 }
             }
 
             matches.sort(Comparator.comparingDouble(pos -> center.distSqr(pos)));
             return matches;
+        }
+
+        private void removeRecentExposure(BlockPos pos) {
+            long chunkKey = ChunkPos.asLong(pos);
+            Map<Long, Long> recent = this.recentlyExposedOreBlocksByChunk.get(chunkKey);
+            if (recent == null) {
+                return;
+            }
+            recent.remove(pos.asLong());
+            if (recent.isEmpty()) {
+                this.recentlyExposedOreBlocksByChunk.remove(chunkKey);
+            }
+        }
+
+        private void pruneExpiredRecentExposures(long gameTime) {
+            if (gameTime < this.nextRecentExposurePruneGameTime) {
+                return;
+            }
+            this.nextRecentExposurePruneGameTime = gameTime + RECENT_EXPOSURE_PRUNE_TICKS;
+            this.recentlyExposedOreBlocksByChunk.entrySet().removeIf(entry -> {
+                entry.getValue().entrySet().removeIf(exposure -> exposure.getValue() <= gameTime);
+                return entry.getValue().isEmpty();
+            });
         }
 
         private void ensureChunkIndexed(ServerLevel level, int chunkX, int chunkZ, long chunkKey) {
@@ -216,7 +245,7 @@ public final class HiredOreBlockTracker {
             }
             LevelChunk chunk = level.getChunkSource().getChunkNow(chunkX, chunkZ);
             if (chunk != null) {
-                indexChunk(level, chunk);
+                indexChunk(chunk);
             }
         }
 

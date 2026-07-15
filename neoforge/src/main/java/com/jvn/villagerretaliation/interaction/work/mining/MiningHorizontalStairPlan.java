@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work.mining;
 
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
+import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
@@ -51,9 +52,27 @@ final class MiningHorizontalStairPlan {
     }
 
     static boolean hasRemainingSupport(ServerLevel level, HiredWorkContext context) {
-        for (BlockPos raw : BlockPos.betweenClosed(context.workMin(), context.workMax())) {
-            BlockPos pos = raw.immutable();
-            if (isSupport(context, pos) && MiningBlockRules.isMineableExcavationBlock(level, context, pos)) {
+        if (!needsStairs(context) || !context.state().contains(AXIS_TAG, Tag.TAG_STRING)) {
+            return false;
+        }
+        LongSet protectedBarriers = MiningHazardManager.protectedBarrierPositions(context);
+        boolean xAxis = "x".equals(context.state().getString(AXIS_TAG));
+        boolean fromMin = context.state().getBoolean(FROM_MIN_TAG);
+        int lane = context.state().getInt(LANE_TAG);
+        int min = xAxis ? context.workMin().getX() : context.workMin().getZ();
+        int max = xAxis ? context.workMax().getX() : context.workMax().getZ();
+        int requiredRise = Math.max(0,
+                context.workMax().getY() - context.workMin().getY() - GROUND_REACHABLE_HEIGHT + 1);
+        for (int coordinate = min; coordinate <= max; coordinate++) {
+            int depth = fromMin ? coordinate - min : max - coordinate;
+            if (depth < 1) {
+                continue;
+            }
+            int supportY = context.workMin().getY() - 1 + Math.min(depth, requiredRise);
+            BlockPos pos = xAxis
+                    ? new BlockPos(coordinate, supportY, lane)
+                    : new BlockPos(lane, supportY, coordinate);
+            if (MiningBlockRules.isMineableExcavationBlock(level, pos, protectedBarriers)) {
                 return true;
             }
         }
