@@ -6,9 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -95,7 +93,7 @@ public final class PartySyncService {
         long now = server.overworld().getGameTime();
         List<PartyRosterSyncPayload.VillagerEntry> villagers = new ArrayList<>(party.villagers().size());
         for (PartyVillagerRecord record : party.villagers()) {
-            Villager loaded = findLoadedVillager(server, record.villagerId());
+            Villager loaded = PartyEntityResolver.loadedVillager(server, record.villagerId());
             villagers.add(new PartyRosterSyncPayload.VillagerEntry(
                     record.villagerId(),
                     loaded == null ? -1 : loaded.getId(),
@@ -152,16 +150,6 @@ public final class PartySyncService {
                 .map(GameProfile::getName)
                 .filter(name -> !name.isBlank())
                 .orElse("Player");
-    }
-
-    private static Villager findLoadedVillager(MinecraftServer server, UUID villagerId) {
-        for (ServerLevel level : server.getAllLevels()) {
-            Entity entity = level.getEntity(villagerId);
-            if (entity instanceof Villager villager) {
-                return villager;
-            }
-        }
-        return null;
     }
 
     private static void send(ServerPlayer player, PartyRosterSyncPayload payload) {

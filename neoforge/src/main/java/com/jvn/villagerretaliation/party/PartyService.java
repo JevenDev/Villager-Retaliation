@@ -67,8 +67,7 @@ public final class PartyService {
         return first != null
                 && second != null
                 && (first.id().equals(second.id())
-                || first.isAlliedWith(second.id())
-                || second.isAlliedWith(first.id()));
+                || first.isAlliedWith(second.id()) && second.isAlliedWith(first.id()));
     }
 
     public static boolean arePlayerAndVillagerInSameParty(ServerLevel level, UUID playerId, UUID villagerId) {
@@ -185,10 +184,11 @@ public final class PartyService {
         if (!relationship.validLeader()) {
             return relationship.failure();
         }
-        if (!relationship.party().removeAlliance(relationship.targetParty().id())) {
+        boolean removed = relationship.party().removeAlliance(relationship.targetParty().id());
+        removed |= relationship.targetParty().removeAlliance(relationship.party().id());
+        if (!removed) {
             return PartyResult.failure("villagerretaliation.party.error.not_allied");
         }
-        relationship.targetParty().removeAlliance(relationship.party().id());
         relationship.party().removeAllianceRequest(relationship.targetParty().id());
         relationship.targetParty().removeAllianceRequest(relationship.party().id());
         relationship.data().changed();
@@ -216,35 +216,17 @@ public final class PartyService {
 
     private static void clearPartyCombatTargets(MinecraftServer server, PartyRecord party) {
         for (PartyVillagerRecord record : party.villagers()) {
-            for (ServerLevel level : server.getAllLevels()) {
-                Entity entity = level.getEntity(record.villagerId());
-                if (entity instanceof Villager villager) {
-                    com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.clearCustomTarget(villager);
-                    break;
-                }
+            Villager villager = PartyEntityResolver.loadedVillager(server, record.villagerId());
+            if (villager != null) {
+                com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.clearCustomTarget(villager);
             }
         }
-    }
-
-    public static boolean isPartyPlayer(ServerLevel level, UUID playerId) {
-        return getPartyForPlayer(level, playerId).isPresent();
     }
 
     public static boolean isRecruitedPartyVillager(ServerLevel level, UUID villagerId) {
         return getPartyForVillager(level, villagerId).isPresent();
     }
 
-    public static UUID getPartyLeader(PartyRecord party) {
-        return party == null ? null : party.leaderId();
-    }
-
-    public static List<UUID> getPartyPlayers(PartyRecord party) {
-        return party == null ? List.of() : party.playerIds();
-    }
-
-    public static List<PartyVillagerRecord> getPartyVillagers(PartyRecord party) {
-        return party == null ? List.of() : party.villagers();
-    }
 
     public static PartyResult sendInvitation(ServerPlayer inviter, ServerPlayer target) {
         if (inviter == null || target == null || inviter.getUUID().equals(target.getUUID())) {

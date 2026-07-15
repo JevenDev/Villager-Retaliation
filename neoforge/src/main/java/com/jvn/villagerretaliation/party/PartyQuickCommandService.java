@@ -122,7 +122,7 @@ public final class PartyQuickCommandService {
         record.setQuickCommandsEnabled(enabled);
         if (!enabled) {
             record.setRegrouping(false);
-            Villager loaded = loadedVillager(player.getServer(), villagerId);
+            Villager loaded = PartyEntityResolver.activeVillager(player.getServer(), villagerId);
             if (loaded == null) {
                 clearAllOrders(villagerId);
             } else {
@@ -294,7 +294,7 @@ public final class PartyQuickCommandService {
         }
         int affected = 0;
         for (PartyVillagerRecord record : records) {
-            Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
+            Villager villager = PartyEntityResolver.activeVillager(player.serverLevel(), record.villagerId());
             if (!canReceiveAttackOrder(player.serverLevel(), villager, record, target)) {
                 continue;
             }
@@ -381,7 +381,7 @@ public final class PartyQuickCommandService {
             List<PartyVillagerRecord> records,
             LivingEntity target) {
         for (PartyVillagerRecord record : records) {
-            Villager villager = loadedVillager(level, record.villagerId());
+            Villager villager = PartyEntityResolver.activeVillager(level, record.villagerId());
             if (canReceiveAttackOrder(level, villager, record, target)) {
                 return true;
             }
@@ -435,7 +435,7 @@ public final class PartyQuickCommandService {
         for (PartyVillagerRecord record : records) {
             record.setStaying(player.serverLevel().dimension().location(), target);
             record.setRegrouping(false);
-            Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
+            Villager villager = PartyEntityResolver.activeVillager(player.serverLevel(), record.villagerId());
             if (villager == null) {
                 clearMovementOrder(record.villagerId());
                 MANUAL_ATTACK_TARGETS.remove(record.villagerId());
@@ -458,7 +458,7 @@ public final class PartyQuickCommandService {
         BlockPos center = player.blockPosition().immutable();
         for (PartyVillagerRecord record : records) {
             record.setRegrouping(false);
-            Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
+            Villager villager = PartyEntityResolver.activeVillager(player.serverLevel(), record.villagerId());
             if (villager == null) {
                 continue;
             }
@@ -488,7 +488,7 @@ public final class PartyQuickCommandService {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
             record.setRegrouping(false);
-            Villager villager = loadedVillager(player.serverLevel(), record.villagerId());
+            Villager villager = PartyEntityResolver.activeVillager(player.serverLevel(), record.villagerId());
             if (villager == null) {
                 continue;
             }
@@ -513,7 +513,7 @@ public final class PartyQuickCommandService {
         for (PartyVillagerRecord record : records) {
             record.setFollowing();
             record.setRegrouping(true);
-            Villager villager = loadedVillager(player.getServer(), record.villagerId());
+            Villager villager = PartyEntityResolver.activeVillager(player.getServer(), record.villagerId());
             if (villager == null) {
                 clearMovementOrder(record.villagerId());
                 MANUAL_ATTACK_TARGETS.remove(record.villagerId());
@@ -539,7 +539,7 @@ public final class PartyQuickCommandService {
     private static int stayHere(ServerPlayer player, List<PartyVillagerRecord> records) {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
-            Villager villager = loadedVillager(player.getServer(), record.villagerId());
+            Villager villager = PartyEntityResolver.activeVillager(player.getServer(), record.villagerId());
             if (villager == null || !(villager.level() instanceof ServerLevel level)) {
                 continue;
             }
@@ -563,7 +563,7 @@ public final class PartyQuickCommandService {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
             record.setWeaponPreference(preference);
-            Villager villager = loadedVillager(player.getServer(), record.villagerId());
+            Villager villager = PartyEntityResolver.activeVillager(player.getServer(), record.villagerId());
             if (villager != null) {
                 com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService.applyPreference(villager, preference);
             }
@@ -575,7 +575,7 @@ public final class PartyQuickCommandService {
     private static int heal(ServerPlayer player, List<PartyVillagerRecord> records) {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
-            Villager villager = loadedVillager(player.getServer(), record.villagerId());
+            Villager villager = PartyEntityResolver.activeVillager(player.getServer(), record.villagerId());
             if (villager == null || !villager.isAlive() || villager.getHealth() >= villager.getMaxHealth()) {
                 continue;
             }
@@ -593,7 +593,7 @@ public final class PartyQuickCommandService {
 
     private static int standGuard(ServerPlayer player, List<PartyVillagerRecord> records) {
         List<Villager> loaded = records.stream()
-                .map(record -> loadedVillager(player.serverLevel(), record.villagerId()))
+                .map(record -> PartyEntityResolver.activeVillager(player.serverLevel(), record.villagerId()))
                 .filter(java.util.Objects::nonNull)
                 .toList();
         boolean lowerShields = loaded.stream()
@@ -981,28 +981,6 @@ public final class PartyQuickCommandService {
         }
         PartyRecord party = PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).orElse(null);
         return party != null && party.leaderId().equals(player.getUUID()) ? party : null;
-    }
-
-    private static Villager loadedVillager(ServerLevel level, UUID villagerId) {
-        Entity entity = level == null ? null : level.getEntity(villagerId);
-        return entity instanceof Villager villager && villager.isAlive() ? villager : null;
-    }
-
-    private static Villager loadedVillager(MinecraftServer server, UUID villagerId) {
-        return loadedVillagerFromAnyServerLevel(server, villagerId);
-    }
-
-    private static Villager loadedVillagerFromAnyServerLevel(MinecraftServer server, UUID villagerId) {
-        if (server == null) {
-            return null;
-        }
-        for (ServerLevel level : server.getAllLevels()) {
-            Villager villager = loadedVillager(level, villagerId);
-            if (villager != null) {
-                return villager;
-            }
-        }
-        return null;
     }
 
     private static boolean targetRequired(PartyQuickCommand command) {

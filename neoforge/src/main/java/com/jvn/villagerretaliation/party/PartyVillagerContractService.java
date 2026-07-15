@@ -21,7 +21,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
 
 public final class PartyVillagerContractService {
@@ -386,7 +385,7 @@ public final class PartyVillagerContractService {
         List<PartyVillagerRecord> villagers = List.copyOf(party.villagers());
         PartyService.deleteParty(level, party.id());
         for (PartyVillagerRecord record : villagers) {
-            Villager loaded = findLoadedVillager(level.getServer(), record.villagerId());
+            Villager loaded = PartyEntityResolver.loadedVillager(level.getServer(), record.villagerId());
             if (loaded != null) {
                 cleanupEntity(loaded);
                 closeJobInventories(level.getServer(), loaded.getId());
@@ -451,7 +450,7 @@ public final class PartyVillagerContractService {
         if (removed == null) {
             return;
         }
-        Villager loaded = findLoadedVillager(server, record.villagerId());
+        Villager loaded = PartyEntityResolver.loadedVillager(server, record.villagerId());
         if (loaded != null) {
             updateLastKnownLocation(record, loaded);
             loaded.getPersistentData().putUUID(EXPIRED_PARTY_ID_TAG, party.id());
@@ -503,7 +502,7 @@ public final class PartyVillagerContractService {
         if (party == null || PartyService.removeVillager(storageLevel, villagerId) == null) {
             return false;
         }
-        Villager loaded = findLoadedVillager(server, villagerId);
+        Villager loaded = PartyEntityResolver.loadedVillager(server, villagerId);
         if (loaded != null) {
             cleanupEntity(loaded);
             closeJobInventories(server, loaded.getId());
@@ -518,16 +517,6 @@ public final class PartyVillagerContractService {
                     EXPIRED_PARTY_ID_TAG,
                     villager.getPersistentData().getUUID(PARTY_ID_TAG));
         }
-    }
-
-    private static Villager findLoadedVillager(MinecraftServer server, UUID villagerId) {
-        for (ServerLevel level : server.getAllLevels()) {
-            Entity entity = level.getEntity(villagerId);
-            if (entity instanceof Villager villager) {
-                return villager;
-            }
-        }
-        return null;
     }
 
     private static void closeJobInventories(MinecraftServer server, int villagerEntityId) {

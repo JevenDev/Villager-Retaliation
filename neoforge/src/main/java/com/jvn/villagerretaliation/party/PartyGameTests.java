@@ -818,6 +818,18 @@ public final class PartyGameTests {
                     "either party leader should be able to end an alliance");
             helper.assertFalse(PartyService.areInSameOrAlliedParty(firstVillager, secondLeader),
                     "ending an alliance must immediately restore separate-party relationships");
+
+            firstParty.addAlliance(secondParty.id());
+            helper.assertFalse(PartyService.areSameOrAllied(firstParty, secondParty),
+                    "one-sided alliance state must never grant friendly-fire protection");
+            PartySavedData repaired = PartySavedData.load(
+                    data.save(new CompoundTag(), level.registryAccess()),
+                    level.registryAccess());
+            PartyRecord repairedFirst = repaired.party(firstParty.id()).orElseThrow();
+            PartyRecord repairedSecond = repaired.party(secondParty.id()).orElseThrow();
+            helper.assertFalse(repairedFirst.isAlliedWith(secondParty.id())
+                            || repairedSecond.isAlliedWith(firstParty.id()),
+                    "loading must prune one-sided alliance state instead of promoting it");
         } finally {
             PartyService.deleteParty(level, firstParty.id());
             PartyService.deleteParty(level, secondParty.id());

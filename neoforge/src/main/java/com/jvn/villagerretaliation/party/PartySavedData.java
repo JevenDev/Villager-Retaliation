@@ -60,6 +60,9 @@ public final class PartySavedData extends SavedData {
                 data.invitationsById.putIfAbsent(invitation.id(), invitation);
             }
         }
+        // Loading normalizes legacy and malformed records. Persist those repairs even when
+        // the server performs no subsequent party mutation before shutting down.
+        data.setDirty();
         return data;
     }
 
@@ -206,10 +209,6 @@ public final class PartySavedData extends SavedData {
         return removed;
     }
 
-    public int partyCount() {
-        return this.partiesById.size();
-    }
-
     public int pruneExpiredInvitations(long gameTime) {
         int before = this.invitationsById.size();
         this.invitationsById.entrySet().removeIf(entry -> entry.getValue().isExpired(gameTime));
@@ -242,16 +241,17 @@ public final class PartySavedData extends SavedData {
         }
         invalidParties.forEach(this.partiesById::remove);
         Set<UUID> validPartyIds = Set.copyOf(this.partiesById.keySet());
+        Map<UUID, Set<UUID>> declaredAlliances = new HashMap<>();
         for (PartyRecord party : this.partiesById.values()) {
             party.retainPartyRelationships(validPartyIds);
+            declaredAlliances.put(party.id(), Set.copyOf(party.alliedPartyIds()));
         }
         for (PartyRecord party : this.partiesById.values()) {
-            for (UUID alliedPartyId : List.copyOf(party.alliedPartyIds())) {
-                PartyRecord ally = this.partiesById.get(alliedPartyId);
-                if (ally != null) {
-                    ally.addAlliance(party.id());
-                }
-            }
+            Set<UUID> mutualAlliances = new HashSet<>(declaredAlliances.getOrDefault(party.id(), Set.of()));
+            mutualAlliances.removeIf(allyId -> !declaredAlliances
+                    .getOrDefault(allyId, Set.of())
+                    .contains(party.id()));
+            party.retainAlliances(mutualAlliances);
         }
         for (PartyRecord party : this.partiesById.values()) {
             party.retainPartyRelationships(validPartyIds);

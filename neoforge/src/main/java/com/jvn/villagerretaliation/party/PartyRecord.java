@@ -98,10 +98,6 @@ public final class PartyRecord {
         return Collections.unmodifiableSet(this.alliedPartyIds);
     }
 
-    public Set<UUID> allianceRequestPartyIds() {
-        return Collections.unmodifiableSet(this.allianceRequestPartyIds);
-    }
-
     public boolean isAlliedWith(UUID partyId) {
         return partyId != null && this.alliedPartyIds.contains(partyId);
     }
@@ -134,6 +130,10 @@ public final class PartyRecord {
         this.allianceRequestPartyIds.removeIf(partyId -> this.id.equals(partyId)
                 || !validPartyIds.contains(partyId)
                 || this.alliedPartyIds.contains(partyId));
+    }
+
+    void retainAlliances(Set<UUID> mutualPartyIds) {
+        this.alliedPartyIds.retainAll(mutualPartyIds);
     }
 
     public PartyCombatMode combatMode() {
