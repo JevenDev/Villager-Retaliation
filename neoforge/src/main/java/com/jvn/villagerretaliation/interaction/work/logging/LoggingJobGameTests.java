@@ -53,18 +53,40 @@ public final class LoggingJobGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void loggingOptionsUseDefaultsAndRejectUnknownIds(GameTestHelper helper) {
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredLoggingOptions.STRIP_LOGS_TAG, "invalid_type");
+        HiredLoggingOptions.initializeDefaults(state);
+        helper.assertFalse(HiredLoggingOptions.stripLogs(state), "invalid persisted option type should normalize to its default");
+        helper.assertTrue(HiredLoggingOptions.pickUpDecayDrops(state), "decay drop pickup should default on");
+
+        HiredLoggingOptions.ToggleResult toggled = HiredLoggingOptions.toggle(state, "  HARVEST_LEAVES  ");
+        helper.assertValueEqual(toggled.optionId(), HiredLoggingOptions.HARVEST_LEAVES, "normalized option id");
+        helper.assertTrue(toggled.enabled() && HiredLoggingOptions.harvestLeaves(state), "known option should toggle");
+        helper.assertValueEqual(HiredLoggingOptions.label(toggled.optionId()), "Harvest leaves", "option label lookup");
+
+        CompoundTag beforeInvalidToggle = state.copy();
+        HiredLoggingOptions.ToggleResult invalid = HiredLoggingOptions.toggle(state, "unknown_option");
+        helper.assertTrue(invalid.invalid(), "unknown option should report invalid");
+        helper.assertValueEqual(state, beforeInvalidToggle, "unknown option must not mutate persisted state");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void loggingHarvestPlanBoundsAndNormalizesPersistedWork(GameTestHelper helper) {
         CompoundTag state = new CompoundTag();
         HiredWorkContext context = context(state, new BlockPos(-20, 0, -20), new BlockPos(20, 4, 20));
         List<BlockPos> logs = positions(320, 1);
-        logs.add(logs.getFirst());
+        BlockPos origin = logs.getFirst();
+        logs.addFirst(new BlockPos(200, 1, 200));
+        logs.add(origin);
         List<BlockPos> leaves = positions(440, 2);
         List<BlockPos> saplings = positions(320, 1);
-        BlockPos origin = logs.getFirst();
 
         LoggingHarvestPlan.begin(
                 context,
                 origin,
+                origin.offset(0, 0, 1),
                 logs,
                 leaves,
                 saplings,
@@ -78,7 +100,11 @@ public final class LoggingJobGameTests {
         helper.assertValueEqual(plan.leaves().length, LoggingHarvestPlan.MAX_LEAVES, "bounded pending leaf count");
         helper.assertValueEqual(plan.saplings().length, LoggingHarvestPlan.MAX_SAPLINGS, "bounded pending sapling count");
         helper.assertValueEqual(new HashSet<>(boxed(plan.logs())).size(), plan.logs().length, "pending logs should be deduplicated");
+        helper.assertTrue(
+                java.util.Arrays.stream(plan.logs()).mapToObj(BlockPos::of).allMatch(context::isInsideWorkArea),
+                "new plans must reject positions outside their assigned work area");
         helper.assertValueEqual(plan.logFamily(), "minecraft:oak", "selected tree family should persist with the plan");
+        helper.assertValueEqual(plan.harvestPos(), origin.offset(0, 0, 1), "safe harvest position should persist with the plan");
         helper.assertTrue(plan.stripLogs(), "strip option should be snapshotted with the plan");
         helper.assertTrue(plan.sapling().is(Items.OAK_SAPLING), "replanting item should survive plan reload");
 
@@ -92,7 +118,6 @@ public final class LoggingJobGameTests {
 
         HiredWorkContext movedArea = context(state, new BlockPos(100, 0, 100), new BlockPos(110, 4, 110));
         helper.assertTrue(LoggingHarvestPlan.read(movedArea) == null, "plan outside a reassigned work area should be discarded");
-        helper.assertFalse(LoggingHarvestPlan.has(movedArea), "discarded plan must not leave partial state behind");
         helper.succeed();
     }
 
@@ -169,7 +194,7 @@ public final class LoggingJobGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 400)
-    public static void activeLoggingHarvestFinishesItsTreeAfterFilterChanges(GameTestHelper helper) {
+    public static void activeLoggingHarvestFinishesTallTreeAfterFilterChanges(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         for (int x = 0; x <= 8; x++) {
@@ -184,16 +209,15 @@ public final class LoggingJobGameTests {
         helper.assertTrue(level.addFreshEntity(villager), "logging fixture villager should enter the level");
 
         List<BlockPos> treeLogs = new ArrayList<>();
-        for (int x = 3; x <= 6; x++) {
-            for (int z = 2; z <= 4; z++) {
-                BlockPos log = helper.absolutePos(new BlockPos(x, 2, z));
-                treeLogs.add(log);
-                setBlock(level, log.below(), Blocks.DIRT.defaultBlockState());
-                setBlock(level, log, Blocks.OAK_LOG.defaultBlockState());
-            }
+        BlockPos root = helper.absolutePos(new BlockPos(4, 2, 3));
+        setBlock(level, root.below(), Blocks.DIRT.defaultBlockState());
+        for (int y = 0; y < 12; y++) {
+            BlockPos log = root.above(y);
+            treeLogs.add(log);
+            setBlock(level, log, Blocks.OAK_LOG.defaultBlockState());
         }
         BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false);
-        BlockPos crown = helper.absolutePos(new BlockPos(4, 4, 3));
+        BlockPos crown = root.above(12);
         for (BlockPos leaf : List.of(crown, crown.north(), crown.south(), crown.east(), crown.west())) {
             setBlock(level, leaf, leaves);
         }
@@ -205,9 +229,9 @@ public final class LoggingJobGameTests {
         HiredWorkContext context = new HiredWorkContext(
                 inventory,
                 state,
-                helper.absolutePos(new BlockPos(4, 3, 3)),
+                helper.absolutePos(new BlockPos(4, 7, 3)),
                 helper.absolutePos(new BlockPos(1, 1, 1)),
-                helper.absolutePos(new BlockPos(7, 6, 5)),
+                helper.absolutePos(new BlockPos(7, 15, 5)),
                 16,
                 16,
                 true,

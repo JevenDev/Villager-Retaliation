@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work.logging;
 
 import java.util.Locale;
+import java.util.Map;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 
@@ -17,85 +18,74 @@ public final class HiredLoggingOptions {
     public static final String PLANT_SAPLINGS = "plant_saplings";
     public static final String PICK_UP_DECAY_DROPS = "pick_up_decay_drops";
 
+    private static final Option STRIP_LOGS_OPTION = new Option(STRIP_LOGS, STRIP_LOGS_TAG, "Strip logs", false);
+    private static final Option HARVEST_LEAVES_OPTION = new Option(HARVEST_LEAVES, HARVEST_LEAVES_TAG, "Harvest leaves", false);
+    private static final Option BONEMEAL_SAPLINGS_OPTION = new Option(BONEMEAL_SAPLINGS, BONEMEAL_SAPLINGS_TAG, "Bonemeal saplings", false);
+    private static final Option PLANT_SAPLINGS_OPTION = new Option(PLANT_SAPLINGS, PLANT_SAPLINGS_TAG, "Plant saplings", false);
+    private static final Option PICK_UP_DECAY_DROPS_OPTION = new Option(PICK_UP_DECAY_DROPS, PICK_UP_DECAY_DROPS_TAG, "Pick up decay drops", true);
+    private static final Map<String, Option> OPTIONS = Map.of(
+            STRIP_LOGS, STRIP_LOGS_OPTION,
+            HARVEST_LEAVES, HARVEST_LEAVES_OPTION,
+            BONEMEAL_SAPLINGS, BONEMEAL_SAPLINGS_OPTION,
+            PLANT_SAPLINGS, PLANT_SAPLINGS_OPTION,
+            PICK_UP_DECAY_DROPS, PICK_UP_DECAY_DROPS_OPTION);
+
     private HiredLoggingOptions() {
     }
 
     public static void initializeDefaults(CompoundTag state) {
-        putDefault(state, STRIP_LOGS_TAG, false);
-        putDefault(state, HARVEST_LEAVES_TAG, false);
-        putDefault(state, BONEMEAL_SAPLINGS_TAG, false);
-        putDefault(state, PLANT_SAPLINGS_TAG, false);
-        putDefault(state, PICK_UP_DECAY_DROPS_TAG, true);
+        for (Option option : OPTIONS.values()) {
+            putDefault(state, option.tag(), option.defaultEnabled());
+        }
     }
 
     public static boolean stripLogs(CompoundTag state) {
-        return state.getBoolean(STRIP_LOGS_TAG);
+        return enabled(state, STRIP_LOGS_OPTION);
     }
 
     public static boolean harvestLeaves(CompoundTag state) {
-        return state.getBoolean(HARVEST_LEAVES_TAG);
+        return enabled(state, HARVEST_LEAVES_OPTION);
     }
 
     public static boolean bonemealSaplings(CompoundTag state) {
-        return state.getBoolean(BONEMEAL_SAPLINGS_TAG);
+        return enabled(state, BONEMEAL_SAPLINGS_OPTION);
     }
 
     public static boolean plantSaplings(CompoundTag state) {
-        return state.getBoolean(PLANT_SAPLINGS_TAG);
+        return enabled(state, PLANT_SAPLINGS_OPTION);
     }
 
     public static boolean pickUpDecayDrops(CompoundTag state) {
-        return state.getBoolean(PICK_UP_DECAY_DROPS_TAG);
+        return enabled(state, PICK_UP_DECAY_DROPS_OPTION);
     }
 
     public static boolean enabled(CompoundTag state, String optionId) {
-        return switch (normalize(optionId)) {
-            case STRIP_LOGS -> stripLogs(state);
-            case HARVEST_LEAVES -> harvestLeaves(state);
-            case BONEMEAL_SAPLINGS -> bonemealSaplings(state);
-            case PLANT_SAPLINGS -> plantSaplings(state);
-            case PICK_UP_DECAY_DROPS -> pickUpDecayDrops(state);
-            default -> false;
-        };
+        return enabled(state, OPTIONS.get(normalize(optionId)));
     }
 
     public static ToggleResult toggle(CompoundTag state, String optionId) {
-        String normalized = normalize(optionId);
-        String tag = tagFor(normalized);
-        if (tag.isBlank()) {
+        Option option = OPTIONS.get(normalize(optionId));
+        if (option == null) {
             return ToggleResult.invalidResult();
         }
-        boolean enabled = !state.getBoolean(tag);
-        state.putBoolean(tag, enabled);
-        return new ToggleResult(normalized, enabled, false);
+        boolean enabled = !enabled(state, option);
+        state.putBoolean(option.tag(), enabled);
+        return new ToggleResult(option.id(), enabled, false);
     }
 
     public static String label(String optionId) {
-        return switch (normalize(optionId)) {
-            case STRIP_LOGS -> "Strip logs";
-            case HARVEST_LEAVES -> "Harvest leaves";
-            case BONEMEAL_SAPLINGS -> "Bonemeal saplings";
-            case PLANT_SAPLINGS -> "Plant saplings";
-            case PICK_UP_DECAY_DROPS -> "Pick up decay drops";
-            default -> "Logging option";
-        };
+        Option option = OPTIONS.get(normalize(optionId));
+        return option == null ? "Logging option" : option.label();
+    }
+
+    private static boolean enabled(CompoundTag state, Option option) {
+        return option != null && state.getBoolean(option.tag());
     }
 
     private static void putDefault(CompoundTag state, String tag, boolean value) {
         if (!state.contains(tag, Tag.TAG_BYTE)) {
             state.putBoolean(tag, value);
         }
-    }
-
-    private static String tagFor(String optionId) {
-        return switch (optionId) {
-            case STRIP_LOGS -> STRIP_LOGS_TAG;
-            case HARVEST_LEAVES -> HARVEST_LEAVES_TAG;
-            case BONEMEAL_SAPLINGS -> BONEMEAL_SAPLINGS_TAG;
-            case PLANT_SAPLINGS -> PLANT_SAPLINGS_TAG;
-            case PICK_UP_DECAY_DROPS -> PICK_UP_DECAY_DROPS_TAG;
-            default -> "";
-        };
     }
 
     private static String normalize(String optionId) {
@@ -106,5 +96,8 @@ public final class HiredLoggingOptions {
         private static ToggleResult invalidResult() {
             return new ToggleResult("", false, true);
         }
+    }
+
+    private record Option(String id, String tag, String label, boolean defaultEnabled) {
     }
 }

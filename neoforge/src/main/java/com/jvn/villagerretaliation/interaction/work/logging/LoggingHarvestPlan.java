@@ -26,6 +26,7 @@ final class LoggingHarvestPlan {
     static final int MAX_SAPLINGS = 256;
 
     private static final String ORIGIN_TAG = "PendingLoggingTreeOrigin";
+    private static final String HARVEST_POS_TAG = "PendingLoggingTreeHarvestPos";
     private static final String LOGS_TAG = "PendingLoggingTreeLogs";
     private static final String LEAVES_TAG = "PendingLoggingTreeLeaves";
     private static final String SAPLINGS_TAG = "PendingLoggingTreeSaplings";
@@ -36,7 +37,7 @@ final class LoggingHarvestPlan {
     private static final String VERSION_TAG = "PendingLoggingTreePlanVersion";
     private static final String WORK_MIN_TAG = "PendingLoggingTreeWorkMin";
     private static final String WORK_MAX_TAG = "PendingLoggingTreeWorkMax";
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
 
     private LoggingHarvestPlan() {
     }
@@ -44,6 +45,7 @@ final class LoggingHarvestPlan {
     static void begin(
             HiredWorkContext context,
             BlockPos origin,
+            BlockPos harvestPos,
             List<BlockPos> logs,
             List<BlockPos> leaves,
             List<BlockPos> saplingPositions,
@@ -53,9 +55,12 @@ final class LoggingHarvestPlan {
         clear(context);
         CompoundTag state = context.state();
         state.putLong(ORIGIN_TAG, origin.asLong());
-        state.putLongArray(LOGS_TAG, positionsToArray(logs, MAX_LOGS));
-        state.putLongArray(LEAVES_TAG, positionsToArray(leaves, MAX_LEAVES));
-        state.putLongArray(SAPLINGS_TAG, positionsToArray(saplingPositions, MAX_SAPLINGS));
+        if (harvestPos != null && context.isInsideWorkArea(harvestPos)) {
+            state.putLong(HARVEST_POS_TAG, harvestPos.asLong());
+        }
+        state.putLongArray(LOGS_TAG, positionsToArray(context, logs, MAX_LOGS));
+        state.putLongArray(LEAVES_TAG, positionsToArray(context, leaves, MAX_LEAVES));
+        state.putLongArray(SAPLINGS_TAG, positionsToArray(context, saplingPositions, MAX_SAPLINGS));
         state.putBoolean(STRIP_LOGS_TAG, stripLogs);
         state.putInt(LOGS_CUT_TAG, 0);
         if (logFamily != null && !logFamily.isBlank()) {
@@ -76,6 +81,7 @@ final class LoggingHarvestPlan {
     static Snapshot read(HiredWorkContext context) {
         CompoundTag state = context.state();
         if (!state.contains(ORIGIN_TAG)
+                && !state.contains(HARVEST_POS_TAG)
                 && !state.contains(LOGS_TAG)
                 && !state.contains(LEAVES_TAG)
                 && !state.contains(SAPLINGS_TAG)
@@ -85,6 +91,9 @@ final class LoggingHarvestPlan {
         if (!context.hasWorkArea()) {
             clear(context);
             return null;
+        }
+        if (state.contains(HARVEST_POS_TAG) && !state.contains(HARVEST_POS_TAG, Tag.TAG_LONG)) {
+            state.remove(HARVEST_POS_TAG);
         }
         boolean normalize = needsNormalization(context, state);
         long[] logs = normalize
@@ -125,8 +134,16 @@ final class LoggingHarvestPlan {
         if (normalize) {
             rememberConfiguration(context);
         }
+        BlockPos harvestPos = state.contains(HARVEST_POS_TAG, Tag.TAG_LONG)
+                ? BlockPos.of(state.getLong(HARVEST_POS_TAG))
+                : null;
+        if (harvestPos != null && !context.isInsideWorkArea(harvestPos)) {
+            state.remove(HARVEST_POS_TAG);
+            harvestPos = null;
+        }
         return new Snapshot(
                 origin,
+                harvestPos,
                 logs,
                 leaves,
                 saplings,
@@ -134,10 +151,6 @@ final class LoggingHarvestPlan {
                 state.getBoolean(STRIP_LOGS_TAG),
                 state.getString(LOG_FAMILY_TAG),
                 logsCut);
-    }
-
-    static boolean has(HiredWorkContext context) {
-        return read(context) != null;
     }
 
     static void rememberLogFamily(HiredWorkContext context, String logFamily) {
@@ -189,6 +202,7 @@ final class LoggingHarvestPlan {
     static void clear(HiredWorkContext context) {
         CompoundTag state = context.state();
         state.remove(ORIGIN_TAG);
+        state.remove(HARVEST_POS_TAG);
         state.remove(LOGS_TAG);
         state.remove(LEAVES_TAG);
         state.remove(SAPLINGS_TAG);
@@ -283,11 +297,14 @@ final class LoggingHarvestPlan {
         return BlockPos.of(saplings[0]);
     }
 
-    private static long[] positionsToArray(List<BlockPos> positions, int maxPositions) {
+    private static long[] positionsToArray(
+            HiredWorkContext context,
+            List<BlockPos> positions,
+            int maxPositions) {
         List<Long> packed = new ArrayList<>();
         Set<Long> seen = new HashSet<>();
         for (BlockPos pos : positions) {
-            if (pos != null && seen.add(pos.asLong())) {
+            if (pos != null && context.isInsideWorkArea(pos) && seen.add(pos.asLong())) {
                 packed.add(pos.asLong());
                 if (packed.size() >= maxPositions) {
                     break;
@@ -323,6 +340,7 @@ final class LoggingHarvestPlan {
 
     record Snapshot(
             BlockPos origin,
+            BlockPos harvestPos,
             long[] logs,
             long[] leaves,
             long[] saplings,
