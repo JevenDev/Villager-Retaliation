@@ -3158,6 +3158,7 @@ public final class VillagerWorkerGameTests {
         buildFloor(helper, -6, 10, -2, 7, 1);
         ServerLevel level = helper.getLevel();
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        tickVillager(level, villager, 20);
         BlockPos nodeRel = new BlockPos(5, 2, 2);
         BlockPos node = helper.absolutePos(nodeRel);
         setBlock(helper, nodeRel, Blocks.CHEST.defaultBlockState());
@@ -3232,6 +3233,56 @@ public final class VillagerWorkerGameTests {
                 "courier should physically return to the beginning of its route");
         helper.assertFalse(villager.blockPosition().equals(input),
                 "courier should stand beside a container route node instead of trying to occupy it");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void courierLimitsEachRouteTripToOneStackOfCargo(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierCargoLimit");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        BlockPos inputRel = new BlockPos(4, 2, 2);
+        BlockPos outputRel = new BlockPos(7, 2, 2);
+        BlockPos input = helper.absolutePos(inputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, input);
+        AssignedStorageService.removeAssignedContainer(level, output);
+        container(level, input).setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+        container(level, input).setItem(1, new ItemStack(Items.COBBLESTONE, 36));
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "courier input assignment");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "courier output assignment");
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(helper, villager, state, List.of(inputRel, outputRel));
+        CourierWorker worker = new CourierWorker();
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 220, () ->
+                countItem(container(level, output), Items.COBBLESTONE) == 64
+                        && "pickup".equals(state.getString("CourierPhase")));
+
+        helper.assertValueEqual(
+                countItem(container(level, input), Items.COBBLESTONE),
+                36,
+                "courier should leave excess cargo for the next route trip");
+        helper.assertValueEqual(
+                countItem(container(level, output), Items.COBBLESTONE),
+                64,
+                "courier should deliver no more than 64 items per route trip");
+        helper.assertFalse(context.inventory().hasOutputItems(), "courier should finish the trip without retained cargo");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         villager.discard();

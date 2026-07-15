@@ -1006,7 +1006,10 @@ public final class PartyGameTests {
         ServerPlayer leader = fakePlayer(level, uniqueName("party_shared_move_route"));
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
-        BlockPos target = helper.absolutePos(new BlockPos(13, 2, 2));
+        for (int tick = 0; tick < 20; tick++) {
+            level.tickNonPassenger(villager);
+        }
+        BlockPos target = helper.absolutePos(new BlockPos(10, 2, 2));
         long now = level.getServer().overworld().getGameTime();
         PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
         PartySavedData.get(level).addVillager(
@@ -1018,22 +1021,16 @@ public final class PartyGameTests {
                         PartyQuickCommand.MOVE_TO,
                         com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
                         target));
-        helper.startSequence()
-                .thenExecuteFor(20, () -> {
-                    if (villager.getNavigation().isDone()) {
-                        PartyQuickCommandService.onVillagerTickPost(villager);
-                    }
-                })
-                .thenExecute(() -> {
-                    helper.assertFalse(villager.getNavigation().isDone(),
-                            "move-to should start the shared node-route path");
-                    helper.assertTrue(VillagerTaskNavigationUtil.isHiredWalkTarget(villager),
-                            "move-to should use the same guarded walk-target pipeline as node jobs");
-                    PartyService.deleteParty(level, party.id());
-                    PartyQuickCommandService.clearRuntimeState();
-                    villager.discard();
-                })
-                .thenSucceed();
+        PartyQuickCommandService.onVillagerTickPost(villager);
+
+        helper.assertFalse(villager.getNavigation().isDone(),
+                "move-to should start the shared node-route path");
+        helper.assertTrue(VillagerTaskNavigationUtil.isHiredWalkTarget(villager),
+                "move-to should use the same guarded walk-target pipeline as node jobs");
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 180)

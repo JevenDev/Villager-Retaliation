@@ -87,10 +87,17 @@ public final class HiredRouteNavigator {
             return NodeMovement.ARRIVED;
         }
 
+        boolean targetIsStandable = HiredMoveToBlockFaceJob.isValidApproachPosition(level, target);
         BlockPos navigationTarget = villager.getNavigation().getTargetPos();
         if (!villager.getNavigation().isDone()
                 && navigationTarget != null
                 && navigationTarget.distSqr(target) <= arrivalDistanceSqr) {
+            int closeEnough = targetIsStandable ? CLOSE_ENOUGH_DISTANCE : 0;
+            VillagerTaskNavigationUtil.setHiredWalkTarget(
+                    villager,
+                    navigationTarget,
+                    speed,
+                    closeEnough);
             if (HiredPathMemory.observeNavigationProgress(level, villager, target, distanceSqr)) {
                 return NodeMovement.MOVING;
             }
@@ -100,7 +107,6 @@ public final class HiredRouteNavigator {
 
         Path path;
         BlockPos walkTarget;
-        boolean targetIsStandable = HiredMoveToBlockFaceJob.isValidApproachPosition(level, target);
         if (targetIsStandable) {
             walkTarget = target;
             path = HiredPathMemory.createPath(level, villager, target, CLOSE_ENOUGH_DISTANCE);

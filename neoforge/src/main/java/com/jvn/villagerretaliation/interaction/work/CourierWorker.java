@@ -23,6 +23,7 @@ public final class CourierWorker implements HiredRoleWorker {
     private static final String PHASE_OUTBOUND = "outbound";
     private static final String PHASE_DELIVER = "deliver";
     private static final String PHASE_RETURN = "return";
+    private static final int MAX_CARGO_ITEMS = 64;
     private static final double MOVE_SPEED = 0.5D;
     private static final double ROUTE_ARRIVAL_DISTANCE_SQR = 4.0D;
 
@@ -247,15 +248,22 @@ public final class CourierWorker implements HiredRoleWorker {
     }
 
     private static int collectInput(Villager villager, HiredWorkContext context, BlockPos input) {
-        if (!context.inventory().hasOutputSpace()) {
+        int remainingCapacity = MAX_CARGO_ITEMS - cargoItemCount(context);
+        if (remainingCapacity <= 0 || !context.inventory().hasOutputSpace()) {
             return 0;
         }
         return AssignedStorageService.transferItemsAtAssignedStorage(
                 villager,
                 input,
                 stack -> !stack.isEmpty(),
-                Integer.MAX_VALUE,
+                remainingCapacity,
                 context.inventory()::insertOutput);
+    }
+
+    private static int cargoItemCount(HiredWorkContext context) {
+        return context.inventory().collectOutputItems().stream()
+                .mapToInt(output -> output.stack().getCount())
+                .sum();
     }
 
     private static Set<BlockPos> purposePositions(ServerLevel level, Villager villager, String purpose) {

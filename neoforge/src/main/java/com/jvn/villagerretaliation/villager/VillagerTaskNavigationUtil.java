@@ -95,6 +95,7 @@ public final class VillagerTaskNavigationUtil {
     private static final double PATH_STEP_NODE_REACHED_DISTANCE_SQR = 0.64D;
     private static final double PATH_STEP_HEIGHT_EPSILON = 0.001D;
     private static final double PATH_STEP_MAX_HEIGHT_DIFFERENCE = 0.5D;
+    private static final double PATH_STEP_SNAP_HEIGHT = 0.125D;
     private static final Map<UUID, Set<GlobalPos>> DOORS_TO_CLOSE = new HashMap<>();
     private static final Map<UUID, ActiveLadderClimb> ACTIVE_LADDER_CLIMBS = new HashMap<>();
     private static final Map<UUID, RecentLadderDismount> RECENT_LADDER_DISMOUNTS = new HashMap<>();
@@ -254,6 +255,11 @@ public final class VillagerTaskNavigationUtil {
         double maximumAssistHeight = Math.min(PATH_STEP_MAX_HEIGHT_DIFFERENCE, villager.maxUpStep());
         if (heightDifference <= PATH_STEP_HEIGHT_EPSILON || heightDifference > maximumAssistHeight) {
             return false;
+        }
+        if (nextTop > currentTop && heightDifference <= PATH_STEP_SNAP_HEIGHT) {
+            villager.setPos(villager.getX(), villager.getY() + heightDifference, villager.getZ());
+            villager.setOnGround(true);
+            return true;
         }
         villager.getJumpControl().jump();
         return true;
