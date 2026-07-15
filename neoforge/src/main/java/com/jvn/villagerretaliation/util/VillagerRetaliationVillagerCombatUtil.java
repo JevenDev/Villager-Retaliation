@@ -21,6 +21,7 @@ import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.AABB;
 
 public final class VillagerRetaliationVillagerCombatUtil {
@@ -115,16 +116,23 @@ public final class VillagerRetaliationVillagerCombatUtil {
         if (attacker instanceof LivingEntity livingEntity) {
             return Optional.of(livingEntity);
         }
+        if (attacker instanceof Projectile projectile && projectile.getOwner() instanceof LivingEntity owner) {
+            return Optional.of(owner);
+        }
 
         Entity direct = source.getDirectEntity();
         if (direct instanceof LivingEntity livingEntity) {
             return Optional.of(livingEntity);
         }
+        if (direct instanceof Projectile projectile && projectile.getOwner() instanceof LivingEntity owner) {
+            return Optional.of(owner);
+        }
 
         return Optional.empty();
     }
 
-    public static Optional<LivingEntity> resolveAttacker(LivingEntity victim, DamageSource source) {
+    /** Resolves only attribution carried by this damage event; stale kill credit is intentionally excluded. */
+    public static Optional<LivingEntity> resolveDamageAttacker(LivingEntity victim, DamageSource source) {
         Optional<LivingEntity> directAttacker = resolveAttacker(source);
         if (directAttacker.isPresent()) {
             return directAttacker;
@@ -133,11 +141,13 @@ public final class VillagerRetaliationVillagerCombatUtil {
         Optional<LivingEntity> hazardOwner = ToucanHazardAttribution.resolveVanillaHazardOwner(victim, source)
                 .filter(LivingEntity.class::isInstance)
                 .map(LivingEntity.class::cast);
-        if (hazardOwner.isPresent()) {
-            return hazardOwner;
-        }
+        return hazardOwner;
+    }
 
-        return Optional.ofNullable(victim.getKillCredit());
+    /** Death attribution may use vanilla's recent kill credit after explicit event attribution is exhausted. */
+    public static Optional<LivingEntity> resolveDeathAttacker(LivingEntity victim, DamageSource source) {
+        return resolveDamageAttacker(victim, source)
+                .or(() -> Optional.ofNullable(victim.getKillCredit()));
     }
 
     public static boolean shouldIgnoreAttacker(LivingEntity attacker) {

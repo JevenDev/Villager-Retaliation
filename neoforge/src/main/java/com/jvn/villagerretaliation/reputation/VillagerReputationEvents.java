@@ -92,7 +92,7 @@ public final class VillagerReputationEvents {
                 || event.getNewDamage() <= 0.0F
                 || !(event.getEntity().level() instanceof ServerLevel level)
                 || !(event.getEntity() instanceof LivingEntity damaged)
-                || !(VillagerRetaliationVillagerCombatUtil.resolveAttacker(damaged, event.getSource()).orElse(null) instanceof Player player)) {
+                || !(VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(damaged, event.getSource()).orElse(null) instanceof Player player)) {
             return;
         }
 
@@ -618,13 +618,16 @@ public final class VillagerReputationEvents {
             List<NearbyPlayerReputation> nearbyPlayers,
             double radius,
             double radiusSqr) {
-        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || !VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.get()) {
             return;
         }
 
         List<IronGolem> nearbyGolems = null;
         for (NearbyPlayerReputation nearbyPlayer : nearbyPlayers) {
-            if (!nearbyPlayer.visible() || !isBellAlertTier(nearbyPlayer.reputationLevel())) {
+            if (!nearbyPlayer.visible()
+                    || !VillagerAggressionPolicy.shouldIronGolemsTargetNegativeReputationPlayer(
+                            villager, nearbyPlayer.player())) {
                 continue;
             }
             if (nearbyGolems == null) {

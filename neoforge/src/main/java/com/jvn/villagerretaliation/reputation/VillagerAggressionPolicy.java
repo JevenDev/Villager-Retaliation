@@ -67,6 +67,7 @@ public final class VillagerAggressionPolicy {
 
     public static boolean shouldIronGolemsTargetNegativeReputationPlayer(AbstractVillager villager, Player player) {
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
+                || !VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.get()
                 || !(villager.level() instanceof ServerLevel level)) {
             return false;
         }

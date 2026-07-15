@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedPose;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -21,7 +22,10 @@ import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
+import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
+import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationTradePricing;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
@@ -749,6 +753,79 @@ public final class VillagerGameplayGameTests {
         player.setInvisible(false);
         player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void damageAttributionDoesNotUseStaleKillCredit(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrDamageAttribution");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        player.moveTo(villager.getX(), villager.getY(), villager.getZ() + 1.0D, 0.0F, 0.0F);
+
+        helper.assertTrue(
+                villager.hurt(level.damageSources().playerAttack(player), 1.0F),
+                "player hit should seed vanilla kill credit");
+        helper.assertTrue(villager.getKillCredit() == player, "fixture should retain player kill credit");
+        int reputationAfterPlayerHit = VillagerReputationManager.getReputation(level, villager, player.getUUID());
+        helper.assertTrue(reputationAfterPlayerHit < 0, "player hit should apply the direct reputation penalty");
+        helper.assertTrue(
+                VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(
+                                villager, level.damageSources().generic())
+                        .isEmpty(),
+                "attackerless damage must not inherit stale kill credit");
+        helper.assertTrue(
+                VillagerRetaliationVillagerCombatUtil.resolveDeathAttacker(
+                                villager, level.damageSources().generic())
+                        .orElse(null) == player,
+                "death attribution should retain vanilla kill-credit fallback");
+
+        villager.invulnerableTime = 0;
+        helper.assertTrue(
+                villager.hurt(level.damageSources().generic(), 1.0F),
+                "attackerless follow-up damage should be applied");
+        helper.assertValueEqual(
+                VillagerReputationManager.getReputation(level, villager, player.getUUID()),
+                reputationAfterPlayerHit,
+                "attackerless follow-up damage must not penalize the stale credited player");
+
+        VillagerReputationManager.setReputation(level, villager, player.getUUID(), 0);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void despisedKillOnSightToggleControlsGolemAggressionPolicy(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrGolemAggressionToggle");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        boolean previousReputationEnabled = VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get();
+        boolean previousKillOnSightEnabled = VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.get();
+
+        try {
+            VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.set(true);
+            VillagerReputationManager.setReputation(
+                    level,
+                    villager,
+                    player.getUUID(),
+                    VillagerRetaliationConfig.DESPISED_THRESHOLD.get());
+
+            VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.set(false);
+            helper.assertFalse(
+                    VillagerAggressionPolicy.shouldIronGolemsTargetNegativeReputationPlayer(villager, player),
+                    "disabled kill on sight should suppress reputation-driven golem aggression");
+
+            VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.set(true);
+            helper.assertTrue(
+                    VillagerAggressionPolicy.shouldIronGolemsTargetNegativeReputationPlayer(villager, player),
+                    "enabled kill on sight should allow golems to target a despised player");
+        } finally {
+            VillagerReputationManager.setReputation(level, villager, player.getUUID(), 0);
+            VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.set(previousReputationEnabled);
+            VillagerRetaliationConfig.ENABLE_DESPISED_KILL_ON_SIGHT.set(previousKillOnSightEnabled);
+            villager.discard();
+        }
+
         helper.succeed();
     }
 

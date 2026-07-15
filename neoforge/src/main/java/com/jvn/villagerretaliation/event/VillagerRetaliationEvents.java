@@ -256,7 +256,7 @@ public final class VillagerRetaliationEvents {
         EncounterService.onDeath(event.getEntity());
         SceneLifecycleIntegration.onActorDeath(event.getEntity());
         if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
-            VillagerRetaliationVillagerCombatUtil.resolveAttacker(player, event.getSource())
+            VillagerRetaliationVillagerCombatUtil.resolveDeathAttacker(player, event.getSource())
                     .filter(AbstractVillager.class::isInstance)
                     .map(AbstractVillager.class::cast)
                     .ifPresent(killer -> VillagerAmbientIndicatorService.onPlayerKilled(level, killer, player));
@@ -816,7 +816,7 @@ public final class VillagerRetaliationEvents {
             return;
         }
 
-        VillagerRetaliationVillagerCombatUtil.resolveAttacker(target, event.getSource())
+        VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(target, event.getSource())
                 .filter(AbstractVillager.class::isInstance)
                 .map(AbstractVillager.class::cast)
                 .filter(attacker -> attacker != target)

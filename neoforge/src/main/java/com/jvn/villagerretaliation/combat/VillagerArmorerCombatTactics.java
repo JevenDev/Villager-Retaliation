@@ -58,7 +58,7 @@ final class VillagerArmorerCombatTactics {
 
         boolean shieldBroke = applyShieldDurabilityDamage(villager, incomingDamage);
         boolean disabledByAxe = false;
-        Optional<LivingEntity> attacker = VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, source);
+        Optional<LivingEntity> attacker = VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(villager, source);
         if (attacker.isPresent()) {
             LivingEntity resolvedAttacker = attacker.get();
             angerCallback.anger(villager, resolvedAttacker);

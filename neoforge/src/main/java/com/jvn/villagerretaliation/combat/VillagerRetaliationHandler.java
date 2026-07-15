@@ -147,7 +147,7 @@ public final class VillagerRetaliationHandler {
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
         LivingEntity damaged = event.getEntity();
         Optional<LivingEntity> resolvedAttacker =
-                VillagerRetaliationVillagerCombatUtil.resolveAttacker(damaged, event.getSource());
+                VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(damaged, event.getSource());
         boolean disciplinary = resolvedAttacker
                 .map(attacker -> VillagerDisciplineService.isCommitting(attacker, damaged))
                 .orElse(false);
@@ -208,7 +208,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getEntity(), event.getSource())
+        VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(event.getEntity(), event.getSource())
                 .ifPresent(attacker -> {
                     rallyPartyVillagers(event.getEntity(), attacker, false);
                     rallyPartyVillagers(attacker, event.getEntity(), true);
@@ -219,7 +219,7 @@ public final class VillagerRetaliationHandler {
         }
 
         if (villager.isBaby()) {
-            VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker -> {
+            VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(villager, event.getSource()).ifPresent(attacker -> {
                 if (shouldRetaliateAgainstAttacker(villager, attacker)) {
                     rallyNearbyVillagers(villager, attacker, VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get(), false);
                 }
@@ -231,7 +231,7 @@ public final class VillagerRetaliationHandler {
             villager.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 80, 0));
         }
 
-        VillagerRetaliationVillagerCombatUtil.resolveAttacker(villager, event.getSource()).ifPresent(attacker -> {
+        VillagerRetaliationVillagerCombatUtil.resolveDamageAttacker(villager, event.getSource()).ifPresent(attacker -> {
             if (!shouldRetaliateAgainstAttacker(villager, attacker)) {
                 return;
             }
@@ -267,7 +267,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
         Optional<LivingEntity> attacker = event.getEntity() instanceof LivingEntity livingEntity
-                ? VillagerRetaliationVillagerCombatUtil.resolveAttacker(livingEntity, event.getSource())
+                ? VillagerRetaliationVillagerCombatUtil.resolveDeathAttacker(livingEntity, event.getSource())
                 : VillagerRetaliationVillagerCombatUtil.resolveAttacker(event.getSource());
         double radius = VillagerRetaliationConfig.VILLAGER_KILL_AGGRO_RADIUS.get();
         List<Villager> witnessVillagers = witnessVillagersNear(deceased, radius);
