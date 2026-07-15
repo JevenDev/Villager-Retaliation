@@ -35,13 +35,12 @@ public final class HiredLoggingFilters {
     }
 
     public static Set<ResourceLocation> selectedFilterIds(CompoundTag state) {
-        List<ResourceLocation> options = options();
         Set<ResourceLocation> selected = new LinkedHashSet<>();
         if (state.contains(FILTERS_TAG, Tag.TAG_LIST)) {
             ListTag list = state.getList(FILTERS_TAG, Tag.TAG_STRING);
             for (Tag entry : list) {
                 if (entry instanceof StringTag stringTag) {
-                    ResourceLocation id = resolveFilterId(stringTag.getAsString(), options);
+                    ResourceLocation id = resolveStoredFilterId(stringTag.getAsString());
                     if (id != null) {
                         selected.add(id);
                     }
@@ -50,7 +49,7 @@ public final class HiredLoggingFilters {
             return selected;
         }
 
-        ResourceLocation legacyId = resolveFilterId(state.getString(LEGACY_FILTER_TAG), options);
+        ResourceLocation legacyId = resolveStoredFilterId(state.getString(LEGACY_FILTER_TAG));
         if (legacyId != null) {
             selected.add(legacyId);
         }
@@ -63,8 +62,7 @@ public final class HiredLoggingFilters {
             return;
         }
 
-        List<ResourceLocation> options = options();
-        ResourceLocation resolved = resolveFilterId(filterId, options);
+        ResourceLocation resolved = resolveStoredFilterId(filterId);
         if (resolved == null) {
             return;
         }
@@ -73,7 +71,7 @@ public final class HiredLoggingFilters {
         if (!selected.remove(resolved)) {
             selected.add(resolved);
         }
-        writeSelectedFilters(state, selected, options);
+        writeSelectedFilters(state, selected);
     }
 
     public static boolean matches(BlockState state, Set<ResourceLocation> selectedFilterIds) {
@@ -111,18 +109,18 @@ public final class HiredLoggingFilters {
 
     private static void writeSelectedFilters(
             CompoundTag state,
-            Set<ResourceLocation> selected,
-            List<ResourceLocation> options) {
+            Set<ResourceLocation> selected) {
         if (selected.isEmpty()) {
             clearFilters(state);
             return;
         }
 
         ListTag list = new ListTag();
-        for (ResourceLocation option : options) {
-            if (selected.contains(option)) {
-                list.add(StringTag.valueOf(option.toString()));
-            }
+        for (ResourceLocation option : selected.stream()
+                .sorted(Comparator.comparing(ResourceLocation::getNamespace)
+                        .thenComparing(ResourceLocation::getPath))
+                .toList()) {
+            list.add(StringTag.valueOf(option.toString()));
         }
         if (list.isEmpty()) {
             clearFilters(state);
@@ -137,19 +135,27 @@ public final class HiredLoggingFilters {
         state.putString(LEGACY_FILTER_TAG, ANY_FILTER);
     }
 
-    private static ResourceLocation resolveFilterId(String filter, List<ResourceLocation> options) {
+    private static ResourceLocation resolveStoredFilterId(String filter) {
         if (filter == null || filter.isBlank() || ANY_FILTER.equals(filter)) {
             return null;
         }
         ResourceLocation parsed = ResourceLocation.tryParse(filter);
-        if (parsed != null && options.contains(parsed)) {
+        if (parsed != null && isLogBlock(parsed)) {
             return parsed;
         }
-        for (ResourceLocation option : options) {
+        // Pre-namespaced saves stored only the path. This slower migration path is never used for
+        // modern persisted selections, keeping worker ticks independent of a full registry scan.
+        for (ResourceLocation option : options()) {
             if (option.getPath().equals(filter)) {
                 return option;
             }
         }
         return null;
+    }
+
+    private static boolean isLogBlock(ResourceLocation id) {
+        return BuiltInRegistries.BLOCK.getOptional(id)
+                .map(block -> block.defaultBlockState().is(BlockTags.LOGS))
+                .orElse(false);
     }
 }

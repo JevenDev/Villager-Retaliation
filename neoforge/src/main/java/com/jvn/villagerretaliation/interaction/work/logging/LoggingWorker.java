@@ -1,5 +1,10 @@
 package com.jvn.villagerretaliation.interaction.work.logging;
 
+import static com.jvn.villagerretaliation.interaction.work.logging.LoggingWorkerState.NEXT_SAPLING_SCAN_GAME_TIME_TAG;
+import static com.jvn.villagerretaliation.interaction.work.logging.LoggingWorkerState.NEXT_TREE_SCAN_GAME_TIME_TAG;
+import static com.jvn.villagerretaliation.interaction.work.logging.LoggingWorkerState.SAPLING_SCAN_CURSOR_TAG;
+import static com.jvn.villagerretaliation.interaction.work.logging.LoggingWorkerState.TREE_SCAN_CURSOR_TAG;
+
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkPlan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
@@ -19,7 +24,6 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -60,15 +64,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 
 public final class LoggingWorker extends AbstractBlockWorker {
     private static final String NEXT_WORK_GAME_TIME_TAG = "NextWorkGameTime";
-    private static final String NEXT_TREE_SCAN_GAME_TIME_TAG = "NextLoggingTreeScanGameTime";
-    private static final String TREE_SCAN_CURSOR_TAG = "LoggingTreeScanCursor";
-    private static final String PENDING_TREE_ORIGIN_TAG = "PendingLoggingTreeOrigin";
-    private static final String PENDING_TREE_LOGS_TAG = "PendingLoggingTreeLogs";
-    private static final String PENDING_TREE_LEAVES_TAG = "PendingLoggingTreeLeaves";
-    private static final String PENDING_TREE_SAPLINGS_TAG = "PendingLoggingTreeSaplings";
-    private static final String PENDING_TREE_SAPLING_ITEM_TAG = "PendingLoggingTreeSaplingItem";
-    private static final String PENDING_TREE_STRIP_LOGS_TAG = "PendingLoggingTreeStripLogs";
-    private static final String PENDING_TREE_LOGS_CUT_TAG = "PendingLoggingTreeLogsCut";
     private static final int MAX_TREE_LOGS_PER_HARVEST = 256;
     private static final int MAX_TREE_LOGS_PER_HARVEST_TICK = 10;
     private static final int MAX_TREE_HORIZONTAL_DISTANCE = 12;
@@ -78,8 +73,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static final int TREE_LEAF_LOG_ATTACHMENT_RADIUS = 2;
     private static final int MIN_NATURAL_LEAVES = 4;
     private static final int MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK = 512;
-    private static final String NEXT_SAPLING_SCAN_GAME_TIME_TAG = "NextLoggingSaplingScanGameTime";
-    private static final String SAPLING_SCAN_CURSOR_TAG = "LoggingSaplingScanCursor";
     private static final int MAX_SAPLING_SCAN_POSITIONS_PER_WORK_TICK = 768;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
     private static final int MAX_TREE_PROGRESS_TICKS = 180;
@@ -137,13 +130,13 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     public static String debugSummary(HiredWorkContext context) {
-        CompoundTag state = context.state();
-        String pending = hasPendingTreeHarvest(context)
-                ? "pending logs=" + state.getLongArray(PENDING_TREE_LOGS_TAG).length
-                + ", leaves=" + state.getLongArray(PENDING_TREE_LEAVES_TAG).length
-                + ", saplings=" + state.getLongArray(PENDING_TREE_SAPLINGS_TAG).length
-                + ", cut=" + state.getInt(PENDING_TREE_LOGS_CUT_TAG)
-                : "pending none";
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        String pending = plan == null
+                ? "pending none"
+                : "pending logs=" + plan.logs().length
+                + ", leaves=" + plan.leaves().length
+                + ", saplings=" + plan.saplings().length
+                + ", cut=" + plan.logsCut();
         return "Logging: " + pending
                 + ", treeScan=" + scanState(context, TREE_SCAN_CURSOR_TAG, NEXT_TREE_SCAN_GAME_TIME_TAG)
                 + ", saplingScan=" + scanState(context, SAPLING_SCAN_CURSOR_TAG, NEXT_SAPLING_SCAN_GAME_TIME_TAG);
@@ -162,17 +155,16 @@ public final class LoggingWorker extends AbstractBlockWorker {
         super.maintain(level, villager, context);
         context.state().remove(NEXT_WORK_GAME_TIME_TAG);
         if (!context.hasWorkArea()) {
-            clearPendingTreeHarvest(context);
-            clearTreeTargetSearch(context);
+            LoggingHarvestPlan.clear(context);
+            LoggingWorkerState.clear(context);
             return;
         }
         HiredWorkerBrain.Snapshot worker = HiredWorkerBrain.snapshot(context.state(), level.getGameTime());
         if (worker.taskState() == HiredWorkerTaskState.MOVING_TO_TARGET && worker.targetPos() != null) {
             HiredPathTarget active = activeWorkTarget(level, context, villager);
             if (active != null) {
-                Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
                 boolean physicalLeafTarget = isPendingLeafTarget(context, active.blockPos())
-                        || isTreeAccessLeaf(level, active.blockPos(), filters);
+                        || LoggingWorkerState.isAccessLeaf(context, active.blockPos());
                 boolean saplingTarget = isBonemealableSapling(level, active.blockPos());
                 boolean canWork = physicalLeafTarget
                         ? canBreakAccessLeafFromCurrentPosition(level, villager, context, active)
@@ -196,8 +188,8 @@ public final class LoggingWorker extends AbstractBlockWorker {
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (!context.hasWorkArea()) {
-            clearPendingTreeHarvest(context);
-            clearTreeTargetSearch(context);
+            LoggingHarvestPlan.clear(context);
+            LoggingWorkerState.clear(context);
             return waitForWorkAreaAssignment(level, villager, context);
         }
 
@@ -377,9 +369,15 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     @Override
+    public void pause(ServerLevel level, Villager villager, HiredWorkContext context) {
+        LoggingWorkerState.clearAccessLeaf(context);
+        super.pause(level, villager, context);
+    }
+
+    @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
-        clearPendingTreeHarvest(context);
-        clearTreeTargetSearch(context);
+        LoggingHarvestPlan.clear(context);
+        LoggingWorkerState.clear(context);
         super.stop(level, villager, context);
     }
 
@@ -492,7 +490,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.logging.output_full_blocked");
         }
         if (harvestResult == TreeHarvestResult.TARGET_CHANGED) {
-            clearPendingTreeHarvest(context);
+            LoggingHarvestPlan.clear(context);
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "target_changed", level.getGameTime() + 40L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN);
@@ -518,7 +516,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 return null;
             }
             if (candidates.kind() == PendingTargetKind.SAPLING) {
-                context.state().remove(PENDING_TREE_SAPLINGS_TAG);
+                LoggingHarvestPlan.clearSaplings(context);
                 clearActiveBreakingTarget(level, context, villager);
                 return null;
             }
@@ -528,7 +526,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             }
             BlockPos origin = pendingTreeOrigin(context);
             if (recordWorkPathFailure(level, villager, origin)) {
-                clearPendingTreeHarvest(context);
+                LoggingHarvestPlan.clear(context);
                 clearActiveBreakingTarget(level, context, villager);
                 HiredWorkerBrain.setFailure(context, "pending_tree_unreachable", level.getGameTime() + 20L * 30L);
                 setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, origin);
@@ -553,12 +551,12 @@ public final class LoggingWorker extends AbstractBlockWorker {
                     : moveToTarget(level, villager, context, target, 0.55D);
             if (!moved) {
                 if (candidates.kind() == PendingTargetKind.LEAF) {
-                    removePendingPosition(context, PENDING_TREE_LEAVES_TAG, target.blockPos());
+                    LoggingHarvestPlan.removeLeaf(context, target.blockPos());
                     clearActiveBreakingTarget(level, context, villager);
                     return null;
                 }
                 if (candidates.kind() == PendingTargetKind.SAPLING) {
-                    removePendingPosition(context, PENDING_TREE_SAPLINGS_TAG, target.blockPos().above());
+                    LoggingHarvestPlan.removeSapling(context, target.blockPos().above());
                     clearActiveBreakingTarget(level, context, villager);
                     return null;
                 }
@@ -567,7 +565,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                     return blockingLeafResult;
                 }
                 if (recordWorkPathFailure(level, villager, target.blockPos())) {
-                    clearPendingTreeHarvest(context);
+                    LoggingHarvestPlan.clear(context);
                     clearActiveBreakingTarget(level, context, villager);
                     HiredWorkerBrain.setFailure(context, "pending_tree_unreachable", level.getGameTime() + 20L * 30L);
                     setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
@@ -652,7 +650,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             TreeHarvestResult harvestResult) {
         HiredWorkPlan.removeTarget(context, pendingTreeOrigin(context));
-        clearPendingTreeHarvest(context);
+        LoggingHarvestPlan.clear(context);
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
         return completedTreeWork(context, harvestResult.logsCut());
@@ -666,7 +664,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
 
     private static WorkResult completedTreeWork(HiredWorkContext context, int logsCut) {
         context.state().remove(NEXT_WORK_GAME_TIME_TAG);
-        wakeTreeTargetSearch(context);
+        LoggingWorkerState.wakeTreeSearch(context);
         return WorkResult.skilledProgress(
                 "interaction.work.logging.completed",
                 Map.of("logs", Integer.toString(logsCut)));
@@ -860,9 +858,14 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private WorkResult continueActiveAccessLeaf(ServerLevel level, Villager villager, HiredWorkContext context) {
-        Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
         HiredPathTarget active = activeWorkTarget(level, context, villager);
-        if (active == null || !isTreeAccessLeaf(level, active.blockPos(), filters)) {
+        if (active == null || !LoggingWorkerState.isAccessLeaf(context, active.blockPos())) {
+            LoggingWorkerState.clearAccessLeaf(context);
+            return null;
+        }
+        if (!context.isLoaded(level, active.blockPos()) || !isNaturalLeaf(level.getBlockState(active.blockPos()))) {
+            LoggingWorkerState.clearAccessLeaf(context);
+            clearActiveBreakingTarget(level, context, villager);
             return null;
         }
         return workTreeAccessLeaf(level, villager, context, active);
@@ -873,6 +876,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             HiredPathTarget target) {
+        LoggingWorkerState.markAccessLeaf(context, target.blockPos());
         prepareBreakingTarget(level, context, villager, target);
         if (!canBreakAccessLeafFromCurrentPosition(level, villager, context, target)) {
             context.setProgressTicks(0);
@@ -880,6 +884,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             if (!moveToAccessLeafTarget(level, villager, context, target, 0.55D)) {
                 if (recordWorkPathFailure(level, villager, target.blockPos())) {
                     HiredWorkPlan.removeTarget(context, target.blockPos());
+                    LoggingWorkerState.clearAccessLeaf(context);
                     clearActiveBreakingTarget(level, context, villager);
                     HiredWorkerBrain.setFailure(context, "access_leaf_unreachable", level.getGameTime() + 20L * 30L);
                     setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
@@ -898,6 +903,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         LeafBreakResult leafBreakResult = breakAccessLeaf(level, context, villager, target.blockPos());
         if (leafBreakResult == LeafBreakResult.BLOCKED) {
             HiredWorkPlan.removeTarget(context, target.blockPos());
+            LoggingWorkerState.clearAccessLeaf(context);
             clearActiveBreakingTarget(level, context, villager);
             HiredWorkerBrain.setFailure(context, "access_leaf_blocked", level.getGameTime() + 40L);
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, target.blockPos());
@@ -921,8 +927,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
         }
 
         HiredWorkPlan.removeTarget(context, target.blockPos());
+        LoggingWorkerState.clearAccessLeaf(context);
         clearActiveBreakingTarget(level, context, villager);
-        clearTreeTargetSearch(context);
+        LoggingWorkerState.clearTargetSearch(context);
         return WorkResult.progressed("interaction.work.logging.clearing_access_leaf");
     }
 
@@ -1014,21 +1021,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
         }
         HiredPathMemory.clearNavigationProgress(villager);
         return false;
-    }
-
-    private static void clearTreeTargetSearch(HiredWorkContext context) {
-        HiredWorkAreaScan.clearCursor(context, TREE_SCAN_CURSOR_TAG);
-        HiredWorkAreaScan.clearCursor(context, SAPLING_SCAN_CURSOR_TAG);
-        wakeTreeTargetSearch(context);
-        wakeSaplingTargetSearch(context);
-    }
-
-    private static void wakeTreeTargetSearch(HiredWorkContext context) {
-        context.state().remove(NEXT_TREE_SCAN_GAME_TIME_TAG);
-    }
-
-    private static void wakeSaplingTargetSearch(HiredWorkContext context) {
-        context.state().remove(NEXT_SAPLING_SCAN_GAME_TIME_TAG);
     }
 
     private WorkResult collectOptionalLeafTool(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -1164,7 +1156,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             prioritizeSaplingPlan(context, target.blockPos());
         } else {
             HiredWorkPlan.removeTarget(context, target.blockPos());
-            wakeTreeTargetSearch(context);
+            LoggingWorkerState.wakeTreeSearch(context);
         }
         clearActiveBreakingTarget(level, context, villager);
         setTaskState(context, HiredWorkerTaskState.IDLE);
@@ -1368,11 +1360,15 @@ public final class LoggingWorker extends AbstractBlockWorker {
         if (!hasBoneMealAvailable(villager, context)) {
             return false;
         }
-        ItemStack boneMeal = new ItemStack(Items.BONE_MEAL);
-        if (!BoneMealItem.applyBonemeal(boneMeal, level, pos, null)) {
+        if (context.consumeSupply(villager, stack -> stack.is(Items.BONE_MEAL), 1) <= 0) {
             return false;
         }
-        if (context.consumeSupply(villager, stack -> stack.is(Items.BONE_MEAL), 1) <= 0) {
+        ItemStack boneMeal = new ItemStack(Items.BONE_MEAL);
+        if (!BoneMealItem.applyBonemeal(boneMeal, level, pos, null)) {
+            ItemStack remainder = context.inventory().insertSupply(new ItemStack(Items.BONE_MEAL));
+            if (!remainder.isEmpty()) {
+                Block.popResource(level, villager.blockPosition(), remainder);
+            }
             return false;
         }
         level.levelEvent(1505, pos, 15);
@@ -1389,24 +1385,6 @@ public final class LoggingWorker extends AbstractBlockWorker {
         BlockState state = level.getBlockState(pos);
         return isMatchingLog(state, filters)
                 && isLikelyNaturalTree(level, pos, filters);
-    }
-
-    private static boolean isTreeAccessLeaf(
-            ServerLevel level,
-            BlockPos pos,
-            Set<ResourceLocation> filters) {
-        if (!level.hasChunkAt(pos) || !isNaturalLeaf(level.getBlockState(pos))) {
-            return false;
-        }
-        for (BlockPos rawLog : BlockPos.betweenClosed(pos.offset(-4, -4, -4), pos.offset(4, 4, 4))) {
-            BlockPos log = rawLog.immutable();
-            if (level.hasChunkAt(log)
-                    && isMatchingLog(level.getBlockState(log), filters)
-                    && isLikelyNaturalTree(level, log, filters)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private HiredPathTarget rebuildTreeObjective(
@@ -1544,15 +1522,15 @@ public final class LoggingWorker extends AbstractBlockWorker {
         List<BlockPos> saplingPositions = sapling.isEmpty()
                 ? List.of()
                 : saplingPlantingPositions(level, context, logs);
-        List<ItemStack> drops = treeDrops(level, context, villager, logs, filters, axe, stripLogs, leaves, leafTool);
-        if (!context.canStoreOutputs(drops)) {
-            context.depositOutputs(villager);
-        }
-        if (!context.canStoreOutputs(drops)) {
-            return TreeHarvestResult.OUTPUT_FULL;
-        }
-
-        beginPendingTreeHarvest(context, target.blockPos(), logs, leaves, saplingPositions, sapling, stripLogs);
+        LoggingHarvestPlan.begin(
+                context,
+                target.blockPos(),
+                logs,
+                leaves,
+                saplingPositions,
+                sapling,
+                stripLogs,
+                logFamilyKey(level.getBlockState(target.blockPos())));
         return processPendingTreeHarvest(level, context, villager, axe);
     }
 
@@ -1565,25 +1543,33 @@ public final class LoggingWorker extends AbstractBlockWorker {
         if (logResult == TreeHarvestResult.OUTPUT_FULL || logResult == TreeHarvestResult.TARGET_CHANGED) {
             return logResult;
         }
-        if (hasPendingLogs(context)) {
-            return TreeHarvestResult.progressed(context.state().getInt(PENDING_TREE_LOGS_CUT_TAG));
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        if (plan == null) {
+            return TreeHarvestResult.TARGET_CHANGED;
+        }
+        if (plan.hasLogs()) {
+            return TreeHarvestResult.progressed(plan.logsCut());
         }
         if (!harvestPendingLeaves(level, context, villager)) {
             return TreeHarvestResult.OUTPUT_FULL;
         }
-        if (hasPendingLeaves(context)) {
-            return TreeHarvestResult.progressed(context.state().getInt(PENDING_TREE_LOGS_CUT_TAG));
+        plan = LoggingHarvestPlan.read(context);
+        if (plan == null) {
+            return TreeHarvestResult.TARGET_CHANGED;
+        }
+        if (plan.hasLeaves()) {
+            return TreeHarvestResult.progressed(plan.logsCut());
         }
 
-        restoreLoggingAxe(context, level, pendingTreeOrigin(context));
-        ItemStack sapling = pendingSapling(context);
-        if (!sapling.isEmpty() && context.state().getLongArray(PENDING_TREE_SAPLINGS_TAG).length > 0) {
-            plantPendingSapling(level, context, villager, sapling);
-            if (context.state().getLongArray(PENDING_TREE_SAPLINGS_TAG).length > 0) {
-                return TreeHarvestResult.progressed(context.state().getInt(PENDING_TREE_LOGS_CUT_TAG));
+        restoreLoggingAxe(context, level, plan.origin());
+        if (!plan.sapling().isEmpty() && plan.saplings().length > 0) {
+            plantPendingSapling(level, context, villager, plan.sapling());
+            plan = LoggingHarvestPlan.read(context);
+            if (plan != null && plan.saplings().length > 0) {
+                return TreeHarvestResult.progressed(plan.logsCut());
             }
         }
-        int logsCut = context.state().getInt(PENDING_TREE_LOGS_CUT_TAG);
+        int logsCut = plan == null ? 0 : plan.logsCut();
         return logsCut <= 0 ? TreeHarvestResult.TARGET_CHANGED : TreeHarvestResult.completed(logsCut);
     }
 
@@ -1592,24 +1578,39 @@ public final class LoggingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             Villager villager,
             ItemStack axe) {
-        long[] pendingLogs = context.state().getLongArray(PENDING_TREE_LOGS_TAG);
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        if (plan == null) {
+            return TreeHarvestResult.TARGET_CHANGED;
+        }
+        long[] pendingLogs = plan.logs();
         if (pendingLogs.length <= 0) {
-            return TreeHarvestResult.progressed(context.state().getInt(PENDING_TREE_LOGS_CUT_TAG));
+            return TreeHarvestResult.progressed(plan.logsCut());
         }
 
-        Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
-        boolean stripLogs = context.state().getBoolean(PENDING_TREE_STRIP_LOGS_TAG);
-        int processed = 0;
+        String logFamily = plan.logFamily();
+        if (logFamily.isBlank()) {
+            logFamily = inferPendingLogFamily(level, context, pendingLogs);
+            LoggingHarvestPlan.rememberLogFamily(context, logFamily);
+        }
+        boolean stripLogs = plan.stripLogs();
+        List<Long> remaining = new ArrayList<>(pendingLogs.length);
         int cut = 0;
-        while (processed < pendingLogs.length && cut < MAX_TREE_LOGS_PER_HARVEST_TICK) {
-            BlockPos log = BlockPos.of(pendingLogs[processed]);
-            if (!context.isInsideWorkArea(log) || !context.isLoaded(level, log)) {
-                processed++;
+        for (int index = 0; index < pendingLogs.length; index++) {
+            long packedLog = pendingLogs[index];
+            BlockPos log = BlockPos.of(packedLog);
+            if (!context.isInsideWorkArea(log)) {
+                continue;
+            }
+            if (!context.isLoaded(level, log)) {
+                remaining.add(packedLog);
                 continue;
             }
             BlockState state = level.getBlockState(log);
-            if (!isMatchingLog(state, filters)) {
-                processed++;
+            if (!isPendingTreeLog(state, logFamily)) {
+                continue;
+            }
+            if (cut >= MAX_TREE_LOGS_PER_HARVEST_TICK) {
+                remaining.add(packedLog);
                 continue;
             }
 
@@ -1620,88 +1621,61 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 axe = activeAxe;
             }
             if (axe.isEmpty()) {
+                remaining.add(packedLog);
+                for (int rest = index + 1; rest < pendingLogs.length; rest++) {
+                    remaining.add(pendingLogs[rest]);
+                }
                 break;
             }
 
-            BlockState harvestState = stripLogs ? stripLog(level, log, state) : state;
+            BlockState strippedState = stripLogs ? strippedLogState(state) : null;
+            BlockState harvestState = strippedState == null ? state : strippedState;
             boolean stripped = !harvestState.equals(state);
-            for (ItemStack drop : Block.getDrops(harvestState, level, log, level.getBlockEntity(log), villager, axe)) {
-                if (!context.storeOutputAfterDepositIfFull(villager, drop).isEmpty()) {
-                    context.state().putLongArray(PENDING_TREE_LOGS_TAG, Arrays.copyOfRange(pendingLogs, processed, pendingLogs.length));
-                    return TreeHarvestResult.OUTPUT_FULL;
+            List<ItemStack> drops = Block.getDrops(harvestState, level, log, level.getBlockEntity(log), villager, axe);
+            if (!context.canStoreOutputs(drops)) {
+                context.depositOutputs(villager);
+            }
+            if (!context.canStoreOutputs(drops)) {
+                remaining.add(packedLog);
+                for (int rest = index + 1; rest < pendingLogs.length; rest++) {
+                    remaining.add(pendingLogs[rest]);
                 }
+                LoggingHarvestPlan.replaceLogs(context, packedPositions(remaining));
+                return TreeHarvestResult.OUTPUT_FULL;
             }
             faceBlock(villager, log);
             swingWorkTool(villager);
             EnchantmentHelper.onHitBlock(level, axe, villager, villager, EquipmentSlot.MAINHAND, log.getCenter(), harvestState, ignored -> {
             });
-            level.destroyBlock(log, false, villager);
+            if (!level.destroyBlock(log, false, villager) && isPendingTreeLog(level.getBlockState(log), logFamily)) {
+                remaining.add(packedLog);
+                for (int rest = index + 1; rest < pendingLogs.length; rest++) {
+                    remaining.add(pendingLogs[rest]);
+                }
+                LoggingHarvestPlan.replaceLogs(context, packedPositions(remaining));
+                return TreeHarvestResult.TARGET_CHANGED;
+            }
             HiredPathMemory.onBlockChanged(level, log);
             level.destroyBlockProgress(villager.getId(), log, -1);
+            for (ItemStack drop : drops) {
+                context.storeOutputAfterDepositIfFull(villager, drop);
+            }
             damageTool(context, villager, axe, level, harvestState, log);
             if (stripped && !axe.isEmpty()) {
                 damageTool(context, villager, axe);
             }
             HiredPathMemory.rememberRecent(level, log);
-            processed++;
             cut++;
-            context.state().putInt(PENDING_TREE_LOGS_CUT_TAG, context.state().getInt(PENDING_TREE_LOGS_CUT_TAG) + 1);
-            if (axe.isEmpty()) {
-                break;
-            }
+            LoggingHarvestPlan.incrementLogsCut(context);
         }
 
-        context.state().putLongArray(PENDING_TREE_LOGS_TAG, Arrays.copyOfRange(pendingLogs, processed, pendingLogs.length));
-        return TreeHarvestResult.progressed(context.state().getInt(PENDING_TREE_LOGS_CUT_TAG));
-    }
-
-    private static List<ItemStack> treeDrops(
-            ServerLevel level,
-            HiredWorkContext context,
-            Villager villager,
-            List<BlockPos> logs,
-            Set<ResourceLocation> filters,
-            ItemStack axe,
-            boolean stripLogs,
-            List<BlockPos> leaves,
-            ItemStack leafTool) {
-        List<ItemStack> drops = new ArrayList<>();
-        for (BlockPos log : logs) {
-            if (!context.isInsideWorkArea(log) || !context.isLoaded(level, log)) {
-                continue;
-            }
-            BlockState state = level.getBlockState(log);
-            if (isMatchingLog(state, filters)) {
-                BlockState dropState = stripLogs ? strippedLogState(state) : null;
-                drops.addAll(Block.getDrops(dropState == null ? state : dropState, level, log, level.getBlockEntity(log), villager, axe));
-            }
-        }
-        for (BlockPos leaf : leaves) {
-            if (!context.isInsideWorkArea(leaf) || !context.isLoaded(level, leaf)) {
-                continue;
-            }
-            BlockState state = level.getBlockState(leaf);
-            if (isNaturalLeaf(state)) {
-                drops.addAll(Block.getDrops(state, level, leaf, level.getBlockEntity(leaf), villager, leafTool));
-            }
-        }
-        return drops;
+        LoggingHarvestPlan.replaceLogs(context, packedPositions(remaining));
+        LoggingHarvestPlan.Snapshot updated = LoggingHarvestPlan.read(context);
+        return TreeHarvestResult.progressed(updated == null ? plan.logsCut() + cut : updated.logsCut());
     }
 
     private static BlockState strippedLogState(BlockState state) {
         return AxeItem.getAxeStrippingState(state);
-    }
-
-    private static BlockState stripLog(ServerLevel level, BlockPos pos, BlockState state) {
-        BlockState stripped = strippedLogState(state);
-        if (stripped == null || stripped.equals(state)) {
-            return state;
-        }
-        if (!level.setBlock(pos, stripped, Block.UPDATE_ALL)) {
-            return state;
-        }
-        HiredPathMemory.onBlockChanged(level, pos);
-        return stripped;
     }
 
     private static BlockPos firstBlockingLeaf(ServerLevel level, Villager villager, HiredPathTarget target) {
@@ -1747,11 +1721,13 @@ public final class LoggingWorker extends AbstractBlockWorker {
                         LoggingWorker::isLeafHarvestTool,
                         LoggingWorker::leafToolScore)
                 : ItemStack.EMPTY;
-        for (ItemStack drop : Block.getDrops(state, level, leaf, level.getBlockEntity(leaf), villager, leafTool)) {
-            if (!context.storeOutputAfterDepositIfFull(villager, drop).isEmpty()) {
-                restoreLoggingAxe(context, level, leaf);
-                return LeafBreakResult.OUTPUT_FULL;
-            }
+        List<ItemStack> drops = Block.getDrops(state, level, leaf, level.getBlockEntity(leaf), villager, leafTool);
+        if (!context.canStoreOutputs(drops)) {
+            context.depositOutputs(villager);
+        }
+        if (!context.canStoreOutputs(drops)) {
+            restoreLoggingAxe(context, level, leaf);
+            return LeafBreakResult.OUTPUT_FULL;
         }
         faceBlock(villager, leaf);
         swingWorkTool(villager);
@@ -1760,6 +1736,9 @@ public final class LoggingWorker extends AbstractBlockWorker {
         boolean removed = level.destroyBlock(leaf, false, villager);
         level.destroyBlockProgress(villager.getId(), leaf, -1);
         if (removed || !isNaturalLeaf(level.getBlockState(leaf))) {
+            for (ItemStack drop : drops) {
+                context.storeOutputAfterDepositIfFull(villager, drop);
+            }
             HiredPathMemory.onBlockChanged(level, leaf);
             damageTool(context, villager, leafTool, level, state, leaf);
             HiredPathMemory.rememberRecent(level, leaf);
@@ -1772,14 +1751,14 @@ public final class LoggingWorker extends AbstractBlockWorker {
             ServerLevel level,
             HiredWorkContext context,
             Villager villager) {
-        long[] pendingLeaves = context.state().getLongArray(PENDING_TREE_LEAVES_TAG);
-        if (pendingLeaves.length <= 0) {
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        if (plan == null || plan.leaves().length <= 0) {
             return true;
         }
 
         HiredPathTarget target = activeWorkTarget(level, context, villager);
         if (target == null
-                || !containsPendingPosition(pendingLeaves, target.blockPos())
+                || !LoggingHarvestPlan.contains(plan.leaves(), target.blockPos())
                 || !canBreakAccessLeafFromCurrentPosition(level, villager, context, target)) {
             return true;
         }
@@ -1789,7 +1768,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         if (result == LeafBreakResult.OUTPUT_FULL) {
             return false;
         }
-        removePendingPosition(context, PENDING_TREE_LEAVES_TAG, leaf);
+        LoggingHarvestPlan.removeLeaf(context, leaf);
         return true;
     }
 
@@ -1802,64 +1781,47 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 stack -> stack.getDestroySpeed(referenceState));
     }
 
-    private static void beginPendingTreeHarvest(
-            HiredWorkContext context,
-            BlockPos origin,
-            List<BlockPos> logs,
-            List<BlockPos> leaves,
-            List<BlockPos> saplingPositions,
-            ItemStack sapling,
-            boolean stripLogs) {
-        CompoundTag state = context.state();
-        state.putLong(PENDING_TREE_ORIGIN_TAG, origin.asLong());
-        state.putLongArray(PENDING_TREE_LOGS_TAG, positionsToArray(logs));
-        state.putLongArray(PENDING_TREE_LEAVES_TAG, positionsToArray(leaves));
-        state.putLongArray(PENDING_TREE_SAPLINGS_TAG, positionsToArray(saplingPositions));
-        state.putBoolean(PENDING_TREE_STRIP_LOGS_TAG, stripLogs);
-        state.putInt(PENDING_TREE_LOGS_CUT_TAG, 0);
-        if (sapling.isEmpty()) {
-            state.remove(PENDING_TREE_SAPLING_ITEM_TAG);
-        } else {
-            state.putString(PENDING_TREE_SAPLING_ITEM_TAG, BuiltInRegistries.ITEM.getKey(sapling.getItem()).toString());
-        }
-    }
-
     private static boolean hasPendingTreeHarvest(HiredWorkContext context) {
-        CompoundTag state = context.state();
-        return state.contains(PENDING_TREE_ORIGIN_TAG)
-                || state.contains(PENDING_TREE_LOGS_TAG)
-                || state.contains(PENDING_TREE_LEAVES_TAG)
-                || state.contains(PENDING_TREE_SAPLINGS_TAG);
+        return LoggingHarvestPlan.has(context);
     }
 
     private static boolean hasPendingLogs(HiredWorkContext context) {
-        return context.state().getLongArray(PENDING_TREE_LOGS_TAG).length > 0;
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        return plan != null && plan.hasLogs();
     }
 
     private static boolean hasPendingLeaves(HiredWorkContext context) {
-        return context.state().getLongArray(PENDING_TREE_LEAVES_TAG).length > 0;
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        return plan != null && plan.hasLeaves();
     }
 
     private static boolean isPendingLeafTarget(HiredWorkContext context, BlockPos pos) {
-        return containsPendingPosition(context.state().getLongArray(PENDING_TREE_LEAVES_TAG), pos);
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        return plan != null && LoggingHarvestPlan.contains(plan.leaves(), pos);
     }
 
     private static BlockPos pendingTreeOrigin(HiredWorkContext context) {
-        CompoundTag state = context.state();
-        return state.contains(PENDING_TREE_ORIGIN_TAG)
-                ? BlockPos.of(state.getLong(PENDING_TREE_ORIGIN_TAG))
-                : context.workCenter();
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        return plan == null ? context.workCenter() : plan.origin();
     }
 
     private static BlockState firstPendingLogState(ServerLevel level, HiredWorkContext context) {
-        Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
-        for (long packed : context.state().getLongArray(PENDING_TREE_LOGS_TAG)) {
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        if (plan == null) {
+            return null;
+        }
+        String logFamily = plan.logFamily();
+        if (logFamily.isBlank()) {
+            logFamily = inferPendingLogFamily(level, context, plan.logs());
+            LoggingHarvestPlan.rememberLogFamily(context, logFamily);
+        }
+        for (long packed : plan.logs()) {
             BlockPos pos = BlockPos.of(packed);
             if (!context.isInsideWorkArea(pos) || !context.isLoaded(level, pos)) {
                 continue;
             }
             BlockState state = level.getBlockState(pos);
-            if (isMatchingLog(state, filters)) {
+            if (isPendingTreeLog(state, logFamily)) {
                 return state;
             }
         }
@@ -1867,57 +1829,76 @@ public final class LoggingWorker extends AbstractBlockWorker {
     }
 
     private static PendingHarvestTargets pendingHarvestTargets(ServerLevel level, HiredWorkContext context) {
-        Set<ResourceLocation> filters = HiredLoggingFilters.selectedFilterIds(context.state());
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        if (plan == null) {
+            return new PendingHarvestTargets(List.of(), PendingTargetKind.LOG);
+        }
+        String logFamily = plan.logFamily();
+        if (logFamily.isBlank()) {
+            logFamily = inferPendingLogFamily(level, context, plan.logs());
+            LoggingHarvestPlan.rememberLogFamily(context, logFamily);
+        }
+        String expectedLogFamily = logFamily;
         List<BlockPos> logs = pendingMatchingPositions(
                 level,
                 context,
-                PENDING_TREE_LOGS_TAG,
-                state -> isMatchingLog(state, filters),
+                plan.logs(),
+                state -> isPendingTreeLog(state, expectedLogFamily),
                 MAX_TREE_LOGS_PER_HARVEST);
-        if (!logs.isEmpty()) {
+        if (plan.hasLogs()) {
             return new PendingHarvestTargets(logs, PendingTargetKind.LOG);
+        }
+        for (long packed : plan.leaves()) {
+            BlockPos leaf = BlockPos.of(packed);
+            if (context.isLoaded(level, leaf) && !isNaturalLeaf(level.getBlockState(leaf))) {
+                LoggingHarvestPlan.removeLeaf(context, leaf);
+            }
+        }
+        plan = LoggingHarvestPlan.read(context);
+        if (plan == null) {
+            return new PendingHarvestTargets(List.of(), PendingTargetKind.LEAF);
         }
         List<BlockPos> leaves = pendingMatchingPositions(
                 level,
                 context,
-                PENDING_TREE_LEAVES_TAG,
+                plan.leaves(),
                 LoggingWorker::isNaturalLeaf,
                 MAX_TREE_LEAVES_PER_HARVEST);
-        if (leaves.isEmpty() && hasPendingLeaves(context)) {
-            context.state().remove(PENDING_TREE_LEAVES_TAG);
-        }
-        if (!leaves.isEmpty()) {
+        if (plan.hasLeaves()) {
             return new PendingHarvestTargets(leaves, PendingTargetKind.LEAF);
         }
 
-        ItemStack sapling = pendingSapling(context);
+        ItemStack sapling = plan.sapling();
         if (!sapling.isEmpty() && sapling.getItem() instanceof BlockItem blockItem) {
             BlockState saplingState = blockItem.getBlock().defaultBlockState();
             List<BlockPos> plantingTargets = new ArrayList<>();
-            for (BlockPos plantingPos : pendingPositions(context, PENDING_TREE_SAPLINGS_TAG)) {
+            for (long packed : plan.saplings()) {
+                BlockPos plantingPos = BlockPos.of(packed);
+                if (!context.isLoaded(level, plantingPos)) {
+                    continue;
+                }
                 if (canPlaceSapling(level, context, plantingPos, saplingState)) {
                     plantingTargets.add(plantingPos.below().immutable());
                 } else {
-                    removePendingPosition(context, PENDING_TREE_SAPLINGS_TAG, plantingPos);
+                    LoggingHarvestPlan.removeSapling(context, plantingPos);
                 }
             }
             if (!plantingTargets.isEmpty()) {
                 return new PendingHarvestTargets(plantingTargets, PendingTargetKind.SAPLING);
             }
         }
-        context.state().remove(PENDING_TREE_SAPLINGS_TAG);
         return new PendingHarvestTargets(List.of(), PendingTargetKind.SAPLING);
     }
 
     private static List<BlockPos> pendingMatchingPositions(
             ServerLevel level,
             HiredWorkContext context,
-            String tag,
+            long[] packedPositions,
             Predicate<BlockState> matcher,
             int maxPositions) {
         List<BlockPos> positions = new ArrayList<>();
         int safeMaxPositions = Math.max(1, maxPositions);
-        for (long packed : context.state().getLongArray(tag)) {
+        for (long packed : packedPositions) {
             BlockPos pos = BlockPos.of(packed);
             if (!context.isInsideWorkArea(pos) || !context.isLoaded(level, pos)) {
                 continue;
@@ -1932,74 +1913,38 @@ public final class LoggingWorker extends AbstractBlockWorker {
         return positions;
     }
 
-    private static ItemStack pendingSapling(HiredWorkContext context) {
-        String itemIdText = context.state().getString(PENDING_TREE_SAPLING_ITEM_TAG);
-        if (itemIdText.isBlank()) {
-            return ItemStack.EMPTY;
-        }
-        ResourceLocation itemId = ResourceLocation.tryParse(itemIdText);
-        if (itemId == null) {
-            return ItemStack.EMPTY;
-        }
-        return BuiltInRegistries.ITEM.getOptional(itemId)
-                .map(ItemStack::new)
-                .orElse(ItemStack.EMPTY);
-    }
-
-    private static List<BlockPos> pendingPositions(HiredWorkContext context, String tag) {
-        List<BlockPos> positions = new ArrayList<>();
-        for (long packed : context.state().getLongArray(tag)) {
-            positions.add(BlockPos.of(packed));
-        }
-        return positions;
-    }
-
-    private static boolean containsPendingPosition(long[] packedPositions, BlockPos pos) {
-        if (pos == null) {
-            return false;
-        }
-        long packedPos = pos.asLong();
-        for (long packed : packedPositions) {
-            if (packed == packedPos) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static void removePendingPosition(HiredWorkContext context, String tag, BlockPos pos) {
-        if (pos == null) {
-            return;
-        }
-        long packedPos = pos.asLong();
-        long[] packedPositions = context.state().getLongArray(tag);
-        long[] retained = Arrays.stream(packedPositions)
-                .filter(packed -> packed != packedPos)
-                .toArray();
-        context.state().putLongArray(tag, retained);
-    }
-
     private static void clearPendingTreeLeaves(HiredWorkContext context) {
-        context.state().remove(PENDING_TREE_LEAVES_TAG);
+        LoggingHarvestPlan.clearLeaves(context);
     }
 
-    private static long[] positionsToArray(List<BlockPos> positions) {
+    private static long[] packedPositions(List<Long> positions) {
         long[] packed = new long[positions.size()];
         for (int i = 0; i < positions.size(); i++) {
-            packed[i] = positions.get(i).asLong();
+            packed[i] = positions.get(i);
         }
         return packed;
     }
 
-    private static void clearPendingTreeHarvest(HiredWorkContext context) {
-        CompoundTag state = context.state();
-        state.remove(PENDING_TREE_ORIGIN_TAG);
-        state.remove(PENDING_TREE_LOGS_TAG);
-        state.remove(PENDING_TREE_LEAVES_TAG);
-        state.remove(PENDING_TREE_SAPLINGS_TAG);
-        state.remove(PENDING_TREE_SAPLING_ITEM_TAG);
-        state.remove(PENDING_TREE_STRIP_LOGS_TAG);
-        state.remove(PENDING_TREE_LOGS_CUT_TAG);
+    private static String inferPendingLogFamily(
+            ServerLevel level,
+            HiredWorkContext context,
+            long[] pendingLogs) {
+        for (long packed : pendingLogs) {
+            BlockPos pos = BlockPos.of(packed);
+            if (!context.isLoaded(level, pos)) {
+                continue;
+            }
+            BlockState state = level.getBlockState(pos);
+            if (state.is(BlockTags.LOGS)) {
+                return logFamilyKey(state);
+            }
+        }
+        return "";
+    }
+
+    private static boolean isPendingTreeLog(BlockState state, String logFamily) {
+        return state.is(BlockTags.LOGS)
+                && (logFamily == null || logFamily.isBlank() || logFamilyKey(state).equals(logFamily));
     }
 
     private static List<BlockPos> naturalTreeLeaves(ServerLevel level, List<BlockPos> logs) {
@@ -2136,7 +2081,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             Villager villager,
             ItemStack sapling) {
         if (!(sapling.getItem() instanceof BlockItem blockItem)) {
-            context.state().remove(PENDING_TREE_SAPLINGS_TAG);
+            LoggingHarvestPlan.clearSaplings(context);
             return;
         }
         HiredPathTarget target = storedWorkTarget(context.state());
@@ -2144,28 +2089,36 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return;
         }
         BlockPos pos = target.blockPos().above();
-        if (!containsPendingPosition(context.state().getLongArray(PENDING_TREE_SAPLINGS_TAG), pos)) {
+        LoggingHarvestPlan.Snapshot plan = LoggingHarvestPlan.read(context);
+        if (plan == null || !LoggingHarvestPlan.contains(plan.saplings(), pos)) {
             return;
         }
         BlockState saplingState = blockItem.getBlock().defaultBlockState();
         if (!canPlaceSapling(level, context, pos, saplingState)) {
-            removePendingPosition(context, PENDING_TREE_SAPLINGS_TAG, pos);
+            LoggingHarvestPlan.removeSapling(context, pos);
             clearActiveBreakingTarget(level, context, villager);
             return;
         }
         if (!consumeSapling(villager, context, sapling)) {
-            context.state().remove(PENDING_TREE_SAPLINGS_TAG);
+            LoggingHarvestPlan.clearSaplings(context);
             clearActiveBreakingTarget(level, context, villager);
             return;
         }
         facePlacedSapling(villager, pos);
         villager.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
-        level.setBlock(pos, saplingState, Block.UPDATE_ALL);
+        if (!level.setBlock(pos, saplingState, Block.UPDATE_ALL)) {
+            ItemStack remainder = context.inventory().insertSupply(sapling.copyWithCount(1));
+            if (!remainder.isEmpty()) {
+                Block.popResource(level, villager.blockPosition(), remainder);
+            }
+            clearActiveBreakingTarget(level, context, villager);
+            return;
+        }
         HiredPathMemory.onBlockChanged(level, pos);
         HiredPathMemory.rememberRecent(level, pos);
-        removePendingPosition(context, PENDING_TREE_SAPLINGS_TAG, pos);
+        LoggingHarvestPlan.removeSapling(context, pos);
         clearActiveBreakingTarget(level, context, villager);
-        wakeSaplingTargetSearch(context);
+        LoggingWorkerState.wakeSaplingSearch(context);
     }
 
     private static void facePlacedSapling(Villager villager, BlockPos pos) {
