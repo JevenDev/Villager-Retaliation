@@ -10,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.block.Blocks;
@@ -220,21 +221,31 @@ final class MiningExcavationShaft {
     }
 
     static Shaft stored(HiredWorkContext context) {
-        if (!context.state().contains(X_TAG)
-                || !context.state().contains(Z_TAG)
-                || !context.state().contains(FACING_TAG)) {
+        boolean hasSelection = context.state().contains(X_TAG)
+                || context.state().contains(Z_TAG)
+                || context.state().contains(FACING_TAG);
+        if (!hasSelection) {
+            return null;
+        }
+        if (!context.state().contains(X_TAG, Tag.TAG_INT)
+                || !context.state().contains(Z_TAG, Tag.TAG_INT)
+                || !context.state().contains(FACING_TAG, Tag.TAG_STRING)) {
+            clear(context);
             return null;
         }
         int x = context.state().getInt(X_TAG);
         int z = context.state().getInt(Z_TAG);
         Direction facing = Direction.byName(context.state().getString(FACING_TAG));
         if (facing == null || facing.getAxis().isVertical()) {
+            clear(context);
             return null;
         }
         Shaft shaft = new Shaft(x, z, facing);
-        return context.isInsideWorkArea(shaft.at(context.workMax().getY())) && isCandidate(context, shaft)
-                ? shaft
-                : null;
+        if (!context.isInsideWorkArea(shaft.at(context.workMax().getY())) || !isCandidate(context, shaft)) {
+            clear(context);
+            return null;
+        }
+        return shaft;
     }
 
     static void clear(HiredWorkContext context) {

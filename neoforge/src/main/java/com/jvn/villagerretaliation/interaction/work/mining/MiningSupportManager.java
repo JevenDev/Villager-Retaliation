@@ -178,6 +178,9 @@ final class MiningSupportManager {
         int topY = MiningExcavationShaft.topY(level, context, shaft);
         for (int y = topY; y >= lowestOpenY; y--) {
             BlockPos pos = shaft.at(y);
+            if (!level.hasChunkAt(pos)) {
+                return null;
+            }
             if (level.getBlockState(pos).is(Blocks.LADDER)) {
                 continue;
             }

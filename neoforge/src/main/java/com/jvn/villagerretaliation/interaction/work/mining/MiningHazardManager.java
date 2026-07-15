@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import it.unimi.dsi.fastutil.longs.LongSets;
 import java.util.ArrayDeque;
@@ -708,14 +709,14 @@ final class MiningHazardManager {
     }
 
     private static void addPermanentBarriers(HiredWorkContext context, List<BlockPos> positions) {
-        LinkedHashSet<Long> barriers = new LinkedHashSet<>();
+        LongSet barriers = new LongLinkedOpenHashSet();
         for (long packed : context.state().getLongArray(PERMANENT_BARRIERS_TAG)) {
             barriers.add(packed);
         }
         for (BlockPos pos : positions) {
             barriers.add(pos.asLong());
         }
-        context.state().putLongArray(PERMANENT_BARRIERS_TAG, barriers.stream().mapToLong(Long::longValue).toArray());
+        context.state().putLongArray(PERMANENT_BARRIERS_TAG, barriers.toLongArray());
     }
 
     private static void prunePermanentBarriers(ServerLevel level, HiredWorkContext context) {
@@ -723,7 +724,7 @@ final class MiningHazardManager {
         if (packed.length == 0) {
             return;
         }
-        List<Long> retained = new ArrayList<>(packed.length);
+        LongSet retained = new LongLinkedOpenHashSet(packed.length);
         for (long value : packed) {
             BlockPos pos = BlockPos.of(value);
             if (!isWithinHazardScope(context, pos)) {
@@ -735,7 +736,7 @@ final class MiningHazardManager {
             }
         }
         if (retained.size() != packed.length) {
-            context.state().putLongArray(PERMANENT_BARRIERS_TAG, retained.stream().mapToLong(Long::longValue).toArray());
+            context.state().putLongArray(PERMANENT_BARRIERS_TAG, retained.toLongArray());
             MiningWorkerState.clearExcavationLayerCache(context);
         }
     }

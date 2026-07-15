@@ -2570,6 +2570,44 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void horizontalMiningRepairsMalformedStairPlanBeforeImmediateTargeting(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerHorizontalStairRecovery");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        BlockPos supportRel = new BlockPos(3, 2, 3);
+        BlockPos support = helper.absolutePos(supportRel);
+        setBlock(helper, supportRel, Blocks.STONE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.HORIZONTAL_EXCAVATION.serializedName());
+        state.putString("HorizontalExcavationStairAxis", "diagonal");
+        state.putBoolean("HorizontalExcavationStairFromMin", true);
+        state.putInt("HorizontalExcavationStairLane", support.getX());
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                state,
+                new BlockPos(2, 2, 2),
+                new BlockPos(6, 7, 4),
+                true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        context.setProgressTicks(200);
+
+        new MiningWorker().tick(level, villager, hirer, context);
+
+        helper.assertTrue(level.getBlockState(support).is(Blocks.STONE),
+                "immediate targeting must preserve a reserved horizontal stair support");
+        helper.assertValueEqual(state.getString("HorizontalExcavationStairAxis"), "x",
+                "malformed stair axis should be replaced with a valid route");
+        helper.assertValueEqual(state.getInt("HorizontalExcavationStairLane"), villager.blockPosition().getZ(),
+                "recovered stair route should use an in-bounds lane near the miner");
+
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
     public static void horizontalMiningPatchesFloorFromMinedOutputsByDefault(GameTestHelper helper) {
         buildFloor(helper, 0, 6, 0, 6, 1);
@@ -3241,6 +3279,67 @@ public final class VillagerWorkerGameTests {
                 "water seal should not retain fluid in the barrier cell");
         helper.assertTrue(level.getFluidState(helper.absolutePos(remoteWaterRel)).is(FluidTags.WATER),
                 "sealing should leave the remote unbounded water body intact");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80)
+    public static void miningLayerCacheDoesNotTreatUnloadedWorkAreaAsComplete(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = new CompoundTag();
+        BlockPos farRel = new BlockPos(4096, 2, 4096);
+        HiredWorkContext context = context(helper, villager, state, farRel, farRel.above(2), true);
+
+        helper.assertFalse(level.hasChunkAt(context.workMin()),
+                "fixture work area should remain unloaded");
+        helper.assertTrue(MiningBlockRules.currentExcavationLayer(level, context) == null,
+                "an unavailable excavation layer should not be selected");
+        helper.assertFalse(state.contains("CurrentExcavationLayerPresent")
+                        || state.contains("CurrentExcavationLayerExpiresGameTime"),
+                "an unloaded work area must not persist a cached completion result");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void miningWorkerSanitizesMalformedShaftAndBarrierState(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerMiningStateSanitize");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 1, 3));
+        BlockPos barrierRel = new BlockPos(3, 1, 3);
+        BlockPos barrier = helper.absolutePos(barrierRel);
+        setBlock(helper, barrierRel, Blocks.STONE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        state.putString("ExcavationLadderX", "broken");
+        state.putInt("ExcavationLadderZ", barrier.getZ());
+        state.putString("ExcavationLadderFacing", Direction.NORTH.getName());
+        state.putLongArray("MiningPermanentHazardBarriers", new long[] {barrier.asLong(), barrier.asLong()});
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                state,
+                new BlockPos(2, 1, 3),
+                new BlockPos(3, 2, 3),
+                true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+
+        MiningWorker.excavationEntryTarget(level, context);
+        helper.assertFalse(state.contains("ExcavationLadderX")
+                        || state.contains("ExcavationLadderZ")
+                        || state.contains("ExcavationLadderFacing"),
+                "partial or incorrectly typed shaft state should be discarded atomically");
+
+        new MiningWorker().tick(level, villager, hirer, context);
+        helper.assertValueEqual(state.getLongArray("MiningPermanentHazardBarriers").length, 1,
+                "persisted permanent barriers should be deduplicated during validation");
+        helper.assertValueEqual(state.getLongArray("MiningPermanentHazardBarriers")[0], barrier.asLong(),
+                "barrier validation should preserve the live in-scope barrier");
 
         villager.discard();
         helper.succeed();

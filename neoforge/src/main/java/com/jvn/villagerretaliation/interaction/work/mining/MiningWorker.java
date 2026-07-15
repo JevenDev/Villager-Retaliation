@@ -1176,6 +1176,7 @@ public final class MiningWorker extends AbstractBlockWorker {
 
     private static boolean isExcavationComplete(ServerLevel level, HiredWorkContext context, HiredMiningMode mode) {
         return mode.excavatesArea()
+                && MiningBlockRules.isExcavationAreaLoaded(level, context)
                 && !HiredWorkAreaScan.isInProgress(context, MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG)
                 && level.getGameTime() < context.state().getLong(MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG)
                 && MiningBlockRules.currentExcavationLayer(level, context) == null;

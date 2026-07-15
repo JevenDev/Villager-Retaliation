@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
@@ -65,6 +66,10 @@ public final class MiningBlockRules {
     }
 
     public static Integer currentExcavationLayer(ServerLevel level, HiredWorkContext context) {
+        if (!isExcavationAreaLoaded(level, context)) {
+            MiningWorkerState.clearExcavationLayerCache(context);
+            return null;
+        }
         if (MiningWorkerState.hasFreshExcavationLayerCache(level, context)) {
             return MiningWorkerState.cachedExcavationLayer(context);
         }
@@ -83,6 +88,21 @@ public final class MiningBlockRules {
         }
         MiningWorkerState.rememberExcavationLayer(level, context, null);
         return null;
+    }
+
+    static boolean isExcavationAreaLoaded(ServerLevel level, HiredWorkContext context) {
+        int minChunkX = SectionPos.blockToSectionCoord(context.workMin().getX());
+        int maxChunkX = SectionPos.blockToSectionCoord(context.workMax().getX());
+        int minChunkZ = SectionPos.blockToSectionCoord(context.workMin().getZ());
+        int maxChunkZ = SectionPos.blockToSectionCoord(context.workMax().getZ());
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                if (!level.hasChunk(chunkX, chunkZ)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     public static boolean hasAdjacentExcavationFluid(ServerLevel level, BlockPos pos) {

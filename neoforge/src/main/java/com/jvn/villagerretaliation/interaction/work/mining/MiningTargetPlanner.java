@@ -46,7 +46,7 @@ final class MiningTargetPlanner {
             HiredWorkContext context,
             HiredMiningMode mode) {
         return mode.excavatesArea()
-                ? resolveExcavation(level, villager, context)
+                ? resolveExcavation(level, villager, context, mode)
                 : resolveOre(level, villager, context);
     }
 
@@ -80,12 +80,19 @@ final class MiningTargetPlanner {
             ServerLevel level,
             Villager villager,
             HiredWorkContext context) {
+        if (!MiningBlockRules.isExcavationAreaLoaded(level, context)) {
+            HiredWorkAreaScan.clearCursor(context, MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG);
+            context.state().remove(MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG);
+            HiredWorkerBrain.setLastTargetScanResult(context, "excavation_chunks_unloaded");
+            return null;
+        }
+        HiredMiningMode mode = HiredMiningMode.fromState(context.state());
         LongSet protectedBarriers = MiningHazardManager.protectedBarrierPositions(context);
         HiredWorkAreaScan.Result scan = HiredWorkAreaScan.collect(
                 context,
                 MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG,
                 MAX_EXCAVATION_SCAN_POSITIONS,
-                pos -> isValidExcavationTarget(level, villager, context, pos, protectedBarriers));
+                pos -> isValidExcavationTarget(level, villager, context, pos, mode, protectedBarriers));
         if (!scan.candidates().isEmpty()) {
             context.state().remove(MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG);
             HiredWorkerBrain.setLastTargetScanResult(context, "excavation_targets_found");
@@ -116,7 +123,13 @@ final class MiningTargetPlanner {
             Villager villager,
             HiredWorkContext context,
             BlockPos pos) {
-        return isValidExcavationTarget(level, villager, context, pos, null);
+        return isValidExcavationTarget(
+                level,
+                villager,
+                context,
+                pos,
+                HiredMiningMode.fromState(context.state()),
+                null);
     }
 
     private boolean isValidExcavationTarget(
@@ -124,8 +137,8 @@ final class MiningTargetPlanner {
             Villager villager,
             HiredWorkContext context,
             BlockPos pos,
+            HiredMiningMode mode,
             LongSet protectedBarriers) {
-        HiredMiningMode mode = HiredMiningMode.fromState(context.state());
         boolean horizontal = mode.excavatesHorizontally();
         boolean neededShaftTarget = !horizontal && MiningExcavationSupport.isNeededLadderShaftTarget(level, context, pos);
         return context.isInsideWorkArea(pos)
@@ -213,7 +226,14 @@ final class MiningTargetPlanner {
     private HiredPathTarget resolveExcavation(
             ServerLevel level,
             Villager villager,
-            HiredWorkContext context) {
+            HiredWorkContext context,
+            HiredMiningMode mode) {
+        if (!MiningBlockRules.isExcavationAreaLoaded(level, context)) {
+            HiredWorkAreaScan.clearCursor(context, MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG);
+            context.state().remove(MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG);
+            HiredWorkerBrain.setLastTargetScanResult(context, "excavation_chunks_unloaded");
+            return null;
+        }
         HiredPathTarget immediate = immediateExcavationWorkTarget(level, villager, context);
         if (immediate != null) {
             MiningWorkerState.set(context, MiningWorkerState.Phase.FIND_TARGET);
@@ -242,7 +262,7 @@ final class MiningTargetPlanner {
                     return active;
                 },
                 target -> isValidExcavationTarget(
-                        level, villager, context, target.blockPos(), protectedBarriers),
+                        level, villager, context, target.blockPos(), mode, protectedBarriers),
                 filter -> {
                     HiredPathTarget planned = plannedExcavationTarget(level, villager, context, filter);
                     if (planned != null) {
@@ -250,7 +270,7 @@ final class MiningTargetPlanner {
                     }
                     return planned;
                 },
-                pos -> isValidExcavationTarget(level, villager, context, pos, protectedBarriers),
+                pos -> isValidExcavationTarget(level, villager, context, pos, mode, protectedBarriers),
                 MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG,
                 MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG,
                 MAX_EXCAVATION_SCAN_POSITIONS,
@@ -545,7 +565,7 @@ final class MiningTargetPlanner {
             BlockPos approachPos,
             HiredMiningMode mode) {
         BlockPos target = targetPos.immutable();
-        if (!isReachableCurrentExcavationTarget(level, context, target)
+        if (!isReachableCurrentExcavationTarget(level, villager, context, target, mode)
                 || MiningWorker.isUnsafeExcavationUnderfoot(level, context, target, approachPos)
                 || approachPos.distSqr(target) > 4) {
             return null;
@@ -570,11 +590,14 @@ final class MiningTargetPlanner {
 
     private boolean isReachableCurrentExcavationTarget(
             ServerLevel level,
+            Villager villager,
             HiredWorkContext context,
-            BlockPos pos) {
-        boolean horizontal = HiredMiningMode.fromState(context.state()).excavatesHorizontally();
+            BlockPos pos,
+            HiredMiningMode mode) {
+        boolean horizontal = mode.excavatesHorizontally();
         boolean neededShaftTarget = !horizontal && MiningExcavationSupport.isNeededLadderShaftTarget(level, context, pos);
         return context.isInsideWorkArea(pos)
+                && (!horizontal || !MiningHorizontalStairPlan.isReservedSupport(context, villager, pos))
                 && (neededShaftTarget || MiningBlockRules.isMineableExcavationBlock(level, context, pos))
                 && (horizontal || MiningBlockRules.isCurrentExcavationLayer(level, context, pos))
                 && (horizontal || MiningExcavationSupport.canMineCurrentLayerTarget(level, context, pos))
@@ -705,7 +728,7 @@ final class MiningTargetPlanner {
             BlockPos anchor,
             HiredMiningMode mode) {
         return mode.excavatesArea()
-                ? isValidExcavationTarget(level, villager, context, pos)
+                ? isValidExcavationTarget(level, villager, context, pos, mode, null)
                 : isValidOreTarget(level, villager, context, pos, anchor);
     }
 
