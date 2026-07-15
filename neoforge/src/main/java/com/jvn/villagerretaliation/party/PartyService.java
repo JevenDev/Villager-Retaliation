@@ -37,29 +37,42 @@ public final class PartyService {
         if (entity == null || !(entity.level() instanceof ServerLevel level)) {
             return Optional.empty();
         }
-        if (entity instanceof ServerPlayer) {
-            return getPartyForPlayer(level, entity.getUUID());
-        }
-        return entity instanceof Villager
-                ? getPartyForVillager(level, entity.getUUID())
-                : Optional.empty();
+        PartySavedData data = partyData(level);
+        return data.party(partyIdForEntity(data, entity));
     }
 
     public static boolean areInSameParty(Entity first, Entity second) {
-        if (first == null || second == null || first.level().getServer() != second.level().getServer()) {
+        if (first == null
+                || second == null
+                || !(first.level() instanceof ServerLevel firstLevel)
+                || !(second.level() instanceof ServerLevel)
+                || first.level().getServer() != second.level().getServer()) {
             return false;
         }
-        Optional<PartyRecord> firstParty = getPartyForEntity(first);
-        return firstParty.isPresent()
-                && getPartyForEntity(second).map(party -> party.id().equals(firstParty.get().id())).orElse(false);
+        PartySavedData data = partyData(firstLevel);
+        UUID firstPartyId = partyIdForEntity(data, first);
+        return firstPartyId != null && firstPartyId.equals(partyIdForEntity(data, second));
     }
 
     public static boolean areInSameOrAlliedParty(Entity first, Entity second) {
-        if (first == null || second == null || first.level().getServer() != second.level().getServer()) {
+        if (first == null
+                || second == null
+                || !(first.level() instanceof ServerLevel firstLevel)
+                || !(second.level() instanceof ServerLevel)
+                || first.level().getServer() != second.level().getServer()) {
             return false;
         }
-        PartyRecord firstParty = getPartyForEntity(first).orElse(null);
-        PartyRecord secondParty = getPartyForEntity(second).orElse(null);
+        PartySavedData data = partyData(firstLevel);
+        UUID firstPartyId = partyIdForEntity(data, first);
+        UUID secondPartyId = partyIdForEntity(data, second);
+        if (firstPartyId == null || secondPartyId == null) {
+            return false;
+        }
+        if (firstPartyId.equals(secondPartyId)) {
+            return true;
+        }
+        PartyRecord firstParty = data.party(firstPartyId).orElse(null);
+        PartyRecord secondParty = data.party(secondPartyId).orElse(null);
         return areSameOrAllied(firstParty, secondParty);
     }
 
@@ -74,11 +87,9 @@ public final class PartyService {
         if (level == null || playerId == null || villagerId == null) {
             return false;
         }
-        Optional<PartyRecord> playerParty = getPartyForPlayer(level, playerId);
-        return playerParty.isPresent()
-                && getPartyForVillager(level, villagerId)
-                .map(party -> party.id().equals(playerParty.get().id()))
-                .orElse(false);
+        PartySavedData data = partyData(level);
+        UUID playerPartyId = data.partyIdForPlayer(playerId);
+        return playerPartyId != null && playerPartyId.equals(data.partyIdForVillager(villagerId));
     }
 
     /**
@@ -224,7 +235,14 @@ public final class PartyService {
     }
 
     public static boolean isRecruitedPartyVillager(ServerLevel level, UUID villagerId) {
-        return getPartyForVillager(level, villagerId).isPresent();
+        return level != null && partyData(level).partyIdForVillager(villagerId) != null;
+    }
+
+    private static UUID partyIdForEntity(PartySavedData data, Entity entity) {
+        if (entity instanceof ServerPlayer) {
+            return data.partyIdForPlayer(entity.getUUID());
+        }
+        return entity instanceof Villager ? data.partyIdForVillager(entity.getUUID()) : null;
     }
 
 

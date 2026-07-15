@@ -5,6 +5,8 @@ import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
@@ -19,7 +21,9 @@ public final class PartySyncService {
             return;
         }
         PartyRecord party = PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).orElse(null);
-        send(player, party == null ? PartyRosterSyncPayload.empty() : snapshot(player.getServer(), party, player));
+        send(player, party == null
+                ? PartyRosterSyncPayload.empty()
+                : snapshot(player.getServer(), party, null, null).forRecipient(player.getUUID()));
     }
 
     public static void syncParty(MinecraftServer server, UUID partyId) {
@@ -46,10 +50,11 @@ public final class PartySyncService {
         if (party == null) {
             return;
         }
+        PartyRosterSnapshot snapshot = snapshot(server, party, offlinePlayerId, unavailableVillagerId);
         for (UUID playerId : party.playerIds()) {
             ServerPlayer player = server.getPlayerList().getPlayer(playerId);
             if (player != null) {
-                send(player, snapshot(server, party, player, offlinePlayerId, unavailableVillagerId));
+                send(player, snapshot.forRecipient(playerId));
             }
         }
     }
@@ -71,14 +76,9 @@ public final class PartySyncService {
         playerIds.forEach(playerId -> clear(server, playerId));
     }
 
-    private static PartyRosterSyncPayload snapshot(MinecraftServer server, PartyRecord party, ServerPlayer recipient) {
-        return snapshot(server, party, recipient, null, null);
-    }
-
-    private static PartyRosterSyncPayload snapshot(
+    private static PartyRosterSnapshot snapshot(
             MinecraftServer server,
             PartyRecord party,
-            ServerPlayer recipient,
             UUID offlinePlayerId,
             UUID unavailableVillagerId) {
         List<PartyRosterSyncPayload.PlayerEntry> players = new ArrayList<>(party.playerIds().size());
@@ -107,11 +107,10 @@ public final class PartySyncService {
                     record.dropCollectionMode(),
                     record.quickCommandsEnabled()));
         }
-        return new PartyRosterSyncPayload(
-                true,
+        return new PartyRosterSnapshot(
                 party.id(),
+                party.leaderId(),
                 profileName(server, party.leaderId()),
-                recipient.getUUID().equals(party.leaderId()),
                 combatModeState(party),
                 attackModeState(party),
                 party.sharedVillagerInventories(),
@@ -120,6 +119,35 @@ public final class PartySyncService {
                 PartyQuickCommandService.isStandGuardActive(party),
                 List.copyOf(players),
                 List.copyOf(villagers));
+    }
+
+    private record PartyRosterSnapshot(
+            UUID partyId,
+            UUID leaderId,
+            String leaderName,
+            PartyCombatModeState combatMode,
+            PartyAttackModeState attackMode,
+            boolean sharedVillagerInventories,
+            ResourceLocation moveTargetDimension,
+            BlockPos moveTarget,
+            boolean standGuardActive,
+            List<PartyRosterSyncPayload.PlayerEntry> players,
+            List<PartyRosterSyncPayload.VillagerEntry> villagers) {
+        PartyRosterSyncPayload forRecipient(UUID recipientId) {
+            return new PartyRosterSyncPayload(
+                    true,
+                    this.partyId,
+                    this.leaderName,
+                    this.leaderId.equals(recipientId),
+                    this.combatMode,
+                    this.attackMode,
+                    this.sharedVillagerInventories,
+                    this.moveTargetDimension,
+                    this.moveTarget,
+                    this.standGuardActive,
+                    this.players,
+                    this.villagers);
+        }
     }
 
     static PartyCombatModeState combatModeState(PartyRecord party) {
@@ -145,7 +173,11 @@ public final class PartySyncService {
         if (online != null) {
             return online.getGameProfile().getName();
         }
-        return server.getProfileCache()
+        var profileCache = server.getProfileCache();
+        if (profileCache == null) {
+            return "Player";
+        }
+        return profileCache
                 .get(playerId)
                 .map(GameProfile::getName)
                 .filter(name -> !name.isBlank())

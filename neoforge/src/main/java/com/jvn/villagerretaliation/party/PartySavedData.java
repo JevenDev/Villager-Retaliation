@@ -94,12 +94,20 @@ public final class PartySavedData extends SavedData {
         return party(this.partyByVillager.get(villagerId));
     }
 
+    UUID partyIdForPlayer(UUID playerId) {
+        return playerId == null ? null : this.partyByPlayer.get(playerId);
+    }
+
+    UUID partyIdForVillager(UUID villagerId) {
+        return villagerId == null ? null : this.partyByVillager.get(villagerId);
+    }
+
     public Optional<PartyInvitation> invitation(UUID invitationId) {
         return Optional.ofNullable(this.invitationsById.get(invitationId));
     }
 
-    public List<PartyRecord> parties() {
-        return List.copyOf(this.partiesById.values());
+    Iterable<PartyRecord> partyRecords() {
+        return this.partiesById.values();
     }
 
     public List<PartyInvitation> invitationsFor(UUID targetId, long gameTime) {

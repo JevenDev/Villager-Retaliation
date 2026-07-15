@@ -360,7 +360,7 @@ public final class PartyVillagerContractService {
         nextExpirationScanGameTime = now + EXPIRATION_SCAN_INTERVAL_TICKS;
         List<ExpiredContract> expired = new ArrayList<>();
         PartySavedData data = PartySavedData.get(server.overworld());
-        for (PartyRecord party : data.parties()) {
+        for (PartyRecord party : data.partyRecords()) {
             for (PartyVillagerRecord villager : party.villagers()) {
                 if (VillagerContractTime.isExpired(now, villager.contractEndGameTime())) {
                     expired.add(new ExpiredContract(party, villager));
