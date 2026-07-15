@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.party;
 
 import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
+import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,7 +94,7 @@ public final class PartySyncService {
         long now = server.overworld().getGameTime();
         List<PartyRosterSyncPayload.VillagerEntry> villagers = new ArrayList<>(party.villagers().size());
         for (PartyVillagerRecord record : party.villagers()) {
-            Villager loaded = PartyEntityResolver.loadedVillager(server, record.villagerId());
+            Villager loaded = VillagerEntityResolver.loaded(server, record.villagerId());
             villagers.add(new PartyRosterSyncPayload.VillagerEntry(
                     record.villagerId(),
                     loaded == null ? -1 : loaded.getId(),

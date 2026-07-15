@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.party;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -28,6 +30,8 @@ public final class PartySavedData extends SavedData {
     private final Map<UUID, UUID> partyByPlayer = new HashMap<>();
     private final Map<UUID, UUID> partyByVillager = new HashMap<>();
     private final Map<UUID, PartyInvitation> invitationsById = new LinkedHashMap<>();
+    private final Collection<PartyRecord> partyRecords =
+            Collections.unmodifiableCollection(this.partiesById.values());
 
     public static PartySavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -107,7 +111,7 @@ public final class PartySavedData extends SavedData {
     }
 
     Iterable<PartyRecord> partyRecords() {
-        return this.partiesById.values();
+        return this.partyRecords;
     }
 
     public List<PartyInvitation> invitationsFor(UUID targetId, long gameTime) {

@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredRouteNavigator;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.inventory.PartyContainerLootService;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
+import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
@@ -62,7 +63,7 @@ public final class PartyQuickCommandService {
     private static final Map<UUID, UUID> MANUAL_ATTACK_TARGETS = new HashMap<>();
     private static final Set<UUID> STAND_GUARD_VILLAGERS = new HashSet<>();
     private static final Map<UUID, UUID> DROP_CLAIMS = new HashMap<>();
-    private static final Map<BlockPos, UUID> CONTAINER_CLAIMS = new HashMap<>();
+    private static final Map<ContainerClaim, UUID> CONTAINER_CLAIMS = new HashMap<>();
 
     private PartyQuickCommandService() {
     }
@@ -124,7 +125,7 @@ public final class PartyQuickCommandService {
         record.setQuickCommandsEnabled(enabled);
         if (!enabled) {
             record.setRegrouping(false);
-            Villager loaded = PartyEntityResolver.activeVillager(player.getServer(), villagerId);
+            Villager loaded = VillagerEntityResolver.active(player.getServer(), villagerId);
             if (loaded == null) {
                 clearAllOrders(villagerId);
             } else {
@@ -308,7 +309,7 @@ public final class PartyQuickCommandService {
         }
         int affected = 0;
         for (PartyVillagerRecord record : records) {
-            Villager villager = PartyEntityResolver.activeVillager(player.serverLevel(), record.villagerId());
+            Villager villager = VillagerEntityResolver.active(player.serverLevel(), record.villagerId());
             if (!canReceiveAttackOrder(player.serverLevel(), villager, record, target)) {
                 continue;
             }
@@ -395,7 +396,7 @@ public final class PartyQuickCommandService {
             List<PartyVillagerRecord> records,
             LivingEntity target) {
         for (PartyVillagerRecord record : records) {
-            Villager villager = PartyEntityResolver.activeVillager(level, record.villagerId());
+            Villager villager = VillagerEntityResolver.active(level, record.villagerId());
             if (canReceiveAttackOrder(level, villager, record, target)) {
                 return true;
             }
@@ -449,7 +450,7 @@ public final class PartyQuickCommandService {
         for (PartyVillagerRecord record : records) {
             record.setStaying(player.serverLevel().dimension().location(), target);
             record.setRegrouping(false);
-            Villager villager = PartyEntityResolver.activeVillager(player.serverLevel(), record.villagerId());
+            Villager villager = VillagerEntityResolver.active(player.serverLevel(), record.villagerId());
             if (villager == null) {
                 clearMovementOrder(record.villagerId());
                 MANUAL_ATTACK_TARGETS.remove(record.villagerId());
@@ -472,7 +473,7 @@ public final class PartyQuickCommandService {
         BlockPos center = player.blockPosition().immutable();
         for (PartyVillagerRecord record : records) {
             record.setRegrouping(false);
-            Villager villager = PartyEntityResolver.activeVillager(player.serverLevel(), record.villagerId());
+            Villager villager = VillagerEntityResolver.active(player.serverLevel(), record.villagerId());
             if (villager == null) {
                 continue;
             }
@@ -501,7 +502,7 @@ public final class PartyQuickCommandService {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
             record.setRegrouping(false);
-            Villager villager = PartyEntityResolver.activeVillager(player.serverLevel(), record.villagerId());
+            Villager villager = VillagerEntityResolver.active(player.serverLevel(), record.villagerId());
             if (villager == null) {
                 continue;
             }
@@ -525,7 +526,7 @@ public final class PartyQuickCommandService {
         for (PartyVillagerRecord record : records) {
             record.setFollowing();
             record.setRegrouping(true);
-            Villager villager = PartyEntityResolver.activeVillager(player.getServer(), record.villagerId());
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
             if (villager == null) {
                 clearMovementOrder(record.villagerId());
                 MANUAL_ATTACK_TARGETS.remove(record.villagerId());
@@ -551,7 +552,7 @@ public final class PartyQuickCommandService {
     private static int stayHere(ServerPlayer player, List<PartyVillagerRecord> records) {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
-            Villager villager = PartyEntityResolver.activeVillager(player.getServer(), record.villagerId());
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
             if (villager == null || !(villager.level() instanceof ServerLevel level)) {
                 continue;
             }
@@ -575,7 +576,7 @@ public final class PartyQuickCommandService {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
             record.setWeaponPreference(preference);
-            Villager villager = PartyEntityResolver.activeVillager(player.getServer(), record.villagerId());
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
             if (villager != null) {
                 com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService.applyPreference(villager, preference);
             }
@@ -587,7 +588,7 @@ public final class PartyQuickCommandService {
     private static int heal(ServerPlayer player, List<PartyVillagerRecord> records) {
         int affected = 0;
         for (PartyVillagerRecord record : records) {
-            Villager villager = PartyEntityResolver.activeVillager(player.getServer(), record.villagerId());
+            Villager villager = VillagerEntityResolver.active(player.getServer(), record.villagerId());
             if (villager == null || !villager.isAlive() || villager.getHealth() >= villager.getMaxHealth()) {
                 continue;
             }
@@ -605,7 +606,7 @@ public final class PartyQuickCommandService {
 
     private static int standGuard(ServerPlayer player, List<PartyVillagerRecord> records) {
         List<Villager> loaded = records.stream()
-                .map(record -> PartyEntityResolver.activeVillager(player.serverLevel(), record.villagerId()))
+                .map(record -> VillagerEntityResolver.active(player.serverLevel(), record.villagerId()))
                 .filter(java.util.Objects::nonNull)
                 .toList();
         boolean lowerShields = loaded.stream()
@@ -825,7 +826,8 @@ public final class PartyQuickCommandService {
         if (order.activeBlockTarget() == null) {
             List<BlockPos> available = order.containerTargets().stream()
                     .filter(pos -> !order.visitedBlocks().contains(pos))
-                    .filter(pos -> !isContainerClaimedByOther(villager.getUUID(), pos))
+                    .filter(pos -> !isContainerClaimedByOther(
+                            villager.getUUID(), level.dimension().location(), pos))
                     .filter(pos -> PartyContainerLootService.isAvailable(level, pos))
                     .toList();
             HiredPathResult result = new HiredMoveToBlockFaceJob(level, villager, available, 16).search();
@@ -874,8 +876,11 @@ public final class PartyQuickCommandService {
         }
     }
 
-    private static boolean isContainerClaimedByOther(UUID villagerId, BlockPos containerPos) {
-        UUID claimant = CONTAINER_CLAIMS.get(containerPos);
+    private static boolean isContainerClaimedByOther(
+            UUID villagerId,
+            ResourceLocation dimension,
+            BlockPos containerPos) {
+        UUID claimant = CONTAINER_CLAIMS.get(new ContainerClaim(dimension, containerPos));
         return claimant != null && !claimant.equals(villagerId);
     }
 
@@ -921,7 +926,8 @@ public final class PartyQuickCommandService {
             BlockPos containerPos,
             BlockPos approachPos) {
         BlockPos immutablePos = containerPos.immutable();
-        UUID claimant = CONTAINER_CLAIMS.putIfAbsent(immutablePos, villagerId);
+        ContainerClaim claim = new ContainerClaim(order.targetDimension(), immutablePos);
+        UUID claimant = CONTAINER_CLAIMS.putIfAbsent(claim, villagerId);
         if (claimant != null && !claimant.equals(villagerId)) {
             return false;
         }
@@ -934,7 +940,8 @@ public final class PartyQuickCommandService {
             DROP_CLAIMS.remove(order.activeEntityTarget(), villagerId);
         }
         if (order.activeBlockTarget() != null) {
-            CONTAINER_CLAIMS.remove(order.activeBlockTarget(), villagerId);
+            CONTAINER_CLAIMS.remove(
+                    new ContainerClaim(order.targetDimension(), order.activeBlockTarget()), villagerId);
         }
         order.clearActiveTarget();
     }
@@ -1061,6 +1068,12 @@ public final class PartyQuickCommandService {
 
         boolean background() {
             return this == PICK_UP_DROPS || this == LOOT_CONTAINERS;
+        }
+    }
+
+    private record ContainerClaim(ResourceLocation dimension, BlockPos position) {
+        private ContainerClaim {
+            position = position.immutable();
         }
     }
 

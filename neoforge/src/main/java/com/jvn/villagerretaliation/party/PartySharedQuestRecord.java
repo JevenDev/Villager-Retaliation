@@ -37,6 +37,7 @@ public final class PartySharedQuestRecord {
     private final UUID sourceVillagerId;
     private final long createdGameTime;
     private final Map<UUID, Enrollment> enrollments;
+    private final Map<UUID, Enrollment> enrollmentsView;
     private final Map<String, Integer> objectiveCounters;
     private final Set<String> completedObjectives;
     private final LinkedHashSet<String> processedDeaths;
@@ -62,6 +63,7 @@ public final class PartySharedQuestRecord {
         this.sourceVillagerId = sourceVillagerId;
         this.createdGameTime = Math.max(0L, createdGameTime);
         this.enrollments = enrollments;
+        this.enrollmentsView = Collections.unmodifiableMap(this.enrollments);
         this.objectiveCounters = objectiveCounters;
         this.completedObjectives = completedObjectives;
         this.processedDeaths = processedDeaths;
@@ -80,12 +82,8 @@ public final class PartySharedQuestRecord {
         return this.sourceVillagerId;
     }
 
-    public long createdGameTime() {
-        return this.createdGameTime;
-    }
-
     public Map<UUID, Enrollment> enrollments() {
-        return Collections.unmodifiableMap(this.enrollments);
+        return this.enrollmentsView;
     }
 
     public boolean linked(UUID playerId) {
@@ -118,11 +116,15 @@ public final class PartySharedQuestRecord {
     }
 
     public int objectiveCounter(String objectiveId) {
-        return this.objectiveCounters.getOrDefault(objectiveId, 0);
+        return objectiveId == null ? 0 : this.objectiveCounters.getOrDefault(objectiveId, 0);
     }
 
     public int incrementObjective(String objectiveId) {
-        int next = objectiveCounter(objectiveId) + 1;
+        if (objectiveId == null || objectiveId.isBlank()) {
+            return 0;
+        }
+        int current = objectiveCounter(objectiveId);
+        int next = current == Integer.MAX_VALUE ? current : current + 1;
         this.objectiveCounters.put(objectiveId, next);
         return next;
     }
@@ -217,7 +219,7 @@ public final class PartySharedQuestRecord {
                 String objective = counterTag.getString(TAG_OBJECTIVE);
                 int count = Math.max(0, counterTag.getInt(TAG_COUNT));
                 if (!objective.isBlank() && count > 0) {
-                    counters.put(objective, count);
+                    counters.merge(objective, count, Math::max);
                 }
             }
         }
@@ -225,6 +227,9 @@ public final class PartySharedQuestRecord {
                 readStringList(tag, TAG_COMPLETED_OBJECTIVES));
         LinkedHashSet<String> processedDeaths = new LinkedHashSet<>(
                 readStringList(tag, TAG_PROCESSED_DEATHS));
+        while (processedDeaths.size() > MAX_PROCESSED_DEATHS) {
+            processedDeaths.remove(processedDeaths.iterator().next());
+        }
         return new PartySharedQuestRecord(
                 instanceId,
                 questId,
@@ -256,8 +261,8 @@ public final class PartySharedQuestRecord {
 
         private Enrollment(UUID playerId, boolean pendingStart, boolean pendingReward, boolean rewardClaimed) {
             this.playerId = playerId;
-            this.pendingStart = pendingStart;
-            this.pendingReward = pendingReward;
+            this.pendingStart = pendingStart && !pendingReward && !rewardClaimed;
+            this.pendingReward = pendingReward && !rewardClaimed;
             this.rewardClaimed = rewardClaimed;
         }
 

@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "49";
+    private static final String PROTOCOL_VERSION = "50";
 
     private VillagerReputationNetworking() {
     }
@@ -184,12 +184,6 @@ public final class VillagerReputationNetworking {
                 PartyInvitationSyncPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.party.PartyInvitationClient",
                 "accept"
-        );
-        network.safePlayToClientThreaded(
-                OpenPlayerPartyMenuPayload.TYPE,
-                OpenPlayerPartyMenuPayload.STREAM_CODEC,
-                "com.jvn.villagerretaliation.client.party.PlayerPartyInteractionClient",
-                "open"
         );
         network.playToServer(
                 PartyActionRequestPayload.TYPE,

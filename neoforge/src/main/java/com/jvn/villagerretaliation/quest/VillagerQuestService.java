@@ -67,6 +67,7 @@ import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.jvn.villagerretaliation.util.VillagerWorldTargetCache;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
@@ -1411,7 +1412,7 @@ public final class VillagerQuestService {
                     progress == null ? null : progress.startedVillagerId(), replacement.getUUID());
         }
         UUID previousId = progress.startedVillagerId();
-        Villager previous = findLoadedVillager(level.getServer(), previousId);
+        Villager previous = VillagerEntityResolver.loaded(level.getServer(), previousId);
         if (previous != null && previous.isAlive()) {
             return new ProviderRebindResult(false, "The current provider is still live; rebind was refused.",
                     previousId, replacement.getUUID());
@@ -2401,7 +2402,7 @@ public final class VillagerQuestService {
                 continue;
             }
             QuestDefinition definition = VillagerQuestResources.quest(player.getServer(), shared.questId()).orElse(null);
-            Villager provider = findLoadedVillager(player.getServer(), shared.sourceVillagerId());
+            Villager provider = VillagerEntityResolver.loaded(player.getServer(), shared.sourceVillagerId());
             VillagerQuestSavedData.QuestProgress source = canonicalSharedProgress(level, shared);
             if (definition == null || provider == null || provider.level() != level || source == null) {
                 continue;
@@ -2447,19 +2448,6 @@ public final class VillagerQuestService {
             }
         }
         return completed;
-    }
-
-    private static Villager findLoadedVillager(net.minecraft.server.MinecraftServer server, UUID villagerId) {
-        if (server == null || villagerId == null) {
-            return null;
-        }
-        for (ServerLevel level : server.getAllLevels()) {
-            Entity entity = level.getEntity(villagerId);
-            if (entity instanceof Villager villager) {
-                return villager;
-            }
-        }
-        return null;
     }
 
     private static QuestActionOutcome remindQuest(DialogueContext context, QuestDefinition definition) {
@@ -2643,7 +2631,8 @@ public final class VillagerQuestService {
                     definition.rules().consumeOnCompletion());
             SceneLifecycleIntegration.onQuestTerminal(completingContext.level(), enrollment.playerId(), definition.id(), "completed");
             ServerPlayer player = completingContext.level().getServer().getPlayerList().getPlayer(enrollment.playerId());
-            Villager provider = findLoadedVillager(completingContext.level().getServer(), shared.sourceVillagerId());
+            Villager provider = VillagerEntityResolver.loaded(
+                    completingContext.level().getServer(), shared.sourceVillagerId());
             if (player == null || provider == null || player.serverLevel() != provider.level()) {
                 enrollment.markPendingReward();
                 progress.markPendingPartyReward();
@@ -2706,7 +2695,7 @@ public final class VillagerQuestService {
                 continue;
             }
             QuestDefinition definition = VillagerQuestResources.quest(player.getServer(), entry.getKey()).orElse(null);
-            Villager provider = findLoadedVillager(player.getServer(), progress.startedVillagerId());
+            Villager provider = VillagerEntityResolver.loaded(player.getServer(), progress.startedVillagerId());
             if (definition == null || provider == null || provider.level() != player.serverLevel()
                     || !provider.isAlive()) {
                 continue;

@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.party;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.network.OpenPlayerPartyMenuPayload;
 import com.jvn.villagerretaliation.network.PartyActionRequestPayload;
 import com.jvn.villagerretaliation.network.PartyInvitationSyncPayload;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
@@ -15,32 +14,8 @@ public final class PartyActionHandler {
     private PartyActionHandler() {
     }
 
-    public static void openPlayerMenu(ServerPlayer player, ServerPlayer target) {
-        if (!canInteract(player, target)) {
-            return;
-        }
-        PartyRecord playerParty = PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).orElse(null);
-        PartyRecord targetParty = PartyService.getPartyForPlayer(player.serverLevel(), target.getUUID()).orElse(null);
-        boolean leader = playerParty == null || playerParty.leaderId().equals(player.getUUID());
-        boolean canInvite = leader
-                && targetParty == null
-                && (playerParty == null || playerParty.playerIds().size() < PartyService.MAX_PLAYERS);
-        boolean canRemove = playerParty != null
-                && playerParty.leaderId().equals(player.getUUID())
-                && targetParty != null
-                && targetParty.id().equals(playerParty.id())
-                && !target.getUUID().equals(playerParty.leaderId());
-        send(player, new OpenPlayerPartyMenuPayload(
-                target.getUUID(),
-                target.getGameProfile().getName(),
-                canInvite,
-                canRemove));
-    }
-
     public static void sendPendingInvitation(ServerPlayer target) {
-        PartyInvitation invitation = PartyService.pendingInvitations(target).stream()
-                .reduce((first, second) -> second)
-                .orElse(null);
+        PartyInvitation invitation = latestPendingInvitation(target);
         if (invitation == null) {
             return;
         }
@@ -64,19 +39,13 @@ public final class PartyActionHandler {
     }
 
     public static void acceptLatestInvitationCommand(ServerPlayer target) {
-        UUID invitationId = PartyService.pendingInvitations(target).stream()
-                .reduce((first, second) -> second)
-                .map(PartyInvitation::id)
-                .orElse(null);
-        acceptInvitation(target, invitationId);
+        PartyInvitation invitation = latestPendingInvitation(target);
+        acceptInvitation(target, invitation == null ? null : invitation.id());
     }
 
     public static void declineLatestInvitationCommand(ServerPlayer target) {
-        UUID invitationId = PartyService.pendingInvitations(target).stream()
-                .reduce((first, second) -> second)
-                .map(PartyInvitation::id)
-                .orElse(null);
-        declineInvitation(target, invitationId);
+        PartyInvitation invitation = latestPendingInvitation(target);
+        declineInvitation(target, invitation == null ? null : invitation.id());
     }
 
     public static void leavePartyCommand(ServerPlayer player) {
@@ -121,6 +90,9 @@ public final class PartyActionHandler {
             ServerPlayer leader,
             UUID targetPlayerId,
             PartyService.AllianceAction action) {
+        if (leader == null || action == null) {
+            return;
+        }
         PartyRecord targetParty = PartyService.getPartyForPlayer(leader.serverLevel(), targetPlayerId).orElse(null);
         PartyService.PartyResult result = switch (action) {
             case REQUEST -> PartyService.requestAlliance(leader, targetPlayerId);
@@ -180,10 +152,7 @@ public final class PartyActionHandler {
             return;
         }
         if (requireInteraction) {
-            PartyInvitation invitation = PartyService.pendingInvitations(target).stream()
-                    .filter(candidate -> candidate.id().equals(result.invitationId()))
-                    .findFirst()
-                    .orElse(null);
+            PartyInvitation invitation = pendingInvitation(target, result.invitationId());
             if (invitation != null) {
                 send(target, new PartyInvitationSyncPayload(
                         invitation.id(),
@@ -197,10 +166,7 @@ public final class PartyActionHandler {
     }
 
     private static void acceptInvitation(ServerPlayer target, UUID invitationId) {
-        PartyInvitation invitation = PartyService.pendingInvitations(target).stream()
-                .filter(candidate -> candidate.id().equals(invitationId))
-                .findFirst()
-                .orElse(null);
+        PartyInvitation invitation = pendingInvitation(target, invitationId);
         boolean createsParty = invitation != null
                 && PartyService.getPartyForPlayer(target.serverLevel(), invitation.inviterId()).isEmpty();
         PartyService.PartyResult result = PartyService.acceptInvitation(target, invitationId);
@@ -220,10 +186,7 @@ public final class PartyActionHandler {
     }
 
     private static void declineInvitation(ServerPlayer target, UUID invitationId) {
-        PartyInvitation invitation = PartyService.pendingInvitations(target).stream()
-                .filter(candidate -> candidate.id().equals(invitationId))
-                .findFirst()
-                .orElse(null);
+        PartyInvitation invitation = pendingInvitation(target, invitationId);
         PartyService.PartyResult result = PartyService.declineInvitation(target, invitationId);
         notice(target, result.messageKey());
         if (result.success() && invitation != null) {
@@ -232,6 +195,23 @@ public final class PartyActionHandler {
                 notice(inviter, "villagerretaliation.party.invitation_declined");
             }
         }
+    }
+
+    private static PartyInvitation latestPendingInvitation(ServerPlayer target) {
+        List<PartyInvitation> invitations = PartyService.pendingInvitations(target);
+        return invitations.isEmpty() ? null : invitations.getLast();
+    }
+
+    private static PartyInvitation pendingInvitation(ServerPlayer target, UUID invitationId) {
+        if (invitationId == null) {
+            return null;
+        }
+        for (PartyInvitation invitation : PartyService.pendingInvitations(target)) {
+            if (invitation.id().equals(invitationId)) {
+                return invitation;
+            }
+        }
+        return null;
     }
 
     private static void leaveParty(ServerPlayer player) {

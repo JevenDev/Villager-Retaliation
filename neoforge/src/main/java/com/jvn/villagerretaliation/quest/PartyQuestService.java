@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartySharedQuestRecord;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
+import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -277,7 +278,7 @@ public final class PartyQuestService {
             }
         }
         for (PartyVillagerRecord villagerRecord : party.villagers()) {
-            Villager villager = findLoadedVillager(server, villagerRecord.villagerId());
+            Villager villager = VillagerEntityResolver.loaded(server, villagerRecord.villagerId());
             if (villager == null || !villager.isAlive()) {
                 continue;
             }
@@ -290,16 +291,6 @@ public final class PartyQuestService {
             }
         }
         return sources;
-    }
-
-    private static Villager findLoadedVillager(MinecraftServer server, UUID villagerId) {
-        for (ServerLevel level : server.getAllLevels()) {
-            Entity entity = level.getEntity(villagerId);
-            if (entity instanceof Villager villager) {
-                return villager;
-            }
-        }
-        return null;
     }
 
     public static final class SubmissionPlan {

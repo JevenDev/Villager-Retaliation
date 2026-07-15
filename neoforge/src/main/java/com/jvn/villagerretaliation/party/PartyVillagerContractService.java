@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.List;
@@ -237,6 +238,9 @@ public final class PartyVillagerContractService {
     }
 
     public static Optional<UUID> currentContractId(ServerLevel level, Villager villager) {
+        if (level == null || villager == null) {
+            return Optional.empty();
+        }
         long now = level.getServer().overworld().getGameTime();
         return PartyService.getPartyForVillager(level, villager.getUUID())
                 .map(party -> party.villager(villager.getUUID()))
@@ -256,10 +260,15 @@ public final class PartyVillagerContractService {
     }
 
     public static Optional<UUID> leaderId(ServerLevel level, Villager villager) {
-        return PartyService.getPartyForVillager(level, villager.getUUID()).map(PartyRecord::leaderId);
+        return villager == null
+                ? Optional.empty()
+                : PartyService.getPartyForVillager(level, villager.getUUID()).map(PartyRecord::leaderId);
     }
 
     public static boolean isActivePartyVillager(ServerLevel level, Villager villager) {
+        if (level == null || villager == null) {
+            return false;
+        }
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
         return record != null && !VillagerContractTime.isExpired(
@@ -285,12 +294,13 @@ public final class PartyVillagerContractService {
             expire(level.getServer(), party, record);
             return;
         }
-        record.updateDisplay(
+        if (record.updateDisplay(
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 professionTranslationKey(villager),
                 level.dimension().location(),
-                villager.blockPosition());
-        PartyService.markChanged(level);
+                villager.blockPosition())) {
+            PartyService.markChanged(level);
+        }
         attachEntityState(level, villager, party.id(), record);
         applyCommandState(level, villager, party, record);
         for (UUID playerId : party.playerIds()) {
@@ -308,8 +318,9 @@ public final class PartyVillagerContractService {
                     .ifPresent(party -> {
                         PartyVillagerRecord record = party.villager(villager.getUUID());
                         if (record != null) {
-                            updateLastKnownLocation(record, villager);
-                            PartyService.markChanged(level);
+                            if (updateLastKnownLocation(record, villager)) {
+                                PartyService.markChanged(level);
+                            }
                         }
                         PartySyncService.syncPartyWithUnavailableVillager(
                                 level.getServer(),
@@ -353,6 +364,9 @@ public final class PartyVillagerContractService {
     }
 
     public static void onServerTick(MinecraftServer server) {
+        if (server == null) {
+            return;
+        }
         long now = server.overworld().getGameTime();
         if (now < nextExpirationScanGameTime) {
             return;
@@ -385,7 +399,7 @@ public final class PartyVillagerContractService {
         List<PartyVillagerRecord> villagers = List.copyOf(party.villagers());
         PartyService.deleteParty(level, party.id());
         for (PartyVillagerRecord record : villagers) {
-            Villager loaded = PartyEntityResolver.loadedVillager(level.getServer(), record.villagerId());
+            Villager loaded = VillagerEntityResolver.loaded(level.getServer(), record.villagerId());
             if (loaded != null) {
                 cleanupEntity(loaded);
                 closeJobInventories(level.getServer(), loaded.getId());
@@ -450,7 +464,7 @@ public final class PartyVillagerContractService {
         if (removed == null) {
             return;
         }
-        Villager loaded = PartyEntityResolver.loadedVillager(server, record.villagerId());
+        Villager loaded = VillagerEntityResolver.loaded(server, record.villagerId());
         if (loaded != null) {
             updateLastKnownLocation(record, loaded);
             loaded.getPersistentData().putUUID(EXPIRED_PARTY_ID_TAG, party.id());
@@ -477,7 +491,7 @@ public final class PartyVillagerContractService {
             ResourceLocation dimension = record.stayDimension();
             if (dimension != null && dimension.equals(level.dimension().location())) {
                 VillagerRecruitmentService.applyPartyStay(level, villager, party.leaderId(), record.stayPosition());
-            } else if (dimension == null || !dimension.equals(level.dimension().location())) {
+            } else {
                 VillagerRecruitmentService.clearPartyFollowing(villager);
             }
         } else {
@@ -502,7 +516,7 @@ public final class PartyVillagerContractService {
         if (party == null || PartyService.removeVillager(storageLevel, villagerId) == null) {
             return false;
         }
-        Villager loaded = PartyEntityResolver.loadedVillager(server, villagerId);
+        Villager loaded = VillagerEntityResolver.loaded(server, villagerId);
         if (loaded != null) {
             cleanupEntity(loaded);
             closeJobInventories(server, loaded.getId());
@@ -555,8 +569,8 @@ public final class PartyVillagerContractService {
         return Component.translatable(messageKey, name, profession, dimension, coordinates);
     }
 
-    private static void updateLastKnownLocation(PartyVillagerRecord record, Villager villager) {
-        record.updateDisplay(
+    private static boolean updateLastKnownLocation(PartyVillagerRecord record, Villager villager) {
+        return record.updateDisplay(
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 professionTranslationKey(villager),
                 villager.level().dimension().location(),

@@ -281,7 +281,8 @@ public final class PartyGameTests {
                 "player roster order with leader first");
         helper.assertValueEqual(restored.villagers().stream().map(PartyVillagerRecord::villagerId).toList(), villagers,
                 "villager recruitment order");
-        helper.assertValueEqual(restored.totalMembers(), PartyService.MAX_VISIBLE_MEMBERS, "visible 8/8 member total");
+        helper.assertValueEqual(restored.playerIds().size(), PartyService.MAX_PLAYERS, "full player roster size");
+        helper.assertValueEqual(restored.villagers().size(), PartyService.MAX_VILLAGERS, "full villager roster size");
         helper.assertValueEqual(restored.villager(villagers.get(1)).commandMode(), PartyCommandMode.STAY,
                 "stay mode persistence");
         helper.assertValueEqual(restored.villager(villagers.get(1)).stayPosition(), new BlockPos(12, 65, -4),
@@ -329,19 +330,38 @@ public final class PartyGameTests {
         ServerPlayer third = fakePlayer(level, uniqueName("party_third"));
         ServerPlayer fourth = fakePlayer(level, uniqueName("party_fourth"));
         ServerPlayer racedOut = fakePlayer(level, uniqueName("party_raced_out"));
+        ServerPlayer intruder = fakePlayer(level, uniqueName("party_intruder"));
         UUID partyId = null;
         try {
             PartyService.PartyResult firstInvite = PartyService.sendInvitation(leader, second);
             helper.assertTrue(firstInvite.success(), "leader should send first invitation");
             helper.assertTrue(PartyService.getPartyForPlayer(level, leader.getUUID()).isEmpty(),
                     "sending an invitation must not create an empty party");
+            helper.assertFalse(PartyService.acceptInvitation(intruder, firstInvite.invitationId()).success(),
+                    "another player must not be able to consume the target's invitation");
+            helper.assertTrue(PartySavedData.get(level).invitation(firstInvite.invitationId()).isPresent(),
+                    "unauthorized acceptance must leave the invitation intact");
             PartyService.PartyResult firstAccept = PartyService.acceptInvitation(second, firstInvite.invitationId());
             helper.assertTrue(firstAccept.success(), "target should explicitly accept first invitation");
             partyId = firstAccept.partyId();
 
             PartyService.PartyResult secondInvite = PartyService.sendInvitation(leader, third);
+            helper.assertFalse(PartyService.declineInvitation(intruder, secondInvite.invitationId()).success(),
+                    "another player must not be able to decline the target's invitation");
+            helper.assertTrue(PartySavedData.get(level).invitation(secondInvite.invitationId()).isPresent(),
+                    "unauthorized decline must leave the invitation intact");
             helper.assertTrue(PartyService.acceptInvitation(third, secondInvite.invitationId()).success(),
                     "third player should fill the third roster position");
+            long now = level.getServer().overworld().getGameTime();
+            PartyInvitation expired = new PartyInvitation(
+                    UUID.randomUUID(), leader.getUUID(), racedOut.getUUID(), partyId, now - 2L, now - 1L);
+            PartySavedData.get(level).putInvitation(expired);
+            PartyService.PartyResult expiredDecline = PartyService.declineInvitation(racedOut, expired.id());
+            helper.assertFalse(expiredDecline.success(), "expired invitation decline must not report success");
+            helper.assertValueEqual(expiredDecline.messageKey(), "villagerretaliation.party.invitation_expired",
+                    "expired invitation decline message");
+            helper.assertTrue(PartySavedData.get(level).invitation(expired.id()).isEmpty(),
+                    "expired invitation should be pruned when declined");
             PartyService.PartyResult finalSlotInvite = PartyService.sendInvitation(leader, fourth);
             PartyService.PartyResult racingInvite = PartyService.sendInvitation(leader, racedOut);
             helper.assertTrue(finalSlotInvite.success() && racingInvite.success(),

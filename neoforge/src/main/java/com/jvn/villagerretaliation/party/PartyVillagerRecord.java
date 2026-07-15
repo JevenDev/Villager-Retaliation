@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.party;
 
+import java.util.Objects;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -126,10 +127,6 @@ public final class PartyVillagerRecord {
         return this.contractEndGameTime;
     }
 
-    public int durationDays() {
-        return this.durationDays;
-    }
-
     public int emeraldsPaid() {
         return this.emeraldsPaid;
     }
@@ -231,11 +228,19 @@ public final class PartyVillagerRecord {
         this.emeraldsPaid += Math.max(0, additionalEmeralds);
     }
 
-    void updateDisplay(String name, String profession, ResourceLocation dimension, BlockPos position) {
-        this.cachedName = safeText(name, 128);
-        this.cachedProfession = safeText(profession, 128);
+    boolean updateDisplay(String name, String profession, ResourceLocation dimension, BlockPos position) {
+        String safeName = safeText(name, 128);
+        String safeProfession = safeText(profession, 128);
+        BlockPos immutablePosition = position == null ? null : position.immutable();
+        boolean changed = !this.cachedName.equals(safeName)
+                || !this.cachedProfession.equals(safeProfession)
+                || !Objects.equals(this.lastKnownDimension, dimension)
+                || !Objects.equals(this.lastKnownPosition, immutablePosition);
+        this.cachedName = safeName;
+        this.cachedProfession = safeProfession;
         this.lastKnownDimension = dimension;
-        this.lastKnownPosition = position == null ? null : position.immutable();
+        this.lastKnownPosition = immutablePosition;
+        return changed;
     }
 
     CompoundTag save() {

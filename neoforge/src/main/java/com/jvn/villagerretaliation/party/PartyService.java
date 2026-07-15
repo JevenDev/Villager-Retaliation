@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.party;
 
+import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,22 +16,21 @@ import net.minecraft.world.entity.npc.Villager;
 public final class PartyService {
     public static final int MAX_PLAYERS = 4;
     public static final int MAX_VILLAGERS = 4;
-    public static final int MAX_VISIBLE_MEMBERS = MAX_PLAYERS + MAX_VILLAGERS;
     public static final long INVITATION_LIFETIME_TICKS = 20L * 60L;
 
     private PartyService() {
     }
 
     public static Optional<PartyRecord> getParty(ServerLevel level, UUID partyId) {
-        return partyData(level).party(partyId);
+        return level == null ? Optional.empty() : partyData(level).party(partyId);
     }
 
     public static Optional<PartyRecord> getPartyForPlayer(ServerLevel level, UUID playerId) {
-        return partyData(level).partyForPlayer(playerId);
+        return level == null ? Optional.empty() : partyData(level).partyForPlayer(playerId);
     }
 
     public static Optional<PartyRecord> getPartyForVillager(ServerLevel level, UUID villagerId) {
-        return partyData(level).partyForVillager(villagerId);
+        return level == null ? Optional.empty() : partyData(level).partyForVillager(villagerId);
     }
 
     public static Optional<PartyRecord> getPartyForEntity(Entity entity) {
@@ -227,7 +227,7 @@ public final class PartyService {
 
     private static void clearPartyCombatTargets(MinecraftServer server, PartyRecord party) {
         for (PartyVillagerRecord record : party.villagers()) {
-            Villager villager = PartyEntityResolver.loadedVillager(server, record.villagerId());
+            Villager villager = VillagerEntityResolver.loaded(server, record.villagerId());
             if (villager != null) {
                 com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.clearCustomTarget(villager);
             }
@@ -247,7 +247,10 @@ public final class PartyService {
 
 
     public static PartyResult sendInvitation(ServerPlayer inviter, ServerPlayer target) {
-        if (inviter == null || target == null || inviter.getUUID().equals(target.getUUID())) {
+        if (inviter == null
+                || target == null
+                || inviter.getServer() != target.getServer()
+                || inviter.getUUID().equals(target.getUUID())) {
             return PartyResult.failure("villagerretaliation.party.error.invitation_invalid");
         }
         ServerLevel level = inviter.serverLevel();
@@ -280,15 +283,14 @@ public final class PartyService {
             return PartyResult.failure("villagerretaliation.party.error.invitation_invalid");
         }
         PartySavedData data = partyData(target.serverLevel());
-        PartyInvitation invitation = data.invitation(invitationId).orElse(null);
+        PartyInvitation invitation = invitationForTarget(data, target.getUUID(), invitationId);
         long now = serverGameTime(target.getServer());
-        if (invitation != null && invitation.isExpired(now)) {
+        if (invitation == null) {
+            return PartyResult.failure("villagerretaliation.party.error.invitation_invalid");
+        }
+        if (invitation.isExpired(now)) {
             data.removeInvitation(invitationId);
             return PartyResult.failure("villagerretaliation.party.invitation_expired");
-        }
-        if (invitation == null || !invitation.targetId().equals(target.getUUID())) {
-            data.removeInvitation(invitationId);
-            return PartyResult.failure("villagerretaliation.party.error.invitation_invalid");
         }
         if (data.partyForPlayer(target.getUUID()).isPresent()) {
             data.removeInvitation(invitationId);
@@ -336,12 +338,24 @@ public final class PartyService {
             return PartyResult.failure("villagerretaliation.party.error.invitation_invalid");
         }
         PartySavedData data = partyData(target.serverLevel());
-        PartyInvitation invitation = data.invitation(invitationId).orElse(null);
-        if (invitation == null || !invitation.targetId().equals(target.getUUID())) {
+        PartyInvitation invitation = invitationForTarget(data, target.getUUID(), invitationId);
+        if (invitation == null) {
             return PartyResult.failure("villagerretaliation.party.error.invitation_invalid");
+        }
+        if (invitation.isExpired(serverGameTime(target.getServer()))) {
+            data.removeInvitation(invitationId);
+            return PartyResult.failure("villagerretaliation.party.invitation_expired");
         }
         data.removeInvitation(invitationId);
         return PartyResult.success("villagerretaliation.party.invitation_declined", invitation.expectedPartyId(), invitationId);
+    }
+
+    private static PartyInvitation invitationForTarget(
+            PartySavedData data,
+            UUID targetId,
+            UUID invitationId) {
+        PartyInvitation invitation = data.invitation(invitationId).orElse(null);
+        return invitation != null && invitation.targetId().equals(targetId) ? invitation : null;
     }
 
     public static PartyResult leaveParty(ServerPlayer player) {
@@ -415,7 +429,9 @@ public final class PartyService {
     }
 
     public static void markChanged(ServerLevel level) {
-        partyData(level).changed();
+        if (level != null) {
+            partyData(level).changed();
+        }
     }
 
     static PartyRecord deleteParty(ServerLevel level, UUID partyId) {
@@ -429,7 +445,9 @@ public final class PartyService {
     }
 
     public static int pruneExpiredInvitations(MinecraftServer server) {
-        return partyData(server.overworld()).pruneExpiredInvitations(serverGameTime(server));
+        return server == null
+                ? 0
+                : partyData(server.overworld()).pruneExpiredInvitations(serverGameTime(server));
     }
 
     private static PartySavedData partyData(ServerLevel level) {

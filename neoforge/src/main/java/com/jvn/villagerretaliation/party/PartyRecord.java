@@ -35,6 +35,10 @@ public final class PartyRecord {
     private final List<PartySharedQuestRecord> sharedQuests;
     private final Set<UUID> alliedPartyIds;
     private final Set<UUID> allianceRequestPartyIds;
+    private final List<UUID> playerIdsView;
+    private final List<PartyVillagerRecord> villagersView;
+    private final List<PartySharedQuestRecord> sharedQuestsView;
+    private final Set<UUID> alliedPartyIdsView;
     private PartyCombatMode combatMode;
     private PartyAttackMode attackMode;
     private boolean sharedVillagerInventories;
@@ -64,6 +68,10 @@ public final class PartyRecord {
         this.sharedQuests = sharedQuests;
         this.alliedPartyIds = alliedPartyIds;
         this.allianceRequestPartyIds = allianceRequestPartyIds;
+        this.playerIdsView = Collections.unmodifiableList(this.playerIds);
+        this.villagersView = Collections.unmodifiableList(this.villagers);
+        this.sharedQuestsView = Collections.unmodifiableList(this.sharedQuests);
+        this.alliedPartyIdsView = Collections.unmodifiableSet(this.alliedPartyIds);
         this.combatMode = combatMode == null ? PartyCombatMode.ATTACK_WITH_PARTY : combatMode;
         this.attackMode = attackMode == null ? PartyAttackMode.ALL : attackMode;
         this.sharedVillagerInventories = sharedVillagerInventories;
@@ -78,24 +86,20 @@ public final class PartyRecord {
         return this.leaderId;
     }
 
-    public long createdGameTime() {
-        return this.createdGameTime;
-    }
-
     public List<UUID> playerIds() {
-        return Collections.unmodifiableList(this.playerIds);
+        return this.playerIdsView;
     }
 
     public List<PartyVillagerRecord> villagers() {
-        return Collections.unmodifiableList(this.villagers);
+        return this.villagersView;
     }
 
     public List<PartySharedQuestRecord> sharedQuests() {
-        return Collections.unmodifiableList(this.sharedQuests);
+        return this.sharedQuestsView;
     }
 
-    public Set<UUID> alliedPartyIds() {
-        return Collections.unmodifiableSet(this.alliedPartyIds);
+    Set<UUID> alliedPartyIds() {
+        return this.alliedPartyIdsView;
     }
 
     public boolean isAlliedWith(UUID partyId) {
@@ -170,10 +174,6 @@ public final class PartyRecord {
 
     public boolean removeSharedQuest(UUID instanceId) {
         return this.sharedQuests.removeIf(sharedQuest -> sharedQuest.instanceId().equals(instanceId));
-    }
-
-    public int totalMembers() {
-        return this.playerIds.size() + this.villagers.size();
     }
 
     boolean addPlayer(UUID playerId) {
