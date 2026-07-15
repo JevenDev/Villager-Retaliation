@@ -254,7 +254,10 @@ public final class PartyGameTests {
         PartyRecord restored = loaded.party(party.id()).orElseThrow(
                 () -> new GameTestAssertException("serialized party did not load"));
 
-        helper.assertValueEqual(saved.getInt("Version"), 7, "party serialization version");
+        helper.assertValueEqual(
+                saved.getInt("Version"),
+                PartySavedData.CURRENT_VERSION,
+                "party serialization version");
         helper.assertValueEqual(restored.combatMode(), PartyCombatMode.KILL_ON_SIGHT,
                 "global combat-mode persistence");
         helper.assertValueEqual(restored.attackMode(), PartyAttackMode.HOSTILES,

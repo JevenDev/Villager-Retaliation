@@ -1,10 +1,10 @@
 package com.jvn.villagerretaliation.combat.downed;
 
-import java.util.UUID;
-import net.minecraft.world.entity.EntityDimensions;
-import net.minecraft.resources.ResourceLocation;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import java.util.Optional;
+import java.util.UUID;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityDimensions;
 
 public enum VillagerDownedPose {
     SITTING(VillagerRetaliation.id("sitting"), 1.25F, 0.77F),
@@ -29,7 +29,11 @@ public enum VillagerDownedPose {
     }
 
     public static Optional<VillagerDownedPose> fromId(ResourceLocation id) {
-        for (VillagerDownedPose pose : values()) if (pose.id.equals(id)) return Optional.of(pose);
+        for (VillagerDownedPose pose : values()) {
+            if (pose.id.equals(id)) {
+                return Optional.of(pose);
+            }
+        }
         return Optional.empty();
     }
 

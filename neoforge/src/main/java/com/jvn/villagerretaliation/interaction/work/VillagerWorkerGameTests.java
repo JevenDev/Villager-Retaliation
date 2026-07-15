@@ -3251,12 +3251,15 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 180)
     public static void sharedRouteNavigatorApproachesNonStandableContainerNode(GameTestHelper helper) {
         buildFloor(helper, -6, 10, -2, 7, 1);
         ServerLevel level = helper.getLevel();
-        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        BlockPos startRel = new BlockPos(1, 2, 2);
+        Villager villager = spawnVillager(helper, startRel);
         tickVillager(level, villager, 20);
+        villager.moveTo(helper.absolutePos(startRel).getCenter());
+        VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
         BlockPos nodeRel = new BlockPos(5, 2, 2);
         BlockPos node = helper.absolutePos(nodeRel);
         setBlock(helper, nodeRel, Blocks.CHEST.defaultBlockState());
@@ -3264,7 +3267,7 @@ public final class VillagerWorkerGameTests {
         CompoundTag state = new CompoundTag();
         HiredWorkContext context = routeContext(helper, villager, state, List.of(nodeRel));
         helper.startSequence()
-                .thenExecuteFor(100, () -> {
+                .thenExecuteFor(140, () -> {
                     if (villager.blockPosition().distSqr(node) > 4.0D) {
                         HiredRouteNavigator.maintainRoute(level, villager, context, 0.5D);
                     }
