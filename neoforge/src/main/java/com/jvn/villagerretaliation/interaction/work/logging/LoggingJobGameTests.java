@@ -7,6 +7,8 @@ import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -106,12 +108,63 @@ public final class LoggingJobGameTests {
         state.putLong(LoggingWorkerState.SAPLING_SCAN_CURSOR_TAG, 8L);
         state.putLong(LoggingWorkerState.NEXT_TREE_SCAN_GAME_TIME_TAG, 12L);
         state.putLong(LoggingWorkerState.NEXT_SAPLING_SCAN_GAME_TIME_TAG, 16L);
+        AtomicInteger breakGoalCalculations = new AtomicInteger();
+        helper.assertValueEqual(
+                LoggingWorkerState.breakGoal(context, leaf, "minecraft:iron_axe", 0, 100, () -> {
+                    breakGoalCalculations.incrementAndGet();
+                    return 37;
+                }),
+                37,
+                "initial tree break goal");
+        context.setProgressTicks(1);
+        helper.assertValueEqual(
+                LoggingWorkerState.breakGoal(context, leaf, "minecraft:iron_axe", 0, 100, () -> {
+                    breakGoalCalculations.incrementAndGet();
+                    return 99;
+                }),
+                37,
+                "active target should reuse its tree break goal");
+        helper.assertValueEqual(breakGoalCalculations.get(), 1, "tree geometry should not be recalculated every break tick");
         LoggingWorkerState.clear(context);
         helper.assertFalse(LoggingWorkerState.isAccessLeaf(context, leaf), "worker clear should remove access leaf marker");
         helper.assertFalse(state.contains(LoggingWorkerState.TREE_SCAN_CURSOR_TAG), "worker clear should remove tree scan cursor");
         helper.assertFalse(state.contains(LoggingWorkerState.SAPLING_SCAN_CURSOR_TAG), "worker clear should remove sapling scan cursor");
         helper.assertFalse(state.contains(LoggingWorkerState.NEXT_TREE_SCAN_GAME_TIME_TAG), "worker clear should wake tree scans");
         helper.assertFalse(state.contains(LoggingWorkerState.NEXT_SAPLING_SCAN_GAME_TIME_TAG), "worker clear should wake sapling scans");
+        helper.assertValueEqual(
+                LoggingWorkerState.breakGoal(context, leaf, "minecraft:iron_axe", 0, 100, () -> {
+                    breakGoalCalculations.incrementAndGet();
+                    return 41;
+                }),
+                41,
+                "worker clear should invalidate the tree break goal");
+        helper.assertValueEqual(breakGoalCalculations.get(), 2, "cleared tree break goal should be recalculated");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void loggingTreeDiscoveryAnalyzesConnectedLogsOnce(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos root = helper.absolutePos(new BlockPos(4, 2, 4));
+        setBlock(level, root.below(), Blocks.DIRT.defaultBlockState());
+        List<BlockPos> logs = new ArrayList<>();
+        for (int y = 0; y < 4; y++) {
+            BlockPos log = root.above(y);
+            logs.add(log);
+            setBlock(level, log, Blocks.OAK_LOG.defaultBlockState());
+        }
+        BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false);
+        BlockPos crown = root.above(4);
+        for (BlockPos leaf : List.of(crown, crown.north(), crown.south(), crown.east(), crown.west())) {
+            setBlock(level, leaf, leaves);
+        }
+
+        LoggingTreeGeometry.DiscoveryCache discovery = LoggingTreeGeometry.discovery(level, Set.of());
+        for (BlockPos log : logs) {
+            helper.assertTrue(discovery.isNaturalTree(log), "connected log should share its tree classification");
+        }
+        helper.assertValueEqual(discovery.analysisCount(), 1, "one geometry analysis per connected tree");
+        helper.assertValueEqual(discovery.distinctRoots(logs), List.of(root), "one route objective per connected tree");
         helper.succeed();
     }
 

@@ -700,7 +700,7 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         damageTool(context, villager, tool);
     }
 
-    private int efficiencyLevel(ItemStack stack) {
+    protected final int efficiencyLevel(ItemStack stack) {
         return enchantmentLevel(stack.getEnchantments(), "efficiency");
     }
 

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction.work.logging;
 
 import com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
+import java.util.function.IntSupplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -14,6 +15,11 @@ final class LoggingWorkerState {
     static final String SAPLING_SCAN_CURSOR_TAG = "LoggingSaplingScanCursor";
 
     private static final String ACTIVE_ACCESS_LEAF_TAG = "LoggingActiveAccessLeaf";
+    private static final String BREAK_GOAL_TARGET_TAG = "LoggingBreakGoalTarget";
+    private static final String BREAK_GOAL_TOOL_TAG = "LoggingBreakGoalTool";
+    private static final String BREAK_GOAL_TOOL_EFFICIENCY_TAG = "LoggingBreakGoalToolEfficiency";
+    private static final String BREAK_GOAL_WORKER_EFFICIENCY_TAG = "LoggingBreakGoalWorkerEfficiency";
+    private static final String BREAK_GOAL_TICKS_TAG = "LoggingBreakGoalTicks";
 
     private LoggingWorkerState() {
     }
@@ -43,6 +49,47 @@ final class LoggingWorkerState {
         context.state().remove(ACTIVE_ACCESS_LEAF_TAG);
     }
 
+    static int breakGoal(
+            HiredWorkContext context,
+            BlockPos target,
+            String toolId,
+            int toolEfficiency,
+            int workerEfficiency,
+            IntSupplier calculator) {
+        CompoundTag state = context.state();
+        String safeToolId = toolId == null ? "" : toolId;
+        if (context.progressTicks() > 0
+                && state.contains(BREAK_GOAL_TARGET_TAG, Tag.TAG_LONG)
+                && state.getLong(BREAK_GOAL_TARGET_TAG) == target.asLong()
+                && state.contains(BREAK_GOAL_TOOL_TAG, Tag.TAG_STRING)
+                && safeToolId.equals(state.getString(BREAK_GOAL_TOOL_TAG))
+                && state.contains(BREAK_GOAL_TOOL_EFFICIENCY_TAG, Tag.TAG_INT)
+                && state.getInt(BREAK_GOAL_TOOL_EFFICIENCY_TAG) == toolEfficiency
+                && state.contains(BREAK_GOAL_WORKER_EFFICIENCY_TAG, Tag.TAG_INT)
+                && state.getInt(BREAK_GOAL_WORKER_EFFICIENCY_TAG) == workerEfficiency
+                && state.contains(BREAK_GOAL_TICKS_TAG, Tag.TAG_INT)
+                && state.getInt(BREAK_GOAL_TICKS_TAG) > 0) {
+            return state.getInt(BREAK_GOAL_TICKS_TAG);
+        }
+
+        int ticks = Math.max(1, calculator.getAsInt());
+        state.putLong(BREAK_GOAL_TARGET_TAG, target.asLong());
+        state.putString(BREAK_GOAL_TOOL_TAG, safeToolId);
+        state.putInt(BREAK_GOAL_TOOL_EFFICIENCY_TAG, toolEfficiency);
+        state.putInt(BREAK_GOAL_WORKER_EFFICIENCY_TAG, workerEfficiency);
+        state.putInt(BREAK_GOAL_TICKS_TAG, ticks);
+        return ticks;
+    }
+
+    static void clearBreakGoal(HiredWorkContext context) {
+        CompoundTag state = context.state();
+        state.remove(BREAK_GOAL_TARGET_TAG);
+        state.remove(BREAK_GOAL_TOOL_TAG);
+        state.remove(BREAK_GOAL_TOOL_EFFICIENCY_TAG);
+        state.remove(BREAK_GOAL_WORKER_EFFICIENCY_TAG);
+        state.remove(BREAK_GOAL_TICKS_TAG);
+    }
+
     static void clearTargetSearch(HiredWorkContext context) {
         HiredWorkAreaScan.clearCursor(context, TREE_SCAN_CURSOR_TAG);
         HiredWorkAreaScan.clearCursor(context, SAPLING_SCAN_CURSOR_TAG);
@@ -60,6 +107,7 @@ final class LoggingWorkerState {
 
     static void clear(HiredWorkContext context) {
         clearAccessLeaf(context);
+        clearBreakGoal(context);
         clearTargetSearch(context);
     }
 }
