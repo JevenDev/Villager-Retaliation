@@ -163,7 +163,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, pair.first().blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.pair_changed");
         }
-        if (context.inventory().consumeSupply(pair.foodPredicate(), 2) < 2) {
+        if (!context.inventory().consumeSupplyExactly(pair.foodPredicate(), 2)) {
             HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, pair.first().blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_food");

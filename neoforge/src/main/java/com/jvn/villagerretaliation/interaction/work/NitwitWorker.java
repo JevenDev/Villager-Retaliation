@@ -1,11 +1,14 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 
 public final class NitwitWorker implements HiredRoleWorker {
+    private static final String LAST_NOTICE_TICK_TAG = "NitwitNoticeTick";
+    private static final long NOTICE_COOLDOWN_TICKS = 20L * 60L;
     private static final String[] REPORT_KEYS = {
             "interaction.work.nitwit.report.sky",
             "interaction.work.nitwit.report.supervising",
@@ -20,13 +23,14 @@ public final class NitwitWorker implements HiredRoleWorker {
 
     @Override
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
-        long lastNotice = context.state().getLong("NitwitNoticeTick");
-        if (level.getGameTime() - lastNotice < 20L * 60L) {
+        long lastNotice = context.state().getLong(LAST_NOTICE_TICK_TAG);
+        if (context.state().contains(LAST_NOTICE_TICK_TAG, Tag.TAG_LONG)
+                && level.getGameTime() - lastNotice < NOTICE_COOLDOWN_TICKS) {
             HiredWorkerBrain.setLastTargetScanResult(context, "nitwit_cooldown");
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.IDLE);
             return WorkResult.idle("interaction.work.nitwit.cooldown");
         }
-        context.state().putLong("NitwitNoticeTick", level.getGameTime());
+        context.state().putLong(LAST_NOTICE_TICK_TAG, level.getGameTime());
         String line = REPORT_KEYS[Math.floorMod((int) (level.getGameTime() / 1200L + villager.getId()), REPORT_KEYS.length)];
         HiredWorkerBrain.setLastTargetScanResult(context, "nitwit_report_ready");
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING);

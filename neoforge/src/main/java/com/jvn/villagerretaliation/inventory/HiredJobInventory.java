@@ -563,6 +563,28 @@ public final class HiredJobInventory implements Container {
         return consumed;
     }
 
+    /**
+     * Consumes the full requested amount or leaves the inventory unchanged.
+     */
+    public boolean consumeSupplyExactly(Predicate<ItemStack> predicate, int count) {
+        int requested = Math.max(0, count);
+        if (requested == 0) {
+            return true;
+        }
+
+        int available = 0;
+        for (int slot : supplySlots()) {
+            ItemStack stack = this.items.get(slot);
+            if (!stack.isEmpty() && predicate.test(stack)) {
+                available += stack.getCount();
+                if (available >= requested) {
+                    return consumeSupply(predicate, requested) == requested;
+                }
+            }
+        }
+        return false;
+    }
+
     public int countRemovableItemsForContract(UUID contractId) {
         if (contractId == null) {
             return 0;

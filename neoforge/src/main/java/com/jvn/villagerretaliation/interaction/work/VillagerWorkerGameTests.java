@@ -170,6 +170,53 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void exactSupplyConsumptionDoesNotEatPartialIngredients(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.WHEAT)).isEmpty(), "single ingredient should fit");
+
+        helper.assertFalse(
+                inventory.consumeSupplyExactly(stack -> stack.is(Items.WHEAT), 2),
+                "an incomplete ingredient set should not be consumed");
+        helper.assertValueEqual(
+                inventory.findSupply(stack -> stack.is(Items.WHEAT)).getCount(),
+                1,
+                "failed exact consumption should preserve the ingredient");
+
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.WHEAT)).isEmpty(), "second ingredient should fit");
+        helper.assertTrue(
+                inventory.consumeSupplyExactly(stack -> stack.is(Items.WHEAT), 2),
+                "a complete ingredient set should be consumed");
+        helper.assertTrue(
+                inventory.findSupply(stack -> stack.is(Items.WHEAT)).isEmpty(),
+                "successful exact consumption should remove both ingredients");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void nitwitWorkerReportsBeforeItsFirstCooldown(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                new CompoundTag(),
+                new BlockPos(0, 2, 0),
+                new BlockPos(2, 4, 2),
+                true);
+        NitwitWorker worker = new NitwitWorker();
+
+        WorkResult first = worker.tick(level, villager, fakePlayer(level, "VrNitwitFirstReport"), context);
+        helper.assertTrue(first.completed(), "a nitwit should produce its first report immediately");
+        WorkResult second = worker.tick(level, villager, fakePlayer(level, "VrNitwitCooldown"), context);
+        helper.assertFalse(second.completed(), "the next nitwit report should respect the cooldown");
+        helper.assertValueEqual(second.status(), "interaction.work.nitwit.cooldown", "nitwit cooldown status");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void supplyCraftingRequiresTableForBreadAndCraftsWhenPresent(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         buildFloor(helper, 0, 8, 0, 8, 1);
