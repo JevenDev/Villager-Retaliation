@@ -28,6 +28,8 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCata
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureScanner.BuilderToolAction;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.party.PartyActionHandler;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
@@ -108,20 +110,23 @@ public final class VillagerRetaliationCommands {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
                 literal(VillagerRetaliation.MOD_ID)
-                        .requires(source -> source.hasPermission(2))
+                        .then(partyCommands())
                         .then(literal("setNearbyReputation")
+                                .requires(source -> source.hasPermission(2))
                                 .then(argument("integer", IntegerArgumentType.integer())
                                         .executes(context -> setNearbyReputation(
                                                 context,
                                                 IntegerArgumentType.getInteger(context, "integer")
                                         ))))
                         .then(literal("setNearestRelationship")
+                                .requires(source -> source.hasPermission(2))
                                 .then(argument("stage", StringArgumentType.word())
                                         .executes(context -> setNearestRelationship(
                                                 context,
                                                 StringArgumentType.getString(context, "stage")
                                         ))))
                         .then(literal("dialogue")
+                                .requires(source -> source.hasPermission(2))
                                 .then(literal("explain")
                                         .then(targetArgument()
                                                 .then(argument("request", StringArgumentType.word())
@@ -136,6 +141,7 @@ public final class VillagerRetaliationCommands {
                                                                         context,
                                                                         StringArgumentType.getString(context, "option"))))))))
                         .then(literal("datapack")
+                                .requires(source -> source.hasPermission(2))
                                 .then(literal("diagnostics")
                                         .executes(context -> showDatapackDiagnostics(context, "", ""))
                                         .then(literal("severity")
@@ -160,13 +166,14 @@ public final class VillagerRetaliationCommands {
                                                                 context,
                                                                 "",
                                                                 StringArgumentType.getString(context, "resource")))))))
-                        .then(villageDebugCommands())
-                        .then(hiredDebugCommands())
-                        .then(questDebugCommands())
-                        .then(sceneDebugCommands())
-                        .then(debugCommands())
-                        .then(allegianceCommands())
+                        .then(villageDebugCommands().requires(source -> source.hasPermission(2)))
+                        .then(hiredDebugCommands().requires(source -> source.hasPermission(2)))
+                        .then(questDebugCommands().requires(source -> source.hasPermission(2)))
+                        .then(sceneDebugCommands().requires(source -> source.hasPermission(2)))
+                        .then(debugCommands().requires(source -> source.hasPermission(2)))
+                        .then(allegianceCommands().requires(source -> source.hasPermission(2)))
                         .then(literal("profile")
+                                .requires(source -> source.hasPermission(2))
                                 .then(literal("get")
                                         .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::getProfile)))
@@ -199,6 +206,7 @@ public final class VillagerRetaliationCommands {
                                         .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::exportProfile))))
                         .then(literal("skill")
+                                .requires(source -> source.hasPermission(2))
                                 .then(literal("get")
                                         .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::getSkills)
@@ -229,6 +237,83 @@ public final class VillagerRetaliationCommands {
                                         .then(targetArgument()
                                                 .executes(VillagerRetaliationCommands::exportSkills))))
         );
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> partyCommands() {
+        return literal("party")
+                .executes(VillagerRetaliationCommands::showPartyCommandHelp)
+                .then(literal("create")
+                        .executes(context -> {
+                            PartyActionHandler.createPartyCommand(context.getSource().getPlayerOrException());
+                            return 1;
+                        }))
+                .then(literal("invite")
+                        .then(argument("player", EntityArgument.player())
+                                .executes(context -> {
+                                    PartyActionHandler.sendInvitationCommand(
+                                            context.getSource().getPlayerOrException(),
+                                            EntityArgument.getPlayer(context, "player"));
+                                    return 1;
+                                })))
+                .then(literal("accept")
+                        .executes(context -> {
+                            PartyActionHandler.acceptLatestInvitationCommand(
+                                    context.getSource().getPlayerOrException());
+                            return 1;
+                        }))
+                .then(literal("decline")
+                        .executes(context -> {
+                            PartyActionHandler.declineLatestInvitationCommand(
+                                    context.getSource().getPlayerOrException());
+                            return 1;
+                        }))
+                .then(literal("leave")
+                        .executes(context -> {
+                            PartyActionHandler.leavePartyCommand(context.getSource().getPlayerOrException());
+                            return 1;
+                        }))
+                .then(literal("kick")
+                        .then(argument("player", EntityArgument.player())
+                                .executes(context -> {
+                                    PartyActionHandler.removePlayerCommand(
+                                            context.getSource().getPlayerOrException(),
+                                            EntityArgument.getPlayer(context, "player"));
+                                    return 1;
+                                })))
+                .then(literal("disband")
+                        .executes(context -> {
+                            PartyActionHandler.disbandCommand(context.getSource().getPlayerOrException());
+                            return 1;
+                        }))
+                .then(literal("alliance")
+                        .then(partyAlliancePlayerCommand(
+                                "request", PartyService.AllianceAction.REQUEST))
+                        .then(partyAlliancePlayerCommand(
+                                "accept", PartyService.AllianceAction.ACCEPT))
+                        .then(partyAlliancePlayerCommand(
+                                "cancel", PartyService.AllianceAction.CANCEL_REQUEST))
+                        .then(partyAlliancePlayerCommand(
+                                "end", PartyService.AllianceAction.END)));
+    }
+
+    private static LiteralArgumentBuilder<CommandSourceStack> partyAlliancePlayerCommand(
+            String command,
+            PartyService.AllianceAction action) {
+        return literal(command)
+                .then(argument("player", EntityArgument.player())
+                        .executes(context -> {
+                            PartyActionHandler.allianceCommand(
+                                    context.getSource().getPlayerOrException(),
+                                    EntityArgument.getPlayer(context, "player"),
+                                    action);
+                            return 1;
+                        }));
+    }
+
+    private static int showPartyCommandHelp(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        context.getSource().getPlayerOrException().sendSystemMessage(
+                Component.translatable("villagerretaliation.party.command.help"));
+        return 1;
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, String> targetArgument() {

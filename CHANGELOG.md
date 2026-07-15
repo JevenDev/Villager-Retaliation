@@ -1,5 +1,6 @@
 # Changelog
 
+- Added chat-command party membership and mutual alliances under `/villagerretaliation party`; allied players and recruited villagers no longer target or retaliate against one another.
 - Added a mercy stage to Player Raids: after armed defenders fall, raiders can right-click snapshotted babies and nitwits to spare them, leave them for a manual kill, or say nothing. Spared villagers survive with exactly `-1000` reputation toward every raider player, while nearby unresolved survivors occasionally plead for their lives.
 - Added 15 victory reactions and 15 loss reactions for recruited party villagers at the end of Player Raids.
 - Added built-in optional Second Wind compatibility for every VR-protected villager. Second Wind can channel an early player revive, while VR remains authoritative and villagers continue to recover automatically instead of bleeding out.

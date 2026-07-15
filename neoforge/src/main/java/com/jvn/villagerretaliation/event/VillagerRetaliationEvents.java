@@ -432,15 +432,6 @@ public final class VillagerRetaliationEvents {
             VillagerReputationAdvancements.onVillagerInteraction(serverPlayer);
         }
 
-        if (event.getTarget() instanceof ServerPlayer target
-                && player instanceof ServerPlayer serverPlayer
-                && !target.getUUID().equals(serverPlayer.getUUID())) {
-            PartyActionHandler.openPlayerMenu(serverPlayer, target);
-            event.setCanceled(true);
-            event.setCancellationResult(InteractionResult.CONSUME);
-            return;
-        }
-
         ItemStack interactionStack = player.getItemInHand(event.getHand());
 
         if (event.getTarget() instanceof Villager villager

@@ -152,7 +152,7 @@ public final class VillagerRetaliationHandler {
                 .map(attacker -> VillagerDisciplineService.isCommitting(attacker, damaged))
                 .orElse(false);
         if (!disciplinary && resolvedAttacker.filter(Villager.class::isInstance)
-                .filter(attacker -> PartyService.areInSameParty(attacker, damaged))
+                .filter(attacker -> PartyService.areInSameOrAlliedParty(attacker, damaged))
                 .isPresent()) {
             event.setAmount(0.0F);
             return;
@@ -527,6 +527,11 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
+        if (PartyService.areInSameOrAlliedParty(villager, player)) {
+            clearAnger(villager);
+            return false;
+        }
+
         if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(player)) {
             RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager));
             return false;
@@ -645,7 +650,7 @@ public final class VillagerRetaliationHandler {
                 || !target.isAlive()
                 || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)
                 || villager == target
-                || PartyService.areInSameParty(villager, target)
+                || PartyService.areInSameOrAlliedParty(villager, target)
                 || !villager.canAttack(target)) {
             return false;
         }
@@ -666,7 +671,7 @@ public final class VillagerRetaliationHandler {
         if (villager.isBaby()) {
             return;
         }
-        if (PartyService.areInSameParty(villager, attacker)) {
+        if (PartyService.areInSameOrAlliedParty(villager, attacker)) {
             clearAnger(villager);
             return;
         }
@@ -825,7 +830,7 @@ public final class VillagerRetaliationHandler {
                 || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)
                 || !villager.canAttack(target)
                 || target.isAlliedTo(villager)
-                || PartyService.areInSameParty(villager, target)
+                || PartyService.areInSameOrAlliedParty(villager, target)
                 || (target instanceof Villager targetVillager
                         && PartyVillagerContractService.hasExpiredContractWithParty(targetVillager, party.id()))
                 || (target instanceof AbstractVillager && !(target instanceof Villager))
@@ -990,7 +995,7 @@ public final class VillagerRetaliationHandler {
 
     private static boolean shouldRetaliateAgainstAttacker(Villager villager, LivingEntity attacker) {
         if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(attacker)
-                || villager != null && PartyService.areInSameParty(villager, attacker)) {
+                || villager != null && PartyService.areInSameOrAlliedParty(villager, attacker)) {
             return false;
         }
         return VillagerRetaliationConfig.VILLAGERS_RETALIATE_AGAINST_HOSTILE_MOBS.get()
@@ -1000,7 +1005,7 @@ public final class VillagerRetaliationHandler {
     private static void rallyPartyVillagers(Entity partyMember, LivingEntity target, boolean attackingWithParty) {
         if (!(partyMember.level() instanceof ServerLevel level)
                 || partyMember == target
-                || PartyService.areInSameParty(partyMember, target)) {
+                || PartyService.areInSameOrAlliedParty(partyMember, target)) {
             return;
         }
         PartyRecord party = PartyService.getPartyForEntity(partyMember).orElse(null);
@@ -1294,7 +1299,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean shouldAggroFromWitness(Villager witness, LivingEntity attacker, boolean witnessedVillagerKill) {
-        if (PartyService.areInSameParty(witness, attacker)) {
+        if (PartyService.areInSameOrAlliedParty(witness, attacker)) {
             return false;
         }
         if (!(attacker instanceof Player player)) {

@@ -22,7 +22,7 @@ public final class PartySavedData extends SavedData {
     private static final String TAG_VERSION = "Version";
     private static final String TAG_PARTIES = "Parties";
     private static final String TAG_INVITATIONS = "Invitations";
-    private static final int CURRENT_VERSION = 7;
+    private static final int CURRENT_VERSION = 8;
 
     private final Map<UUID, PartyRecord> partiesById = new LinkedHashMap<>();
     private final Map<UUID, UUID> partyByPlayer = new HashMap<>();
@@ -197,6 +197,10 @@ public final class PartySavedData extends SavedData {
         for (PartyVillagerRecord villager : removed.villagers()) {
             this.partyByVillager.remove(villager.villagerId(), partyId);
         }
+        for (PartyRecord party : this.partiesById.values()) {
+            party.removeAlliance(partyId);
+            party.removeAllianceRequest(partyId);
+        }
         cancelInvitationsForParty(removed);
         setDirty();
         return removed;
@@ -237,5 +241,20 @@ public final class PartySavedData extends SavedData {
             }
         }
         invalidParties.forEach(this.partiesById::remove);
+        Set<UUID> validPartyIds = Set.copyOf(this.partiesById.keySet());
+        for (PartyRecord party : this.partiesById.values()) {
+            party.retainPartyRelationships(validPartyIds);
+        }
+        for (PartyRecord party : this.partiesById.values()) {
+            for (UUID alliedPartyId : List.copyOf(party.alliedPartyIds())) {
+                PartyRecord ally = this.partiesById.get(alliedPartyId);
+                if (ally != null) {
+                    ally.addAlliance(party.id());
+                }
+            }
+        }
+        for (PartyRecord party : this.partiesById.values()) {
+            party.retainPartyRelationships(validPartyIds);
+        }
     }
 }

@@ -30,7 +30,7 @@ public final class VillageCombatAuthorizationService {
             LivingEntity target) {
         PartyRecord actorParty = PartyService.getPartyForEntity(actor).orElse(null);
         PartyRecord targetParty = PartyService.getPartyForEntity(target).orElse(null);
-        if (actorParty == null || targetParty != null && actorParty.id().equals(targetParty.id())) {
+        if (actorParty == null || PartyService.areSameOrAllied(actorParty, targetParty)) {
             return false;
         }
         long expires = level.getServer().overworld().getGameTime() + AUTHORIZATION_TTL_TICKS;
@@ -58,7 +58,7 @@ public final class VillageCombatAuthorizationService {
         return actorParty != null
                 && actorParty.id().equals(authorization.actorPartyId())
                 && Objects.equals(targetParty == null ? null : targetParty.id(), authorization.targetPartyId())
-                && (targetParty == null || !actorParty.id().equals(targetParty.id()));
+                && !PartyService.areSameOrAllied(actorParty, targetParty);
     }
 
     public static void associateProjectile(Entity projectile, LivingEntity actor, LivingEntity target) {

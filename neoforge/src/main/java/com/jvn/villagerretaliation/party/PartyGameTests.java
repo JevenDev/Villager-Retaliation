@@ -368,6 +368,29 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void explicitPartyCreationCreatesOneLeaderParty(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_create_leader"));
+        UUID partyId = null;
+        try {
+            PartyService.PartyResult created = PartyService.createParty(leader);
+            helper.assertTrue(created.success(), "player command should be able to create a solo party");
+            partyId = created.partyId();
+            PartyRecord party = PartyService.getParty(level, partyId).orElseThrow();
+            helper.assertValueEqual(party.leaderId(), leader.getUUID(), "creator becomes party leader");
+            helper.assertValueEqual(party.playerIds(), List.of(leader.getUUID()), "new party starts with its leader");
+            helper.assertFalse(PartyService.createParty(leader).success(),
+                    "a player already in a party must not create another one");
+        } finally {
+            if (partyId != null) {
+                PartyService.deleteParty(level, partyId);
+            }
+            leader.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void recruitmentPaymentExtensionCommandsInventoryAndDismissalAreAuthoritative(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_contract_leader"));
@@ -771,6 +794,27 @@ public final class PartyGameTests {
             helper.assertTrue(VillagerRetaliationRetaliationUtil.tryAnger(
                             firstVillager, secondLeader, anger, "PartyGameTestAnger"),
                     "different-party player remains a valid retaliation relationship");
+
+            helper.assertTrue(PartyService.requestAlliance(firstLeader, secondLeader.getUUID()).success(),
+                    "first party leader should be able to request an alliance");
+            helper.assertTrue(PartyService.acceptAlliance(secondLeader, firstLeader.getUUID()).success(),
+                    "other party leader should be able to accept an alliance");
+            anger.clear();
+            helper.assertTrue(PartyService.areInSameOrAlliedParty(firstVillager, secondLeader),
+                    "alliance must make the other party's players friendly to recruited villagers");
+            helper.assertTrue(PartyService.areInSameOrAlliedParty(firstVillager, secondVillager),
+                    "alliance must make recruited villagers from both parties friendly");
+            helper.assertFalse(VillagerRetaliationRetaliationUtil.tryAnger(
+                            firstVillager, secondLeader, anger, "PartyGameTestAnger"),
+                    "recruited villager must not acquire an allied party player as a retaliation target");
+            helper.assertTrue(anger.isEmpty(), "allied-party retaliation must not persist target state");
+            PartyRecord reloadedAlliance = PartyRecord.load(firstParty.save());
+            helper.assertTrue(reloadedAlliance != null && reloadedAlliance.isAlliedWith(secondParty.id()),
+                    "party alliances must survive record persistence");
+            helper.assertTrue(PartyService.endAlliance(firstLeader, secondLeader.getUUID()).success(),
+                    "either party leader should be able to end an alliance");
+            helper.assertFalse(PartyService.areInSameOrAlliedParty(firstVillager, secondLeader),
+                    "ending an alliance must immediately restore separate-party relationships");
         } finally {
             PartyService.deleteParty(level, firstParty.id());
             PartyService.deleteParty(level, secondParty.id());

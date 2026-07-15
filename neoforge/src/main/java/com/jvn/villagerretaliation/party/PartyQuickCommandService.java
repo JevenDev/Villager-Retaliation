@@ -404,7 +404,7 @@ public final class PartyQuickCommandService {
                 || !target.isAlive()
                 || !villager.canAttack(target)
                 || target.isAlliedTo(villager)
-                || PartyService.areInSameParty(villager, target)
+                || PartyService.areInSameOrAlliedParty(villager, target)
                 || !playerRaidOpponents && !attackModeAllows(record.attackMode(), villager, target)) {
             return false;
         }

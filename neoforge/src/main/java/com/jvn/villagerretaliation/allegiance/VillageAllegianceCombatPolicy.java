@@ -26,7 +26,7 @@ public final class VillageAllegianceCombatPolicy {
         if (context == AllegianceCombatContext.DISCIPLINE) {
             return AllegianceCombatDecision.allow(AllegianceCombatDecision.Reason.DISCIPLINARY_RESPONSE);
         }
-        if (PartyService.areInSameParty(actor, target)) {
+        if (PartyService.areInSameOrAlliedParty(actor, target)) {
             return AllegianceCombatDecision.deny(AllegianceCombatDecision.Reason.SAME_PARTY);
         }
         if (PlayerRaidService.areOpposingParticipants(actor, target)) {

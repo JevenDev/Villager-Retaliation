@@ -54,6 +54,23 @@ public final class PartyService {
                 && getPartyForEntity(second).map(party -> party.id().equals(firstParty.get().id())).orElse(false);
     }
 
+    public static boolean areInSameOrAlliedParty(Entity first, Entity second) {
+        if (first == null || second == null || first.level().getServer() != second.level().getServer()) {
+            return false;
+        }
+        PartyRecord firstParty = getPartyForEntity(first).orElse(null);
+        PartyRecord secondParty = getPartyForEntity(second).orElse(null);
+        return areSameOrAllied(firstParty, secondParty);
+    }
+
+    public static boolean areSameOrAllied(PartyRecord first, PartyRecord second) {
+        return first != null
+                && second != null
+                && (first.id().equals(second.id())
+                || first.isAlliedWith(second.id())
+                || second.isAlliedWith(first.id()));
+    }
+
     public static boolean arePlayerAndVillagerInSameParty(ServerLevel level, UUID playerId, UUID villagerId) {
         if (level == null || playerId == null || villagerId == null) {
             return false;
@@ -101,6 +118,100 @@ public final class PartyService {
         }
         data.changed();
         return PartyResult.success("villagerretaliation.party.settings_updated", party.id(), null);
+    }
+
+    public static PartyResult createParty(ServerPlayer leader) {
+        if (leader == null) {
+            return PartyResult.failure("villagerretaliation.party.error.not_in_party");
+        }
+        PartySavedData data = partyData(leader.serverLevel());
+        if (data.partyForPlayer(leader.getUUID()).isPresent()) {
+            return PartyResult.failure("villagerretaliation.party.error.already_in_party");
+        }
+        PartyRecord party = data.createParty(leader.getUUID(), serverGameTime(leader.getServer()));
+        return PartyResult.success("villagerretaliation.party.created", party.id(), null);
+    }
+
+    public static PartyResult requestAlliance(ServerPlayer leader, UUID targetPlayerId) {
+        PartyRelationship relationship = relationship(leader, targetPlayerId);
+        if (!relationship.validLeader()) {
+            return relationship.failure();
+        }
+        if (relationship.party().isAlliedWith(relationship.targetParty().id())) {
+            return PartyResult.failure("villagerretaliation.party.error.already_allied");
+        }
+        if (relationship.targetParty().hasRequestedAllianceWith(relationship.party().id())) {
+            return PartyResult.failure("villagerretaliation.party.error.alliance_request_pending_acceptance");
+        }
+        if (!relationship.party().addAllianceRequest(relationship.targetParty().id())) {
+            return PartyResult.failure("villagerretaliation.party.error.alliance_request_exists");
+        }
+        relationship.data().changed();
+        return PartyResult.success("villagerretaliation.party.alliance_requested", relationship.party().id(), null);
+    }
+
+    public static PartyResult acceptAlliance(ServerPlayer leader, UUID targetPlayerId) {
+        PartyRelationship relationship = relationship(leader, targetPlayerId);
+        if (!relationship.validLeader()) {
+            return relationship.failure();
+        }
+        if (!relationship.targetParty().hasRequestedAllianceWith(relationship.party().id())) {
+            return PartyResult.failure("villagerretaliation.party.error.alliance_request_missing");
+        }
+        relationship.party().addAlliance(relationship.targetParty().id());
+        relationship.targetParty().addAlliance(relationship.party().id());
+        relationship.party().removeAllianceRequest(relationship.targetParty().id());
+        relationship.targetParty().removeAllianceRequest(relationship.party().id());
+        relationship.data().changed();
+        clearPartyCombatTargets(leader.getServer(), relationship.party());
+        clearPartyCombatTargets(leader.getServer(), relationship.targetParty());
+        return PartyResult.success("villagerretaliation.party.alliance_accepted", relationship.party().id(), null);
+    }
+
+    public static PartyResult cancelAllianceRequest(ServerPlayer leader, UUID targetPlayerId) {
+        PartyRelationship relationship = relationship(leader, targetPlayerId);
+        if (!relationship.validLeader()) {
+            return relationship.failure();
+        }
+        if (!relationship.party().removeAllianceRequest(relationship.targetParty().id())) {
+            return PartyResult.failure("villagerretaliation.party.error.alliance_request_missing");
+        }
+        relationship.data().changed();
+        return PartyResult.success("villagerretaliation.party.alliance_request_cancelled", relationship.party().id(), null);
+    }
+
+    public static PartyResult endAlliance(ServerPlayer leader, UUID targetPlayerId) {
+        PartyRelationship relationship = relationship(leader, targetPlayerId);
+        if (!relationship.validLeader()) {
+            return relationship.failure();
+        }
+        if (!relationship.party().removeAlliance(relationship.targetParty().id())) {
+            return PartyResult.failure("villagerretaliation.party.error.not_allied");
+        }
+        relationship.targetParty().removeAlliance(relationship.party().id());
+        relationship.party().removeAllianceRequest(relationship.targetParty().id());
+        relationship.targetParty().removeAllianceRequest(relationship.party().id());
+        relationship.data().changed();
+        return PartyResult.success("villagerretaliation.party.alliance_ended", relationship.party().id(), null);
+    }
+
+    private static PartyRelationship relationship(ServerPlayer leader, UUID targetPlayerId) {
+        if (leader == null || targetPlayerId == null) {
+            return PartyRelationship.invalid("villagerretaliation.party.error.alliance_invalid");
+        }
+        PartySavedData data = partyData(leader.serverLevel());
+        PartyRecord party = data.partyForPlayer(leader.getUUID()).orElse(null);
+        if (party == null) {
+            return PartyRelationship.invalid("villagerretaliation.party.error.not_in_party");
+        }
+        if (!party.leaderId().equals(leader.getUUID())) {
+            return PartyRelationship.invalid("villagerretaliation.party.error.leader_only");
+        }
+        PartyRecord targetParty = data.partyForPlayer(targetPlayerId).orElse(null);
+        if (targetParty == null || party.id().equals(targetParty.id())) {
+            return PartyRelationship.invalid("villagerretaliation.party.error.alliance_invalid");
+        }
+        return new PartyRelationship(data, party, targetParty, null);
     }
 
     private static void clearPartyCombatTargets(MinecraftServer server, PartyRecord party) {
@@ -336,6 +447,31 @@ public final class PartyService {
 
         static PartyResult failure(String messageKey) {
             return new PartyResult(false, messageKey, null, null);
+        }
+    }
+
+    public enum AllianceAction {
+        REQUEST,
+        ACCEPT,
+        CANCEL_REQUEST,
+        END
+    }
+
+    private record PartyRelationship(
+            PartySavedData data,
+            PartyRecord party,
+            PartyRecord targetParty,
+            String errorKey) {
+        static PartyRelationship invalid(String errorKey) {
+            return new PartyRelationship(null, null, null, errorKey);
+        }
+
+        boolean validLeader() {
+            return this.errorKey == null;
+        }
+
+        PartyResult failure() {
+            return PartyResult.failure(this.errorKey);
         }
     }
 }

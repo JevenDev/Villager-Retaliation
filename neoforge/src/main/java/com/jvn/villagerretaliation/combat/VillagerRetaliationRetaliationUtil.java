@@ -68,7 +68,7 @@ public final class VillagerRetaliationRetaliationUtil {
                 || !villager.isAlive()
                 || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(attacker)
                 || attacker == villager
-                || PartyService.areInSameParty(villager, attacker)) {
+                || PartyService.areInSameOrAlliedParty(villager, attacker)) {
             return false;
         }
 
@@ -299,7 +299,7 @@ public final class VillagerRetaliationRetaliationUtil {
             clearAnger.run();
             return null;
         }
-        if (PartyService.areInSameParty(villager, target)) {
+        if (PartyService.areInSameOrAlliedParty(villager, target)) {
             clearAnger.run();
             return null;
         }
