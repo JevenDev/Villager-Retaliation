@@ -66,25 +66,35 @@ final class MiningWorkerState {
         if (!areaChanged && !modeChanged && !versionChanged) {
             return Change.NONE;
         }
-        resetTransient(context);
-        MiningHazardManager.reset(context, areaChanged);
-        if (areaChanged) {
-            MiningExcavationShaft.clear(context);
-        }
-        rememberConfiguration(context, mode);
-        return areaChanged ? Change.WORK_AREA_CHANGED : Change.MODE_CHANGED;
+        Change change = areaChanged ? Change.WORK_AREA_CHANGED : Change.MODE_CHANGED;
+        resetForConfigurationChange(context, mode, change);
+        return change;
     }
 
     static void resetForModeChange(HiredWorkContext context, HiredMiningMode mode) {
-        resetTransient(context);
-        MiningHazardManager.reset(context, false);
-        rememberConfiguration(context, mode);
+        resetForConfigurationChange(context, mode, Change.MODE_CHANGED);
     }
 
     static void resetForWorkAreaChange(HiredWorkContext context, HiredMiningMode mode) {
+        resetForConfigurationChange(context, mode, Change.WORK_AREA_CHANGED);
+    }
+
+    static void resetForOptionChange(HiredWorkContext context, HiredMiningMode mode) {
+        resetForConfigurationChange(context, mode, Change.OPTIONS_CHANGED);
+    }
+
+    private static void resetForConfigurationChange(
+            HiredWorkContext context,
+            HiredMiningMode mode,
+            Change change) {
         resetTransient(context);
-        MiningHazardManager.reset(context, true);
-        MiningExcavationShaft.clear(context);
+        MiningHazardManager.reset(context, change == Change.WORK_AREA_CHANGED);
+        if (change == Change.WORK_AREA_CHANGED) {
+            MiningExcavationShaft.clear(context);
+        }
+        if (change == Change.MODE_CHANGED || change == Change.WORK_AREA_CHANGED) {
+            MiningHorizontalStairPlan.reset(context);
+        }
         rememberConfiguration(context, mode);
     }
 
@@ -229,7 +239,8 @@ final class MiningWorkerState {
     enum Change {
         NONE,
         MODE_CHANGED,
-        WORK_AREA_CHANGED;
+        WORK_AREA_CHANGED,
+        OPTIONS_CHANGED;
 
         boolean changed() {
             return this != NONE;

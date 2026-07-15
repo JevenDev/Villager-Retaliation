@@ -489,6 +489,7 @@ final class MiningTargetPlanner {
             Villager villager,
             HiredWorkContext context) {
         BlockPos current = villager.blockPosition().immutable();
+        HiredMiningMode mode = HiredMiningMode.fromState(context.state());
         if (!this.worker.isValidExcavationWorkStance(level, context, current)) {
             return null;
         }
@@ -499,7 +500,8 @@ final class MiningTargetPlanner {
                     villager,
                     context,
                     stored.blockPos(),
-                    current);
+                    current,
+                    mode);
             if (recovered != null) {
                 return recovered;
             }
@@ -510,7 +512,8 @@ final class MiningTargetPlanner {
                     villager,
                     context,
                     rawPos,
-                    current);
+                    current,
+                    mode);
             if (recovered != null) {
                 return recovered;
             }
@@ -523,7 +526,8 @@ final class MiningTargetPlanner {
             Villager villager,
             HiredWorkContext context,
             BlockPos targetPos,
-            BlockPos approachPos) {
+            BlockPos approachPos,
+            HiredMiningMode mode) {
         BlockPos target = targetPos.immutable();
         if (!isReachableCurrentExcavationTarget(level, context, target)
                 || MiningWorker.isUnsafeExcavationUnderfoot(level, context, target, approachPos)
@@ -540,7 +544,7 @@ final class MiningTargetPlanner {
                 villager,
                 context,
                 pathTarget,
-                HiredMiningMode.EXCAVATE_AREA)) {
+                mode)) {
             return null;
         }
         HiredPathMemory.clearAvoided(villager, target);

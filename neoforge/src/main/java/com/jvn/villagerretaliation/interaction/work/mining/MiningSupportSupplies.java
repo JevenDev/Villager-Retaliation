@@ -35,10 +35,12 @@ final class MiningSupportSupplies {
 
     static WorkResult gather(ServerLevel level, Villager villager, HiredWorkContext context) {
         if (!context.useAssignedStorageForSupplies()) {
+            clearStorageTripIfGatheringSupport(context);
             return null;
         }
         Integer currentLayerY = MiningBlockRules.currentExcavationLayer(level, context);
         if (currentLayerY == null) {
+            clearStorageTripIfGatheringSupport(context);
             return null;
         }
         boolean needsLadders = MiningExcavationShaft.requiresLadder(level, context, currentLayerY)
@@ -69,6 +71,7 @@ final class MiningSupportSupplies {
                 && MiningSupportManager.hasPendingTorchPlacement(level, villager, context, supportFloorY)
                 && AssignedStorageService.countItems(villager, SupportType.TORCH::matchesSupply) > 0;
         if (!needsLadders && !needsBacking && !wantsTorches) {
+            clearStorageTripIfGatheringSupport(context);
             return null;
         }
 
@@ -86,6 +89,7 @@ final class MiningSupportSupplies {
                         villager,
                         needsLadders ? SupportType.LADDER::matchesSupply : SupportType.TORCH::matchesSupply);
         if (storage == null) {
+            clearStorageTripIfGatheringSupport(context);
             return null;
         }
         HiredWorkerBrain.setStorageTarget(context, storage);
@@ -160,5 +164,11 @@ final class MiningSupportSupplies {
         HiredWorkerBrain.setFailure(context, "support_inventory_full", level.getGameTime() + 100L);
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY);
         return WorkResult.idle("interaction.work.mining.support.inventory_full");
+    }
+
+    private static void clearStorageTripIfGatheringSupport(HiredWorkContext context) {
+        if (MiningWorkerState.phase(context) == MiningWorkerState.Phase.GATHER_SUPPLIES) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+        }
     }
 }

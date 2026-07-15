@@ -1415,7 +1415,7 @@ public final class HiredVillagerWorkService {
         initializeDefaults(state, villager);
         boolean enabled = MiningHorizontalOptions.togglePatchFloor(state);
         HiredWorkSession session = HiredWorkSession.active(level, villager);
-        MiningWorker.resetForWorkAreaChange(level, villager, session.context(), HiredMiningMode.fromState(state));
+        MiningWorker.resetForOptionChange(level, villager, session.context(), HiredMiningMode.fromState(state));
         setStatus(state, "interaction.work.status.mining_orders", Map.of(
                 "mode", "Horizontal floor patching " + (enabled ? "enabled" : "disabled")));
         sendStatusNotice(player, villager, state);

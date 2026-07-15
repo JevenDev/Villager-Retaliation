@@ -3186,6 +3186,10 @@ public final class VillagerWorkerGameTests {
         state.putInt("ExcavationLadderX", target.getX());
         state.putInt("ExcavationLadderZ", target.getZ());
         state.putString("ExcavationLadderFacing", Direction.NORTH.getName());
+        state.putString("HorizontalExcavationStairAxis", "x");
+        state.putBoolean("HorizontalExcavationStairFromMin", true);
+        state.putInt("HorizontalExcavationStairLane", target.getZ());
+        state.putBoolean("HorizontalExcavationStairCleanup", true);
         state.putLong("ActiveWorkBlockPos", target.asLong());
         HiredWorkContext context = context(helper, villager, state, targetRel, targetRel, true);
 
@@ -3198,8 +3202,27 @@ public final class VillagerWorkerGameTests {
                 "mode change should preserve the shaft selected for the same work area");
         helper.assertFalse(state.contains("ActiveWorkBlockPos"),
                 "mode change should clear the stale active mining target");
+        helper.assertFalse(state.contains("HorizontalExcavationStairAxis")
+                        || state.contains("HorizontalExcavationStairLane")
+                        || state.contains("HorizontalExcavationStairCleanup"),
+                "mode change should discard the horizontal excavation plan");
         helper.assertValueEqual(MiningWorker.phase(context), "find_target",
                 "mode change should reset the typed mining phase");
+
+        state.putString("MiningHazardPlanKind", "water");
+        state.putLongArray("MiningHazardPlanPositions", new long[] {target.asLong()});
+        state.putString("HorizontalExcavationStairAxis", "z");
+        state.putBoolean("HorizontalExcavationStairFromMin", false);
+        state.putInt("HorizontalExcavationStairLane", target.getX());
+        MiningWorker.resetForOptionChange(level, villager, context, HiredMiningMode.EXPOSED_ORES);
+        helper.assertFalse(state.contains("MiningHazardPlanKind"),
+                "option change should discard an in-progress plan built under the old setting");
+        helper.assertTrue(state.getLongArray("MiningPermanentHazardBarriers").length == 1,
+                "option change should preserve permanent safety barriers");
+        helper.assertTrue(state.contains("ExcavationLadderX"),
+                "option change should preserve the selected shaft");
+        helper.assertTrue(state.contains("HorizontalExcavationStairAxis"),
+                "option change should preserve the horizontal excavation route");
 
         MiningWorker.resetForWorkAreaChange(level, villager, context, HiredMiningMode.EXPOSED_ORES);
         helper.assertValueEqual(state.getLongArray("MiningPermanentHazardBarriers").length, 0,
@@ -3209,6 +3232,66 @@ public final class VillagerWorkerGameTests {
                         || state.contains("ExcavationLadderFacing"),
                 "work-area change should discard the previous excavation shaft");
 
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void miningWorkerSynchronizesExternalModeChangesAndClearsOldPlans(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerMiningModeSync");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 1, 2));
+        BlockPos areaRel = new BlockPos(2, 1, 2);
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXPOSED_ORES.serializedName());
+        HiredWorkContext context = context(helper, villager, state, areaRel, areaRel, true);
+        state.putInt("MiningStateVersion", 2);
+        state.putString("MiningStateMode", HiredMiningMode.HORIZONTAL_EXCAVATION.serializedName());
+        state.putLong("MiningStateWorkMin", context.workMin().asLong());
+        state.putLong("MiningStateWorkMax", context.workMax().asLong());
+        state.putString("HorizontalExcavationStairAxis", "x");
+        state.putBoolean("HorizontalExcavationStairFromMin", true);
+        state.putInt("HorizontalExcavationStairLane", context.workMin().getZ());
+
+        new MiningWorker().tick(level, villager, hirer, context);
+
+        helper.assertFalse(state.contains("HorizontalExcavationStairAxis")
+                        || state.contains("HorizontalExcavationStairLane"),
+                "automatic mode synchronization should not retain the previous horizontal plan");
+        helper.assertValueEqual(state.getString("MiningStateMode"), HiredMiningMode.EXPOSED_ORES.serializedName(),
+                "automatic synchronization should persist the current mode");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void miningWorkerCancelsResolvedHazardStorageTrip(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 0);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerResolvedHazardTrip");
+        BlockPos targetRel = new BlockPos(2, 1, 2);
+        BlockPos target = helper.absolutePos(targetRel);
+        Villager villager = spawnVillager(helper, targetRel.above());
+        setBlock(helper, targetRel, Blocks.STONE.defaultBlockState());
+
+        CompoundTag state = new CompoundTag();
+        state.putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
+        state.putString("MiningState", "gather_hazard_blocks");
+        state.putString("MiningHazardPlanKind", "water");
+        state.putLongArray("MiningHazardPlanPositions", new long[] {target.asLong()});
+        HiredWorkContext context = context(helper, villager, state, targetRel, targetRel, true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_PICKAXE));
+        HiredWorkerBrain.setStorageTarget(context, target.east(3));
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+
+        new MiningWorker().tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(state, level.getGameTime());
+
+        helper.assertTrue(snapshot.storageTargetPos() == null,
+                "resolved persisted hazard plan should release its obsolete storage target");
+        helper.assertValueEqual(state.getInt("MiningHazardPlanIndex"), 1,
+                "resolved persisted hazard cell should advance without gathering supplies");
         villager.discard();
         helper.succeed();
     }

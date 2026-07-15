@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkAreaScan;
 import com.jvn.villagerretaliation.interaction.work.HiredPathTarget;
 import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
+import com.jvn.villagerretaliation.interaction.work.HiredStorageNavigationGoal;
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
 import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
@@ -63,7 +64,6 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             HiredMiningMode mode) {
         MiningWorkerState.resetForModeChange(context, mode);
-        MiningHorizontalStairPlan.reset(context);
         new MiningWorker().resetRuntimeState(level, villager, context);
     }
 
@@ -73,7 +73,15 @@ public final class MiningWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             HiredMiningMode mode) {
         MiningWorkerState.resetForWorkAreaChange(context, mode);
-        MiningHorizontalStairPlan.reset(context);
+        new MiningWorker().resetRuntimeState(level, villager, context);
+    }
+
+    public static void resetForOptionChange(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredMiningMode mode) {
+        MiningWorkerState.resetForOptionChange(context, mode);
         new MiningWorker().resetRuntimeState(level, villager, context);
     }
 
@@ -113,7 +121,6 @@ public final class MiningWorker extends AbstractBlockWorker {
             }
         }
         if (mode.excavatesArea()) {
-            MiningWorkerState.set(context, MiningWorkerState.Phase.ASSESS_HAZARDS);
             if (mode.excavatesHorizontally() && MiningHorizontalOptions.patchFloor(context.state())) {
                 WorkResult floorResult = MiningHazardManager.tickHorizontalFloor(level, villager, context);
                 if (floorResult != null) {
@@ -368,6 +375,7 @@ public final class MiningWorker extends AbstractBlockWorker {
 
     private void resetRuntimeState(ServerLevel level, Villager villager, HiredWorkContext context) {
         HiredWorkPlan.clear(context);
+        HiredStorageNavigationGoal.clearStorageTarget(context);
         clearActiveBreakingTarget(level, context, villager);
         VillagerTaskNavigationUtil.clearRuntimeState(villager);
         VillagerTaskNavigationUtil.stopHiredNavigation(villager);
@@ -436,7 +444,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                 && (worker.taskState() == HiredWorkerTaskState.MOVING_TO_STORAGE
                 || worker.taskState() == HiredWorkerTaskState.DEPOSITING
                 || worker.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL);
-        if (!storageTrip && (context.hasOutputSpace() || !context.hasOutputToDeposit())) {
+        if (!context.hasOutputToDeposit() || (!storageTrip && context.hasOutputSpace())) {
             return null;
         }
         return depositBeforeMining(level, villager, context);

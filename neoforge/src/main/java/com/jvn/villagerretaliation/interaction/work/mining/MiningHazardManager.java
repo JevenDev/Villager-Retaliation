@@ -67,10 +67,12 @@ final class MiningHazardManager {
 
     static WorkResult tick(ServerLevel level, Villager villager, HiredWorkContext context) {
         prunePermanentBarriers(level, context);
+        beginAssessmentUnlessGathering(context);
         HazardPlan plan = loadPlan(context);
         if (plan == null) {
             plan = findPlan(level, villager, context);
             if (plan == null) {
+                clearStorageTripIfGatheringHazard(context);
                 return null;
             }
             savePlan(context, plan);
@@ -80,10 +82,12 @@ final class MiningHazardManager {
 
     static WorkResult tickHorizontalFloor(ServerLevel level, Villager villager, HiredWorkContext context) {
         prunePermanentBarriers(level, context);
+        beginAssessmentUnlessGathering(context);
         HazardPlan plan = loadPlan(context);
         if (plan == null) {
             plan = findHorizontalFloorPlan(level, villager, context);
             if (plan == null) {
+                clearStorageTripIfGatheringHazard(context);
                 return null;
             }
             savePlan(context, plan);
@@ -318,11 +322,15 @@ final class MiningHazardManager {
             return WorkResult.idle("interaction.work.mining.hazard.unreachable");
         }
         if (!needsPlacement(level, target)) {
+            clearStorageTripIfGatheringHazard(context);
             advancePlan(context, plan);
             return WorkResult.progressed(plan.kind().checkingStatus());
         }
 
         Predicate<ItemStack> fillPredicate = stack -> isSafeFillStack(level, target, stack);
+        if (hasFillBlock(context, fillPredicate)) {
+            clearStorageTripIfGatheringHazard(context);
+        }
         if (!hasFillBlock(context, fillPredicate)) {
             WorkResult gather = gatherFillBlocks(level, villager, context, plan, target, fillPredicate);
             if (gather != null) {
@@ -389,6 +397,7 @@ final class MiningHazardManager {
             addPermanentBarriers(context, plan.positions());
         }
         clearPlan(context);
+        clearStorageTripIfGatheringHazard(context);
         MiningWorkerState.clearExcavationLayerCache(context);
         HiredWorkerBrain.clearFailure(context);
         HiredWorkerBrain.setLastTargetScanResult(
@@ -405,9 +414,11 @@ final class MiningHazardManager {
             BlockPos target,
             Predicate<ItemStack> predicate) {
         if (!context.useAssignedStorageForSupplies()) {
+            clearStorageTripIfGatheringHazard(context);
             return null;
         }
         if (!context.inventory().canStoreSuppliesAfterDepositingOutputs(List.of(new ItemStack(Items.COBBLESTONE)))) {
+            clearStorageTripIfGatheringHazard(context);
             MiningWorkerState.set(context, MiningWorkerState.Phase.BLOCKED_MISSING_SUPPLIES);
             HiredWorkerBrain.setFailure(context, "hazard_fill_inventory_full", level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, target);
@@ -415,6 +426,7 @@ final class MiningHazardManager {
         }
         BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, predicate);
         if (storage == null) {
+            clearStorageTripIfGatheringHazard(context);
             return null;
         }
         HiredWorkerBrain.setStorageTarget(context, storage);
@@ -534,6 +546,18 @@ final class MiningHazardManager {
                 && (feet.isAir() || feet.is(Blocks.LADDER) || feet.getCollisionShape(level, stance).isEmpty())
                 && (head.isAir() || head.is(Blocks.LADDER) || head.getCollisionShape(level, stance.above()).isEmpty())
                 && (floor.isSolid() || feet.is(Blocks.LADDER));
+    }
+
+    private static void clearStorageTripIfGatheringHazard(HiredWorkContext context) {
+        if (MiningWorkerState.phase(context) == MiningWorkerState.Phase.GATHER_HAZARD_BLOCKS) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+        }
+    }
+
+    private static void beginAssessmentUnlessGathering(HiredWorkContext context) {
+        if (MiningWorkerState.phase(context) != MiningWorkerState.Phase.GATHER_HAZARD_BLOCKS) {
+            MiningWorkerState.set(context, MiningWorkerState.Phase.ASSESS_HAZARDS);
+        }
     }
 
     private static boolean isPlacementApproachInScope(HiredWorkContext context, BlockPos pos) {
