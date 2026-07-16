@@ -316,7 +316,6 @@ public final class VillagerMountAssignmentService {
 
     public static void clearRuntimeState() {
         PENDING_TARGETS.clear();
-        VillagerMountTravelService.clearRuntimeState();
     }
 
     private static void handleTargetClick(ServerPlayer player, AbstractHorse mount) {
@@ -425,7 +424,6 @@ public final class VillagerMountAssignmentService {
         if (adapter != null && villager instanceof Villager assignedVillager && villager.getVehicle() == mount) {
             adapter.tryDismount(mount, assignedVillager);
         }
-        VillagerMountTravelService.forgetAssignment(assignment);
     }
 
     private static void consume(PlayerInteractEvent.EntityInteract event) {

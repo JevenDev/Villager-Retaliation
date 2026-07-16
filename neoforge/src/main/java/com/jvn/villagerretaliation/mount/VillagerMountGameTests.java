@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.mount;
 
+import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -322,6 +323,26 @@ public final class VillagerMountGameTests {
                 "The driver must use the vanilla raider-style 0.6-block riding offset");
         helper.assertTrue(passenger.getY() - horse.getY() > 0.7D && passenger.getY() - horse.getY() < 1.0D,
                 "The rear villager must use the same grounded riding offset");
+        double driverHorizontalOffset = driver.position().multiply(1.0D, 0.0D, 1.0D)
+                .distanceTo(horse.position().multiply(1.0D, 0.0D, 1.0D));
+        helper.assertTrue(driverHorizontalOffset < 0.05D,
+                "A two-villager driver must remain centered on the saddle; offset="
+                        + driverHorizontalOffset);
+        double horizontalSeatDistance = driver.position().multiply(1.0D, 0.0D, 1.0D)
+                .distanceTo(passenger.position().multiply(1.0D, 0.0D, 1.0D));
+        helper.assertTrue(horizontalSeatDistance > 1.1D && horizontalSeatDistance < 1.25D,
+                "Two villager models must have extra front-to-rear clearance; distance="
+                        + horizontalSeatDistance);
+
+        helper.assertTrue(VillagerRideOnCompat.tryDismount(horse, passenger),
+                "The rear villager must dismount for offset cleanup coverage");
+        horse.positionRider(driver);
+        double loneDriverHorizontalOffset = driver.position().multiply(1.0D, 0.0D, 1.0D)
+                .distanceTo(horse.position().multiply(1.0D, 0.0D, 1.0D));
+        helper.assertTrue(loneDriverHorizontalOffset < 0.05D,
+                "A lone villager driver must return to the normal seat; offset="
+                        + loneDriverHorizontalOffset);
+
         helper.succeed();
     }
 
@@ -352,6 +373,9 @@ public final class VillagerMountGameTests {
             level.setChunkForced(chunkX, startChunk.z, true);
         }
         double startingX = horse.getX();
+        // Keep unrelated hired-work handlers from issuing their own stop requests while this
+        // fixture isolates NeoForge's rider-to-vehicle navigation delegation.
+        villager.setTradingPlayer(hirer);
         villager.setNoAi(true);
         villager.getBrain().setMemory(
                 MemoryModuleType.WALK_TARGET,
@@ -359,6 +383,14 @@ public final class VillagerMountGameTests {
         VillagerMountTravelService.onVillagerTickPost(villager);
         helper.assertValueEqual(villager.getVehicle(), horse,
                 "The route fixture must mount the villager before measuring movement");
+        helper.assertValueEqual(villager.getNavigation(), horse.getNavigation(),
+                "The mounted villager must use the controlled horse's native navigator");
+        helper.assertTrue(villager.getNavigation().moveTo(
+                        target.getX() + 0.5D,
+                        target.getY(),
+                        target.getZ() + 0.5D,
+                        0.8D),
+                "The rider's delegated navigator must accept the travel route");
         helper.startSequence()
                 .thenExecuteAfter(60, () -> {
                     for (int chunkX = Math.min(startChunk.x, targetChunk.x); chunkX <= Math.max(startChunk.x, targetChunk.x); chunkX++) {
@@ -411,10 +443,18 @@ public final class VillagerMountGameTests {
                 "A driver mob's native navigation must delegate to its controlled horse");
         horse.getNavigation().stop();
         helper.assertTrue(horse.getNavigation().isDone(),
-                "The route refresh fixture must begin with a stopped mount navigator");
+                "The delegation fixture must begin with a stopped mount navigator");
         VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertTrue(horse.getNavigation().isDone(),
+                "The mount coordinator must not inject a competing route for the rider's AI");
+        helper.assertTrue(villager.getNavigation().moveTo(
+                        travelTarget.getX() + 0.5D,
+                        travelTarget.getY(),
+                        travelTarget.getZ() + 0.5D,
+                        0.8D),
+                "The mounted villager's normal navigator must accept the route through its horse");
         helper.assertFalse(horse.getNavigation().isDone(),
-                "A mounted villager must restart the horse navigator when a travel path ends early");
+                "The rider's delegated navigation request must start the horse navigator");
         helper.assertTrue(VillagerMountAssignmentSavedData.get(level)
                         .forVillager(villager.getUUID()).orElseThrow().parkingPosition() == null,
                 "Boarding must release the persisted parking anchor");

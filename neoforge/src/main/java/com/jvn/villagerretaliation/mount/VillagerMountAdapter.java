@@ -29,11 +29,7 @@ interface VillagerMountAdapter {
 
     boolean isPanicking(Entity entity);
 
-    boolean hasGroundPath(Entity entity, BlockPos target);
-
     boolean moveTo(Entity entity, BlockPos target, double speed);
-
-    boolean isNavigationDone(Entity entity);
 
     void stopNavigation(Entity entity);
 
