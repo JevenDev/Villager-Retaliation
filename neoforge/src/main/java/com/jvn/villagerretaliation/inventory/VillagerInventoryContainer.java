@@ -593,12 +593,16 @@ final class VillagerInventoryContainer implements Container {
             }
             remainder = AssignedStorageService.depositStack(this.villager, remainder);
         }
-        if (remainder.isEmpty()) {
-            for (int slot = 0; slot < this.inventory.size(); slot++) {
-                this.inventory.set(slot, updatedInventory.get(slot));
-            }
+        for (int slot = 0; slot < this.inventory.size(); slot++) {
+            this.inventory.set(slot, updatedInventory.get(slot));
         }
-        return remainder.isEmpty();
+        if (!remainder.isEmpty()) {
+            // The preflight can become stale if storage changes during the transfer.
+            // Dropping the unaccepted portion completes the move without retaining a
+            // second copy in the equipment slot.
+            this.villager.spawnAtLocation(remainder);
+        }
+        return true;
     }
 
     private boolean canAssignedStorageAccept(ItemStack stack) {

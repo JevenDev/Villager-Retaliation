@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerItemFilterItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.work.HiredFarmingInventoryBridge;
 import com.jvn.villagerretaliation.recipe.VillagerItemFilterCopyRecipe;
 import com.jvn.villagerretaliation.party.PartyVillagerDropCollection;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -15,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -968,6 +970,71 @@ public final class VillagerInventoryGameTests {
         helper.assertValueEqual(countEventDrops(drops, Items.BONE), 2, "death should drop job hotbar contents");
         helper.assertValueEqual(countStored(villager, Items.BREAD), 0, "personal inventory should clear after death drops");
         helper.assertTrue(HiredJobInventory.getJobInventory(villager).isEmpty(), "job inventory should clear after death drops");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void supplyTransformIsAtomicWhenCraftedOutputCannotFit(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        fillMainJobGrid(inventory, Items.COBBLESTONE);
+        for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.HOTBAR_START; slot++) {
+            inventory.markPlayerPlacedSupply(slot);
+        }
+        for (int slot = HiredJobInventory.HOTBAR_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+            inventory.setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+
+        int ingredientSlot = HiredJobInventory.MAIN_GRID_START;
+        inventory.setItem(ingredientSlot, new ItemStack(Items.GLASS_BOTTLE, 2));
+        helper.assertFalse(inventory.tryTransformSupplies(
+                        Map.of(Items.GLASS_BOTTLE, 1),
+                        List.of(new ItemStack(Items.POTION))),
+                "a full inventory must reject a transform whose ingredient stack remains occupied");
+        helper.assertValueEqual(inventory.getItem(ingredientSlot).getCount(), 2,
+                "a rejected transform must not consume ingredients");
+
+        inventory.setItem(ingredientSlot, new ItemStack(Items.GLASS_BOTTLE));
+        helper.assertTrue(inventory.tryTransformSupplies(
+                        Map.of(Items.GLASS_BOTTLE, 1),
+                        List.of(new ItemStack(Items.POTION))),
+                "a transform should reuse a slot freed by its consumed ingredient");
+        helper.assertTrue(inventory.getItem(ingredientSlot).is(Items.POTION),
+                "the produced item should occupy the freed supply slot");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void farmOverflowDropsOnlyTheUnstoredRemainder(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        fillMainJobGrid(inventory, Items.COBBLESTONE);
+        inventory.setItem(HiredJobInventory.MAIN_GRID_START, new ItemStack(Items.WHEAT, 63));
+        for (int slot = HiredJobInventory.HOTBAR_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+            inventory.setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+        inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.WHEAT, 8));
+
+        helper.assertFalse(HiredFarmingInventoryBridge.storeFarmDrops(
+                        villager,
+                        inventory,
+                        List.of(new ItemStack(Items.WHEAT, 5))),
+                "partial farm storage should report overflow");
+        helper.assertValueEqual(inventory.getItem(HiredJobInventory.MAIN_GRID_START).getCount(), 64,
+                "farm storage should retain the portion that fit");
+        int dropped = helper.getLevel().getEntitiesOfClass(
+                        ItemEntity.class,
+                        villager.getBoundingBox().inflate(2.0D),
+                        entity -> entity.getItem().is(Items.WHEAT))
+                .stream()
+                .mapToInt(entity -> entity.getItem().getCount())
+                .sum();
+        helper.assertValueEqual(dropped, 4,
+                "farm overflow should drop exactly the portion that did not fit");
 
         villager.discard();
         helper.succeed();

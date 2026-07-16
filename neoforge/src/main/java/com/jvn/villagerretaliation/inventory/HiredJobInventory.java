@@ -23,6 +23,7 @@ import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
@@ -799,6 +800,63 @@ public final class HiredJobInventory implements Container {
                 return false;
             }
         }
+        return true;
+    }
+
+    /**
+     * Applies a supply-only item transformation as one transaction. Ingredients are
+     * only consumed when every produced stack, including container remainders, fits.
+     */
+    public boolean tryTransformSupplies(Map<Item, Integer> consumed, List<ItemStack> produced) {
+        if (consumed == null || consumed.isEmpty() || produced == null || produced.isEmpty()) {
+            return false;
+        }
+        NonNullList<ItemStack> simulatedItems = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+        HiredJobInventorySlotType[] simulatedTypes = new HiredJobInventorySlotType[SLOT_COUNT];
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            simulatedItems.set(slot, this.items.get(slot).copy());
+            simulatedTypes[slot] = slotType(slot);
+        }
+
+        for (Map.Entry<Item, Integer> entry : consumed.entrySet()) {
+            Item item = entry.getKey();
+            Integer requested = entry.getValue();
+            if (item == null || requested == null || requested <= 0) {
+                return false;
+            }
+            int remaining = requested;
+            for (int slot = 0; slot < SLOT_COUNT && remaining > 0; slot++) {
+                if (simulatedTypes[slot] != HiredJobInventorySlotType.SUPPLY) {
+                    continue;
+                }
+                ItemStack stack = simulatedItems.get(slot);
+                if (stack.isEmpty() || ProtectedVillagerProperty.isProtected(stack) || !stack.is(item)) {
+                    continue;
+                }
+                int removed = Math.min(remaining, stack.getCount());
+                stack.shrink(removed);
+                remaining -= removed;
+                if (stack.isEmpty()) {
+                    simulatedItems.set(slot, ItemStack.EMPTY);
+                    simulatedTypes[slot] = defaultType(slot);
+                }
+            }
+            if (remaining > 0) {
+                return false;
+            }
+        }
+
+        for (ItemStack stack : produced) {
+            if (stack != null && !simulateSupplyInsert(simulatedItems, simulatedTypes, stack.copy()).isEmpty()) {
+                return false;
+            }
+        }
+
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            this.items.set(slot, simulatedItems.get(slot));
+            this.slotTypes[slot] = simulatedTypes[slot];
+        }
+        setChanged();
         return true;
     }
 

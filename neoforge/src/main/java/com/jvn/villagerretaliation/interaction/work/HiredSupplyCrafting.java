@@ -86,19 +86,11 @@ public final class HiredSupplyCrafting {
             if (!prepareRecipeIngredients(level, context, recipe, ingredients, visiting, hasCraftingTable)) {
                 continue;
             }
-            if (!canInsertSupply(context, result) && !willConsumeAnyOnlyCarriedSupplyStack(context, ingredients)) {
-                visiting.remove(item);
-                return false;
-            }
-            for (Map.Entry<Item, Integer> entry : ingredients.entrySet()) {
-                context.inventory().consumeSupply(stack -> stack.is(entry.getKey()), entry.getValue());
-            }
-            ItemStack remainder = context.inventory().insertSupply(result.copy());
-            if (remainder.isEmpty()) {
-                insertCraftingRemainders(context, ingredients);
-            }
+            List<ItemStack> produced = craftingRemainders(ingredients);
+            produced.add(0, result.copy());
+            boolean crafted = context.inventory().tryTransformSupplies(ingredients, produced);
             visiting.remove(item);
-            return remainder.isEmpty();
+            return crafted;
         }
         visiting.remove(item);
         return false;
@@ -140,43 +132,7 @@ public final class HiredSupplyCrafting {
         return true;
     }
 
-    public static boolean canInsertSupply(HiredWorkContext context, ItemStack stack) {
-        for (int slot : context.inventory().supplySlots()) {
-            ItemStack current = context.inventory().getItem(slot);
-            if (current.isEmpty()) {
-                return true;
-            }
-            if (ItemStack.isSameItemSameComponents(current, stack) && current.getCount() < current.getMaxStackSize()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static boolean willConsumeOnlyCarriedSupplyStack(HiredWorkContext context, Item item) {
-        int matchingSlots = 0;
-        for (int slot : context.inventory().supplySlots()) {
-            ItemStack stack = context.inventory().getItem(slot);
-            if (!stack.isEmpty() && stack.is(item)) {
-                matchingSlots++;
-                if (matchingSlots > 1 || stack.getCount() > 1) {
-                    return false;
-                }
-            }
-        }
-        return matchingSlots == 1;
-    }
-
-    private static boolean willConsumeAnyOnlyCarriedSupplyStack(HiredWorkContext context, Map<Item, Integer> ingredients) {
-        for (Map.Entry<Item, Integer> entry : ingredients.entrySet()) {
-            if (countCarried(context, entry.getKey()) == entry.getValue()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static void insertCraftingRemainders(HiredWorkContext context, Map<Item, Integer> ingredients) {
+    private static List<ItemStack> craftingRemainders(Map<Item, Integer> ingredients) {
         List<ItemStack> remainders = new ArrayList<>();
         for (Map.Entry<Item, Integer> entry : ingredients.entrySet()) {
             ItemStack ingredient = new ItemStack(entry.getKey());
@@ -190,9 +146,7 @@ public final class HiredSupplyCrafting {
                 }
             }
         }
-        for (ItemStack remainder : remainders) {
-            context.inventory().insertSupply(remainder);
-        }
+        return remainders;
     }
 
     public static boolean requiresCraftingTable(CraftingRecipe recipe) {

@@ -1130,16 +1130,9 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 break;
             }
             ItemStack waterBottle = PotionContents.createItemStack(Items.POTION, Potions.WATER);
-            if (!HiredSupplyCrafting.canInsertSupply(context, waterBottle)
-                    && !HiredSupplyCrafting.willConsumeOnlyCarriedSupplyStack(context, Items.GLASS_BOTTLE)) {
-                break;
-            }
-            if (context.inventory().consumeSupply(stack -> stack.is(Items.GLASS_BOTTLE), 1) <= 0) {
-                break;
-            }
-            ItemStack remainder = context.inventory().insertSupply(waterBottle);
-            if (!remainder.isEmpty()) {
-                context.inventory().insertSupply(new ItemStack(Items.GLASS_BOTTLE));
+            if (!context.inventory().tryTransformSupplies(
+                    Map.of(Items.GLASS_BOTTLE, 1),
+                    List.of(waterBottle))) {
                 break;
             }
             filled++;

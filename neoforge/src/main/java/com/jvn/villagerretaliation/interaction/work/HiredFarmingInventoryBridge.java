@@ -134,12 +134,15 @@ public final class HiredFarmingInventoryBridge {
     }
 
     public static boolean storeFarmDrops(Villager villager, HiredJobInventory inventory, List<ItemStack> drops) {
+        boolean storedAll = true;
         for (ItemStack drop : drops) {
-            if (!insertFarmPickup(villager, inventory, drop.copy()).isEmpty()) {
-                return false;
+            ItemStack remainder = insertFarmPickup(villager, inventory, drop.copy());
+            if (!remainder.isEmpty()) {
+                villager.spawnAtLocation(remainder);
+                storedAll = false;
             }
         }
-        return true;
+        return storedAll;
     }
 
     public static boolean plantFromJobInventory(
