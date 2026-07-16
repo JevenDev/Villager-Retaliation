@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.mount;
 
+import java.util.Set;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -11,9 +13,11 @@ interface VillagerMountAdapter {
 
     boolean structurallyEligible(ServerLevel level, Entity entity);
 
-    boolean hasUnrelatedPassengers(Entity entity, Villager assignedVillager);
+    int seatCapacity(Entity entity);
 
-    boolean tryMountDriver(Entity entity, Villager villager);
+    boolean hasUnrelatedPassengers(Entity entity, Set<UUID> assignedVillagers);
+
+    boolean tryMountAvailableSeat(Entity entity, Villager villager);
 
     boolean tryDismount(Entity entity, Villager villager);
 
@@ -28,6 +32,8 @@ interface VillagerMountAdapter {
     boolean hasGroundPath(Entity entity, BlockPos target);
 
     boolean moveTo(Entity entity, BlockPos target, double speed);
+
+    boolean isNavigationDone(Entity entity);
 
     void stopNavigation(Entity entity);
 

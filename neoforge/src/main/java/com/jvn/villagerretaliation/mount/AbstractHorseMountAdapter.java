@@ -1,12 +1,17 @@
 package com.jvn.villagerretaliation.mount;
 
 import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
+import java.util.Set;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.level.pathfinder.Path;
+import net.minecraft.world.phys.Vec3;
 
 final class AbstractHorseMountAdapter implements VillagerMountAdapter {
     @Override
@@ -28,17 +33,26 @@ final class AbstractHorseMountAdapter implements VillagerMountAdapter {
     }
 
     @Override
-    public boolean hasUnrelatedPassengers(Entity entity, Villager assignedVillager) {
-        if (!(entity instanceof AbstractHorse horse)) {
-            return true;
+    public int seatCapacity(Entity entity) {
+        if (!(entity instanceof AbstractHorse horse) || !VillagerRideOnCompat.supportsDriver(horse)) {
+            return 0;
         }
-        return horse.getPassengers().stream().anyMatch(passenger -> passenger != assignedVillager);
+        return VillagerRideOnCompat.supportsPassenger(horse) ? 2 : 1;
     }
 
     @Override
-    public boolean tryMountDriver(Entity entity, Villager villager) {
+    public boolean hasUnrelatedPassengers(Entity entity, Set<UUID> assignedVillagers) {
+        if (!(entity instanceof AbstractHorse horse)) {
+            return true;
+        }
+        return horse.getPassengers().stream()
+                .anyMatch(passenger -> assignedVillagers == null || !assignedVillagers.contains(passenger.getUUID()));
+    }
+
+    @Override
+    public boolean tryMountAvailableSeat(Entity entity, Villager villager) {
         return entity instanceof AbstractHorse horse
-                && VillagerRideOnCompat.tryMountDriver(horse, villager);
+                && VillagerRideOnCompat.tryMountAvailableSeat(horse, villager);
     }
 
     @Override
@@ -73,8 +87,7 @@ final class AbstractHorseMountAdapter implements VillagerMountAdapter {
         if (!(entity instanceof AbstractHorse horse) || target == null) {
             return false;
         }
-        var path = horse.getNavigation().createPath(target, 0);
-        return path != null && path.canReach();
+        return createTravelPath(horse, target) != null;
     }
 
     @Override
@@ -82,8 +95,13 @@ final class AbstractHorseMountAdapter implements VillagerMountAdapter {
         if (!(entity instanceof AbstractHorse horse) || target == null) {
             return false;
         }
-        var path = horse.getNavigation().createPath(target, 0);
-        return path != null && path.canReach() && horse.getNavigation().moveTo(path, speed);
+        Path path = createTravelPath(horse, target);
+        return path != null && horse.getNavigation().moveTo(path, speed);
+    }
+
+    @Override
+    public boolean isNavigationDone(Entity entity) {
+        return !(entity instanceof AbstractHorse horse) || horse.getNavigation().isDone();
     }
 
     @Override
@@ -105,5 +123,36 @@ final class AbstractHorseMountAdapter implements VillagerMountAdapter {
         if (entity instanceof AbstractHorse horse) {
             horse.clearRestriction();
         }
+    }
+
+    private static Path createTravelPath(AbstractHorse horse, BlockPos target) {
+        Path direct = horse.getNavigation().createPath(target, 0);
+        if (direct != null && direct.canReach()) {
+            return direct;
+        }
+
+        Vec3 destination = Vec3.atBottomCenterOf(target);
+        Vec3 from = horse.position();
+        Vec3 horizontal = new Vec3(destination.x - from.x, 0.0D, destination.z - from.z);
+        if (horizontal.lengthSqr() > 1.0D) {
+            Vec3 segment = from.add(horizontal.normalize().scale(Math.min(12.0D, horizontal.length())));
+            Path segmentPath = horse.getNavigation().createPath(
+                    BlockPos.containing(segment.x, destination.y, segment.z), 0);
+            if (segmentPath != null && segmentPath.canReach()) {
+                return segmentPath;
+            }
+        }
+
+        Vec3 waypoint = DefaultRandomPos.getPosTowards(horse, 16, 7, destination, (float) (Math.PI / 10.0D));
+        if (waypoint == null) {
+            waypoint = DefaultRandomPos.getPosTowards(horse, 8, 7, destination, (float) (Math.PI / 2.0D));
+        }
+        Path waypointPath = waypoint == null
+                ? null
+                : horse.getNavigation().createPath(BlockPos.containing(waypoint), 0);
+        if (waypointPath != null && waypointPath.canReach()) {
+            return waypointPath;
+        }
+        return direct != null && direct.getNodeCount() > 1 ? direct : null;
     }
 }

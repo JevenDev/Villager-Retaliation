@@ -8,7 +8,12 @@ import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -16,7 +21,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.pathfinder.Path;
 
 /** Coordinates travel without owning any villager work, party, or combat navigation. */
@@ -31,6 +35,10 @@ public final class VillagerMountTravelService {
     private static final double PARK_RETURN_SPEED = 0.8D;
     private static final long RETRY_INTERVAL_TICKS = 20L;
     private static final long PARKING_INTERVAL_TICKS = 10L;
+    private static final long ROUTE_REFRESH_TICKS = 40L;
+    private static final long TARGET_MEMORY_GRACE_TICKS = 40L;
+    private static final Map<UUID, RememberedTarget> TARGETS_BY_VILLAGER = new HashMap<>();
+    private static final Map<UUID, DrivenRoute> ROUTES_BY_MOUNT = new HashMap<>();
 
     private VillagerMountTravelService() {
     }
@@ -65,6 +73,7 @@ public final class VillagerMountTravelService {
 
         TravelDecision decision = travelDecision(level, villager);
         if (!decision.activeContract()) {
+            forgetAssignment(assignment);
             VillagerMountAssignmentService.clearAssignment(level, villager.getUUID());
             return;
         }
@@ -72,7 +81,7 @@ public final class VillagerMountTravelService {
             park(level, villager, mount, adapter, data);
             return;
         }
-        if (isRearPassengerBehindPlayer(villager, mount)) {
+        if (isRearPassenger(villager, mount)) {
             // A rear passenger keeps combat/look AI, but its own movement requests cannot steer.
             villager.getNavigation().stop();
             return;
@@ -82,10 +91,13 @@ public final class VillagerMountTravelService {
             adapter.clearRestriction(mount);
             if (decision.staying()) {
                 adapter.stopNavigation(mount);
+                ROUTES_BY_MOUNT.remove(mount.getUUID());
+            } else {
+                driveMount(level, villager, mount, adapter, decision.travelTarget());
             }
             return;
         }
-        if (villager.getVehicle() != null || adapter.hasActiveRider(mount)) {
+        if (villager.getVehicle() != null) {
             return;
         }
         // Parking must not make the mount's own pathfinder reject the requested travel leg.
@@ -96,11 +108,11 @@ public final class VillagerMountTravelService {
 
         if (villager.distanceToSqr(mount) <= BOARD_DISTANCE_SQR) {
             BlockPos travelTarget = decision.travelTarget();
-            if (adapter.tryMountDriver(mount, villager)) {
+            if (adapter.tryMountAvailableSeat(mount, villager)) {
                 data.setParkingAnchor(villager.getUUID(), null, null);
                 adapter.clearRestriction(mount);
-                if (travelTarget != null) {
-                    adapter.moveTo(mount, travelTarget, APPROACH_SPEED);
+                if (adapter.isDriver(mount, villager)) {
+                    driveMount(level, villager, mount, adapter, travelTarget);
                 }
             }
             return;
@@ -128,23 +140,32 @@ public final class VillagerMountTravelService {
             return;
         }
         VillagerMountAssignmentSavedData data = VillagerMountAssignmentSavedData.get(server.overworld());
+        Set<UUID> handledMounts = new HashSet<>();
         for (VillagerMountAssignment assignment : List.copyOf(data.assignments())) {
+            if (!handledMounts.add(assignment.mountId())) {
+                continue;
+            }
             Entity mount = VillagerMountEntities.loaded(server, assignment.mountId());
             if (mount == null) {
                 continue;
             }
             data.updateMountLocation(mount.getUUID(), mount.level().dimension().location(), mount.blockPosition());
             VillagerMountAdapter adapter = VillagerMountAdapters.find(mount);
-            if (adapter == null
-                    || assignment.parkingDimension() == null
-                    || assignment.parkingPosition() == null
-                    || !assignment.parkingDimension().equals(mount.level().dimension().location())) {
+            if (adapter == null) {
                 continue;
             }
-            Entity assigned = VillagerMountEntities.loaded(server, assignment.villagerId());
-            if (assigned instanceof Villager villager
-                    && villager.level() == mount.level()
-                    && travelDecision((ServerLevel) villager.level(), villager).wantsMount()) {
+            List<VillagerMountAssignment> mountAssignments = data.assignmentsForMount(assignment.mountId());
+            boolean wanted = false;
+            for (VillagerMountAssignment mountAssignment : mountAssignments) {
+                Entity assigned = VillagerMountEntities.loaded(server, mountAssignment.villagerId());
+                if (assigned instanceof Villager villager
+                        && villager.level() == mount.level()
+                        && travelDecision((ServerLevel) villager.level(), villager).wantsMount()) {
+                    wanted = true;
+                    break;
+                }
+            }
+            if (wanted) {
                 adapter.clearRestriction(mount);
                 continue;
             }
@@ -152,7 +173,16 @@ public final class VillagerMountTravelService {
                 adapter.clearRestriction(mount);
                 continue;
             }
-            BlockPos anchor = assignment.parkingPosition();
+            VillagerMountAssignment parked = mountAssignments.stream()
+                    .filter(candidate -> candidate.parkingPosition() != null
+                            && candidate.parkingDimension() != null
+                            && candidate.parkingDimension().equals(mount.level().dimension().location()))
+                    .findFirst()
+                    .orElse(null);
+            if (parked == null) {
+                continue;
+            }
+            BlockPos anchor = parked.parkingPosition();
             adapter.restrictTo(mount, anchor, PARK_RESTRICTION_RADIUS);
             double distance = mount.blockPosition().distSqr(anchor);
             if (distance > PARK_RETURN_DISTANCE_SQR) {
@@ -186,12 +216,29 @@ public final class VillagerMountTravelService {
     }
 
     static void releaseRestriction(MinecraftServer server, VillagerMountAssignment assignment) {
+        forgetAssignment(assignment);
         Entity mount = assignment == null ? null : VillagerMountEntities.loaded(server, assignment.mountId());
         VillagerMountAdapter adapter = VillagerMountAdapters.find(mount);
         if (adapter != null) {
             adapter.clearRestriction(mount);
             adapter.stopNavigation(mount);
         }
+    }
+
+    static void forgetAssignment(VillagerMountAssignment assignment) {
+        if (assignment == null) {
+            return;
+        }
+        TARGETS_BY_VILLAGER.remove(assignment.villagerId());
+        DrivenRoute route = ROUTES_BY_MOUNT.get(assignment.mountId());
+        if (route != null && route.driverId().equals(assignment.villagerId())) {
+            ROUTES_BY_MOUNT.remove(assignment.mountId());
+        }
+    }
+
+    static void clearRuntimeState() {
+        TARGETS_BY_VILLAGER.clear();
+        ROUTES_BY_MOUNT.clear();
     }
 
     private static TravelDecision travelDecision(ServerLevel level, Villager villager) {
@@ -202,7 +249,7 @@ public final class VillagerMountTravelService {
                     true,
                     party.mountMode() && partyVillager.quickCommandsEnabled(),
                     partyVillager.commandMode() == PartyCommandMode.STAY,
-                    null);
+                    currentTravelTarget(villager));
         }
         if (!HiredVillagerContractService.isHired(level, villager)) {
             return TravelDecision.INACTIVE;
@@ -223,22 +270,33 @@ public final class VillagerMountTravelService {
     }
 
     private static BlockPos currentTravelTarget(Villager villager) {
+        long now = villager.level().getGameTime();
         BlockPos walkTarget = villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
                 .map(target -> target.getTarget().currentBlockPosition())
                 .orElse(null);
         if (walkTarget != null) {
+            TARGETS_BY_VILLAGER.put(villager.getUUID(), new RememberedTarget(walkTarget, now));
             return walkTarget;
+        }
+        RememberedTarget remembered = TARGETS_BY_VILLAGER.get(villager.getUUID());
+        if (villager.isPassenger()
+                && remembered != null
+                && now - remembered.lastObservedGameTime() <= TARGET_MEMORY_GRACE_TICKS) {
+            return remembered.target();
+        }
+        if (remembered != null) {
+            TARGETS_BY_VILLAGER.remove(villager.getUUID());
         }
         return villager.getNavigation().isDone() ? null : villager.getNavigation().getTargetPos();
     }
 
-    private static boolean isRearPassengerBehindPlayer(Villager villager, Entity mount) {
+    private static boolean isRearPassenger(Villager villager, Entity mount) {
         if (!(mount instanceof AbstractHorse horse)) {
             return false;
         }
         Entity driver = VillagerRideOnCompat.occupant(horse, false);
-        return driver instanceof Player player
-                && player.isAlive()
+        return driver != null
+                && driver.isAlive()
                 && VillagerRideOnCompat.occupant(horse, true) == villager;
     }
 
@@ -253,6 +311,7 @@ public final class VillagerMountTravelService {
             Entity mount,
             VillagerMountAdapter adapter,
             VillagerMountAssignmentSavedData data) {
+        forgetAssignment(data.forVillager(villager.getUUID()).orElse(null));
         if (villager.getVehicle() == mount) {
             adapter.tryDismount(mount, villager);
         }
@@ -273,6 +332,32 @@ public final class VillagerMountTravelService {
         }
     }
 
+    private static void driveMount(
+            ServerLevel level,
+            Villager villager,
+            Entity mount,
+            VillagerMountAdapter adapter,
+            BlockPos target) {
+        if (target == null) {
+            DrivenRoute route = ROUTES_BY_MOUNT.get(mount.getUUID());
+            if (route != null && route.driverId().equals(villager.getUUID())) {
+                ROUTES_BY_MOUNT.remove(mount.getUUID());
+            }
+            return;
+        }
+        long now = level.getGameTime();
+        DrivenRoute route = ROUTES_BY_MOUNT.get(mount.getUUID());
+        boolean changed = route == null
+                || !route.driverId().equals(villager.getUUID())
+                || !route.target().equals(target);
+        if (!changed && !adapter.isNavigationDone(mount) && now < route.refreshGameTime()) {
+            return;
+        }
+        adapter.moveTo(mount, target, APPROACH_SPEED);
+        ROUTES_BY_MOUNT.put(mount.getUUID(),
+                new DrivenRoute(villager.getUUID(), target.immutable(), now + ROUTE_REFRESH_TICKS));
+    }
+
     private record TravelDecision(
             boolean activeContract,
             boolean wantsMount,
@@ -280,5 +365,11 @@ public final class VillagerMountTravelService {
             BlockPos travelTarget) {
         private static final TravelDecision INACTIVE = new TravelDecision(false, false, false, null);
         private static final TravelDecision ACTIVE_ON_FOOT = new TravelDecision(true, false, false, null);
+    }
+
+    private record RememberedTarget(BlockPos target, long lastObservedGameTime) {
+    }
+
+    private record DrivenRoute(UUID driverId, BlockPos target, long refreshGameTime) {
     }
 }

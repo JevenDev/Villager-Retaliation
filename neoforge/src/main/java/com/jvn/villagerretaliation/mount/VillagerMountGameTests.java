@@ -23,6 +23,7 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
@@ -78,6 +79,7 @@ public final class VillagerMountGameTests {
     public static void assignmentDataPersistsBothIndexesLocationsAndParking(GameTestHelper helper) {
         VillagerMountAssignmentSavedData data = new VillagerMountAssignmentSavedData();
         UUID villagerId = UUID.randomUUID();
+        UUID secondVillagerId = UUID.randomUUID();
         UUID mountId = UUID.randomUUID();
         VillagerMountAssignment assignment = new VillagerMountAssignment(
                 villagerId,
@@ -89,15 +91,15 @@ public final class VillagerMountGameTests {
                 new BlockPos(3, 70, -7),
                 42L
         );
-        helper.assertTrue(data.assign(assignment), "The first one-to-one assignment must be accepted");
+        helper.assertTrue(data.assign(assignment), "The first villager assignment must be accepted");
         helper.assertFalse(data.assign(new VillagerMountAssignment(
                         villagerId, UUID.randomUUID(), assignment.mountType(), assignment.mountDimension(),
                         BlockPos.ZERO, null, null, 43L)),
                 "A villager must not receive a second mount");
-        helper.assertFalse(data.assign(new VillagerMountAssignment(
-                        UUID.randomUUID(), mountId, assignment.mountType(), assignment.mountDimension(),
+        helper.assertTrue(data.assign(new VillagerMountAssignment(
+                        secondVillagerId, mountId, assignment.mountType(), assignment.mountDimension(),
                         BlockPos.ZERO, null, null, 43L)),
-                "A mount must not be shared by a second villager");
+                "Persistence must retain multiple villagers for a multi-seat mount");
 
         ResourceLocation nether = Level.NETHER.location();
         BlockPos moved = new BlockPos(18, 64, 22);
@@ -111,7 +113,11 @@ public final class VillagerMountGameTests {
                 VillagerMountAssignmentSavedData.load(saved, helper.getLevel().registryAccess());
         VillagerMountAssignment restored = loaded.forVillager(villagerId).orElseThrow();
         helper.assertValueEqual(loaded.forMount(mountId).orElseThrow(), restored,
-                "Villager and mount indexes must resolve the same restored record");
+                "The mount index must retain the first restored record");
+        helper.assertValueEqual(loaded.assignmentsForMount(mountId).size(), 2,
+                "The mount index must restore every remembered rider");
+        helper.assertValueEqual(loaded.forVillager(secondVillagerId).orElseThrow().lastMountPosition(), moved,
+                "Location updates must reach every assignment sharing a mount");
         helper.assertValueEqual(restored.mountDimension(), nether, "restored mount dimension");
         helper.assertValueEqual(restored.lastMountPosition(), moved, "restored mount position");
         helper.assertValueEqual(restored.parkingPosition(), moved.offset(1, 0, 1), "restored parking anchor");
@@ -180,8 +186,20 @@ public final class VillagerMountGameTests {
         HiredVillagerContractService.startHireContract(level, duplicateVillager, hirer, 1, 0);
         helper.assertValueEqual(
                 VillagerMountAssignmentService.assign(hirer, duplicateVillager, mounts.getFirst()),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "A normal horse must remember a villager for each of its two Ride On seats");
+        Villager thirdHorseVillager = helper.spawn(EntityType.VILLAGER, 8, 1, 3);
+        HiredVillagerContractService.startHireContract(level, thirdHorseVillager, hirer, 1, 0);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, thirdHorseVillager, mounts.getFirst()),
                 VillagerMountAssignmentService.AssignmentResult.MOUNT_ALREADY_ASSIGNED,
-                "A second villager must not share an assigned mount");
+                "A normal horse must reject a third remembered villager");
+        Villager secondDonkeyVillager = helper.spawn(EntityType.VILLAGER, 9, 1, 3);
+        HiredVillagerContractService.startHireContract(level, secondDonkeyVillager, hirer, 1, 0);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, secondDonkeyVillager, mounts.get(1)),
+                VillagerMountAssignmentService.AssignmentResult.MOUNT_ALREADY_ASSIGNED,
+                "A Ride On single-seat mount must still remember only one villager");
         helper.assertValueEqual(
                 VillagerMountAssignmentService.assign(hirer, firstVillager, mounts.get(1)),
                 VillagerMountAssignmentService.AssignmentResult.VILLAGER_ALREADY_ASSIGNED,
@@ -257,6 +275,104 @@ public final class VillagerMountGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_shared_seats")
+    public static void twoAssignedVillagersFillBothHorseSeatsAtRaiderHeight(GameTestHelper helper) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            helper.succeed();
+            return;
+        }
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager driver = helper.spawn(EntityType.VILLAGER, 1, 1, 2);
+        Villager passenger = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 1, 1, 2);
+        horse.setTamed(true);
+        horse.setOnGround(true);
+        HiredVillagerContractService.startHireContract(level, driver, hirer, 1, 0);
+        HiredVillagerContractService.startHireContract(level, passenger, hirer, 1, 0);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, driver, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The horse must accept its driver assignment");
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, passenger, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The horse must accept its rear-seat assignment");
+
+        BlockPos target = driver.blockPosition().offset(20, 0, 0);
+        layTravelFloor(level, driver.blockPosition(), target);
+        driver.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(target), 0.8F, 0));
+        passenger.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(target), 0.8F, 0));
+        VillagerMountTravelService.onVillagerTickPost(driver);
+        VillagerMountTravelService.onVillagerTickPost(passenger);
+
+        helper.assertValueEqual(driver.getVehicle(), horse, "The first villager must take the driver seat");
+        helper.assertValueEqual(passenger.getVehicle(), horse, "The second villager must take the rear seat");
+        helper.assertValueEqual(horse.getPassengers().size(), 2, "The horse must carry both assigned villagers");
+        helper.assertValueEqual(horse.getPassengers().getFirst(), driver, "The first villager must remain the driver");
+        helper.assertValueEqual(horse.getPassengers().get(1), passenger, "The second villager must occupy the rear seat");
+
+        horse.positionRider(driver);
+        horse.positionRider(passenger);
+        helper.assertTrue(driver.getY() - horse.getY() > 0.7D && driver.getY() - horse.getY() < 1.0D,
+                "The driver must use the vanilla raider-style 0.6-block riding offset");
+        helper.assertTrue(passenger.getY() - horse.getY() > 0.7D && passenger.getY() - horse.getY() < 1.0D,
+                "The rear villager must use the same grounded riding offset");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120, batch = "mount_driven_route")
+    public static void mountedVillagerActuallyDrivesTheHorseAlongItsRoute(GameTestHelper helper) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            helper.succeed();
+            return;
+        }
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        horse.setTamed(true);
+        horse.setOnGround(true);
+        hirer.moveTo(horse.getX(), horse.getY(), horse.getZ(), 0.0F, 0.0F);
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, villager, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The route fixture must create its assignment");
+
+        BlockPos target = villager.blockPosition().offset(20, 0, 0);
+        layTravelFloor(level, villager.blockPosition(), target);
+        ChunkPos startChunk = new ChunkPos(villager.blockPosition());
+        ChunkPos targetChunk = new ChunkPos(target);
+        for (int chunkX = Math.min(startChunk.x, targetChunk.x); chunkX <= Math.max(startChunk.x, targetChunk.x); chunkX++) {
+            level.setChunkForced(chunkX, startChunk.z, true);
+        }
+        double startingX = horse.getX();
+        villager.setNoAi(true);
+        villager.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(target), 0.8F, 0));
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertValueEqual(villager.getVehicle(), horse,
+                "The route fixture must mount the villager before measuring movement");
+        helper.startSequence()
+                .thenExecuteAfter(60, () -> {
+                    for (int chunkX = Math.min(startChunk.x, targetChunk.x); chunkX <= Math.max(startChunk.x, targetChunk.x); chunkX++) {
+                        level.setChunkForced(chunkX, startChunk.z, false);
+                    }
+                    helper.assertTrue(horse.getX() - startingX > 2.0D,
+                            "The horse navigator must carry its villager driver toward the requested destination; delta="
+                                    + (horse.getX() - startingX)
+                                    + ", entityTicks=" + horse.tickCount
+                                    + ", navTarget=" + horse.getNavigation().getTargetPos());
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel_remount")
     public static void mountDesireSurvivesUnloadAndRetriesWhenTheMountReturns(GameTestHelper helper) {
         if (!VillagerMountAssignmentService.featureAvailable()) {
@@ -293,6 +409,12 @@ public final class VillagerMountGameTests {
                 "The villager must board when the assigned mount returns within three blocks");
         helper.assertValueEqual(villager.getNavigation(), horse.getNavigation(),
                 "A driver mob's native navigation must delegate to its controlled horse");
+        horse.getNavigation().stop();
+        helper.assertTrue(horse.getNavigation().isDone(),
+                "The route refresh fixture must begin with a stopped mount navigator");
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertFalse(horse.getNavigation().isDone(),
+                "A mounted villager must restart the horse navigator when a travel path ends early");
         helper.assertTrue(VillagerMountAssignmentSavedData.get(level)
                         .forVillager(villager.getUUID()).orElseThrow().parkingPosition() == null,
                 "Boarding must release the persisted parking anchor");

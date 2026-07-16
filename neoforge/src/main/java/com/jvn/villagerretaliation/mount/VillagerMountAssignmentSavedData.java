@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.mount;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,7 +32,7 @@ public final class VillagerMountAssignmentSavedData extends SavedData {
     private static final int CURRENT_VERSION = 1;
 
     private final Map<UUID, VillagerMountAssignment> byVillager = new LinkedHashMap<>();
-    private final Map<UUID, VillagerMountAssignment> byMount = new LinkedHashMap<>();
+    private final Map<UUID, LinkedHashMap<UUID, VillagerMountAssignment>> byMount = new LinkedHashMap<>();
     private final Collection<VillagerMountAssignment> assignments =
             Collections.unmodifiableCollection(this.byVillager.values());
 
@@ -52,10 +53,9 @@ public final class VillagerMountAssignmentSavedData extends SavedData {
             }
             VillagerMountAssignment assignment = readAssignment(entry);
             if (assignment != null
-                    && !data.byVillager.containsKey(assignment.villagerId())
-                    && !data.byMount.containsKey(assignment.mountId())) {
+                    && !data.byVillager.containsKey(assignment.villagerId())) {
                 data.byVillager.put(assignment.villagerId(), assignment);
-                data.byMount.put(assignment.mountId(), assignment);
+                data.mountAssignments(assignment.mountId()).put(assignment.villagerId(), assignment);
             }
         }
         data.setDirty();
@@ -78,7 +78,13 @@ public final class VillagerMountAssignmentSavedData extends SavedData {
     }
 
     public Optional<VillagerMountAssignment> forMount(UUID mountId) {
-        return Optional.ofNullable(mountId == null ? null : byMount.get(mountId));
+        List<VillagerMountAssignment> records = assignmentsForMount(mountId);
+        return records.isEmpty() ? Optional.empty() : Optional.of(records.getFirst());
+    }
+
+    public List<VillagerMountAssignment> assignmentsForMount(UUID mountId) {
+        Map<UUID, VillagerMountAssignment> records = mountId == null ? null : byMount.get(mountId);
+        return records == null ? List.of() : List.copyOf(records.values());
     }
 
     public Collection<VillagerMountAssignment> assignments() {
@@ -87,12 +93,11 @@ public final class VillagerMountAssignmentSavedData extends SavedData {
 
     public boolean assign(VillagerMountAssignment assignment) {
         if (assignment == null
-                || byVillager.containsKey(assignment.villagerId())
-                || byMount.containsKey(assignment.mountId())) {
+                || byVillager.containsKey(assignment.villagerId())) {
             return false;
         }
         byVillager.put(assignment.villagerId(), assignment);
-        byMount.put(assignment.mountId(), assignment);
+        mountAssignments(assignment.mountId()).put(assignment.villagerId(), assignment);
         setDirty();
         return true;
     }
@@ -100,29 +105,40 @@ public final class VillagerMountAssignmentSavedData extends SavedData {
     public VillagerMountAssignment removeForVillager(UUID villagerId) {
         VillagerMountAssignment removed = byVillager.remove(villagerId);
         if (removed != null) {
-            byMount.remove(removed.mountId(), removed);
+            Map<UUID, VillagerMountAssignment> records = byMount.get(removed.mountId());
+            if (records != null) {
+                records.remove(removed.villagerId());
+                if (records.isEmpty()) {
+                    byMount.remove(removed.mountId());
+                }
+            }
             setDirty();
         }
         return removed;
     }
 
-    public VillagerMountAssignment removeForMount(UUID mountId) {
-        VillagerMountAssignment removed = byMount.remove(mountId);
-        if (removed != null) {
-            byVillager.remove(removed.villagerId(), removed);
+    public List<VillagerMountAssignment> removeForMount(UUID mountId) {
+        Map<UUID, VillagerMountAssignment> removed = byMount.remove(mountId);
+        if (removed != null && !removed.isEmpty()) {
+            removed.values().forEach(assignment -> byVillager.remove(assignment.villagerId(), assignment));
             setDirty();
         }
-        return removed;
+        return removed == null ? List.of() : List.copyOf(removed.values());
     }
 
     public boolean updateMountLocation(UUID mountId, ResourceLocation dimension, BlockPos position) {
-        VillagerMountAssignment current = byMount.get(mountId);
-        if (current == null || dimension == null || position == null
-                || dimension.equals(current.mountDimension()) && position.equals(current.lastMountPosition())) {
+        List<VillagerMountAssignment> current = assignmentsForMount(mountId);
+        if (current.isEmpty() || dimension == null || position == null) {
             return false;
         }
-        replace(current, current.withMountLocation(dimension, position.immutable()));
-        return true;
+        boolean changed = false;
+        for (VillagerMountAssignment assignment : current) {
+            if (!dimension.equals(assignment.mountDimension()) || !position.equals(assignment.lastMountPosition())) {
+                replace(assignment, assignment.withMountLocation(dimension, position.immutable()));
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     public boolean setParkingAnchor(UUID villagerId, ResourceLocation dimension, BlockPos position) {
@@ -142,8 +158,12 @@ public final class VillagerMountAssignmentSavedData extends SavedData {
 
     private void replace(VillagerMountAssignment current, VillagerMountAssignment updated) {
         byVillager.put(current.villagerId(), updated);
-        byMount.put(current.mountId(), updated);
+        mountAssignments(current.mountId()).put(current.villagerId(), updated);
         setDirty();
+    }
+
+    private LinkedHashMap<UUID, VillagerMountAssignment> mountAssignments(UUID mountId) {
+        return byMount.computeIfAbsent(mountId, ignored -> new LinkedHashMap<>());
     }
 
     private static CompoundTag writeAssignment(VillagerMountAssignment assignment) {

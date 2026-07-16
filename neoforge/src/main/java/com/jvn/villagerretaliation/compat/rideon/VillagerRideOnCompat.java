@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.ModList;
 import org.slf4j.Logger;
 
@@ -13,6 +14,7 @@ public final class VillagerRideOnCompat {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String MOD_ID = "rideon";
     private static final int REQUIRED_API_VERSION = 2;
+    private static final Vec3 VILLAGER_RIDING_OFFSET = new Vec3(0.0D, -0.6D, 0.0D);
     private static volatile boolean initialized;
     private static volatile Bridge bridge;
 
@@ -35,7 +37,23 @@ public final class VillagerRideOnCompat {
 
     public static boolean tryMountDriver(AbstractHorse horse, Entity rider) {
         Bridge active = bridge();
-        return active != null && active.invokeBoolean(active.tryMount(), horse, rider, active.driverSeat());
+        return active != null && active.invokeBoolean(
+                active.tryMountWithOffset(), horse, rider, active.driverSeat(), VILLAGER_RIDING_OFFSET);
+    }
+
+    public static boolean tryMountPassenger(AbstractHorse horse, Entity rider) {
+        Bridge active = bridge();
+        return active != null && active.invokeBoolean(
+                active.tryMountWithOffset(), horse, rider, active.passengerSeat(), VILLAGER_RIDING_OFFSET);
+    }
+
+    public static boolean tryMountAvailableSeat(AbstractHorse horse, Entity rider) {
+        if (occupant(horse, false) == null) {
+            return tryMountDriver(horse, rider);
+        }
+        return supportsPassenger(horse)
+                && occupant(horse, true) == null
+                && tryMountPassenger(horse, rider);
     }
 
     public static boolean tryDismount(AbstractHorse horse, Entity rider) {
@@ -91,6 +109,7 @@ public final class VillagerRideOnCompat {
                     passenger,
                     apiClass.getMethod("supportsSeat", AbstractHorse.class, seatClass),
                     apiClass.getMethod("tryMount", AbstractHorse.class, Entity.class, seatClass),
+                    apiClass.getMethod("tryMount", AbstractHorse.class, Entity.class, seatClass, Vec3.class),
                     apiClass.getMethod("tryDismount", AbstractHorse.class, Entity.class),
                     apiClass.getMethod("tryTakeDriverSeat", AbstractHorse.class, Entity.class),
                     apiClass.getMethod("occupant", AbstractHorse.class, seatClass)
@@ -106,6 +125,7 @@ public final class VillagerRideOnCompat {
             Object passengerSeat,
             Method supportsSeat,
             Method tryMount,
+            Method tryMountWithOffset,
             Method tryDismount,
             Method tryTakeDriverSeat,
             Method occupant) {

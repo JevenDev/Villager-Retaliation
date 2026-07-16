@@ -11,10 +11,12 @@ import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -59,6 +61,12 @@ public final class VillagerMountAssignmentService {
                 : VillagerMountAssignmentSavedData.get(level).forMount(mountId);
     }
 
+    public static List<VillagerMountAssignment> assignmentsForMount(ServerLevel level, UUID mountId) {
+        return level == null || mountId == null
+                ? List.of()
+                : VillagerMountAssignmentSavedData.get(level).assignmentsForMount(mountId);
+    }
+
     public static boolean canManage(ServerPlayer player, Villager villager) {
         if (player == null
                 || villager == null
@@ -97,10 +105,13 @@ public final class VillagerMountAssignmentService {
     }
 
     public static boolean isEligibleCandidate(ServerLevel level, Entity mount) {
-        return featureAvailable()
-                && structurallyEligible(level, mount)
-                && VillagerMountAssignmentSavedData.get(level).forMount(mount.getUUID()).isEmpty()
-                && mount.getPassengers().isEmpty();
+        if (!featureAvailable() || !structurallyEligible(level, mount) || !mount.getPassengers().isEmpty()) {
+            return false;
+        }
+        VillagerMountAdapter adapter = VillagerMountAdapters.find(mount);
+        return adapter != null
+                && VillagerMountAssignmentSavedData.get(level).assignmentsForMount(mount.getUUID()).size()
+                < adapter.seatCapacity(mount);
     }
 
     public static AssignmentResult startTargeting(ServerPlayer player, Villager villager) {
@@ -146,8 +157,11 @@ public final class VillagerMountAssignmentService {
         if (assignment == null) {
             return false;
         }
-        releaseAssignment(level.getServer(), assignment);
         data.removeForVillager(villagerId);
+        releaseAssignment(level.getServer(), assignment);
+        if (data.assignmentsForMount(assignment.mountId()).isEmpty()) {
+            VillagerMountTravelService.releaseRestriction(level.getServer(), assignment);
+        }
         syncPartyIfPresent(level, villagerId);
         return true;
     }
@@ -157,13 +171,15 @@ public final class VillagerMountAssignmentService {
             return false;
         }
         VillagerMountAssignmentSavedData data = VillagerMountAssignmentSavedData.get(level);
-        VillagerMountAssignment assignment = data.forMount(mountId).orElse(null);
-        if (assignment == null) {
+        List<VillagerMountAssignment> assignments = data.removeForMount(mountId);
+        if (assignments.isEmpty()) {
             return false;
         }
-        releaseAssignment(level.getServer(), assignment);
-        data.removeForMount(mountId);
-        syncPartyIfPresent(level, assignment.villagerId());
+        for (VillagerMountAssignment assignment : assignments) {
+            releaseAssignment(level.getServer(), assignment);
+            syncPartyIfPresent(level, assignment.villagerId());
+        }
+        VillagerMountTravelService.releaseRestriction(level.getServer(), assignments.getFirst());
         return true;
     }
 
@@ -196,11 +212,18 @@ public final class VillagerMountAssignmentService {
         if (!structurallyEligible(level, mount)) {
             return AssignmentResult.INVALID_MOUNT;
         }
-        if (data.forMount(mount.getUUID()).isPresent()) {
+        VillagerMountAdapter adapter = VillagerMountAdapters.find(mount);
+        if (adapter == null) {
+            return AssignmentResult.INVALID_MOUNT;
+        }
+        List<VillagerMountAssignment> mountAssignments = data.assignmentsForMount(mount.getUUID());
+        if (mountAssignments.size() >= adapter.seatCapacity(mount)) {
             return AssignmentResult.MOUNT_ALREADY_ASSIGNED;
         }
-        VillagerMountAdapter adapter = VillagerMountAdapters.find(mount);
-        if (adapter == null || adapter.hasUnrelatedPassengers(mount, villager)) {
+        Set<UUID> assignedVillagers = new HashSet<>();
+        mountAssignments.forEach(assignment -> assignedVillagers.add(assignment.villagerId()));
+        assignedVillagers.add(villager.getUUID());
+        if (adapter.hasUnrelatedPassengers(mount, assignedVillagers)) {
             return AssignmentResult.INVALID_MOUNT;
         }
         VillagerMountAssignment assignment = new VillagerMountAssignment(
@@ -214,7 +237,7 @@ public final class VillagerMountAssignmentService {
                 level.getServer().overworld().getGameTime()
         );
         if (!data.assign(assignment)) {
-            return AssignmentResult.MOUNT_ALREADY_ASSIGNED;
+            return AssignmentResult.VILLAGER_ALREADY_ASSIGNED;
         }
         syncPartyIfPresent(level, villager.getUUID());
         return AssignmentResult.SUCCESS;
@@ -246,13 +269,12 @@ public final class VillagerMountAssignmentService {
         if (!featureAvailable() || player == null || mount == null || player.getVehicle() != null) {
             return false;
         }
-        VillagerMountAssignment assignment = assignmentForMount(player.serverLevel(), mount.getUUID()).orElse(null);
-        if (assignment == null) {
-            return false;
-        }
         Entity driver = VillagerRideOnCompat.occupant(mount, false);
         if (!(driver instanceof Villager villager)
-                || !assignment.villagerId().equals(villager.getUUID())
+                || VillagerMountAssignmentSavedData.get(player.serverLevel())
+                .forVillager(villager.getUUID())
+                .filter(assignment -> assignment.mountId().equals(mount.getUUID()))
+                .isEmpty()
                 || !canRideAssignedMount(player, villager)) {
             return false;
         }
@@ -294,6 +316,7 @@ public final class VillagerMountAssignmentService {
 
     public static void clearRuntimeState() {
         PENDING_TARGETS.clear();
+        VillagerMountTravelService.clearRuntimeState();
     }
 
     private static void handleTargetClick(ServerPlayer player, AbstractHorse mount) {
@@ -402,7 +425,7 @@ public final class VillagerMountAssignmentService {
         if (adapter != null && villager instanceof Villager assignedVillager && villager.getVehicle() == mount) {
             adapter.tryDismount(mount, assignedVillager);
         }
-        VillagerMountTravelService.releaseRestriction(server, assignment);
+        VillagerMountTravelService.forgetAssignment(assignment);
     }
 
     private static void consume(PlayerInteractEvent.EntityInteract event) {
