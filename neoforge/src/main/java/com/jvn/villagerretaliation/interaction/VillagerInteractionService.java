@@ -786,6 +786,12 @@ public final class VillagerInteractionService {
             case SHOW_PAYMENT_STORAGE -> showAssignedPaymentStorage(player, level, villager);
             case REMOVE_PAYMENT_STORAGE -> removeAssignedPaymentStorage(player, level, villager);
             case TOGGLE_AUTO_PAYMENT -> toggleAutoPayment(player, level, villager);
+            case START_MOUNT_ASSIGNMENT ->
+                    com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.startTargeting(player, villager);
+            case UNASSIGN_MOUNT -> {
+                com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.unassign(player, villager);
+                VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            }
             case END_HIRE -> {
                 if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
                     sendVillagerNotice(player, villager, "interaction.hire.end_requires_hirer");
@@ -916,6 +922,8 @@ public final class VillagerInteractionService {
                  SHOW_PAYMENT_STORAGE,
                  REMOVE_PAYMENT_STORAGE,
                  TOGGLE_AUTO_PAYMENT,
+                 START_MOUNT_ASSIGNMENT,
+                 UNASSIGN_MOUNT,
                  PROMPT_END_HIRE_CONFIRMATION,
                  DECLINE_END_HIRE_CONFIRMATION,
                  END_HIRE,
@@ -969,6 +977,8 @@ public final class VillagerInteractionService {
                  CYCLE_PARTY_COMBAT_MODE,
                  CYCLE_PARTY_ATTACK_MODE,
                  CYCLE_PARTY_DROP_COLLECTION,
+                 START_MOUNT_ASSIGNMENT,
+                 UNASSIGN_MOUNT,
                  PROMPT_PARTY_DISMISS_CONFIRMATION,
                  DECLINE_PARTY_DISMISS_CONFIRMATION,
                  PARTY_DISMISS -> true;
@@ -1044,6 +1054,15 @@ public final class VillagerInteractionService {
                 trySendToPlayer(player, new VillagerConversationEndedPayload(villager.getId(), ""));
                 VillagerConversationService.endForPlayer(player, false);
             }
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.START_MOUNT_ASSIGNMENT) {
+            com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.startTargeting(player, villager);
+            return true;
+        }
+        if (action == VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT) {
+            com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.unassign(player, villager);
+            VillagerInteractionScreenOpener.refreshNormal(player, villager);
             return true;
         }
         int extensionDays = switch (action) {

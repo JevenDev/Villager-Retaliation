@@ -22,6 +22,7 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagKeyMappings::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandKeyMappings::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::registerGuiLayer);
+        modEventBus.addListener(com.jvn.villagerretaliation.client.mount.VillagerMountTargetClient::registerGuiLayer);
         com.jvn.villagerretaliation.client.item.VillagerFishingRodItemProperties.register();
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerStatNameTagOverlay::onRenderNameTag);
@@ -85,6 +86,9 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onMouseButton);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::onMouseScroll);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandTargetRenderer::onRenderLevelStage);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.mount.VillagerMountTargetClient::onKey);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.mount.VillagerMountTargetClient::onClientTick);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.mount.VillagerMountTargetClient::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onComputeFov);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onComputeCameraAngles);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.interaction.VillagerDialogueCameraFocus::onClientTick);

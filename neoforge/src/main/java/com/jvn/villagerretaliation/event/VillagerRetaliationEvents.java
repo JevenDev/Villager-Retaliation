@@ -140,6 +140,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onPlayerLoggedOut(event);
         if (event.getEntity() instanceof ServerPlayer player) {
             PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())
                     .ifPresent(party -> PartySyncService.syncPartyWithOfflinePlayer(
@@ -161,6 +162,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onServerStopping(ServerStoppingEvent event) {
         com.jvn.villagerretaliation.raid.PlayerRaidService.clearRuntimeState();
+        com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.clearRuntimeState();
         ServerRuntimeState.clear(event.getServer());
     }
 
@@ -175,6 +177,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
+        com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onServerTick(event.getServer());
         VillagerInventoryAccess.onServerTick(event.getServer());
         PartyVillagerContractService.onServerTick(event.getServer());
         SceneRuntime.tick(event.getServer());
@@ -406,6 +409,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.handleEntityInteract(event)) {
+            return;
+        }
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }

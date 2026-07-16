@@ -121,6 +121,8 @@ public final class VillagerInteractionClientHandler {
                 payload.partyVillagerAuthorized(),
                 payload.partyVillagerPartyMember(),
                 payload.partyRecruitAvailable(),
+                payload.mountFeatureAvailable(),
+                payload.assignedMount(),
                 payload.partyRemainingDays(),
                 payload.walletEmeralds(),
                 payload.maxWalletEmeralds(),

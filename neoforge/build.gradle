@@ -120,6 +120,10 @@ dependencies {
     annotationProcessor "io.wispforest:owo-lib-neoforge:${rootProject.owo_version}"
     implementation "dev.architectury:architectury-neoforge:${rootProject.architectury_version}"
 
+    providers.gradleProperty('rideOnIntegrationJar').orNull?.with { jarPath ->
+        localRuntime files(jarPath)
+    }
+
     if (rootProject.enable_toucanlib.toBoolean()) {
         if (rootProject.useLocalToucanLib.toBoolean()) {
             implementation "com.jvn.toucanlib:toucanlib-neoforge-${rootProject.minecraft_version}:${rootProject.toucanlib_version}"

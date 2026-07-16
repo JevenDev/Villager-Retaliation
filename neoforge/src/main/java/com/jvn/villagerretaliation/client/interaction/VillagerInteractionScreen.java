@@ -266,6 +266,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final boolean partyVillagerAuthorized;
     private final boolean partyVillagerPartyMember;
     private final boolean partyRecruitAvailable;
+    private final boolean mountFeatureAvailable;
+    private boolean assignedMount;
     private int partyRemainingDays;
     private final int walletEmeralds;
     private final int maxWalletEmeralds;
@@ -391,6 +393,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean partyVillagerAuthorized,
             boolean partyVillagerPartyMember,
             boolean partyRecruitAvailable,
+            boolean mountFeatureAvailable,
+            boolean assignedMount,
             int partyRemainingDays,
             int walletEmeralds,
             int maxWalletEmeralds,
@@ -449,6 +453,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.partyVillagerAuthorized = partyVillagerAuthorized;
         this.partyVillagerPartyMember = partyVillagerPartyMember;
         this.partyRecruitAvailable = partyRecruitAvailable;
+        this.mountFeatureAvailable = mountFeatureAvailable;
+        this.assignedMount = assignedMount;
         this.partyRemainingDays = Math.max(0, partyRemainingDays);
         this.walletEmeralds = Math.max(0, walletEmeralds);
         this.maxWalletEmeralds = Math.max(0, maxWalletEmeralds);
@@ -1131,6 +1137,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 } else {
                     addOption("party.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
                 }
+                if (this.mountFeatureAvailable) {
+                    addOption(this.assignedMount ? "party.unassign_mount" : "party.assign_mount",
+                            () -> requestRecruit(this.assignedMount
+                                    ? VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT
+                                    : VillagerRecruitRequestPayload.Action.START_MOUNT_ASSIGNMENT));
+                }
                 addOption("party.dismiss", this::openPartyDismissConfirmationPage);
             }
             return;
@@ -1153,6 +1165,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 addOption("recruit.about_role", this::openRolePage);
             }
             addOption("recruit.work", this::openWorkPage);
+            if (this.mountFeatureAvailable) {
+                addOption(this.assignedMount ? "recruit.unassign_mount" : "recruit.assign_mount",
+                        () -> requestRecruit(this.assignedMount
+                                ? VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT
+                                : VillagerRecruitRequestPayload.Action.START_MOUNT_ASSIGNMENT));
+            }
         }
         if (this.hiredByPlayer && !this.oneOffBuilderJob) {
             addOption("recruit.end_hire", () -> {
@@ -2399,6 +2417,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             } else {
                 openBuilderReturnPage();
             }
+        } else if (action == VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT) {
+            this.assignedMount = false;
         }
     }
 

@@ -56,6 +56,8 @@ public record VillagerRecruitRequestPayload(int entityId, Action action, HiredVi
         SHOW_PAYMENT_STORAGE,
         REMOVE_PAYMENT_STORAGE,
         TOGGLE_AUTO_PAYMENT,
+        START_MOUNT_ASSIGNMENT,
+        UNASSIGN_MOUNT,
         PROMPT_END_HIRE_CONFIRMATION,
         DECLINE_END_HIRE_CONFIRMATION,
         END_HIRE,
