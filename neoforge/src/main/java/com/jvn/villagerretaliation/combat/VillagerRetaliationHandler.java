@@ -316,11 +316,14 @@ public final class VillagerRetaliationHandler {
             clearAnger(villager);
         }
 
-        if (!VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
+        boolean transientMainHandActive = VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+                || RETALIATION.hasTemporaryWeapon(villager);
+        if (!transientMainHandActive
+                && !VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
             HiredJobInventory.maintainEquipmentSlots(villager);
         }
         VillagerArmorerCombatTactics.ensureSpawnShieldRoll(villager);
-        if (!VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+        if (!transientMainHandActive
                 && VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
             VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager);
         }

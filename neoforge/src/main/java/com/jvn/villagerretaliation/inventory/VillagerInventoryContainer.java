@@ -526,9 +526,18 @@ final class VillagerInventoryContainer implements Container {
         BorrowedCombatWeapon borrowedWeapon = borrowedCombatWeapon(villager);
         boolean borrowedWeaponInMainHand = borrowedWeapon != null
                 && ItemStack.isSameItem(villager.getMainHandItem(), borrowedWeapon.stack());
+        ItemStack trackedPlayerMainHand = HiredJobInventory.hasJobEquipmentForSlot(villager, EquipmentSlot.MAINHAND)
+                ? ItemStack.EMPTY
+                : VillagerRetaliationVillagerEquipment.playerManagedMainHandStack(villager);
+        boolean trackedPlayerMainHandInMainHand = !trackedPlayerMainHand.isEmpty()
+                && ItemStack.isSameItem(villager.getMainHandItem(), trackedPlayerMainHand);
         dropEquipment(villager, event);
         if (borrowedWeapon != null && !borrowedWeaponInMainHand) {
             com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, borrowedWeapon.stack().copy());
+        }
+        if (!trackedPlayerMainHand.isEmpty() && !trackedPlayerMainHandInMainHand) {
+            com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops.addDrop(event, trackedPlayerMainHand);
+            VillagerRetaliationVillagerEquipment.clearPlayerManagedMainHand(villager);
         }
 
         NonNullList<ItemStack> inventory = loadFullInventory(villager);
@@ -914,6 +923,12 @@ final class VillagerInventoryContainer implements Container {
     }
 
     private static boolean canAccessMainHand(Villager villager) {
+        if (VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)) {
+            ItemStack trackedStack = VillagerRetaliationVillagerEquipment.playerManagedMainHandStack(villager);
+            return villager.getMainHandItem().isEmpty()
+                    || !trackedStack.isEmpty() && ItemStack.isSameItem(villager.getMainHandItem(), trackedStack)
+                    || mainHandMatchesBorrowedCombatWeapon(villager);
+        }
         return villager.getMainHandItem().isEmpty()
                 || mainHandMatchesBorrowedCombatWeapon(villager)
                 || VillagerRetaliationVillagerEquipment.hasManagedMainHand(villager);

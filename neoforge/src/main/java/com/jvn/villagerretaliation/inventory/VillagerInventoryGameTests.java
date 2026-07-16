@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.item.VillagerItemFilterItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.recipe.VillagerItemFilterCopyRecipe;
+import com.jvn.villagerretaliation.party.PartyVillagerDropCollection;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.mojang.authlib.GameProfile;
@@ -968,6 +969,96 @@ public final class VillagerInventoryGameTests {
         helper.assertValueEqual(countStored(villager, Items.BREAD), 0, "personal inventory should clear after death drops");
         helper.assertTrue(HiredJobInventory.getJobInventory(villager).isEmpty(), "job inventory should clear after death drops");
 
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void deathDropsTrackedMainHandInsteadOfTransientOverride(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager,
+                EquipmentSlot.MAINHAND,
+                new ItemStack(Items.NETHERITE_SWORD));
+        VillagerRetaliationVillagerEquipment.setTemporaryMainHand(
+                villager,
+                new ItemStack(Items.CROSSBOW),
+                0.0F);
+
+        List<ItemEntity> drops = new ArrayList<>();
+        LivingDropsEvent event = new LivingDropsEvent(villager, villager.damageSources().generic(), drops, false);
+        VillagerInventoryAccess.dropAllInventoryAndEquipment(villager, event);
+
+        helper.assertValueEqual(
+                countEventDrops(drops, Items.NETHERITE_SWORD),
+                1,
+                "death must preserve the real tracked weapon exactly once");
+        helper.assertValueEqual(
+                countEventDrops(drops, Items.CROSSBOW),
+                0,
+                "a zero-drop-chance transient hand must not replace owned inventory in death drops");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void deathDropsBorrowedLoadoutExactlyOnce(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager,
+                EquipmentSlot.MAINHAND,
+                new ItemStack(Items.NETHERITE_SWORD));
+        VillagerInventoryContainer.addItem(villager, new ItemStack(Items.CROSSBOW));
+        helper.assertTrue(
+                VillagerInventoryContainer.tryBorrowCombatWeapon(
+                        villager,
+                        VillagerRetaliationVillagerWeapons::isCrossbowWeapon),
+                "the ranged loadout should borrow the crossbow");
+
+        List<ItemEntity> drops = new ArrayList<>();
+        LivingDropsEvent event = new LivingDropsEvent(villager, villager.damageSources().generic(), drops, false);
+        VillagerInventoryAccess.dropAllInventoryAndEquipment(villager, event);
+
+        helper.assertValueEqual(countEventDrops(drops, Items.NETHERITE_SWORD), 1, "the displaced sword must drop once");
+        helper.assertValueEqual(countEventDrops(drops, Items.CROSSBOW), 1, "the borrowed crossbow must drop once");
+        helper.assertValueEqual(countStored(villager, Items.NETHERITE_SWORD), 0, "death must clear stored sword state");
+        helper.assertValueEqual(countStored(villager, Items.CROSSBOW), 0, "death must clear stored crossbow state");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyDropPickupConservesPartialAndRejectedStacks(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+            inventory.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+        }
+        inventory.setItem(HiredJobInventory.MAIN_GRID_START, new ItemStack(Items.WHEAT, 63));
+        ItemEntity groundItem = new ItemEntity(
+                level,
+                villager.getX(),
+                villager.getY(),
+                villager.getZ(),
+                new ItemStack(Items.WHEAT, 5));
+
+        helper.assertValueEqual(
+                PartyVillagerDropCollection.collectAny(villager, groundItem),
+                1,
+                "pickup should move only the available capacity");
+        helper.assertValueEqual(countJobInventoryItem(inventory, Items.WHEAT), 64, "inventory should receive one item");
+        helper.assertValueEqual(groundItem.getItem().getCount(), 4, "the exact remainder must stay on the ground");
+        helper.assertValueEqual(
+                PartyVillagerDropCollection.collectAny(villager, groundItem),
+                0,
+                "a full inventory must reject the remaining ground stack");
+        helper.assertValueEqual(groundItem.getItem().getCount(), 4, "a rejected pickup must not consume or copy items");
+
+        groundItem.discard();
         villager.discard();
         helper.succeed();
     }
