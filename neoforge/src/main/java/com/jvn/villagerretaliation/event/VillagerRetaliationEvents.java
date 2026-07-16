@@ -42,6 +42,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.mount.VillagerMountedCombatPolicy;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
@@ -103,6 +104,7 @@ import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
+import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
@@ -118,12 +120,26 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 public final class VillagerRetaliationEvents {
     private static final AtomicBoolean BUILDER_CATALOG_SYNC_DIRTY = new AtomicBoolean();
+    private static boolean gameTestOriginSeeded;
 
     private VillagerRetaliationEvents() {
     }
 
     public static void onServerStarted(ServerStartedEvent event) {
         VillagerDataWarmup.warm(event.getServer());
+    }
+
+    public static void stabilizeGameTestOrigin(ServerTickEvent.Post event) {
+        String configuredSeed = System.getProperty("villagerretaliation.gametestOriginSeed");
+        if (gameTestOriginSeeded || configuredSeed == null) {
+            return;
+        }
+        try {
+            event.getServer().overworld().random.setSeed(Long.parseLong(configuredSeed));
+            gameTestOriginSeeded = true;
+        } catch (NumberFormatException ignored) {
+            // Leave NeoForge's random GameTest origin in place for an invalid local override.
+        }
     }
 
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
@@ -161,6 +177,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onServerStopping(ServerStoppingEvent event) {
+        gameTestOriginSeeded = false;
         com.jvn.villagerretaliation.raid.PlayerRaidService.clearRuntimeState();
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.clearRuntimeState();
         ServerRuntimeState.clear(event.getServer());
@@ -237,6 +254,11 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        if (VillagerMountedCombatPolicy.shouldCancelDamage(event.getEntity(), event.getSource())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+        }
         if (EncounterService.shouldCancelFriendlyDamage(event.getEntity(), event.getSource().getEntity(), event.getSource().getDirectEntity())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -248,6 +270,10 @@ public final class VillagerRetaliationEvents {
             return;
         }
         VillagerRetaliationHandler.onLivingDamagePre(event);
+    }
+
+    public static void onProjectileImpact(ProjectileImpactEvent event) {
+        VillagerMountedCombatPolicy.onProjectileImpact(event);
     }
 
     public static void onLivingDamageFinalPre(LivingDamageEvent.Pre event) {

@@ -71,6 +71,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onLivingDamagePre)
                 .listener(VillagerRetaliationEvents::onLivingDamageFinalPre)
                 .listener(VillagerRetaliationEvents::onLivingDamage)
+                .listener(VillagerRetaliationEvents::onProjectileImpact)
                 .listener(VillagerReputationEvents::onLivingDamage)
                 .listener(VillagerDisciplineService::onLivingDamage)
                 .listener(VillagerRetaliationEvents::onLivingDrops)
@@ -122,6 +123,7 @@ public class VillagerRetaliation {
 
         // Death is cancellable (for example, Second Wind converts it into a downed state).
         // Run irreversible death bookkeeping only after other mods have had a chance to cancel it.
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerRetaliationEvents::stabilizeGameTestOrigin);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerRetaliationEvents::onLivingDeath);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillageAllegianceService::onLivingDeath);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerSocialGraphService::onLivingDeath);

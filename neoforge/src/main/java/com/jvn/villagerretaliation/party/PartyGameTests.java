@@ -74,6 +74,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.Level;
 import net.minecraft.util.Unit;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -976,7 +977,7 @@ public final class PartyGameTests {
         });
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "party_sleeping_target")
     public static void partyAttackerWakesSleepingVillagerTarget(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         for (int x = 0; x <= 6; x++) {
@@ -984,7 +985,7 @@ public final class PartyGameTests {
                 helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
             }
         }
-        ServerPlayer leader = fakePlayer(level, uniqueName("party_sleeping_target"));
+        ServerPlayer leader = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
         Villager target = spawnVillager(helper, new BlockPos(4, 2, 2));
@@ -1006,15 +1007,15 @@ public final class PartyGameTests {
                 "attack command should establish the sleeping villager as the party target");
         helper.assertTrue(target.isSleeping(), "regression setup should begin with the target in bed");
 
-        helper.runAfterDelay(5, () -> {
-            helper.assertFalse(target.isSleeping(),
-                    "a villager targeted by a party attacker should be pulled out of bed");
-            PartyService.deleteParty(level, party.id());
-            PartyQuickCommandService.clearRuntimeState();
-            attacker.discard();
-            target.discard();
-            helper.succeed();
-        });
+        VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(attacker));
+        helper.assertFalse(target.isSleeping(),
+                "a villager targeted by a party attacker should be pulled out of bed");
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        attacker.discard();
+        target.discard();
+        leader.discard();
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

@@ -257,7 +257,7 @@ public final class VillagerMountGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel")
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel_remount")
     public static void mountDesireSurvivesUnloadAndRetriesWhenTheMountReturns(GameTestHelper helper) {
         if (!VillagerMountAssignmentService.featureAvailable()) {
             helper.succeed();
@@ -273,8 +273,9 @@ public final class VillagerMountGameTests {
                 VillagerMountAssignmentService.assign(hirer, villager, horse),
                 VillagerMountAssignmentService.AssignmentResult.SUCCESS,
                 "The travel fixture must create an assignment");
-        BlockPos travelTarget = villager.blockPosition().offset(18, 0, 0);
+        BlockPos travelTarget = villager.blockPosition().offset(16, 0, 0);
         layTravelFloor(level, villager.blockPosition(), travelTarget);
+        horse.setOnGround(true);
         villager.getBrain().setMemory(
                 MemoryModuleType.WALK_TARGET,
                 new WalkTarget(new BlockPosTracker(travelTarget), 0.8F, 0));
@@ -286,6 +287,7 @@ public final class VillagerMountGameTests {
                 "A temporarily unreachable mount must not clear mount desire");
 
         horse.moveTo(villager.getX() + 1.0D, villager.getY(), villager.getZ(), 0.0F, 0.0F);
+        horse.setOnGround(true);
         VillagerMountTravelService.onVillagerTickPost(villager);
         helper.assertValueEqual(villager.getVehicle(), horse,
                 "The villager must board when the assigned mount returns within three blocks");
@@ -297,7 +299,7 @@ public final class VillagerMountGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel")
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel_commute")
     public static void roleCommuteDismountsForPreciseWorkAndParksTheHorse(GameTestHelper helper) {
         if (!VillagerMountAssignmentService.featureAvailable()) {
             helper.succeed();
@@ -314,8 +316,9 @@ public final class VillagerMountGameTests {
                 VillagerMountAssignmentService.AssignmentResult.SUCCESS,
                 "The commute fixture must create an assignment");
 
-        BlockPos farTarget = villager.blockPosition().offset(18, 0, 0);
+        BlockPos farTarget = villager.blockPosition().offset(16, 0, 0);
         layTravelFloor(level, villager.blockPosition(), farTarget);
+        horse.setOnGround(true);
         villager.getBrain().setMemory(
                 MemoryModuleType.WALK_TARGET,
                 new WalkTarget(new BlockPosTracker(farTarget), 0.8F, 0));
@@ -344,7 +347,7 @@ public final class VillagerMountGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel")
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel_parking")
     public static void parkedMountReturnsAfterYieldingToRidersAndLeashes(GameTestHelper helper) {
         if (!VillagerMountAssignmentService.featureAvailable()) {
             helper.succeed();
@@ -372,6 +375,7 @@ public final class VillagerMountGameTests {
         horse.dropLeash(true, false);
         layTravelFloor(level, anchor, anchor.offset(12, 0, 0));
         horse.moveTo(anchor.getX() + 12.5D, anchor.getY(), anchor.getZ() + 0.5D, 0.0F, 0.0F);
+        horse.setOnGround(true);
         VillagerMountTravelService.maintainParking(level.getServer());
         helper.assertTrue(horse.hasRestriction(), "Parking must resume after the leash is removed");
         helper.assertTrue(horse.getNavigation().getTargetPos() != null
@@ -380,7 +384,7 @@ public final class VillagerMountGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel")
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel_lifecycle")
     public static void terminalLifecycleEventsClearAssignmentsButChunkUnloadDoesNot(GameTestHelper helper) {
         if (!VillagerMountAssignmentService.featureAvailable()) {
             helper.succeed();

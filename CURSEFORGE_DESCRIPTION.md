@@ -77,6 +77,14 @@ Anger fades over time, but reputation lasts. A fight may end after a short while
 
 Hostile villagers and wandering traders can also block trading. If you have not fallen too far, you may be able to pacify them with the right payment item.
 
+### Assigned Mounts
+
+With a compatible Ride On API v2 installation, party leaders and active hirers can assign one adult horse, donkey, mule, llama, or camel to each eligible adult villager. Choose **Assign Mount** in the villager's party or hired-worker screen, then select the mount within 30 seconds. Eligible leashed mounts can also be assigned from the villager interaction, returning the lead.
+
+Hired workers can toggle **Mounted Travel** for long work journeys. Parties have a shared mount mode plus **Ride Mount** and **Dismount Mount** quick commands. Villagers dismount near precise work, retry temporarily unavailable mounts, and park idle mounts while yielding to players, leashes, and panic behavior.
+
+Rear-seat villagers cannot accidentally hurt allied front riders with melee, projectiles, splash, or attributed damage, and canceled projectiles continue flying. Exact retaliation targets, authorized party targets, and opposing Player Raid participants remain attackable, so the front seat does not provide general immunity.
+
 ### Dialogue and Interaction
 
 Villagers can feel more like actual NPCs instead of silent trade menus.
@@ -272,6 +280,7 @@ Villager Retaliation! is designed to work with vanilla villager systems rather t
 * Uses vanilla gossip integration where enabled
 * Uses NeoForge item tags for weapon detection where possible
 * Does not replace the villager entity type
+* Optionally integrates with Ride On API v2 for assigned mounts and two-seat travel; without a compatible Ride On version, mount features remain dormant and Villager Retaliation runs normally
 
 Compatibility may vary with mods that heavily replace villager AI, trading, combat, rendering, or entity classes.
 

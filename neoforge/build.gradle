@@ -20,6 +20,9 @@ sourceSets.main.resources {
     exclude('src/generated/**/.cache')
 }
 
+def defaultGameTestOriginSeed = providers.gradleProperty('rideOnIntegrationJar').orNull == null ? '3733' : '5147'
+def gameTestOriginSeed = providers.gradleProperty('gameTestOriginSeed').orElse(defaultGameTestOriginSeed)
+
 neoForge {
     version = rootProject.neo_version
 
@@ -41,6 +44,7 @@ neoForge {
         gameTestServer {
             type = 'gameTestServer'
             gameDirectory.set(layout.buildDirectory.dir('gametest-run'))
+            systemProperty 'villagerretaliation.gametestOriginSeed', gameTestOriginSeed.get()
             systemProperty 'villagerretaliation.gameteststructures', file('src/main/gameteststructures').absolutePath
         }
 
@@ -61,6 +65,12 @@ neoForge {
         "${rootProject.mod_id}" {
             sourceSet(sourceSets.main)
         }
+    }
+}
+
+tasks.named('runGameTestServer') {
+    doFirst {
+        delete(layout.buildDirectory.dir('gametest-run/world'))
     }
 }
 

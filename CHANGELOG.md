@@ -1,5 +1,9 @@
 # Changelog
 
+- Added optional Ride On API v2 integration so party leaders and active hirers can assign adult horses, donkeys, mules, llamas, and camels to eligible villagers without making Ride On a required dependency.
+- Added persisted one-to-one mount assignments, party and hired-worker controls, long-distance mounted travel, precise-work dismounting, unload/remount retry behavior, parking anchors, and cleanup for terminal villager, mount, and contract lifecycle events.
+- Added rear-seat friendly-fire protection for allied villagers, party players, vanilla teammates, same-village riders, and active hirers across direct, projectile, splash, and attributed damage. Explicit retaliation targets, authorized party targets, and opposing Player Raid participants still take damage, including the narrow same-vehicle projectile override.
+- Added standalone and integrated GameTests for assignment, travel, parking, lifecycle cleanup, allied projectile continuation, melee and area damage, and hostile front-rider precedence.
 - Added chat-command party membership and mutual alliances under `/villagerretaliation party`; allied players and recruited villagers no longer target or retaliate against one another.
 - Added a mercy stage to Player Raids: after armed defenders fall, raiders can right-click snapshotted babies and nitwits to spare them, leave them for a manual kill, or say nothing. Spared villagers survive with exactly `-1000` reputation toward every raider player, while nearby unresolved survivors occasionally plead for their lives.
 - Added 15 victory reactions and 15 loss reactions for recruited party villagers at the end of Player Raids.
