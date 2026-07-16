@@ -250,10 +250,6 @@ public final class VillagerRetaliationVillagerEquipment {
         villager.getPersistentData().remove(LEGACY_PICKED_UP_MAINHAND_TAG);
     }
 
-    public static void clearTrackedMainHandCache(AbstractVillager villager) {
-        // Pickup ownership is now persisted directly; there is no in-memory cache to clear.
-    }
-
     public static void clearRoleMainHand(AbstractVillager villager) {
         villager.getPersistentData().remove(ROLE_MAINHAND_TAG);
         if (mainHandOwner(villager) == MainHandOwner.ROLE) {

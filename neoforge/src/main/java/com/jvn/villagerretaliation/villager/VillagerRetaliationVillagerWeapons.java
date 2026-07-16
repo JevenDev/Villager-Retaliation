@@ -192,7 +192,6 @@ public final class VillagerRetaliationVillagerWeapons {
     }
 
     public static void clearTrackedPickupCache(AbstractVillager villager) {
-        VillagerRetaliationVillagerEquipment.clearTrackedMainHandCache(villager);
         clearNearestWeaponCache(villager);
     }
 

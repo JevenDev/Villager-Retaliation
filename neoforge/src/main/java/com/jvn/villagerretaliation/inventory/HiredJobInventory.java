@@ -433,6 +433,9 @@ public final class HiredJobInventory implements Container {
                         return moved;
                     }
                 }
+                // A partially moved stack must remain output. Reclassifying the
+                // entire source here would promote more than maxCount requested.
+                continue;
             }
             this.slotTypes[slot] = HiredJobInventorySlotType.SUPPLY;
             moved += stack.getCount();
@@ -789,6 +792,14 @@ public final class HiredJobInventory implements Container {
     }
 
     public boolean canStoreOutputs(List<ItemStack> stacks) {
+        return canStoreOutputs(stacks, true);
+    }
+
+    public boolean canStorePlainOutputs(List<ItemStack> stacks) {
+        return canStoreOutputs(stacks, false);
+    }
+
+    private boolean canStoreOutputs(List<ItemStack> stacks, boolean markContractItems) {
         NonNullList<ItemStack> simulatedItems = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
         HiredJobInventorySlotType[] simulatedTypes = new HiredJobInventorySlotType[SLOT_COUNT];
         for (int slot = 0; slot < SLOT_COUNT; slot++) {
@@ -796,7 +807,7 @@ public final class HiredJobInventory implements Container {
             simulatedTypes[slot] = slotType(slot);
         }
         for (ItemStack stack : stacks) {
-            if (!simulateOutputInsert(simulatedItems, simulatedTypes, stack.copy()).isEmpty()) {
+            if (!simulateOutputInsert(simulatedItems, simulatedTypes, stack.copy(), markContractItems).isEmpty()) {
                 return false;
             }
         }
@@ -808,7 +819,28 @@ public final class HiredJobInventory implements Container {
      * only consumed when every produced stack, including container remainders, fits.
      */
     public boolean tryTransformSupplies(Map<Item, Integer> consumed, List<ItemStack> produced) {
+        return transformSupplies(consumed, produced, false, true);
+    }
+
+    /** Applies a supply-to-output transformation without exposing a partial state. */
+    public boolean tryTransformSuppliesToOutputs(Map<Item, Integer> consumed, List<ItemStack> produced) {
+        return transformSupplies(consumed, produced, true, true);
+    }
+
+    public boolean canTransformSuppliesToOutputs(Map<Item, Integer> consumed, List<ItemStack> produced) {
+        return transformSupplies(consumed, produced, true, false);
+    }
+
+    private boolean transformSupplies(
+            Map<Item, Integer> consumed,
+            List<ItemStack> produced,
+            boolean produceAsOutput,
+            boolean commit) {
         if (consumed == null || consumed.isEmpty() || produced == null || produced.isEmpty()) {
+            return false;
+        }
+        boolean hasProducedItem = produced.stream().anyMatch(stack -> stack != null && !stack.isEmpty());
+        if (!hasProducedItem) {
             return false;
         }
         NonNullList<ItemStack> simulatedItems = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
@@ -847,17 +879,39 @@ public final class HiredJobInventory implements Container {
         }
 
         for (ItemStack stack : produced) {
-            if (stack != null && !simulateSupplyInsert(simulatedItems, simulatedTypes, stack.copy()).isEmpty()) {
+            if (stack == null) {
+                continue;
+            }
+            ItemStack remainder = produceAsOutput
+                    ? simulateOutputInsert(simulatedItems, simulatedTypes, stack.copy(), true)
+                    : simulateSupplyInsert(simulatedItems, simulatedTypes, stack.copy());
+            if (!remainder.isEmpty()) {
                 return false;
             }
         }
 
-        for (int slot = 0; slot < SLOT_COUNT; slot++) {
-            this.items.set(slot, simulatedItems.get(slot));
-            this.slotTypes[slot] = simulatedTypes[slot];
+        if (commit) {
+            for (int slot = 0; slot < SLOT_COUNT; slot++) {
+                this.items.set(slot, simulatedItems.get(slot));
+                this.slotTypes[slot] = simulatedTypes[slot];
+            }
+            setChanged();
         }
-        setChanged();
         return true;
+    }
+
+    public void returnSupplyOrDrop(ItemStack stack) {
+        ItemStack remainder = insertSupply(stack);
+        if (!remainder.isEmpty()) {
+            this.villager.spawnAtLocation(remainder);
+        }
+    }
+
+    public void returnOutputOrDrop(ItemStack stack) {
+        ItemStack remainder = insertOutput(stack);
+        if (!remainder.isEmpty()) {
+            this.villager.spawnAtLocation(remainder);
+        }
     }
 
     public boolean canStoreSuppliesAfterDepositingOutputs(List<ItemStack> stacks) {
@@ -989,11 +1043,17 @@ public final class HiredJobInventory implements Container {
     private ItemStack simulateOutputInsert(
             NonNullList<ItemStack> simulatedItems,
             HiredJobInventorySlotType[] simulatedTypes,
-            ItemStack stack) {
+            ItemStack stack,
+            boolean markContractItem) {
         if (stack.isEmpty()) {
             return ItemStack.EMPTY;
         }
         ItemStack remainder = stack.copy();
+        if (markContractItem) {
+            markWithActiveContract(remainder);
+        } else {
+            removeJobItemMarker(remainder);
+        }
         simulateOutputInsertIntoPreferredRegions(simulatedItems, simulatedTypes, remainder);
         return remainder;
     }

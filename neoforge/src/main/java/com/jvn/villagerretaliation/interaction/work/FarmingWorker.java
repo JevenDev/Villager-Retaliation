@@ -200,7 +200,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         List<ItemStack> drops = Block.getDrops(state, level, cropTarget, level.getBlockEntity(cropTarget), villager, hoe);
-        if (!context.canStoreOutputs(drops)) {
+        if (!context.inventory().canStorePlainOutputs(drops)) {
             OutputFullHandling outputFull = handleOutputFullInventory(
                     level,
                     context,
@@ -212,7 +212,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             if (outputFull.handled()) {
                 return outputFull.result();
             }
-            if (!context.canStoreOutputs(drops)) {
+            if (!context.inventory().canStorePlainOutputs(drops)) {
                 return WorkResult.idle("interaction.work.farming.output_full_blocked");
             }
         }

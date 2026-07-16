@@ -34,6 +34,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -1003,6 +1004,83 @@ public final class VillagerInventoryGameTests {
                 "a transform should reuse a slot freed by its consumed ingredient");
         helper.assertTrue(inventory.getItem(ingredientSlot).is(Items.POTION),
                 "the produced item should occupy the freed supply slot");
+
+        inventory.setItem(ingredientSlot, new ItemStack(Items.BUCKET, 2));
+        inventory.markPlayerPlacedSupply(ingredientSlot);
+        helper.assertFalse(inventory.tryTransformSuppliesToOutputs(
+                        Map.of(Items.BUCKET, 1),
+                        List.of(new ItemStack(Items.MILK_BUCKET))),
+                "a rejected supply-to-output transform must remain atomic");
+        helper.assertValueEqual(inventory.getItem(ingredientSlot).getCount(), 2,
+                "a rejected supply-to-output transform must retain its input");
+
+        inventory.setItem(ingredientSlot, new ItemStack(Items.BUCKET));
+        helper.assertTrue(inventory.tryTransformSuppliesToOutputs(
+                        Map.of(Items.BUCKET, 1),
+                        List.of(new ItemStack(Items.MILK_BUCKET))),
+                "an output transform should reuse a default output slot freed by its input");
+        helper.assertTrue(inventory.getItem(ingredientSlot).is(Items.MILK_BUCKET),
+                "the transformed output should occupy the freed grid slot");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void outputPromotionNeverExceedsRequestedCount(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        fillMainJobGrid(inventory, Items.COBBLESTONE);
+        helper.assertTrue(inventory.insertOutput(new ItemStack(Items.ARROW, 64)).isEmpty(),
+                "the output fixture should claim the first hotbar slot");
+        int outputSlot = HiredJobInventory.HOTBAR_START;
+        int supplySlot = outputSlot + 1;
+        inventory.setItem(supplySlot, new ItemStack(Items.ARROW, 63));
+        for (int slot = supplySlot + 1; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+            inventory.setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+
+        helper.assertValueEqual(inventory.promoteOutputToSupply(stack -> stack.is(Items.ARROW), 1), 1,
+                "promotion must report only the requested item count");
+        helper.assertValueEqual(inventory.getItem(outputSlot).getCount(), 63,
+                "partial promotion must remove exactly one output item");
+        helper.assertTrue(inventory.isOutputSlot(outputSlot),
+                "a partially promoted source stack must remain output");
+        helper.assertValueEqual(inventory.getItem(supplySlot).getCount(), 64,
+                "the promoted item should merge into supply exactly once");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void containerTransfersTrustObservedChangesNotRequestedCounts(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        SimpleContainer rejectingInsert = new SimpleContainer(1) {
+            @Override
+            public void setItem(int slot, ItemStack stack) {
+                // Simulates a modded container rejecting an otherwise advertised slot.
+            }
+        };
+        ItemStack insertionRemainder = VillagerInventoryOverflowService.insertIntoContainer(
+                rejectingInsert, new ItemStack(Items.DIAMOND, 5));
+        helper.assertValueEqual(insertionRemainder.getCount(), 5,
+                "a rejected container insertion must retain the entire source stack");
+        helper.assertTrue(rejectingInsert.isEmpty(),
+                "a rejecting container should remain empty");
+
+        SimpleContainer rejectingRemoval = new SimpleContainer(new ItemStack(Items.DIAMOND, 5)) {
+            @Override
+            public ItemStack removeItem(int slot, int amount) {
+                return getItem(slot).copyWithCount(Math.min(amount, getItem(slot).getCount()));
+            }
+        };
+        ItemStack extracted = VillagerInventoryOverflowService.extractUpTo(
+                villager, rejectingRemoval, 0, 3);
+        helper.assertTrue(extracted.isEmpty(),
+                "a container that did not change must not be credited as withdrawn");
+        helper.assertValueEqual(rejectingRemoval.getItem(0).getCount(), 5,
+                "a rejected withdrawal must leave the source untouched");
 
         villager.discard();
         helper.succeed();

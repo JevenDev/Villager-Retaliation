@@ -583,22 +583,16 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, animal == null ? villager.blockPosition() : animal.blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.product_changed");
         }
-        if (context.inventory().consumeSupply(stack -> stack.is(Items.BUCKET), 1) <= 0) {
+        if (context.inventory().findSupply(stack -> stack.is(Items.BUCKET)).isEmpty()) {
             HiredWorkerBrain.setFailure(context, "missing_bucket", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, animal.blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_bucket");
         }
 
         ItemStack milk = new ItemStack(Items.MILK_BUCKET);
-        if (!context.canStoreOutputs(List.of(milk))) {
-            context.inventory().insertSupply(new ItemStack(Items.BUCKET));
-            HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, animal.blockPosition());
-            return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
-        }
-        ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, milk);
-        if (!remainder.isEmpty()) {
-            context.inventory().insertSupply(new ItemStack(Items.BUCKET));
+        if (!context.inventory().tryTransformSuppliesToOutputs(
+                Map.of(Items.BUCKET, 1),
+                List.of(milk))) {
             HiredWorkerBrain.setFailure(context, "output_inventory_full", 0L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, animal.blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
@@ -657,7 +651,9 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private boolean canStoreProductOutputs(HiredWorkContext context, AnimalProductTarget target) {
         return switch (target.kind()) {
             case SHEAR -> context.hasOutputSpace();
-            case MILK -> context.canStoreOutputs(List.of(new ItemStack(Items.MILK_BUCKET)));
+            case MILK -> context.inventory().canTransformSuppliesToOutputs(
+                    Map.of(Items.BUCKET, 1),
+                    List.of(new ItemStack(Items.MILK_BUCKET)));
         };
     }
 

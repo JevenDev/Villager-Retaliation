@@ -822,10 +822,6 @@ final class VillagerInventoryContainer implements Container {
         }
     }
 
-    private static int selectBestWeaponSlot(NonNullList<ItemStack> inventory) {
-        return selectBestWeaponSlot(inventory, VillagerRetaliationVillagerWeapons::isUsableWeapon);
-    }
-
     private static int selectBestWeaponSlot(
             NonNullList<ItemStack> inventory,
             Predicate<ItemStack> predicate) {
@@ -840,10 +836,6 @@ final class VillagerInventoryContainer implements Container {
             }
         }
         return bestSlot;
-    }
-
-    private static void persistBorrowedCombatWeapon(Villager villager, int slot, ItemStack stack) {
-        persistBorrowedCombatWeapon(villager, slot, stack, ItemStack.EMPTY, 0);
     }
 
     private static void persistBorrowedCombatWeapon(Villager villager, int slot, ItemStack stack, ItemStack displacedMainHand) {

@@ -565,7 +565,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         ItemStack crafted = selection.result().copyWithCount(craftedCount);
         ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, crafted.copy());
         if (!remainder.isEmpty()) {
-            context.inventory().insertSupply(remainder);
+            context.inventory().returnSupplyOrDrop(remainder);
         }
         HiredWorkerBrain.clearFailure(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);

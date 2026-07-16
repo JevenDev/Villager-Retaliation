@@ -216,9 +216,12 @@ final class VillagerInventoryOverflowService {
 
     static ItemStack insertIntoContainer(Container container, ItemStack stack) {
         ItemStack remainder = stack.copy();
+        boolean changed = false;
         for (int slot = 0; slot < container.getContainerSize(); slot++) {
             if (remainder.isEmpty()) {
-                container.setChanged();
+                if (changed) {
+                    container.setChanged();
+                }
                 return ItemStack.EMPTY;
             }
 
@@ -230,31 +233,88 @@ final class VillagerInventoryOverflowService {
             }
 
             int maxStackSize = Math.min(existing.getMaxStackSize(), container.getMaxStackSize());
-            int moveCount = Math.min(remainder.getCount(), maxStackSize - existing.getCount());
-            if (moveCount > 0) {
-                existing.grow(moveCount);
-                remainder.shrink(moveCount);
+            int requested = Math.min(remainder.getCount(), maxStackSize - existing.getCount());
+            if (requested > 0) {
+                int previousCount = existing.getCount();
+                ItemStack updated = existing.copy();
+                updated.grow(requested);
+                container.setItem(slot, updated);
+                ItemStack stored = container.getItem(slot);
+                int moved = ItemStack.isSameItemSameComponents(stored, remainder)
+                        ? Math.clamp(stored.getCount() - previousCount, 0, requested)
+                        : 0;
+                if (moved > 0) {
+                    remainder.shrink(moved);
+                    changed = true;
+                }
             }
         }
 
         for (int slot = 0; slot < container.getContainerSize(); slot++) {
             if (remainder.isEmpty()) {
-                container.setChanged();
+                if (changed) {
+                    container.setChanged();
+                }
                 return ItemStack.EMPTY;
             }
             if (!container.getItem(slot).isEmpty() || !container.canPlaceItem(slot, remainder)) {
                 continue;
             }
 
-            int moveCount = Math.min(remainder.getCount(), Math.min(remainder.getMaxStackSize(), container.getMaxStackSize()));
-            container.setItem(slot, remainder.copyWithCount(moveCount));
-            remainder.shrink(moveCount);
+            int requested = Math.min(remainder.getCount(), Math.min(remainder.getMaxStackSize(), container.getMaxStackSize()));
+            container.setItem(slot, remainder.copyWithCount(requested));
+            ItemStack stored = container.getItem(slot);
+            int moved = ItemStack.isSameItemSameComponents(stored, remainder)
+                    ? Math.clamp(stored.getCount(), 0, requested)
+                    : 0;
+            if (moved > 0) {
+                remainder.shrink(moved);
+                changed = true;
+            }
         }
 
-        if (remainder.getCount() != stack.getCount()) {
+        if (changed) {
             container.setChanged();
         }
         return remainder;
+    }
+
+    /** Extracts only the count that observably left the source slot. */
+    static ItemStack extractUpTo(Villager villager, Container container, int slot, int requested) {
+        if (container == null || slot < 0 || slot >= container.getContainerSize() || requested <= 0) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack before = container.getItem(slot).copy();
+        if (before.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        container.removeItem(slot, Math.min(requested, before.getCount()));
+        ItemStack after = container.getItem(slot);
+        int removedCount;
+        if (after.isEmpty()) {
+            removedCount = before.getCount();
+        } else if (ItemStack.isSameItemSameComponents(before, after)) {
+            removedCount = Math.max(0, before.getCount() - after.getCount());
+        } else {
+            removedCount = before.getCount();
+        }
+        if (removedCount <= 0) {
+            return ItemStack.EMPTY;
+        }
+
+        int extractedCount = Math.min(requested, removedCount);
+        if (removedCount > extractedCount) {
+            restoreToContainerOrDrop(villager, container, before.copyWithCount(removedCount - extractedCount));
+        }
+        container.setChanged();
+        return before.copyWithCount(extractedCount);
+    }
+
+    static void restoreToContainerOrDrop(Villager villager, Container container, ItemStack stack) {
+        ItemStack remainder = insertIntoContainer(container, stack);
+        if (!remainder.isEmpty() && villager != null) {
+            villager.spawnAtLocation(remainder);
+        }
     }
 
     static void openUsedContainers(ServerLevel level, List<ContainerCandidate> usedContainers) {

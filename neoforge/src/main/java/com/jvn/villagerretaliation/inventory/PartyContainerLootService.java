@@ -70,10 +70,19 @@ public final class PartyContainerLootService {
             if (stack.isEmpty() || !container.canTakeItem(inventory, slot, stack)) {
                 continue;
             }
-            ItemStack remainder = inventory.insertPlainOutput(stack.copy());
-            int moved = stack.getCount() - remainder.getCount();
+            ItemStack extracted = VillagerInventoryOverflowService.extractUpTo(
+                    villager, container, slot, stack.getCount());
+            if (extracted.isEmpty()) {
+                continue;
+            }
+            ItemStack remainder = inventory.insertPlainOutput(extracted.copy());
+            int moved = extracted.getCount() - remainder.getCount();
+            int unaccepted = extracted.getCount() - moved;
+            if (unaccepted > 0) {
+                VillagerInventoryOverflowService.restoreToContainerOrDrop(
+                        villager, container, extracted.copyWithCount(unaccepted));
+            }
             if (moved > 0) {
-                container.removeItem(slot, moved);
                 movedAny = true;
             }
             if (!remainder.isEmpty()) {

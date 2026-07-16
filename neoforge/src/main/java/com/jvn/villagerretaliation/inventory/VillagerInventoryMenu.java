@@ -69,6 +69,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private VillagerConfiscatedStolenItemTracker.StolenItemSnapshot stolenItemSnapshot;
     private int initialGearStackCount;
     private boolean personalTrackingInitialized;
+    private boolean gearReportProcessed;
     private boolean giftReturnsProcessed;
     private boolean tradePaymentReturnsProcessed;
     private boolean stolenItemReturnsProcessed;
@@ -202,10 +203,13 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        if (this.viewMode.isWorkInventory() && !hasJobInventoryAccess(player)) {
+        if (!hasCurrentViewAccess(player)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 serverPlayer.closeContainer();
             }
+            return ItemStack.EMPTY;
+        }
+        if (index < 0 || index >= this.slots.size()) {
             return ItemStack.EMPTY;
         }
         // External inventory writers (combat loadouts, pickups, storage automation)
@@ -241,7 +245,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     @Override
     public void clicked(int slotId, int button, ClickType clickType, Player player) {
-        if (this.viewMode.isWorkInventory() && !hasJobInventoryAccess(player)) {
+        if (!hasCurrentViewAccess(player)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 serverPlayer.closeContainer();
             }
@@ -304,6 +308,9 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         }
         if (viewMode.isWorkInventory() && !this.jobInventoryAccess) {
             return;
+        }
+        if (this.viewMode == ViewMode.PERSONAL) {
+            rememberAddedGear(this.playerInventory.player);
         }
         this.villagerInventory.stopOpen(this.playerInventory.player);
         this.viewMode = viewMode;
@@ -526,7 +533,11 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     }
 
     private void rememberAddedGear(Player player) {
-        if (this.villager == null || !(player instanceof ServerPlayer serverPlayer)) {
+        if (this.gearReportProcessed
+                || !this.personalTrackingInitialized
+                || this.viewMode != ViewMode.PERSONAL
+                || this.villager == null
+                || !(player instanceof ServerPlayer serverPlayer)) {
             return;
         }
         if (gearStackCount(this.villagerInventory) <= this.initialGearStackCount) {
@@ -535,6 +546,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         String gearKind = gearKind(this.villagerInventory);
         if (!gearKind.isBlank()) {
             VillagerInteractionTracker.rememberGearReport(serverPlayer.serverLevel(), this.villager, serverPlayer, gearKind);
+            this.gearReportProcessed = true;
         }
     }
 
@@ -830,6 +842,15 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                 || this.villager == null
                 || this.villager.level() instanceof ServerLevel level
                 && VillagerJobInventoryAuthorization.canAccess(level, this.villager, serverPlayer));
+    }
+
+    private boolean hasCurrentViewAccess(Player player) {
+        if (this.villager == null) {
+            return true;
+        }
+        return this.viewMode == ViewMode.PERSONAL
+                ? hasPersonalInventoryAccess(player)
+                : hasJobInventoryAccess(player);
     }
 
     private record ClientMenuData(

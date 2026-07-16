@@ -633,9 +633,12 @@ public final class AssignedStorageService {
                 if (stack.isEmpty() || !safePredicate.test(stack)) {
                     continue;
                 }
-                int removed = Math.min(remaining, stack.getCount());
-                container.removeItem(slot, removed);
-                remaining -= removed;
+                ItemStack removed = VillagerInventoryOverflowService.extractUpTo(
+                        villager, container, slot, Math.min(remaining, stack.getCount()));
+                if (removed.isEmpty()) {
+                    continue;
+                }
+                remaining -= removed.getCount();
                 used = true;
             }
             if (used) {
@@ -677,9 +680,12 @@ public final class AssignedStorageService {
                 int itemValue = Math.max(1, safeValue.applyAsInt(stack));
                 int remainingValue = targetValue - consumedValue;
                 int requested = Math.max(1, (remainingValue + itemValue - 1) / itemValue);
-                int removed = Math.min(requested, stack.getCount());
-                container.removeItem(slot, removed);
-                consumedValue += removed * itemValue;
+                ItemStack removed = VillagerInventoryOverflowService.extractUpTo(
+                        villager, container, slot, Math.min(requested, stack.getCount()));
+                if (removed.isEmpty()) {
+                    continue;
+                }
+                consumedValue += removed.getCount() * itemValue;
                 used = true;
             }
             if (used) {
@@ -830,13 +836,21 @@ public final class AssignedStorageService {
                     continue;
                 }
                 int requested = Math.min(maxCount - movedTotal, stack.getCount());
-                ItemStack offered = stack.copyWithCount(requested);
-                ItemStack remainder = receiver.apply(offered.copy());
-                int moved = offered.getCount() - remainder.getCount();
+                ItemStack extracted = VillagerInventoryOverflowService.extractUpTo(
+                        villager, container, slot, requested);
+                if (extracted.isEmpty()) {
+                    continue;
+                }
+                ItemStack remainder = receiver.apply(extracted.copy());
+                int moved = acceptedCount(extracted, remainder);
+                int unaccepted = extracted.getCount() - moved;
+                if (unaccepted > 0) {
+                    VillagerInventoryOverflowService.restoreToContainerOrDrop(
+                            villager, container, extracted.copyWithCount(unaccepted));
+                }
                 if (moved <= 0) {
                     continue;
                 }
-                container.removeItem(slot, moved);
                 movedTotal += moved;
                 if (!usedContainers.contains(candidate)) {
                     usedContainers.add(candidate);
@@ -869,13 +883,21 @@ public final class AssignedStorageService {
                 if (stack.isEmpty() || !safePredicate.test(stack)) {
                     continue;
                 }
-                ItemStack offered = stack.copy();
-                ItemStack remainder = receiver.apply(offered.copy());
-                int moved = offered.getCount() - remainder.getCount();
+                ItemStack extracted = VillagerInventoryOverflowService.extractUpTo(
+                        villager, container, slot, stack.getCount());
+                if (extracted.isEmpty()) {
+                    return 0;
+                }
+                ItemStack remainder = receiver.apply(extracted.copy());
+                int moved = acceptedCount(extracted, remainder);
+                int unaccepted = extracted.getCount() - moved;
+                if (unaccepted > 0) {
+                    VillagerInventoryOverflowService.restoreToContainerOrDrop(
+                            villager, container, extracted.copyWithCount(unaccepted));
+                }
                 if (moved <= 0) {
                     return 0;
                 }
-                container.removeItem(slot, moved);
                 VillagerInventoryOverflowService.openUsedContainers(level, List.of(candidate));
                 return moved;
             }
@@ -899,9 +921,12 @@ public final class AssignedStorageService {
                 if (stack.isEmpty() || !safePredicate.test(stack)) {
                     continue;
                 }
-                int removed = Math.min(remaining, stack.getCount());
-                container.removeItem(slot, removed);
-                remaining -= removed;
+                ItemStack removed = VillagerInventoryOverflowService.extractUpTo(
+                        villager, container, slot, Math.min(remaining, stack.getCount()));
+                if (removed.isEmpty()) {
+                    continue;
+                }
+                remaining -= removed.getCount();
                 used = true;
             }
             if (used) {
@@ -933,9 +958,12 @@ public final class AssignedStorageService {
                 if (stack.isEmpty() || !safePredicate.test(stack)) {
                     continue;
                 }
-                int removed = Math.min(remaining, stack.getCount());
-                container.removeItem(slot, removed);
-                remaining -= removed;
+                ItemStack removed = VillagerInventoryOverflowService.extractUpTo(
+                        villager, container, slot, Math.min(remaining, stack.getCount()));
+                if (removed.isEmpty()) {
+                    continue;
+                }
+                remaining -= removed.getCount();
                 used = true;
             }
             if (used) {
@@ -999,6 +1027,13 @@ public final class AssignedStorageService {
             Villager villager,
             Predicate<ItemStack> workerPredicate) {
         return withdrawalPredicate(villager, workerPredicate, true);
+    }
+
+    private static int acceptedCount(ItemStack offered, ItemStack remainder) {
+        if (offered.isEmpty() || remainder == null) {
+            return 0;
+        }
+        return Math.clamp(offered.getCount() - remainder.getCount(), 0, offered.getCount());
     }
 
     private static Predicate<ItemStack> withdrawalPredicate(
@@ -1074,12 +1109,6 @@ public final class AssignedStorageService {
             containers.putIfAbsent(candidate.pos(), candidate);
         }
         return new ArrayList<>(containers.values());
-    }
-
-    private static List<VillagerInventoryOverflowService.ContainerCandidate> nearbyLiveContainerCandidates(
-            ServerLevel level,
-            Villager villager) {
-        return nearbyLiveContainerCandidates(level, villager, ignored -> true);
     }
 
     private static List<VillagerInventoryOverflowService.ContainerCandidate> nearbyLiveContainerCandidates(

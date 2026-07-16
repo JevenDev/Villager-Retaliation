@@ -618,9 +618,9 @@ final class MiningHazardManager {
             return;
         }
         if (consumed.fromOutput()) {
-            context.inventory().insertOutput(consumed.stack());
+            context.inventory().returnOutputOrDrop(consumed.stack());
         } else {
-            context.inventory().insertSupply(consumed.stack());
+            context.inventory().returnSupplyOrDrop(consumed.stack());
         }
     }
 

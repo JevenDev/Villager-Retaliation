@@ -357,7 +357,7 @@ final class MiningSupportManager {
             return false;
         }
         if (!level.setBlock(placement.pos(), placement.state(), Block.UPDATE_ALL)) {
-            context.inventory().insertSupply(consumed);
+            context.inventory().returnSupplyOrDrop(consumed);
             return false;
         }
         HiredPathMemory.onBlockChanged(level, placement.pos());
@@ -388,7 +388,7 @@ final class MiningSupportManager {
             return false;
         }
         if (!level.setBlock(backingPos, blockItem.getBlock().defaultBlockState(), Block.UPDATE_ALL)) {
-            context.inventory().insertOutput(backingStack);
+            context.inventory().returnOutputOrDrop(backingStack);
             return false;
         }
         HiredPathMemory.onBlockChanged(level, backingPos);
