@@ -203,6 +203,7 @@ public final class VillagerInteractionScreenOpener {
                 partyRecruitAvailable,
                 com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.featureAvailable(),
                 com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.hasAssignment(level, villager.getUUID()),
+                HiredVillagerContractService.isMountedTravelEnabled(level, villager),
                 partyRemainingDays,
                 VillagerWalletService.getVendorCurrencyAvailable(villager),
                 VillagerWalletService.getVendorCurrencyCap(villager),

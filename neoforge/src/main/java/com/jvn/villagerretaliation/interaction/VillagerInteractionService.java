@@ -792,6 +792,13 @@ public final class VillagerInteractionService {
                 com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.unassign(player, villager);
                 VillagerInteractionScreenOpener.refreshNormal(player, villager);
             }
+            case TOGGLE_MOUNTED_TRAVEL -> {
+                boolean enabled = HiredVillagerContractService.toggleMountedTravel(level, villager);
+                sendVillagerNotice(player, villager, enabled
+                        ? "interaction.mount.mounted_travel_enabled"
+                        : "interaction.mount.mounted_travel_disabled");
+                VillagerInteractionScreenOpener.refreshNormal(player, villager);
+            }
             case END_HIRE -> {
                 if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
                     sendVillagerNotice(player, villager, "interaction.hire.end_requires_hirer");
@@ -924,6 +931,7 @@ public final class VillagerInteractionService {
                  TOGGLE_AUTO_PAYMENT,
                  START_MOUNT_ASSIGNMENT,
                  UNASSIGN_MOUNT,
+                 TOGGLE_MOUNTED_TRAVEL,
                  PROMPT_END_HIRE_CONFIRMATION,
                  DECLINE_END_HIRE_CONFIRMATION,
                  END_HIRE,

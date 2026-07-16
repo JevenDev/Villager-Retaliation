@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredPathResult;
 import com.jvn.villagerretaliation.interaction.work.HiredRouteNavigator;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.inventory.PartyContainerLootService;
+import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
@@ -98,6 +99,8 @@ public final class PartyQuickCommandService {
             case HEAL -> heal(player, participants);
             case PICK_UP_DROPS -> pickUpDrops(player, participants);
             case LOOT_CONTAINERS -> lootContainers(player, participants, payload.targetPosition());
+            case RIDE_MOUNT -> setMountMode(player, party, participants, true);
+            case DISMOUNT_MOUNT -> setMountMode(player, party, participants, false);
         };
         if (affected <= 0) {
             notice(player, targetRequired(payload.command())
@@ -216,6 +219,24 @@ public final class PartyQuickCommandService {
         PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
         return record != null && record.quickCommandsEnabled() && record.regrouping();
+    }
+
+    private static int setMountMode(
+            ServerPlayer player,
+            PartyRecord party,
+            List<PartyVillagerRecord> participants,
+            boolean enabled) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            return 0;
+        }
+        int affected = (int) participants.stream()
+                .filter(record -> VillagerMountAssignmentService.hasAssignment(
+                        player.serverLevel(), record.villagerId()))
+                .count();
+        if (affected > 0) {
+            party.setMountMode(enabled);
+        }
+        return affected;
     }
 
     public static boolean overridesCombatTargeting(Villager villager) {

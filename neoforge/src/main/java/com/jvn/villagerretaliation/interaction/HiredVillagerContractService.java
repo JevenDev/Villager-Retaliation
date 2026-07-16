@@ -43,6 +43,7 @@ public final class HiredVillagerContractService {
     private static final String EMERALDS_RELEASED_TAG = "EmeraldsReleased";
     private static final String EMERALDS_REFUNDED_TAG = "EmeraldsRefunded";
     private static final String AUTO_PAYMENT_TAG = "AutoPayment";
+    private static final String MOUNTED_TRAVEL_TAG = "MountedTravel";
     private static final String ONE_OFF_BUILDER_JOB_TAG = "OneOffBuilderJob";
     private static final String LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG = "LastAutoPaymentAttemptGameTime";
     private static final String AWAITING_AUTO_PAYMENT_START_GAME_TIME_TAG = "AwaitingAutoPaymentStartGameTime";
@@ -292,6 +293,30 @@ public final class HiredVillagerContractService {
                 });
     }
 
+    public static boolean isMountedTravelEnabled(ServerLevel level, Villager villager) {
+        expireHireContractIfNeeded(level, villager);
+        return contract(villager)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .filter(tag -> !isOneOffBuilderJob(tag))
+                .map(tag -> !tag.contains(MOUNTED_TRAVEL_TAG) || tag.getBoolean(MOUNTED_TRAVEL_TAG))
+                .orElse(false);
+    }
+
+    public static boolean toggleMountedTravel(ServerLevel level, Villager villager) {
+        expireHireContractIfNeeded(level, villager);
+        Optional<CompoundTag> activeContract = contract(villager)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .filter(tag -> !isOneOffBuilderJob(tag));
+        if (activeContract.isEmpty()) {
+            return false;
+        }
+        CompoundTag tag = activeContract.get();
+        boolean enabled = !isMountedTravelEnabled(level, villager);
+        tag.putBoolean(MOUNTED_TRAVEL_TAG, enabled);
+        villager.setPersistenceRequired();
+        return enabled;
+    }
+
     public static void onVillagerDeath(ServerLevel level, Villager villager) {
         contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
@@ -333,6 +358,7 @@ public final class HiredVillagerContractService {
         tag.putInt(EMERALDS_RELEASED_TAG, 0);
         tag.putInt(EMERALDS_REFUNDED_TAG, 0);
         tag.putBoolean(AUTO_PAYMENT_TAG, false);
+        tag.putBoolean(MOUNTED_TRAVEL_TAG, true);
         tag.putBoolean(ONE_OFF_BUILDER_JOB_TAG, false);
         tag.putString(ROLE_TAG, safeRole.serializedName());
         tag.putString(STATUS_TAG, STATUS_ACTIVE);

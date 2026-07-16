@@ -10,5 +10,7 @@ public enum PartyQuickCommand {
     MELEE,
     HEAL,
     PICK_UP_DROPS,
-    LOOT_CONTAINERS
+    LOOT_CONTAINERS,
+    RIDE_MOUNT,
+    DISMOUNT_MOUNT
 }

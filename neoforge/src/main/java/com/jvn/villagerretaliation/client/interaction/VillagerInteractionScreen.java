@@ -268,6 +268,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final boolean partyRecruitAvailable;
     private final boolean mountFeatureAvailable;
     private boolean assignedMount;
+    private boolean mountedTravelEnabled;
     private int partyRemainingDays;
     private final int walletEmeralds;
     private final int maxWalletEmeralds;
@@ -395,6 +396,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean partyRecruitAvailable,
             boolean mountFeatureAvailable,
             boolean assignedMount,
+            boolean mountedTravelEnabled,
             int partyRemainingDays,
             int walletEmeralds,
             int maxWalletEmeralds,
@@ -455,6 +457,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.partyRecruitAvailable = partyRecruitAvailable;
         this.mountFeatureAvailable = mountFeatureAvailable;
         this.assignedMount = assignedMount;
+        this.mountedTravelEnabled = mountedTravelEnabled;
         this.partyRemainingDays = Math.max(0, partyRemainingDays);
         this.walletEmeralds = Math.max(0, walletEmeralds);
         this.maxWalletEmeralds = Math.max(0, maxWalletEmeralds);
@@ -1293,6 +1296,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void addRoleOptions() {
         addOption("recruit.current_role", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_ROLE));
         addOption("recruit.change_role", this::openRoleChangePage);
+        if (this.mountFeatureAvailable && this.assignedMount) {
+            addOption(this.mountedTravelEnabled
+                            ? "recruit.mounted_travel.disable"
+                            : "recruit.mounted_travel.enable",
+                    () -> requestRecruit(VillagerRecruitRequestPayload.Action.TOGGLE_MOUNTED_TRAVEL));
+        }
         addOption("recruit.nevermind", this::openRecruitPage);
     }
 

@@ -23,6 +23,8 @@ public record PartyRosterSyncPayload(
         PartyCombatModeState combatMode,
         PartyAttackModeState attackMode,
         boolean sharedVillagerInventories,
+        boolean mountMode,
+        boolean mountFeatureAvailable,
         ResourceLocation quickCommandMoveDimension,
         BlockPos quickCommandMoveTarget,
         boolean standGuardActive,
@@ -39,7 +41,7 @@ public record PartyRosterSyncPayload(
     public static PartyRosterSyncPayload empty() {
         return new PartyRosterSyncPayload(false, null, "", false,
                 PartyCombatModeState.ATTACK_WITH_PARTY, PartyAttackModeState.ALL,
-                true, null, null, false, List.of(), List.of());
+                true, false, false, null, null, false, List.of(), List.of());
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, PartyRosterSyncPayload payload) {
@@ -53,6 +55,8 @@ public record PartyRosterSyncPayload(
         buffer.writeEnum(payload.combatMode());
         buffer.writeEnum(payload.attackMode());
         buffer.writeBoolean(payload.sharedVillagerInventories());
+        buffer.writeBoolean(payload.mountMode());
+        buffer.writeBoolean(payload.mountFeatureAvailable());
         boolean hasMoveTarget = payload.quickCommandMoveDimension() != null
                 && payload.quickCommandMoveTarget() != null;
         buffer.writeBoolean(hasMoveTarget);
@@ -83,6 +87,7 @@ public record PartyRosterSyncPayload(
             buffer.writeEnum(villager.attackMode());
             buffer.writeEnum(villager.dropCollectionMode());
             buffer.writeBoolean(villager.quickCommandsEnabled());
+            buffer.writeBoolean(villager.assignedMount());
         }
     }
 
@@ -96,6 +101,8 @@ public record PartyRosterSyncPayload(
         PartyCombatModeState combatMode = buffer.readEnum(PartyCombatModeState.class);
         PartyAttackModeState attackMode = buffer.readEnum(PartyAttackModeState.class);
         boolean sharedVillagerInventories = buffer.readBoolean();
+        boolean mountMode = buffer.readBoolean();
+        boolean mountFeatureAvailable = buffer.readBoolean();
         boolean hasMoveTarget = buffer.readBoolean();
         ResourceLocation quickCommandMoveDimension = hasMoveTarget ? buffer.readResourceLocation() : null;
         BlockPos quickCommandMoveTarget = hasMoveTarget ? buffer.readBlockPos() : null;
@@ -123,10 +130,11 @@ public record PartyRosterSyncPayload(
                     buffer.readEnum(PartyCombatMode.class),
                     buffer.readEnum(PartyAttackMode.class),
                     buffer.readEnum(PartyDropCollectionMode.class),
+                    buffer.readBoolean(),
                     buffer.readBoolean()));
         }
         return new PartyRosterSyncPayload(true, partyId, leaderName, recipientLeader,
-                combatMode, attackMode, sharedVillagerInventories,
+                combatMode, attackMode, sharedVillagerInventories, mountMode, mountFeatureAvailable,
                 quickCommandMoveDimension, quickCommandMoveTarget, standGuardActive,
                 List.copyOf(players), List.copyOf(villagers));
     }
@@ -150,6 +158,7 @@ public record PartyRosterSyncPayload(
             PartyCombatMode combatMode,
             PartyAttackMode attackMode,
             PartyDropCollectionMode dropCollectionMode,
-            boolean quickCommandsEnabled) {
+            boolean quickCommandsEnabled,
+            boolean assignedMount) {
     }
 }

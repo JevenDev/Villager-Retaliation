@@ -11,6 +11,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -52,7 +53,7 @@ public final class PartyQuickCommandWheel {
     private static final double ATTACK_TARGET_RANGE = 32.0D;
     private static final double ENTITY_SNAP_INFLATION = 0.85D;
 
-    private static final List<WheelEntry> ENTRIES = List.of(
+    private static final List<WheelEntry> BASE_ENTRIES = List.of(
             entry(PartyQuickCommand.ATTACK, Items.IRON_SWORD),
             entry(PartyQuickCommand.MOVE_TO, Items.COMPASS),
             entry(PartyQuickCommand.STAY_HERE, Items.OAK_FENCE),
@@ -142,8 +143,9 @@ public final class PartyQuickCommandWheel {
     }
 
     private static void close(Minecraft minecraft, boolean applySelection) {
-        if (applySelection && highlightedIndex >= 0 && highlightedIndex < ENTRIES.size()) {
-            send(ENTRIES.get(highlightedIndex).command(), capturedTarget);
+        List<WheelEntry> entries = entries();
+        if (applySelection && highlightedIndex >= 0 && highlightedIndex < entries.size()) {
+            send(entries.get(highlightedIndex).command(), capturedTarget);
         }
         open = false;
         highlightedIndex = -1;
@@ -239,8 +241,9 @@ public final class PartyQuickCommandWheel {
             return;
         }
         double angle = normalizeAngle(Math.atan2(dy, dx) + Math.PI / 2.0D);
-        int index = (int) Math.floor(angle / (FULL_CIRCLE / ENTRIES.size()));
-        highlightedIndex = Math.min(index, ENTRIES.size() - 1);
+        List<WheelEntry> entries = entries();
+        int index = (int) Math.floor(angle / (FULL_CIRCLE / entries.size()));
+        highlightedIndex = Math.min(index, entries.size() - 1);
     }
 
     private static void render(GuiGraphics graphics) {
@@ -248,11 +251,12 @@ public final class PartyQuickCommandWheel {
         Font font = minecraft.font;
         int centerX = minecraft.getWindow().getGuiScaledWidth() / 2;
         int centerY = minecraft.getWindow().getGuiScaledHeight() / 2;
+        List<WheelEntry> entries = entries();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         drawCircle(centerX, centerY, WHEEL_RADIUS, 96, 0xB0101010);
-        double slice = FULL_CIRCLE / ENTRIES.size();
-        for (int index = 0; index < ENTRIES.size(); index++) {
+        double slice = FULL_CIRCLE / entries.size();
+        for (int index = 0; index < entries.size(); index++) {
             double start = -Math.PI / 2.0D + index * slice;
             double end = start + slice;
             drawWedge(centerX, centerY, WHEEL_RADIUS, start, end,
@@ -261,12 +265,12 @@ public final class PartyQuickCommandWheel {
         drawCircle(centerX, centerY, CENTER_RADIUS, 48, 0xD0181818);
         RenderSystem.disableBlend();
 
-        for (int index = 0; index < ENTRIES.size(); index++) {
+        for (int index = 0; index < entries.size(); index++) {
             double angle = -Math.PI / 2.0D + (index + 0.5D) * slice;
             int iconX = centerX + (int) Math.round(Math.cos(angle) * ICON_RADIUS) - 8;
             int iconY = centerY + (int) Math.round(Math.sin(angle) * ICON_RADIUS) - 8;
             renderSlotBackground(graphics, iconX - SLOT_FRAME_SIZE, iconY - SLOT_FRAME_SIZE);
-            ItemStack stack = ENTRIES.get(index).icon();
+            ItemStack stack = entries.get(index).icon();
             graphics.renderItem(stack, iconX, iconY);
         }
 
@@ -274,7 +278,7 @@ public final class PartyQuickCommandWheel {
                 Component.translatable("villagerretaliation.party.quick_command.title"),
                 centerX, centerY - WHEEL_RADIUS - 18, 0xFFFFFF);
         Component label = highlightedIndex >= 0
-                ? selectionLabel(ENTRIES.get(highlightedIndex))
+                ? selectionLabel(entries.get(highlightedIndex))
                 : Component.translatable("villagerretaliation.party.quick_command.cancel");
         graphics.drawCenteredString(font, truncate(font, label.getString(), 118),
                 centerX, centerY + WHEEL_RADIUS + font.lineHeight, 0xFFFFFF);
@@ -344,6 +348,20 @@ public final class PartyQuickCommandWheel {
                 new ItemStack(item),
                 Component.translatable("villagerretaliation.party.quick_command."
                         + command.name().toLowerCase(java.util.Locale.ROOT)));
+    }
+
+    private static List<WheelEntry> entries() {
+        var roster = PartyRosterClient.roster();
+        if (!roster.mountFeatureAvailable()
+                || roster.villagers().stream().noneMatch(villager ->
+                        villager.quickCommandsEnabled() && villager.assignedMount())) {
+            return BASE_ENTRIES;
+        }
+        List<WheelEntry> entries = new ArrayList<>(BASE_ENTRIES);
+        entries.add(entry(roster.mountMode()
+                ? PartyQuickCommand.DISMOUNT_MOUNT
+                : PartyQuickCommand.RIDE_MOUNT, Items.SADDLE));
+        return entries;
     }
 
     private static Component selectionLabel(WheelEntry entry) {

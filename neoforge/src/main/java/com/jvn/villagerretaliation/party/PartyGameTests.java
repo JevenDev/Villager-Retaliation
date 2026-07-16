@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
@@ -17,6 +18,9 @@ import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
+import com.jvn.villagerretaliation.mount.VillagerMountAssignment;
+import com.jvn.villagerretaliation.mount.VillagerMountAssignmentSavedData;
+import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
@@ -54,6 +58,7 @@ import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
@@ -199,6 +204,7 @@ public final class PartyGameTests {
                 "new parties default to attack with party");
         party.setAttackMode(PartyAttackMode.HOSTILES);
         party.setSharedVillagerInventories(false);
+        party.setMountMode(true);
         helper.assertTrue(data.addPlayer(party, second), "second player should join");
         helper.assertTrue(data.addPlayer(party, third), "third player should join");
         helper.assertTrue(data.addPlayer(party, fourth), "fourth player should join");
@@ -263,6 +269,11 @@ public final class PartyGameTests {
         helper.assertValueEqual(restored.attackMode(), PartyAttackMode.HOSTILES,
                 "global attack-mode persistence");
         helper.assertFalse(restored.sharedVillagerInventories(), "shared-inventory policy persistence");
+        helper.assertTrue(restored.mountMode(), "party mount mode persistence");
+        CompoundTag legacyMountParty = party.save();
+        legacyMountParty.remove("MountMode");
+        helper.assertFalse(PartyRecord.load(legacyMountParty).mountMode(),
+                "legacy parties must begin with mounted party travel disabled");
         helper.assertValueEqual(restored.villager(villagers.getFirst()).combatMode(),
                 PartyCombatMode.ATTACK_WITH_PARTY,
                 "individual combat-mode persistence");
@@ -387,6 +398,71 @@ public final class PartyGameTests {
                 PartyService.deleteParty(level, partyId);
             }
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void mountQuickCommandsPersistAndOnlyAffectEnabledAssignments(GameTestHelper helper) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            helper.succeed();
+            return;
+        }
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_mount_leader"));
+        ServerPlayer member = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 4);
+        horse.setTamed(true);
+        member.moveTo(horse.getX() + 1.0D, horse.getY(), horse.getZ(), 0.0F, 0.0F);
+        long now = level.getGameTime();
+        PartySavedData data = PartySavedData.get(level);
+        PartyRecord party = data.createParty(leader.getUUID(), now);
+        data.addPlayer(party, member.getUUID());
+        PartyVillagerRecord record = villagerRecord(villager.getUUID(), leader.getUUID(), 0, now);
+        data.addVillager(party, record);
+        VillagerMountAssignmentSavedData.get(level).assign(new VillagerMountAssignment(
+                villager.getUUID(),
+                horse.getUUID(),
+                ResourceLocation.withDefaultNamespace("horse"),
+                level.dimension().location(),
+                horse.blockPosition(),
+                level.dimension().location(),
+                horse.blockPosition(),
+                now));
+
+        PartyQuickCommandService.handle(leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.RIDE_MOUNT));
+        helper.assertTrue(party.mountMode(), "Ride Mount must persist the party mount mode");
+        record.setQuickCommandsEnabled(false);
+        PartyQuickCommandService.handle(leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.DISMOUNT_MOUNT));
+        helper.assertTrue(party.mountMode(),
+                "A disabled assigned villager must not change party mount mode");
+        record.setQuickCommandsEnabled(true);
+        PartyQuickCommandService.handle(leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.DISMOUNT_MOUNT));
+        helper.assertFalse(party.mountMode(), "Dismount Mount must persist the off state");
+
+        helper.assertTrue(VillagerRideOnCompat.tryMountDriver(horse, villager),
+                "The assigned villager must start in the driver seat");
+        helper.assertTrue(VillagerMountAssignmentService.assignmentForMount(level, horse.getUUID()).isPresent(),
+                "The driver-seat check must resolve the mount assignment");
+        helper.assertTrue(VillagerMountAssignmentService.canRideAssignedMount(member, villager),
+                "A non-leader party member must pass server authorization");
+        ServerPlayer outsider = fakePlayer(level, uniqueName("party_mount_outsider"));
+        helper.assertFalse(VillagerMountAssignmentService.canRideAssignedMount(outsider, villager),
+                "A player outside the villager's party must not pass seat authorization");
+        helper.assertFalse(VillagerMountAssignmentService.tryTakeAssignedDriverSeat(outsider, horse),
+                "An unauthorized player must not displace the assigned villager");
+        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, false), villager,
+                "The assigned villager must remain the current front rider before a real interaction");
+
+        VillagerMountAssignmentSavedData.get(level).removeForVillager(villager.getUUID());
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
         helper.succeed();
     }
 

@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.network.VillagerMountTargetModePayload;
 import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartySyncService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import java.util.ArrayList;
@@ -52,6 +53,12 @@ public final class VillagerMountAssignmentService {
         return assignment(level, villagerId).isPresent();
     }
 
+    public static Optional<VillagerMountAssignment> assignmentForMount(ServerLevel level, UUID mountId) {
+        return level == null || mountId == null
+                ? Optional.empty()
+                : VillagerMountAssignmentSavedData.get(level).forMount(mountId);
+    }
+
     public static boolean canManage(ServerPlayer player, Villager villager) {
         if (player == null
                 || villager == null
@@ -67,6 +74,21 @@ public final class VillagerMountAssignmentService {
                 && party.leaderId().equals(player.getUUID())
                 && PartyVillagerContractService.isActivePartyVillager(level, villager);
         return partyLeader || HiredVillagerContractService.isHiredBy(level, villager, player);
+    }
+
+    public static boolean canRideAssignedMount(ServerPlayer player, Villager villager) {
+        if (player == null
+                || villager == null
+                || !(villager.level() instanceof ServerLevel level)
+                || player.serverLevel() != level
+                || !villager.isAlive()) {
+            return false;
+        }
+        PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        boolean partyMember = party != null
+                && party.playerIds().contains(player.getUUID())
+                && PartyVillagerContractService.isActivePartyVillager(level, villager);
+        return partyMember || HiredVillagerContractService.isHiredBy(level, villager, player);
     }
 
     public static boolean structurallyEligible(ServerLevel level, Entity mount) {
@@ -113,6 +135,7 @@ public final class VillagerMountAssignmentService {
             notice(player, "villagerretaliation.mount.none_assigned");
             return AssignmentResult.NO_ASSIGNMENT;
         }
+        syncPartyIfPresent(player.serverLevel(), villager.getUUID());
         notice(player, "villagerretaliation.mount.unassigned");
         return AssignmentResult.SUCCESS;
     }
@@ -152,7 +175,11 @@ public final class VillagerMountAssignmentService {
                 mount.blockPosition().immutable(),
                 level.getServer().overworld().getGameTime()
         );
-        return data.assign(assignment) ? AssignmentResult.SUCCESS : AssignmentResult.MOUNT_ALREADY_ASSIGNED;
+        if (!data.assign(assignment)) {
+            return AssignmentResult.MOUNT_ALREADY_ASSIGNED;
+        }
+        syncPartyIfPresent(level, villager.getUUID());
+        return AssignmentResult.SUCCESS;
     }
 
     /** Runs before the normal villager interaction handler. */
@@ -166,11 +193,32 @@ public final class VillagerMountAssignmentService {
             consume(event);
             return true;
         }
+        if (event.getTarget() instanceof AbstractHorse mount && tryTakeAssignedDriverSeat(player, mount)) {
+            consume(event);
+            return true;
+        }
         if (event.getTarget() instanceof Villager villager && tryAssignLeashedMount(player, villager)) {
             consume(event);
             return true;
         }
         return false;
+    }
+
+    public static boolean tryTakeAssignedDriverSeat(ServerPlayer player, AbstractHorse mount) {
+        if (!featureAvailable() || player == null || mount == null || player.getVehicle() != null) {
+            return false;
+        }
+        VillagerMountAssignment assignment = assignmentForMount(player.serverLevel(), mount.getUUID()).orElse(null);
+        if (assignment == null) {
+            return false;
+        }
+        Entity driver = VillagerRideOnCompat.occupant(mount, false);
+        if (!(driver instanceof Villager villager)
+                || !assignment.villagerId().equals(villager.getUUID())
+                || !canRideAssignedMount(player, villager)) {
+            return false;
+        }
+        return VillagerRideOnCompat.tryTakeDriverSeat(mount, player);
     }
 
     public static void cancelTargeting(ServerPlayer player) {
@@ -301,6 +349,11 @@ public final class VillagerMountAssignmentService {
             case NO_ASSIGNMENT -> "villagerretaliation.mount.none_assigned";
             case SUCCESS -> "villagerretaliation.mount.assigned";
         };
+    }
+
+    private static void syncPartyIfPresent(ServerLevel level, UUID villagerId) {
+        PartyService.getPartyForVillager(level, villagerId)
+                .ifPresent(party -> PartySyncService.syncParty(level.getServer(), party.id()));
     }
 
     private static void consume(PlayerInteractEvent.EntityInteract event) {

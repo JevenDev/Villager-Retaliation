@@ -609,6 +609,8 @@
   "villagerretaliation.gui.recruit.about_role": "About Your Role",
   "villagerretaliation.gui.recruit.current_role": "What's your role?",
   "villagerretaliation.gui.recruit.change_role": "Let's Change Your Role",
+  "villagerretaliation.gui.recruit.mounted_travel.enable": "Mounted Travel: Off",
+  "villagerretaliation.gui.recruit.mounted_travel.disable": "Mounted Travel: On",
   "villagerretaliation.gui.recruit.role_combat": "Role: Combat",
   "villagerretaliation.gui.recruit.role_hunting": "Role: Hunting",
   "villagerretaliation.gui.recruit.role_mining": "Role: Mining",
@@ -1609,6 +1611,8 @@
   "villagerretaliation.party.quick_command.heal": "Heal",
   "villagerretaliation.party.quick_command.pick_up_drops": "Pick Up Drops",
   "villagerretaliation.party.quick_command.loot_containers": "Loot Containers",
+  "villagerretaliation.party.quick_command.ride_mount": "Ride Mount",
+  "villagerretaliation.party.quick_command.dismount_mount": "Dismount Mount",
   "villagerretaliation.party.quick_command.lower_shields": "Lower Shields",
   "villagerretaliation.party.quick_command.sent": "%1$s: %2$s villager(s)",
   "villagerretaliation.party.quick_command.none_enabled": "No villagers are enabled for quick commands.",
@@ -1698,5 +1702,7 @@
   "villagerretaliation.mount.target_cancelled": "Mount assignment cancelled.",
   "villagerretaliation.mount.target_timed_out": "Mount assignment timed out.",
   "villagerretaliation.mount.target_hud": "Select a mount",
-  "villagerretaliation.mount.target_hud_cancel": "Escape to cancel"
+  "villagerretaliation.mount.target_hud_cancel": "Escape to cancel",
+  "interaction.mount.mounted_travel_enabled": "Mounted travel enabled.",
+  "interaction.mount.mounted_travel_disabled": "Mounted travel disabled."
 }

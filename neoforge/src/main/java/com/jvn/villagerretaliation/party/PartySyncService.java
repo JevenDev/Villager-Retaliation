@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.party;
 
 import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
+import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
@@ -106,7 +107,8 @@ public final class PartySyncService {
                     record.combatMode(),
                     record.attackMode(),
                     record.dropCollectionMode(),
-                    record.quickCommandsEnabled()));
+                    record.quickCommandsEnabled(),
+                    VillagerMountAssignmentService.hasAssignment(server.overworld(), record.villagerId())));
         }
         return new PartyRosterSnapshot(
                 party.id(),
@@ -115,6 +117,8 @@ public final class PartySyncService {
                 combatModeState(party),
                 attackModeState(party),
                 party.sharedVillagerInventories(),
+                party.mountMode(),
+                VillagerMountAssignmentService.featureAvailable(),
                 PartyQuickCommandService.moveTargetDimension(party),
                 PartyQuickCommandService.moveTarget(party),
                 PartyQuickCommandService.isStandGuardActive(party),
@@ -129,6 +133,8 @@ public final class PartySyncService {
             PartyCombatModeState combatMode,
             PartyAttackModeState attackMode,
             boolean sharedVillagerInventories,
+            boolean mountMode,
+            boolean mountFeatureAvailable,
             ResourceLocation moveTargetDimension,
             BlockPos moveTarget,
             boolean standGuardActive,
@@ -143,6 +149,8 @@ public final class PartySyncService {
                     this.combatMode,
                     this.attackMode,
                     this.sharedVillagerInventories,
+                    this.mountMode,
+                    this.mountFeatureAvailable,
                     this.moveTargetDimension,
                     this.moveTarget,
                     this.standGuardActive,

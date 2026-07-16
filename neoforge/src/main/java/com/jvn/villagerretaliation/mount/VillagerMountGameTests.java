@@ -115,6 +115,29 @@ public final class VillagerMountGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void roleWorkerMountedTravelTogglePersistsWithTheContract(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        helper.assertTrue(HiredVillagerContractService.isMountedTravelEnabled(level, villager),
+                "New role contracts must opt into mounted travel");
+        helper.assertFalse(HiredVillagerContractService.toggleMountedTravel(level, villager),
+                "The first toggle must disable mounted travel");
+
+        CompoundTag savedVillager = new CompoundTag();
+        villager.saveWithoutId(savedVillager);
+        Villager restored = EntityType.VILLAGER.create(level);
+        helper.assertTrue(restored != null, "The restored villager fixture must be created");
+        restored.load(savedVillager);
+        helper.assertFalse(HiredVillagerContractService.isMountedTravelEnabled(level, restored),
+                "Mounted travel must survive an entity save/load cycle");
+        helper.assertTrue(HiredVillagerContractService.toggleMountedTravel(level, restored),
+                "The second toggle must re-enable mounted travel");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void compatibleRuntimeAssignsEverySupportedMountWithoutOwnershipOrSaddles(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
