@@ -208,6 +208,10 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             }
             return ItemStack.EMPTY;
         }
+        // External inventory writers (combat loadouts, pickups, storage automation)
+        // persist immediately. Always begin a player transaction from that current
+        // state so one slot change cannot save an older full-inventory snapshot.
+        refreshVillagerInventory();
         Slot sourceSlot = this.slots.get(index);
         if (!sourceSlot.hasItem()) {
             return ItemStack.EMPTY;
@@ -243,6 +247,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             }
             return;
         }
+        refreshVillagerInventory();
         super.clicked(slotId, button, clickType, player);
         stripPlayerSideTradePaymentTracking(player);
     }

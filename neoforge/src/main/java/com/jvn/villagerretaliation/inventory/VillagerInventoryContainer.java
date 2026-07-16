@@ -188,7 +188,6 @@ final class VillagerInventoryContainer implements Container {
 
     @Override
     public void stopOpen(Player player) {
-        setChanged();
         OPEN_INVENTORIES.computeIfPresent(this.villager.getUUID(), (uuid, openCount) -> openCount <= 1 ? null : openCount - 1);
     }
 
@@ -318,6 +317,12 @@ final class VillagerInventoryContainer implements Container {
     }
 
     static boolean tryBorrowCombatWeapon(Villager villager, Predicate<ItemStack> predicate) {
+        // A personal-inventory menu owns a mutable view of these same slots. Moving a
+        // weapon behind that menu's back lets a same-tick click write the old stack
+        // back to storage while the borrowed copy remains equipped.
+        if (hasOpenInventory(villager)) {
+            return false;
+        }
         if (hasBorrowedCombatWeapon(villager)) {
             if (predicate.test(villager.getMainHandItem())) {
                 return maintainBorrowedCombatWeapon(villager);

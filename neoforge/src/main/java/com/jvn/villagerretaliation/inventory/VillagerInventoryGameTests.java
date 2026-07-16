@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.recipe.VillagerItemFilterCopyRecipe;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.mojang.authlib.GameProfile;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
@@ -502,6 +503,69 @@ public final class VillagerInventoryGameTests {
         helper.assertFalse(VillagerInventoryContainer.hasBorrowedCombatWeapon(villager), "borrowed state should clear after return");
         helper.assertTrue(villager.getMainHandItem().isEmpty(), "main hand should clear after borrowed sword returns");
         helper.assertValueEqual(countStored(villager, Items.IRON_SWORD), 1, "returned sword should be back in regular inventory");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void openPersonalInventoryCannotDuplicateBorrowedWeapons(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrOpenWeaponInventory");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        helper.assertTrue(
+                VillagerInventoryContainer.addItem(villager, new ItemStack(Items.NETHERITE_SWORD)).isEmpty(),
+                "personal inventory should accept the sword");
+        helper.assertTrue(
+                VillagerInventoryContainer.addItem(villager, new ItemStack(Items.CROSSBOW)).isEmpty(),
+                "personal inventory should accept the crossbow");
+
+        VillagerInventoryContainer openInventory = new VillagerInventoryContainer(villager);
+        openInventory.startOpen(player);
+        helper.assertFalse(
+                VillagerInventoryContainer.tryBorrowCombatWeapon(
+                        villager,
+                        VillagerRetaliationVillagerWeapons::isCrossbowWeapon),
+                "quick-command loadout changes must not borrow from an open personal inventory");
+        helper.assertTrue(villager.getMainHandItem().isEmpty(), "blocked borrowing must not equip a copied weapon");
+        helper.assertValueEqual(countStored(villager, Items.NETHERITE_SWORD), 1, "the sword count must remain exact");
+        helper.assertValueEqual(countStored(villager, Items.CROSSBOW), 1, "the crossbow count must remain exact");
+        openInventory.stopOpen(player);
+
+        helper.assertTrue(
+                VillagerInventoryContainer.tryBorrowCombatWeapon(
+                        villager,
+                        VillagerRetaliationVillagerWeapons::isCrossbowWeapon),
+                "borrowing should resume after the personal inventory closes");
+        helper.assertTrue(villager.getMainHandItem().is(Items.CROSSBOW), "the crossbow should move to the main hand");
+        helper.assertValueEqual(countStored(villager, Items.CROSSBOW), 0, "a borrowed crossbow must leave storage");
+        VillagerInventoryContainer.returnBorrowedCombatWeapon(villager);
+        helper.assertValueEqual(countStored(villager, Items.NETHERITE_SWORD), 1, "the sword must not duplicate during the cycle");
+        helper.assertValueEqual(countStored(villager, Items.CROSSBOW), 1, "the crossbow must return exactly once");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void closingStalePersonalInventoryDoesNotResurrectItems(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrStaleInventoryClose");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerInventoryContainer.addItem(villager, new ItemStack(Items.NETHERITE_SWORD));
+        VillagerInventoryContainer openInventory = new VillagerInventoryContainer(villager);
+        openInventory.startOpen(player);
+
+        VillagerInventoryContainer.saveFullInventory(
+                villager,
+                NonNullList.withSize(VillagerInventoryContainer.INVENTORY_SLOT_COUNT, ItemStack.EMPTY));
+        openInventory.stopOpen(player);
+
+        helper.assertValueEqual(
+                countStored(villager, Items.NETHERITE_SWORD),
+                0,
+                "closing an older menu snapshot must not write removed items back");
         villager.discard();
         helper.succeed();
     }
