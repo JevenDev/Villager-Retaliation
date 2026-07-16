@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.mount;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.npc.Villager;
@@ -17,4 +18,20 @@ interface VillagerMountAdapter {
     boolean tryDismount(Entity entity, Villager villager);
 
     boolean isDriver(Entity entity, Villager villager);
+
+    boolean hasActiveRider(Entity entity);
+
+    boolean isLeashed(Entity entity);
+
+    boolean isPanicking(Entity entity);
+
+    boolean hasGroundPath(Entity entity, BlockPos target);
+
+    boolean moveTo(Entity entity, BlockPos target, double speed);
+
+    void stopNavigation(Entity entity);
+
+    void restrictTo(Entity entity, BlockPos anchor, int radius);
+
+    void clearRestriction(Entity entity);
 }

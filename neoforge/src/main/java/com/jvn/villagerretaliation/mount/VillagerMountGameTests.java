@@ -17,10 +17,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -251,6 +255,184 @@ public final class VillagerMountGameTests {
         helper.assertFalse(VillagerMountAssignmentService.hasAssignment(level, villager.getUUID()),
                 "Cancellation must not create an assignment");
         helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel")
+    public static void mountDesireSurvivesUnloadAndRetriesWhenTheMountReturns(GameTestHelper helper) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            helper.succeed();
+            return;
+        }
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 7, 1, 2);
+        horse.setTamed(true);
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, villager, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The travel fixture must create an assignment");
+        BlockPos travelTarget = villager.blockPosition().offset(18, 0, 0);
+        layTravelFloor(level, villager.blockPosition(), travelTarget);
+        villager.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(travelTarget), 0.8F, 0));
+
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertFalse(villager.isPassenger(),
+                "A villager must continue on foot while its assigned mount is out of boarding range");
+        helper.assertTrue(VillagerMountAssignmentService.hasAssignment(level, villager.getUUID()),
+                "A temporarily unreachable mount must not clear mount desire");
+
+        horse.moveTo(villager.getX() + 1.0D, villager.getY(), villager.getZ(), 0.0F, 0.0F);
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertValueEqual(villager.getVehicle(), horse,
+                "The villager must board when the assigned mount returns within three blocks");
+        helper.assertValueEqual(villager.getNavigation(), horse.getNavigation(),
+                "A driver mob's native navigation must delegate to its controlled horse");
+        helper.assertTrue(VillagerMountAssignmentSavedData.get(level)
+                        .forVillager(villager.getUUID()).orElseThrow().parkingPosition() == null,
+                "Boarding must release the persisted parking anchor");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel")
+    public static void roleCommuteDismountsForPreciseWorkAndParksTheHorse(GameTestHelper helper) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            helper.succeed();
+            return;
+        }
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        horse.setTamed(true);
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, villager, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The commute fixture must create an assignment");
+
+        BlockPos farTarget = villager.blockPosition().offset(18, 0, 0);
+        layTravelFloor(level, villager.blockPosition(), farTarget);
+        villager.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(farTarget), 0.8F, 0));
+        helper.assertTrue(HiredVillagerContractService.isHired(level, villager),
+                "The commute fixture must retain its active contract");
+        helper.assertTrue(HiredVillagerContractService.isMountedTravelEnabled(level, villager),
+                "The commute fixture must have mounted travel enabled");
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertValueEqual(villager.getVehicle(), horse,
+                "A role worker must mount for a reachable travel leg of at least sixteen blocks");
+
+        villager.getNavigation().stop();
+        BlockPos preciseTarget = horse.blockPosition().offset(4, 0, 0);
+        villager.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(preciseTarget), 0.5F, 0));
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertFalse(villager.isPassenger(),
+                "A role worker must dismount within eight blocks of precise work");
+        VillagerMountAssignment parked = VillagerMountAssignmentSavedData.get(level)
+                .forVillager(villager.getUUID()).orElseThrow();
+        helper.assertValueEqual(parked.parkingPosition(), horse.blockPosition(),
+                "Dismounting must persist a parking anchor at the horse");
+        helper.assertTrue(horse.hasRestriction() && horse.getRestrictRadius() == 8.0F,
+                "A parked horse must receive the eight-block restriction");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel")
+    public static void parkedMountReturnsAfterYieldingToRidersAndLeashes(GameTestHelper helper) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            helper.succeed();
+            return;
+        }
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        horse.setTamed(true);
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, villager, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The parking fixture must create an assignment");
+        helper.assertFalse(HiredVillagerContractService.toggleMountedTravel(level, villager),
+                "The parking fixture must leave its villager on foot");
+        BlockPos anchor = horse.blockPosition().immutable();
+        VillagerMountAssignmentSavedData.get(level)
+                .setParkingAnchor(villager.getUUID(), level.dimension().location(), anchor);
+
+        horse.setLeashedTo(hirer, true);
+        VillagerMountTravelService.maintainParking(level.getServer());
+        helper.assertFalse(horse.hasRestriction(), "Parking must yield while the mount is leashed");
+        horse.dropLeash(true, false);
+        layTravelFloor(level, anchor, anchor.offset(12, 0, 0));
+        horse.moveTo(anchor.getX() + 12.5D, anchor.getY(), anchor.getZ() + 0.5D, 0.0F, 0.0F);
+        VillagerMountTravelService.maintainParking(level.getServer());
+        helper.assertTrue(horse.hasRestriction(), "Parking must resume after the leash is removed");
+        helper.assertTrue(horse.getNavigation().getTargetPos() != null
+                        && horse.getNavigation().getTargetPos().distSqr(anchor) <= 1.0D,
+                "A mount beyond ten blocks must navigate back to its parking anchor");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_travel")
+    public static void terminalLifecycleEventsClearAssignmentsButChunkUnloadDoesNot(GameTestHelper helper) {
+        if (!VillagerMountAssignmentService.featureAvailable()) {
+            helper.succeed();
+            return;
+        }
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        horse.setTamed(true);
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, villager, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The lifecycle fixture must create an assignment");
+
+        horse.remove(Entity.RemovalReason.UNLOADED_TO_CHUNK);
+        helper.assertTrue(VillagerMountAssignmentService.hasAssignment(level, villager.getUUID()),
+                "Chunk unload must preserve the assignment");
+        VillagerMountAssignmentService.onEntityPermanentlyRemoved(horse);
+        helper.assertFalse(VillagerMountAssignmentService.hasAssignment(level, villager.getUUID()),
+                "Permanent mount removal must clear both assignment indexes");
+
+        AbstractHorse replacement = helper.spawn(EntityType.HORSE, 3, 1, 2);
+        replacement.setTamed(true);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, villager, replacement),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The replacement mount must be assignable after cleanup");
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        helper.assertFalse(VillagerMountAssignmentService.hasAssignment(level, villager.getUUID()),
+                "Contract end must release the replacement mount and clear the assignment");
+        helper.assertFalse(replacement.hasRestriction(),
+                "Terminal cleanup must release any parking restriction");
+        helper.succeed();
+    }
+
+    private static void layTravelFloor(ServerLevel level, BlockPos from, BlockPos to) {
+        int direction = Integer.compare(to.getX(), from.getX());
+        if (direction == 0) {
+            for (int z = from.getZ() - 1; z <= from.getZ() + 1; z++) {
+                level.setBlockAndUpdate(new BlockPos(from.getX(), from.getY() - 1, z),
+                        Blocks.STONE.defaultBlockState());
+            }
+            return;
+        }
+        for (int x = from.getX(); x != to.getX() + direction; x += direction) {
+            for (int z = from.getZ() - 1; z <= from.getZ() + 1; z++) {
+                level.setBlockAndUpdate(new BlockPos(x, from.getY() - 1, z),
+                        Blocks.STONE.defaultBlockState());
+            }
+        }
     }
 
     private static void configureGameTestStructures() {

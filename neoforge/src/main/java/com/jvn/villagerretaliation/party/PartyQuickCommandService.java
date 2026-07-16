@@ -585,6 +585,8 @@ public final class PartyQuickCommandService {
             com.jvn.villagerretaliation.villager.VillagerRecoveryService.cancelForcedRecovery(villager);
             VillagerRetaliationHandler.clearCustomTarget(villager);
             VillagerRecruitmentService.applyPartyStay(level, villager, player.getUUID(), target);
+            com.jvn.villagerretaliation.mount.VillagerMountTravelService
+                    .stopAssignedMountNavigation(villager);
             affected++;
         }
         return affected;

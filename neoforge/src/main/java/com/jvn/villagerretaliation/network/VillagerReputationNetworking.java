@@ -652,9 +652,13 @@ public final class VillagerReputationNetworking {
     }
 
     public static void syncHungerToTracking(Villager villager, int hunger) {
-        PacketDistributor.sendToPlayersTrackingEntity(
-                villager,
-                new VillagerHungerSyncPayload(villager.getId(), hunger));
+        try {
+            PacketDistributor.sendToPlayersTrackingEntity(
+                    villager,
+                    new VillagerHungerSyncPayload(villager.getId(), hunger));
+        } catch (UnsupportedOperationException ignored) {
+            // Some server-side harnesses track entities through mock connections without payload support.
+        }
     }
 
     private static double tradeLevelXpMultiplier(AbstractVillager villager, VillagerProfile profile) {

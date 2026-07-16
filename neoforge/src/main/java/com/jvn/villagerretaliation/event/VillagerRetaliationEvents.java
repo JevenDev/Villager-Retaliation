@@ -258,6 +258,8 @@ public final class VillagerRetaliationEvents {
     public static void onLivingDeath(LivingDeathEvent event) {
         EncounterService.onDeath(event.getEntity());
         SceneLifecycleIntegration.onActorDeath(event.getEntity());
+        com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
+                .onEntityPermanentlyRemoved(event.getEntity());
         if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
             VillagerRetaliationVillagerCombatUtil.resolveDeathAttacker(player, event.getSource())
                     .filter(AbstractVillager.class::isInstance)
@@ -317,6 +319,7 @@ public final class VillagerRetaliationEvents {
         }
         if (entity instanceof Villager villager) {
             if (VillagerDownedService.isDowned(villager)) {
+                com.jvn.villagerretaliation.mount.VillagerMountTravelService.onVillagerDowned(villager);
                 return;
             }
             VillagerNaturalJobArmor.maybeRoll(villager);
@@ -345,6 +348,7 @@ public final class VillagerRetaliationEvents {
             VillagerFleeBehaviorHandler.onEntityTickPost(event);
             VillagerCombatSurvivalService.onVillagerTickPost(villager);
             com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerTickPost(villager);
+            com.jvn.villagerretaliation.mount.VillagerMountTravelService.onVillagerTickPost(villager);
             VillagerInventoryAccess.maybeOffloadInventoryOverflow(villager);
             VillagerWalletService.tickWallet(villager);
             VillagerSocialGraphService.onEntityTickPost(event);
@@ -743,12 +747,18 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
         VillageCombatAuthorizationService.clearFor(event.getEntity());
+        Entity.RemovalReason removalReason = event.getEntity().getRemovalReason();
+        if (!event.getLevel().isClientSide()
+                && (removalReason == Entity.RemovalReason.DISCARDED
+                || removalReason == Entity.RemovalReason.KILLED)) {
+            com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
+                    .onEntityPermanentlyRemoved(event.getEntity());
+        }
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
             VillagerDownedService.onVillagerUnloaded(villager);
             com.jvn.villagerretaliation.villager.VillagerRecoveryService.onVillagerUnloaded(villager);
             com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerUnloaded(villager);
-            Entity.RemovalReason reason = villager.getRemovalReason();
-            if (reason == Entity.RemovalReason.DISCARDED || reason == Entity.RemovalReason.KILLED) {
+            if (removalReason == Entity.RemovalReason.DISCARDED || removalReason == Entity.RemovalReason.KILLED) {
                 PartyVillagerContractService.onVillagerPermanentlyRemoved(villager);
             } else {
                 PartyVillagerContractService.onVillagerUnloaded(villager);

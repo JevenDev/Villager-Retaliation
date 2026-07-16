@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.party;
 
+import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import java.util.List;
 import java.util.Optional;
@@ -425,7 +426,11 @@ public final class PartyService {
     static PartyVillagerRecord removeVillager(ServerLevel level, UUID villagerId) {
         PartySavedData data = partyData(level);
         PartyRecord party = data.partyForVillager(villagerId).orElse(null);
-        return party == null ? null : data.removeVillager(party, villagerId);
+        if (party == null) {
+            return null;
+        }
+        VillagerMountAssignmentService.clearAssignment(level, villagerId);
+        return data.removeVillager(party, villagerId);
     }
 
     public static void markChanged(ServerLevel level) {
@@ -435,7 +440,12 @@ public final class PartyService {
     }
 
     static PartyRecord deleteParty(ServerLevel level, UUID partyId) {
-        return partyData(level).removeParty(partyId);
+        PartyRecord removed = partyData(level).removeParty(partyId);
+        if (removed != null) {
+            removed.villagers().forEach(villager ->
+                    VillagerMountAssignmentService.clearAssignment(level, villager.villagerId()));
+        }
+        return removed;
     }
 
     public static List<PartyInvitation> pendingInvitations(ServerPlayer player) {

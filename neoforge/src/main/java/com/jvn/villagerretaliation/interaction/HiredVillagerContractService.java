@@ -689,6 +689,8 @@ public final class HiredVillagerContractService {
             rememberOverflowClaimIfNeeded(level, villager, tag, contractId);
         }
         AssignedStorageService.removeAllAssignedStorage(level, villager);
+        com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
+                .clearAssignment(level, villager.getUUID());
         VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
         villager.setPersistenceRequired();
         HiredVillagerIndex.remove(villager);

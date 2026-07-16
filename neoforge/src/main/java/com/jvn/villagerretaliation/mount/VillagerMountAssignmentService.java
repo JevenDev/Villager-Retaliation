@@ -129,15 +129,53 @@ public final class VillagerMountAssignmentService {
             notice(player, "villagerretaliation.mount.unauthorized");
             return AssignmentResult.UNAUTHORIZED;
         }
-        VillagerMountAssignment removed = VillagerMountAssignmentSavedData.get(player.serverLevel())
-                .removeForVillager(villager.getUUID());
-        if (removed == null) {
+        if (!clearAssignment(player.serverLevel(), villager.getUUID())) {
             notice(player, "villagerretaliation.mount.none_assigned");
             return AssignmentResult.NO_ASSIGNMENT;
         }
-        syncPartyIfPresent(player.serverLevel(), villager.getUUID());
         notice(player, "villagerretaliation.mount.unassigned");
         return AssignmentResult.SUCCESS;
+    }
+
+    public static boolean clearAssignment(ServerLevel level, UUID villagerId) {
+        if (level == null || villagerId == null) {
+            return false;
+        }
+        VillagerMountAssignmentSavedData data = VillagerMountAssignmentSavedData.get(level);
+        VillagerMountAssignment assignment = data.forVillager(villagerId).orElse(null);
+        if (assignment == null) {
+            return false;
+        }
+        releaseAssignment(level.getServer(), assignment);
+        data.removeForVillager(villagerId);
+        syncPartyIfPresent(level, villagerId);
+        return true;
+    }
+
+    public static boolean clearAssignmentForMount(ServerLevel level, UUID mountId) {
+        if (level == null || mountId == null) {
+            return false;
+        }
+        VillagerMountAssignmentSavedData data = VillagerMountAssignmentSavedData.get(level);
+        VillagerMountAssignment assignment = data.forMount(mountId).orElse(null);
+        if (assignment == null) {
+            return false;
+        }
+        releaseAssignment(level.getServer(), assignment);
+        data.removeForMount(mountId);
+        syncPartyIfPresent(level, assignment.villagerId());
+        return true;
+    }
+
+    public static void onEntityPermanentlyRemoved(Entity entity) {
+        if (entity == null || !(entity.level() instanceof ServerLevel level)) {
+            return;
+        }
+        if (entity instanceof Villager villager) {
+            clearAssignment(level, villager.getUUID());
+        } else {
+            clearAssignmentForMount(level, entity.getUUID());
+        }
     }
 
     public static AssignmentResult assign(
@@ -226,6 +264,7 @@ public final class VillagerMountAssignmentService {
     }
 
     public static void onServerTick(MinecraftServer server) {
+        VillagerMountTravelService.onServerTick(server);
         if (server == null || PENDING_TARGETS.isEmpty()) {
             return;
         }
@@ -354,6 +393,16 @@ public final class VillagerMountAssignmentService {
     private static void syncPartyIfPresent(ServerLevel level, UUID villagerId) {
         PartyService.getPartyForVillager(level, villagerId)
                 .ifPresent(party -> PartySyncService.syncParty(level.getServer(), party.id()));
+    }
+
+    private static void releaseAssignment(MinecraftServer server, VillagerMountAssignment assignment) {
+        Entity mount = VillagerMountEntities.loaded(server, assignment.mountId());
+        Entity villager = VillagerMountEntities.loaded(server, assignment.villagerId());
+        VillagerMountAdapter adapter = VillagerMountAdapters.find(mount);
+        if (adapter != null && villager instanceof Villager assignedVillager && villager.getVehicle() == mount) {
+            adapter.tryDismount(mount, assignedVillager);
+        }
+        VillagerMountTravelService.releaseRestriction(server, assignment);
     }
 
     private static void consume(PlayerInteractEvent.EntityInteract event) {
