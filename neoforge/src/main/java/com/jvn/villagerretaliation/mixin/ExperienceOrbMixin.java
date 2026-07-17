@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.mixin;
 
-import com.jvn.villagerretaliation.villager.VillagerArmorMending;
+import com.jvn.villagerretaliation.villager.VillagerEquipmentMending;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
@@ -31,7 +31,7 @@ public abstract class ExperienceOrbMixin {
         for (Villager villager : orb.level().getEntitiesOfClass(
                 Villager.class,
                 searchArea,
-                candidate -> candidate.isAlive() && VillagerArmorMending.canRepair(candidate)
+                candidate -> candidate.isAlive() && VillagerEquipmentMending.canRepair(candidate)
         )) {
             double distance = villager.distanceToSqr(orb);
             if (distance < 64.0D && distance < nearestDistance) {
@@ -57,13 +57,13 @@ public abstract class ExperienceOrbMixin {
                 || !villager.isAlive()
                 || villager.level() != orb.level()
                 || villager.distanceToSqr(orb) >= 64.0D
-                || !VillagerArmorMending.canRepair(villager)) {
+                || !VillagerEquipmentMending.canRepair(villager)) {
             villagerretaliation$followingVillager = null;
             return;
         }
 
         if (!orb.getBoundingBox().intersects(villager.getBoundingBox())
-                || !VillagerArmorMending.repairWithXp(villager, value)) {
+                || !VillagerEquipmentMending.repairWithXp(villager, value)) {
             return;
         }
 
