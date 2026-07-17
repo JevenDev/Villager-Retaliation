@@ -30,6 +30,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
+import com.jvn.villagerretaliation.inventory.PaymentBoxChunkLoadingService;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
@@ -1541,6 +1542,87 @@ public final class VillagerWorkerGameTests {
         AssignedStorageService.removeAllAssignedStorage(level, otherVillager);
         villager.discard();
         otherVillager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void autoPaymentRenewsAfterHirerReturnsToFundedPaymentBox(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        BlockPos paymentRel = new BlockPos(2, 2, 1);
+        BlockPos payment = helper.absolutePos(paymentRel);
+        setBlock(helper, paymentRel, VillagerRetaliationBlocks.PAYMENT_BOX.get().defaultBlockState());
+        container(level, payment).setItem(0, new ItemStack(Items.EMERALD, 64));
+        AssignedStorageService.removeAssignedContainer(level, payment);
+        AssignedStorageService.AssignSummary paymentAssignment = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), payment)),
+                AssignedStorageService.PAYMENT_PURPOSE);
+        helper.assertValueEqual(paymentAssignment.assigned(), 1, "payment box assignment");
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 1);
+        HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
+        int currentDailyCost = HiredVillagerContractService.getDailyCost(level, villager, hirer);
+        CompoundTag contract = villager.getPersistentData().getCompound("VillagerRetaliationHireContract");
+        long expiredAt = level.getGameTime();
+        contract.putLong("EndGameTime", expiredAt);
+        CompoundTag workState = new CompoundTag();
+        workState.putString("Status", HiredVillagerWorkService.WAITING_FOR_HIRER_STATUS);
+        villager.getPersistentData().put(WORK_STATE_TAG, workState);
+
+        HiredVillagerContractService.expireHireContractIfNeeded(level, villager);
+
+        helper.assertValueEqual(
+                countItem(container(level, payment), Items.EMERALD),
+                64 - currentDailyCost,
+                "returning hirer's funded payment box should renew the contract");
+        helper.assertValueEqual(contract.getString("Status"), "active", "renewed contract should remain active");
+        helper.assertValueEqual(
+                HiredWorkerBrain.snapshot(workState, level.getGameTime()).taskState(),
+                HiredWorkerTaskState.IDLE,
+                "villager should resume work after automatic renewal");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void softPaymentBoxLoadsAreBoundedAndRequireLivingVillager(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 1);
+
+        AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
+        for (int index = 0; index < 6; index++) {
+            BlockPos paymentPos = helper.absolutePos(new BlockPos(160_000 + index * 16, 2, 160_000));
+            data.assign(new AssignedStorageSavedData.AssignedContainerRecord(
+                    level.dimension(),
+                    paymentPos,
+                    villager.getUUID(),
+                    hirer.getUUID(),
+                    AssignedStorageService.PAYMENT_PURPOSE,
+                    index,
+                    "unloaded"));
+        }
+
+        int requested = PaymentBoxChunkLoadingService.requestLoads(level, villager);
+        helper.assertValueEqual(requested, 4, "one renewal should request at most four payment chunks");
+        PaymentBoxChunkLoadingService.releaseLoads(level, villager);
+
+        villager.discard();
+        helper.assertValueEqual(
+                PaymentBoxChunkLoadingService.requestLoads(level, villager),
+                0,
+                "removed or dead villagers should not load payment chunks");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
         helper.succeed();
     }
 

@@ -58,6 +58,7 @@
 
 ### Added
 
+- Added bounded soft loading for assigned payment boxes when automatic contract renewal is due; payment chunks load at FULL-only status without block or entity ticking, release immediately after charging, and use short timeouts plus per-renewal and server-wide rate caps.
 - Added `/villagerretaliation debug raid win` and `/villagerretaliation debug raid lose` operator commands for settling the relevant Player Raid.
 - Expanded personal, job, and party villager inventories with nine-slot hotbars; assigned job tools now prefer mainhand then hotbar storage, while ordinary supplies, outputs, and party drops use the hotbar only for overflow.
 - Added durable POI-backed village identities with generated names, canonical aliases, resident rosters, automatic connected-footprint merging, loaded-only empty-grace observation, and archival after 72,000 fully observed ticks.

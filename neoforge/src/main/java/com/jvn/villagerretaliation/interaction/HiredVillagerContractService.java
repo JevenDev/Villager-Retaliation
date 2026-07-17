@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.PaymentBoxChunkLoadingService;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
@@ -560,10 +561,6 @@ public final class HiredVillagerContractService {
     }
 
     private static boolean hasOnlineHirerForRenewal(ServerLevel level, Villager villager, CompoundTag tag) {
-        if (HiredVillagerWorkService.WAITING_FOR_HIRER_STATUS.equals(
-                HiredVillagerWorkService.state(villager).getString("Status"))) {
-            return false;
-        }
         if (!tag.hasUUID(HIRER_TAG)) {
             return true;
         }
@@ -584,18 +581,20 @@ public final class HiredVillagerContractService {
     }
 
     private static void handleAwaitingAutoPayment(ServerLevel level, Villager villager, CompoundTag tag) {
-        if (isAwaitingAutoPaymentExpired(level, tag)) {
-            expireContract(level, villager, tag, "Work stopped. Recurring payment was unpaid for more than a day.");
-            return;
-        }
+        boolean gracePeriodExpired = isAwaitingAutoPaymentExpired(level, tag);
         long gameTime = level.getGameTime();
         long lastAttempt = tag.getLong(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG);
-        if (tag.contains(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG, Tag.TAG_LONG)
+        if (!gracePeriodExpired
+                && tag.contains(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG, Tag.TAG_LONG)
                 && lastAttempt <= gameTime
                 && gameTime - lastAttempt < AUTO_PAYMENT_RETRY_INTERVAL_TICKS) {
             return;
         }
         if (!canAttemptAutoPaymentRenewal(level, villager, tag)) {
+            if (gracePeriodExpired) {
+                expireContract(level, villager, tag, "Work stopped. Recurring payment was unpaid for more than a day.");
+                return;
+            }
             HiredWorkerBrain.setState(HiredVillagerWorkService.state(villager), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setWorkStatus(villager, "Contract paused. Recurring payment is unpaid.");
             return;
@@ -603,6 +602,10 @@ public final class HiredVillagerContractService {
 
         AutoPaymentResult result = tryAutoPaymentRenewal(level, villager, tag);
         if (result == AutoPaymentResult.SUCCESS) {
+            return;
+        }
+        if (gracePeriodExpired) {
+            expireContract(level, villager, tag, "Work stopped. Recurring payment was unpaid for more than a day.");
             return;
         }
         if (result == AutoPaymentResult.INSUFFICIENT_FUNDS) {
@@ -619,11 +622,17 @@ public final class HiredVillagerContractService {
         tag.putLong(LAST_AUTO_PAYMENT_ATTEMPT_GAME_TIME_TAG, level.getGameTime());
         int dailyCost = currentRenewalDailyCost(level, villager, tag);
         if (!AssignedStorageService.hasLoadedAssignedPaymentStorage(level, villager)) {
+            PaymentBoxChunkLoadingService.requestLoads(level, villager);
             return AutoPaymentResult.UNAVAILABLE;
         }
-        if (AssignedStorageService.countPaymentItems(
+        int availablePayment = AssignedStorageService.countPaymentItems(
                 villager,
-                stack -> VillagerCurrencyResources.isCurrency(level.getServer(), stack)) < dailyCost) {
+                stack -> VillagerCurrencyResources.isCurrency(level.getServer(), stack));
+        if (availablePayment < dailyCost
+                && PaymentBoxChunkLoadingService.requestLoads(level, villager) > 0) {
+            return AutoPaymentResult.UNAVAILABLE;
+        }
+        if (availablePayment < dailyCost) {
             return AutoPaymentResult.INSUFFICIENT_FUNDS;
         }
         int consumed = AssignedStorageService.consumePaymentItems(
@@ -633,6 +642,7 @@ public final class HiredVillagerContractService {
         if (consumed < dailyCost) {
             return AutoPaymentResult.INSUFFICIENT_FUNDS;
         }
+        PaymentBoxChunkLoadingService.releaseLoads(level, villager);
         releaseEarnedHirePayment(level, villager, tag);
         extendActiveContract(level, tag, 1, dailyCost);
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
@@ -688,6 +698,7 @@ public final class HiredVillagerContractService {
             inventory.depositRemovableItemsToAssignedStorage();
             rememberOverflowClaimIfNeeded(level, villager, tag, contractId);
         }
+        PaymentBoxChunkLoadingService.releaseLoads(level, villager);
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
                 .clearAssignment(level, villager.getUUID());
