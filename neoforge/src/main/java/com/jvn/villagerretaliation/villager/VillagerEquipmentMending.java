@@ -12,19 +12,12 @@ import net.minecraft.world.item.enchantment.EnchantedItemInUse;
 import net.minecraft.world.item.enchantment.EnchantmentEffectComponents;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
-public final class VillagerArmorMending {
-    private static final List<EquipmentSlot> ARMOR_SLOTS = List.of(
-            EquipmentSlot.HEAD,
-            EquipmentSlot.CHEST,
-            EquipmentSlot.LEGS,
-            EquipmentSlot.FEET
-    );
-
-    private VillagerArmorMending() {
+public final class VillagerEquipmentMending {
+    private VillagerEquipmentMending() {
     }
 
     public static boolean canRepair(Villager villager) {
-        return getRandomDamagedMendingArmor(villager).isPresent();
+        return getRandomDamagedMendingItem(villager).isPresent();
     }
 
     public static boolean repairWithXp(Villager villager, int value) {
@@ -32,38 +25,38 @@ public final class VillagerArmorMending {
             return false;
         }
 
-        Optional<EnchantedItemInUse> candidate = getRandomDamagedMendingArmor(villager);
+        Optional<EnchantedItemInUse> candidate = getRandomDamagedMendingItem(villager);
         if (candidate.isEmpty()) {
             return false;
         }
 
-        ItemStack armor = candidate.get().itemStack();
+        ItemStack item = candidate.get().itemStack();
         int repair = EnchantmentHelper.modifyDurabilityToRepairFromXp(
                 serverLevel,
-                armor,
-                (int) (value * armor.getXpRepairRatio())
+                item,
+                (int) (value * item.getXpRepairRatio())
         );
-        int repaired = Math.min(repair, armor.getDamageValue());
+        int repaired = Math.min(repair, item.getDamageValue());
         if (repaired <= 0) {
             return false;
         }
 
-        armor.setDamageValue(armor.getDamageValue() - repaired);
+        item.setDamageValue(item.getDamageValue() - repaired);
         return true;
     }
 
-    private static Optional<EnchantedItemInUse> getRandomDamagedMendingArmor(Villager villager) {
+    private static Optional<EnchantedItemInUse> getRandomDamagedMendingItem(Villager villager) {
         List<EnchantedItemInUse> candidates = new ArrayList<>();
-        for (EquipmentSlot slot : ARMOR_SLOTS) {
-            ItemStack armor = villager.getItemBySlot(slot);
-            if (!armor.isDamaged()) {
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            ItemStack item = villager.getItemBySlot(slot);
+            if (!item.isDamaged()) {
                 continue;
             }
 
-            EnchantmentHelper.runIterationOnItem(armor, slot, villager, (enchantment, level, item) -> {
+            EnchantmentHelper.runIterationOnItem(item, slot, villager, (enchantment, level, enchantedItem) -> {
                 if (enchantment.value().effects().has(EnchantmentEffectComponents.REPAIR_WITH_XP)
                         && enchantment.value().matchingSlot(slot)) {
-                    candidates.add(item);
+                    candidates.add(enchantedItem);
                 }
             });
         }

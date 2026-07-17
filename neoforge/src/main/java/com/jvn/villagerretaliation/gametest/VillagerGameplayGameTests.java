@@ -117,6 +117,40 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerHeldMendingFishingRodConsumesExperience(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemStack fishingRod = new ItemStack(Items.FISHING_ROD);
+        var enchantments = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        fishingRod.enchant(enchantments.getOrThrow(Enchantments.MENDING), 1);
+        fishingRod.setDamageValue(20);
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager,
+                EquipmentSlot.MAINHAND,
+                fishingRod
+        );
+        ItemStack equippedRod = villager.getMainHandItem();
+
+        ExperienceOrb orb = helper.spawn(EntityType.EXPERIENCE_ORB, 1, 2, 1);
+        orb.value = 5;
+        orb.setPos(villager.position());
+        orb.tickCount = 1;
+        orb.tick();
+        orb.setPos(villager.position());
+        orb.setDeltaMovement(Vec3.ZERO);
+        orb.tick();
+
+        helper.assertValueEqual(equippedRod.getDamageValue(), 10,
+                "five XP should repair ten held fishing-rod durability");
+        helper.assertTrue(orb.isRemoved(),
+                "the villager should consume the experience orb after repairing a held fishing rod");
+        helper.assertTrue(VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager),
+                "equipment maintenance should retain the repaired held tool");
+        helper.assertValueEqual(villager.getMainHandItem().getDamageValue(), 10,
+                "equipment maintenance should not restore the fishing rod's old damage");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void unprotectedVillagerStillDiesFromLethalDamage(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
 
