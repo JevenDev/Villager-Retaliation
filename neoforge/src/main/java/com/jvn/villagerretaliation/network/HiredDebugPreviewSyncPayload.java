@@ -16,6 +16,7 @@ public record HiredDebugPreviewSyncPayload(
     public static final int MAX_STORAGE = 256;
     public static final int MAX_ROUTES = 128;
     private static final int LABEL_LENGTH = 64;
+    private static final int STORAGE_OWNER_LABEL_LENGTH = 256;
     public static final Type<HiredDebugPreviewSyncPayload> TYPE = VillagerPayloads.type("hired_debug_preview_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, HiredDebugPreviewSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(HiredDebugPreviewSyncPayload::encode, HiredDebugPreviewSyncPayload::decode);
@@ -52,7 +53,7 @@ public record HiredDebugPreviewSyncPayload(
             buffer.writeResourceLocation(entry.dimension());
             buffer.writeBlockPos(entry.pos());
             buffer.writeBoolean(entry.payment());
-            buffer.writeUtf(entry.ownerName(), LABEL_LENGTH);
+            buffer.writeUtf(entry.ownerName(), STORAGE_OWNER_LABEL_LENGTH);
             buffer.writeUtf(entry.storageType(), LABEL_LENGTH);
         }
         buffer.writeVarInt(Math.min(MAX_ROUTES, payload.routes().size()));
@@ -88,7 +89,7 @@ public record HiredDebugPreviewSyncPayload(
                     buffer.readResourceLocation(),
                     buffer.readBlockPos(),
                     buffer.readBoolean(),
-                    buffer.readUtf(LABEL_LENGTH),
+                    buffer.readUtf(STORAGE_OWNER_LABEL_LENGTH),
                     buffer.readUtf(LABEL_LENGTH)
             ));
         }
@@ -146,16 +147,20 @@ public record HiredDebugPreviewSyncPayload(
             String ownerName,
             String storageType) {
         public StorageEntry {
-            ownerName = sanitizeLabel(ownerName);
+            ownerName = sanitizeLabel(ownerName, STORAGE_OWNER_LABEL_LENGTH);
             storageType = sanitizeLabel(storageType);
         }
     }
 
     private static String sanitizeLabel(String label) {
+        return sanitizeLabel(label, LABEL_LENGTH);
+    }
+
+    private static String sanitizeLabel(String label, int maxLength) {
         if (label == null) {
             return "";
         }
         String trimmed = label.trim();
-        return trimmed.length() > LABEL_LENGTH ? trimmed.substring(0, LABEL_LENGTH) : trimmed;
+        return trimmed.length() > maxLength ? trimmed.substring(0, maxLength) : trimmed;
     }
 }

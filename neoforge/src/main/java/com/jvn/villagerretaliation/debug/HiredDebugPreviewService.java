@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -155,9 +156,8 @@ public final class HiredDebugPreviewService {
         ServerLevel level = player.serverLevel();
         List<Villager> villagers = nearbyHiredVillagers(level, player, state.radius());
         List<HiredDebugPreviewSyncPayload.WorkAreaEntry> workAreas = new ArrayList<>();
-        List<HiredDebugPreviewSyncPayload.StorageEntry> storage = new ArrayList<>();
+        List<NamedStorageAssignments> storageAssignments = new ArrayList<>();
         List<ClipboardRouteEntry> routes = new ArrayList<>();
-        Set<StorageDebugKey> seenStorage = new LinkedHashSet<>();
         ResourceLocation currentDimension = level.dimension().location();
         for (Villager villager : villagers) {
             String ownerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
@@ -182,8 +182,11 @@ public final class HiredDebugPreviewService {
             if (!route.isEmpty() && routes.size() < HiredDebugPreviewSyncPayload.MAX_ROUTES) {
                 routes.add(new ClipboardRouteEntry(currentDimension, route.nodes(), route.loop(), ownerName, role.label()));
             }
-            addStorageEntries(storage, seenStorage, ownerName, AssignedStorageService.allAssignedStorage(level, villager));
+            storageAssignments.add(new NamedStorageAssignments(
+                    ownerName,
+                    AssignedStorageService.allAssignedStorage(level, villager)));
         }
+        List<HiredDebugPreviewSyncPayload.StorageEntry> storage = storageEntries(storageAssignments);
         PacketDistributor.sendToPlayer(player, new HiredDebugPreviewSyncPayload(true, workAreas, storage, routes, VISIBLE_TICKS));
         ENABLED_PLAYERS.put(player.getUUID(), new DebugPreviewState(
                 state.radius(),
@@ -217,27 +220,38 @@ public final class HiredDebugPreviewService {
     }
 
     private static void addStorageEntries(
-            List<HiredDebugPreviewSyncPayload.StorageEntry> entries,
-            Set<StorageDebugKey> seen,
+            Map<StorageDebugKey, StorageDebugEntry> entries,
             String ownerName,
             List<AssignedContainerRecord> records) {
         for (AssignedContainerRecord record : records) {
-            if (entries.size() >= HiredDebugPreviewSyncPayload.MAX_STORAGE) {
-                return;
-            }
             String purpose = AssignedStorageService.normalizePurpose(record.purpose());
             boolean payment = AssignedStorageService.PAYMENT_PURPOSE.equals(purpose);
             StorageDebugKey key = new StorageDebugKey(record.dimension().location(), record.pos(), purpose);
-            if (seen.add(key)) {
-                entries.add(new HiredDebugPreviewSyncPayload.StorageEntry(
+            StorageDebugEntry existing = entries.get(key);
+            if (existing != null) {
+                existing.addOwner(ownerName);
+            } else if (entries.size() < HiredDebugPreviewSyncPayload.MAX_STORAGE) {
+                entries.put(key, new StorageDebugEntry(
                         record.dimension().location(),
                         record.pos(),
                         payment,
                         ownerName,
-                        storagePurposeLabel(record.purpose())
-                ));
+                        storagePurposeLabel(record.purpose())));
             }
         }
+    }
+
+    static List<HiredDebugPreviewSyncPayload.StorageEntry> storageEntries(
+            List<NamedStorageAssignments> assignments) {
+        Map<StorageDebugKey, StorageDebugEntry> entries = new LinkedHashMap<>();
+        if (assignments != null) {
+            for (NamedStorageAssignments assignment : assignments) {
+                if (assignment != null) {
+                    addStorageEntries(entries, assignment.ownerName(), assignment.records());
+                }
+            }
+        }
+        return entries.values().stream().map(StorageDebugEntry::toPayload).toList();
     }
 
     private static String storagePurposeLabel(String purpose) {
@@ -293,5 +307,48 @@ public final class HiredDebugPreviewService {
     }
 
     private record StorageDebugKey(ResourceLocation dimension, BlockPos pos, String purpose) {
+    }
+
+    record NamedStorageAssignments(String ownerName, List<AssignedContainerRecord> records) {
+        NamedStorageAssignments {
+            ownerName = ownerName == null ? "" : ownerName;
+            records = records == null ? List.of() : List.copyOf(records);
+        }
+    }
+
+    private static final class StorageDebugEntry {
+        private final ResourceLocation dimension;
+        private final BlockPos pos;
+        private final boolean payment;
+        private final String storageType;
+        private final Set<String> ownerNames = new LinkedHashSet<>();
+
+        private StorageDebugEntry(
+                ResourceLocation dimension,
+                BlockPos pos,
+                boolean payment,
+                String ownerName,
+                String storageType) {
+            this.dimension = dimension;
+            this.pos = pos;
+            this.payment = payment;
+            this.storageType = storageType;
+            addOwner(ownerName);
+        }
+
+        private void addOwner(String ownerName) {
+            if (ownerName != null && !ownerName.isBlank()) {
+                this.ownerNames.add(ownerName);
+            }
+        }
+
+        private HiredDebugPreviewSyncPayload.StorageEntry toPayload() {
+            return new HiredDebugPreviewSyncPayload.StorageEntry(
+                    this.dimension,
+                    this.pos,
+                    this.payment,
+                    String.join(", ", this.ownerNames),
+                    this.storageType);
+        }
     }
 }
