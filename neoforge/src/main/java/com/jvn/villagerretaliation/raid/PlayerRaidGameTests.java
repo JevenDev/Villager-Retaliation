@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.village.VillagerRaidMemorySavedData;
 import java.util.LinkedHashSet;
@@ -365,6 +366,11 @@ public final class PlayerRaidGameTests {
                 PlayerRaidService.debugFinishRaid(helper.getLevel(), center, player, true), won,
                 "participant raid selected for debug win");
         helper.assertValueEqual(won.phase(), PlayerRaidSavedData.Phase.RAIDER_VICTORY, "debug win outcome");
+        long winFinishedAt = helper.getLevel().getServer().overworld().getGameTime();
+        helper.assertValueEqual(
+                data.cooldownUntil(won.villageId()),
+                winFinishedAt + Math.max(0, VillagerRetaliationConfig.PLAYER_RAID_VILLAGE_COOLDOWN_DAYS.get()) * 24_000L,
+                "raider victory persisted village cooldown");
 
         UUID secondPlayer = UUID.randomUUID();
         PlayerRaidSavedData.RaidRecord lost = data.create(
@@ -376,6 +382,11 @@ public final class PlayerRaidGameTests {
                 PlayerRaidService.debugFinishRaid(helper.getLevel(), center, secondPlayer, false), lost,
                 "participant raid selected for debug loss");
         helper.assertValueEqual(lost.phase(), PlayerRaidSavedData.Phase.DEFENDER_VICTORY, "debug loss outcome");
+        long lossFinishedAt = helper.getLevel().getServer().overworld().getGameTime();
+        helper.assertValueEqual(
+                data.cooldownUntil(lost.villageId()),
+                lossFinishedAt + Math.max(0, VillagerRetaliationConfig.PLAYER_RAID_VILLAGE_COOLDOWN_DAYS.get()) * 24_000L,
+                "defender victory persisted village cooldown");
         data.remove(won.id());
         data.remove(lost.id());
         helper.succeed();
@@ -402,6 +413,53 @@ public final class PlayerRaidGameTests {
         helper.assertTrue(defender.hasEffect(MobEffects.GLOWING), "tracked invisible defender should glow");
         data.remove(raid.id());
         defender.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void raidDefenderDebugHighlightUsesPersistedObjective(GameTestHelper helper) {
+        BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
+        Villager defender = EntityType.VILLAGER.create(helper.getLevel());
+        helper.assertTrue(defender != null, "villager should be creatable");
+        defender.moveTo(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(defender), "villager should spawn");
+
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
+        UUID player = UUID.randomUUID();
+        PlayerRaidSavedData.RaidRecord raid = data.create(
+                VillageAllegianceId.random(), helper.getLevel().dimension().location(), center,
+                Set.of(SectionPos.asLong(center)), "Highlight Village", player, null,
+                Set.of(player), Set.of(), Set.of(defender.getUUID()), Set.of(), 42L);
+        raid.setPhase(PlayerRaidSavedData.Phase.ACTIVE, 43L);
+        PlayerRaidService.highlightTrackedDefenders(helper.getLevel().getServer(), raid);
+        helper.assertTrue(defender.hasEffect(MobEffects.GLOWING),
+                "the defender retained in the raid objective should glow");
+        data.remove(raid.id());
+        defender.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void permanentlyDiscardedDefenderLeavesRaidObjective(GameTestHelper helper) {
+        BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
+        Villager defender = EntityType.VILLAGER.create(helper.getLevel());
+        helper.assertTrue(defender != null, "villager should be creatable");
+        defender.moveTo(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(defender), "villager should spawn");
+
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
+        UUID player = UUID.randomUUID();
+        PlayerRaidSavedData.RaidRecord raid = data.create(
+                VillageAllegianceId.random(), helper.getLevel().dimension().location(), center,
+                Set.of(SectionPos.asLong(center)), "Discard Village", player, null,
+                Set.of(player), Set.of(), Set.of(defender.getUUID()), Set.of(), 42L);
+        raid.setPhase(PlayerRaidSavedData.Phase.ACTIVE, 43L);
+        defender.discard();
+        helper.assertTrue(raid.defenders().isEmpty(),
+                "a permanently discarded defender should be removed from the objective");
+        helper.assertValueEqual(raid.phase(), PlayerRaidSavedData.Phase.RAIDER_VICTORY,
+                "discarding the final defender should settle the raid");
+        data.remove(raid.id());
         helper.succeed();
     }
 

@@ -284,6 +284,9 @@ public final class PlayerRaidService {
         }
         reclassifyLoadedNoncombatants(server, data, raid);
         if (resolveDefenderObjective(server, data, raid, now)) return;
+        if (VillagerRetaliationConfig.HIGHLIGHT_RAID_DEFENDERS.get() && now % 20L == 0L) {
+            highlightTrackedDefenders(server, raid);
+        }
         reconcileCombat(server, raid);
         reconcileGolemMilestones(level, data, raid);
     }
@@ -525,6 +528,13 @@ public final class PlayerRaidService {
         if (event.getEntity().level() instanceof ServerLevel level) removeDefender(level, event.getEntity().getUUID());
     }
 
+    /** Covers permanent removals which do not emit a usable living-death event, such as explicit discards. */
+    public static void onEntityPermanentlyRemoved(Entity entity) {
+        if (entity != null && entity.level() instanceof ServerLevel level) {
+            removeDefender(level, entity.getUUID());
+        }
+    }
+
     private static void removeDefender(ServerLevel level, UUID id) {
         PlayerRaidSavedData data = PlayerRaidSavedData.get(level);
         for (PlayerRaidSavedData.RaidRecord raid : data.raids()) {
@@ -548,10 +558,8 @@ public final class PlayerRaidService {
         PlayerRaidMercyService.onRaidFinished(server, raid.id());
         raid.setPhase(raidersWon ? PlayerRaidSavedData.Phase.RAIDER_VICTORY : PlayerRaidSavedData.Phase.DEFENDER_VICTORY, now);
         raid.setOutcomeCleanupAt(now + OUTCOME_DISPLAY_TICKS);
-        if (!raidersWon) {
-            long cooldown = Math.max(0, VillagerRetaliationConfig.PLAYER_RAID_VILLAGE_COOLDOWN_DAYS.get()) * DAY_TICKS;
-            data.setCooldown(raid.villageId(), now + cooldown);
-        }
+        long cooldown = Math.max(0, VillagerRetaliationConfig.PLAYER_RAID_VILLAGE_COOLDOWN_DAYS.get()) * DAY_TICKS;
+        data.setCooldown(raid.villageId(), now + cooldown);
         data.changed();
         Component message = Component.translatable(raidersWon
                 ? "villagerretaliation.player_raid.victory"
@@ -672,6 +680,15 @@ public final class PlayerRaidService {
             if (entity instanceof LivingEntity living && living.isAlive()) result.add(living);
         }
         return result;
+    }
+
+    static void highlightTrackedDefenders(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
+        for (UUID id : raid.defenders()) {
+            Entity entity = find(server, id);
+            if (entity instanceof LivingEntity living && living.isAlive()) {
+                living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 30));
+            }
+        }
     }
 
     static int betrayalReputation(int current) {

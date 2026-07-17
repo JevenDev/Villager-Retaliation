@@ -779,6 +779,8 @@ public final class VillagerRetaliationEvents {
                 || removalReason == Entity.RemovalReason.KILLED)) {
             com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
                     .onEntityPermanentlyRemoved(event.getEntity());
+            com.jvn.villagerretaliation.raid.PlayerRaidService
+                    .onEntityPermanentlyRemoved(event.getEntity());
         }
         if (event.getEntity() instanceof Villager villager && !event.getLevel().isClientSide()) {
             VillagerDownedService.onVillagerUnloaded(villager);
