@@ -116,7 +116,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final String QUEST_V2_TAG = "quest_v2";
     private static final String QUEST_OFFER_HINT_TAG = "quest_offer_hint";
     private static final float OPTION_SCROLL_LERP = 0.32F;
-    private static final float OPTION_SCROLL_STEP = 12.0F;
+    private static final float OPTION_SCROLL_STEP = 23.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
     private static final float OPTION_SELECTED_SCALE = 0.02F;
     private static final float INTERACTION_ANIMATION_DURATION_MILLIS = 280.0F;
@@ -321,6 +321,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private float skillScrollbarDragOffset;
     private float skillScroll;
     private float targetSkillScroll;
+    private long lastOptionScrollRenderMillis = -1L;
     private VillagerSkill selectedSkillDetails;
     private VillagerSocialAttribute selectedProfileAttributeDetails;
     private SkillsProfilePanel skillsProfilePanel = SkillsProfilePanel.SKILLS;
@@ -338,9 +339,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean pixelOptionEdgeScaleInitialized;
     private float pixelOptionTopEdgeScaleBlend;
     private float pixelOptionBottomEdgeScaleBlend;
-    private int pixelOptionMiddleIndex = -1;
-    private boolean pixelOptionMiddleInitialized;
-    private float pixelOptionMiddlePopBlend;
     private int lastMouseX;
     private int lastMouseY;
     private long mouseStareStartMillis = -1L;
@@ -511,6 +509,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     protected void init() {
+        this.lastOptionScrollRenderMillis = Util.getMillis();
         this.giftButton = addRenderableWidget(Button.builder(Component.translatable(GUI_KEY_PREFIX + "gift.give"), button -> requestGift())
                 .bounds(0, 0, GIFT_BUTTON_WIDTH, GIFT_BUTTON_HEIGHT)
                 .build());
@@ -2615,7 +2614,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void updateOptionScroll() {
-        this.state.tickOptionScroll(OPTION_SCROLL_LERP);
+        long now = Util.getMillis();
+        float frames = this.lastOptionScrollRenderMillis < 0L
+                ? 1.0F
+                : Mth.clamp((now - this.lastOptionScrollRenderMillis) / 16.6667F, 0.0F, 4.0F);
+        this.lastOptionScrollRenderMillis = now;
+        float frameAdjustedLerp = 1.0F - (float) Math.pow(1.0F - OPTION_SCROLL_LERP, frames);
+        this.state.tickOptionScroll(frameAdjustedLerp);
     }
 
     private void updateSkillScroll() {
@@ -4052,6 +4057,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean tryBeginScrollbarDrag(double mouseX, double mouseY) {
+        // The compact interaction stack uses scroll arrows instead of a scrollbar.
+        // Do not let its otherwise invisible scrollbar hit box consume clicks.
+        if (usesInteractionOptionStack()) {
+            return false;
+        }
         ToucanScrollbarThumb scrollbarThumb = scrollbarThumb();
         if (scrollbarThumb == null || !scrollbarThumb.contains(mouseX, mouseY)) {
             return false;
@@ -4221,7 +4231,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
         int left = optionsLeft() - uiUnit(18);
-        int right = optionsLeft() + optionWidth() + uiUnit(4);
+        int right = usesInteractionOptionStack()
+                ? optionsLeft() + optionWidth() + INTERACTION_OPTION_SELECTION_ARROW_GAP + INTERACTION_OPTION_SELECTION_ARROW_WIDTH
+                : optionsLeft() + optionWidth() + uiUnit(4);
         int top = optionsTop();
         int bottom = top + optionViewportHeight();
         int verticalPadding = uiUnit(4);
@@ -4648,44 +4660,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void setTargetOptionScroll(float scroll) {
-        float maxScroll = maxOptionScroll();
-        if (usesInteractionOptionStack()) {
-            float targetScroll = snapInteractionOptionScroll(scroll, maxScroll);
-            this.state.setTargetOptionScroll(targetScroll, maxScroll);
-            this.state.jumpOptionScrollToTarget();
-            return;
-        }
-
-        this.state.setTargetOptionScroll(scroll, maxScroll);
-    }
-
-    private float snapInteractionOptionScroll(float scroll, float maxScroll) {
-        if (!usesInteractionOptionStack() || maxScroll <= 0.0F || this.options.isEmpty()) {
-            return 0.0F;
-        }
-
-        float clamped = Mth.clamp(scroll, 0.0F, maxScroll);
-        float best = 0.0F;
-        float bestDistance = Math.abs(clamped);
-        for (int index = 0; index < this.options.size(); index++) {
-            float offset = Math.min(maxScroll, VillagerInteractionOptionList.optionOffset(this.optionListContext, index));
-            float distance = Math.abs(clamped - offset);
-            if (distance < bestDistance) {
-                best = offset;
-                bestDistance = distance;
-            }
-        }
-        float maxDistance = Math.abs(clamped - maxScroll);
-        return maxDistance < bestDistance ? maxScroll : best;
+        this.state.setTargetOptionScroll(scroll, maxOptionScroll());
     }
 
     private void resetPixelOptionEdgeScaleBlends() {
         this.pixelOptionEdgeScaleInitialized = false;
         this.pixelOptionTopEdgeScaleBlend = 0.0F;
         this.pixelOptionBottomEdgeScaleBlend = 0.0F;
-        this.pixelOptionMiddleIndex = -1;
-        this.pixelOptionMiddleInitialized = false;
-        this.pixelOptionMiddlePopBlend = 0.0F;
     }
 
     private float pixelOptionEdgeScaleBlend(int index, int edgePosition) {
@@ -4699,21 +4680,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         };
     }
 
-    private void beginPixelOptionAnimationFrame(int middleIndex, boolean topEdgeVisible, boolean bottomEdgeVisible) {
+    private void updatePixelOptionEdgeScaling(boolean topEdgeVisible, boolean bottomEdgeVisible) {
         if (!usesInteractionOptionStack()) {
             return;
         }
         updatePixelOptionEdgeSlotBlends(topEdgeVisible, bottomEdgeVisible);
-        if (!this.pixelOptionMiddleInitialized) {
-            this.pixelOptionMiddleIndex = middleIndex;
-            this.pixelOptionMiddleInitialized = true;
-            this.pixelOptionMiddlePopBlend = 0.0F;
-            return;
-        }
-        if (middleIndex != this.pixelOptionMiddleIndex) {
-            this.pixelOptionMiddleIndex = middleIndex;
-            this.pixelOptionMiddlePopBlend = middleIndex >= 0 ? 1.0F : 0.0F;
-        }
     }
 
     private void updatePixelOptionEdgeSlotBlends(boolean topEdgeVisible, boolean bottomEdgeVisible) {
@@ -4732,19 +4703,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static float lerpPixelOptionEdgeBlend(float current, float target) {
         float blend = Mth.lerp(OPTION_SCROLL_LERP, current, target);
         return Math.abs(blend - target) < 0.01F ? target : blend;
-    }
-
-    private float pixelOptionMiddlePopBlend(int index) {
-        if (!usesInteractionOptionStack() || index != this.pixelOptionMiddleIndex || this.pixelOptionMiddlePopBlend <= 0.001F) {
-            return 0.0F;
-        }
-
-        float blend = this.pixelOptionMiddlePopBlend;
-        this.pixelOptionMiddlePopBlend = Mth.lerp(OPTION_SCROLL_LERP, this.pixelOptionMiddlePopBlend, 0.0F);
-        if (this.pixelOptionMiddlePopBlend < 0.01F) {
-            this.pixelOptionMiddlePopBlend = 0.0F;
-        }
-        return blend;
     }
 
     private float edgeFadeAlpha(float optionY, int viewportTop, int viewportBottom) {
@@ -5249,11 +5207,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
         @Override
         public float optionScroll() {
-            if (VillagerInteractionScreen.this.usesInteractionOptionStack()) {
-                return VillagerInteractionScreen.this.snapInteractionOptionScroll(
-                        VillagerInteractionScreen.this.state.optionScroll(),
-                        VillagerInteractionScreen.this.maxOptionScroll());
-            }
             return VillagerInteractionScreen.this.state.optionScroll();
         }
 
@@ -5413,13 +5366,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
-        public void beginPixelOptionAnimationFrame(int middleIndex, boolean topEdgeVisible, boolean bottomEdgeVisible) {
-            VillagerInteractionScreen.this.beginPixelOptionAnimationFrame(middleIndex, topEdgeVisible, bottomEdgeVisible);
-        }
-
-        @Override
-        public float pixelOptionMiddlePopBlend(int index) {
-            return VillagerInteractionScreen.this.pixelOptionMiddlePopBlend(index);
+        public void updatePixelOptionEdgeScaling(boolean topEdgeVisible, boolean bottomEdgeVisible) {
+            VillagerInteractionScreen.this.updatePixelOptionEdgeScaling(topEdgeVisible, bottomEdgeVisible);
         }
 
         @Override

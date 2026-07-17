@@ -25,7 +25,6 @@ final class VillagerInteractionOptionList {
     private static final int PIXEL_OPTION_DISABLED_HIGHLIGHT_COLOR = 0x20FFFFFF;
     private static final int PIXEL_OPTION_HIGHLIGHT_INSET = 2;
     private static final float PIXEL_OPTION_EDGE_SCALE = 0.92F;
-    private static final float PIXEL_OPTION_MIDDLE_POP_SCALE = 1.05F;
 
     private VillagerInteractionOptionList() {
     }
@@ -66,20 +65,16 @@ final class VillagerInteractionOptionList {
         int top = context.optionsTop();
         int bottom = top + context.optionViewportHeight();
         int horizontalPadding = context.usePixelOptionButtons() ? 0 : context.uiUnit(18);
-        int verticalPadding = context.usePixelOptionButtons() ? 0 : context.uiUnitAtLeast(2, 1);
         if (mouseX < left - horizontalPadding || mouseX > left + context.optionWidth()) {
             return -1;
         }
-        if (mouseY < top - verticalPadding || mouseY > bottom + verticalPadding) {
+        if (mouseY < top || mouseY >= bottom) {
             return -1;
         }
         for (int index = 0; index < context.optionCount(); index++) {
             float y = top + optionOffset(context, index) - context.optionScroll();
             int rowHeight = optionHeight(context, index);
-            if (context.usePixelOptionButtons() && !isFullyVisible(Mth.floor(y), rowHeight, top, bottom)) {
-                continue;
-            }
-            if (mouseY >= y - verticalPadding && mouseY <= y + rowHeight + verticalPadding) {
+            if (mouseY >= y && mouseY < y + rowHeight) {
                 return index;
             }
         }
@@ -198,14 +193,12 @@ final class VillagerInteractionOptionList {
         for (int index = 0; index < context.optionCount(); index++) {
             int rowHeight = optionHeight(context, index);
             float y = top + optionOffset(context, index) - context.optionScroll();
-            if (isFullyVisible(Mth.floor(y), rowHeight, top, viewportBottom)) {
+            if (isVisible(y, rowHeight, top, viewportBottom)) {
                 visibleIndices.add(index);
             }
         }
 
-        int middleVisibleSlot = visibleIndices.size() >= 3 ? visibleIndices.size() / 2 : -1;
-        int middleVisibleIndex = middleVisibleSlot >= 0 ? visibleIndices.get(middleVisibleSlot) : -1;
-        context.beginPixelOptionAnimationFrame(middleVisibleIndex, hasHiddenAbove, hasHiddenBelow);
+        context.updatePixelOptionEdgeScaling(hasHiddenAbove, hasHiddenBelow);
         for (int visibleSlot = 0; visibleSlot < visibleIndices.size(); visibleSlot++) {
             int index = visibleIndices.get(visibleSlot);
             int rowHeight = optionHeight(context, index);
@@ -226,8 +219,7 @@ final class VillagerInteractionOptionList {
                     left,
                     y,
                     rowHeight,
-                    context.pixelOptionEdgeScaleBlend(index, edgePosition),
-                    context.pixelOptionMiddlePopBlend(index));
+                    context.pixelOptionEdgeScaleBlend(index, edgePosition));
         }
         graphics.disableScissor();
         renderPixelScrollArrows(context, graphics, left, top, viewportBottom);
@@ -241,8 +233,7 @@ final class VillagerInteractionOptionList {
             int left,
             float top,
             int rowHeight,
-            float edgeScaleBlend,
-            float middlePopBlend) {
+            float edgeScaleBlend) {
         int drawTop = Mth.floor(top);
         boolean selected = index == context.selectedOption();
         boolean isHovered = hovered == index;
@@ -251,7 +242,7 @@ final class VillagerInteractionOptionList {
         ResourceLocation texture = context.pixelOptionTexture(keyboardFocused, isHovered);
 
         graphics.pose().pushPose();
-        applyPixelOptionScale(graphics, left, drawTop, context.optionWidth(), rowHeight, edgeScaleBlend, middlePopBlend);
+        applyPixelOptionScale(graphics, left, drawTop, context.optionWidth(), rowHeight, edgeScaleBlend);
         try {
             blitPixelOptionButton(graphics, texture, left, drawTop, context.optionWidth(), rowHeight);
 
@@ -324,18 +315,16 @@ final class VillagerInteractionOptionList {
         graphics.blit(texture, arrowLeft, arrowTop, 0, 0, arrowWidth, arrowHeight, arrowWidth, arrowHeight);
     }
 
-    private static boolean isFullyVisible(int top, int height, int viewportTop, int viewportBottom) {
-        return top >= viewportTop && top + height <= viewportBottom;
+    private static boolean isVisible(float top, int height, int viewportTop, int viewportBottom) {
+        return top + height > viewportTop && top < viewportBottom;
     }
 
-    private static void applyPixelOptionScale(GuiGraphics graphics, int left, int top, int width, int height, float edgeScaleBlend, float middlePopBlend) {
-        if (edgeScaleBlend <= 0.001F && middlePopBlend <= 0.001F) {
+    private static void applyPixelOptionScale(GuiGraphics graphics, int left, int top, int width, int height, float edgeScaleBlend) {
+        if (edgeScaleBlend <= 0.001F) {
             return;
         }
 
-        float edgeScale = Mth.lerp(Mth.clamp(edgeScaleBlend, 0.0F, 1.0F), 1.0F, PIXEL_OPTION_EDGE_SCALE);
-        float middlePopScale = Mth.lerp(Mth.clamp(middlePopBlend, 0.0F, 1.0F), 1.0F, PIXEL_OPTION_MIDDLE_POP_SCALE);
-        float scale = edgeScale * middlePopScale;
+        float scale = Mth.lerp(Mth.clamp(edgeScaleBlend, 0.0F, 1.0F), 1.0F, PIXEL_OPTION_EDGE_SCALE);
         float pivotX = left + width * 0.5F;
         float pivotY = top + height * 0.5F;
         graphics.pose().translate(pivotX, pivotY, 0.0F);
@@ -738,11 +727,7 @@ final class VillagerInteractionOptionList {
             return edgePosition == PIXEL_OPTION_EDGE_NONE ? 0.0F : 1.0F;
         }
 
-        default void beginPixelOptionAnimationFrame(int middleIndex, boolean topEdgeVisible, boolean bottomEdgeVisible) {
-        }
-
-        default float pixelOptionMiddlePopBlend(int index) {
-            return 0.0F;
+        default void updatePixelOptionEdgeScaling(boolean topEdgeVisible, boolean bottomEdgeVisible) {
         }
 
         default ResourceLocation pixelOptionArrowUpTexture() {
