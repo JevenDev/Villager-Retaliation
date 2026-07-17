@@ -80,6 +80,8 @@ public final class PartyQuickCommandService {
         }
         List<PartyVillagerRecord> participants = party.villagers().stream()
                 .filter(PartyVillagerRecord::quickCommandsEnabled)
+                .filter(record -> payload.commandedVillagerId() == null
+                        || record.villagerId().equals(payload.commandedVillagerId()))
                 .toList();
         if (participants.isEmpty()) {
             notice(player, "villagerretaliation.party.quick_command.none_enabled");
@@ -87,7 +89,8 @@ public final class PartyQuickCommandService {
         }
 
         boolean loweringShields = payload.command() == PartyQuickCommand.STAND_GUARD
-                && isStandGuardActive(party);
+                && participants.stream().anyMatch(record ->
+                        STAND_GUARD_VILLAGERS.contains(record.villagerId()));
         int affected = switch (payload.command()) {
             case ATTACK -> attack(player, participants, payload.targetEntityId());
             case MOVE_TO -> moveTo(player, participants, payload.targetPosition());

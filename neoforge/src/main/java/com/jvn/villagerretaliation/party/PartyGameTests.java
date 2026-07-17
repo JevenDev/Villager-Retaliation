@@ -498,6 +498,38 @@ public final class PartyGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void quickCommandsCanTargetOnePartyVillager(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_quick_target"));
+        Villager selected = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager other = spawnVillager(helper, new BlockPos(4, 2, 2));
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartyVillagerRecord selectedRecord = villagerRecord(selected.getUUID(), leader.getUUID(), 0, now);
+        PartyVillagerRecord otherRecord = villagerRecord(other.getUUID(), leader.getUUID(), 1, now);
+        PartySavedData.get(level).addVillager(party, selectedRecord);
+        PartySavedData.get(level).addVillager(party, otherRecord);
+
+        PartyQuickCommandService.handle(leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.RANGE,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        null,
+                        selected.getUUID()));
+
+        helper.assertValueEqual(selectedRecord.weaponPreference(), PartyWeaponPreference.RANGED,
+                "an individually targeted villager should receive the quick command");
+        helper.assertValueEqual(otherRecord.weaponPreference(), PartyWeaponPreference.AUTO,
+                "other enabled party villagers must not receive an individual quick command");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        selected.discard();
+        other.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void explicitPartyCreationCreatesOneLeaderParty(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();

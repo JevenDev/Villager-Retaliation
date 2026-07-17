@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.party;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
+import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
 import com.jvn.villagerretaliation.party.PartyQuickCommand;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
@@ -12,6 +13,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -69,6 +71,8 @@ public final class PartyQuickCommandWheel {
     private static boolean open;
     private static boolean wasMouseGrabbed;
     private static int highlightedIndex = -1;
+    private static UUID commandedVillagerId;
+    private static String commandedVillagerName;
     private static CapturedTarget capturedTarget = CapturedTarget.EMPTY;
 
     private PartyQuickCommandWheel() {
@@ -108,6 +112,11 @@ public final class PartyQuickCommandWheel {
 
     public static void onMouseScroll(InputEvent.MouseScrollingEvent event) {
         if (open) {
+            int delta = event.getScrollDeltaY() > 0.0D ? -1
+                    : event.getScrollDeltaY() < 0.0D ? 1 : 0;
+            if (delta != 0) {
+                cycleCommandTarget(delta);
+            }
             event.setCanceled(true);
         }
     }
@@ -135,6 +144,8 @@ public final class PartyQuickCommandWheel {
     private static void open(Minecraft minecraft) {
         open = true;
         highlightedIndex = -1;
+        commandedVillagerId = null;
+        commandedVillagerName = null;
         capturedTarget = captureTarget(minecraft);
         wasMouseGrabbed = minecraft.mouseHandler.isMouseGrabbed();
         if (wasMouseGrabbed) {
@@ -150,6 +161,8 @@ public final class PartyQuickCommandWheel {
         open = false;
         highlightedIndex = -1;
         capturedTarget = CapturedTarget.EMPTY;
+        commandedVillagerId = null;
+        commandedVillagerName = null;
         if (wasMouseGrabbed && minecraft.screen == null) {
             minecraft.mouseHandler.grabMouse();
         }
@@ -160,7 +173,8 @@ public final class PartyQuickCommandWheel {
         PacketDistributor.sendToServer(new PartyQuickCommandRequestPayload(
                 command,
                 target.entityId(),
-                target.position()));
+                target.position(),
+                commandedVillagerId));
     }
 
     private static CapturedTarget captureTarget(Minecraft minecraft) {
@@ -274,8 +288,7 @@ public final class PartyQuickCommandWheel {
             graphics.renderItem(stack, iconX, iconY);
         }
 
-        graphics.drawCenteredString(font,
-                Component.translatable("villagerretaliation.party.quick_command.title"),
+        graphics.drawCenteredString(font, truncate(font, targetTitle().getString(), 180),
                 centerX, centerY - WHEEL_RADIUS - 18, 0xFFFFFF);
         Component label = highlightedIndex >= 0
                 ? selectionLabel(entries.get(highlightedIndex))
@@ -352,7 +365,8 @@ public final class PartyQuickCommandWheel {
 
     private static List<WheelEntry> entries() {
         var roster = PartyRosterClient.roster();
-        if (!roster.mountFeatureAvailable()
+        if (commandedVillagerId != null
+                || !roster.mountFeatureAvailable()
                 || roster.villagers().stream().noneMatch(villager ->
                         villager.quickCommandsEnabled() && villager.assignedMount())) {
             return BASE_ENTRIES;
@@ -364,10 +378,53 @@ public final class PartyQuickCommandWheel {
         return entries;
     }
 
+    private static void cycleCommandTarget(int delta) {
+        List<PartyRosterSyncPayload.VillagerEntry> villagers = commandableVillagers();
+        int targetCount = villagers.size() + 1;
+        int current = 0;
+        if (commandedVillagerId != null) {
+            for (int index = 0; index < villagers.size(); index++) {
+                if (villagers.get(index).villagerId().equals(commandedVillagerId)) {
+                    current = index + 1;
+                    break;
+                }
+            }
+        }
+        int next = Math.floorMod(current + delta, targetCount);
+        if (next == 0) {
+            commandedVillagerId = null;
+            commandedVillagerName = null;
+        } else {
+            PartyRosterSyncPayload.VillagerEntry villager = villagers.get(next - 1);
+            commandedVillagerId = villager.villagerId();
+            commandedVillagerName = villager.name();
+        }
+        highlightedIndex = -1;
+    }
+
+    private static Component targetTitle() {
+        if (commandedVillagerId == null) {
+            return Component.translatable("villagerretaliation.party.quick_command.target_all");
+        }
+        return Component.translatable(
+                "villagerretaliation.party.quick_command.target_villager",
+                commandedVillagerName);
+    }
+
+    private static List<PartyRosterSyncPayload.VillagerEntry> commandableVillagers() {
+        return PartyRosterClient.roster().villagers().stream()
+                .filter(PartyRosterSyncPayload.VillagerEntry::quickCommandsEnabled)
+                .toList();
+    }
+
     private static Component selectionLabel(WheelEntry entry) {
-        if (entry.command() == PartyQuickCommand.STAND_GUARD
-                && PartyRosterClient.roster().standGuardActive()) {
-            return Component.translatable("villagerretaliation.party.quick_command.lower_shields");
+        if (entry.command() == PartyQuickCommand.STAND_GUARD) {
+            if (commandedVillagerId != null) {
+                return Component.translatable("villagerretaliation.party.quick_command.toggle_guard");
+            }
+            if (PartyRosterClient.roster().standGuardActive()) {
+                return Component.translatable("villagerretaliation.party.quick_command.lower_shields");
+            }
         }
         return entry.label();
     }
