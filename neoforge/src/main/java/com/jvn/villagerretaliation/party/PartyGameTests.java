@@ -62,6 +62,7 @@ import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
@@ -88,6 +89,36 @@ public final class PartyGameTests {
     }
 
     private PartyGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void partyVillagersRejectJobSiteProfessionsUntilTheyLeave(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_job_site"));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        PartySavedData data = PartySavedData.get(level);
+        long now = level.getGameTime();
+        PartyRecord party = data.createParty(leader.getUUID(), now);
+        data.addVillager(party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+
+        GlobalPos jobSite = GlobalPos.of(level.dimension(), villager.blockPosition());
+        villager.getBrain().setMemory(MemoryModuleType.JOB_SITE, jobSite);
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+
+        helper.assertValueEqual(villager.getVillagerData().getProfession(), VillagerProfession.NONE,
+                "an active party villager should remain unemployed when a job site assigns a profession");
+        helper.assertFalse(villager.getBrain().hasMemoryValue(MemoryModuleType.JOB_SITE),
+                "a rejected job site should be removed from the party villager's brain");
+
+        data.removeVillager(party, villager.getUUID());
+        villager.getBrain().setMemory(MemoryModuleType.JOB_SITE, jobSite);
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        helper.assertValueEqual(villager.getVillagerData().getProfession(), VillagerProfession.FARMER,
+                "a villager should be able to gain a profession after leaving the party");
+
+        PartyService.deleteParty(level, party.id());
+        villager.discard();
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE)

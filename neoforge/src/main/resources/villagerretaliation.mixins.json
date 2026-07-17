@@ -26,6 +26,7 @@
     "VillagerBrainTickMixin",
     "VillagerPickupMixin",
     "VillagerPanicTriggerMixin",
+    "VillagerProfessionMixin",
     "VillagerTradeLevelingMixin",
     "WalkNodeEvaluatorMixin",
     "WorkAtPoiMixin"
