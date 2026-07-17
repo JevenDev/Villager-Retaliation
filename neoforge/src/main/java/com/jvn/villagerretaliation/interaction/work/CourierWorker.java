@@ -56,11 +56,15 @@ public final class CourierWorker implements HiredRoleWorker {
             case PHASE_OUTBOUND -> traverseRoute(level, villager, context, route, true);
             case PHASE_DELIVER -> deliver(level, villager, context, route);
             case PHASE_RETURN -> traverseRoute(level, villager, context, route, false);
-            default -> pickup(level, villager, context);
+            default -> pickup(level, villager, context, route);
         };
     }
 
-    private WorkResult pickup(ServerLevel level, Villager villager, HiredWorkContext context) {
+    private WorkResult pickup(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            HiredRoute route) {
         Set<BlockPos> inputs = purposePositions(level, villager, AssignedStorageService.INPUT_PURPOSE);
         if (inputs.isEmpty()) {
             HiredWorkerBrain.setFailure(context, "courier_missing_input_storage", level.getGameTime() + 100L);
@@ -73,9 +77,7 @@ public final class CourierWorker implements HiredRoleWorker {
             input = AssignedStorageService.nearestAssignedInputStoragePosContaining(
                     level, villager, stack -> !stack.isEmpty(), inputs::contains);
             if (input == null) {
-                HiredWorkerBrain.setFailure(context, "courier_input_empty", level.getGameTime() + 100L);
-                HiredWorkerBrain.setState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, null);
-                return WorkResult.idle("interaction.work.courier.input_empty");
+                return beginEmptyOutboundPass(context, route);
             }
             storeTarget(context, input);
         }
@@ -99,9 +101,7 @@ public final class CourierWorker implements HiredRoleWorker {
         clearStoredTarget(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);
         if (moved <= 0) {
-            HiredWorkerBrain.setFailure(context, "courier_input_empty", level.getGameTime() + 100L);
-            HiredWorkerBrain.setState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, input);
-            return WorkResult.idle("interaction.work.courier.input_empty");
+            return beginEmptyOutboundPass(context, route);
         }
 
         setPhase(context, PHASE_OUTBOUND);
@@ -111,6 +111,14 @@ public final class CourierWorker implements HiredRoleWorker {
         return WorkResult.progressed(
                 "interaction.work.courier.collected_items",
                 Map.of("count", Integer.toString(moved)));
+    }
+
+    private static WorkResult beginEmptyOutboundPass(HiredWorkContext context, HiredRoute route) {
+        setPhase(context, PHASE_OUTBOUND);
+        context.state().putInt(ROUTE_INDEX_TAG, 0);
+        HiredWorkerBrain.clearFailure(context);
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_TARGET, route.first());
+        return WorkResult.progressed("interaction.work.courier.following_route_outbound");
     }
 
     private WorkResult traverseRoute(

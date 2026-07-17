@@ -3801,6 +3801,69 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void courierPatrolsRouteWhileInputsAreEmpty(GameTestHelper helper) {
+        buildFloor(helper, 0, 10, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierEmptyInput");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        BlockPos firstInputRel = new BlockPos(2, 2, 2);
+        BlockPos secondInputRel = new BlockPos(6, 2, 2);
+        BlockPos outputRel = new BlockPos(9, 2, 2);
+        BlockPos firstInput = helper.absolutePos(firstInputRel);
+        BlockPos secondInput = helper.absolutePos(secondInputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, firstInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, secondInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, firstInput);
+        AssignedStorageService.removeAssignedContainer(level, secondInput);
+        AssignedStorageService.removeAssignedContainer(level, output);
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), firstInput),
+                        new AssignedStorageService.StoragePosition(level.dimension(), secondInput)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "courier empty-input assignments");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "courier output assignment");
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(firstInputRel, secondInputRel, outputRel));
+        CourierWorker worker = new CourierWorker();
+
+        WorkResult emptyInputResult = worker.tick(level, villager, hirer, context);
+        helper.assertValueEqual(emptyInputResult.status(),
+                "interaction.work.courier.following_route_outbound",
+                "courier should begin its route when every input is empty");
+        helper.assertValueEqual(state.getString("CourierPhase"), "outbound",
+                "empty input should not leave the courier waiting in pickup phase");
+
+        container(level, secondInput).setItem(0, new ItemStack(Items.DIRT, 12));
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 240, () ->
+                countItem(container(level, output), Items.DIRT) == 12);
+
+        helper.assertValueEqual(countItem(container(level, firstInput), Items.DIRT), 0,
+                "empty first input should not stop the courier");
+        helper.assertValueEqual(countItem(container(level, secondInput), Items.DIRT), 0,
+                "courier should collect cargo encountered later on the route");
+        helper.assertValueEqual(countItem(container(level, output), Items.DIRT), 12,
+                "courier should deliver cargo collected after an empty input");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
     public static void courierHandlesContainerRouteNodesAndRepeatsMultipleInputLoop(GameTestHelper helper) {
         buildFloor(helper, 0, 12, 0, 5, 1);
         ServerLevel level = helper.getLevel();
