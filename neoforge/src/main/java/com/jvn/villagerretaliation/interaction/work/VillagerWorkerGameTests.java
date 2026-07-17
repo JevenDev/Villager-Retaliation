@@ -393,6 +393,9 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(
                 context.inventory().insertSupply(new ItemStack(Items.RAW_IRON, 4)).isEmpty(),
                 "smelter ore supply should fit");
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.COAL, 2)).isEmpty(),
+                "smelter fuel supply should fit");
 
         WorkResult result = new SmeltingWorker().tick(
                 level, villager, fakePlayer(level, "VrMultiSmelter"), context);
@@ -425,6 +428,9 @@ public final class VillagerWorkerGameTests {
         helper.assertTrue(
                 context.inventory().insertSupply(new ItemStack(Items.BEEF, 4)).isEmpty(),
                 "cook food supply should fit");
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.COAL, 2)).isEmpty(),
+                "cook fuel supply should fit");
 
         WorkResult result = new CookingWorker().tick(
                 level, villager, fakePlayer(level, "VrMultiCook"), context);
