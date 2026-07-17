@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.mount.VillagerMountAssignment;
@@ -751,12 +752,25 @@ public final class PartyGameTests {
                     "extension beyond shared maximum must fail");
 
             int balanceBeforeDismissal = VillagerCurrencyPayment.count(leader);
+            HiredJobInventory partyInventory = HiredJobInventory.getJobInventory(villager);
+            partyInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_SWORD));
+            partyInventory.markPlayerPlacedSupply(HiredJobInventory.MAINHAND_SLOT);
+            UUID dismissedContractId = record.contractId();
             helper.assertTrue(PartyVillagerContractService.dismiss(leader, villager).success(),
                     "leader dismissal should succeed");
             helper.assertTrue(PartyService.getPartyForVillager(level, villager.getUUID()).isEmpty(),
                     "dismissal frees villager slot immediately");
             helper.assertFalse(PartyVillagerContractService.canAccessJobInventory(level, villager, leader),
                     "dismissal revokes job-inventory access");
+            helper.assertTrue(VillagerJobInventoryAuthorization.canAccess(level, villager, leader),
+                    "dismissed recruiter can reclaim leftover party gear during the overflow claim window");
+            helper.assertFalse(VillagerJobInventoryAuthorization.canAccess(level, villager, outsider),
+                    "unrelated players cannot reclaim dismissed party gear");
+            helper.assertValueEqual(
+                    HiredJobInventory.jobItemContractId(partyInventory.getItem(HiredJobInventory.MAINHAND_SLOT))
+                            .orElse(null),
+                    dismissedContractId,
+                    "reclaimable party gear retains the dismissed contract identity");
             helper.assertValueEqual(VillagerCurrencyPayment.count(leader), balanceBeforeDismissal,
                     "dismissal must not refund prepaid time");
         } finally {
@@ -1582,6 +1596,9 @@ public final class PartyGameTests {
         attackerRecord.setAttackMode(PartyAttackMode.ALL);
         attackerRecord.setCombatMode(PartyCombatMode.KILL_ON_SIGHT);
         data.changed();
+        HiredJobInventory releasedInventory = HiredJobInventory.getJobInventory(released);
+        releasedInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_SWORD));
+        releasedInventory.markPlayerPlacedSupply(HiredJobInventory.MAINHAND_SLOT);
         PartyVillagerContractService.clearRuntimeState();
         PartyVillagerContractService.onServerTick(level.getServer());
 
@@ -1589,6 +1606,10 @@ public final class PartyGameTests {
                 "expired contract should release the villager from the active roster");
         helper.assertTrue(PartyVillagerContractService.hasExpiredContractWithParty(released, party.id()),
                 "released villager should remember the party whose contract expired");
+        helper.assertTrue(VillagerJobInventoryAuthorization.canAccess(level, released, leader),
+                "contract expiry should leave the recruiter a claim on supplied party gear");
+        helper.assertTrue(releasedInventory.getItem(HiredJobInventory.MAINHAND_SLOT).is(Items.DIAMOND_SWORD),
+                "claimed party gear should remain available in the former party inventory");
         helper.runAfterDelay(30, () -> {
             helper.assertFalse(attacker.getTarget() == released,
                     "KOS must not turn on a villager released by this party's contract expiry");

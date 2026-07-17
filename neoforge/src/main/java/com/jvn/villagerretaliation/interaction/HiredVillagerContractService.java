@@ -133,6 +133,35 @@ public final class HiredVillagerContractService {
                 .orElse(0);
     }
 
+    /**
+     * Preserves removable job-inventory items for their contract owner after any
+     * contract system releases the villager.
+     */
+    public static void rememberJobInventoryOverflowClaim(
+            ServerLevel level,
+            Villager villager,
+            UUID contractId,
+            UUID ownerId) {
+        if (level == null || villager == null || contractId == null || ownerId == null) {
+            return;
+        }
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.markRemovableItemsForContract(contractId);
+        int overflowCount = inventory.countRemovableItemsForContract(contractId);
+        if (overflowCount <= 0) {
+            clearOverflowClaim(villager);
+            return;
+        }
+        CompoundTag claim = new CompoundTag();
+        claim.putUUID(CONTRACT_ID_TAG, contractId);
+        claim.putUUID(OVERFLOW_CLAIM_OWNER_TAG, ownerId);
+        claim.putLong(OVERFLOW_CLAIM_CREATED_GAME_TIME_TAG, level.getGameTime());
+        claim.putLong(OVERFLOW_CLAIM_EXPIRES_GAME_TIME_TAG, level.getGameTime() + OVERFLOW_CLAIM_TICKS);
+        claim.putLong(OVERFLOW_CLAIM_LAST_REMINDER_DAY_TAG, -1L);
+        villager.getPersistentData().put(OVERFLOW_CLAIM_TAG, claim);
+        villager.setPersistenceRequired();
+    }
+
     public static boolean tryOpenJobInventoryOverflowReminder(ServerLevel level, Villager villager, ServerPlayer player) {
         Optional<CompoundTag> claim = activeOverflowClaim(level, villager)
                 .filter(tag -> tag.hasUUID(OVERFLOW_CLAIM_OWNER_TAG))
@@ -927,18 +956,7 @@ public final class HiredVillagerContractService {
             clearOverflowClaim(villager);
             return;
         }
-        int overflowCount = HiredJobInventory.getJobInventory(villager).countRemovableItemsForContract(contractId);
-        if (overflowCount <= 0) {
-            clearOverflowClaim(villager);
-            return;
-        }
-        CompoundTag claim = new CompoundTag();
-        claim.putUUID(CONTRACT_ID_TAG, contractId);
-        claim.putUUID(OVERFLOW_CLAIM_OWNER_TAG, contract.getUUID(HIRER_TAG));
-        claim.putLong(OVERFLOW_CLAIM_CREATED_GAME_TIME_TAG, level.getGameTime());
-        claim.putLong(OVERFLOW_CLAIM_EXPIRES_GAME_TIME_TAG, level.getGameTime() + OVERFLOW_CLAIM_TICKS);
-        claim.putLong(OVERFLOW_CLAIM_LAST_REMINDER_DAY_TAG, -1L);
-        villager.getPersistentData().put(OVERFLOW_CLAIM_TAG, claim);
+        rememberJobInventoryOverflowClaim(level, villager, contractId, contract.getUUID(HIRER_TAG));
     }
 
     private static Optional<CompoundTag> activeOverflowClaim(ServerLevel level, Villager villager) {
