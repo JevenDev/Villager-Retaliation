@@ -65,7 +65,8 @@ public final class ClipboardWorkforceService {
                 boolean storageFull = brain.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL;
                 boolean inventoryFull = brain.taskState() == HiredWorkerTaskState.PAUSED_FULL_INVENTORY
                         || !session.inventory().hasOutputSpace();
-                boolean noStorage = brain.taskState() == HiredWorkerTaskState.PAUSED_NO_STORAGE || !storageAssigned;
+                boolean noStorage = brain.taskState() == HiredWorkerTaskState.PAUSED_NO_STORAGE
+                        || (role != HiredVillagerRole.BUILDER && !storageAssigned);
                 boolean noWorkArea = role != HiredVillagerRole.BUILDER
                         && (!hasEffectiveWorkAssignment
                         || brain.taskState() == HiredWorkerTaskState.NO_WORK_AREA);

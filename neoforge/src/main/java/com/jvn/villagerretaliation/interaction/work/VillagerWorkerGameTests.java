@@ -5216,6 +5216,41 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void builderOnlyReportsMissingStorageWhenStorageIsRequired(GameTestHelper helper) {
+        HiredVillagerIndex.clearRuntimeState();
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrBuilderStorageWarning");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.MASON));
+
+        HiredVillagerContractService.startOneOffBuilderJob(level, villager, hirer);
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.WORKING, null);
+        HiredVillagerIndex.update(level, villager);
+
+        ClipboardWorkforceSnapshot suppliedSnapshot = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertValueEqual(suppliedSnapshot.workers().size(), 1, "clipboard builder rows");
+        helper.assertFalse(
+                suppliedSnapshot.workers().getFirst().noStorage(),
+                "builder with enough carried materials should not require assigned storage");
+        helper.assertFalse(
+                suppliedSnapshot.warnings().stream().anyMatch(warning ->
+                        warning.type() == ClipboardWorkforceSnapshot.WarningType.NO_STORAGE),
+                "clipboard should not show a missing-storage warning for an unblocked builder");
+
+        HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.PAUSED_NO_STORAGE, null);
+        ClipboardWorkforceSnapshot blockedSnapshot = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertTrue(
+                blockedSnapshot.workers().getFirst().noStorage(),
+                "builder should still report missing storage when material collection is blocked");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        HiredVillagerIndex.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void farmingJobSiteTetherPreventsClipboardTooFarWarning(GameTestHelper helper) {
         HiredVillagerIndex.clearRuntimeState();
         buildFloor(helper, 0, 10, 0, 6, 1);

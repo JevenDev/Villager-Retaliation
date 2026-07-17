@@ -1,5 +1,6 @@
 # Changelog
 
+- Fixed builders showing a missing-storage warning when they already carry the materials needed to continue building.
 - Fixed couriers stopping when assigned input storage was empty; they now keep patrolling their route and collect items that appear at later inputs.
 
 - Fixed villagers created during village world generation being permanently marked as Wanderers before their village POIs and footprint became available; initial allegiance discovery now uses the bounded retry queue until the surrounding observation is complete.
