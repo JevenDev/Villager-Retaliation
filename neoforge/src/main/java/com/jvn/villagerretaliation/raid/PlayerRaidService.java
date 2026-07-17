@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.SectionPos;
@@ -108,8 +109,8 @@ public final class PlayerRaidService {
                         ? "villagerretaliation.player_raid.horn_reveal_none"
                         : "villagerretaliation.player_raid.horn_reveal";
         player.sendSystemMessage(revealed == 0
-                ? Component.translatable(messageKey)
-                : Component.translatable(messageKey, revealed));
+                ? Component.translatable(messageKey).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)
+                : Component.translatable(messageKey, revealed).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         return true;
     }
 
