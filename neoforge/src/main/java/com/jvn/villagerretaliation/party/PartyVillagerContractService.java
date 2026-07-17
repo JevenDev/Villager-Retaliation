@@ -29,6 +29,7 @@ public final class PartyVillagerContractService {
     public static final int INITIAL_PAID_DAYS = 1;
     private static final String PARTY_ID_TAG = "VillagerRetaliationPartyId";
     private static final String PARTY_CONTRACT_ID_TAG = "VillagerRetaliationPartyContractId";
+    private static final String PARTY_RECRUITER_ID_TAG = "VillagerRetaliationPartyRecruiterId";
     private static final String EXPIRED_PARTY_ID_TAG = "VillagerRetaliationExpiredPartyId";
     private static final long EXPIRATION_SCAN_INTERVAL_TICKS = 20L;
     private static long nextExpirationScanGameTime = Long.MIN_VALUE;
@@ -190,6 +191,7 @@ public final class PartyVillagerContractService {
         if (removed == null) {
             return ContractResult.failure("villagerretaliation.party.error.contract_inactive");
         }
+        rememberJobInventoryClaim(context.level(), villager, removed.contractId(), removed.recruiterId());
         cleanupEntity(villager);
         closeJobInventories(context.level().getServer(), villager.getId());
         PartySyncService.syncParty(context.level().getServer(), context.party().id());
@@ -285,6 +287,7 @@ public final class PartyVillagerContractService {
         if (record == null) {
             if (hasPartyEntityReference(villager)) {
                 rememberExpiredParty(villager);
+                rememberJobInventoryClaimFromEntityState(level, villager);
                 cleanupEntity(villager);
             }
             return;
@@ -401,6 +404,7 @@ public final class PartyVillagerContractService {
         for (PartyVillagerRecord record : villagers) {
             Villager loaded = VillagerEntityResolver.loaded(level.getServer(), record.villagerId());
             if (loaded != null) {
+                rememberJobInventoryClaimFromEntityState((ServerLevel) loaded.level(), loaded);
                 cleanupEntity(loaded);
                 closeJobInventories(level.getServer(), loaded.getId());
             }
@@ -468,6 +472,7 @@ public final class PartyVillagerContractService {
         if (loaded != null) {
             updateLastKnownLocation(record, loaded);
             loaded.getPersistentData().putUUID(EXPIRED_PARTY_ID_TAG, party.id());
+            rememberJobInventoryClaim((ServerLevel) loaded.level(), loaded, record.contractId(), record.recruiterId());
             cleanupEntity(loaded);
             closeJobInventories(server, loaded.getId());
         }
@@ -479,6 +484,7 @@ public final class PartyVillagerContractService {
         villager.getPersistentData().remove(EXPIRED_PARTY_ID_TAG);
         villager.getPersistentData().putUUID(PARTY_ID_TAG, partyId);
         villager.getPersistentData().putUUID(PARTY_CONTRACT_ID_TAG, record.contractId());
+        villager.getPersistentData().putUUID(PARTY_RECRUITER_ID_TAG, record.recruiterId());
         villager.setPersistenceRequired();
     }
 
@@ -503,6 +509,7 @@ public final class PartyVillagerContractService {
         VillagerRecruitmentService.clearPartyFollowing(villager);
         villager.getPersistentData().remove(PARTY_ID_TAG);
         villager.getPersistentData().remove(PARTY_CONTRACT_ID_TAG);
+        villager.getPersistentData().remove(PARTY_RECRUITER_ID_TAG);
         villager.setPersistenceRequired();
     }
 
@@ -513,11 +520,16 @@ public final class PartyVillagerContractService {
         }
         ServerLevel storageLevel = server.overworld();
         PartyRecord party = PartyService.getPartyForVillager(storageLevel, villagerId).orElse(null);
+        PartyVillagerRecord record = party == null ? null : party.villager(villagerId);
         if (party == null || PartyService.removeVillager(storageLevel, villagerId) == null) {
             return false;
         }
         Villager loaded = VillagerEntityResolver.loaded(server, villagerId);
         if (loaded != null) {
+            if (record != null) {
+                rememberJobInventoryClaim(
+                        (ServerLevel) loaded.level(), loaded, record.contractId(), record.recruiterId());
+            }
             cleanupEntity(loaded);
             closeJobInventories(server, loaded.getId());
         }
@@ -531,6 +543,26 @@ public final class PartyVillagerContractService {
                     EXPIRED_PARTY_ID_TAG,
                     villager.getPersistentData().getUUID(PARTY_ID_TAG));
         }
+    }
+
+    private static void rememberJobInventoryClaimFromEntityState(ServerLevel level, Villager villager) {
+        if (villager.getPersistentData().hasUUID(PARTY_CONTRACT_ID_TAG)
+                && villager.getPersistentData().hasUUID(PARTY_RECRUITER_ID_TAG)) {
+            rememberJobInventoryClaim(
+                    level,
+                    villager,
+                    villager.getPersistentData().getUUID(PARTY_CONTRACT_ID_TAG),
+                    villager.getPersistentData().getUUID(PARTY_RECRUITER_ID_TAG));
+        }
+    }
+
+    private static void rememberJobInventoryClaim(
+            ServerLevel level,
+            Villager villager,
+            UUID contractId,
+            UUID recruiterId) {
+        HiredVillagerContractService.rememberJobInventoryOverflowClaim(
+                level, villager, contractId, recruiterId);
     }
 
     private static void closeJobInventories(MinecraftServer server, int villagerEntityId) {
