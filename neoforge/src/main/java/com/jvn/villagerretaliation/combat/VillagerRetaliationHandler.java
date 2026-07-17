@@ -27,6 +27,7 @@ import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
+import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -409,7 +410,8 @@ public final class VillagerRetaliationHandler {
             return;
         }
         wakeSleepingVillagerTargetForPartyAttacker(level, villager, target);
-        if (!VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)) {
+        if (!PlayerRaidService.areOpposingParticipants(villager, target)
+                && !VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)) {
             clearAnger(villager);
             handlePassivePotionState(villager);
             return;

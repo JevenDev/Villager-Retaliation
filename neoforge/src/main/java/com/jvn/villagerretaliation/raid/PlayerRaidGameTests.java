@@ -28,6 +28,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 @GameTestHolder
@@ -501,8 +502,8 @@ public final class PlayerRaidGameTests {
         helper.assertTrue(raider != null && defender != null && golem != null,
                 "raid combatants should be creatable");
         raider.moveTo(center.getX() - 1.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
-        golem.moveTo(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
-        defender.moveTo(center.getX() + 5.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        golem.moveTo(center.getX() + 0.5D, center.getY() + 34.0D, center.getZ() + 0.5D, 0.0F, 0.0F);
+        defender.moveTo(center.getX() + 5.5D, center.getY() + 40.0D, center.getZ() + 0.5D, 0.0F, 0.0F);
         helper.assertTrue(helper.getLevel().addFreshEntity(raider), "raider should spawn");
         helper.assertTrue(helper.getLevel().addFreshEntity(defender), "defender should spawn");
         helper.assertTrue(helper.getLevel().addFreshEntity(golem), "golem should spawn");
@@ -521,8 +522,9 @@ public final class PlayerRaidGameTests {
         helper.assertTrue(PlayerRaidService.areOpposingParticipants(raider, golem),
                 "an aligned village golem should count as a Player Raid defender");
         PlayerRaidService.reconcileCombat(helper.getLevel().getServer(), raid);
+        VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(raider));
         helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(raider, golem),
-                "a raiding party villager should target the nearest aligned village golem");
+                "a raiding party villager should retain a distant aligned village golem after its AI tick");
 
         data.remove(raid.id());
         raider.discard();
