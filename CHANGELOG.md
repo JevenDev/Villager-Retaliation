@@ -1,5 +1,6 @@
 # Changelog
 
+- Fixed damaged Mending armor on villagers not attracting and absorbing nearby experience orbs.
 - Fixed builders showing a missing-storage warning when they already carry the materials needed to continue building.
 - Fixed couriers stopping when assigned input storage was empty; they now keep patrolling their route and collect items that appear at later inputs.
 - Fixed unemployed recruited villagers claiming job-site professions while actively in a party; rejected job sites are released and can be claimed normally after the villager leaves the party.

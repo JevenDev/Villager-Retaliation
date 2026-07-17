@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -50,6 +51,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
@@ -66,9 +68,11 @@ import net.minecraft.world.entity.npc.WanderingTrader;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -83,6 +87,33 @@ public final class VillagerGameplayGameTests {
     }
 
     private VillagerGameplayGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerMendingArmorAttractsAndConsumesExperience(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemStack armor = new ItemStack(Items.IRON_CHESTPLATE);
+        var enchantments = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        armor.enchant(enchantments.getOrThrow(Enchantments.MENDING), 1);
+        armor.setDamageValue(20);
+        villager.setItemSlot(EquipmentSlot.CHEST, armor);
+
+        ExperienceOrb orb = helper.spawn(EntityType.EXPERIENCE_ORB, 2, 2, 1);
+        orb.value = 5;
+        orb.setDeltaMovement(Vec3.ZERO);
+        orb.tickCount = 1;
+        orb.tick();
+        Vec3 offset = villager.position().subtract(orb.position());
+        boolean attracted = orb.getDeltaMovement().x * offset.x
+                + orb.getDeltaMovement().z * offset.z > 0.0D;
+        helper.assertTrue(attracted, "damaged villager Mending armor should attract nearby experience orbs");
+
+        orb.setPos(villager.position());
+        orb.setDeltaMovement(Vec3.ZERO);
+        orb.tick();
+        helper.assertValueEqual(armor.getDamageValue(), 10, "five XP should repair ten armor durability");
+        helper.assertTrue(orb.isRemoved(), "the villager should consume the experience orb after repairing armor");
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

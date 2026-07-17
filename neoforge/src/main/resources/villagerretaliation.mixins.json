@@ -10,6 +10,7 @@
     "AvoidEntityGoalMixin",
     "BrewingStandBlockEntityAccessor",
     "EntityNameMixin",
+    "ExperienceOrbMixin",
     "GiveGiftToHeroMixin",
     "GoToPotentialJobSiteMixin",
     "HarvestFarmlandMixin",
