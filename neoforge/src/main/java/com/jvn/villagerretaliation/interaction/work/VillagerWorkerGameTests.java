@@ -3747,6 +3747,20 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(AssignedStorageService.assignedPaymentStorage(level, second).size(), 1,
                 "second villager should retain payment assignment");
 
+        container(level, payment).setItem(0, new ItemStack(Items.EMERALD, 12));
+        helper.assertValueEqual(
+                AssignedStorageService.consumePaymentItems(first, stack -> stack.is(Items.EMERALD), 4),
+                4,
+                "first villager should pull payment from shared box");
+        helper.assertValueEqual(
+                AssignedStorageService.consumePaymentItems(second, stack -> stack.is(Items.EMERALD), 4),
+                4,
+                "second villager should also pull payment from shared box");
+        helper.assertValueEqual(
+                countItem(container(level, payment), Items.EMERALD),
+                4,
+                "shared payment pulls should consume each villager's payment exactly once");
+
         AssignedStorageService.removeAllAssignedStorage(level, first);
         helper.assertValueEqual(AssignedStorageService.assignedPaymentStorage(level, second).size(), 1,
                 "removing first villager should preserve shared payment assignment");
