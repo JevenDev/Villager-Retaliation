@@ -698,7 +698,8 @@ public final class CookingWorker extends AbstractBlockWorker {
         CompoundTag state = context.state();
         BlockPos cached = cachedPos(state);
         if (isValidCookingStation(level, context, cached)
-                && !HiredPathMemory.isAvoided(level, villager, cached)) {
+                && !HiredPathMemory.isAvoided(level, villager, cached)
+                && stationNeedsAttention(level, cached)) {
             return cached;
         }
         clearCachedStation(state);
@@ -715,11 +716,20 @@ public final class CookingWorker extends AbstractBlockWorker {
             }
         }
         candidates.sort(Comparator.comparingDouble(FacilityCandidate::score));
-        BlockPos fallback = candidates.isEmpty() ? null : candidates.getFirst().pos();
+        boolean hasAvailableStation = candidates.stream()
+                .anyMatch(candidate -> stationNeedsAttention(level, candidate.pos()));
+        BlockPos fallback = candidates.stream()
+                .filter(candidate -> !hasAvailableStation || stationNeedsAttention(level, candidate.pos()))
+                .map(FacilityCandidate::pos)
+                .findFirst()
+                .orElse(null);
         BlockPos best = null;
         double bestScore = Double.MAX_VALUE;
         int attempts = 0;
         for (FacilityCandidate candidate : candidates) {
+            if (hasAvailableStation && !stationNeedsAttention(level, candidate.pos())) {
+                continue;
+            }
             HiredPathTarget target = bestWorkTarget(level, villager, context, candidate.pos());
             if (target == null) {
                 continue;
@@ -745,6 +755,16 @@ public final class CookingWorker extends AbstractBlockWorker {
         state.putLong(CACHED_STATION_POS_TAG, best.asLong());
         state.remove(NEXT_STATION_SCAN_GAME_TIME_TAG);
         return best;
+    }
+
+    private static boolean stationNeedsAttention(ServerLevel level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof AbstractFurnaceBlockEntity furnace)) {
+            return false;
+        }
+        return !furnace.getItem(RESULT_SLOT).isEmpty()
+                || isFuelRemainder(furnace.getItem(FUEL_SLOT))
+                || furnace.getItem(INPUT_SLOT).isEmpty()
+                || furnace.getItem(FUEL_SLOT).isEmpty();
     }
 
     private static boolean isValidCookingStation(ServerLevel level, HiredWorkContext context, BlockPos pos) {

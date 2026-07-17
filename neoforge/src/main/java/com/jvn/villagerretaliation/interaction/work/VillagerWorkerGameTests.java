@@ -373,6 +373,70 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void smelterMovesFromBusyCachedFurnaceToAnotherFurnace(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        BlockPos busyRel = new BlockPos(3, 2, 2);
+        BlockPos availableRel = new BlockPos(2, 2, 3);
+        setBlock(helper, busyRel, Blocks.FURNACE.defaultBlockState());
+        setBlock(helper, availableRel, Blocks.FURNACE.defaultBlockState());
+        Container busy = container(level, helper.absolutePos(busyRel));
+        Container available = container(level, helper.absolutePos(availableRel));
+        busy.setItem(0, new ItemStack(Items.RAW_IRON, 8));
+        busy.setItem(1, new ItemStack(Items.COAL, 2));
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = new CompoundTag();
+        state.putLong("SmeltingCachedStationPos", helper.absolutePos(busyRel).asLong());
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.RAW_IRON, 4)).isEmpty(),
+                "smelter ore supply should fit");
+
+        WorkResult result = new SmeltingWorker().tick(
+                level, villager, fakePlayer(level, "VrMultiSmelter"), context);
+
+        helper.assertValueEqual(result.status(), "interaction.work.smelting.loaded_input", "second furnace work status");
+        helper.assertValueEqual(available.getItem(0).getCount(), 4, "smelter should load the available furnace");
+        helper.assertValueEqual(busy.getItem(0).getCount(), 8, "busy furnace input should remain in place");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void cookMovesFromBusyCachedFurnaceToAnotherFurnace(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        BlockPos busyRel = new BlockPos(3, 2, 2);
+        BlockPos availableRel = new BlockPos(2, 2, 3);
+        setBlock(helper, busyRel, Blocks.FURNACE.defaultBlockState());
+        setBlock(helper, availableRel, Blocks.FURNACE.defaultBlockState());
+        Container busy = container(level, helper.absolutePos(busyRel));
+        Container available = container(level, helper.absolutePos(availableRel));
+        busy.setItem(0, new ItemStack(Items.BEEF, 8));
+        busy.setItem(1, new ItemStack(Items.COAL, 2));
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = new CompoundTag();
+        state.putLong("CookingCachedStationPos", helper.absolutePos(busyRel).asLong());
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.BEEF, 4)).isEmpty(),
+                "cook food supply should fit");
+
+        WorkResult result = new CookingWorker().tick(
+                level, villager, fakePlayer(level, "VrMultiCook"), context);
+
+        helper.assertValueEqual(result.status(), "interaction.work.cooking.loaded_input", "second furnace work status");
+        helper.assertValueEqual(available.getItem(0).getCount(), 4, "cook should load the available furnace");
+        helper.assertValueEqual(busy.getItem(0).getCount(), 8, "busy furnace input should remain in place");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void courierRoleIsAvailableToEveryProfessionIncludingUnemployed(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         buildFloor(helper, 0, 6, 0, 6, 1);
