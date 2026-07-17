@@ -32,6 +32,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 public final class VillageAllegianceService {
     private static final long RETRY_INTERVAL_TICKS = 20L;
     private static final long MAX_RETRY_INTERVAL_TICKS = 200L;
+    private static final int NATURAL_SPAWN_GRACE_ATTEMPTS = 5;
     private static final long WANDERER_CHECK_INTERVAL_TICKS = 200L;
     private static final long RESIDENT_REFRESH_INTERVAL_TICKS = 1_200L;
     private static final long LIFECYCLE_REFRESH_TICKS = 1_200L;
@@ -158,7 +159,9 @@ public final class VillageAllegianceService {
                 continue;
             }
             int attempts = pending.attempts() + 1;
-            if (tryResolve(level, entity, pending.source(), false, pending.initialPosition())) {
+            boolean deferUnaffiliated = pending.source() == AllegianceAssignmentSource.NATURAL_SPAWN
+                    && attempts < NATURAL_SPAWN_GRACE_ATTEMPTS;
+            if (tryResolve(level, entity, pending.source(), deferUnaffiliated, pending.initialPosition())) {
                 PENDING.remove(task.entityId());
             } else {
                 long delay = Math.min(MAX_RETRY_INTERVAL_TICKS, RETRY_INTERVAL_TICKS * Math.max(1L, attempts));
@@ -404,13 +407,9 @@ public final class VillageAllegianceService {
             ServerLevel level,
             Entity entity,
             AllegianceAssignmentSource source,
-            boolean finalize,
+            boolean deferUnaffiliated,
             BlockPos evidencePosition) {
         if (!(entity instanceof Villager) && !(entity instanceof IronGolem)) {
-            if (finalize) {
-                assignUnknown(level, entity, source);
-                return true;
-            }
             return false;
         }
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
@@ -438,7 +437,9 @@ public final class VillageAllegianceService {
                     protectedParents);
             return true;
         }
-        if (resolution.status() == VillageAssignmentResolution.Status.NONE && resolution.observationComplete()) {
+        if (resolution.status() == VillageAssignmentResolution.Status.NONE
+                && resolution.observationComplete()
+                && !deferUnaffiliated) {
             assignUnaffiliated(level, entity, source);
             return true;
         }
@@ -457,7 +458,14 @@ public final class VillageAllegianceService {
         if (village.isPresent()) {
             assignKnown(level, villager, village.get(), AllegianceAssignmentSource.NATURAL_SPAWN, spawnPosition);
         } else {
-            assignUnaffiliated(level, villager, AllegianceAssignmentSource.NATURAL_SPAWN);
+            // Structure entities join the level while their chunk is still being generated. At that
+            // point the village POIs and indexed footprint may not exist yet, so an immediate negative
+            // lookup would permanently turn a generated resident into a Wanderer. Preserve the spawn
+            // position and let the bounded assignment queue retry after worldgen has finished exposing
+            // the POIs. A genuinely outside spawn is finalized as unaffiliated once the surrounding
+            // observation is complete.
+            schedulePending(level, villager, spawnPosition, AllegianceAssignmentSource.NATURAL_SPAWN, 0,
+                    level.getServer().overworld().getGameTime() + RETRY_INTERVAL_TICKS);
         }
     }
 

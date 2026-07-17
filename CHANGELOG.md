@@ -1,5 +1,6 @@
 # Changelog
 
+- Fixed villagers created during village world generation being permanently marked as Wanderers before their village POIs and footprint became available; initial allegiance discovery now uses the bounded retry queue until the surrounding observation is complete.
 - Added optional Ride On API v2 integration so party leaders and active hirers can assign adult horses, donkeys, mules, llamas, and camels to eligible villagers without making Ride On a required dependency.
 - Added persisted one-to-one mount assignments, party and hired-worker controls, long-distance mounted travel, precise-work dismounting, unload/remount retry behavior, parking anchors, and cleanup for terminal villager, mount, and contract lifecycle events.
 - Added rear-seat friendly-fire protection for allied villagers, party players, vanilla teammates, same-village riders, and active hirers across direct, projectile, splash, and attributed damage. Explicit retaliation targets, authorized party targets, and opposing Player Raid participants still take damage, including the narrow same-vehicle projectile override.
