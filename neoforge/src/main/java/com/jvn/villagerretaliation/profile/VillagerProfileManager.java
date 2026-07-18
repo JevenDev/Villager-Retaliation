@@ -164,6 +164,23 @@ public final class VillagerProfileManager {
             builder.append("\"").append(skill.serializedName()).append("\":").append(xp);
         }
         builder.append("},");
+        builder.append("\"skillPracticeDailyState\":{");
+        boolean firstDailyState = true;
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            if (!profile.hasPracticeDailyState(skill)) {
+                continue;
+            }
+            if (!firstDailyState) {
+                builder.append(",");
+            }
+            firstDailyState = false;
+            builder.append("\"").append(skill.serializedName()).append("\":{")
+                    .append("\"day\":").append(profile.practiceDayIndex(skill)).append(",")
+                    .append("\"earnedXp\":").append(profile.practiceEarnedOnStoredDay(skill)).append(",")
+                    .append("\"repetitionKeys\":").append(profile.storedRepetitionKeyCount(skill))
+                    .append("}");
+        }
+        builder.append("},");
         builder.append("\"tradeLevelSkillAdjustedXpProgress\":").append(profile.tradeLevelSkillAdjustedXpProgress()).append(",");
         builder.append("\"createdGameTime\":").append(profile.createdGameTime()).append(",");
         builder.append("\"updatedGameTime\":").append(profile.updatedGameTime());

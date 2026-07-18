@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -207,7 +208,7 @@ public final class HiredVillagerRoles {
             boolean universallyAvailable,
             Set<String> professionRestrictions) {
         public RoleDefinition {
-            skillWeights = Map.copyOf(skillWeights);
+            skillWeights = Collections.unmodifiableMap(new LinkedHashMap<>(skillWeights));
             professionRestrictions = Set.copyOf(professionRestrictions);
         }
     }

@@ -284,6 +284,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDeath(LivingDeathEvent event) {
+        HiredCombatSkillPracticeService.onKill(event);
         EncounterService.onDeath(event.getEntity());
         SceneLifecycleIntegration.onActorDeath(event.getEntity());
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService

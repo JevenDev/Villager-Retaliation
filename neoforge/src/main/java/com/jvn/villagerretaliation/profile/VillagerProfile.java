@@ -255,6 +255,25 @@ public class VillagerProfile {
         return state != null && state.dayIndex == overworldDayIndex ? state.repetitions.size() : 0;
     }
 
+    public boolean hasPracticeDailyState(VillagerSkill skill) {
+        return this.skillPracticeDailyState.containsKey(skill);
+    }
+
+    public long practiceDayIndex(VillagerSkill skill) {
+        PracticeDayState state = this.skillPracticeDailyState.get(skill);
+        return state == null ? 0L : state.dayIndex;
+    }
+
+    public double practiceEarnedOnStoredDay(VillagerSkill skill) {
+        PracticeDayState state = this.skillPracticeDailyState.get(skill);
+        return state == null ? 0.0D : state.earnedXp;
+    }
+
+    public int storedRepetitionKeyCount(VillagerSkill skill) {
+        PracticeDayState state = this.skillPracticeDailyState.get(skill);
+        return state == null ? 0 : state.repetitions.size();
+    }
+
     public double tradeLevelSkillAdjustedXpProgress() {
         return this.tradeLevelSkillAdjustedXpProgress;
     }
