@@ -792,6 +792,7 @@ public final class VillagerRecruitmentService {
         villager.getPersistentData().remove(STAY_ANCHOR_X_KEY);
         villager.getPersistentData().remove(STAY_ANCHOR_Y_KEY);
         villager.getPersistentData().remove(STAY_ANCHOR_Z_KEY);
+        com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
     }
 
     private static void beginStayingHere(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -800,6 +801,7 @@ public final class VillagerRecruitmentService {
 
     private static void beginStayingHere(ServerLevel level, Villager villager, ServerPlayer player, BlockPos anchor) {
         beginStayingHere(villager, player.getUUID(), anchor);
+        com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
     }
 
     private static void beginStayingHere(Villager villager, UUID playerId, BlockPos anchor) {

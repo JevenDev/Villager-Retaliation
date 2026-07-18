@@ -120,6 +120,7 @@ public final class VillagerDownedService {
                 .orElseGet(() -> VillagerDownedPose.forVillager(villager.getUUID()));
         state.putString(POSE_KEY, pose.id().toString());
         villager.getPersistentData().put(STATE_KEY, state);
+        com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
         NEXT_THREAT_SCAN_TICKS.remove(villager.getUUID());
         villager.setHealth(Math.max(1.0F, villager.getHealth()));
         if (villager.isPassenger()) {

@@ -112,6 +112,7 @@ public final class PartyVillagerContractService {
         attachEntityState(level, villager, membership.partyId(), record);
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
         VillagerRecruitmentService.applyPartyFollowing(level, villager, player);
+        com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
         PartySyncService.syncParty(level.getServer(), membership.partyId());
         return ContractResult.success(
                 "villagerretaliation.party.villager_recruited",
