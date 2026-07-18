@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.mixin;
 
 import com.jvn.villagerretaliation.social.VillagerBreedingPolicy;
+import com.jvn.villagerretaliation.social.VillagerBirthService;
+import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.VillagerMakeLove;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -55,6 +57,33 @@ public abstract class VillagerMakeLoveMixin {
             VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
             callback.cancel();
         }
+    }
+
+    @Inject(
+            method = "breed(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/npc/Villager;Lnet/minecraft/world/entity/npc/Villager;)Ljava/util/Optional;",
+            at = @At("HEAD"),
+            cancellable = true)
+    private void villagerretaliation$guardBirthCompletion(
+            ServerLevel level,
+            Villager parent,
+            Villager partner,
+            CallbackInfoReturnable<Optional<Villager>> callback) {
+        if (!VillagerBirthService.validateBirth(level, parent, partner)) {
+            VillagerBreedingPolicy.cancelActiveAttempt(level, parent);
+            callback.setReturnValue(Optional.empty());
+        }
+    }
+
+    @Inject(
+            method = "breed(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/entity/npc/Villager;Lnet/minecraft/world/entity/npc/Villager;)Ljava/util/Optional;",
+            at = @At("RETURN"))
+    private void villagerretaliation$initializeNaturalNewborn(
+            ServerLevel level,
+            Villager parent,
+            Villager partner,
+            CallbackInfoReturnable<Optional<Villager>> callback) {
+        callback.getReturnValue().ifPresent(
+                child -> VillagerBirthService.initializeNewborn(level, parent, partner, child, null));
     }
 
     private static boolean pairAllowed(ServerLevel level, Villager villager) {

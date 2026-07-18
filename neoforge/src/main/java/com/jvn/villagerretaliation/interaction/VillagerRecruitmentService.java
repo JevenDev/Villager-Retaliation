@@ -168,6 +168,10 @@ public final class VillagerRecruitmentService {
         clearFollowTarget(villager);
     }
 
+    public static void clearInheritedStateForNewborn(Villager child) {
+        if (child != null) clearFollowTarget(child);
+    }
+
     public static void applyPartyFollowing(ServerLevel level, Villager villager, ServerPlayer leader) {
         applyPartyFollowing(level, villager, leader == null ? null : leader.getUUID());
     }

@@ -25,6 +25,7 @@ import com.jvn.villagerretaliation.raid.PlayerRaidDialogueService;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.recipe.VillagerRetaliationRecipes;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
+import com.jvn.villagerretaliation.social.VillagerBirthService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.trade.VillagerSkillTradeEvents;
 import com.jvn.villagerretaliation.villager.VillagerConversionPersistenceService;
@@ -86,8 +87,6 @@ public class VillagerRetaliation {
                 .listener(VillagerReputationEvents::onServerTickPost)
                 .listener(PlayerRaidService::onServerTickPost)
                 .listener(PlayerRaidService::onUseItemStart)
-                .listener(VillagerSocialGraphService::onBabyEntitySpawn)
-                .listener(VillageAllegianceService::onBabyEntitySpawn)
                 .listener(VillagerSocialGraphService::onLivingConversionPost)
                 .listener(VillagerReputationEvents::onLivingConversionPost)
                 .listener(VillagerConversionPersistenceService::onLivingConversionPost)
@@ -124,6 +123,7 @@ public class VillagerRetaliation {
         // Death is cancellable (for example, Second Wind converts it into a downed state).
         // Run irreversible death bookkeeping only after other mods have had a chance to cancel it.
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerRetaliationEvents::stabilizeGameTestOrigin);
+        NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerBirthService::onBabyEntitySpawn);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerRetaliationEvents::onLivingDeath);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillageAllegianceService::onLivingDeath);
         NeoForge.EVENT_BUS.addListener(EventPriority.LOWEST, VillagerSocialGraphService::onLivingDeath);

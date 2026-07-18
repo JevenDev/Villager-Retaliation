@@ -131,6 +131,12 @@ public final class HiredJobInventory implements Container {
         }
     }
 
+    public static void clearInheritedStateForNewborn(Villager child) {
+        if (child == null) return;
+        child.getPersistentData().remove(TAG);
+        clearRuntimeState(child);
+    }
+
     public static boolean hasJobEquipmentForSlot(Villager villager, EquipmentSlot equipmentSlot) {
         if (villager == null || equipmentSlot == null) {
             return false;

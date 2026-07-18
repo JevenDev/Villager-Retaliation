@@ -255,6 +255,14 @@ public final class PartyVillagerContractService {
         return villager != null && villager.getPersistentData().hasUUID(PARTY_ID_TAG);
     }
 
+    public static void clearInheritedStateForNewborn(Villager child) {
+        if (child == null) return;
+        child.getPersistentData().remove(PARTY_ID_TAG);
+        child.getPersistentData().remove(PARTY_CONTRACT_ID_TAG);
+        child.getPersistentData().remove(PARTY_RECRUITER_ID_TAG);
+        child.getPersistentData().remove(EXPIRED_PARTY_ID_TAG);
+    }
+
     public static boolean hasExpiredContractWithParty(Villager villager, UUID partyId) {
         return villager != null
                 && partyId != null
