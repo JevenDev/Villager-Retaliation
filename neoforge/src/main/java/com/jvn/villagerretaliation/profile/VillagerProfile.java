@@ -4,9 +4,11 @@ import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.skill.VillagerSkillGenerator;
 import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 
 public class VillagerProfile {
@@ -21,6 +23,8 @@ public class VillagerProfile {
     private static final String TAG_LAST_KNOWN_PROFESSION = "LastKnownProfession";
     private static final String TAG_HIGHEST_SKILL_GROWTH_TRADE_LEVEL_AWARDED = "HighestSkillGrowthTradeLevelAwarded";
     private static final String TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS = "RegularTradeSkillGrowthProgress";
+    private static final String TAG_SKILL_PRACTICE_XP = "SkillPracticeXp";
+    private static final String TAG_SKILL_PRACTICE_DAILY_STATE = "SkillPracticeDailyState";
     private static final String TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS = "TradeLevelSkillAdjustedXpProgress";
     private static final String TAG_CREATED_GAME_TIME = "CreatedGameTime";
     private static final String TAG_UPDATED_GAME_TIME = "UpdatedGameTime";
@@ -34,6 +38,8 @@ public class VillagerProfile {
     private String lastKnownProfession;
     private int highestSkillGrowthTradeLevelAwarded;
     private final EnumMap<VillagerSkill, Double> regularTradeSkillGrowthProgress;
+    private final EnumMap<VillagerSkill, Double> skillPracticeXp;
+    private final EnumMap<VillagerSkill, PracticeDayState> skillPracticeDailyState;
     private double tradeLevelSkillAdjustedXpProgress;
     private long createdGameTime;
     private long updatedGameTime;
@@ -48,6 +54,8 @@ public class VillagerProfile {
             String lastKnownProfession,
             int highestSkillGrowthTradeLevelAwarded,
             Map<VillagerSkill, Double> regularTradeSkillGrowthProgress,
+            Map<VillagerSkill, Double> skillPracticeXp,
+            Map<VillagerSkill, PracticeDayState> skillPracticeDailyState,
             double tradeLevelSkillAdjustedXpProgress,
             long createdGameTime,
             long updatedGameTime) {
@@ -60,6 +68,8 @@ public class VillagerProfile {
         this.lastKnownProfession = lastKnownProfession == null ? "" : lastKnownProfession;
         this.highestSkillGrowthTradeLevelAwarded = Math.clamp(highestSkillGrowthTradeLevelAwarded, 1, 5);
         this.regularTradeSkillGrowthProgress = copyRegularTradeSkillGrowthProgress(regularTradeSkillGrowthProgress);
+        this.skillPracticeXp = copySkillPracticeXp(skillPracticeXp);
+        this.skillPracticeDailyState = copyPracticeDailyState(skillPracticeDailyState);
         this.tradeLevelSkillAdjustedXpProgress = clampFractionalProgress(tradeLevelSkillAdjustedXpProgress);
         this.createdGameTime = createdGameTime;
         this.updatedGameTime = updatedGameTime;
@@ -83,6 +93,8 @@ public class VillagerProfile {
                 skills,
                 lastKnownProfession,
                 1,
+                Map.of(),
+                Map.of(),
                 Map.of(),
                 0.0D,
                 gameTime,
@@ -115,6 +127,12 @@ public class VillagerProfile {
                 tag.contains(TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS, Tag.TAG_COMPOUND)
                         ? loadRegularTradeSkillGrowthProgress(tag.getCompound(TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS))
                         : Map.of(),
+                tag.contains(TAG_SKILL_PRACTICE_XP, Tag.TAG_COMPOUND)
+                        ? loadSkillPracticeXp(tag.getCompound(TAG_SKILL_PRACTICE_XP))
+                        : Map.of(),
+                tag.contains(TAG_SKILL_PRACTICE_DAILY_STATE, Tag.TAG_COMPOUND)
+                        ? loadPracticeDailyState(tag.getCompound(TAG_SKILL_PRACTICE_DAILY_STATE))
+                        : Map.of(),
                 tag.contains(TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS, Tag.TAG_DOUBLE)
                         ? tag.getDouble(TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS)
                         : 0.0D,
@@ -136,6 +154,14 @@ public class VillagerProfile {
         CompoundTag regularTradeProgress = saveRegularTradeSkillGrowthProgress();
         if (!regularTradeProgress.isEmpty()) {
             tag.put(TAG_REGULAR_TRADE_SKILL_GROWTH_PROGRESS, regularTradeProgress);
+        }
+        CompoundTag practiceXp = saveSkillPracticeXp();
+        if (!practiceXp.isEmpty()) {
+            tag.put(TAG_SKILL_PRACTICE_XP, practiceXp);
+        }
+        CompoundTag dailyState = savePracticeDailyState();
+        if (!dailyState.isEmpty()) {
+            tag.put(TAG_SKILL_PRACTICE_DAILY_STATE, dailyState);
         }
         if (this.tradeLevelSkillAdjustedXpProgress > 0.000_001D) {
             tag.putDouble(TAG_TRADE_LEVEL_SKILL_ADJUSTED_XP_PROGRESS, this.tradeLevelSkillAdjustedXpProgress);
@@ -160,6 +186,8 @@ public class VillagerProfile {
                 this.lastKnownProfession,
                 this.highestSkillGrowthTradeLevelAwarded,
                 this.regularTradeSkillGrowthProgress,
+                this.skillPracticeXp,
+                this.skillPracticeDailyState,
                 this.tradeLevelSkillAdjustedXpProgress,
                 this.createdGameTime,
                 this.updatedGameTime
@@ -200,6 +228,31 @@ public class VillagerProfile {
 
     public double regularTradeSkillGrowthProgress(VillagerSkill skill) {
         return this.regularTradeSkillGrowthProgress.getOrDefault(skill, 0.0D);
+    }
+
+    public Map<VillagerSkill, Double> skillPracticeXp() {
+        return Map.copyOf(this.skillPracticeXp);
+    }
+
+    public double skillPracticeXp(VillagerSkill skill) {
+        return this.skillPracticeXp.getOrDefault(skill, 0.0D);
+    }
+
+    public double practiceEarnedToday(VillagerSkill skill, long overworldDayIndex) {
+        PracticeDayState state = this.skillPracticeDailyState.get(skill);
+        return state != null && state.dayIndex == overworldDayIndex ? state.earnedXp : 0.0D;
+    }
+
+    public int repetitionCount(VillagerSkill skill, long repetitionKey, long overworldDayIndex) {
+        PracticeDayState state = this.skillPracticeDailyState.get(skill);
+        return state != null && state.dayIndex == overworldDayIndex
+                ? state.repetitions.getOrDefault(repetitionKey, 0)
+                : 0;
+    }
+
+    public int repetitionKeyCount(VillagerSkill skill, long overworldDayIndex) {
+        PracticeDayState state = this.skillPracticeDailyState.get(skill);
+        return state != null && state.dayIndex == overworldDayIndex ? state.repetitions.size() : 0;
     }
 
     public double tradeLevelSkillAdjustedXpProgress() {
@@ -271,6 +324,49 @@ public class VillagerProfile {
         } else {
             this.regularTradeSkillGrowthProgress.put(skill, clamped);
         }
+        this.updatedGameTime = gameTime;
+        return true;
+    }
+
+    public boolean setSkillPracticeXp(VillagerSkill skill, double xp, long gameTime) {
+        if (skill == null || !Double.isFinite(xp)) {
+            return false;
+        }
+        double clamped = Math.max(0.0D, Math.min(1_000_000.0D, xp));
+        double current = skillPracticeXp(skill);
+        if (Math.abs(current - clamped) < 0.000_001D) {
+            return false;
+        }
+        if (clamped <= 0.000_001D) {
+            this.skillPracticeXp.remove(skill);
+        } else {
+            this.skillPracticeXp.put(skill, clamped);
+        }
+        this.updatedGameTime = gameTime;
+        return true;
+    }
+
+    public boolean recordPracticeEvent(
+            VillagerSkill skill,
+            long repetitionKey,
+            long overworldDayIndex,
+            double grantedXp,
+            int maximumKeys,
+            long gameTime) {
+        if (skill == null || !Double.isFinite(grantedXp) || grantedXp <= 0.0D || maximumKeys <= 0) {
+            return false;
+        }
+        PracticeDayState state = this.skillPracticeDailyState.get(skill);
+        if (state == null || state.dayIndex != overworldDayIndex) {
+            state = new PracticeDayState(overworldDayIndex, 0.0D, new LinkedHashMap<>());
+            this.skillPracticeDailyState.put(skill, state);
+        }
+        if (!state.repetitions.containsKey(repetitionKey) && state.repetitions.size() >= maximumKeys) {
+            Long eldest = state.repetitions.keySet().iterator().next();
+            state.repetitions.remove(eldest);
+        }
+        state.repetitions.put(repetitionKey, Math.min(1_000_000, state.repetitions.getOrDefault(repetitionKey, 0) + 1));
+        state.earnedXp = Math.min(1_000_000.0D, state.earnedXp + grantedXp);
         this.updatedGameTime = gameTime;
         return true;
     }
@@ -369,10 +465,126 @@ public class VillagerProfile {
         return tag;
     }
 
+    private static EnumMap<VillagerSkill, Double> copySkillPracticeXp(Map<VillagerSkill, Double> xp) {
+        EnumMap<VillagerSkill, Double> copy = new EnumMap<>(VillagerSkill.class);
+        if (xp == null) {
+            return copy;
+        }
+        for (Map.Entry<VillagerSkill, Double> entry : xp.entrySet()) {
+            if (entry.getKey() != null && entry.getValue() != null && Double.isFinite(entry.getValue())) {
+                double value = Math.max(0.0D, Math.min(1_000_000.0D, entry.getValue()));
+                if (value > 0.000_001D) {
+                    copy.put(entry.getKey(), value);
+                }
+            }
+        }
+        return copy;
+    }
+
+    private static EnumMap<VillagerSkill, Double> loadSkillPracticeXp(CompoundTag tag) {
+        EnumMap<VillagerSkill, Double> values = new EnumMap<>(VillagerSkill.class);
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            if (tag.contains(skill.serializedName(), Tag.TAG_DOUBLE)) {
+                double value = tag.getDouble(skill.serializedName());
+                if (Double.isFinite(value) && value > 0.000_001D) {
+                    values.put(skill, Math.min(1_000_000.0D, value));
+                }
+            }
+        }
+        return values;
+    }
+
+    private CompoundTag saveSkillPracticeXp() {
+        CompoundTag tag = new CompoundTag();
+        this.skillPracticeXp.forEach((skill, xp) -> {
+            if (Double.isFinite(xp) && xp > 0.000_001D) {
+                tag.putDouble(skill.serializedName(), Math.min(1_000_000.0D, xp));
+            }
+        });
+        return tag;
+    }
+
+    private static EnumMap<VillagerSkill, PracticeDayState> copyPracticeDailyState(
+            Map<VillagerSkill, PracticeDayState> states) {
+        EnumMap<VillagerSkill, PracticeDayState> copy = new EnumMap<>(VillagerSkill.class);
+        if (states != null) {
+            states.forEach((skill, state) -> {
+                if (skill != null && state != null) {
+                    copy.put(skill, state.copy());
+                }
+            });
+        }
+        return copy;
+    }
+
+    private static EnumMap<VillagerSkill, PracticeDayState> loadPracticeDailyState(CompoundTag root) {
+        EnumMap<VillagerSkill, PracticeDayState> states = new EnumMap<>(VillagerSkill.class);
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            if (!root.contains(skill.serializedName(), Tag.TAG_COMPOUND)) {
+                continue;
+            }
+            CompoundTag tag = root.getCompound(skill.serializedName());
+            long day = tag.getLong("Day");
+            double earned = tag.getDouble("EarnedXp");
+            if (!Double.isFinite(earned) || earned < 0.0D) {
+                earned = 0.0D;
+            }
+            LinkedHashMap<Long, Integer> repetitions = new LinkedHashMap<>();
+            ListTag list = tag.getList("Repetitions", Tag.TAG_COMPOUND);
+            for (int i = 0; i < list.size() && repetitions.size() < 64; i++) {
+                CompoundTag entry = list.getCompound(i);
+                repetitions.put(entry.getLong("Key"), Math.clamp(entry.getInt("Count"), 0, 1_000_000));
+            }
+            states.put(skill, new PracticeDayState(day, Math.min(1_000_000.0D, earned), repetitions));
+        }
+        return states;
+    }
+
+    private CompoundTag savePracticeDailyState() {
+        CompoundTag root = new CompoundTag();
+        this.skillPracticeDailyState.forEach((skill, state) -> {
+            CompoundTag tag = new CompoundTag();
+            tag.putLong("Day", state.dayIndex);
+            tag.putDouble("EarnedXp", Math.max(0.0D, Math.min(1_000_000.0D, state.earnedXp)));
+            ListTag repetitions = new ListTag();
+            int written = 0;
+            for (Map.Entry<Long, Integer> repetition : state.repetitions.entrySet()) {
+                if (written++ >= 64) {
+                    break;
+                }
+                CompoundTag entry = new CompoundTag();
+                entry.putLong("Key", repetition.getKey());
+                entry.putInt("Count", Math.clamp(repetition.getValue(), 0, 1_000_000));
+                repetitions.add(entry);
+            }
+            if (!repetitions.isEmpty()) {
+                tag.put("Repetitions", repetitions);
+            }
+            root.put(skill.serializedName(), tag);
+        });
+        return root;
+    }
+
     private static double clampFractionalProgress(double progress) {
         if (!Double.isFinite(progress)) {
             return 0.0D;
         }
         return Math.max(0.0D, Math.min(0.999_999D, progress));
+    }
+
+    private static final class PracticeDayState {
+        private final long dayIndex;
+        private double earnedXp;
+        private final LinkedHashMap<Long, Integer> repetitions;
+
+        private PracticeDayState(long dayIndex, double earnedXp, LinkedHashMap<Long, Integer> repetitions) {
+            this.dayIndex = dayIndex;
+            this.earnedXp = earnedXp;
+            this.repetitions = repetitions;
+        }
+
+        private PracticeDayState copy() {
+            return new PracticeDayState(this.dayIndex, this.earnedXp, new LinkedHashMap<>(this.repetitions));
+        }
     }
 }
