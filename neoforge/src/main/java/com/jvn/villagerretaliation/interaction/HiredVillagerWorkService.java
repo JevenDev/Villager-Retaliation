@@ -996,6 +996,10 @@ public final class HiredVillagerWorkService {
         return !HiredWorkerTaskState.byId(state.getString("WorkerTaskState")).isWaitingState();
     }
 
+    public static void clearInheritedStateForNewborn(Villager child) {
+        if (child != null) child.getPersistentData().remove(TAG);
+    }
+
     public static void onVillagerLeaveLevel(ServerLevel level, Villager villager) {
         if (!HiredVillagerContractService.isHired(level, villager)) {
             return;

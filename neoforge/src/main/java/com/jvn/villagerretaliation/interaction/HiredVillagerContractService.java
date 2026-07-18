@@ -76,6 +76,12 @@ public final class HiredVillagerContractService {
         return contract(villager).filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment).isPresent();
     }
 
+    public static void clearInheritedStateForNewborn(Villager child) {
+        if (child == null) return;
+        child.getPersistentData().remove(CONTRACT_TAG);
+        child.getPersistentData().remove(OVERFLOW_CLAIM_TAG);
+    }
+
     public static boolean isHiredBy(ServerLevel level, Villager villager, ServerPlayer player) {
         return getHirer(level, villager).filter(player.getUUID()::equals).isPresent();
     }

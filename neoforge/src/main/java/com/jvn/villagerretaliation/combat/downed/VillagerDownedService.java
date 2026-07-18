@@ -199,6 +199,13 @@ public final class VillagerDownedService {
                 && state(villager).getBoolean(DOWNED_KEY);
     }
 
+    public static void clearInheritedStateForNewborn(Villager child) {
+        if (child == null) return;
+        child.getPersistentData().remove(STATE_KEY);
+        NEXT_THREAT_SCAN_TICKS.remove(child.getUUID());
+        PENDING_ABSORPTION_RESTORE.remove(child.getUUID());
+    }
+
     public static boolean canBypassDownedProtection(Villager villager, DamageSource source) {
         return source.is(DamageTypes.GENERIC_KILL)
                 || source.is(DamageTypes.FELL_OUT_OF_WORLD)
