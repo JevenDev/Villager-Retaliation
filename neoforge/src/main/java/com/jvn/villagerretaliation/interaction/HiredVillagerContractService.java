@@ -71,6 +71,11 @@ public final class HiredVillagerContractService {
         return contract(villager).filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment).isPresent();
     }
 
+    /** Non-mutating query for policies that run while vanilla AI evaluates behavior. */
+    public static boolean hasActiveOrPendingContract(Villager villager) {
+        return contract(villager).filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment).isPresent();
+    }
+
     public static boolean isHiredBy(ServerLevel level, Villager villager, ServerPlayer player) {
         return getHirer(level, villager).filter(player.getUUID()::equals).isPresent();
     }

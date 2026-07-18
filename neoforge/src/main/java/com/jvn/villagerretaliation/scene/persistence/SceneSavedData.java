@@ -197,6 +197,16 @@ public final class SceneSavedData extends SavedData {
     public Optional<SceneInstance> get(UUID id) { return Optional.ofNullable(instances.get(id)); }
     public List<SceneInstance> all() { return List.copyOf(instances.values()); }
     public List<SceneInstance> active() { return instances.values().stream().filter(value -> !value.state().terminal()).toList(); }
+    public boolean hasActiveActor(UUID entityId) {
+        if (entityId == null) return false;
+        for (SceneInstance scene : instances.values()) {
+            if (scene.state().terminal()) continue;
+            for (var binding : scene.actorBindings().values()) {
+                if (entityId.equals(binding.entityId())) return true;
+            }
+        }
+        return false;
+    }
     public List<SceneInstance> byState(SceneState state) { return instances.values().stream().filter(value -> value.state()==state).toList(); }
     public void changed() { if (!futureVersion) setDirty(); }
     public boolean futureVersion() { return futureVersion; }

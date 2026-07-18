@@ -122,6 +122,18 @@ public final class VillagerRecruitmentService {
         return villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY);
     }
 
+    public static boolean isActivelyFollowingAnyPlayer(Villager villager) {
+        return villager != null
+                && villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
+                && isFollowMode(villager);
+    }
+
+    public static boolean isOrderedToStay(Villager villager) {
+        return villager != null
+                && villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
+                && isStayMode(villager);
+    }
+
     public static Optional<UUID> followingPlayerId(Villager villager) {
         if (!villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
             return Optional.empty();
