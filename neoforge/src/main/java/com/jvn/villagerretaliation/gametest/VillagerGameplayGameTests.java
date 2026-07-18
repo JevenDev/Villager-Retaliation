@@ -375,6 +375,20 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hitboxDebugPreviewPacketRequiresOperatorPermission(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        HiredDebugPreviewService.clearRuntimeState();
+
+        ServerPlayer player = fakePlayer(level, "VrHitboxGuard");
+        HiredDebugPreviewService.DebugPreviewSummary rejected =
+                HiredDebugPreviewService.setHitboxDebugPreviewEnabled(player, true);
+        helper.assertFalse(rejected.enabled(), "hitbox preview should reject a non-operator packet sender");
+
+        HiredDebugPreviewService.clearRuntimeState();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void hiredContractPaymentStaysConservedWhenEndedEarly(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = fakePlayer(level, "VrHireEscrow");
