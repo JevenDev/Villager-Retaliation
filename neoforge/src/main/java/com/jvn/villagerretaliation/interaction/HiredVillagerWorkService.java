@@ -984,6 +984,18 @@ public final class HiredVillagerWorkService {
         HiredRoleWorkerRegistry.clearRuntimeState();
     }
 
+    /** Returns whether durable worker state currently describes an active work operation. */
+    public static boolean isActivelyWorking(Villager villager) {
+        if (villager == null || !villager.getPersistentData().contains(TAG, Tag.TAG_COMPOUND)) {
+            return false;
+        }
+        CompoundTag state = villager.getPersistentData().getCompound(TAG);
+        if (!state.getBoolean("Enabled") || !state.contains("WorkerTaskState", Tag.TAG_STRING)) {
+            return false;
+        }
+        return !HiredWorkerTaskState.byId(state.getString("WorkerTaskState")).isWaitingState();
+    }
+
     public static void onVillagerLeaveLevel(ServerLevel level, Villager villager) {
         if (!HiredVillagerContractService.isHired(level, villager)) {
             return;

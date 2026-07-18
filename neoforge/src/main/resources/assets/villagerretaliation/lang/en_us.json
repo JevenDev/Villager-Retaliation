@@ -1710,5 +1710,19 @@
   "villagerretaliation.mount.target_hud": "Select a mount",
   "villagerretaliation.mount.target_hud_cancel": "Escape to cancel",
   "interaction.mount.mounted_travel_enabled": "Mounted travel enabled.",
-  "interaction.mount.mounted_travel_disabled": "Mounted travel disabled."
+  "interaction.mount.mounted_travel_disabled": "Mounted travel disabled.",
+  "villagerretaliation.breeding.blocked.baby": "Baby villagers cannot breed.",
+  "villagerretaliation.breeding.blocked.dead": "That villager is unavailable.",
+  "villagerretaliation.breeding.blocked.hired": "Hired villagers cannot breed while their contract is active.",
+  "villagerretaliation.breeding.blocked.party_member": "Villagers recruited into a party cannot breed.",
+  "villagerretaliation.breeding.blocked.following_player": "A villager following a player cannot breed.",
+  "villagerretaliation.breeding.blocked.ordered_to_stay": "A villager ordered to stay cannot breed.",
+  "villagerretaliation.breeding.blocked.downed": "A downed villager cannot breed.",
+  "villagerretaliation.breeding.blocked.working": "A villager cannot breed during active work.",
+  "villagerretaliation.breeding.blocked.in_combat": "A villager cannot breed during combat.",
+  "villagerretaliation.breeding.blocked.panicking": "A frightened villager cannot breed.",
+  "villagerretaliation.breeding.blocked.quest_controlled": "A quest-controlled villager cannot breed right now.",
+  "villagerretaliation.breeding.blocked.scene_controlled": "A scene-controlled villager cannot breed right now.",
+  "villagerretaliation.breeding.blocked.incompatible_allegiance": "Those villagers have incompatible allegiances.",
+  "villagerretaliation.breeding.blocked.invalid_family_pair": "Those villagers cannot have a baby together."
 }
