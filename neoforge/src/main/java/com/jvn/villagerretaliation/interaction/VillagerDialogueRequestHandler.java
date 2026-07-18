@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerRaidDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.mount.VillagerMountOwnershipDialogue;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
@@ -67,6 +68,9 @@ public final class VillagerDialogueRequestHandler {
         VillagerInteractionService.focusVillagerOnPlayer(villager, player);
 
         ServerLevel level = target.level();
+        if (VillagerMountOwnershipDialogue.handle(level, player, villager, optionId)) {
+            return;
+        }
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
         if (DialogueTreeService.LEAVE_OPTION_ID.equals(optionId)) {
