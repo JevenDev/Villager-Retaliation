@@ -35,6 +35,8 @@ import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
@@ -1542,6 +1544,43 @@ public final class VillagerWorkerGameTests {
         AssignedStorageService.removeAllAssignedStorage(level, otherVillager);
         villager.discard();
         otherVillager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void preferredRolesUseLowerThresholdWithoutBypassingSkills(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        Villager farmer = spawnVillager(helper, new BlockPos(2, 2, 2));
+        farmer.setVillagerData(farmer.getVillagerData().setProfession(VillagerProfession.FARMER));
+        Villager unemployed = spawnVillager(helper, new BlockPos(4, 2, 2));
+        unemployed.setVillagerData(unemployed.getVillagerData().setProfession(VillagerProfession.NONE));
+
+        VillagerProfileManager.setSkill(level, farmer, VillagerSkill.FARMING, 34);
+        helper.assertFalse(
+                HiredVillagerRoles.availableContractRoles(level, farmer).contains(HiredVillagerRole.FARMING),
+                "preferred profession must not bypass its skill threshold");
+        VillagerProfileManager.setSkill(level, farmer, VillagerSkill.FARMING, 35);
+        helper.assertTrue(
+                HiredVillagerRoles.availableContractRoles(level, farmer).contains(HiredVillagerRole.FARMING),
+                "preferred profession should unlock at 35");
+
+        VillagerProfileManager.setSkill(level, unemployed, VillagerSkill.MINING, 54);
+        VillagerProfileManager.setSkill(level, unemployed, VillagerSkill.MASONRY, 54);
+        helper.assertFalse(
+                HiredVillagerRoles.availableContractRoles(level, unemployed).contains(HiredVillagerRole.MINING),
+                "nonpreferred role should remain locked below 55");
+        helper.assertFalse(
+                HiredVillagerRoles.availableContractRoles(level, unemployed).contains(HiredVillagerRole.FARMING),
+                "eligibility must not fabricate Farming as a fallback");
+        VillagerProfileManager.setSkill(level, unemployed, VillagerSkill.MINING, 55);
+        VillagerProfileManager.setSkill(level, unemployed, VillagerSkill.MASONRY, 55);
+        helper.assertTrue(
+                HiredVillagerRoles.availableContractRoles(level, unemployed).contains(HiredVillagerRole.MINING),
+                "nonpreferred role should unlock at 55");
+
+        farmer.discard();
+        unemployed.discard();
         helper.succeed();
     }
 
