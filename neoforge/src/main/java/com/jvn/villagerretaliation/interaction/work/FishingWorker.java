@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -192,9 +193,11 @@ public final class FishingWorker extends AbstractBlockWorker {
         context.state().remove(CATCH_OVERFLOW_TAG);
         clearFishingTarget(context);
         setTaskState(context, HiredWorkerTaskState.IDLE);
-        return overflow
-                ? WorkResult.completed("interaction.work.fishing.completed_overflow")
-                : WorkResult.completed("interaction.work.fishing.completed");
+        return WorkResult.completedWithPractice(
+                overflow
+                        ? "interaction.work.fishing.completed_overflow"
+                        : "interaction.work.fishing.completed",
+                HiredWorkPractice.fishing(ItemStack.EMPTY));
     }
 
     @Override

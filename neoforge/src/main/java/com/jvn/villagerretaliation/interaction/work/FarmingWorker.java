@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
@@ -234,9 +235,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
         boolean replanted = HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget);
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
-        return WorkResult.progressed(replanted
-                ? "interaction.work.farming.completed_crop"
-                : "interaction.work.farming.completed_output");
+        return WorkResult.progressedWithPractice(
+                replanted
+                        ? "interaction.work.farming.completed_crop"
+                        : "interaction.work.farming.completed_output",
+                HiredWorkPractice.farming(replanted ? "harvest_replant" : "harvest"));
     }
 
     private WorkResult plantCrop(ServerLevel level, Villager villager, HiredWorkContext context, BlockPos cropTarget) {
@@ -255,7 +258,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
         swingWorkTool(villager);
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
-        return WorkResult.progressed("interaction.work.farming.tending_fields");
+        return WorkResult.progressedWithPractice(
+                "interaction.work.farming.tending_fields", HiredWorkPractice.farming("plant"));
     }
 
     private WorkResult guideSoilTillTarget(
@@ -396,7 +400,8 @@ public final class FarmingWorker extends AbstractBlockWorker {
         damageTool(context, villager, hoe);
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.IDLE, soilTarget);
-        return WorkResult.progressed("interaction.work.farming.tilled_soil");
+        return WorkResult.progressedWithPractice(
+                "interaction.work.farming.tilled_soil", HiredWorkPractice.farming("till"));
     }
 
     private WorkResult ensureFarmingHoe(ServerLevel level, Villager villager, HiredWorkContext context) {

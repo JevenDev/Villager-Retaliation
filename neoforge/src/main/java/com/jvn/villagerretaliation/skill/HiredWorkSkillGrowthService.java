@@ -3,7 +3,6 @@ package com.jvn.villagerretaliation.skill;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoleSettings;
-import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
@@ -18,114 +17,83 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 
 public final class HiredWorkSkillGrowthService {
-    private static final String PROGRESS_TAG = "HiredWorkSkillGrowthProgress";
-    private static final double PROGRESS_EPSILON = 0.000_001D;
+    static final String LEGACY_PROGRESS_TAG = "HiredWorkSkillGrowthProgress";
 
     private HiredWorkSkillGrowthService() {
     }
 
-    public static void onWorkCompleted(
+    public static VillagerSkillProgressionResult onPractice(
             ServerLevel level,
             Villager villager,
             ServerPlayer hirer,
             HiredVillagerRole role,
-            CompoundTag workState) {
-        if (!VillagerRetaliationConfig.ENABLE_HIRED_WORK_SKILL_GROWTH.get()
-                || villager == null
-                || villager.isBaby()
-                || role == null
-                || workState == null) {
-            return;
+            CompoundTag workState,
+            List<VillagerSkillPractice> practice) {
+        if (level == null || villager == null || villager.isBaby() || role == null || workState == null) {
+            return VillagerSkillProgressionResult.NONE;
         }
 
-        double amount = HiredVillagerRoleSettings.skillGrowthAmount(role);
-        if (amount <= 0.0D) {
-            return;
-        }
-
-        List<VillagerSkill> skills = HiredVillagerRoles.roleSkills(role);
-        if (skills.isEmpty()) {
-            return;
-        }
-
-        VillagerSkill primary = skills.getFirst();
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
-        VillagerSkill improvedSkill = awardProgress(level, profile, workState, primary, amount) ? primary : null;
-
-        if (skills.size() > 1 && villager.getRandom().nextDouble() < VillagerRetaliationConfig.SKILL_GROWTH_SECONDARY_CHANCE.get()) {
-            VillagerSkill secondary = skills.get(1 + villager.getRandom().nextInt(skills.size() - 1));
-            if (awardProgress(level, profile, workState, secondary, amount * 0.5D) && improvedSkill == null) {
-                improvedSkill = secondary;
+        boolean migrated = migrateLegacyProgress(profile, workState, level.getGameTime());
+        if (!VillagerRetaliationConfig.ENABLE_HIRED_WORK_SKILL_GROWTH.get()
+                || practice == null
+                || practice.isEmpty()) {
+            if (migrated) {
+                VillagerProfileSavedData.get(level).setDirty();
             }
+            return VillagerSkillProgressionResult.NONE;
         }
 
-        if (improvedSkill == null) {
-            return;
+        double xpPerUnit = HiredVillagerRoleSettings.skillGrowthAmount(role);
+        if (!Double.isFinite(xpPerUnit) || xpPerUnit <= 0.0D) {
+            return VillagerSkillProgressionResult.NONE;
+        }
+        long dayIndex = Math.floorDiv(level.getServer().overworld().getDayTime(), 24_000L);
+        VillagerSkillProgressionResult result = VillagerSkillProgressionService.apply(
+                profile, practice, dayIndex, level.getGameTime(), xpPerUnit);
+        if (!migrated && !result.profileChanged()) {
+            return result;
         }
 
         VillagerProfileSavedData.get(level).setDirty();
-        if (hirer != null) {
+        if (hirer != null && result.increased()) {
             VillagerReputationNetworking.sendProfile(hirer, villager, profile);
-            sendFeedback(hirer, villager, improvedSkill);
+            sendFeedback(hirer, villager, result.increases().getFirst().skill());
         }
+        return result;
     }
 
-    private static boolean awardProgress(
-            ServerLevel level,
-            VillagerProfile profile,
-            CompoundTag workState,
-            VillagerSkill skill,
-            double amount) {
-        if (skill == null || amount <= 0.0D) {
+    static boolean migrateLegacyProgress(VillagerProfile profile, CompoundTag workState, long gameTime) {
+        if (!workState.contains(LEGACY_PROGRESS_TAG, Tag.TAG_COMPOUND)) {
             return false;
         }
-
-        int oldValue = profile.skills().get(skill);
-        if (oldValue >= VillagerSkillSet.MAX_VALUE) {
-            progressTag(workState).remove(skill.serializedName());
-            return false;
+        CompoundTag legacy = workState.getCompound(LEGACY_PROGRESS_TAG);
+        boolean changed = false;
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            if (!legacy.contains(skill.serializedName(), Tag.TAG_DOUBLE)) {
+                continue;
+            }
+            double oldFraction = legacy.getDouble(skill.serializedName());
+            if (!Double.isFinite(oldFraction) || oldFraction <= 0.0D) {
+                continue;
+            }
+            double preservedXp = Math.min(0.999_999D, oldFraction)
+                    * VillagerSkillProgressionService.requiredXp(profile.skills().get(skill));
+            changed |= profile.setSkillPracticeXp(
+                    skill, profile.skillPracticeXp(skill) + preservedXp, gameTime);
         }
-
-        CompoundTag progressTag = progressTag(workState);
-        double totalProgress = progressTag.getDouble(skill.serializedName()) + amount;
-        int wholePoints = (int) Math.floor(totalProgress + PROGRESS_EPSILON);
-        double remainingProgress = Math.max(0.0D, totalProgress - wholePoints);
-        int awardedPoints = Math.min(wholePoints, VillagerSkillSet.MAX_VALUE - oldValue);
-
-        if (oldValue + awardedPoints >= VillagerSkillSet.MAX_VALUE) {
-            remainingProgress = 0.0D;
-        }
-
-        if (remainingProgress <= PROGRESS_EPSILON) {
-            progressTag.remove(skill.serializedName());
-        } else {
-            progressTag.putDouble(skill.serializedName(), Math.min(0.999_999D, remainingProgress));
-        }
-
-        if (awardedPoints <= 0) {
-            return false;
-        }
-
-        return profile.setSkill(skill, oldValue + awardedPoints, level.getGameTime());
-    }
-
-    private static CompoundTag progressTag(CompoundTag workState) {
-        if (!workState.contains(PROGRESS_TAG, Tag.TAG_COMPOUND)) {
-            workState.put(PROGRESS_TAG, new CompoundTag());
-        }
-        return workState.getCompound(PROGRESS_TAG);
+        workState.remove(LEGACY_PROGRESS_TAG);
+        return true;
     }
 
     private static void sendFeedback(ServerPlayer player, Villager villager, VillagerSkill skill) {
-        if (!VillagerRetaliationConfig.ENABLE_SKILL_GROWTH_FEEDBACK.get()) {
-            return;
+        if (VillagerRetaliationConfig.ENABLE_SKILL_GROWTH_FEEDBACK.get()) {
+            player.displayClientMessage(
+                    Component.translatable(
+                            "villagerretaliation.skill_growth.improved",
+                            VillagerPresetNameRegistry.resolveDisplayName(villager),
+                            Component.translatable(skill.translationKey())),
+                    true);
         }
-
-        player.displayClientMessage(
-                Component.translatable(
-                        "villagerretaliation.skill_growth.improved",
-                        VillagerPresetNameRegistry.resolveDisplayName(villager),
-                        Component.translatable(skill.translationKey())),
-                true);
     }
 }

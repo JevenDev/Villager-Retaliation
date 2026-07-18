@@ -4,6 +4,8 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -264,7 +266,11 @@ public final class CookingWorker extends AbstractBlockWorker {
         }
         updateFurnace(level, furnace, station);
         swingWorkTool(villager);
-        return completed ? WorkResult.completed(status, itemReplacements(removed)) : WorkResult.progressed(status, itemReplacements(removed));
+        var practice = HiredWorkPractice.batch(
+                VillagerSkill.COOKING, "hired:cooking:batch", removed.getCount(), removed.getItem().hashCode());
+        return completed
+                ? WorkResult.completedWithPractice(status, itemReplacements(removed), practice)
+                : WorkResult.progressedWithPractice(status, itemReplacements(removed), practice);
     }
 
     private WorkResult gatherCookingMaterials(
@@ -570,7 +576,11 @@ public final class CookingWorker extends AbstractBlockWorker {
         HiredWorkerBrain.clearFailure(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);
         swingWorkTool(villager);
-        return WorkResult.completed("interaction.work.cooking.crafted_food", itemReplacements(crafted));
+        return WorkResult.completedWithPractice(
+                "interaction.work.cooking.crafted_food",
+                itemReplacements(crafted),
+                HiredWorkPractice.batch(
+                        VillagerSkill.COOKING, "hired:cooking:craft", crafted.getCount(), crafted.getItem().hashCode()));
     }
 
     private WorkResult gatherCraftingMaterials(

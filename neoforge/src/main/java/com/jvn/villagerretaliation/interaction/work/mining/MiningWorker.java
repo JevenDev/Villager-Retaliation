@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
 import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -310,6 +311,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
         HiredOreBlockTracker.onBlockBroken(level, target.blockPos());
         HiredWorkPlan.removeTarget(context, target.blockPos());
+        var practice = HiredWorkPractice.mining(level, target.blockPos(), targetState);
 
         MiningWorkerState.rememberLastMined(context, target.blockPos());
         if (!mode.excavatesArea()) {
@@ -326,14 +328,14 @@ public final class MiningWorker extends AbstractBlockWorker {
             prepareBreakingTarget(level, context, villager, nextTarget);
             MiningWorkerState.set(context, MiningWorkerState.Phase.PATH_TO_TARGET);
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_TARGET, nextTarget.blockPos());
-            return WorkResult.skilledProgress(miningStatusKey(mode, "next_target"));
+            return WorkResult.progressedWithPractice(miningStatusKey(mode, "next_target"), practice);
         }
 
         MiningWorkerState.clearMiningAnchor(context);
         if (MiningWorkerState.isExcavationScanInProgress(context, mode)) {
             MiningWorkerState.set(context, MiningWorkerState.Phase.FIND_TARGET);
             setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-            return WorkResult.skilledProgress("interaction.work.mining.post_clear_scan");
+            return WorkResult.progressedWithPractice("interaction.work.mining.post_clear_scan", practice);
         }
         DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
         MiningWorkerState.set(context, depositResult == DepositResult.DEPOSITED || depositResult == DepositResult.MOVING
@@ -341,7 +343,7 @@ public final class MiningWorker extends AbstractBlockWorker {
                 : MiningWorkerState.Phase.WAITING_NO_TARGETS);
         if (depositResult == DepositResult.MOVING) {
             setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-            return WorkResult.skilledProgress("interaction.work.mining.post_clear_depositing");
+            return WorkResult.progressedWithPractice("interaction.work.mining.post_clear_depositing", practice);
         }
         if (depositResult == DepositResult.STORAGE_FULL) {
             return WorkResult.idle(storageFullStatus(context));
@@ -349,20 +351,22 @@ public final class MiningWorker extends AbstractBlockWorker {
         if (depositResult != DepositResult.UNAVAILABLE && isExcavationComplete(level, context, mode)) {
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
             MiningWorkerState.ensureNoTargetScanCooldown(level, context);
-            return WorkResult.completed(excavationResultStatusKey(depositResult, "completed_excavation"));
+            return WorkResult.completedWithPractice(excavationResultStatusKey(depositResult, "completed_excavation"), practice);
         }
         if (roamInsideWorkArea(level, villager, context, 0.4D)) {
-            return WorkResult.skilledProgress(miningStatusKey(mode, "completed_searching"));
+            return WorkResult.progressedWithPractice(miningStatusKey(mode, "completed_searching"), practice);
         }
         if (mode.excavatesArea()) {
             setTaskState(context, HiredWorkerTaskState.SELECTING_TARGET);
-            return WorkResult.skilledProgress(excavationResultStatusKey(depositResult, "continuing_excavation"));
+            return WorkResult.progressedWithPractice(excavationResultStatusKey(depositResult, "continuing_excavation"), practice);
         }
         setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
         MiningWorkerState.ensureNoTargetScanCooldown(level, context);
-        return WorkResult.completed(depositResult == DepositResult.DEPOSITED
-                ? miningStatusKey(mode, "completed_deposited")
-                : miningStatusKey(mode, "completed_no_next"));
+        return WorkResult.completedWithPractice(
+                depositResult == DepositResult.DEPOSITED
+                        ? miningStatusKey(mode, "completed_deposited")
+                        : miningStatusKey(mode, "completed_no_next"),
+                practice);
     }
 
     private HiredPathTarget resolveTarget(

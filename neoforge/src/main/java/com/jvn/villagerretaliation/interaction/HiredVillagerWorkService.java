@@ -196,9 +196,8 @@ public final class HiredVillagerWorkService {
         WorkResult result = session.worker().tick(level, villager, hirer, session.context());
         setStatus(session.state(), result.status(), result.replacements());
         maybeNotifyStorageFull(level, villager, hirer, session.context(), session.state());
-        if (result.awardsSkillGrowth()) {
-            HiredWorkSkillGrowthService.onWorkCompleted(level, villager, hirer, session.role(), session.state());
-        }
+        HiredWorkSkillGrowthService.onPractice(
+                level, villager, hirer, session.role(), session.state(), result.practice());
         if (result.completed()) {
             recordCompletedTask(session.state());
             session.state().putLong("NextWorkGameTime", level.getGameTime() + nextTaskCooldownTicks(session.efficiency()));

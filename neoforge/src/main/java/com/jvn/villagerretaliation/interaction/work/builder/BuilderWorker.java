@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
@@ -304,7 +305,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
         BuilderTaskState.setPlacedIndex(context.state(), index + 1);
         BuilderTaskState.setPhase(context.state(), BuilderBuildPhase.BUILDING);
         setTaskState(context, HiredWorkerTaskState.WORKING, worldPos);
-        return WorkResult.progressed("interaction.work.builder.placed_block", BuilderTaskState.replacements(context.state()));
+        return WorkResult.progressedWithPractice(
+                "interaction.work.builder.placed_block",
+                BuilderTaskState.replacements(context.state()),
+                HiredWorkPractice.builderPlacement(placementGroup.materialPart().block().state()));
     }
 
     @Override
@@ -1889,9 +1893,12 @@ public final class BuilderWorker extends AbstractBlockWorker {
         clearWorkPathFailure(villager, pos);
         clearActiveBreakingTarget(level, context, villager);
         BuilderTaskState.clearMaterialBatch(context.state());
-        return WorkResult.progressed("interaction.work.builder.cleared_obstruction", Map.of(
-                "target", HiredWorkerBrain.formatPos(pos),
-                "structure", BuilderTaskState.structureLabel(context.state())));
+        return WorkResult.progressedWithPractice(
+                "interaction.work.builder.cleared_obstruction",
+                Map.of(
+                        "target", HiredWorkerBrain.formatPos(pos),
+                        "structure", BuilderTaskState.structureLabel(context.state())),
+                HiredWorkPractice.builderClearing(state));
     }
 
     private HiredPathTarget bestClearingTarget(

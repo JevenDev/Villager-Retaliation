@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -228,7 +230,11 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         }
         updateFurnace(level, furnace, station);
         swingWorkTool(villager);
-        return completed ? WorkResult.completed(status, itemReplacements(removed)) : WorkResult.progressed(status, itemReplacements(removed));
+        var practice = HiredWorkPractice.batch(
+                VillagerSkill.SMITHING, "hired:smelting:batch", removed.getCount(), removed.getItem().hashCode());
+        return completed
+                ? WorkResult.completedWithPractice(status, itemReplacements(removed), practice)
+                : WorkResult.progressedWithPractice(status, itemReplacements(removed), practice);
     }
 
     private WorkResult gatherSmeltingMaterials(
