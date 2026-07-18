@@ -700,6 +700,7 @@ public final class VillagerRetaliationHandler {
         }
         AngerTarget previousTarget = RETALIATION.angerTarget(villager);
         if (RETALIATION.anger(villager, attacker) && villager.level() instanceof ServerLevel level) {
+            com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
             VillagerMoodService.recordRetaliationStarted(level, villager, attacker);
             if ((previousTarget == null || !previousTarget.targetId().equals(attacker.getUUID()))
                     && announceRetaliation) {

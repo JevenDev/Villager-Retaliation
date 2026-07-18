@@ -404,6 +404,7 @@ public final class HiredVillagerContractService {
         villager.setPersistenceRequired();
         HiredVillagerIndex.update(level, villager);
         com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);
+        com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
     }
 
     public static void startOneOffBuilderJob(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -433,6 +434,7 @@ public final class HiredVillagerContractService {
         villager.setPersistenceRequired();
         HiredVillagerIndex.update(level, villager);
         com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);
+        com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
     }
 
     public static boolean isOneOffBuilderJob(ServerLevel level, Villager villager) {

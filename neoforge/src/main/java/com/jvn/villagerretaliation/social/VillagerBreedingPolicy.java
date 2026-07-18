@@ -13,6 +13,10 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.List;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.behavior.EntityTracker;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.npc.Villager;
 
 /** Central, server-side policy for villager breeding participation. */
@@ -62,6 +66,50 @@ public final class VillagerBreedingPolicy {
 
     public static boolean canBreed(ServerLevel level, Villager villager) {
         return evaluateParent(level, villager).allowed();
+    }
+
+    /** Idempotently clears only memories owned by a current villager courtship. */
+    public static void cancelActiveAttempt(ServerLevel level, Villager villager) {
+        if (level == null || villager == null || villager.level() != level) return;
+        Villager partner = breedingPartner(villager);
+        if (partner == null) return;
+
+        clearAttemptWith(villager, partner);
+        if (partner.level() == level && breedingPartner(partner) == villager) {
+            clearAttemptWith(partner, villager);
+        }
+    }
+
+    private static Villager breedingPartner(Villager villager) {
+        return villager.getBrain().getMemory(MemoryModuleType.BREED_TARGET)
+                .filter(Villager.class::isInstance)
+                .map(Villager.class::cast)
+                .orElse(null);
+    }
+
+    private static void clearAttemptWith(Villager villager, Villager partner) {
+        Brain<Villager> brain = villager.getBrain();
+        boolean ownedWalkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET)
+                .map(WalkTarget::getTarget)
+                .filter(EntityTracker.class::isInstance)
+                .map(EntityTracker.class::cast)
+                .map(EntityTracker::getEntity)
+                .filter(partner::equals)
+                .isPresent();
+        boolean ownedLookTarget = brain.getMemory(MemoryModuleType.LOOK_TARGET)
+                .filter(EntityTracker.class::isInstance)
+                .map(EntityTracker.class::cast)
+                .map(EntityTracker::getEntity)
+                .filter(partner::equals)
+                .isPresent();
+
+        brain.eraseMemory(MemoryModuleType.BREED_TARGET);
+        if (ownedLookTarget) brain.eraseMemory(MemoryModuleType.LOOK_TARGET);
+        if (ownedWalkTarget) {
+            brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+            brain.eraseMemory(MemoryModuleType.PATH);
+            villager.getNavigation().stop();
+        }
     }
 
     private static BreedingBlockReason evaluateLifeState(ServerLevel level, Villager villager) {

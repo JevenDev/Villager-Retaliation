@@ -24,6 +24,7 @@
     "TradeWithVillagerMixin",
     "VillagerHiredNavigationMixin",
     "VillagerJobInventoryMixin",
+    "VillagerMakeLoveMixin",
     "VillagerBrainTickMixin",
     "VillagerPickupMixin",
     "VillagerPanicTriggerMixin",
