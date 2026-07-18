@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -73,9 +74,12 @@ import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.util.Unit;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -1784,6 +1788,97 @@ public final class PartyGameTests {
         PartyQuickCommandService.clearRuntimeState();
         villager.discard();
         lootTarget.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyLootContainersRejectsLockedContainers(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_loot_locked"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party,
+                villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+        BlockPos chestPos = helper.absolutePos(new BlockPos(3, 2, 2));
+        level.setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
+        BlockEntity blockEntity = level.getBlockEntity(chestPos);
+        if (!(blockEntity instanceof Container chest)) {
+            throw new GameTestAssertException("Could not create locked loot-command chest");
+        }
+        chest.setItem(0, new ItemStack(Items.DIAMOND, 4));
+        CompoundTag lockedData = blockEntity.saveWithoutMetadata(level.registryAccess());
+        lockedData.putString("Lock", "party-loot-test-key");
+        blockEntity.loadWithComponents(lockedData, level.registryAccess());
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.LOOT_CONTAINERS,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        chestPos));
+        PartyQuickCommandService.onVillagerTickPost(villager);
+
+        helper.assertValueEqual(chest.countItem(Items.DIAMOND), 4,
+                "a commander without the lock key must not loot a locked container");
+        helper.assertValueEqual(HiredJobInventory.getJobInventory(villager).countItem(Items.DIAMOND), 0,
+                "locked-container items must not enter the villager inventory");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyLootContainersHonorsCanceledBlockInteraction(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_loot_protected"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party,
+                villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+        BlockPos chestPos = helper.absolutePos(new BlockPos(3, 2, 2));
+        level.setBlockAndUpdate(chestPos, Blocks.CHEST.defaultBlockState());
+        if (!(level.getBlockEntity(chestPos) instanceof Container chest)) {
+            throw new GameTestAssertException("Could not create protected loot-command chest");
+        }
+        chest.setItem(0, new ItemStack(Items.EMERALD, 6));
+        boolean[] authorizationEventSeen = {false};
+        Consumer<PlayerInteractEvent.RightClickBlock> protection = event -> {
+            if (event.getEntity().getUUID().equals(leader.getUUID()) && event.getPos().equals(chestPos)) {
+                authorizationEventSeen[0] = true;
+                event.setCanceled(true);
+            }
+        };
+        NeoForge.EVENT_BUS.addListener(PlayerInteractEvent.RightClickBlock.class, protection);
+        try {
+            PartyQuickCommandService.handle(
+                    leader,
+                    new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                            PartyQuickCommand.LOOT_CONTAINERS,
+                            com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                            chestPos));
+            PartyQuickCommandService.onVillagerTickPost(villager);
+        } finally {
+            NeoForge.EVENT_BUS.unregister(protection);
+        }
+
+        helper.assertTrue(authorizationEventSeen[0],
+                "container discovery should ask the block-interaction protection hook");
+        helper.assertValueEqual(chest.countItem(Items.EMERALD), 6,
+                "a protection provider's canceled interaction must prevent container looting");
+        helper.assertValueEqual(HiredJobInventory.getJobInventory(villager).countItem(Items.EMERALD), 0,
+                "protected-container items must not enter the villager inventory");
+
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
         helper.succeed();
     }
 
