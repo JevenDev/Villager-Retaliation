@@ -639,11 +639,6 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 0, max = 10)
         public int skillGrowthPrimaryMax = 5;
 
-        @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
-        public double skillGrowthSecondaryChance = 0.35D;
-
-        @RangeConstraint(min = 0, max = 5)
-        public int skillGrowthSecondaryMax = 1;
     }
 
     public static final class DebugOverlay {

@@ -67,6 +67,7 @@
 
 ### Added
 
+- Reworked villager skill growth around successful practice: hired workers now learn only from measurable completed actions, larger jobs train more than trivial ones, repeated equivalent work has diminishing returns, and higher skill levels take longer to improve. Existing villager skill values are preserved.
 - Added bounded soft loading for assigned payment boxes when automatic contract renewal is due; payment chunks load at FULL-only status without block or entity ticking, release immediately after charging, and use short timeouts plus per-renewal and server-wide rate caps.
 - Added `/villagerretaliation debug raid win` and `/villagerretaliation debug raid lose` operator commands for settling the relevant Player Raid.
 - Expanded personal, job, and party villager inventories with nine-slot hotbars; assigned job tools now prefer mainhand then hotbar storage, while ordinary supplies, outputs, and party drops use the hotbar only for overflow.
