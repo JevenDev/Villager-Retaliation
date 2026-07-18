@@ -64,8 +64,37 @@ public final class HiredWorkPractice {
         String itemId = caught == null || caught.isEmpty()
                 ? "catch"
                 : BuiltInRegistries.ITEM.getKey(caught.getItem()).toString();
-        double units = caught == null || caught.isEmpty() ? 0.8D : Math.min(1.5D, 0.75D + caught.getCount() * 0.15D);
+        double rarityBonus = itemId.contains("enchanted_book")
+                || itemId.contains("name_tag")
+                || itemId.contains("nautilus_shell")
+                || itemId.contains("saddle") ? 0.35D : 0.0D;
+        double units = caught == null || caught.isEmpty()
+                ? 0.8D
+                : Math.min(1.5D, 0.75D + caught.getCount() * 0.15D + rarityBonus);
         return List.of(new VillagerSkillPractice(VillagerSkill.FISHING, units, "hired:fishing:catch", itemId.hashCode()));
+    }
+
+    public static List<VillagerSkillPractice> fishing(double units, long catchCategory) {
+        return List.of(new VillagerSkillPractice(
+                VillagerSkill.FISHING,
+                Math.clamp(units, 0.25D, 3.0D),
+                "hired:fishing:catch",
+                catchCategory));
+    }
+
+    public static List<VillagerSkillPractice> combatKill(boolean ranged, boolean hunting, double threat, long targetCategory) {
+        double units = Math.clamp(threat, 0.4D, 2.0D);
+        List<VillagerSkillPractice> practice = new ArrayList<>();
+        practice.add(new VillagerSkillPractice(
+                ranged ? VillagerSkill.ARCHERY : VillagerSkill.GUARDING,
+                units,
+                ranged ? "hired:combat:ranged_kill" : "hired:combat:melee_kill",
+                targetCategory));
+        if (hunting) {
+            practice.add(new VillagerSkillPractice(
+                    VillagerSkill.SURVIVAL, units * 0.4D, "hired:hunting:kill", targetCategory));
+        }
+        return List.copyOf(practice);
     }
 
     public static List<VillagerSkillPractice> batch(VillagerSkill skill, String source, int outputCount, long key) {

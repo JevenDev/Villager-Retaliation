@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.skill;
 
 import com.jvn.villagerretaliation.profile.VillagerProfile;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import java.util.List;
@@ -85,7 +86,8 @@ public final class VillagerSkillProgressionGameTests {
         VillagerProfile loaded = VillagerProfile.load(repeated.save());
         if (loaded == null
                 || Math.abs(loaded.skillPracticeXp(VillagerSkill.MINING) - repeated.skillPracticeXp(VillagerSkill.MINING)) > 0.0001D
-                || loaded.repetitionKeyCount(VillagerSkill.MINING, 9L) != repeated.repetitionKeyCount(VillagerSkill.MINING, 9L)) {
+                || loaded.repetitionKeyCount(VillagerSkill.MINING, 9L) != repeated.repetitionKeyCount(VillagerSkill.MINING, 9L)
+                || !VillagerProfileManager.exportProfile(loaded).contains("skillPracticeDailyState")) {
             helper.fail("Practice XP or daily state did not survive save/load");
             return;
         }

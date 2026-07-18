@@ -39,6 +39,8 @@ public final class FishingWorker extends AbstractBlockWorker {
     private static final String ACTIVE_APPROACH_POS_TAG = "FishingApproachPos";
     private static final String CATCH_COMPLETED_TAG = "FishingCatchCompleted";
     private static final String CATCH_OVERFLOW_TAG = "FishingCatchOverflow";
+    private static final String CATCH_PRACTICE_UNITS_TAG = "FishingCatchPracticeUnits";
+    private static final String CATCH_REPETITION_KEY_TAG = "FishingCatchRepetitionKey";
     private static final String COLLECTING_ROD_TAG = "FishingCollectingRod";
     private static final String DEPOSITING_OUTPUTS_TAG = "FishingDepositingOutputs";
     private static final String NEXT_FISHING_SPOT_SCAN_GAME_TIME_TAG = "NextFishingSpotScanGameTime";
@@ -189,15 +191,20 @@ public final class FishingWorker extends AbstractBlockWorker {
             return depositResult;
         }
         boolean overflow = context.state().getBoolean(CATCH_OVERFLOW_TAG);
+        double practiceUnits = context.state().getDouble(CATCH_PRACTICE_UNITS_TAG);
+        long repetitionKey = context.state().getLong(CATCH_REPETITION_KEY_TAG);
         context.state().remove(CATCH_COMPLETED_TAG);
         context.state().remove(CATCH_OVERFLOW_TAG);
+        context.state().remove(CATCH_PRACTICE_UNITS_TAG);
+        context.state().remove(CATCH_REPETITION_KEY_TAG);
         clearFishingTarget(context);
         setTaskState(context, HiredWorkerTaskState.IDLE);
-        return WorkResult.completedWithPractice(
-                overflow
-                        ? "interaction.work.fishing.completed_overflow"
-                        : "interaction.work.fishing.completed",
-                HiredWorkPractice.fishing(ItemStack.EMPTY));
+        String status = overflow
+                ? "interaction.work.fishing.completed_overflow"
+                : "interaction.work.fishing.completed";
+        return Double.isFinite(practiceUnits) && practiceUnits > 0.0D
+                ? WorkResult.completedWithPractice(status, HiredWorkPractice.fishing(practiceUnits, repetitionKey))
+                : WorkResult.completed(status);
     }
 
     @Override
@@ -362,7 +369,12 @@ public final class FishingWorker extends AbstractBlockWorker {
         ItemStack rod = context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT);
         VillagerFishingHook.CatchResult result = hook.retrieve(rod);
         boolean overflow = false;
+        double practiceUnits = 0.0D;
+        long repetitionKey = 1L;
         for (ItemStack item : result.items()) {
+            var itemPractice = HiredWorkPractice.fishing(item).getFirst();
+            practiceUnits += itemPractice.units();
+            repetitionKey = 31L * repetitionKey + itemPractice.repetitionKey();
             ItemStack remainder = context.storeOutputAfterDepositIfFull(villager, item.copy());
             if (!remainder.isEmpty()) {
                 overflow = true;
@@ -378,6 +390,10 @@ public final class FishingWorker extends AbstractBlockWorker {
         villager.swing(InteractionHand.MAIN_HAND, true);
         villager.gameEvent(GameEvent.ITEM_INTERACT_FINISH);
         context.state().putBoolean(CATCH_COMPLETED_TAG, true);
+        if (practiceUnits > 0.0D) {
+            context.state().putDouble(CATCH_PRACTICE_UNITS_TAG, Math.min(3.0D, practiceUnits));
+            context.state().putLong(CATCH_REPETITION_KEY_TAG, repetitionKey);
+        }
         if (overflow) {
             context.state().putBoolean(CATCH_OVERFLOW_TAG, true);
         }
