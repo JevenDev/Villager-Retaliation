@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
 import com.jvn.villagerretaliation.mood.VillagerMood;
+import com.jvn.villagerretaliation.mount.VillagerMountOwnershipDialogue;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
 import com.jvn.villagerretaliation.network.VillageAllegianceView;
@@ -50,7 +51,8 @@ public final class VillagerInteractionScreenOpener {
         ServerLevel level = player.serverLevel();
         DialogueContext dialogueContext = VillagerInteractionService.createDialogueContext(level, player, villager);
         DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
-        List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
+        List<DialogueOptionDefinition> dialogueOptions = VillagerMountOwnershipDialogue.addAvailableOption(
+                level, player, villager, VillagerDialogueResources.dialogueOptions(dialogueContext, mood));
         String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
         OpenVillagerInteractionPayload payload = createPayload(
                 level,
@@ -115,7 +117,8 @@ public final class VillagerInteractionScreenOpener {
         ServerLevel level = player.serverLevel();
         DialogueContext dialogueContext = VillagerInteractionService.createDialogueContext(level, player, villager);
         DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
-        List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(dialogueContext, mood);
+        List<DialogueOptionDefinition> dialogueOptions = VillagerMountOwnershipDialogue.addAvailableOption(
+                level, player, villager, VillagerDialogueResources.dialogueOptions(dialogueContext, mood));
         trySendToPlayer(player, createPayload(
                 level,
                 player,

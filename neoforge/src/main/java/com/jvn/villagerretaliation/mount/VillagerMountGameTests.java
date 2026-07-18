@@ -1,7 +1,9 @@
 package com.jvn.villagerretaliation.mount;
 
 import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
+import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.mojang.authlib.GameProfile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -12,6 +14,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -30,6 +33,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.common.util.FakePlayerFactory;
 
 @GameTestHolder
 @PrefixGameTestTemplate(false)
@@ -145,6 +149,42 @@ public final class VillagerMountGameTests {
                 "Mounted travel must survive an entity save/load cycle");
         helper.assertTrue(HiredVillagerContractService.toggleMountedTravel(level, restored),
                 "The second toggle must re-enable mounted travel");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void mountOwnershipDialogueOnlyAppearsForTheOtherHirersActiveRider(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        ServerPlayer owner = FakePlayerFactory.get(level, new GameProfile(UUID.randomUUID(), "MountOwner"));
+        Villager villager = helper.spawn(EntityType.VILLAGER, 1, 1, 1);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 1, 1, 2);
+        horse.setTamed(true);
+        horse.setOwnerUUID(owner.getUUID());
+        horse.setCustomName(Component.literal("Chestnut"));
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        VillagerMountAssignmentSavedData.get(level).assign(new VillagerMountAssignment(
+                villager.getUUID(),
+                horse.getUUID(),
+                BuiltInRegistries.ENTITY_TYPE.getKey(horse.getType()),
+                level.dimension().location(),
+                horse.blockPosition(),
+                level.dimension().location(),
+                horse.blockPosition(),
+                level.getServer().overworld().getGameTime()));
+        villager.startRiding(horse, true);
+
+        helper.assertTrue(VillagerMountOwnershipDialogue.isAvailable(level, owner, villager),
+                "The mount owner must be able to challenge another player's hired rider");
+        List<DialogueOptionDefinition> options =
+                VillagerMountOwnershipDialogue.addAvailableOption(level, owner, villager, List.of());
+        helper.assertTrue(options.size() == 1 && options.getFirst().label().equals("That's my Chestnut"),
+                "The challenge option must identify the player's mounted animal by name");
+        helper.assertFalse(VillagerMountOwnershipDialogue.isAvailable(level, hirer, villager),
+                "A villager must not challenge the player who hired them");
+        villager.stopRiding();
+        helper.assertFalse(VillagerMountOwnershipDialogue.isAvailable(level, owner, villager),
+                "The option must disappear when the villager is no longer on the mount");
         helper.succeed();
     }
 
