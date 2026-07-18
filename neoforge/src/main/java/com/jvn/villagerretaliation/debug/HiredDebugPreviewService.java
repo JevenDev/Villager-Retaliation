@@ -92,6 +92,13 @@ public final class HiredDebugPreviewService {
     public static DebugPreviewSummary setHitboxDebugPreviewEnabled(ServerPlayer player, boolean enabled) {
         UUID playerId = player.getUUID();
         DebugPreviewState state = ENABLED_PLAYERS.get(playerId);
+        if (enabled && !canUsePrivilegedDebugPreview(player)) {
+            if (state != null && state.hitboxDebugEnabled()) {
+                return applyState(player, state.withHitboxDebug(false).refreshNow(), DEFAULT_RADIUS);
+            }
+            return new DebugPreviewSummary(state != null && state.active(), 0, 0, 0,
+                    state == null ? DEFAULT_RADIUS : state.radius());
+        }
         if (enabled && !ServerboundRequestLimiter.tryAcquire(
                 player, HiredHitboxDebugPreviewPayload.TYPE.id(), 20L)) {
             return new DebugPreviewSummary(state != null && state.active(), 0, 0, 0,
@@ -114,6 +121,15 @@ public final class HiredDebugPreviewService {
         DebugPreviewState state = ENABLED_PLAYERS.get(player.getUUID());
         if (state == null || !(player.level() instanceof ServerLevel level)) {
             return;
+        }
+        if ((state.commandEnabled() || state.hitboxDebugEnabled()) && !canUsePrivilegedDebugPreview(player)) {
+            state = state.withCommand(false, DEFAULT_RADIUS).withHitboxDebug(false).refreshNow();
+            if (!state.active()) {
+                ENABLED_PLAYERS.remove(player.getUUID());
+                PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
+                return;
+            }
+            ENABLED_PLAYERS.put(player.getUUID(), state);
         }
         if (state.clipboardEnabled() && !hasHeldClipboard(player)) {
             state = state.withClipboard(false).refreshNow();
@@ -217,6 +233,10 @@ public final class HiredDebugPreviewService {
         ItemStack mainHand = player.getMainHandItem();
         return VillagerRetaliationItems.isClipboard(mainHand)
                 || VillagerRetaliationItems.isClipboard(player.getOffhandItem());
+    }
+
+    private static boolean canUsePrivilegedDebugPreview(ServerPlayer player) {
+        return player.createCommandSourceStack().hasPermission(2);
     }
 
     private static void addStorageEntries(
