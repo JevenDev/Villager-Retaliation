@@ -150,6 +150,20 @@ public final class VillagerProfileManager {
             builder.append("\"").append(skill.serializedName()).append("\":").append(progress);
         }
         builder.append("},");
+        builder.append("\"skillPracticeXp\":{");
+        boolean firstPracticeXp = true;
+        for (VillagerSkill skill : VillagerSkill.values()) {
+            double xp = profile.skillPracticeXp(skill);
+            if (xp <= 0.0D) {
+                continue;
+            }
+            if (!firstPracticeXp) {
+                builder.append(",");
+            }
+            firstPracticeXp = false;
+            builder.append("\"").append(skill.serializedName()).append("\":").append(xp);
+        }
+        builder.append("},");
         builder.append("\"tradeLevelSkillAdjustedXpProgress\":").append(profile.tradeLevelSkillAdjustedXpProgress()).append(",");
         builder.append("\"createdGameTime\":").append(profile.createdGameTime()).append(",");
         builder.append("\"updatedGameTime\":").append(profile.updatedGameTime());
