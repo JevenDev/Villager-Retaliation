@@ -10,6 +10,10 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.trading.ItemCost;
+import net.minecraft.world.item.trading.MerchantOffer;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -146,6 +150,30 @@ public final class VillagerSkillProgressionGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void tradeProgressMigratesAndOfferKeysAreStable(GameTestHelper helper) {
+        VillagerProfile profile = profileWithSkill(40);
+        profile.setRegularTradeSkillGrowthProgress(VillagerSkill.TRADING, 0.5D, 1L);
+        int original = profile.skills().get(VillagerSkill.TRADING);
+        if (!VillagerSkillGrowthService.migrateRegularTradeProgress(profile, 2L)
+                || profile.regularTradeSkillGrowthProgress(VillagerSkill.TRADING) != 0.0D
+                || profile.skillPracticeXp(VillagerSkill.TRADING) <= 0.0D
+                || profile.skills().get(VillagerSkill.TRADING) != original) {
+            helper.fail("Regular trade progress did not migrate into centralized XP");
+            return;
+        }
+
+        MerchantOffer breadA = offer(Items.BREAD);
+        MerchantOffer breadB = offer(Items.BREAD);
+        MerchantOffer apples = offer(Items.APPLE);
+        if (VillagerSkillGrowthService.offerRepetitionKey(breadA) != VillagerSkillGrowthService.offerRepetitionKey(breadB)
+                || VillagerSkillGrowthService.offerRepetitionKey(breadA) == VillagerSkillGrowthService.offerRepetitionKey(apples)) {
+            helper.fail("Trade offer repetition keys were not stable and offer-specific");
+            return;
+        }
+        helper.succeed();
+    }
+
     private static VillagerProfile profileWithSkill(int value) {
         return VillagerProfile.create(
                 UUID.randomUUID(), 1, 1L, VillagerSocialAttributes.DEFAULT, 1,
@@ -154,5 +182,14 @@ public final class VillagerSkillProgressionGameTests {
 
     private static VillagerSkillPractice practice(double units, long key) {
         return new VillagerSkillPractice(VillagerSkill.MINING, units, "test:mining", key);
+    }
+
+    private static MerchantOffer offer(net.minecraft.world.item.Item result) {
+        return new MerchantOffer(
+                new ItemCost(Items.EMERALD, 2),
+                new ItemStack(result),
+                12,
+                2,
+                0.05F);
     }
 }

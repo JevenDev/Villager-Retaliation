@@ -237,6 +237,7 @@ public final class VillagerReputationEvents {
                     level,
                     villager,
                     event.getEntity() instanceof ServerPlayer serverPlayer ? serverPlayer : null,
+                    event.getMerchantOffer(),
                     completedTradeCount);
             if (villager instanceof Villager villageResident
                     && event.getEntity() instanceof ServerPlayer serverPlayer
