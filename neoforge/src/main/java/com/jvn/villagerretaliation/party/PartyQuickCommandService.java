@@ -519,7 +519,7 @@ public final class PartyQuickCommandService {
         if (center == null) {
             return 0;
         }
-        List<BlockPos> containers = PartyContainerLootService.findContainersNear(player.serverLevel(), center);
+        List<BlockPos> containers = PartyContainerLootService.findContainersNear(player.serverLevel(), center, player);
         if (containers.isEmpty()) {
             return 0;
         }
@@ -534,7 +534,7 @@ public final class PartyQuickCommandService {
             VillagerRetaliationHandler.clearCustomTarget(villager);
             replaceMovementOrder(villager, RuntimeOrder.lootContainers(
                     center,
-                    player.getUUID(),
+                    player,
                     player.serverLevel().dimension().location(),
                     containers));
             affected++;
@@ -849,12 +849,18 @@ public final class PartyQuickCommandService {
             Villager villager,
             RuntimeOrder order,
             PartyRecord party) {
+        ServerPlayer onlineCommander = order.commanderId() == null
+                ? null
+                : level.getServer().getPlayerList().getPlayer(order.commanderId());
+        ServerPlayer commander = onlineCommander != null
+                ? onlineCommander
+                : order.commander() != null && !order.commander().isRemoved() ? order.commander() : null;
         if (order.activeBlockTarget() == null) {
             List<BlockPos> available = order.containerTargets().stream()
                     .filter(pos -> !order.visitedBlocks().contains(pos))
                     .filter(pos -> !isContainerClaimedByOther(
                             villager.getUUID(), level.dimension().location(), pos))
-                    .filter(pos -> PartyContainerLootService.isAvailable(level, pos))
+                    .filter(pos -> PartyContainerLootService.isAvailable(level, pos, commander))
                     .toList();
             HiredPathResult result = new HiredMoveToBlockFaceJob(level, villager, available, 16).search();
             if (result.target() == null) {
@@ -871,9 +877,6 @@ public final class PartyQuickCommandService {
         }
 
         BlockPos containerPos = order.activeBlockTarget();
-        ServerPlayer commander = order.commanderId() == null
-                ? null
-                : level.getServer().getPlayerList().getPlayer(order.commanderId());
         PartyContainerLootService.LootResult lootResult =
                 PartyContainerLootService.loot(level, villager, containerPos, commander);
         if (lootResult != PartyContainerLootService.LootResult.OUT_OF_REACH) {
@@ -1107,6 +1110,7 @@ public final class PartyQuickCommandService {
         private final RuntimeOrderType type;
         private final BlockPos targetPosition;
         private final UUID commanderId;
+        private final ServerPlayer commander;
         private final ResourceLocation targetDimension;
         private final List<BlockPos> containerTargets;
         private final Set<BlockPos> visitedBlocks = new HashSet<>();
@@ -1122,36 +1126,39 @@ public final class PartyQuickCommandService {
                 RuntimeOrderType type,
                 BlockPos targetPosition,
                 UUID commanderId,
+                ServerPlayer commander,
                 ResourceLocation targetDimension,
                 List<BlockPos> containerTargets) {
             this.type = type;
             this.targetPosition = targetPosition;
             this.commanderId = commanderId;
+            this.commander = commander;
             this.targetDimension = targetDimension;
             this.containerTargets = containerTargets == null ? List.of() : List.copyOf(containerTargets);
         }
 
         static RuntimeOrder moveTo(BlockPos target, ResourceLocation dimension) {
-            return new RuntimeOrder(RuntimeOrderType.MOVE_TO, target.immutable(), null, dimension, List.of());
+            return new RuntimeOrder(RuntimeOrderType.MOVE_TO, target.immutable(), null, null, dimension, List.of());
         }
 
         static RuntimeOrder regroup(UUID commanderId) {
-            return new RuntimeOrder(RuntimeOrderType.REGROUP, null, commanderId, null, List.of());
+            return new RuntimeOrder(RuntimeOrderType.REGROUP, null, commanderId, null, null, List.of());
         }
 
         static RuntimeOrder pickUpDrops(BlockPos center, ResourceLocation dimension) {
-            return new RuntimeOrder(RuntimeOrderType.PICK_UP_DROPS, center.immutable(), null, dimension, List.of());
+            return new RuntimeOrder(RuntimeOrderType.PICK_UP_DROPS, center.immutable(), null, null, dimension, List.of());
         }
 
         static RuntimeOrder lootContainers(
                 BlockPos center,
-                UUID commanderId,
+                ServerPlayer commander,
                 ResourceLocation dimension,
                 List<BlockPos> containers) {
             return new RuntimeOrder(
                     RuntimeOrderType.LOOT_CONTAINERS,
                     center.immutable(),
-                    commanderId,
+                    commander.getUUID(),
+                    commander,
                     dimension,
                     containers);
         }
@@ -1166,6 +1173,10 @@ public final class PartyQuickCommandService {
 
         UUID commanderId() {
             return this.commanderId;
+        }
+
+        ServerPlayer commander() {
+            return this.commander;
         }
 
         ResourceLocation targetDimension() {

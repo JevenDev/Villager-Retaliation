@@ -31,6 +31,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredCombatSkillPracticeService;
 import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
+import com.jvn.villagerretaliation.inventory.PartyContainerLootService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
@@ -647,6 +648,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (PartyContainerLootService.isCheckingAccess()) {
+            return;
+        }
         if (event.getEntity() instanceof ServerPlayer serverPlayer
                 && event.getLevel() instanceof ServerLevel level
                 && VillagerRetaliationItems.isClipboard(event.getItemStack())) {
