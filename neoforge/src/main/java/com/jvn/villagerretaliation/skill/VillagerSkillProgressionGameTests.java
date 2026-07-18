@@ -2,10 +2,14 @@ package com.jvn.villagerretaliation.skill;
 
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
+import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.block.Blocks;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -79,6 +83,64 @@ public final class VillagerSkillProgressionGameTests {
                 || Math.abs(loaded.skillPracticeXp(VillagerSkill.MINING) - repeated.skillPracticeXp(VillagerSkill.MINING)) > 0.0001D
                 || loaded.repetitionKeyCount(VillagerSkill.MINING, 9L) != repeated.repetitionKeyCount(VillagerSkill.MINING, 9L)) {
             helper.fail("Practice XP or daily state did not survive save/load");
+            return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void workResultsAndNormalizationRequireExplicitSuccessfulPractice(GameTestHelper helper) {
+        if (!WorkResult.idle("idle").practice().isEmpty()
+                || !WorkResult.progressed("moving").practice().isEmpty()
+                || !WorkResult.completed("done_without_work").practice().isEmpty()) {
+            helper.fail("Idle, movement, and no-practice completion results should be empty");
+            return;
+        }
+        WorkResult practiced = WorkResult.progressedWithPractice("worked", HiredWorkPractice.farming("plant"));
+        if (practiced.practice().isEmpty()) {
+            helper.fail("Explicit practice was discarded");
+            return;
+        }
+
+        BlockPos pos = helper.absolutePos(new BlockPos(1, 1, 1));
+        double oneBlock = HiredWorkPractice.mining(helper.getLevel(), pos, Blocks.STONE.defaultBlockState())
+                .stream().mapToDouble(VillagerSkillPractice::units).sum();
+        double twoBlocks = oneBlock * 2.0D;
+        double smallTree = HiredWorkPractice.logging(2).getFirst().units();
+        double largeTree = HiredWorkPractice.logging(12).getFirst().units();
+        double smallBuild = HiredWorkPractice.builderPlacement(Blocks.COBBLESTONE.defaultBlockState())
+                .stream().mapToDouble(VillagerSkillPractice::units).sum();
+        double largeBuild = smallBuild * 20.0D;
+        double smallDelivery = HiredWorkPractice.courier(1, 4.0D).stream().mapToDouble(VillagerSkillPractice::units).sum();
+        double largeDelivery = HiredWorkPractice.courier(32, 64.0D).stream().mapToDouble(VillagerSkillPractice::units).sum();
+        if (!(twoBlocks > oneBlock && largeTree > smallTree && largeBuild > smallBuild && largeDelivery > smallDelivery)) {
+            helper.fail("Successful larger work did not normalize above smaller work");
+            return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void legacyHiredProgressMigratesExactlyOnce(GameTestHelper helper) {
+        VillagerProfile profile = profileWithSkill(40);
+        CompoundTag workState = new CompoundTag();
+        CompoundTag legacy = new CompoundTag();
+        legacy.putDouble(VillagerSkill.MINING.serializedName(), 0.5D);
+        legacy.putDouble(VillagerSkill.FARMING.serializedName(), Double.NaN);
+        workState.put(HiredWorkSkillGrowthService.LEGACY_PROGRESS_TAG, legacy);
+
+        int originalSkill = profile.skills().get(VillagerSkill.MINING);
+        if (!HiredWorkSkillGrowthService.migrateLegacyProgress(profile, workState, 1L)
+                || workState.contains(HiredWorkSkillGrowthService.LEGACY_PROGRESS_TAG)
+                || profile.skills().get(VillagerSkill.MINING) != originalSkill
+                || profile.skillPracticeXp(VillagerSkill.MINING) <= 0.0D) {
+            helper.fail("Legacy fractional work progress was not migrated safely");
+            return;
+        }
+        double migratedXp = profile.skillPracticeXp(VillagerSkill.MINING);
+        if (HiredWorkSkillGrowthService.migrateLegacyProgress(profile, workState, 2L)
+                || profile.skillPracticeXp(VillagerSkill.MINING) != migratedXp) {
+            helper.fail("Legacy migration was not idempotent");
             return;
         }
         helper.succeed();

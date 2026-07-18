@@ -13,6 +13,8 @@ import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
 import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
+import com.jvn.villagerretaliation.skill.VillagerSkill;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.mixin.BrewingStandBlockEntityAccessor;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
@@ -874,8 +876,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
                     "count", Integer.toString(collected),
                     "item", route.output().getHoverName().getString());
             return completesOrder
-                    ? WorkResult.completed("interaction.work.brewing.collected_output", replacements)
-                    : WorkResult.skilledProgress("interaction.work.brewing.collected_output", replacements);
+                    ? WorkResult.completedWithPractice(
+                            "interaction.work.brewing.collected_output", replacements,
+                            HiredWorkPractice.batch(VillagerSkill.MEDICINE, "hired:brewing:batch", collected, route.output().getItem().hashCode()))
+                    : WorkResult.progressedWithPractice(
+                            "interaction.work.brewing.collected_output", replacements,
+                            HiredWorkPractice.batch(VillagerSkill.MEDICINE, "hired:brewing:batch", collected, route.output().getItem().hashCode()));
         }
 
         int currentStep = currentBrewingStep(level, blockEntity, route);

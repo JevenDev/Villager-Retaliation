@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -174,9 +175,10 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         rememberHandledAnimals(context, level.getGameTime(), pair.first(), pair.second());
         setTaskState(context, HiredWorkerTaskState.IDLE, pair.first().blockPosition());
         swingWorkTool(villager);
-        return WorkResult.completed(
+        return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.completed",
-                java.util.Map.of("target", HiredAnimalBreedingTargets.label(pair.typeId())));
+                java.util.Map.of("target", HiredAnimalBreedingTargets.label(pair.typeId())),
+                HiredWorkPractice.animal("breed", 1.2D, pair.typeId().hashCode()));
     }
 
     private WorkResult cullExcessAnimals(ServerLevel level, Villager villager, HiredWorkContext context) {
@@ -264,11 +266,12 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         damageTool(context, villager, weaponResult.tool());
         swingWorkTool(villager);
         setTaskState(context, HiredWorkerTaskState.IDLE, animal.blockPosition());
-        return WorkResult.completed(
+        return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.culled_animal",
                 java.util.Map.of(
                         "target", HiredAnimalBreedingTargets.label(target.typeId()),
-                        "cap", Integer.toString(cap)));
+                        "cap", Integer.toString(cap)),
+                HiredWorkPractice.animal("cull", 0.8D, target.typeId().hashCode()));
     }
 
     private CullTarget findCullTarget(ServerLevel level, Villager villager, HiredWorkContext context, int cap) {
@@ -572,9 +575,10 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         damageSupplyItem(context, shearsSlot, villager);
         swingWorkTool(villager);
         setTaskState(context, HiredWorkerTaskState.IDLE, sheep.blockPosition());
-        return WorkResult.completed(
+        return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.sheared_sheep",
-                java.util.Map.of("count", Integer.toString(wool.getCount())));
+                java.util.Map.of("count", Integer.toString(wool.getCount())),
+                HiredWorkPractice.animal("shear", 0.35D * wool.getCount(), typeId(sheep).hashCode()));
     }
 
     private WorkResult milkAnimal(ServerLevel level, Villager villager, HiredWorkContext context, Animal animal) {
@@ -600,9 +604,10 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         level.playSound(null, animal, milkingSound(animal), SoundSource.NEUTRAL, 1.0F, 1.0F);
         swingWorkTool(villager);
         setTaskState(context, HiredWorkerTaskState.IDLE, animal.blockPosition());
-        return WorkResult.completed(
+        return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.milked_animal",
-                java.util.Map.of("target", HiredAnimalBreedingTargets.label(typeId(animal))));
+                java.util.Map.of("target", HiredAnimalBreedingTargets.label(typeId(animal))),
+                HiredWorkPractice.animal("milk", 0.5D, typeId(animal).hashCode()));
     }
 
     private WorkResult collectGroundEggs(ServerLevel level, Villager villager, HiredWorkContext context) {

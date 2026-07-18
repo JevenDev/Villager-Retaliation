@@ -28,6 +28,7 @@ import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.List;
@@ -753,9 +754,10 @@ public final class LoggingWorker extends AbstractBlockWorker {
     private static WorkResult completedTreeWork(HiredWorkContext context, int logsCut) {
         context.state().remove(NEXT_WORK_GAME_TIME_TAG);
         LoggingWorkerState.wakeTreeSearch(context);
-        return WorkResult.skilledProgress(
+        return WorkResult.progressedWithPractice(
                 "interaction.work.logging.completed",
-                Map.of("logs", Integer.toString(logsCut)));
+                Map.of("logs", Integer.toString(logsCut)),
+                HiredWorkPractice.logging(logsCut));
     }
 
     private HiredPathTarget findTreeLog(ServerLevel level, Villager villager, HiredWorkContext context) {

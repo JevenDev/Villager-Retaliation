@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction.work;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -34,6 +35,7 @@ public final class NitwitWorker implements HiredRoleWorker {
         String line = REPORT_KEYS[Math.floorMod((int) (level.getGameTime() / 1200L + villager.getId()), REPORT_KEYS.length)];
         HiredWorkerBrain.setLastTargetScanResult(context, "nitwit_report_ready");
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.WORKING);
-        return WorkResult.completed(line);
+        return WorkResult.completedWithPractice(
+                line, HiredWorkPractice.nitwit(Math.floorDiv(level.getGameTime(), NOTICE_COOLDOWN_TICKS)));
     }
 }

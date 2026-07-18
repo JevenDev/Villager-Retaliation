@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.Map;
 import java.util.Set;
@@ -220,6 +221,9 @@ public final class CourierWorker implements HiredRoleWorker {
             return WorkResult.idle("interaction.work.courier.output_unreachable");
         }
 
+        int deliveredItems = context.inventory().collectOutputItems().stream()
+                .mapToInt(outputItem -> outputItem.stack().getCount())
+                .sum();
         while (context.inventory().hasOutputItems()
                 && context.inventory().depositOutputToAssignedStorageAt(output)) {
         }
@@ -234,7 +238,23 @@ public final class CourierWorker implements HiredRoleWorker {
         beginReturn(context, route);
         HiredWorkerBrain.clearFailure(context);
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, route.last());
-        return WorkResult.progressed("interaction.work.courier.delivered_items");
+        if (deliveredItems <= 0) {
+            return WorkResult.progressed("interaction.work.courier.delivered_items");
+        }
+        return WorkResult.progressedWithPractice(
+                "interaction.work.courier.delivered_items",
+                HiredWorkPractice.courier(deliveredItems, routeDistance(route)));
+    }
+
+    static double routeDistance(HiredRoute route) {
+        double distance = 0.0D;
+        for (int index = 1; index < route.nodes().size(); index++) {
+            distance += Math.sqrt(route.nodes().get(index - 1).distSqr(route.nodes().get(index)));
+        }
+        if (route.loop() && route.nodes().size() > 1) {
+            distance += Math.sqrt(route.nodes().getLast().distSqr(route.nodes().getFirst()));
+        }
+        return distance;
     }
 
     private static int collectInputsAtNode(

@@ -29,6 +29,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.interaction.HiredCombatSkillPracticeService;
 import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
@@ -230,6 +231,7 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        HiredCombatSkillPracticeService.onDamageDealt(event);
         if (event.getEntity() instanceof AbstractVillager villager) {
             VillagerEquipmentDurability.hurtArmor(villager, event.getSource(), event.getOriginalDamage());
         }
