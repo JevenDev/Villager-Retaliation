@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.List;
 import java.util.function.Predicate;
 import net.minecraft.network.chat.Component;
@@ -156,15 +157,18 @@ public final class VillagerInventoryAccess {
     }
 
     public static boolean maintainBorrowedCombatWeapon(Villager villager) {
-        return VillagerInventoryContainer.maintainBorrowedCombatWeapon(villager);
+        return !VillagerRecoveryService.isForcingRecovery(villager)
+                && VillagerInventoryContainer.maintainBorrowedCombatWeapon(villager);
     }
 
     public static boolean tryBorrowCombatWeapon(Villager villager) {
-        return VillagerInventoryContainer.tryBorrowCombatWeapon(villager);
+        return !VillagerRecoveryService.isForcingRecovery(villager)
+                && VillagerInventoryContainer.tryBorrowCombatWeapon(villager);
     }
 
     public static boolean tryBorrowCombatWeapon(Villager villager, Predicate<ItemStack> predicate) {
-        return VillagerInventoryContainer.tryBorrowCombatWeapon(villager, predicate);
+        return !VillagerRecoveryService.isForcingRecovery(villager)
+                && VillagerInventoryContainer.tryBorrowCombatWeapon(villager, predicate);
     }
 
     public static boolean hasCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
@@ -187,7 +191,9 @@ public final class VillagerInventoryAccess {
     }
 
     public static void returnBorrowedCombatWeapon(Villager villager) {
-        VillagerInventoryContainer.returnBorrowedCombatWeapon(villager);
+        if (!VillagerRecoveryService.isForcingRecovery(villager)) {
+            VillagerInventoryContainer.returnBorrowedCombatWeapon(villager);
+        }
     }
 
     public static void clearBorrowedCombatWeapon(Villager villager) {

@@ -10,14 +10,20 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 @GameTestHolder
 @PrefixGameTestTemplate(false)
@@ -50,6 +56,39 @@ public final class VillagerRangedCombatGameTests {
 
         target.discard();
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hardModeArmorerRaisesShieldBetweenPointBlankAttacks(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Difficulty previousDifficulty = level.getDifficulty();
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = spawnZombie(helper, new BlockPos(3, 2, 2));
+        try {
+            level.getServer().setDifficulty(Difficulty.HARD, true);
+            villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.ARMORER));
+            villager.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+            villager.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+            VillagerRetaliationHandler.forceAngerSilently(villager, target);
+
+            VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(villager));
+            VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(villager));
+
+            helper.assertTrue(villager.isUsingItem()
+                            && villager.getUsedItemHand() == InteractionHand.OFF_HAND
+                            && villager.getUseItem().is(Items.SHIELD),
+                    "hard-mode armorer should raise its shield during the cooldown after a point-blank attack");
+            helper.assertValueEqual(
+                    VillagerArmorerCombatTactics.movementSpeedFactor(villager),
+                    0.45D,
+                    "point-blank shield guard movement factor");
+        } finally {
+            VillagerArmorerCombatTactics.resetState(villager);
+            level.getServer().setDifficulty(previousDifficulty, true);
+            target.discard();
+            villager.discard();
+        }
         helper.succeed();
     }
 

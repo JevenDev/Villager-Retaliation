@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.inventory;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
+import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -87,7 +88,7 @@ public final class HiredJobInventory implements Container {
     }
 
     public static void maintainEquipmentSlots(Villager villager) {
-        if (villager == null) {
+        if (villager == null || VillagerRecoveryService.isForcingRecovery(villager)) {
             return;
         }
         CompoundTag tag = jobInventoryTag(villager);

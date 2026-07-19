@@ -174,8 +174,7 @@ public final class PartyQuickCommandService {
                 && VillagerRetaliationHandler.hasActiveRetaliationTarget(villager)) {
             return;
         }
-        if (order != null
-                && order.type().background()
+        if ((standingGuard || order != null && order.type().background())
                 && com.jvn.villagerretaliation.villager.VillagerRecoveryService.isForcingRecovery(villager)) {
             return;
         }
@@ -934,10 +933,11 @@ public final class PartyQuickCommandService {
             clearStandGuardAndSync(villager, party);
             return;
         }
-        if (villager.getOffhandItem().is(Items.SHIELD)) {
-            villager.startUsingItem(InteractionHand.OFF_HAND);
-        } else if (villager.getMainHandItem().is(Items.SHIELD)) {
-            villager.startUsingItem(InteractionHand.MAIN_HAND);
+        InteractionHand shieldHand = villager.getOffhandItem().is(Items.SHIELD)
+                ? InteractionHand.OFF_HAND
+                : villager.getMainHandItem().is(Items.SHIELD) ? InteractionHand.MAIN_HAND : null;
+        if (shieldHand != null && !villager.isUsingItem()) {
+            villager.startUsingItem(shieldHand);
         }
     }
 
@@ -1003,8 +1003,7 @@ public final class PartyQuickCommandService {
     private static void clearStandGuard(Villager villager) {
         if (STAND_GUARD_VILLAGERS.remove(villager.getUUID())
                 && villager.isUsingItem()
-                && (villager.getUsedItemHand() == InteractionHand.OFF_HAND
-                || villager.getUsedItemHand() == InteractionHand.MAIN_HAND)) {
+                && villager.getUseItem().is(Items.SHIELD)) {
             villager.stopUsingItem();
         }
     }
