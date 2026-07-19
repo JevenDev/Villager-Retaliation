@@ -99,6 +99,7 @@ import net.minecraft.world.entity.raid.Raider;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -445,8 +446,9 @@ public final class VillagerRetaliationEvents {
             return;
         }
 
-        if (event.getTarget() instanceof Villager
-                && !VillagerInteractionService.hasEmptyHandForVillagerInteraction(player)) {
+        if (event.getTarget() instanceof Villager villager
+                && !VillagerInteractionService.hasEmptyHandForVillagerInteraction(player)
+                && !isPacificationPaymentInteraction(villager, player, event.getHand())) {
             event.setCanceled(true);
             event.setCancellationResult(InteractionResult.FAIL);
             return;
@@ -617,10 +619,26 @@ public final class VillagerRetaliationEvents {
                 : player.getOffhandItem();
     }
 
+    private static boolean isPacificationPaymentInteraction(
+            Villager villager,
+            Player player,
+            InteractionHand hand) {
+        ItemStack interactionStack = player.getItemInHand(hand);
+        if (!villager.level().isClientSide()) {
+            return VillagerRetaliationHandler.isHostileTowards(villager, player)
+                    && VillagerPacifyPaymentResources.isEligiblePayment(villager, interactionStack);
+        }
+
+        // Dedicated clients cannot read server datapack payment rules. Allow the built-in emerald
+        // payment through locally; the server still validates it against the active rules.
+        return interactionStack.is(Items.EMERALD);
+    }
+
     public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
-        if (event.getTarget() instanceof Villager
+        if (event.getTarget() instanceof Villager villager
                 && event.getEntity() instanceof Player player
-                && !VillagerInteractionService.hasEmptyHandForVillagerInteraction(player)) {
+                && !VillagerInteractionService.hasEmptyHandForVillagerInteraction(player)
+                && !isPacificationPaymentInteraction(villager, player, event.getHand())) {
             event.setCancellationResult(InteractionResult.FAIL);
             event.setCanceled(true);
             return;
