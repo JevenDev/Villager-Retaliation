@@ -320,7 +320,11 @@ final class VillagerInventoryContainer implements Container {
         // A personal-inventory menu owns a mutable view of these same slots. Moving a
         // weapon behind that menu's back lets a same-tick click write the old stack
         // back to storage while the borrowed copy remains equipped.
-        if (hasOpenInventory(villager)) {
+        // Job/party equipment is likewise authoritative. Borrowing a personal weapon
+        // over it leaves two owners for the live main hand and can cause the job copy
+        // to be returned to personal storage when the borrowed state is released.
+        if (hasOpenInventory(villager)
+                || HiredJobInventory.hasJobEquipmentForSlot(villager, EquipmentSlot.MAINHAND)) {
             return false;
         }
         if (hasBorrowedCombatWeapon(villager)) {
