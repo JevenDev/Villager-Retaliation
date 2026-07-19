@@ -171,7 +171,7 @@ public final class HiredDebugPreviewService {
     private static DebugPreviewSummary refresh(ServerPlayer player, DebugPreviewState state, long gameTime) {
         ServerLevel level = player.serverLevel();
         List<Villager> villagers = nearbyHiredVillagers(level, player, state.radius());
-        List<HiredDebugPreviewSyncPayload.WorkAreaEntry> workAreas = new ArrayList<>();
+        List<HiredDebugPreviewSyncPayload.WorkAreaEntry> workAreaAssignments = new ArrayList<>();
         List<NamedStorageAssignments> storageAssignments = new ArrayList<>();
         List<ClipboardRouteEntry> routes = new ArrayList<>();
         ResourceLocation currentDimension = level.dimension().location();
@@ -179,8 +179,8 @@ public final class HiredDebugPreviewService {
             String ownerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
             HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
             HiredWorkArea area = HiredVillagerWorkService.workArea(level, villager);
-            if (area.usable() && workAreas.size() < HiredDebugPreviewSyncPayload.MAX_WORK_AREAS) {
-                workAreas.add(new HiredDebugPreviewSyncPayload.WorkAreaEntry(
+            if (area.usable()) {
+                workAreaAssignments.add(new HiredDebugPreviewSyncPayload.WorkAreaEntry(
                         currentDimension,
                         area.min(),
                         area.max(),
@@ -202,6 +202,7 @@ public final class HiredDebugPreviewService {
                     ownerName,
                     AssignedStorageService.allAssignedStorage(level, villager)));
         }
+        List<HiredDebugPreviewSyncPayload.WorkAreaEntry> workAreas = workAreaEntries(workAreaAssignments);
         List<HiredDebugPreviewSyncPayload.StorageEntry> storage = storageEntries(storageAssignments);
         PacketDistributor.sendToPlayer(player, new HiredDebugPreviewSyncPayload(true, workAreas, storage, routes, VISIBLE_TICKS));
         ENABLED_PLAYERS.put(player.getUUID(), new DebugPreviewState(
@@ -259,6 +260,36 @@ public final class HiredDebugPreviewService {
                         storagePurposeLabel(record.purpose())));
             }
         }
+    }
+
+    static List<HiredDebugPreviewSyncPayload.WorkAreaEntry> workAreaEntries(
+            List<HiredDebugPreviewSyncPayload.WorkAreaEntry> assignments) {
+        Map<WorkAreaDebugKey, WorkAreaDebugEntry> entries = new LinkedHashMap<>();
+        if (assignments != null) {
+            for (HiredDebugPreviewSyncPayload.WorkAreaEntry assignment : assignments) {
+                if (assignment == null) {
+                    continue;
+                }
+                WorkAreaDebugKey key = new WorkAreaDebugKey(
+                        assignment.dimension(),
+                        assignment.min(),
+                        assignment.max(),
+                        assignment.center(),
+                        assignment.showCenter(),
+                        assignment.firstCorner(),
+                        assignment.showFirstCorner(),
+                        assignment.secondCorner(),
+                        assignment.showSecondCorner(),
+                        assignment.jobName());
+                WorkAreaDebugEntry existing = entries.get(key);
+                if (existing != null) {
+                    existing.addOwner(assignment.ownerName());
+                } else if (entries.size() < HiredDebugPreviewSyncPayload.MAX_WORK_AREAS) {
+                    entries.put(key, new WorkAreaDebugEntry(assignment));
+                }
+            }
+        }
+        return entries.values().stream().map(WorkAreaDebugEntry::toPayload).toList();
     }
 
     static List<HiredDebugPreviewSyncPayload.StorageEntry> storageEntries(
@@ -329,10 +360,54 @@ public final class HiredDebugPreviewService {
     private record StorageDebugKey(ResourceLocation dimension, BlockPos pos, String purpose) {
     }
 
+    private record WorkAreaDebugKey(
+            ResourceLocation dimension,
+            BlockPos min,
+            BlockPos max,
+            BlockPos center,
+            boolean showCenter,
+            BlockPos firstCorner,
+            boolean showFirstCorner,
+            BlockPos secondCorner,
+            boolean showSecondCorner,
+            String jobName) {
+    }
+
     record NamedStorageAssignments(String ownerName, List<AssignedContainerRecord> records) {
         NamedStorageAssignments {
             ownerName = ownerName == null ? "" : ownerName;
             records = records == null ? List.of() : List.copyOf(records);
+        }
+    }
+
+    private static final class WorkAreaDebugEntry {
+        private final HiredDebugPreviewSyncPayload.WorkAreaEntry assignment;
+        private final Set<String> ownerNames = new LinkedHashSet<>();
+
+        private WorkAreaDebugEntry(HiredDebugPreviewSyncPayload.WorkAreaEntry assignment) {
+            this.assignment = assignment;
+            addOwner(assignment.ownerName());
+        }
+
+        private void addOwner(String ownerName) {
+            if (ownerName != null && !ownerName.isBlank()) {
+                this.ownerNames.add(ownerName);
+            }
+        }
+
+        private HiredDebugPreviewSyncPayload.WorkAreaEntry toPayload() {
+            return new HiredDebugPreviewSyncPayload.WorkAreaEntry(
+                    this.assignment.dimension(),
+                    this.assignment.min(),
+                    this.assignment.max(),
+                    this.assignment.center(),
+                    this.assignment.showCenter(),
+                    this.assignment.firstCorner(),
+                    this.assignment.showFirstCorner(),
+                    this.assignment.secondCorner(),
+                    this.assignment.showSecondCorner(),
+                    String.join(", ", this.ownerNames),
+                    this.assignment.jobName());
         }
     }
 
