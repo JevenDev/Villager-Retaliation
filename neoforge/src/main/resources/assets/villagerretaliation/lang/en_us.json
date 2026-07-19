@@ -1694,7 +1694,7 @@
   "text.config.villagerretaliation.option.playerRaids.minimumGolems": "Minimum Golems",
   "text.config.villagerretaliation.option.playerRaids.maximumGolems": "Maximum Golems",
   "text.config.villagerretaliation.option.playerRaids.raidersPerBonusGolem": "Raiders Per Bonus Golem",
-  "villagerretaliation.mount.unavailable": "Mount support requires Ride On API v2.",
+  "villagerretaliation.mount.unavailable": "Mount support is unavailable.",
   "villagerretaliation.mount.unauthorized": "Only the party leader or this worker's hirer can manage the mount.",
   "villagerretaliation.mount.already_assigned": "This villager already has an assigned mount.",
   "villagerretaliation.mount.mount_already_assigned": "That mount has no unassigned villager seat.",

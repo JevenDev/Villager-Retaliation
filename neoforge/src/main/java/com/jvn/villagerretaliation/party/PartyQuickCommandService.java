@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredRouteNavigator;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.inventory.PartyContainerLootService;
 import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
+import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
@@ -696,7 +697,7 @@ public final class PartyQuickCommandService {
                 level,
                 villager,
                 target,
-                speed,
+                VillagerMountSpeedPolicy.toward(villager, target, speed),
                 arrivalDistanceSqr);
         if (movement == HiredRouteNavigator.NodeMovement.FAILED) {
             order.setNextPathRefreshGameTime(gameTime + PATH_REFRESH_TICKS);

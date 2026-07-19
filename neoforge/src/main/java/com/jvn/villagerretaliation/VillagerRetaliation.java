@@ -72,7 +72,6 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onLivingDamagePre)
                 .listener(VillagerRetaliationEvents::onLivingDamageFinalPre)
                 .listener(VillagerRetaliationEvents::onLivingDamage)
-                .listener(VillagerRetaliationEvents::onProjectileImpact)
                 .listener(VillagerReputationEvents::onLivingDamage)
                 .listener(VillagerDisciplineService::onLivingDamage)
                 .listener(VillagerRetaliationEvents::onLivingDrops)

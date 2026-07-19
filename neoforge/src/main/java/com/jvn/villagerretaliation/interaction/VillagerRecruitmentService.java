@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
@@ -22,9 +23,11 @@ import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -34,10 +37,12 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.vehicle.Boat;
+import net.minecraft.world.level.pathfinder.Path;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerRecruitmentService {
@@ -64,6 +69,8 @@ public final class VillagerRecruitmentService {
     private static final double FOLLOW_FORMATION_BACK_DISTANCE = 2.75D;
     private static final double FOLLOW_FORMATION_LATERAL_SPACING = 2.0D;
     private static final double FOLLOW_FORMATION_ROW_SPACING = 1.75D;
+    private static final float FOLLOW_FORMATION_MAX_TURN_DEGREES_PER_TICK = 8.0F;
+    private static final double MOUNTED_FORMATION_SPACING_SCALE = 1.35D;
     private static final double STAY_RETURN_START_DISTANCE_SQR = 2.25D * 2.25D;
     private static final double STAY_RETURN_STOP_DISTANCE_SQR = 1.25D * 1.25D;
     private static final double STAY_HERE_SPEED = 0.52D;
@@ -71,6 +78,9 @@ public final class VillagerRecruitmentService {
     private static final int FOLLOW_PATH_RECALCULATION_MIN_TICKS = 4;
     private static final int FOLLOW_PATH_RECALCULATION_RANDOM_TICKS = 7;
     private static final double FOLLOW_TARGET_MOVED_DISTANCE_SQR = 1.0D;
+    private static final int MOUNTED_FOLLOW_PATH_RECALCULATION_MIN_TICKS = 6;
+    private static final int MOUNTED_FOLLOW_PATH_RECALCULATION_RANDOM_TICKS = 5;
+    private static final double MOUNTED_FOLLOW_TARGET_MOVED_DISTANCE_SQR = 1.5D * 1.5D;
     private static final long FOLLOW_TRAVEL_MEMORY_INTERVAL_TICKS = 20L;
     private static final long FOLLOW_REPUTATION_CHECK_INTERVAL_TICKS = 40L;
     private static final long LEFT_BEHIND_PROXIMITY_SCAN_INTERVAL_TICKS = 20L;
@@ -506,6 +516,12 @@ public final class VillagerRecruitmentService {
     }
 
     private static void syncVehicleWithPlayer(Villager villager, ServerPlayer player) {
+        // An assigned horse is the follower's own vehicle, not a seat it should mirror from the
+        // leader. Dismounting here handed the refreshed follow path to the villager's on-foot
+        // navigator; the mount coordinator then remounted it after the horse had missed the path.
+        if (isMountedDriver(villager)) {
+            return;
+        }
         Entity playerVehicle = player.getVehicle();
         if (playerVehicle == null) {
             dismountFollower(villager);
@@ -579,10 +595,7 @@ public final class VillagerRecruitmentService {
             }
             followers.sort(Comparator.comparing(Villager::getUUID));
 
-            Map<UUID, FollowFormationSlot> slots = new HashMap<>();
-            for (int index = 0; index < followers.size(); index++) {
-                slots.put(followers.get(index).getUUID(), formationSlot(index, followers.size()));
-            }
+            Map<UUID, FollowFormationSlot> slots = stableFormationSlots(state, followers);
             double forwardX;
             double forwardZ;
             double movementX = player.getDeltaMovement().x;
@@ -600,18 +613,83 @@ public final class VillagerRecruitmentService {
                 forwardX = -Mth.sin((float) yawRadians);
                 forwardZ = Mth.cos((float) yawRadians);
             }
+            if (state != null) {
+                float currentYaw = (float) (Mth.atan2(-state.forwardX(), state.forwardZ()) * Mth.RAD_TO_DEG);
+                float desiredYaw = (float) (Mth.atan2(-forwardX, forwardZ) * Mth.RAD_TO_DEG);
+                float smoothedYaw = Mth.approachDegrees(
+                        currentYaw,
+                        desiredYaw,
+                        FOLLOW_FORMATION_MAX_TURN_DEGREES_PER_TICK);
+                forwardX = -Mth.sin(smoothedYaw * Mth.DEG_TO_RAD);
+                forwardZ = Mth.cos(smoothedYaw * Mth.DEG_TO_RAD);
+            }
             state = new FollowFormationState(gameTime, slots, forwardX, forwardZ);
             FOLLOW_FORMATION_STATES.put(player.getUUID(), state);
         }
 
         FollowFormationSlot slot = state.slots().getOrDefault(villager.getUUID(), formationSlot(0, 1));
+        double spacingScale = isMountedDriver(villager) ? MOUNTED_FORMATION_SPACING_SCALE : 1.0D;
+        double lateral = slot.lateral() * spacingScale;
+        double back = FOLLOW_FORMATION_BACK_DISTANCE
+                + (slot.back() - FOLLOW_FORMATION_BACK_DISTANCE) * spacingScale;
         double forwardX = state.forwardX();
         double forwardZ = state.forwardZ();
         double rightX = forwardZ;
         double rightZ = -forwardX;
-        double x = pathAnchor.getX() - forwardX * slot.back() + rightX * slot.lateral();
-        double z = pathAnchor.getZ() - forwardZ * slot.back() + rightZ * slot.lateral();
+        double x = pathAnchor.getX() - forwardX * back + rightX * lateral;
+        double z = pathAnchor.getZ() - forwardZ * back + rightZ * lateral;
         return new FollowTarget(pathAnchor, x, pathAnchor.getY(), z);
+    }
+
+    private static Map<UUID, FollowFormationSlot> stableFormationSlots(
+            FollowFormationState previous,
+            List<Villager> followers) {
+        Map<UUID, FollowFormationSlot> slots = new HashMap<>();
+        Set<UUID> followerIds = new HashSet<>();
+        for (Villager follower : followers) {
+            followerIds.add(follower.getUUID());
+        }
+        if (previous != null) {
+            previous.slots().forEach((id, slot) -> {
+                if (followerIds.contains(id)) {
+                    slots.put(id, slot);
+                }
+            });
+        }
+        if (slots.isEmpty()) {
+            for (int index = 0; index < followers.size(); index++) {
+                slots.put(followers.get(index).getUUID(), formationSlot(index, followers.size()));
+            }
+            return slots;
+        }
+
+        Set<FollowFormationSlot> occupied = new HashSet<>(slots.values());
+        int candidateIndex = 0;
+        for (Villager follower : followers) {
+            if (slots.containsKey(follower.getUUID())) {
+                continue;
+            }
+            FollowFormationSlot candidate;
+            do {
+                candidate = stableFormationSlot(candidateIndex++);
+            } while (occupied.contains(candidate));
+            slots.put(follower.getUUID(), candidate);
+            occupied.add(candidate);
+        }
+        return slots;
+    }
+
+    private static FollowFormationSlot stableFormationSlot(int index) {
+        int row = index / FOLLOW_FORMATION_COLUMNS;
+        int column = index % FOLLOW_FORMATION_COLUMNS;
+        double lateral = switch (column) {
+            case 1 -> -FOLLOW_FORMATION_LATERAL_SPACING;
+            case 2 -> FOLLOW_FORMATION_LATERAL_SPACING;
+            default -> 0.0D;
+        };
+        return new FollowFormationSlot(
+                lateral,
+                FOLLOW_FORMATION_BACK_DISTANCE + row * FOLLOW_FORMATION_ROW_SPACING);
     }
 
     private static FollowFormationSlot formationSlot(int index, int followerCount) {
@@ -632,14 +710,21 @@ public final class VillagerRecruitmentService {
         UUID villagerId = villager.getUUID();
         long gameTime = level.getGameTime();
         FollowPathState state = FOLLOW_PATH_STATES.get(villagerId);
+        boolean mountedDriver = isMountedDriver(villager);
         boolean targetChanged = state == null || !state.targetId().equals(followTarget.pathAnchor().getUUID());
         boolean targetMoved = state == null
-                || distanceToSqr(followTarget, state.targetX(), state.targetY(), state.targetZ()) >= FOLLOW_TARGET_MOVED_DISTANCE_SQR;
+                || distanceToSqr(followTarget, state.targetX(), state.targetY(), state.targetZ())
+                >= (mountedDriver ? MOUNTED_FOLLOW_TARGET_MOVED_DISTANCE_SQR : FOLLOW_TARGET_MOVED_DISTANCE_SQR);
+        boolean navigationDone = villager.getNavigation().isDone();
+        boolean cooldownElapsed = state == null || gameTime >= state.nextRecalculationGameTime();
         boolean shouldRecalculate = targetChanged
-                || targetMoved
-                || villager.getNavigation().isDone()
-                || gameTime >= state.nextRecalculationGameTime()
-                || villager.getRandom().nextFloat() < 0.05F;
+                || navigationDone
+                || (mountedDriver
+                        // Retain a horse's current path until its formation destination has
+                        // meaningfully changed. Replacing a valid path every couple of ticks
+                        // repeatedly sends MoveControl back toward a new first node.
+                        ? targetMoved && cooldownElapsed
+                        : targetMoved || cooldownElapsed || villager.getRandom().nextFloat() < 0.05F);
 
         if (!shouldRecalculate) {
             return true;
@@ -649,8 +734,11 @@ public final class VillagerRecruitmentService {
         VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
 
         int failedPathFindingPenalty = targetChanged || state == null ? 0 : state.failedPathFindingPenalty();
-        long recalculationDelay = FOLLOW_PATH_RECALCULATION_MIN_TICKS
-                + villager.getRandom().nextInt(FOLLOW_PATH_RECALCULATION_RANDOM_TICKS);
+        long recalculationDelay = mountedDriver
+                ? MOUNTED_FOLLOW_PATH_RECALCULATION_MIN_TICKS
+                        + villager.getRandom().nextInt(MOUNTED_FOLLOW_PATH_RECALCULATION_RANDOM_TICKS)
+                : FOLLOW_PATH_RECALCULATION_MIN_TICKS
+                        + villager.getRandom().nextInt(FOLLOW_PATH_RECALCULATION_RANDOM_TICKS);
         double distanceSqr = villager.distanceToSqr(followTarget.x(), followTarget.y(), followTarget.z());
         if (distanceSqr > 1024.0D) {
             recalculationDelay += 10L;
@@ -658,15 +746,25 @@ public final class VillagerRecruitmentService {
             recalculationDelay += 5L;
         }
 
-        boolean moved = villager.getNavigation().moveTo(followTarget.x(), followTarget.y(), followTarget.z(), speed);
-        if (!moved) {
-            moved = villager.getNavigation().moveTo(followTarget.pathAnchor(), speed);
+        double navigationSpeed = mountedDriver
+                ? VillagerMountSpeedPolicy.toward(villager, followTarget.pathAnchor(), speed)
+                : speed;
+        boolean moved = mountedDriver
+                ? moveMountedFollower(villager, followTarget, navigationSpeed)
+                : villager.getNavigation().moveTo(
+                        followTarget.x(), followTarget.y(), followTarget.z(), navigationSpeed);
+        if (!moved && !mountedDriver) {
+            moved = villager.getNavigation().moveTo(followTarget.pathAnchor(), navigationSpeed);
         }
         if (moved) {
             failedPathFindingPenalty = 0;
         } else {
-            failedPathFindingPenalty += 15;
-            recalculationDelay += failedPathFindingPenalty;
+            // A moving horse can briefly reject a replacement route. Keep mounted retries
+            // responsive instead of pinning the rider to its previous command position.
+            if (!mountedDriver) {
+                failedPathFindingPenalty += 15;
+                recalculationDelay += failedPathFindingPenalty;
+            }
         }
 
         FOLLOW_PATH_STATES.put(villagerId, new FollowPathState(
@@ -678,6 +776,25 @@ public final class VillagerRecruitmentService {
                 failedPathFindingPenalty
         ));
         return moved;
+    }
+
+    private static boolean moveMountedFollower(
+            Villager villager,
+            FollowTarget followTarget,
+            double navigationSpeed) {
+        if (!(villager.getControlledVehicle() instanceof AbstractHorse horse)) {
+            return false;
+        }
+        BlockPos target = BlockPos.containing(followTarget.x(), followTarget.y(), followTarget.z());
+        Path path = horse.getNavigation().createPath(target, 0);
+        if (path == null || !path.canReach()) {
+            path = horse.getNavigation().createPath(followTarget.pathAnchor(), 0);
+        }
+        return path != null && horse.getNavigation().moveTo(path, navigationSpeed);
+    }
+
+    private static boolean isMountedDriver(Villager villager) {
+        return villager != null && villager.getControlledVehicle() instanceof AbstractHorse;
     }
 
     private static double distanceToSqr(FollowTarget target, double x, double y, double z) {

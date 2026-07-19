@@ -44,7 +44,6 @@ import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
-import com.jvn.villagerretaliation.mount.VillagerMountedCombatPolicy;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
@@ -106,7 +105,6 @@ import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeModificationEvent;
-import net.neoforged.neoforge.event.entity.ProjectileImpactEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
@@ -257,11 +255,6 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
-        if (VillagerMountedCombatPolicy.shouldCancelDamage(event.getEntity(), event.getSource())) {
-            event.setCanceled(true);
-            event.setAmount(0.0F);
-            return;
-        }
         if (EncounterService.shouldCancelFriendlyDamage(event.getEntity(), event.getSource().getEntity(), event.getSource().getDirectEntity())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -273,10 +266,6 @@ public final class VillagerRetaliationEvents {
             return;
         }
         VillagerRetaliationHandler.onLivingDamagePre(event);
-    }
-
-    public static void onProjectileImpact(ProjectileImpactEvent event) {
-        VillagerMountedCombatPolicy.onProjectileImpact(event);
     }
 
     public static void onLivingDamageFinalPre(LivingDamageEvent.Pre event) {

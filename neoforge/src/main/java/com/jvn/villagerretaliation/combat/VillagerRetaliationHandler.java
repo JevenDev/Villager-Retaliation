@@ -19,6 +19,7 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
 import com.jvn.villagerretaliation.party.PartyAttackMode;
 import com.jvn.villagerretaliation.party.PartyCombatMode;
 import com.jvn.villagerretaliation.party.PartyRecord;
@@ -480,6 +481,7 @@ public final class VillagerRetaliationHandler {
 
         double movementSpeed = ACTOR_POLICY.movementSpeed(villager)
                 * VillagerArmorerCombatTactics.movementSpeedFactor(villager);
+        movementSpeed = VillagerMountSpeedPolicy.toward(villager, target, movementSpeed);
         boolean canUseMeleeCombat = VillagerRetaliationRetaliationUtil.canUseMeleeCombatMode(villager);
         boolean canMeleeHit = canUseMeleeCombat && VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
         if (canMeleeHit) {
@@ -931,7 +933,9 @@ public final class VillagerRetaliationHandler {
         if (VillagerCombatLoadoutService.ensurePreferredWeapon(villager)) {
             RETALIATION.discardTemporaryWeapon(villager);
             ItemStack equippedWeapon = VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager);
-            if (!ItemStack.isSameItemSameComponents(weaponBeforePreference, equippedWeapon)) {
+            // Loading a crossbow mutates its components. Only seed a new attack cycle when
+            // the equipped weapon item actually changes, not when the current weapon loads.
+            if (!ItemStack.isSameItem(weaponBeforePreference, equippedWeapon)) {
                 VillagerRangedCombatHelper.seedInitialAttackDelay(villager, equippedWeapon);
             }
             return true;

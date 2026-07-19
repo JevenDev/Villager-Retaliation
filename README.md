@@ -98,11 +98,13 @@ The interaction screen's Home topic lets the player ask a villager where they ca
 
 ### Assigned Mounts
 
-With a compatible Ride On API v2 installation, party leaders and active hirers can assign one adult horse, donkey, mule, llama, or camel to each eligible adult villager. Choose **Assign Mount** in the villager's party or hired-worker screen, then select the mount within 30 seconds. An eligible leashed mount can also be assigned from the villager interaction, returning the lead.
+Party leaders and active hirers can assign one adult horse, donkey, mule, llama, or camel to each eligible adult villager. Choose **Assign Mount** in the villager's party or hired-worker screen, then select the mount within 30 seconds. An eligible leashed mount can also be assigned from the villager interaction, returning the lead. No companion mount mod is required.
 
 Hired workers can toggle **Mounted Travel** for long work journeys. Parties have a shared mount mode plus **Ride Mount** and **Dismount Mount** quick commands. Villagers dismount near precise work, keep trying when an assigned mount is temporarily unloaded or occupied, and park idle mounts near their last anchor while yielding to players, leashes, and panic behavior.
 
-When a villager rides behind someone, direct, projectile, splash, and attributed damage from the rear villager is blocked for allied front riders, and canceled projectiles continue flying. This protection covers villagers, party allies, vanilla teammates, same-village allies, and the villager's active hirer. It does not grant general front-seat immunity: an exact retaliation target, an authorized party target, or an opposing Player Raid participant can still be attacked.
+Without a companion mod, mounted villagers use Minecraft's native mob-jockey behavior: one villager controls the mount and delegates movement to it. When Ride On 1.0.0-pre-release.3 or newer is installed, an assigned mount supports two villagers. The front rider controls the mount while the rear rider shares the journey without competing for navigation or rotation.
+
+An authorized party leader or hirer can take the front seat of a saddled assigned mount. If both seats are occupied, Ride On moves the current villager driver to the rear and temporarily dismounts the former rear rider. After the player leaves, the villagers promote and remount automatically. Villager Retaliation remains responsible for assignment and access rules; Ride On remains responsible for seats, offsets, and passenger transitions.
 
 ### Dialogue and Interaction
 
@@ -323,7 +325,7 @@ Villager Retaliation! is designed to work with vanilla villager systems rather t
 - Uses vanilla gossip integration where enabled
 - Uses NeoForge item tags for weapon detection where possible
 - Does not replace the villager entity type
-- Optionally integrates with Ride On API v2 for assigned mounts and two-seat travel; without a compatible Ride On version, mount features remain dormant and Villager Retaliation runs normally
+- Uses Minecraft's native mob-jockey control path for assigned mounts with no companion mod required, plus optional Ride On dual-rider integration
 
 Compatibility may vary with mods that heavily replace villager AI, trading, combat, or entity classes.
 

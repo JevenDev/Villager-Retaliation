@@ -128,6 +128,20 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
             this.leftLeg.xRot = -1.4137167F;
             this.leftLeg.yRot = (-(float) Math.PI / 10F);
             this.leftLeg.zRot = -0.07853982F;
+            VillagerArmPose pose = this.poseProvider == null
+                    ? VillagerArmPose.NONE
+                    : this.poseProvider.getArmPose(villager, this.attackTime);
+            if (pose != VillagerArmPose.NONE) {
+                VillagerPoseAnimator.applyPose(
+                        pose,
+                        villager,
+                        this.body,
+                        this.head,
+                        this.rightArm,
+                        this.leftArm,
+                        this.attackTime,
+                        ageInTicks);
+            }
             this.syncRobe(villager);
             this.dialogueMouthParts.apply(villager, ageInTicks);
             return;
