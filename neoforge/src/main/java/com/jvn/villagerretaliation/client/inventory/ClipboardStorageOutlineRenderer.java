@@ -18,7 +18,9 @@ import com.jvn.villagerretaliation.network.HiredHitboxDebugPreviewPayload;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -59,6 +61,7 @@ public final class ClipboardStorageOutlineRenderer {
     private static final float DEBUG_ROUTE_NODE_HEIGHT = 0.025F;
     private static final float DEBUG_ROUTE_NODE_ALPHA = 0.5F;
     private static final int DEBUG_ROUTE_LABEL_COLOR = 0xFFFFFFFF;
+    private static final float DEBUG_LABEL_SCALE = 0.025F;
     private static final double DEBUG_ROUTE_LABEL_HEIGHT = 1.36D;
     private static final double ROUTE_GUIDE_HEIGHT_ABOVE_SURFACE = 0.55D;
     private static final int ROUTE_GUIDE_SURFACE_SEARCH_UP = 3;
@@ -495,6 +498,8 @@ public final class ClipboardStorageOutlineRenderer {
             ));
         }
         addRouteOwnerLabels(minecraft, currentDimension, routes, labels);
+        Map<BlockPos, Integer> storageLabelCounts = new HashMap<>();
+        double storageLabelStackStep = (minecraft.font.lineHeight + 1.0D) * 2.0D * DEBUG_LABEL_SCALE;
         for (OutlinedStoragePosition position : storagePositions) {
             if (!position.dimension().equals(currentDimension)
                     || position.payment() && !includePaymentStorage
@@ -503,8 +508,12 @@ public final class ClipboardStorageOutlineRenderer {
                     || !minecraft.level.hasChunkAt(position.pos())) {
                 continue;
             }
+            int stackIndex = storageLabelCounts.merge(position.pos(), 1, Integer::sum) - 1;
             labels.add(new DebugLabelPosition(
-                    new Vec3(position.pos().getX() + 0.5D, position.pos().getY() + 1.25D, position.pos().getZ() + 0.5D),
+                    new Vec3(
+                            position.pos().getX() + 0.5D,
+                            position.pos().getY() + 1.25D + stackIndex * storageLabelStackStep,
+                            position.pos().getZ() + 0.5D),
                     position.ownerName(),
                     position.storageType(),
                     position.payment() ? PAYMENT_COLOR : ASSIGNED_COLOR
@@ -585,7 +594,7 @@ public final class ClipboardStorageOutlineRenderer {
             poseStack.pushPose();
             poseStack.translate(label.pos().x - camera.x, label.pos().y - camera.y, label.pos().z - camera.z);
             poseStack.mulPose(minecraft.getEntityRenderDispatcher().cameraOrientation());
-            poseStack.scale(0.025F, -0.025F, 0.025F);
+            poseStack.scale(DEBUG_LABEL_SCALE, -DEBUG_LABEL_SCALE, DEBUG_LABEL_SCALE);
             Matrix4f pose = poseStack.last().pose();
             renderLabelLine(font, bufferSource, pose, label.ownerName(), 0.0F, background, label.color());
             if (!label.jobName().isBlank()) {
