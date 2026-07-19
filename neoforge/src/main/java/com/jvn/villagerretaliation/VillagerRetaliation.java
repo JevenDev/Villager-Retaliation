@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
+import com.jvn.villagerretaliation.mount.VillagerMountedCombatPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.villagerretaliation.raid.PlayerRaidDialogueService;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
@@ -70,6 +71,7 @@ public class VillagerRetaliation {
                 .listener(VillagerSkillTradeEvents::onWandererTrades)
                 .listener(VillagerRetaliationCommands::onRegisterCommands)
                 .listener(VillagerRetaliationEvents::onLivingDamagePre)
+                .listener(VillagerMountedCombatPolicy::onProjectileImpact)
                 .listener(VillagerRetaliationEvents::onLivingDamageFinalPre)
                 .listener(VillagerRetaliationEvents::onLivingDamage)
                 .listener(VillagerReputationEvents::onLivingDamage)

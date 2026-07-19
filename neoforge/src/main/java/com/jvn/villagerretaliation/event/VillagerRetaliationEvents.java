@@ -44,6 +44,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.loot.VillagerLootHandler;
 import com.jvn.villagerretaliation.loot.WanderingTraderLootHandler;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.mount.VillagerMountedCombatPolicy;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
@@ -255,6 +256,11 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        if (VillagerMountedCombatPolicy.shouldCancelDamage(event.getEntity(), event.getSource())) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return;
+        }
         if (EncounterService.shouldCancelFriendlyDamage(event.getEntity(), event.getSource().getEntity(), event.getSource().getDirectEntity())) {
             event.setCanceled(true);
             event.setAmount(0.0F);

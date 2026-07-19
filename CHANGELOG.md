@@ -1,5 +1,6 @@
 # Changelog
 
+- Prevented a Ride On rear passenger from damaging an allied front-seat driver, covering players and villagers, melee, projectiles, indirect damage, mutual parties and alliances, vanilla teams, shared village allegiance, and active hirers.
 - Fixed party villager contracts locking the recruiter out of leftover supplied gear after expiry, dismissal, party disbanding, or raid-driven release; the recruiter now receives the existing three-day job-inventory claim window.
 - Fixed completed Player Raids allowing the same village to be raided again after a player victory or relog; the configured village cooldown now persists after either outcome.
 - Fixed permanently removed defenders leaving Player Raid boss bars stuck at one, and added a disabled-by-default debug option to make loaded tracked defenders glow.
