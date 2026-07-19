@@ -7,6 +7,7 @@ public enum PartyAttackModeState {
     VILLAGERS,
     PARTIES,
     ALL,
+    NONE,
     CUSTOM;
 
     public PartyAttackMode nextMode() {

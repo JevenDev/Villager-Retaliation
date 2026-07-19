@@ -88,6 +88,8 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean enableDespisedKillOnSight = true;
 
+        public boolean despisedKillOnSightInterruptsHiredWork = false;
+
         public ReputationChangeDisplayMode reputationChangeDisplayMode = ReputationChangeDisplayMode.HUD;
 
         public ReputationChangeNotificationStyle reputationChangeNotificationStyle = ReputationChangeNotificationStyle.EXPERIMENTAL;

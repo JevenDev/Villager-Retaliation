@@ -340,7 +340,7 @@ public final class WanderingTraderRetaliationHandler {
             if (!trader.hasLineOfSight(player)) {
                 continue;
             }
-            if (VillagerAggressionPolicy.shouldAttackOnSight(trader, player)) {
+            if (VillagerAggressionPolicy.shouldProactivelyAttackOnSight(trader, player)) {
                 anger(trader, player);
                 return true;
             }

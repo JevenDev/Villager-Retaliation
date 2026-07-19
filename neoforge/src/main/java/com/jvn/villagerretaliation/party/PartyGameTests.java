@@ -234,6 +234,14 @@ public final class PartyGameTests {
                 "party mode should allow members of other parties");
         helper.assertTrue(PartyAttackMode.ALL.allows(false, false, false, false, false),
                 "all mode should preserve unrestricted party attacks");
+        helper.assertFalse(PartyAttackMode.NONE.allows(true, true, true, true, true, true),
+                "none mode should reject every proactive target category");
+        helper.assertFalse(PartyAttackMode.PARTIES.allowsReputationPlayerKillOnSight(),
+                "party mode should not authorize reputation-driven player KOS");
+        helper.assertTrue(PartyAttackMode.PLAYERS.allowsReputationPlayerKillOnSight(),
+                "player mode should authorize reputation-driven player KOS");
+        helper.assertValueEqual(PartyAttackMode.ALL.next(), PartyAttackMode.NONE,
+                "attack-mode UI cycle should include none after all");
 
         PartySavedData data = new PartySavedData();
         PartyRecord party = data.createParty(leader, now);

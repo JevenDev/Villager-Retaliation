@@ -3,6 +3,9 @@ package com.jvn.villagerretaliation.reputation;
 import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
 import com.jvn.villagerretaliation.combat.WanderingTraderCombatRoles;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.party.PartyService;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
@@ -63,6 +66,38 @@ public final class VillagerAggressionPolicy {
         }
 
         return VillagerReputationManager.isDespised(level, villager, player);
+    }
+
+    /**
+     * Applies order and work precedence to reputation-driven proactive aggression.
+     * Direct retaliation is deliberately handled elsewhere so NONE and active work
+     * never prevent a villager from defending itself when its combat mode allows it.
+     */
+    public static boolean shouldProactivelyAttackOnSight(AbstractVillager villager, Player player) {
+        if (!shouldAttackOnSight(villager, player)) {
+            return false;
+        }
+        if (!(villager instanceof Villager villageResident)) {
+            return true;
+        }
+        if (PartyService.areInSameOrAlliedParty(villageResident, player)) {
+            return false;
+        }
+        if (HiredVillagerContractService.currentContractHirer(villageResident)
+                .filter(player.getUUID()::equals)
+                .isPresent()) {
+            return false;
+        }
+        boolean partyModeAllowsPlayers = PartyService.getPartyForVillager(
+                        (ServerLevel) villageResident.level(), villageResident.getUUID())
+                .map(party -> party.villager(villageResident.getUUID()))
+                .map(record -> record.attackMode().allowsReputationPlayerKillOnSight())
+                .orElse(true);
+        if (!partyModeAllowsPlayers) {
+            return false;
+        }
+        return VillagerRetaliationConfig.DESPISED_KILL_ON_SIGHT_INTERRUPTS_HIRED_WORK.get()
+                || !HiredVillagerWorkService.isActivelyWorking(villageResident);
     }
 
     public static boolean shouldIronGolemsTargetNegativeReputationPlayer(AbstractVillager villager, Player player) {

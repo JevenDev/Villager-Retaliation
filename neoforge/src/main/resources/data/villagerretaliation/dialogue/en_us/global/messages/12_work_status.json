@@ -106,6 +106,17 @@
       "id": "global.messages.12_work_status.messages.interaction.work.status.enabled.005"
     },
     {
+      "key": "interaction.work.status.refusing_despised_hirer",
+      "lines": [
+        "I will not work for you while matters stand like this.",
+        "Our dispute must be settled before I return to this job.",
+        "I am refusing this work until you make things right.",
+        "The contract can wait. I do not trust you enough to continue.",
+        "I will resume only after relations between us improve."
+      ],
+      "id": "global.messages.12_work_status.messages.interaction.work.status.refusing_despised_hirer"
+    },
+    {
       "key": "interaction.work.status.cooldown",
       "lines": [
         "I am catching my breath before the next task.",

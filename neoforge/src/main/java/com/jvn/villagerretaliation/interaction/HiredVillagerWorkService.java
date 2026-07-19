@@ -70,11 +70,13 @@ public final class HiredVillagerWorkService {
     private static final String COMPLETED_TASKS_TAG = "CompletedTasks";
     private static final String VANILLA_REST_PAUSED_TAG = "VanillaRestPaused";
     private static final String DISABLED_WORK_PAUSED_TAG = "DisabledWorkPaused";
+    private static final String DESPISED_HIRER_WORK_PAUSED_TAG = "DespisedHirerWorkPaused";
     private static final String DEFAULTS_VERSION_TAG = "DefaultsVersion";
     private static final int DEFAULTS_VERSION = 1;
     public static final String WAITING_FOR_HIRER_STATUS = "interaction.work.status.waiting_for_hirer";
     private static final String STORAGE_FULL_NOTICE = "interaction.work.status.storage_full";
     private static final String PAUSED_FOR_COMMAND_STATUS = "interaction.work.status.paused_for_command";
+    private static final String REFUSING_DESPISED_HIRER_STATUS = "interaction.work.status.refusing_despised_hirer";
     private static final String TIRED_STATUS = "interaction.work.status.tired";
     private static final String SLEEPING_STATUS = "interaction.work.status.sleeping";
     private static final double HIRED_WORK_NOTICE_RADIUS = 32.0D;
@@ -134,9 +136,10 @@ public final class HiredVillagerWorkService {
             return;
         }
         if (VillagerAggressionPolicy.shouldAttackOnSight(villager, hirer)) {
-            VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
+            pauseForDespisedHirer(level, villager, session);
             return;
         }
+        session.state().remove(DESPISED_HIRER_WORK_PAUSED_TAG);
         if (VillagerRetaliationVillagerBrainUtil.hasThreatMemories(villager.getBrain())) {
             VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             return;
@@ -981,6 +984,18 @@ public final class HiredVillagerWorkService {
 
     public static void clearRuntimeState() {
         HiredRoleWorkerRegistry.clearRuntimeState();
+    }
+
+    private static void pauseForDespisedHirer(ServerLevel level, Villager villager, HiredWorkSession session) {
+        VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
+        if (!session.state().getBoolean(DESPISED_HIRER_WORK_PAUSED_TAG)) {
+            if (session.worker() != null) {
+                session.worker().pause(level, villager, session.context());
+            }
+            VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+            session.state().putBoolean(DESPISED_HIRER_WORK_PAUSED_TAG, true);
+        }
+        setStatus(session.state(), REFUSING_DESPISED_HIRER_STATUS);
     }
 
     /** Returns whether durable worker state currently describes an active work operation. */

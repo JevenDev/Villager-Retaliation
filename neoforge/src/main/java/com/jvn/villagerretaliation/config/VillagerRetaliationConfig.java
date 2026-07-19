@@ -22,6 +22,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_REPUTATION = bind("general.enableVillagerReputation", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VANILLA_GOSSIP_INTEGRATION = bind("general.enableVanillaGossipIntegration", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_DESPISED_KILL_ON_SIGHT = bind("general.enableDespisedKillOnSight", Boolean.class);
+    public static final ConfigValue<Boolean> DESPISED_KILL_ON_SIGHT_INTERRUPTS_HIRED_WORK = bind("general.despisedKillOnSightInterruptsHiredWork", Boolean.class);
     public static final ConfigValue<ReputationChangeDisplayMode> REPUTATION_CHANGE_DISPLAY_MODE = bind("general.reputationChangeDisplayMode", ReputationChangeDisplayMode.class);
     public static final ConfigValue<ReputationChangeNotificationStyle> REPUTATION_CHANGE_NOTIFICATION_STYLE = bind("general.reputationChangeNotificationStyle", ReputationChangeNotificationStyle.class);
     public static final ConfigValue<ReputationChangeHudPosition> REPUTATION_CHANGE_HUD_POSITION = bind("general.reputationChangeHudPosition", ReputationChangeHudPosition.class);

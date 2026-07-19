@@ -6,7 +6,8 @@ public enum PartyAttackMode {
     PLAYERS,
     VILLAGERS,
     PARTIES,
-    ALL;
+    ALL,
+    NONE;
 
     public PartyAttackMode next() {
         PartyAttackMode[] modes = values();
@@ -31,7 +32,13 @@ public enum PartyAttackMode {
             case VILLAGERS -> villager || ironGolem;
             case PARTIES -> party;
             case ALL -> true;
+            case NONE -> false;
         };
+    }
+
+    /** Reputation-driven player KOS is a player order, not a generic party target. */
+    public boolean allowsReputationPlayerKillOnSight() {
+        return this == PLAYERS || this == ALL;
     }
 
     public static PartyAttackMode byName(String name) {
