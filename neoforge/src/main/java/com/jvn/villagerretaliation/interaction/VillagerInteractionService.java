@@ -721,7 +721,7 @@ public final class VillagerInteractionService {
                 || action == VillagerRecruitRequestPayload.Action.STAY_HERE
                 || action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
                 || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
-            if (HiredVillagerContractService.isHired(level, villager)) {
+            if (HiredVillagerContractService.isHired(level, villager) && !ownsContract) {
                 sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
                 return;
             }

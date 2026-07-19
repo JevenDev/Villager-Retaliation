@@ -364,19 +364,11 @@ public final class VillagerRecruitmentService {
         if (villager.level().isClientSide || !isFollowingAnyPlayer(villager)) {
             return;
         }
-        if (isHiredAnyPlayer(villager)) {
-            clearFollowTarget(villager);
-            return;
-        }
         suppressFollowerAiIfNeeded(villager);
     }
 
     public static void onVillagerTickPost(Villager villager) {
         if (!(villager.level() instanceof ServerLevel level) || !villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
-            return;
-        }
-        if (HiredVillagerContractService.isHired(level, villager)) {
-            clearFollowTarget(villager);
             return;
         }
         if (com.jvn.villagerretaliation.party.PartyQuickCommandService.overridesRecruitmentMovement(villager)) {
@@ -898,6 +890,7 @@ public final class VillagerRecruitmentService {
 
     private static void beginFollowing(ServerLevel level, Villager villager, UUID playerId) {
         BlockPos start = villager.blockPosition();
+        HiredVillagerWorkService.pauseForRecruitmentCommand(level, villager);
         FOLLOW_FORMATION_STATES.remove(playerId);
         villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, playerId);
         villager.getPersistentData().putString(FOLLOW_MODE_KEY, FOLLOW_MODE_FOLLOW);
@@ -926,6 +919,9 @@ public final class VillagerRecruitmentService {
     }
 
     private static void beginStayingHere(Villager villager, UUID playerId, BlockPos anchor) {
+        if (villager.level() instanceof ServerLevel level) {
+            HiredVillagerWorkService.pauseForRecruitmentCommand(level, villager);
+        }
         FOLLOW_FORMATION_STATES.remove(playerId);
         villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, playerId);
         villager.getPersistentData().putString(FOLLOW_MODE_KEY, FOLLOW_MODE_STAY);
@@ -1126,7 +1122,10 @@ public final class VillagerRecruitmentService {
     }
 
     private static boolean canTakeFollowCommand(Villager villager, ServerPlayer player) {
-        return !isHiredAnyPlayer(villager)
+        boolean hiredByAnotherPlayer = villager.level() instanceof ServerLevel level
+                && HiredVillagerContractService.isHired(level, villager)
+                && !HiredVillagerContractService.isHiredBy(level, villager, player);
+        return !hiredByAnotherPlayer
                 && !PartyVillagerContractService.hasPartyEntityReference(villager)
                 && followingPlayerId(villager).map(player.getUUID()::equals).orElse(true);
     }

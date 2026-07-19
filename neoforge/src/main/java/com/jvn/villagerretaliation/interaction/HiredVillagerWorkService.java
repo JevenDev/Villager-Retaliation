@@ -114,6 +114,11 @@ public final class HiredVillagerWorkService {
             return;
         }
         HiredWorkSession session = HiredWorkSession.active(level, villager);
+        if (VillagerRecruitmentService.isFollowingAnyPlayer(villager)) {
+            VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
+            pauseForRecruitmentCommand(level, villager, session);
+            return;
+        }
         if (HiredVillagerFocusService.isVanillaRestActive(villager)) {
             pauseForVanillaRest(level, villager, session);
             return;
@@ -168,12 +173,6 @@ public final class HiredVillagerWorkService {
             return;
         }
         session.state().remove(DISABLED_WORK_PAUSED_TAG);
-        if (VillagerRecruitmentService.isFollowingAnyPlayer(villager)) {
-            VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
-            pauseForRecruitmentCommand(level, villager, session);
-            return;
-        }
-
         if (session.role() == HiredVillagerRole.FARMING) {
             VillagerTaskNavigationUtil.enableHiredFarmingWaterTraversal(villager);
         } else {
@@ -281,11 +280,19 @@ public final class HiredVillagerWorkService {
                 HiredWorkPlan.clear(session.context());
                 HiredWorkerBrain.clearFailure(session.context());
                 HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
-            } else {
-                session.worker().stop(level, villager, session.context());
+            } else if (session.worker() != null) {
+                session.worker().pause(level, villager, session.context());
             }
         }
         setStatus(session.state(), PAUSED_FOR_COMMAND_STATUS);
+    }
+
+    public static void pauseForRecruitmentCommand(ServerLevel level, Villager villager) {
+        if (level == null || villager == null || !HiredVillagerContractService.isHired(level, villager)) {
+            return;
+        }
+        VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
+        pauseForRecruitmentCommand(level, villager, HiredWorkSession.active(level, villager));
     }
 
     private static boolean shouldReturnToWorkArea(HiredWorkSession session) {
