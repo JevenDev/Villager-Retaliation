@@ -176,8 +176,15 @@ public final class VillagerMountGameTests {
 
         helper.assertTrue(VillagerMountOwnershipDialogue.isAvailable(level, owner, villager),
                 "The mount owner must be able to challenge another player's hired rider");
-        List<DialogueOptionDefinition> options =
-                VillagerMountOwnershipDialogue.addAvailableOption(level, owner, villager, List.of());
+        List<DialogueOptionDefinition> options = VillagerMountOwnershipDialogue.addAvailableOption(
+                level,
+                owner,
+                villager,
+                List.of(DialogueOptionDefinition.simple(
+                        VillagerMountOwnershipDialogue.OPTION_ID,
+                        "That's my {mount}",
+                        com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType.QUESTION,
+                        -4)));
         helper.assertTrue(options.size() == 1 && options.getFirst().label().equals("That's my Chestnut"),
                 "The challenge option must identify the player's mounted animal by name");
         helper.assertFalse(VillagerMountOwnershipDialogue.isAvailable(level, hirer, villager),

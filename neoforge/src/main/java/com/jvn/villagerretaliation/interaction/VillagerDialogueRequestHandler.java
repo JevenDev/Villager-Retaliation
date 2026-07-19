@@ -68,7 +68,7 @@ public final class VillagerDialogueRequestHandler {
         VillagerInteractionService.focusVillagerOnPlayer(villager, player);
 
         ServerLevel level = target.level();
-        if (VillagerMountOwnershipDialogue.handle(level, player, villager, optionId)) {
+        if (!VillagerMountOwnershipDialogue.allowsRequest(level, player, villager, optionId)) {
             return;
         }
         VillagerInteractionTracker.InteractionState interactionState = VillagerInteractionTracker.getState(level, villager, player);

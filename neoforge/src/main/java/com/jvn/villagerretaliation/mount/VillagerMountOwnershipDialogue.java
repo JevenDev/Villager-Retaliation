@@ -1,9 +1,7 @@
 package com.jvn.villagerretaliation.mount;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
-import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
-import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -14,7 +12,6 @@ import net.minecraft.world.entity.npc.Villager;
 
 public final class VillagerMountOwnershipDialogue {
     public static final String OPTION_ID = "mount.ownership";
-    private static final String RESPONSE = "Take it up with my boss.";
 
     private VillagerMountOwnershipDialogue() {
     }
@@ -25,29 +22,28 @@ public final class VillagerMountOwnershipDialogue {
             Villager villager,
             List<DialogueOptionDefinition> options) {
         AbstractHorse mount = ownedMountedAssignment(level, player, villager);
-        if (mount == null) {
-            return options;
+        List<DialogueOptionDefinition> result = new ArrayList<>(options.size());
+        for (DialogueOptionDefinition option : options) {
+            if (!OPTION_ID.equals(option.id())) {
+                result.add(option);
+            } else if (mount != null) {
+                result.add(DialogueOptionDefinition.transmitted(
+                        option.id(),
+                        option.label().replace("{mount}", mount.getDisplayName().getString()),
+                        option.requestType(),
+                        option.forceCameraTowardsVillager(),
+                        option.order(),
+                        option.metadata()));
+            }
         }
-        List<DialogueOptionDefinition> result = new ArrayList<>(options);
-        result.add(DialogueOptionDefinition.simple(
-                OPTION_ID,
-                "That's my " + mount.getDisplayName().getString(),
-                DialogueRequestType.QUESTION,
-                Integer.MAX_VALUE));
         return List.copyOf(result);
     }
 
-    public static boolean handle(ServerLevel level, ServerPlayer player, Villager villager, String optionId) {
-        if (!OPTION_ID.equals(optionId)) {
-            return false;
-        }
-        if (ownedMountedAssignment(level, player, villager) != null) {
-            VillagerInteractionService.sendPersonalVillagerChat(player, villager, RESPONSE);
-        }
-        return true;
+    public static boolean allowsRequest(ServerLevel level, ServerPlayer player, Villager villager, String optionId) {
+        return !OPTION_ID.equals(optionId) || ownedMountedAssignment(level, player, villager) != null;
     }
 
-    static boolean isAvailable(ServerLevel level, ServerPlayer player, Villager villager) {
+    public static boolean isAvailable(ServerLevel level, ServerPlayer player, Villager villager) {
         return ownedMountedAssignment(level, player, villager) != null;
     }
 
