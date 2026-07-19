@@ -15,6 +15,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerConversationService {
     private static final int IDLE_TIMEOUT_TICKS = 20 * 60 * 2;
+    private static final int FOREIGN_HIRED_WORKER_IDLE_TIMEOUT_TICKS = IDLE_TIMEOUT_TICKS / 2;
     private static final double FORCED_DIALOGUE_APPROACH_START_DISTANCE = 5.5D;
     private static final double FORCED_DIALOGUE_APPROACH_STOP_DISTANCE = 4.0D;
     private static final double FORCED_DIALOGUE_APPROACH_SPEED = 0.55D;
@@ -52,6 +53,9 @@ public final class VillagerConversationService {
                         ? VillagerInteractionService.canUseForcedInteractionSystemIgnoringDisposition(player, villager)
                         : VillagerInteractionService.canUseForcedInteractionSystem(player, villager)
                 : VillagerInteractionService.canUseInteractionSystem(player, villager);
+        if (!forced && canStart && !VillagerInteractionService.canStartNormalConversation(player, villager)) {
+            return false;
+        }
         if (!canStart) {
             return false;
         }
@@ -207,7 +211,10 @@ public final class VillagerConversationService {
             }
         }
         long idleTicks = player.serverLevel().getGameTime() - session.lastInteractionGameTime();
-        return idleTicks <= IDLE_TIMEOUT_TICKS;
+        int idleTimeoutTicks = VillagerInteractionService.isForeignHiredWorker(player, villager)
+                ? FOREIGN_HIRED_WORKER_IDLE_TIMEOUT_TICKS
+                : IDLE_TIMEOUT_TICKS;
+        return idleTicks <= idleTimeoutTicks;
     }
 
     private static void holdVillager(Villager villager, ServerPlayer player, VillagerConversationSession session) {

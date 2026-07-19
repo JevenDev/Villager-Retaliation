@@ -1,0 +1,23 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.lines"
+    ],
+    "topic": "global.mount_ownership"
+  },
+  "lines": [
+    {
+      "id": "mount_ownership_boss",
+      "request": "question",
+      "option": "mount.ownership",
+      "lines": [
+        "Take it up with my boss."
+      ],
+      "show_for_babies": false,
+      "weight": 1
+    }
+  ]
+}

@@ -61,9 +61,11 @@ import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
+import com.jvn.villagerretaliation.mount.VillagerMountOwnershipDialogue;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
+import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
@@ -242,6 +244,12 @@ public final class VillagerInteractionService {
             VillagerAmbientIndicatorService.onTradeRefused(villager);
             sendVillagerNotice(player, villager, "interaction.refuse_angry");
             return InteractionResult.FAIL;
+        }
+
+        if (isForeignHiredWorkerWithoutQuest(player, villager)) {
+            sendVillagerNotice(player, villager, foreignHiredWorkerDialogueKey(player, villager));
+            focusVillagerOnPlayer(villager, player);
+            return InteractionResult.CONSUME;
         }
 
         if (isCombatBusy(villager) && canInterruptCombatForInteraction(player, villager)) {
@@ -2759,6 +2767,47 @@ public final class VillagerInteractionService {
                 && player.isAlive()
                 && !player.isSpectator()
                 && player.distanceToSqr(villager) <= maxDistance * maxDistance;
+    }
+
+    static boolean canStartNormalConversation(ServerPlayer player, Villager villager) {
+        return !isForeignHiredWorker(player, villager)
+                || hasActiveQuestWithVillager(player, villager)
+                || VillagerMountOwnershipDialogue.isAvailable(player.serverLevel(), player, villager);
+    }
+
+    static boolean isForeignHiredWorker(ServerPlayer player, Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || !HiredVillagerContractService.isHired(level, villager)
+                || HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            return false;
+        }
+        // Party interactions retain their normal lifetime and close conditions even if stale
+        // contract data temporarily overlaps a recruited villager.
+        return PartyService.getPartyForVillager(level, villager.getUUID()).isEmpty();
+    }
+
+    private static boolean isForeignHiredWorkerWithoutQuest(ServerPlayer player, Villager villager) {
+        return isForeignHiredWorker(player, villager)
+                && !hasActiveQuestWithVillager(player, villager)
+                && !VillagerMountOwnershipDialogue.isAvailable(player.serverLevel(), player, villager);
+    }
+
+    private static boolean hasActiveQuestWithVillager(ServerPlayer player, Villager villager) {
+        return VillagerQuestSavedData.get(player.serverLevel())
+                .activeProgress(player.getUUID()).stream()
+                .anyMatch(entry -> villager.getUUID().equals(entry.getValue().startedVillagerId()));
+    }
+
+    private static String foreignHiredWorkerDialogueKey(ServerPlayer player, Villager villager) {
+        VillagerReputationLevel level = VillagerReputationManager.getReputationLevel(
+                player.serverLevel(), villager, player.getUUID());
+        return switch (level) {
+            case ROYALTY, REVERED -> "interaction.foreign_hired_working.respectful";
+            case RESPECTED, TRUSTED -> "interaction.foreign_hired_working.friendly";
+            case NEUTRAL -> "interaction.foreign_hired_working.neutral";
+            case SUSPICIOUS, HOSTILE -> "interaction.foreign_hired_working.cautious";
+            case DESPISED, FEARED -> "interaction.foreign_hired_working.hostile";
+        };
     }
 
     private static boolean isCombatBusy(Villager villager) {

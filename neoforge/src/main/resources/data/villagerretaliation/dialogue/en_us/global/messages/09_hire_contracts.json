@@ -10,6 +10,56 @@
   },
   "messages": [
     {
+      "key": "interaction.foreign_hired_working.respectful",
+      "lines": [
+        "It is good to see you, but I am working under another contract. If it is not about our quest, I should get back to it.",
+        "I would gladly talk when my work is done. For now, another player has hired me.",
+        "You are always welcome here, but these are contracted hours. Let me finish my work.",
+        "I trust you understand: I have promised this time to someone else's work."
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.foreign_hired_working.respectful"
+    },
+    {
+      "key": "interaction.foreign_hired_working.friendly",
+      "lines": [
+        "Good to see you, but I am working for someone else right now.",
+        "I would stop and chat, but I have a contract to keep.",
+        "Not now, friend. Someone else hired me for this work.",
+        "Unless this is about our quest, I need to keep working."
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.foreign_hired_working.friendly"
+    },
+    {
+      "key": "interaction.foreign_hired_working.neutral",
+      "lines": [
+        "I am working under someone else's contract right now.",
+        "I cannot stop to talk. I have been hired for this work.",
+        "Unless you need me for our quest, I should keep working.",
+        "Another player is paying for my time. I need to get back to work."
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.foreign_hired_working.neutral"
+    },
+    {
+      "key": "interaction.foreign_hired_working.cautious",
+      "lines": [
+        "I am working. Do not make me neglect someone else's contract.",
+        "If this is not about our quest, leave me to my work.",
+        "Someone else hired me. I do not have time for this.",
+        "Keep this brief. I have contracted work to finish."
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.foreign_hired_working.cautious"
+    },
+    {
+      "key": "interaction.foreign_hired_working.hostile",
+      "lines": [
+        "I am working. Leave me alone.",
+        "You do not own my time. Go away.",
+        "I have work to do, and none of it is for you.",
+        "Do not interrupt me again unless our quest demands it."
+      ],
+      "id": "global.messages.09_hire_contracts.messages.interaction.foreign_hired_working.hostile"
+    },
+    {
       "key": "interaction.end_hire_confirmation_prompt",
       "lines": [
         "Are you sure you want to end our contract early?",
