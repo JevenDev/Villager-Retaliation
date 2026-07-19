@@ -51,12 +51,14 @@ public final class VillagerRideOnCompat {
         return active != null && active.invokeBoolean(active.supportsSeat(), horse, active.passengerSeat());
     }
 
-    public static boolean tryMountAvailableSeat(AbstractHorse horse, Villager villager) {
+    public static boolean tryMountAvailableSeat(AbstractHorse horse, Entity rider) {
+        Vec3 driverOffset = rider instanceof Villager ? VILLAGER_DRIVER_OFFSET : Vec3.ZERO;
+        Vec3 passengerOffset = rider instanceof Villager ? VILLAGER_PASSENGER_OFFSET : Vec3.ZERO;
         if (occupant(horse, false) == null) {
-            return tryMount(horse, villager, false, VILLAGER_DRIVER_OFFSET);
+            return tryMount(horse, rider, false, driverOffset);
         }
         return occupant(horse, true) == null
-                && tryMount(horse, villager, true, VILLAGER_PASSENGER_OFFSET);
+                && tryMount(horse, rider, true, passengerOffset);
     }
 
     public static boolean tryDismount(AbstractHorse horse, Entity rider) {
