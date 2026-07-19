@@ -1413,6 +1413,14 @@ public final class HiredJobInventory implements Container {
     }
 
     private void setEquipmentItem(int slot, EquipmentSlot equipmentSlot, ItemStack stack) {
+        if (equipmentSlot == EquipmentSlot.MAINHAND
+                && VillagerInventoryContainer.hasBorrowedCombatWeapon(this.villager)) {
+            // Finish the personal-inventory loan before party/job gear takes main-hand
+            // authority. Otherwise the borrowed stack and the new authoritative job
+            // stack can each be returned to personal storage while the job slot keeps
+            // its own copy.
+            VillagerInventoryContainer.returnBorrowedCombatWeapon(this.villager);
+        }
         ItemStack previousJobStack = this.items.get(slot).copy();
         ItemStack current = this.villager.getItemBySlot(equipmentSlot);
         if (stack.isEmpty()) {

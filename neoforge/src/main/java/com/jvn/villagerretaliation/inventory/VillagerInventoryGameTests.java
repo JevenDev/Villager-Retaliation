@@ -737,6 +737,41 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void jobInventoryReclaimsBorrowedMainHandWithoutDuplicating(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager,
+                EquipmentSlot.MAINHAND,
+                new ItemStack(Items.GOLDEN_AXE));
+        VillagerInventoryContainer.addItem(villager, new ItemStack(Items.NETHERITE_SWORD));
+        helper.assertTrue(
+                VillagerInventoryContainer.tryBorrowCombatWeapon(villager),
+                "villager should borrow its personal weapon before receiving job gear");
+
+        HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+        jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_PICKAXE));
+
+        helper.assertFalse(
+                VillagerInventoryContainer.hasBorrowedCombatWeapon(villager),
+                "job equipment should settle the personal weapon loan");
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_PICKAXE),
+                "job equipment should own the live main hand");
+        helper.assertValueEqual(countStored(villager, Items.NETHERITE_SWORD), 1,
+                "borrowed personal weapon should return exactly once");
+        helper.assertValueEqual(countStored(villager, Items.GOLDEN_AXE), 1,
+                "displaced personal main hand should be stored exactly once");
+        helper.assertValueEqual(countStored(villager, Items.IRON_PICKAXE), 0,
+                "active job gear must not be copied into personal inventory");
+        helper.assertFalse(
+                VillagerInventoryContainer.tryBorrowCombatWeapon(villager),
+                "personal weapons must not displace authoritative job equipment");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void jobInventoryMenuMarksPlayerPlacedGridItemsAsSupply(GameTestHelper helper) {
         buildFloor(helper, 0, 4, 0, 4, 1);
         ServerLevel level = helper.getLevel();
