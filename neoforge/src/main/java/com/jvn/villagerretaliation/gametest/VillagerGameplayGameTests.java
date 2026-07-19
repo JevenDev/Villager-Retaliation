@@ -435,9 +435,25 @@ public final class VillagerGameplayGameTests {
         helper.assertFalse(
                 VillagerRecruitmentService.isFollowingAnyPlayer(villager),
                 "hiring should clear the previous follow state");
+        helper.assertTrue(
+                VillagerRecruitmentService.startFollowing(level, villager, followerOwner),
+                "the contract owner should be able to tell their hired worker to follow");
+        helper.assertValueEqual(
+                villager.getPersistentData().getCompound("VillagerRetaliationHiredWork").getString("Status"),
+                "interaction.work.status.paused_for_command",
+                "hired work should pause before follower navigation begins");
         helper.assertFalse(
                 VillagerRecruitmentService.startFollowing(level, villager, otherPlayer),
-                "a hired worker should reject new follow commands");
+                "a hired worker should reject follow commands from another player");
+        helper.assertTrue(
+                VillagerRecruitmentService.isFollowing(villager, followerOwner),
+                "the rejected command should preserve the contract owner's follow state");
+        VillagerRecruitmentService.onVillagerTickPre(villager);
+        VillagerRecruitmentService.onVillagerTickPost(villager);
+        HiredVillagerWorkService.onVillagerTickPost(villager);
+        helper.assertTrue(
+                VillagerRecruitmentService.isFollowing(villager, followerOwner),
+                "hired work ticks should yield to and preserve the contract owner's follow command");
 
         HiredVillagerContractService.endHireContract(level, villager, followerOwner);
         villager.discard();

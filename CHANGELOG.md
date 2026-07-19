@@ -1,5 +1,6 @@
 # Changelog
 
+- Fixed hired villagers rejecting Follow Me and Stay Here commands from their own hirer as though another player held the contract, then clearing or interfering with accepted follow routes; hired work now pauses before follower navigation begins and yields to the ordinary follow AI while they follow or hold position, while commands from other players remain blocked.
 - Prevented a Ride On rear passenger from damaging an allied front-seat driver, covering players and villagers, melee, projectiles, indirect damage, mutual parties and alliances, vanilla teams, shared village allegiance, and active hirers.
 - Fixed recruited villagers duplicating party equipment into their personal inventory when party gear replaced a temporarily borrowed personal weapon; party/job main-hand equipment now retains sole authority.
 - Fixed party villager contracts locking the recruiter out of leftover supplied gear after expiry, dismissal, party disbanding, or raid-driven release; the recruiter now receives the existing three-day job-inventory claim window.
