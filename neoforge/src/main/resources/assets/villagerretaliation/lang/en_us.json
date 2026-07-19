@@ -762,7 +762,7 @@
   "villagerretaliation.gui.clipboard_workforce.daily_wages": "Daily Wages: %s",
   "villagerretaliation.gui.clipboard_workforce.payment_containers": "Payment boxes: %s",
   "villagerretaliation.gui.clipboard_workforce.unpaid_workers": "Unpaid Workers: %s",
-  "villagerretaliation.gui.clipboard_workforce.payment_placeholder": "Paid up front. Assign a green payment box, then enable auto-payment.",
+  "villagerretaliation.gui.clipboard_workforce.payment_placeholder": "Paid up front. Assign a green payment box for automatic renewal.",
   "container.villagerretaliation.payment_box": "Payment Box",
   "block.villagerretaliation.payment_box": "Payment Box",
   "villagerretaliation.gui.clipboard_workforce.role.combat": "Guards",

@@ -118,6 +118,13 @@ public final class AssignedStorageService {
                 alreadyAssigned++;
             }
         }
+        if (PAYMENT_PURPOSE.equals(normalizedPurpose)
+                && (assigned > 0 || alreadyAssigned > 0)
+                && HiredVillagerContractService.currentContractHirer(villager)
+                        .filter(player.getUUID()::equals)
+                        .isPresent()) {
+            HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
+        }
         return new AssignSummary(assigned, alreadyAssigned, invalid);
     }
 

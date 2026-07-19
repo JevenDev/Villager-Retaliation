@@ -1596,15 +1596,17 @@ public final class VillagerWorkerGameTests {
         setBlock(helper, paymentRel, VillagerRetaliationBlocks.PAYMENT_BOX.get().defaultBlockState());
         container(level, payment).setItem(0, new ItemStack(Items.EMERALD, 64));
         AssignedStorageService.removeAssignedContainer(level, payment);
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 1);
         AssignedStorageService.AssignSummary paymentAssignment = AssignedStorageService.assign(
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), payment)),
                 AssignedStorageService.PAYMENT_PURPOSE);
         helper.assertValueEqual(paymentAssignment.assigned(), 1, "payment box assignment");
-
-        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 1);
-        HiredVillagerContractService.setAutoPaymentEnabled(villager, true);
+        helper.assertTrue(
+                HiredVillagerContractService.isAutoPaymentEnabled(level, villager),
+                "assigning recurring payment storage should enable automatic renewal");
         int currentDailyCost = HiredVillagerContractService.getDailyCost(level, villager, hirer);
         CompoundTag contract = villager.getPersistentData().getCompound("VillagerRetaliationHireContract");
         long expiredAt = level.getGameTime();
