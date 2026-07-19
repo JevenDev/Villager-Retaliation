@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
@@ -680,11 +681,14 @@ public final class VillagerGameplayGameTests {
         helper.assertTrue(
                 VillagerRecoveryService.onVillagerTickPost(villager),
                 "starting a meal should reserve the tick from loadout maintenance");
+        helper.assertFalse(villager.isUsingItem(),
+                "food should synchronize to the client before item use begins");
+        VillagerRecoveryService.onVillagerTickPost(villager);
         helper.assertTrue(villager.isUsingItem(), "villager should begin the eating animation");
         helper.assertTrue(villager.getMainHandItem().is(Items.BREAD), "food should remain visible while eating");
         helper.assertValueEqual(VillagerRecoveryService.foodLevel(villager), 9, "food is not applied immediately");
 
-        for (int tick = 1; tick < useTicks; tick++) {
+        for (int tick = 1; tick < useTicks - 1; tick++) {
             VillagerRecoveryService.onVillagerTickPost(villager);
         }
         helper.assertTrue(villager.isUsingItem(), "eating animation should remain active until its final tick");
@@ -714,6 +718,74 @@ public final class VillagerGameplayGameTests {
         helper.assertValueEqual(VillagerRecoveryService.foodLevel(villager), 9, "resuming should not consume food early");
 
         VillagerRecoveryService.onVillagerUnloaded(villager);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void recoveryOwnsMainHandUntilEatingFinishes(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
+        jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        setRecoveryState(villager, 9, 0.0F);
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.BREAD));
+
+        VillagerRecoveryService.onVillagerTickPost(villager);
+        HiredJobInventory.maintainEquipmentSlots(villager);
+
+        helper.assertFalse(villager.isUsingItem(),
+                "recovery should synchronize its food hand before starting item use");
+        helper.assertTrue(villager.getMainHandItem().is(Items.BREAD),
+                "recovery should expose food for one synchronization tick before eating");
+
+        VillagerRecoveryService.onVillagerTickPost(villager);
+        HiredJobInventory.maintainEquipmentSlots(villager);
+
+        helper.assertTrue(villager.isUsingItem() && villager.getUseItem().is(Items.BREAD),
+                "equipment authority must not interrupt the eating use state");
+        helper.assertTrue(villager.getMainHandItem().is(Items.BREAD),
+                "equipment authority must not flicker the weapon over the food visual");
+        helper.assertTrue(jobInventory.getItem(HiredJobInventory.MAINHAND_SLOT).is(Items.IRON_SWORD)
+                        && jobInventory.getItem(HiredJobInventory.MAINHAND_SLOT).getCount() == 1,
+                "recovery hand swaps must preserve exactly one authoritative job weapon stack");
+
+        VillagerRecoveryService.onVillagerUnloaded(villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void recoveryDefersBorrowedWeaponReturnWithoutDuplication(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.IRON_SWORD));
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.BREAD));
+        helper.assertTrue(
+                VillagerInventoryAccess.tryBorrowCombatWeapon(villager, stack -> stack.is(Items.IRON_SWORD)),
+                "test setup should borrow the only stored weapon");
+        setRecoveryState(villager, 9, 0.0F);
+
+        VillagerRecoveryService.onVillagerTickPost(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
+
+        VillagerRecoveryService.onVillagerTickPost(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
+
+        helper.assertTrue(VillagerInventoryAccess.hasBorrowedCombatWeapon(villager),
+                "borrowed weapon return must wait until the recovery visual releases the main hand");
+        helper.assertTrue(villager.isUsingItem() && villager.getUseItem().is(Items.BREAD),
+                "deferred weapon return must preserve the eating use state");
+
+        VillagerRecoveryService.onVillagerUnloaded(villager);
+        VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
+        ItemStack returnedWeapon = VillagerInventoryAccess.takeCarriedItem(
+                villager, stack -> stack.is(Items.IRON_SWORD));
+        ItemStack duplicateWeapon = VillagerInventoryAccess.takeCarriedItem(
+                villager, stack -> stack.is(Items.IRON_SWORD));
+        helper.assertTrue(returnedWeapon.is(Items.IRON_SWORD) && returnedWeapon.getCount() == 1,
+                "the borrowed weapon should return exactly once after recovery");
+        helper.assertTrue(duplicateWeapon.isEmpty(),
+                "healing hand swaps must not duplicate the borrowed weapon");
+
+        villager.discard();
         helper.succeed();
     }
 

@@ -31,6 +31,7 @@ import com.jvn.villagerretaliation.mood.VillagerMoodState;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.skill.HiredWorkSkillGrowthService;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -226,6 +227,7 @@ public final class HiredVillagerWorkService {
                 || !villager.isAlive()
                 || villager.isTrading()
                 || VillagerConversationService.isConversing(villager)
+                || VillagerRecoveryService.isForcingRecovery(villager)
                 || villager.getTarget() != null
                 || villager.getLastHurtByMob() != null
                 || !HiredVillagerContractService.hasContract(villager)

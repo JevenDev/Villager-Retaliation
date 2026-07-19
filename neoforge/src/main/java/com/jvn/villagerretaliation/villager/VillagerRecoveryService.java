@@ -227,12 +227,14 @@ public final class VillagerRecoveryService {
     private static void startUse(Villager villager, ItemStack stack) {
         ItemStack resumeMainHand = villager.getMainHandItem().copy();
         VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+        if (villager.isUsingItem()) {
+            villager.stopUsingItem();
+        }
         VillagerRetaliationVillagerEquipment.setVisualMainHand(villager, stack.copy());
         int duration;
         if (stack.is(Items.SPLASH_POTION)) {
             duration = 10;
         } else {
-            villager.startUsingItem(InteractionHand.MAIN_HAND);
             duration = Math.max(2, stack.getUseDuration(villager)) - 1;
         }
         ACTIVE_USES.put(villager.getUUID(), new UseState(stack.copy(), resumeMainHand, duration));
@@ -278,8 +280,11 @@ public final class VillagerRecoveryService {
         if (!ItemStack.isSameItemSameComponents(villager.getMainHandItem(), use.stack())) {
             VillagerRetaliationVillagerEquipment.setVisualMainHand(villager, use.stack().copy());
         }
-        if (!villager.isUsingItem()
-                || !ItemStack.isSameItemSameComponents(villager.getUseItem(), use.stack())) {
+        if (villager.isUsingItem()
+                && !ItemStack.isSameItemSameComponents(villager.getUseItem(), use.stack())) {
+            villager.stopUsingItem();
+        }
+        if (!villager.isUsingItem()) {
             villager.startUsingItem(InteractionHand.MAIN_HAND);
         }
     }

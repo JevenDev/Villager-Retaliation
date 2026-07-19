@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
@@ -31,6 +32,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.village.VillageMembership;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
+import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.mojang.authlib.GameProfile;
 import java.nio.charset.StandardCharsets;
@@ -898,6 +900,52 @@ public final class PartyGameTests {
             }
             villager.discard();
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void standGuardDoesNotInterruptVillagerEating(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_guard_recovery"));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+        villager.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.STAND_GUARD));
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertTrue(villager.isUsingItem()
+                        && villager.getUsedItemHand() == net.minecraft.world.InteractionHand.OFF_HAND,
+                "stand guard should raise the off-hand shield");
+
+        CompoundTag recovery = new CompoundTag();
+        recovery.putInt("Food", 9);
+        recovery.putFloat("Saturation", 0.0F);
+        recovery.putFloat("Exhaustion", 0.0F);
+        recovery.putInt("HealTimer", 0);
+        villager.getPersistentData().put("VillagerRetaliationRecovery", recovery);
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.BREAD));
+        VillagerRecoveryService.onVillagerTickPost(villager);
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        VillagerRecoveryService.onVillagerTickPost(villager);
+        PartyQuickCommandService.onVillagerTickPost(villager);
+
+        helper.assertTrue(villager.isUsingItem()
+                        && villager.getUsedItemHand() == net.minecraft.world.InteractionHand.MAIN_HAND
+                        && villager.getUseItem().is(Items.BREAD),
+                "stand guard must leave an active meal and its eating animation untouched");
+
+        VillagerRecoveryService.onVillagerUnloaded(villager);
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
+        leader.discard();
         helper.succeed();
     }
 
