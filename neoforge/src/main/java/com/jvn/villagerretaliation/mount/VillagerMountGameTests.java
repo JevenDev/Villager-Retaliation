@@ -18,14 +18,17 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -220,34 +223,32 @@ public final class VillagerMountGameTests {
             }
             VillagerMountAssignmentService.AssignmentResult result =
                     VillagerMountAssignmentService.assign(hirer, villager, mount);
-            if (!VillagerMountAssignmentService.featureAvailable()) {
-                helper.assertValueEqual(result, VillagerMountAssignmentService.AssignmentResult.UNAVAILABLE,
-                        "Standalone assignment must remain dormant without Ride On API v2");
-                helper.succeed();
-                return;
-            }
             helper.assertValueEqual(result, VillagerMountAssignmentService.AssignmentResult.SUCCESS,
                     BuiltInRegistries.ENTITY_TYPE.getKey(mount.getType()) + " assignment result");
         }
         helper.assertTrue(firstVillager != null, "The fixture must create an initial villager");
         Villager duplicateVillager = helper.spawn(EntityType.VILLAGER, 7, 1, 3);
         HiredVillagerContractService.startHireContract(level, duplicateVillager, hirer, 1, 0);
+        boolean dualSeatHorse = VillagerRideOnCompat.available()
+                && VillagerRideOnCompat.supportsPassenger(mounts.getFirst());
         helper.assertValueEqual(
                 VillagerMountAssignmentService.assign(hirer, duplicateVillager, mounts.getFirst()),
-                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
-                "A normal horse must remember a villager for each of its two Ride On seats");
+                dualSeatHorse
+                        ? VillagerMountAssignmentService.AssignmentResult.SUCCESS
+                        : VillagerMountAssignmentService.AssignmentResult.MOUNT_ALREADY_ASSIGNED,
+                "A horse must expose exactly the assignment capacity supplied by its active seat provider");
         Villager thirdHorseVillager = helper.spawn(EntityType.VILLAGER, 8, 1, 3);
         HiredVillagerContractService.startHireContract(level, thirdHorseVillager, hirer, 1, 0);
         helper.assertValueEqual(
                 VillagerMountAssignmentService.assign(hirer, thirdHorseVillager, mounts.getFirst()),
                 VillagerMountAssignmentService.AssignmentResult.MOUNT_ALREADY_ASSIGNED,
-                "A normal horse must reject a third remembered villager");
+                "A vanilla horse must reject another remembered villager");
         Villager secondDonkeyVillager = helper.spawn(EntityType.VILLAGER, 9, 1, 3);
         HiredVillagerContractService.startHireContract(level, secondDonkeyVillager, hirer, 1, 0);
         helper.assertValueEqual(
                 VillagerMountAssignmentService.assign(hirer, secondDonkeyVillager, mounts.get(1)),
                 VillagerMountAssignmentService.AssignmentResult.MOUNT_ALREADY_ASSIGNED,
-                "A Ride On single-seat mount must still remember only one villager");
+                "A vanilla donkey must remember only one villager");
         helper.assertValueEqual(
                 VillagerMountAssignmentService.assign(hirer, firstVillager, mounts.get(1)),
                 VillagerMountAssignmentService.AssignmentResult.VILLAGER_ALREADY_ASSIGNED,
@@ -323,73 +324,178 @@ public final class VillagerMountGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_shared_seats")
-    public static void twoAssignedVillagersFillBothHorseSeatsAtRaiderHeight(GameTestHelper helper) {
-        if (!VillagerMountAssignmentService.featureAvailable()) {
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_vanilla_rider")
+    public static void assignedVillagerUsesVanillaControllingPassengerSeat(GameTestHelper helper) {
+        if (VillagerRideOnCompat.available()) {
             helper.succeed();
             return;
         }
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         Villager driver = helper.spawn(EntityType.VILLAGER, 1, 1, 2);
-        Villager passenger = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
         AbstractHorse horse = helper.spawn(EntityType.HORSE, 1, 1, 2);
         horse.setTamed(true);
         horse.setOnGround(true);
         HiredVillagerContractService.startHireContract(level, driver, hirer, 1, 0);
-        HiredVillagerContractService.startHireContract(level, passenger, hirer, 1, 0);
         helper.assertValueEqual(
                 VillagerMountAssignmentService.assign(hirer, driver, horse),
                 VillagerMountAssignmentService.AssignmentResult.SUCCESS,
                 "The horse must accept its driver assignment");
-        helper.assertValueEqual(
-                VillagerMountAssignmentService.assign(hirer, passenger, horse),
-                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
-                "The horse must accept its rear-seat assignment");
 
         BlockPos target = driver.blockPosition().offset(20, 0, 0);
         layTravelFloor(level, driver.blockPosition(), target);
         driver.getBrain().setMemory(
                 MemoryModuleType.WALK_TARGET,
                 new WalkTarget(new BlockPosTracker(target), 0.8F, 0));
-        passenger.getBrain().setMemory(
-                MemoryModuleType.WALK_TARGET,
-                new WalkTarget(new BlockPosTracker(target), 0.8F, 0));
         VillagerMountTravelService.onVillagerTickPost(driver);
-        VillagerMountTravelService.onVillagerTickPost(passenger);
 
-        helper.assertValueEqual(driver.getVehicle(), horse, "The first villager must take the driver seat");
-        helper.assertValueEqual(passenger.getVehicle(), horse, "The second villager must take the rear seat");
-        helper.assertValueEqual(horse.getPassengers().size(), 2, "The horse must carry both assigned villagers");
-        helper.assertValueEqual(horse.getPassengers().getFirst(), driver, "The first villager must remain the driver");
-        helper.assertValueEqual(horse.getPassengers().get(1), passenger, "The second villager must occupy the rear seat");
+        helper.assertValueEqual(driver.getVehicle(), horse, "The villager must ride the assigned horse");
+        helper.assertValueEqual(horse.getPassengers().size(), 1, "The horse must use vanilla's single rider seat");
+        helper.assertValueEqual(horse.getFirstPassenger(), driver, "The villager must be the first passenger");
+        helper.assertValueEqual(horse.getControllingPassenger(), driver,
+                "The vanilla mob rider must be the horse's controlling passenger");
+        helper.assertValueEqual(driver.getNavigation(), horse.getNavigation(),
+                "The controlling villager must delegate navigation to the horse");
 
         horse.positionRider(driver);
-        horse.positionRider(passenger);
-        helper.assertTrue(driver.getY() - horse.getY() > 0.7D && driver.getY() - horse.getY() < 1.0D,
-                "The driver must use the vanilla raider-style 0.6-block riding offset");
-        helper.assertTrue(passenger.getY() - horse.getY() > 0.7D && passenger.getY() - horse.getY() < 1.0D,
-                "The rear villager must use the same grounded riding offset");
         double driverHorizontalOffset = driver.position().multiply(1.0D, 0.0D, 1.0D)
                 .distanceTo(horse.position().multiply(1.0D, 0.0D, 1.0D));
         helper.assertTrue(driverHorizontalOffset < 0.05D,
-                "A two-villager driver must remain centered on the saddle; offset="
+                "The vanilla controlling rider must remain centered on the saddle; offset="
                         + driverHorizontalOffset);
-        double horizontalSeatDistance = driver.position().multiply(1.0D, 0.0D, 1.0D)
-                .distanceTo(passenger.position().multiply(1.0D, 0.0D, 1.0D));
-        helper.assertTrue(horizontalSeatDistance > 1.1D && horizontalSeatDistance < 1.25D,
-                "Two villager models must have extra front-to-rear clearance; distance="
-                        + horizontalSeatDistance);
+        double driverVerticalOffset = driver.getY() - horse.getY();
+        helper.assertTrue(driverVerticalOffset > 0.75D && driverVerticalOffset < 0.95D,
+                "The villager rider must use the vanilla humanoid mob offset and sit in the horse saddle; offset="
+                        + driverVerticalOffset);
 
-        helper.assertTrue(VillagerRideOnCompat.tryDismount(horse, passenger),
-                "The rear villager must dismount for offset cleanup coverage");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_dual_rider")
+    public static void rideOnCarriesVillagerPairAndAllowsTemporaryPlayerDriver(GameTestHelper helper) {
+        if (!VillagerRideOnCompat.available()) {
+            helper.succeed();
+            return;
+        }
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        Villager driver = helper.spawn(EntityType.VILLAGER, 1, 1, 2);
+        Villager rear = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 1, 1, 2);
+        horse.setTamed(true);
+        horse.setOnGround(true);
+        HiredVillagerContractService.startHireContract(level, driver, hirer, 1, 0);
+        HiredVillagerContractService.startHireContract(level, rear, hirer, 1, 0);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, driver, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "Ride On must reserve the controlling villager seat");
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(hirer, rear, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "Ride On must reserve the rear villager seat");
+
+        BlockPos target = driver.blockPosition().offset(20, 0, 0);
+        layTravelFloor(level, driver.blockPosition(), target);
+        driver.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(target), 0.8F, 0));
+        rear.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(new BlockPosTracker(target), 0.8F, 0));
+        VillagerMountTravelService.onVillagerTickPost(driver);
+        VillagerMountTravelService.onVillagerTickPost(rear);
+
+        helper.assertValueEqual(horse.getPassengers().size(), 2,
+                "The assigned villagers must occupy both Ride On seats");
+        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, false), driver,
+                "The first assigned rider must control the horse");
+        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, true), rear,
+                "The second assigned rider must occupy the rear seat");
         horse.positionRider(driver);
-        double loneDriverHorizontalOffset = driver.position().multiply(1.0D, 0.0D, 1.0D)
-                .distanceTo(horse.position().multiply(1.0D, 0.0D, 1.0D));
-        helper.assertTrue(loneDriverHorizontalOffset < 0.05D,
-                "A lone villager driver must return to the normal seat; offset="
-                        + loneDriverHorizontalOffset);
+        horse.positionRider(rear);
+        double seatSpacing = driver.position().multiply(1.0D, 0.0D, 1.0D)
+                .distanceTo(rear.position().multiply(1.0D, 0.0D, 1.0D));
+        helper.assertTrue(seatSpacing >= 0.5D && seatSpacing <= 0.7D,
+                "The rear villager must use Ride On's saddle-area seat spacing; spacing=" + seatSpacing);
 
+        horse.equipSaddle(new ItemStack(Items.SADDLE), null);
+        boolean playerTookDriverSeat = VillagerMountAssignmentService.tryTakeAssignedDriverSeat(hirer, horse);
+        helper.assertTrue(playerTookDriverSeat,
+                "The authorized hirer must take control of a full villager pair; passengers="
+                        + horse.getPassengers()
+                        + ", playerVehicle=" + hirer.getVehicle()
+                        + ", driver=" + VillagerRideOnCompat.occupant(horse, false)
+                        + ", rear=" + VillagerRideOnCompat.occupant(horse, true));
+        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, false), hirer,
+                "The authorized player must become the controlling rider");
+        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, true), driver,
+                "The former villager driver must move to the rear seat");
+        helper.assertFalse(rear.isPassenger(),
+                "The former rear villager must temporarily dismount while the player drives");
+
+        hirer.stopRiding();
+        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, false), driver,
+                "The rear villager must be promoted when the player leaves");
+        VillagerMountTravelService.onVillagerTickPost(rear);
+        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, true), rear,
+                "The second assigned villager must reclaim the available rear seat");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_speed_policy")
+    public static void mountedVillagerWalksNearTargetAndSprintsBeyondEightBlocks(GameTestHelper helper) {
+        Villager villager = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        horse.setTamed(true);
+        horse.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.15D);
+        helper.assertTrue(villager.startRiding(horse, true),
+                "The speed-policy fixture must put the villager in the controlling seat");
+
+        BlockPos nearby = horse.blockPosition().offset(7, 0, 0);
+        BlockPos distant = horse.blockPosition().offset(9, 0, 0);
+        double walkModifier = VillagerMountSpeedPolicy.toward(villager, nearby, 0.62D);
+        double sprintModifier = VillagerMountSpeedPolicy.toward(villager, distant, 0.62D);
+        helper.assertTrue(walkModifier * horse.getAttributeValue(Attributes.MOVEMENT_SPEED) >= 0.299D,
+                "A slow mounted horse must be normalized to the reference walking speed");
+        helper.assertTrue(sprintModifier * horse.getAttributeValue(Attributes.MOVEMENT_SPEED) >= 0.434D,
+                "A distant slow horse must be normalized to the reference catch-up speed");
+        helper.assertTrue(sprintModifier > walkModifier,
+                "A mounted villager beyond eight blocks must sprint faster than it walks");
+
+        villager.stopRiding();
+        helper.assertValueEqual(
+                VillagerMountSpeedPolicy.toward(villager, distant, 0.62D),
+                0.62D,
+                "The mount speed policy must preserve ordinary on-foot navigation speed");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_combat_look")
+    public static void mountedVillagerTracksTargetWithoutFightingHorseSteering(GameTestHelper helper) {
+        Villager villager = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        Entity target = helper.spawn(EntityType.ZOMBIE, 8, 1, 2);
+        horse.setTamed(true);
+        helper.assertTrue(villager.startRiding(horse, true),
+                "The combat-look fixture must put the villager in the controlling seat");
+        horse.yBodyRot = 90.0F;
+        villager.setYRot(90.0F);
+        villager.yBodyRot = 90.0F;
+        villager.yHeadRot = 90.0F;
+        villager.setTarget((net.minecraft.world.entity.LivingEntity) target);
+
+        float targetYaw = -90.0F;
+        float initialDifference = Math.abs(Mth.wrapDegrees(targetYaw - villager.yHeadRot));
+        VillagerMountTravelService.alignMountedCombatLook(villager);
+        float alignedDifference = Math.abs(Mth.wrapDegrees(targetYaw - villager.yHeadRot));
+
+        helper.assertTrue(alignedDifference < initialDifference,
+                "The mounted rider's head must smoothly turn toward its combat target");
+        helper.assertValueEqual(villager.yBodyRot, horse.yBodyRot,
+                "The horse must remain the sole owner of mounted body steering");
+        helper.assertTrue(Math.abs(Mth.wrapDegrees(villager.yHeadRot - villager.yBodyRot)) <= 70.0F,
+                "The mounted rider's target tracking must remain within its natural head-turn range");
         helper.succeed();
     }
 

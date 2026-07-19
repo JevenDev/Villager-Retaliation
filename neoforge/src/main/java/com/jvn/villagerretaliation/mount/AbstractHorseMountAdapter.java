@@ -32,10 +32,9 @@ final class AbstractHorseMountAdapter implements VillagerMountAdapter {
 
     @Override
     public int seatCapacity(Entity entity) {
-        if (!(entity instanceof AbstractHorse horse) || !VillagerRideOnCompat.supportsDriver(horse)) {
-            return 0;
-        }
-        return VillagerRideOnCompat.supportsPassenger(horse) ? 2 : 1;
+        return entity instanceof AbstractHorse horse
+                ? VillagerRideOnCompat.seatCapacity(horse)
+                : 0;
     }
 
     @Override
@@ -49,20 +48,31 @@ final class AbstractHorseMountAdapter implements VillagerMountAdapter {
 
     @Override
     public boolean tryMountAvailableSeat(Entity entity, Villager villager) {
-        return entity instanceof AbstractHorse horse
-                && VillagerRideOnCompat.tryMountAvailableSeat(horse, villager);
+        if (!(entity instanceof AbstractHorse horse)) {
+            return false;
+        }
+        return VillagerRideOnCompat.available()
+                ? VillagerRideOnCompat.tryMountAvailableSeat(horse, villager)
+                : VanillaHorseMounting.tryMount(horse, villager);
     }
 
     @Override
     public boolean tryDismount(Entity entity, Villager villager) {
-        return entity instanceof AbstractHorse horse
-                && VillagerRideOnCompat.tryDismount(horse, villager);
+        if (!(entity instanceof AbstractHorse horse)) {
+            return false;
+        }
+        return VillagerRideOnCompat.available()
+                ? VillagerRideOnCompat.tryDismount(horse, villager)
+                : VanillaHorseMounting.tryDismount(horse, villager);
     }
 
     @Override
     public boolean isDriver(Entity entity, Villager villager) {
         return entity instanceof AbstractHorse horse
-                && VillagerRideOnCompat.occupant(horse, false) == villager;
+                && (VillagerRideOnCompat.available()
+                        ? VillagerRideOnCompat.occupant(horse, false) == villager
+                        : VanillaHorseMounting.rider(horse) == villager)
+                && horse.getControllingPassenger() == villager;
     }
 
     @Override

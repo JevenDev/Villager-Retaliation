@@ -1,16 +1,17 @@
 package com.jvn.villagerretaliation.party;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillagerAbuseSavedData;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.compat.rideon.VillagerRideOnCompat;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
+import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
@@ -491,7 +492,7 @@ public final class PartyGameTests {
                         PartyQuickCommand.DISMOUNT_MOUNT));
         helper.assertFalse(party.mountMode(), "Dismount Mount must persist the off state");
 
-        helper.assertTrue(VillagerRideOnCompat.tryMountDriver(horse, villager),
+        helper.assertTrue(villager.startRiding(horse, true),
                 "The assigned villager must start in the driver seat");
         helper.assertTrue(VillagerMountAssignmentService.assignmentForMount(level, horse.getUUID()).isPresent(),
                 "The driver-seat check must resolve the mount assignment");
@@ -502,12 +503,118 @@ public final class PartyGameTests {
                 "A player outside the villager's party must not pass seat authorization");
         helper.assertFalse(VillagerMountAssignmentService.tryTakeAssignedDriverSeat(outsider, horse),
                 "An unauthorized player must not displace the assigned villager");
-        helper.assertValueEqual(VillagerRideOnCompat.occupant(horse, false), villager,
+        helper.assertValueEqual(horse.getFirstPassenger(), villager,
                 "The assigned villager must remain the current front rider before a real interaction");
+        horse.equipSaddle(new ItemStack(Items.SADDLE), null);
+        helper.assertTrue(VillagerMountAssignmentService.tryTakeAssignedDriverSeat(member, horse),
+                "An authorized party member must be able to take over a saddled assigned mount");
+        helper.assertValueEqual(horse.getFirstPassenger(), member,
+                "The authorized player must replace the villager as the vanilla controlling rider");
 
         VillagerMountAssignmentSavedData.get(level).removeForVillager(villager.getUUID());
         PartyService.deleteParty(level, party.id());
         PartyQuickCommandService.clearRuntimeState();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_live_follow")
+    public static void mountedFollowerKeepsHorseAndUsesLiveFollowRoute(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("mounted_follow_leader"));
+        for (int x = 1; x <= 14; x++) {
+            helper.setBlock(new BlockPos(x, 0, 2), Blocks.STONE);
+        }
+        Villager villager = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        horse.setTamed(true);
+        horse.setOnGround(true);
+        leader.moveTo(villager.getX() + 1.0D, villager.getY(), villager.getZ(), -90.0F, 0.0F);
+        leader.getInventory().add(new ItemStack(Items.EMERALD, PartyVillagerContractService.DAILY_EMERALD_COST));
+        PartyVillagerContractService.ContractResult recruited =
+                PartyVillagerContractService.recruit(leader, villager);
+        helper.assertTrue(recruited.success(), "The mounted-follow fixture must recruit its villager");
+        PartyRecord party = PartyService.getParty(level, recruited.partyId()).orElseThrow();
+        party.setMountMode(true);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(leader, villager, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The mounted-follow fixture must assign its horse");
+        helper.assertTrue(villager.startRiding(horse, true),
+                "The mounted-follow fixture must put the villager in the vanilla controlling seat");
+        helper.assertTrue(horse.getControllingPassenger() == villager
+                        && PartyVillagerContractService.isActivePartyVillager(level, villager)
+                        && VillagerRecruitmentService.isFollowing(villager, leader)
+                        && !leader.isSpectator()
+                        && !villager.isSleeping()
+                        && !villager.isTrading()
+                        && villager.getTarget() == null
+                        && villager.getLastHurtByMob() == null
+                        && !PartyQuickCommandService.overridesRecruitmentMovement(villager),
+                "The mounted-follow fixture must satisfy every live-follow precondition");
+
+        leader.moveTo(villager.getX() + 7.0D, villager.getY(), villager.getZ(), -90.0F, 0.0F);
+        BlockPos expectedFormationTarget = BlockPos.containing(
+                leader.getX() - 2.75D, leader.getY(), leader.getZ());
+        var directHorsePath = horse.getNavigation().createPath(expectedFormationTarget, 0);
+        helper.assertTrue(directHorsePath != null && directHorsePath.canReach(),
+                "The mounted-follow fixture must provide a reachable horse path to the formation point");
+        VillagerRecruitmentService.onVillagerTickPost(villager);
+        BlockPos firstTarget = horse.getNavigation().getTargetPos();
+        helper.assertTrue(firstTarget != null,
+                "A mounted follower must immediately path toward its moving leader");
+        helper.assertTrue(horse.getControllingPassenger() == villager,
+                "Ordinary leader follow must retain the assigned villager as the horse's controlling passenger");
+        helper.assertTrue(firstTarget.distSqr(expectedFormationTarget) <= 1.0D,
+                "The live follow route must be placed on the horse navigator instead of the villager's on-foot navigator");
+        PartyService.deleteParty(level, recruited.partyId());
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_live_combat")
+    public static void mountedPartyVillagerRetainsTargetAndMeleeAttacks(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("mounted_combat_leader"));
+        Villager villager = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        var target = helper.spawn(EntityType.COW, 4, 1, 2);
+        target.setNoAi(true);
+        horse.setTamed(true);
+        horse.setOnGround(true);
+
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartyVillagerRecord record = villagerRecord(villager.getUUID(), leader.getUUID(), 0, now);
+        record.setCombatMode(PartyCombatMode.KILL_ON_SIGHT);
+        record.setAttackMode(PartyAttackMode.ANIMALS);
+        helper.assertTrue(PartySavedData.get(level).addVillager(party, record),
+                "The mounted-combat fixture must add its party villager");
+        party.setMountMode(true);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(leader, villager, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The mounted-combat fixture must assign its horse");
+        helper.assertTrue(villager.startRiding(horse, true),
+                "The mounted-combat fixture must put the villager in the controlling seat");
+        helper.assertTrue(VillageCombatAuthorizationService.authorize(level, villager, target),
+                "The mounted-combat fixture must explicitly authorize its neutral target");
+
+        VillagerRetaliationHandler.forceAngerSilently(villager, target);
+        float healthBefore = target.getHealth();
+        VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(villager));
+
+        helper.assertTrue(horse.getControllingPassenger() == villager
+                        && VillagerRetaliationHandler.hasRetaliationTarget(villager, target),
+                "Mounted combat must retain both the controlling seat and retaliation target");
+        helper.assertTrue(target.getHealth() < healthBefore,
+                "A mounted party villager in melee range must attack; health=" + target.getHealth()
+                        + "/" + healthBefore + ", canMelee="
+                        + VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target)
+                        + ", lineOfSight=" + villager.hasLineOfSight(target)
+                        + ", distance=" + villager.distanceToSqr(target)
+                        + ", navigation=" + horse.getNavigation().getTargetPos());
+
+        PartyService.deleteParty(level, party.id());
+        target.discard();
         helper.succeed();
     }
 
@@ -1394,7 +1501,7 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, batch = "crossbow_combat", setupTicks = 20, timeoutTicks = 180)
-    public static void rangedPartyVillagerLoadsAndFiresCrossbowLikePillager(GameTestHelper helper) {
+    public static void mountedRangedPartyVillagerLoadsAndFiresCrossbowLikePillager(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_crossbow_cycle"));
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
@@ -1413,6 +1520,16 @@ public final class PartyGameTests {
         record.setWeaponPreference(PartyWeaponPreference.RANGED);
         PartySavedData.get(level).addVillager(
                 party, record);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 2, 2);
+        horse.setTamed(true);
+        party.setMountMode(true);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(leader, villager, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The mounted crossbow fixture must assign its horse");
+        helper.assertTrue(villager.startRiding(horse, true)
+                        && horse.getControllingPassenger() == villager,
+                "The ranged villager must occupy the vanilla controlling seat");
         leader.lookAt(EntityAnchorArgument.Anchor.EYES, target.getEyePosition());
         HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
         jobInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
@@ -1420,7 +1537,7 @@ public final class PartyGameTests {
         int arrowSlot = crossbowSlot + 1;
         jobInventory.setItem(crossbowSlot, new ItemStack(Items.CROSSBOW));
         jobInventory.markPlayerPlacedSupply(crossbowSlot);
-        jobInventory.setItem(arrowSlot, new ItemStack(Items.ARROW));
+        jobInventory.setItem(arrowSlot, new ItemStack(Items.ARROW, 2));
         jobInventory.markPlayerPlacedSupply(arrowSlot);
 
         VillagerCombatLoadoutService.applyPreference(villager, PartyWeaponPreference.RANGED);
@@ -1439,7 +1556,7 @@ public final class PartyGameTests {
                 .thenWaitUntil(() -> {
                     level.tickNonPassenger(villager);
                     helper.assertTrue(
-                            jobInventory.getItem(arrowSlot).isEmpty(),
+                            countJobInventoryArrows(jobInventory) < 2,
                             "ranged party villager has not loaded its crossbow: "
                                     + crossbowCycleState(level, villager, target, jobInventory, arrowSlot));
                 })
@@ -1451,12 +1568,14 @@ public final class PartyGameTests {
                                     + crossbowCycleState(level, villager, target, jobInventory, arrowSlot));
                 })
                 .thenExecute(() -> {
-                    helper.assertTrue(jobInventory.getItem(arrowSlot).isEmpty(),
+                    helper.assertValueEqual(countJobInventoryArrows(jobInventory), 1,
                             "loading the crossbow should consume exactly the required arrow");
                     helper.assertFalse(villager.isUsingItem(),
                             "the crossbow loading animation must end after the shot is prepared");
                     helper.assertFalse(CrossbowItem.isCharged(findCrossbow(villager, jobInventory)),
                             "the crossbow should discharge after firing");
+                    helper.assertTrue(horse.getControllingPassenger() == villager,
+                            "mounted ranged combat must retain the villager as the horse's controller");
                     VillagerRetaliationHandler.clearCustomTarget(villager);
                     PartyService.deleteParty(level, party.id());
                     PartyQuickCommandService.clearRuntimeState();
@@ -1574,6 +1693,17 @@ public final class PartyGameTests {
                 AbstractArrow.class,
                 villager.getBoundingBox().inflate(20.0D),
                 arrow -> arrow.getOwner() == villager);
+    }
+
+    private static int countJobInventoryArrows(HiredJobInventory jobInventory) {
+        int arrows = 0;
+        for (int slot = 0; slot < jobInventory.getContainerSize(); slot++) {
+            ItemStack stack = jobInventory.getItem(slot);
+            if (stack.is(Items.ARROW)) {
+                arrows += stack.getCount();
+            }
+        }
+        return arrows;
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

@@ -25,6 +25,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
@@ -44,6 +45,7 @@ public final class VillagerRetaliationRetaliationUtil {
     private static final int RANDOM_PATH_RECALCULATION_TICKS = 7;
     private static final double PATHED_TARGET_MOVED_DISTANCE_SQR = 1.0D;
     private static final double MELEE_EDGE_REACH = 0.45D;
+    private static final double MOUNTED_MELEE_EDGE_REACH = 1.0D;
     private static final double CLOSE_MELEE_STEERING_DISTANCE_SQR = 9.0D;
     private static final int MIN_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS = 4;
     private static final int RANDOM_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS = 7;
@@ -341,10 +343,15 @@ public final class VillagerRetaliationRetaliationUtil {
     }
 
     public static boolean canMeleeHit(AbstractVillager villager, LivingEntity target) {
+        Mob meleeBody = villager.getControlledVehicle() instanceof Mob controlledMount
+                ? controlledMount
+                : villager;
+        boolean mounted = meleeBody != villager;
+        double edgeReach = mounted ? MOUNTED_MELEE_EDGE_REACH : MELEE_EDGE_REACH;
         return target.isAlive()
                 && villager.hasLineOfSight(target)
-                && villager.isWithinMeleeAttackRange(target)
-                && isWithinTightMeleeAttackRange(villager, target);
+                && (mounted || villager.isWithinMeleeAttackRange(target))
+                && isWithinTightMeleeAttackRange(meleeBody, target, edgeReach);
     }
 
     public static boolean hasClearLineOfSight(AbstractVillager villager, LivingEntity target) {
@@ -362,14 +369,14 @@ public final class VillagerRetaliationRetaliationUtil {
                 .getType() == HitResult.Type.MISS;
     }
 
-    private static boolean isWithinTightMeleeAttackRange(AbstractVillager villager, LivingEntity target) {
-        AABB villagerBox = villager.getBoundingBox();
+    private static boolean isWithinTightMeleeAttackRange(Mob meleeBody, LivingEntity target, double edgeReach) {
+        AABB bodyBox = meleeBody.getBoundingBox();
         AABB targetBox = target.getHitbox();
-        double xGap = Math.max(0.0D, Math.max(villagerBox.minX - targetBox.maxX, targetBox.minX - villagerBox.maxX));
-        double zGap = Math.max(0.0D, Math.max(villagerBox.minZ - targetBox.maxZ, targetBox.minZ - villagerBox.maxZ));
-        return villagerBox.maxY > targetBox.minY
-                && targetBox.maxY > villagerBox.minY
-                && xGap * xGap + zGap * zGap <= MELEE_EDGE_REACH * MELEE_EDGE_REACH;
+        double xGap = Math.max(0.0D, Math.max(bodyBox.minX - targetBox.maxX, targetBox.minX - bodyBox.maxX));
+        double zGap = Math.max(0.0D, Math.max(bodyBox.minZ - targetBox.maxZ, targetBox.minZ - bodyBox.maxZ));
+        return bodyBox.maxY > targetBox.minY
+                && targetBox.maxY > bodyBox.minY
+                && xGap * xGap + zGap * zGap <= edgeReach * edgeReach;
     }
 
     public static boolean isWithinRetaliationPursuitRange(AbstractVillager villager, LivingEntity target) {
@@ -382,8 +389,13 @@ public final class VillagerRetaliationRetaliationUtil {
                 && villager.hasLineOfSight(target)
                 && villager.distanceToSqr(target) <= CLOSE_MELEE_STEERING_DISTANCE_SQR) {
             villager.getLookControl().setLookAt(target, 30.0F, 30.0F);
-            villager.getMoveControl().setWantedPosition(target.getX(), target.getY(), target.getZ(), movementSpeed);
-            return true;
+            // A controlling mob rider delegates both navigation and move control to its horse.
+            // Writing a second, continuously moving destination here fights the navigator's next
+            // path node and makes the horse alternate headings near its target.
+            if (!(villager.getControlledVehicle() instanceof AbstractHorse)) {
+                villager.getMoveControl().setWantedPosition(target.getX(), target.getY(), target.getZ(), movementSpeed);
+                return true;
+            }
         }
         return moved;
     }

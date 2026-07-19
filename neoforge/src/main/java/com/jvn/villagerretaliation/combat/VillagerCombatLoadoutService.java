@@ -94,6 +94,7 @@ public final class VillagerCombatLoadoutService {
         return isUsableRanged(stack)
                 && (hasAmmo || stack.getItem() instanceof CrossbowItem
                 && (CrossbowItem.isCharged(stack)
-                || VillagerRangedCombatHelper.hasLoadedCrossbowProjectile(villager)));
+                || VillagerRangedCombatHelper.hasLoadedCrossbowProjectile(villager)
+                || VillagerRangedCombatHelper.hasActiveCrossbowCycle(villager)));
     }
 }

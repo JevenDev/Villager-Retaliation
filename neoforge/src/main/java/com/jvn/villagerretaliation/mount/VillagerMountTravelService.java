@@ -15,7 +15,9 @@ import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
@@ -74,9 +76,12 @@ public final class VillagerMountTravelService {
             park(level, villager, mount, adapter, data);
             return;
         }
-        if (isRearPassenger(villager, mount)) {
-            // A rear passenger keeps combat/look AI, but its own movement requests cannot steer.
+        if (mount instanceof AbstractHorse horse
+                && VillagerRideOnCompat.isRearPassenger(horse, villager)) {
+            // A rear villager keeps look/combat AI, but its private on-foot navigator must not
+            // compete with the controlling rider or request movement it cannot perform.
             villager.getNavigation().stop();
+            alignMountedCombatLook(villager);
             return;
         }
         if (adapter.isDriver(mount, villager)) {
@@ -84,7 +89,10 @@ public final class VillagerMountTravelService {
             adapter.clearRestriction(mount);
             if (decision.staying()) {
                 adapter.stopNavigation(mount);
+            } else {
+                maintainMountedNavigationSpeed(villager);
             }
+            alignMountedCombatLook(villager);
             // NeoForge delegates a controlling mob rider's navigation and move control to its
             // mob vehicle. Let the villager's normal brain drive the horse exactly as a raider
             // drives a ravager instead of maintaining a competing route here.
@@ -201,6 +209,37 @@ public final class VillagerMountTravelService {
         }
     }
 
+    /** Lets the horse own body steering while the rider smoothly tracks its combat target. */
+    public static void alignMountedCombatLook(Villager villager) {
+        if (villager == null
+                || !(villager.getControlledVehicle() instanceof AbstractHorse horse)
+                || !(villager.getTarget() instanceof LivingEntity target)
+                || !target.isAlive()) {
+            return;
+        }
+        double deltaX = target.getX() - villager.getX();
+        double deltaZ = target.getZ() - villager.getZ();
+        if (deltaX * deltaX + deltaZ * deltaZ < 1.0E-6D) {
+            return;
+        }
+        float targetYaw = (float) (Mth.atan2(deltaZ, deltaX) * 180.0D / Math.PI) - 90.0F;
+        float bodyYaw = horse.yBodyRot;
+        float boundedTargetYaw = bodyYaw + Mth.clamp(Mth.wrapDegrees(targetYaw - bodyYaw), -70.0F, 70.0F);
+        villager.yBodyRot = bodyYaw;
+        villager.yHeadRot = Mth.approachDegrees(villager.yHeadRot, boundedTargetYaw, 15.0F);
+    }
+
+    private static void maintainMountedNavigationSpeed(Villager villager) {
+        if (villager.getNavigation().isDone()) {
+            return;
+        }
+        BlockPos target = villager.getNavigation().getTargetPos();
+        if (target != null) {
+            villager.getNavigation().setSpeedModifier(
+                    VillagerMountSpeedPolicy.toward(villager, target, VillagerMountSpeedPolicy.WALK_SPEED));
+        }
+    }
+
     static void releaseRestriction(MinecraftServer server, VillagerMountAssignment assignment) {
         Entity mount = assignment == null ? null : VillagerMountEntities.loaded(server, assignment.mountId());
         VillagerMountAdapter adapter = VillagerMountAdapters.find(mount);
@@ -247,16 +286,6 @@ public final class VillagerMountTravelService {
         }
         // For a controlling passenger, NeoForge returns the horse navigator here.
         return villager.getNavigation().isDone() ? null : villager.getNavigation().getTargetPos();
-    }
-
-    private static boolean isRearPassenger(Villager villager, Entity mount) {
-        if (!(mount instanceof AbstractHorse horse)) {
-            return false;
-        }
-        Entity driver = VillagerRideOnCompat.occupant(horse, false);
-        return driver != null
-                && driver.isAlive()
-                && VillagerRideOnCompat.occupant(horse, true) == villager;
     }
 
     private static boolean isRetryTick(Villager villager) {
