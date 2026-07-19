@@ -560,6 +560,9 @@ public final class VillagerReputationEvents {
             if (!nearbyPlayer.visible() || nearbyPlayer.reputationLevel() != VillagerReputationLevel.DESPISED) {
                 continue;
             }
+            if (!VillagerAggressionPolicy.shouldProactivelyAttackOnSight(villager, nearbyPlayer.player())) {
+                continue;
+            }
             triggerNegativeReputationBell(level, villager, VillagerReputationLevel.DESPISED);
             com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.forceAnger(villager, nearbyPlayer.player());
             return;
