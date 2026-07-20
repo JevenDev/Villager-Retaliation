@@ -440,6 +440,14 @@ function testSceneResourceRoundTrip(app) {
   assert(/exactly one template or variants/i.test(app.sceneResourceIssueDetail(scenePath, variantScene)?.message || ""), "Incompatible start_encounter variant sources were not diagnosed.");
 }
 
+function canonicalJson(value) {
+  if (Array.isArray(value)) return value.map(canonicalJson);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonicalJson(value[key])]));
+  }
+  return value;
+}
+
 function testSkillTradeRoundTrip(app) {
   app.state = app.createInitialState();
   const firstPath = "data/alchemy/skill_trades/apothecary/orders.json";
@@ -476,6 +484,23 @@ function testSkillTradeRoundTrip(app) {
   assert(/targetable|extra cost/i.test(app.skillTradeIssueDetail(invalid)?.message || ""), "Invalid Special Order metadata was not diagnosed.");
 }
 
+function testCheckedInSkillTradeExample(app) {
+  app.state = app.createInitialState();
+  const root = "example-packs/skill-trades-special-orders";
+  const paths = [
+    "data/trade_examples/skill_trades/farming_orders.json",
+    "data/trade_examples/skill_trades/profession_specialties.json"
+  ];
+  for (const relativePath of paths) {
+    const source = fs.readFileSync(`${root}/${relativePath}`, "utf8");
+    const input = JSON.parse(source);
+    assert(app.ingestKnownJson(relativePath, source), `Checked-in skill trade import failed for ${relativePath}.`);
+    const output = jsonFile(app.generatedFiles(), relativePath);
+    assert(JSON.stringify(canonicalJson(output)) === JSON.stringify(canonicalJson(input)),
+      `Checked-in skill trade changed during builder round trip: ${relativePath}.`);
+  }
+}
+
 const app = createAppHarness();
 testTypedFolderOutput(app);
 testTypedImportAndProfessionDefaults(app);
@@ -489,5 +514,6 @@ testSurfaceImportsAndEdits(app);
 testBackendPathNormalization(app);
 testSceneResourceRoundTrip(app);
 testSkillTradeRoundTrip(app);
+testCheckedInSkillTradeExample(app);
 
 console.log("Datapack builder schema/import smoke test passed.");
