@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.villager;
 
 import com.jvn.toucanlib.neoforge.loot.ToucanLivingDrops;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -132,6 +134,7 @@ public final class VillagerRetaliationVillagerWeapons {
         if (!itemEntity.isAlive()
                 || itemEntity.hasPickUpDelay()
                 || groundStack.isEmpty()
+                || hasAuthoritativeJobMainHand(villager)
                 || !isBetterWeaponChoice(groundStack, getPrimaryWeapon(villager))) {
             return;
         }
@@ -294,11 +297,17 @@ public final class VillagerRetaliationVillagerWeapons {
 
     private static boolean shouldPathfindForWeapon(AbstractVillager villager, ItemStack equippedWeapon, ItemStack groundWeapon) {
         if (!canSearchForGroundWeapon(villager)
+                || hasAuthoritativeJobMainHand(villager)
                 || !isUsableWeapon(groundWeapon)) {
             return false;
         }
 
         return isBetterWeaponChoice(groundWeapon, equippedWeapon);
+    }
+
+    private static boolean hasAuthoritativeJobMainHand(AbstractVillager villager) {
+        return villager instanceof Villager regularVillager
+                && HiredJobInventory.hasJobEquipmentForSlot(regularVillager, EquipmentSlot.MAINHAND);
     }
 
     private static boolean isCachedWeaponStillUsable(AbstractVillager villager, ItemEntity itemEntity) {

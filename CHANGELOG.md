@@ -1,5 +1,6 @@
 # Changelog
 
+- Fixed hired party villagers duplicating party-owned weapons and armor into personal inventory while attempting to scavenge ground upgrades; authoritative party equipment now rejects both path selection and stale pickup completion.
 - Fixed recruited and hired villagers sometimes opening the vanilla trading menu; controlled contract states now consistently suppress trading.
 
 - Villagers in combat can now pursue and equip stronger dropped armor, preserving displaced pieces in their personal inventory when space is available.

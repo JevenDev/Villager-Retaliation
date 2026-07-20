@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.villager;
 
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import java.util.Optional;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -41,6 +42,7 @@ public final class VillagerRetaliationVillagerArmor {
         EquipmentSlot slot = armorSlot(candidate);
         return slot != null
                 && VillagerRetaliationVillagerWeapons.canSearchForGroundWeapon(villager)
+                && !hasAuthoritativeJobEquipment(villager, slot)
                 && isBetterArmor(candidate, villager.getItemBySlot(slot));
     }
 
@@ -51,7 +53,9 @@ public final class VillagerRetaliationVillagerArmor {
 
         ItemStack groundStack = itemEntity.getItem();
         EquipmentSlot slot = armorSlot(groundStack);
-        if (slot == null || !isBetterArmor(groundStack, villager.getItemBySlot(slot))) {
+        if (slot == null
+                || hasAuthoritativeJobEquipment(villager, slot)
+                || !isBetterArmor(groundStack, villager.getItemBySlot(slot))) {
             return false;
         }
 
@@ -112,6 +116,11 @@ public final class VillagerRetaliationVillagerArmor {
 
     private static EquipmentSlot armorSlot(ItemStack stack) {
         return stack.getItem() instanceof ArmorItem armorItem ? armorItem.getEquipmentSlot() : null;
+    }
+
+    private static boolean hasAuthoritativeJobEquipment(AbstractVillager villager, EquipmentSlot slot) {
+        return villager instanceof Villager regularVillager
+                && HiredJobInventory.hasJobEquipmentForSlot(regularVillager, slot);
     }
 
     private static void storeOrDrop(AbstractVillager villager, ItemStack stack) {
