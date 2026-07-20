@@ -728,8 +728,13 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         @Override
         public void setByPlayer(ItemStack newStack, ItemStack oldStack) {
             super.setByPlayer(newStack, oldStack);
-            if (!newStack.isEmpty() && this.container instanceof HiredJobInventory jobInventory) {
-                jobInventory.markPlayerPlacedSupply(this.getSlotIndex());
+            if (this.container instanceof HiredJobInventory jobInventory) {
+                if (!newStack.isEmpty()) {
+                    jobInventory.markPlayerPlacedSupply(this.getSlotIndex());
+                }
+                if (this.getSlotIndex() == HiredJobInventory.OFFHAND_SLOT) {
+                    VillagerDefensiveLoadoutService.markManualOffhand(jobInventory.villager(), !newStack.isEmpty());
+                }
             }
         }
 
@@ -808,6 +813,14 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         @Override
         public boolean mayPlace(ItemStack stack) {
             return !HiredJobInventory.hasJobEquipmentForSlot(this.villager, this.equipmentSlot);
+        }
+
+        @Override
+        public void setByPlayer(ItemStack newStack, ItemStack oldStack) {
+            super.setByPlayer(newStack, oldStack);
+            if (this.equipmentSlot == EquipmentSlot.OFFHAND) {
+                VillagerDefensiveLoadoutService.markManualOffhand(this.villager, !newStack.isEmpty());
+            }
         }
 
         @Override

@@ -74,6 +74,7 @@ public class VillagerRetaliation {
                 .listener(VillagerMountedCombatPolicy::onProjectileImpact)
                 .listener(VillagerRetaliationEvents::onLivingDamageFinalPre)
                 .listener(VillagerRetaliationEvents::onLivingDamage)
+                .listener(com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService::onLivingUseTotem)
                 .listener(VillagerReputationEvents::onLivingDamage)
                 .listener(VillagerDisciplineService::onLivingDamage)
                 .listener(VillagerRetaliationEvents::onLivingDrops)

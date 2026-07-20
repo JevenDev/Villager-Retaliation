@@ -71,6 +71,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.EntityLeaveLevelEvent;
@@ -448,7 +449,12 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (!waveringUnarmedCounter) {
+        boolean meleeAttackReady = RETALIATION.isAttackReady(villager, gameTime);
+        boolean holdingStandGuard = shouldHoldStandGuard(villager, target, meleeAttackReady);
+        if (!holdingStandGuard) {
+            com.jvn.villagerretaliation.party.PartyQuickCommandService.prepareGuardAttack(villager);
+        }
+        if (!waveringUnarmedCounter && !holdingStandGuard) {
             tryBorrowInventoryCombatWeapon(villager);
             if (tryAcquireGroundWeapon(villager, gameTime)) {
                 return;
@@ -459,8 +465,22 @@ public final class VillagerRetaliationHandler {
         VillagerInteractionTracker.markGearReportsUsedInCombat(level, villager, hasEquippedWeaponGear(villager), hasEquippedArmorGear(villager));
         VillagerRetaliationRetaliationUtil.boostCombatMovement(villager);
 
+        if (holdingStandGuard) {
+            if (VillagerClericPotionHelper.tryCombat(villager, target, level, distanceSqr)) {
+                return;
+            }
+            if (VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target)) {
+                VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+                VillagerRetaliationRetaliationUtil.clearPathingState(villager);
+            } else {
+                double guardSpeed = VillagerMountSpeedPolicy.toward(
+                        villager, target, ACTOR_POLICY.movementSpeed(villager));
+                VillagerRetaliationRetaliationUtil.moveTowardMeleeRetaliationTarget(villager, target, guardSpeed);
+            }
+            return;
+        }
+
         handleDefensiveRole(villager, gameTime);
-        boolean meleeAttackReady = RETALIATION.isAttackReady(villager, gameTime);
         boolean allowMeleeAttack = VillagerArmorerCombatTactics.handleCombatTactics(villager, target, distanceSqr, gameTime, meleeAttackReady);
 
         if (VillagerClericPotionHelper.tryCombat(villager, target, level, distanceSqr)) {
@@ -1476,6 +1496,28 @@ public final class VillagerRetaliationHandler {
         if (tryBorrowInventoryCombatWeapon(villager)) {
             return;
         }
+    }
+
+    private static boolean shouldHoldStandGuard(
+            Villager villager,
+            LivingEntity target,
+            boolean meleeAttackReady
+    ) {
+        if (!com.jvn.villagerretaliation.party.PartyQuickCommandService.isStandingGuard(villager)
+                || !villager.getMainHandItem().is(Items.SHIELD)
+                || villager.isUsingItem() && !villager.getUseItem().is(Items.SHIELD)) {
+            return false;
+        }
+        var preference = VillagerCombatLoadoutService.preference(villager);
+        boolean rangedGuard = preference == com.jvn.villagerretaliation.party.PartyWeaponPreference.RANGED
+                || preference == com.jvn.villagerretaliation.party.PartyWeaponPreference.AUTO
+                && (VillagerRangedCombatHelper.hasState(villager)
+                || VillagerInventoryAccess.hasCarriedItem(
+                        villager, VillagerRetaliationVillagerWeapons::isRangedWeapon));
+        if (rangedGuard) {
+            return VillagerRangedCombatHelper.tickGuardInterval(villager);
+        }
+        return !meleeAttackReady || !VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
     }
 
     private static boolean hasEquippedWeaponGear(Villager villager) {

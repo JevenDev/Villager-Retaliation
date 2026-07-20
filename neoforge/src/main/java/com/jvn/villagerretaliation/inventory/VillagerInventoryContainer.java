@@ -53,6 +53,7 @@ final class VillagerInventoryContainer implements Container {
     VillagerInventoryContainer(Villager villager) {
         this.villager = villager;
         this.inventory = NonNullList.withSize(INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
+        VillagerDefensiveLoadoutService.prepareForInventoryAccess(villager);
         VillagerRetaliationHandler.releaseTemporaryWeaponForInventory(villager);
         VillagerRetaliationVillagerWeapons.prepareTrackedPickupForInventory(villager);
         loadInventory();

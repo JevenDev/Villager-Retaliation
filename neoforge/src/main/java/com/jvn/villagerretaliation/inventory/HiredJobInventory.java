@@ -132,6 +132,10 @@ public final class HiredJobInventory implements Container {
         }
     }
 
+    Villager villager() {
+        return this.villager;
+    }
+
     public static void clearInheritedStateForNewborn(Villager child) {
         if (child == null) return;
         child.getPersistentData().remove(TAG);

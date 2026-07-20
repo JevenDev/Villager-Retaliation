@@ -380,6 +380,7 @@ public final class VillagerRetaliationEvents {
             VillagerFleeBehaviorHandler.onEntityTickPost(event);
             VillagerCombatSurvivalService.onVillagerTickPost(villager);
             com.jvn.villagerretaliation.party.PartyQuickCommandService.onVillagerTickPost(villager);
+            com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
             com.jvn.villagerretaliation.mount.VillagerMountTravelService.onVillagerTickPost(villager);
             VillagerInventoryAccess.maybeOffloadInventoryOverflow(villager);
             VillagerWalletService.tickWallet(villager);

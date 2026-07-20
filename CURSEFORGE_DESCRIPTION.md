@@ -164,6 +164,7 @@ Villager Retaliation! adds configurable drops for villagers and wandering trader
 * Adult villagers can roll profession-themed loot
 * Combat weapons can drop at configurable rates
 * Equipped gear can be given through the villager inventory interaction
+* Adult villagers automatically equip carried Totems of Undying in their off-hand unless that slot was explicitly assigned. Party villagers ordered to Raise Shields can keep the totem ready while blocking with a stored shield and swapping to their preferred weapon for attacks.
 * Baby villager loot is disabled by default
 * Wandering traders can drop emeralds, invisibility potions, and safe copies of current trade results
 

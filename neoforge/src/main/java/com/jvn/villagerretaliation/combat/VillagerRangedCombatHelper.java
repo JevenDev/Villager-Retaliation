@@ -149,6 +149,24 @@ final class VillagerRangedCombatHelper {
                 || state == CrossbowState.READY_TO_ATTACK;
     }
 
+    /** Advances only the recovery timer while Stand Guard temporarily stows the weapon. */
+    static boolean tickGuardInterval(AbstractVillager villager) {
+        if (villager.isUsingItem()) {
+            return false;
+        }
+        UUID villagerId = villager.getUUID();
+        CrossbowState crossbowState = CROSSBOW_STATE.get(villagerId);
+        if (crossbowState == CrossbowState.CHARGING || crossbowState == CrossbowState.READY_TO_ATTACK) {
+            return false;
+        }
+        int delay = ATTACK_DELAY.getOrDefault(villagerId, 0);
+        if (delay <= 0) {
+            return false;
+        }
+        ATTACK_DELAY.put(villagerId, delay - 1);
+        return true;
+    }
+
     static void seedInitialAttackDelay(AbstractVillager villager, ItemStack equippedWeapon) {
         if (VillagerRetaliationVillagerWeapons.isBowWeapon(equippedWeapon)) {
             ATTACK_DELAY.put(villager.getUUID(), INITIAL_RANGED_WINDUP_TICKS);

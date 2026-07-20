@@ -194,6 +194,20 @@ public final class PartyQuickCommandService {
         }
     }
 
+    public static boolean isStandingGuard(Villager villager) {
+        return villager != null && STAND_GUARD_VILLAGERS.contains(villager.getUUID());
+    }
+
+    public static void prepareGuardAttack(Villager villager) {
+        if (!isStandingGuard(villager) || !villager.getMainHandItem().is(Items.SHIELD)) {
+            return;
+        }
+        if (villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD)) {
+            villager.stopUsingItem();
+        }
+        com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService.returnGuardShield(villager);
+    }
+
     public static boolean overridesRecruitmentMovement(Villager villager) {
         if (villager == null) {
             return false;
@@ -929,16 +943,28 @@ public final class PartyQuickCommandService {
     }
 
     private static void tickStandGuard(Villager villager, PartyRecord party) {
-        if (villager.getTarget() != null || villager.getLastHurtByMob() != null || villager.isAggressive()) {
-            clearStandGuardAndSync(villager, party);
+        if (com.jvn.villagerretaliation.inventory.VillagerInventoryAccess.hasOpenInventory(villager)) {
             return;
         }
-        InteractionHand shieldHand = villager.getOffhandItem().is(Items.SHIELD)
-                ? InteractionHand.OFF_HAND
-                : villager.getMainHandItem().is(Items.SHIELD) ? InteractionHand.MAIN_HAND : null;
+        if (villager.isUsingItem() && !villager.getUseItem().is(Items.SHIELD)) {
+            return;
+        }
+        ensureGuardShield(villager);
+        InteractionHand shieldHand = villager.getMainHandItem().is(Items.SHIELD)
+                ? InteractionHand.MAIN_HAND
+                : villager.getOffhandItem().is(Items.SHIELD) ? InteractionHand.OFF_HAND : null;
         if (shieldHand != null && !villager.isUsingItem()) {
             villager.startUsingItem(shieldHand);
         }
+    }
+
+    private static void ensureGuardShield(Villager villager) {
+        if (villager.getMainHandItem().is(Items.SHIELD)
+                || villager.getOffhandItem().is(Items.SHIELD)
+                && !villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING)) {
+            return;
+        }
+        com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService.ensureGuardShield(villager);
     }
 
     private static boolean claimDrop(UUID villagerId, RuntimeOrder order, UUID dropId) {
@@ -1001,11 +1027,20 @@ public final class PartyQuickCommandService {
     }
 
     private static void clearStandGuard(Villager villager) {
-        if (STAND_GUARD_VILLAGERS.remove(villager.getUUID())
-                && villager.isUsingItem()
-                && villager.getUseItem().is(Items.SHIELD)) {
+        boolean removed = STAND_GUARD_VILLAGERS.remove(villager.getUUID());
+        if (removed && villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD)) {
             villager.stopUsingItem();
         }
+        if (removed) {
+            prepareGuardAttackAfterRemoval(villager);
+        }
+    }
+
+    private static void prepareGuardAttackAfterRemoval(Villager villager) {
+        if (!villager.getMainHandItem().is(Items.SHIELD)) {
+            return;
+        }
+        com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService.returnGuardShield(villager);
     }
 
     private static void clearAllOrders(UUID villagerId) {

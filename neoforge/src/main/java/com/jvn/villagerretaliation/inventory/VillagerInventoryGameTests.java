@@ -1243,6 +1243,108 @@ public final class VillagerInventoryGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void carriedTotemReplacesAndRestoresRoleOffhand(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerRetaliationVillagerEquipment.setRoleEquipment(
+                villager, EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.TOTEM_OF_UNDYING));
+
+        VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
+        helper.assertTrue(villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING),
+                "a carried totem should replace role-controlled off-hand gear");
+        helper.assertValueEqual(countStored(villager, Items.SHIELD), 1,
+                "the displaced role shield should occupy the totem's source slot");
+        helper.assertValueEqual(countStored(villager, Items.TOTEM_OF_UNDYING), 0,
+                "the equipped totem must have exactly one owner");
+
+        VillagerDefensiveLoadoutService.prepareForInventoryAccess(villager);
+        helper.assertTrue(villager.getOffhandItem().is(Items.SHIELD),
+                "opening inventory should restore displaced off-hand gear");
+        helper.assertValueEqual(countStored(villager, Items.TOTEM_OF_UNDYING), 1,
+                "returning the loan should restore the same totem to storage");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void manualOffhandOverridesTotemButManualMainhandDoesNot(GameTestHelper helper) {
+        Villager offhandOverride = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                offhandOverride, EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+        VillagerInventoryAccess.addItem(offhandOverride, new ItemStack(Items.TOTEM_OF_UNDYING));
+        VillagerDefensiveLoadoutService.onVillagerTickPost(offhandOverride);
+        helper.assertTrue(offhandOverride.getOffhandItem().is(Items.SHIELD)
+                        && countStored(offhandOverride, Items.TOTEM_OF_UNDYING) == 1,
+                "an explicitly assigned off-hand should remain authoritative");
+
+        Villager mainhandOverride = spawnVillager(helper, new BlockPos(3, 2, 1));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                mainhandOverride, EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+        VillagerInventoryAccess.addItem(mainhandOverride, new ItemStack(Items.TOTEM_OF_UNDYING));
+        VillagerDefensiveLoadoutService.onVillagerTickPost(mainhandOverride);
+        helper.assertTrue(mainhandOverride.getMainHandItem().is(Items.IRON_SWORD)
+                        && mainhandOverride.getOffhandItem().is(Items.TOTEM_OF_UNDYING),
+                "manual main-hand gear should not block automatic off-hand protection");
+
+        offhandOverride.discard();
+        mainhandOverride.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void consumedBorrowedTotemReplenishesWithoutDuplication(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.TOTEM_OF_UNDYING));
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.TOTEM_OF_UNDYING));
+        VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
+
+        villager.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
+        helper.assertTrue(villager.isAlive(), "the automatically borrowed totem should prevent death");
+        VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
+
+        helper.assertTrue(villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING),
+                "the next carried totem should replenish the consumed off-hand loan");
+        helper.assertValueEqual(countStored(villager, Items.TOTEM_OF_UNDYING), 0,
+                "one consumed and one equipped totem should leave no stored duplicate");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void babyVillagersDoNotAutoEquipTotems(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.setBaby(true);
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.TOTEM_OF_UNDYING));
+        VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
+        helper.assertTrue(villager.getOffhandItem().isEmpty()
+                        && countStored(villager, Items.TOTEM_OF_UNDYING) == 1,
+                "baby villagers should leave carried totems in storage");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void totemsProtectVillagersFromEitherHand(GameTestHelper helper) {
+        Villager mainhand = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Villager offhand = spawnVillager(helper, new BlockPos(3, 2, 1));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                mainhand, EquipmentSlot.MAINHAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                offhand, EquipmentSlot.OFFHAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+
+        mainhand.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
+        offhand.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
+        helper.assertTrue(mainhand.isAlive() && mainhand.getMainHandItem().isEmpty(),
+                "a main-hand totem should be consumed while protecting its villager");
+        helper.assertTrue(offhand.isAlive() && offhand.getOffhandItem().isEmpty(),
+                "an off-hand totem should be consumed while protecting its villager");
+
+        mainhand.discard();
+        offhand.discard();
+        helper.succeed();
+    }
+
     private static int countStored(Villager villager, Item item) {
         int count = 0;
         NonNullList<ItemStack> inventory = VillagerInventoryContainer.loadFullInventory(villager);
