@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.reputation;
 
+import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import java.util.ArrayList;
@@ -23,7 +24,8 @@ public final class VillagerReputationDebugOverlay {
     }
 
     public static void onRenderNameTag(RenderNameTagEvent event) {
-        if (!VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
+        if (VillagerModelPreviewRenderContext.isRendering(event.getEntity())
+                || !VillagerRetaliationConfig.SHOW_VILLAGER_REPUTATION_DEBUG_OVERLAY.get()
                 || !(event.getEntity() instanceof AbstractVillager villager)) {
             return;
         }

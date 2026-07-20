@@ -18,6 +18,10 @@ public final class VillagerNameTagOverlay {
     }
 
     public static void onRenderNameTag(RenderNameTagEvent event) {
+        if (VillagerModelPreviewRenderContext.isRendering(event.getEntity())) {
+            event.setCanRender(TriState.FALSE);
+            return;
+        }
         if (!VillagerRetaliationServerConfigClient.showVillagerNameTags()
                 || !VillagerRetaliationClientPreferences.showVillagerNameTags()
                 || !VillagerPresetNameRegistry.isVillagerForm(event.getEntity())

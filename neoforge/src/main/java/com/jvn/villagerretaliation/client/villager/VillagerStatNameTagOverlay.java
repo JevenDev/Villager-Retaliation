@@ -54,6 +54,10 @@ public final class VillagerStatNameTagOverlay {
     }
 
     public static void onRenderNameTag(RenderNameTagEvent event) {
+        if (VillagerModelPreviewRenderContext.isRendering(event.getEntity())) {
+            event.setCanRender(TriState.FALSE);
+            return;
+        }
         if (!(event.getEntity() instanceof Villager villager)) {
             return;
         }
