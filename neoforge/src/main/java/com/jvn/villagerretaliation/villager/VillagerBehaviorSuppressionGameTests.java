@@ -46,34 +46,48 @@ public final class VillagerBehaviorSuppressionGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void sleepingVillagerHealsToConfiguredThresholdWithoutReducingHealth(GameTestHelper helper) {
+    public static void villagerHealsOnlyAfterSuccessfulSleep(GameTestHelper helper) {
         boolean previousEnabled = VillagerRetaliationConfig.ENABLE_VILLAGER_SLEEP_HEALING.get();
         double previousPercent = VillagerRetaliationConfig.VILLAGER_SLEEP_HEALING_MAX_HEALTH_PERCENT.get();
+        long previousDayTime = helper.getLevel().getDayTime();
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
-        villager.startSleeping(villager.blockPosition());
 
         try {
             VillagerRetaliationConfig.ENABLE_VILLAGER_SLEEP_HEALING.set(true);
             VillagerRetaliationConfig.VILLAGER_SLEEP_HEALING_MAX_HEALTH_PERCENT.set(0.50D);
 
             villager.setHealth(4.0F);
-            VillagerSleepHealingService.onVillagerTick(villager);
-            helper.assertValueEqual(villager.getHealth(), villager.getMaxHealth() * 0.50F,
-                    "sleep healing reaches the configured threshold");
-
-            villager.setHealth(16.0F);
-            VillagerSleepHealingService.onVillagerTick(villager);
-            helper.assertValueEqual(villager.getHealth(), 16.0F,
-                    "sleep healing does not lower health above the threshold");
-
-            VillagerRetaliationConfig.ENABLE_VILLAGER_SLEEP_HEALING.set(false);
-            villager.setHealth(4.0F);
+            villager.startSleeping(villager.blockPosition());
             VillagerSleepHealingService.onVillagerTick(villager);
             helper.assertValueEqual(villager.getHealth(), 4.0F,
-                    "disabled sleep healing leaves health unchanged");
+                    "entering sleep does not immediately restore health");
+
+            helper.getLevel().setDayTime(1000L);
+            villager.stopSleeping();
+            VillagerSleepHealingService.onVillagerTick(villager);
+            helper.assertValueEqual(villager.getHealth(), villager.getMaxHealth() * 0.50F,
+                    "a completed sleep restores health to the configured threshold");
+
+            villager.setHealth(16.0F);
+            villager.startSleeping(villager.blockPosition());
+            VillagerSleepHealingService.onVillagerTick(villager);
+            villager.stopSleeping();
+            VillagerSleepHealingService.onVillagerTick(villager);
+            helper.assertValueEqual(villager.getHealth(), 16.0F,
+                    "completed sleep does not lower health above the threshold");
+
+            helper.getLevel().setDayTime(13000L);
+            villager.setHealth(4.0F);
+            villager.startSleeping(villager.blockPosition());
+            VillagerSleepHealingService.onVillagerTick(villager);
+            villager.stopSleeping();
+            VillagerSleepHealingService.onVillagerTick(villager);
+            helper.assertValueEqual(villager.getHealth(), 4.0F,
+                    "interrupted nighttime sleep does not restore health");
         } finally {
             VillagerRetaliationConfig.ENABLE_VILLAGER_SLEEP_HEALING.set(previousEnabled);
             VillagerRetaliationConfig.VILLAGER_SLEEP_HEALING_MAX_HEALTH_PERCENT.set(previousPercent);
+            helper.getLevel().setDayTime(previousDayTime);
             villager.discard();
         }
         helper.succeed();
