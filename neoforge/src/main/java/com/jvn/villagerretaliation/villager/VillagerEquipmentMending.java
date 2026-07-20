@@ -6,6 +6,7 @@ import java.util.Optional;
 import net.minecraft.Util;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.EnchantedItemInUse;
@@ -43,6 +44,21 @@ public final class VillagerEquipmentMending {
 
         item.setDamageValue(item.getDamageValue() - repaired);
         return true;
+    }
+
+    public static boolean hasRepairWithXpEffect(ItemStack item, EquipmentSlot slot, LivingEntity holder) {
+        if (item.isEmpty()) {
+            return false;
+        }
+
+        boolean[] found = {false};
+        EnchantmentHelper.runIterationOnItem(item, slot, holder, (enchantment, level, enchantedItem) -> {
+            if (enchantment.value().effects().has(EnchantmentEffectComponents.REPAIR_WITH_XP)
+                    && enchantment.value().matchingSlot(slot)) {
+                found[0] = true;
+            }
+        });
+        return found[0];
     }
 
     private static Optional<EnchantedItemInUse> getRandomDamagedMendingItem(Villager villager) {

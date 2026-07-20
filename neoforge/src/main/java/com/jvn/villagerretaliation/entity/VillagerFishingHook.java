@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.entity;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
+import com.jvn.villagerretaliation.villager.VillagerEquipmentMending;
 import com.mojang.logging.LogUtils;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -18,6 +19,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
@@ -554,8 +556,9 @@ public class VillagerFishingHook extends Projectile {
             return false;
         }
 
-        public void spawnExperience(Level level, Entity owner) {
-            if (this.experience > 0) {
+        public void spawnExperience(Level level, LivingEntity owner, ItemStack rod) {
+            if (this.experience > 0
+                    && VillagerEquipmentMending.hasRepairWithXpEffect(rod, EquipmentSlot.MAINHAND, owner)) {
                 level.addFreshEntity(new ExperienceOrb(level, owner.getX(), owner.getY() + 0.5D, owner.getZ() + 0.5D, this.experience));
             }
         }

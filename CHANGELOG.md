@@ -20,6 +20,7 @@
 - Fixed completed Player Raids allowing the same village to be raided again after a player victory or relog; the configured village cooldown now persists after either outcome.
 - Fixed permanently removed defenders leaving Player Raid boss bars stuck at one, and added a disabled-by-default debug option to make loaded tracked defenders glow.
 - Fixed damaged Mending armor and held equipment on villagers, including fishing rods, not attracting and absorbing nearby experience orbs.
+- Restored hired-fishing catch experience for fishermen with an equipped Mending fishing rod while keeping catch experience disabled for ordinary rods.
 - Fixed builders showing a missing-storage warning when they already carry the materials needed to continue building.
 - Fixed couriers stopping when assigned input storage was empty; they now keep patrolling their route and collect items that appear at later inputs.
 - Fixed unemployed recruited villagers claiming job-site professions while actively in a party; rejected job sites are released and can be claimed normally after the villager leaves the party.
