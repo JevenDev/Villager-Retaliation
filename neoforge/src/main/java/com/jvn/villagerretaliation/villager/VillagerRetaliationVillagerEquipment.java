@@ -19,6 +19,7 @@ public final class VillagerRetaliationVillagerEquipment {
     private static final String OWNER_MANUAL = "MANUAL";
     private static final String OWNER_PICKED_UP = "PICKED_UP";
     private static final String OWNER_ROLE = "ROLE";
+    private static final String OFFHAND_OWNER_TAG = "VillagerRetaliationOffhandOwner";
 
     private VillagerRetaliationVillagerEquipment() {
     }
@@ -39,11 +40,29 @@ public final class VillagerRetaliationVillagerEquipment {
             VillagerNaturalJobArmor.clearNaturalArmorSlot(regularVillager, slot);
         }
         setEquipment(villager, slot, stack, true);
+        if (slot == EquipmentSlot.OFFHAND) {
+            setOffhandOwner(villager, stack.isEmpty() ? "" : OWNER_MANUAL);
+        }
     }
 
     public static void setRoleEquipment(AbstractVillager villager, EquipmentSlot slot, ItemStack stack) {
         setEquipment(villager, slot, stack, false);
         villager.setDropChance(slot, Mob.DEFAULT_EQUIPMENT_DROP_CHANCE);
+        if (slot == EquipmentSlot.OFFHAND) {
+            setOffhandOwner(villager, stack.isEmpty() ? "" : OWNER_ROLE);
+        }
+    }
+
+    public static boolean isRoleOffhand(AbstractVillager villager) {
+        return OWNER_ROLE.equals(villager.getPersistentData().getString(OFFHAND_OWNER_TAG));
+    }
+
+    private static void setOffhandOwner(AbstractVillager villager, String owner) {
+        if (owner.isEmpty()) {
+            villager.getPersistentData().remove(OFFHAND_OWNER_TAG);
+        } else {
+            villager.getPersistentData().putString(OFFHAND_OWNER_TAG, owner);
+        }
     }
 
     public static void setPickedUpMainHand(AbstractVillager villager, ItemStack stack) {

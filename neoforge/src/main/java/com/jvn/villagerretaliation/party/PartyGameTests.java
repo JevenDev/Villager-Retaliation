@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
+import com.jvn.villagerretaliation.inventory.VillagerDefensiveLoadoutService;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.mount.VillagerMountAssignment;
 import com.jvn.villagerretaliation.mount.VillagerMountAssignmentSavedData;
@@ -942,6 +943,48 @@ public final class PartyGameTests {
                 "stand guard must leave an active meal and its eating animation untouched");
 
         VillagerRecoveryService.onVillagerUnloaded(villager);
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
+        leader.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void standGuardUsesMainhandShieldWithOffhandTotem(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_guard_totem"));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+        HiredJobInventory partyInventory = HiredJobInventory.getJobInventory(villager);
+        partyInventory.setItem(HiredJobInventory.MAIN_GRID_START, new ItemStack(Items.SHIELD));
+        partyInventory.setItem(HiredJobInventory.MAIN_GRID_START + 1, new ItemStack(Items.TOTEM_OF_UNDYING));
+        VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.STAND_GUARD));
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertTrue(villager.getMainHandItem().is(Items.SHIELD)
+                        && villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING)
+                        && villager.isUsingItem()
+                        && villager.getUsedItemHand() == net.minecraft.world.InteractionHand.MAIN_HAND,
+                "stand guard should raise a borrowed main-hand shield without displacing the totem");
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.STAND_GUARD));
+        helper.assertTrue(!PartyQuickCommandService.isStandingGuard(villager)
+                        && !villager.getMainHandItem().is(Items.SHIELD)
+                        && partyInventory.getItem(HiredJobInventory.MAIN_GRID_START).is(Items.SHIELD),
+                "lower shields should return the borrowed shield while retaining totem protection");
+
         PartyService.deleteParty(level, party.id());
         PartyQuickCommandService.clearRuntimeState();
         villager.discard();

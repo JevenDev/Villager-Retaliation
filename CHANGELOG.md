@@ -1,5 +1,8 @@
 # Changelog
 
+- Added automatic Totem of Undying handling for adult villagers. Carried totems now take priority in the off-hand unless a player explicitly assigned that slot, replenish after use, and remain equipped while party villagers raise a stored shield from the main hand.
+- Expanded Raise Shields combat behavior so guarded villagers swap to melee weapons only for in-range attacks and raise the shield again afterward, while bow and crossbow users retain their weapon through each complete shot cycle and guard between shots.
+
 - Prevented gift reputation farming with persisted per-player/per-villager daily caps, sharply reduced gains from repeated stacks of the same item, and a server-side gift request cooldown. Added server config controls for all three limits.
 
 - Reworked hired-job qualification around two relevant skills: ordinary roles now require a cumulative total above 60, while canonical vanilla professions automatically qualify for their matching role. Courier remains universal for adults, Nitwit remains profession-restricted, and Builder remains a one-off service.
