@@ -1134,6 +1134,7 @@ function renderGifts() {
   return `
     ${section("Gift Basics", `
       <p>Villagers evaluate gifts by global rules first and then profession rules. Reactions include Loved, Liked, Neutral, Disliked, and Hated. A gifted stack must fit in the villager inventory or it is refused.</p>
+      <p>Positive gift reputation is personal to each player-villager relationship. By default, another stack of the same item on the same Minecraft day earns 10% reputation, and positive gift reputation is capped at 120 per relationship per day. Negative gift reactions keep their full penalty.</p>
       ${statGrid([
         { value: DATA.gifts.totals?.preferences || 0, label: "Preference rules", icon: "sparkles" },
         { value: DATA.gifts.totals?.rewards || 0, label: "High-reputation reward rules", icon: "gift" }

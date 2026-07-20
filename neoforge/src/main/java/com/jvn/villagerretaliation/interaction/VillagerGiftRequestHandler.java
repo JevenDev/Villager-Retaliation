@@ -2,11 +2,14 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
-import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
-import com.jvn.villagerretaliation.inventory.VillagerTakenItemTracker;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.inventory.VillagerTakenItemTracker;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
+import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
+import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
@@ -36,6 +39,12 @@ public final class VillagerGiftRequestHandler {
     }
 
     public static void handle(ServerPlayer player, int entityId, int inventorySlot) {
+        if (!ServerboundRequestLimiter.tryAcquire(
+                player,
+                VillagerGiftRequestPayload.TYPE.id(),
+                VillagerRetaliationConfig.GIFT_REQUEST_COOLDOWN_TICKS.get())) {
+            return;
+        }
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
             VillagerInteractionService.sendNotice(player, entityId, "interaction.gift_unavailable");
             return;
@@ -77,6 +86,15 @@ public final class VillagerGiftRequestHandler {
         VillagerProfession profession = villager.getVillagerData().getProfession();
         VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, giftedStack);
         int reputationValue = adjustedGiftReputation(level, villager, giftPreference);
+        reputationValue = VillagerInteractionSavedData.get(level).limitPositiveGiftReputation(
+                villager.getUUID(),
+                player.getUUID(),
+                level.getDayTime() / 24000L,
+                itemId(giftedStack),
+                reputationValue,
+                VillagerRetaliationConfig.REPEATED_GIFT_REPUTATION_MULTIPLIER.get(),
+                VillagerRetaliationConfig.DAILY_GIFT_REPUTATION_CAP.get()
+        );
         VillagerGiftKnowledgeService.rememberGiftResult(level, player, profession, giftedStack, giftPreference);
         Boolean giftAdviceLikedResult = giftAdviceLikedResult(giftPreference.reaction());
         if (giftAdviceLikedResult != null) {
@@ -110,10 +128,11 @@ public final class VillagerGiftRequestHandler {
         VillagerQuestService.onGiftGiven(level, player, villager, giftedStack, giftPreference.reaction(), reputationValue);
         VillagerMoodService.recordGift(level, villager, player, giftPreference.reaction(), reputationValue);
         reduceDialogueAnnoyanceFromGift(level, villager, player, reputationValue);
-        sendGiftNotice(player, villager, giftedStack, reputationValue);
+        sendGiftNotice(player, villager, giftedStack, giftPreference.reaction());
         VillagerInteractionService.focusVillagerOnPlayer(villager, player);
-        VillagerInteractionService.playGiftFeedback(level, villager, reputationValue);
-        VillagerAmbientIndicatorService.onGiftReceived(villager, reputationValue);
+        int reactionValue = giftPreference.reaction().defaultPerItemReputation();
+        VillagerInteractionService.playGiftFeedback(level, villager, reactionValue);
+        VillagerAmbientIndicatorService.onGiftReceived(villager, reactionValue);
 
         DialogueContext giftContext = VillagerInteractionService.createDialogueContext(level, player, villager);
         String responseText = giftResponseText(giftContext, giftPreference, giftedStack, takenItemOwner, villager);
@@ -231,12 +250,17 @@ public final class VillagerGiftRequestHandler {
         return equipable == null ? "" : "armor";
     }
 
-    private static void sendGiftNotice(ServerPlayer player, Villager villager, ItemStack giftedStack, int reputationValue) {
-        VillagerReputationNoticeKind kind = reputationValue < 0
+    private static void sendGiftNotice(
+            ServerPlayer player,
+            Villager villager,
+            ItemStack giftedStack,
+            VillagerGiftPreferences.GiftReaction giftReaction) {
+        int reactionValue = giftReaction.defaultPerItemReputation();
+        VillagerReputationNoticeKind kind = reactionValue < 0
                 ? VillagerReputationNoticeKind.GIFT_DISLIKED
-                : reputationValue > 0 ? VillagerReputationNoticeKind.GIFT_LIKED : VillagerReputationNoticeKind.GIFT_NEUTRAL;
-        String reaction = reputationValue < 0 ? "Disliked gift" : reputationValue > 0 ? "Liked gift" : "Accepted gift";
-        String trigger = reputationValue < 0 ? "gift.disliked" : reputationValue > 0 ? "gift.liked" : "gift.neutral";
+                : reactionValue > 0 ? VillagerReputationNoticeKind.GIFT_LIKED : VillagerReputationNoticeKind.GIFT_NEUTRAL;
+        String reaction = reactionValue < 0 ? "Disliked gift" : reactionValue > 0 ? "Liked gift" : "Accepted gift";
+        String trigger = reactionValue < 0 ? "gift.disliked" : reactionValue > 0 ? "gift.liked" : "gift.neutral";
         VillagerNotifications.sendHud(
                 player,
                 player.serverLevel(),

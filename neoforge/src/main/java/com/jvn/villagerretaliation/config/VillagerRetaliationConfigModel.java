@@ -267,6 +267,15 @@ public final class VillagerRetaliationConfigModel {
         public boolean enableHighReputationGifts = true;
 
         public boolean enableGiftKeepsakes = true;
+
+        @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
+        public double repeatedGiftReputationMultiplier = 0.10D;
+
+        @RangeConstraint(min = 0, max = 10000)
+        public int dailyGiftReputationCap = 120;
+
+        @RangeConstraint(min = 1, max = 1200)
+        public int giftRequestCooldownTicks = 10;
     }
 
     public static final class Social {
