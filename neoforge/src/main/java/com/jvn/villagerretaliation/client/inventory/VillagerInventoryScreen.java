@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.inventory;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.villager.VillagerHungerClientCache;
+import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
 import com.jvn.villagerretaliation.inventory.ProtectedVillagerProperty;
 import com.jvn.villagerretaliation.inventory.VillagerConfiscatedStolenItemTracker;
 import com.jvn.villagerretaliation.inventory.VillagerGiftReturnTracker;
@@ -78,7 +79,6 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
     private static final ResourceLocation HUNGER_ICON =
             VillagerRetaliation.id("textures/gui/villager_stats/villager_hunger_stat.png");
 
-    private static int renderingInventoryPreviewVillagerId = -1;
     private boolean playerInventoryBeside;
 
     public VillagerInventoryScreen(VillagerInventoryMenu menu, Inventory playerInventory, Component title) {
@@ -88,7 +88,7 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
     }
 
     public static boolean isRenderingInventoryPreview(AbstractVillager villager) {
-        return villager.getId() == renderingInventoryPreviewVillagerId;
+        return VillagerModelPreviewRenderContext.isRenderingInventoryPreview(villager);
     }
 
     @Override
@@ -462,8 +462,9 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         livingEntity.yHeadRotO = livingEntity.getYRot();
 
         float scale = livingEntity.getScale();
-        renderingInventoryPreviewVillagerId = livingEntity.getId();
-        try {
+        try (VillagerModelPreviewRenderContext.Scope ignored = VillagerModelPreviewRenderContext.begin(
+                livingEntity,
+                VillagerModelPreviewRenderContext.PreviewType.INVENTORY)) {
             InventoryScreen.renderEntityInInventory(
                     graphics,
                     centerX,
@@ -475,7 +476,6 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
                     livingEntity
             );
         } finally {
-            renderingInventoryPreviewVillagerId = -1;
             livingEntity.yBodyRot = previousBodyRot;
             livingEntity.setYRot(previousYRot);
             livingEntity.setXRot(previousXRot);

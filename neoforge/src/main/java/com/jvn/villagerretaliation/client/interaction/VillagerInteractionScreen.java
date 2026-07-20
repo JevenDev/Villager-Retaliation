@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.client.party.PartyRosterClient;
 import com.jvn.villagerretaliation.client.profile.VillagerProfileClientCache;
 import com.jvn.villagerretaliation.client.reputation.VillagerReputationIconSet;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
+import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.party.PartyAttackMode;
@@ -3356,7 +3357,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 portraitTop + this.renderSlideOffsetY,
                 portraitRight + INTERACTION_PORTRAIT_SCISSOR_RIGHT_EXTENSION,
                 portraitBottom + this.renderSlideOffsetY);
-        try {
+        try (VillagerModelPreviewRenderContext.Scope ignored = VillagerModelPreviewRenderContext.begin(
+                livingEntity,
+                VillagerModelPreviewRenderContext.PreviewType.INTERACTION)) {
             InventoryScreen.renderEntityInInventory(
                     graphics,
                     centerX,
