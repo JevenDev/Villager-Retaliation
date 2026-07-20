@@ -75,6 +75,7 @@ import com.jvn.villagerretaliation.villager.VillagerNaturalJobArmor;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
+import com.jvn.villagerretaliation.villager.VillagerSleepHealingService;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -326,6 +327,7 @@ public final class VillagerRetaliationEvents {
             if (villager.level() instanceof ServerLevel level) {
                 VillagerBehaviorSuppressionPolicy.enforce(level, villager);
             }
+            VillagerSleepHealingService.onVillagerTick(villager);
             VillagerRecruitmentService.onVillagerTickPre(villager);
             HiredVillagerFocusService.onVillagerTickPre(villager);
             if (villager.level() instanceof ServerLevel level) {
