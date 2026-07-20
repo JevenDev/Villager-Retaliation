@@ -97,6 +97,10 @@ import net.neoforged.neoforge.event.level.BlockEvent;
 
 public final class ForcedDialogueService {
     private static final String LEAVE_OPTION_ID = "leave";
+    private static final String EXPIRED_PARTY_DEFINITION_ID = "villagerretaliation:expired_party_contract";
+    private static final String EXPIRED_PARTY_EXTEND_OPTION_ID = "expired_party.extend";
+    private static final String EXPIRED_PARTY_INVENTORY_OPTION_ID = "expired_party.inventory";
+    private static final String EXPIRED_PARTY_DURATION_PREFIX = "expired_party.extend.";
     private static final String CONTAINER_THEFT_BACKUP_MESSAGE_KEY = "container_theft.backup_interjection";
     private static final String CONTAINER_THEFT_BACKUP_DEFINITION_ID = "container_theft.backup_interjection";
     private static final String CONTAINER_OPENED_BACKUP_MESSAGE_KEY = "container_opened.backup_interjection";
@@ -389,6 +393,67 @@ public final class ForcedDialogueService {
                 SIMPLE_LEAVE_OPTIONS,
                 SIMPLE_LEAVE_OPTION,
                 SIMPLE_LEAVE_OPTIONS);
+        return openProgrammaticForcedDialogue(player, villager, line, definition);
+    }
+
+    public static boolean openExpiredPartyContractDialogue(
+            ServerPlayer player, Villager villager, String line, boolean canExtend) {
+        if (line == null || line.isBlank()) {
+            return false;
+        }
+        List<ForcedDialogueOption> durations = List.of(
+                expiredPartyDurationOption(1),
+                expiredPartyDurationOption(3),
+                expiredPartyDurationOption(5),
+                expiredPartyDurationOption(7),
+                expiredPartyDurationOption(15),
+                expiredPartyDurationOption(30),
+                SIMPLE_LEAVE_OPTION);
+        ForcedDialogueFollowUp extensionFlow = new ForcedDialogueFollowUp(
+                List.of(LocalizedText.inline("How long would you like to extend the contract?")),
+                durations,
+                SIMPLE_LEAVE_OPTION,
+                List.of(SIMPLE_LEAVE_OPTION));
+        ForcedDialogueOption extend = simpleOption(
+                EXPIRED_PARTY_EXTEND_OPTION_ID, "Extend Contract", false, 100, extensionFlow);
+        ForcedDialogueOption inventory = simpleOption(
+                EXPIRED_PARTY_INVENTORY_OPTION_ID, "Open Party Inventory", true, 200,
+                ForcedDialogueFollowUp.empty());
+        List<ForcedDialogueOption> options = canExtend
+                ? List.of(extend, inventory, SIMPLE_LEAVE_OPTION)
+                : List.of(inventory, SIMPLE_LEAVE_OPTION);
+        ForcedDialogueDefinition definition = new ForcedDialogueDefinition(
+                EXPIRED_PARTY_DEFINITION_ID, null, ForcedDialogueTrigger.QUEST, SIMPLE_FORCED_OUTPUT,
+                List.of(LocalizedText.inline(line)), true, false, true, false, 0.0D, 1.0D,
+                0, 0, 0L, 0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE,
+                Set.of(), Set.of(), Set.of(), 1, 5, false,
+                VillagerEquipmentCondition.empty(), VillagerPlayerItemCondition.empty(),
+                VillagerReputationCondition.empty(), options, SIMPLE_LEAVE_OPTION, options);
+        return openProgrammaticForcedDialogue(player, villager, line, definition);
+    }
+
+    private static ForcedDialogueOption expiredPartyDurationOption(int days) {
+        int cost = days * com.jvn.villagerretaliation.party.PartyVillagerContractService.DAILY_EMERALD_COST;
+        String dayLabel = days == 1 ? "Day" : "Days";
+        return simpleOption(EXPIRED_PARTY_DURATION_PREFIX + days,
+                days + " " + dayLabel + " - " + cost + " emeralds", true, days,
+                ForcedDialogueFollowUp.empty());
+    }
+
+    private static ForcedDialogueOption simpleOption(
+            String id, String label, boolean endConversation, int order, ForcedDialogueFollowUp followUp) {
+        return new ForcedDialogueOption(
+                id, LocalizedText.inline(label), List.of(), 0, false, 0.0D, endConversation, order,
+                ForcedDialogueStolenItemReturn.empty(), ForcedDialogueItemPayment.empty(),
+                VillagerReputationCondition.empty(), SocialAttributeCondition.EMPTY, List.of(), followUp);
+    }
+
+    private static boolean openProgrammaticForcedDialogue(
+            ServerPlayer player,
+            Villager villager,
+            String line,
+            ForcedDialogueDefinition definition) {
+        ServerLevel level = player.serverLevel();
         ForcedDialogueContext context = new ForcedDialogueContext(
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 player.getName().getString(),
@@ -785,6 +850,30 @@ public final class ForcedDialogueService {
             boolean leaveRequest) {
         if (leaveRequest && tryAdvanceDynamicForcedDialogueGroup(player, villager, session)) {
             return true;
+        }
+
+        if (EXPIRED_PARTY_DEFINITION_ID.equals(session.definition().id())) {
+            if (EXPIRED_PARTY_INVENTORY_OPTION_ID.equals(option.id())) {
+                FORCED_SESSIONS.remove(player.getUUID());
+                VillagerConversationService.endForPlayer(player, true);
+                com.jvn.villagerretaliation.inventory.VillagerInventoryAccess.openPreferred(player, villager);
+                return true;
+            }
+            if (option.id().startsWith(EXPIRED_PARTY_DURATION_PREFIX)) {
+                int days;
+                try {
+                    days = Integer.parseInt(option.id().substring(EXPIRED_PARTY_DURATION_PREFIX.length()));
+                } catch (NumberFormatException ignored) {
+                    days = 0;
+                }
+                com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
+                        com.jvn.villagerretaliation.party.PartyVillagerContractService.renewExpired(
+                                player, villager, days);
+                VillagerInteractionService.sendPartyContractResult(player, villager, result);
+                FORCED_SESSIONS.remove(player.getUUID());
+                VillagerConversationService.endForPlayer(player, true);
+                return true;
+            }
         }
 
         ForcedDialogueStolenItemReturn stolenItemReturn = option.stolenItemReturn();

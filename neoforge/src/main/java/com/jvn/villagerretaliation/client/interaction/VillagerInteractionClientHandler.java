@@ -117,6 +117,7 @@ public final class VillagerInteractionClientHandler {
                 payload.hiredByPlayer(),
                 payload.hiredByOtherPlayer(),
                 payload.hiredRemainingDays(),
+                payload.inventoryAvailable(),
                 payload.recruitedPartyVillager(),
                 payload.partyVillagerAuthorized(),
                 payload.partyVillagerPartyMember(),

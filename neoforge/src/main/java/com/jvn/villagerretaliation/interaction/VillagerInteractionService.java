@@ -1126,7 +1126,7 @@ public final class VillagerInteractionService {
         return false;
     }
 
-    private static void sendPartyContractResult(
+    public static void sendPartyContractResult(
             ServerPlayer player,
             Villager villager,
             com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result) {

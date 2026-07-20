@@ -1811,6 +1811,40 @@ public final class PartyGameTests {
         });
     }
 
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void expiredPartyContractCanBeRenewedWhileInventoryIsRetained(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_expired_contract_renewal"));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartyVillagerRecord expiredRecord = new PartyVillagerRecord(
+                villager.getUUID(), leader.getUUID(), UUID.randomUUID(), 0,
+                PartyCommandMode.FOLLOW, null, null, now, now, 1, 32,
+                "Renewable", "minecraft:farmer", Level.OVERWORLD.location(), villager.blockPosition());
+        PartySavedData.get(level).addVillager(party, expiredRecord);
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_SWORD));
+        inventory.markPlayerPlacedSupply(HiredJobInventory.MAINHAND_SLOT);
+        PartyVillagerContractService.clearRuntimeState();
+        PartyVillagerContractService.onServerTick(level.getServer());
+        leader.getInventory().add(new ItemStack(Items.EMERALD, 96));
+
+        helper.assertTrue(PartyVillagerContractService.canRenewExpiredContract(level, villager, leader),
+                "the former recruiter should be able to renew while retained inventory is claimable");
+        PartyVillagerContractService.ContractResult result =
+                PartyVillagerContractService.renewExpired(leader, villager, 3);
+        helper.assertTrue(result.success(), "the three-day expired-contract renewal should succeed");
+        helper.assertValueEqual(result.days(), 3, "renewed duration");
+        helper.assertValueEqual(result.emeraldCost(), 96, "renewed cost");
+        helper.assertTrue(PartyVillagerContractService.isActivePartyVillager(level, villager),
+                "renewal should restore active party membership");
+        helper.assertValueEqual(VillagerCurrencyPayment.count(leader), 0, "renewal payment");
+        helper.assertTrue(VillagerJobInventoryAuthorization.canAccess(level, villager, leader),
+                "renewal should preserve access to the party inventory");
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void fallBackCancelsActiveMoveToPath(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();

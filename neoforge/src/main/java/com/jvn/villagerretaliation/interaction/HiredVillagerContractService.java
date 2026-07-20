@@ -144,6 +144,12 @@ public final class HiredVillagerContractService {
                 .orElse(0);
     }
 
+    public static void takeOverJobInventoryOverflow(Villager villager) {
+        if (villager != null) {
+            clearOverflowClaim(villager);
+        }
+    }
+
     /**
      * Preserves removable job-inventory items for their contract owner after any
      * contract system releases the villager.
@@ -192,11 +198,21 @@ public final class HiredVillagerContractService {
                         "interaction.hire_overflow_claim_reminder",
                         replacements)
                 .orElse("");
-        if (ForcedDialogueService.openSimpleForcedDialogue(
-                player,
-                villager,
-                "villagerretaliation:hired_job_inventory_overflow_claim",
-                line)) {
+        boolean expiredPartyContract = com.jvn.villagerretaliation.party.PartyVillagerContractService
+                .isRetainedPartyInventory(level, villager, player);
+        boolean opened = expiredPartyContract
+                ? ForcedDialogueService.openExpiredPartyContractDialogue(
+                        player,
+                        villager,
+                        line,
+                        com.jvn.villagerretaliation.party.PartyVillagerContractService
+                                .canRenewExpiredContract(level, villager, player))
+                : ForcedDialogueService.openSimpleForcedDialogue(
+                        player,
+                        villager,
+                        "villagerretaliation:hired_job_inventory_overflow_claim",
+                        line);
+        if (opened) {
             tag.putLong(OVERFLOW_CLAIM_LAST_REMINDER_DAY_TAG, day);
             villager.setPersistenceRequired();
             return true;

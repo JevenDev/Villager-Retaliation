@@ -82,9 +82,10 @@ public final class VillagerInventoryAccess {
             ServerLevel level,
             Villager villager,
             ServerPlayer player) {
-        if (VillagerJobInventoryAuthorization.activeContractId(level, villager).isPresent()
-                && VillagerJobInventoryAuthorization.canAccess(level, villager, player)) {
+        if (VillagerJobInventoryAuthorization.canAccess(level, villager, player)) {
             return com.jvn.villagerretaliation.party.PartyVillagerContractService.isActivePartyVillager(level, villager)
+                    || com.jvn.villagerretaliation.party.PartyVillagerContractService.isRetainedPartyInventory(
+                            level, villager, player)
                     ? VillagerInventoryMenu.ViewMode.PARTY
                     : VillagerInventoryMenu.ViewMode.JOB;
         }
@@ -101,6 +102,8 @@ public final class VillagerInventoryAccess {
                 com.jvn.villagerretaliation.party.PartyVillagerContractService.isActivePartyVillager(
                         player.serverLevel(),
                         villager)
+                        || com.jvn.villagerretaliation.party.PartyVillagerContractService.isRetainedPartyInventory(
+                                player.serverLevel(), villager, player)
                         ? VillagerInventoryMenu.ViewMode.PARTY
                         : VillagerInventoryMenu.ViewMode.JOB;
         VillagerInventoryMenu.ViewMode resolvedViewMode = viewMode.isWorkInventory()

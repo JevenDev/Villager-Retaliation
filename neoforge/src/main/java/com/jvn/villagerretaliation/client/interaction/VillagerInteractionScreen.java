@@ -262,6 +262,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean hiredByPlayer;
     private final boolean hiredByOtherPlayer;
     private int hiredRemainingDays;
+    private final boolean inventoryAvailable;
     private final boolean recruitedPartyVillager;
     private final boolean partyVillagerAuthorized;
     private final boolean partyVillagerPartyMember;
@@ -388,6 +389,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean hiredByPlayer,
             boolean hiredByOtherPlayer,
             int hiredRemainingDays,
+            boolean inventoryAvailable,
             boolean recruitedPartyVillager,
             boolean partyVillagerAuthorized,
             boolean partyVillagerPartyMember,
@@ -449,6 +451,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.hiredByPlayer = hiredByPlayer;
         this.hiredByOtherPlayer = hiredByOtherPlayer;
         this.hiredRemainingDays = Math.max(0, hiredRemainingDays);
+        this.inventoryAvailable = inventoryAvailable;
         this.recruitedPartyVillager = recruitedPartyVillager;
         this.partyVillagerAuthorized = partyVillagerAuthorized;
         this.partyVillagerPartyMember = partyVillagerPartyMember;
@@ -4456,10 +4459,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean canRequestVillagerInventory() {
-        return this.hiredByPlayer
-                || canRequestPartyVillagerInventory()
-                || this.reputationLevel != null
-                && this.reputationLevel.trustRank() >= VillagerReputationLevel.REVERED.trustRank();
+        return this.inventoryAvailable;
     }
 
     private boolean canRequestPartyVillagerInventory() {
