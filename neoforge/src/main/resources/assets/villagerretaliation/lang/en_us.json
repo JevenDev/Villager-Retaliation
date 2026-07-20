@@ -413,6 +413,8 @@
   "advancements.villagerretaliation.reputation.legend_trader.description": "Share 25 discovered stories with villagers.",
   "advancements.villagerretaliation.reputation.steady_gaze.title": "Steady Gaze",
   "advancements.villagerretaliation.reputation.steady_gaze.description": "Stare precisely between a villager's eyes.",
+  "advancements.villagerretaliation.reputation.the_mark_you_chose.title": "The Mark You Chose",
+  "advancements.villagerretaliation.reputation.the_mark_you_chose.description": "Speak to a villager while displaying an ominous banner.",
   "villagerretaliation.reputation.label": "Reputation",
   "villagerretaliation.reputation.value_format": "Reputation: %s",
   "villagerretaliation.reputation.tier_value_format": "%s: %s",

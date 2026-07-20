@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.resources.BiomeStoryResources;
 import com.jvn.villagerretaliation.dialogue.resources.DangerousStructureStoryResources;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.item.OminousBannerRecognition;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.network.VillagerReputationNoticeKind;
 import com.jvn.villagerretaliation.notification.VillagerNotifications;
@@ -93,6 +94,7 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation VILLAGE_CHRONICLER = advancementId("reputation/village_chronicler");
     private static final ResourceLocation LEGEND_TRADER = advancementId("reputation/legend_trader");
     private static final ResourceLocation STEADY_GAZE = advancementId("reputation/steady_gaze");
+    private static final ResourceLocation THE_MARK_YOU_CHOSE = advancementId("reputation/the_mark_you_chose");
 
     private VillagerReputationAdvancements() {
     }
@@ -108,6 +110,12 @@ public final class VillagerReputationAdvancements {
 
     public static void onVillagerInteraction(ServerPlayer player) {
         award(player, COMMONFOLK);
+    }
+
+    public static void onVillagerConversationStarted(ServerPlayer player) {
+        if (OminousBannerRecognition.isDisplaying(player)) {
+            award(player, THE_MARK_YOU_CHOSE);
+        }
     }
 
     public static void onVillagerPacified(ServerPlayer player) {

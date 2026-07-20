@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.dialogue.VillagerStoryHintService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
+import com.jvn.villagerretaliation.item.OminousBannerRecognition;
 import com.jvn.villagerretaliation.interaction.VillagerItemText;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
@@ -149,6 +150,15 @@ public final class VillagerDialogueService {
     }
 
     public static String selectOpeningGreeting(DialogueContext context) {
+        if (OminousBannerRecognition.isDisplaying(context.player())) {
+            DialogueDisposition disposition = moodFor(context);
+            return selectConversationLine(
+                    context,
+                    "hello",
+                    VillagerDialogueResources.openingLines(context, disposition),
+                    List.of()
+            );
+        }
         if (context.reputationLevel() != VillagerReputationLevel.FEARED) {
             Optional<String> giftMemory = selectOpeningGiftMemoryLine(context);
             if (giftMemory.isPresent()) {

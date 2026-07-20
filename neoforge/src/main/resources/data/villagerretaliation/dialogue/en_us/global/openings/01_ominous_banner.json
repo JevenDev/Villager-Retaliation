@@ -1,0 +1,146 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.openings",
+      "context.ominous_banner"
+    ],
+    "topic": "global.openings.ominous_banner"
+  },
+  "openings": [
+    {
+      "id": "ominous_banner_resident_revered",
+      "requires_ominous_banner": true,
+      "village_allegiance": "known",
+      "reputation_levels": ["revered", "royalty"],
+      "lines": [
+        "You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "Our trust in you does not make that raider mark harmless. Do not carry it through my home.",
+        "You should know what that banner promises to a village. Why would you put it above your own face?"
+      ]
+    },
+    {
+      "id": "ominous_banner_wanderer_revered",
+      "requires_ominous_banner": true,
+      "village_allegiances": ["unknown", "unaffiliated"],
+      "reputation_levels": ["revered", "royalty"],
+      "lines": [
+        "I have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "I respect what you have done. I cannot respect the banner you chose to wear.",
+        "Even a wanderer knows what follows that pattern. Take it off before anyone mistakes your meaning."
+      ]
+    },
+    {
+      "id": "ominous_banner_resident_trusted",
+      "requires_ominous_banner": true,
+      "village_allegiance": "known",
+      "reputation_levels": ["trusted", "respected"],
+      "lines": [
+        "We trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "I know the person beneath that banner. That is why seeing you wear it feels like a warning.",
+        "You have friends here. Think about what that symbol says to every one of them."
+      ]
+    },
+    {
+      "id": "ominous_banner_wanderer_trusted",
+      "requires_ominous_banner": true,
+      "village_allegiances": ["unknown", "unaffiliated"],
+      "reputation_levels": ["trusted", "respected"],
+      "lines": [
+        "I thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "I may belong nowhere, but I still know what that banner threatens. Why are you wearing it?",
+        "You earned my trust. Do not ask that trust to survive beneath that symbol."
+      ]
+    },
+    {
+      "id": "ominous_banner_resident_neutral",
+      "requires_ominous_banner": true,
+      "village_allegiance": "known",
+      "reputation_level": "neutral",
+      "lines": [
+        "That banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "You entered my village wearing the mark of those who attack villages. Explain yourself.",
+        "Take that symbol away from our bell. Until then, every word from you sounds like a threat."
+      ]
+    },
+    {
+      "id": "ominous_banner_wanderer_neutral",
+      "requires_ominous_banner": true,
+      "village_allegiances": ["unknown", "unaffiliated"],
+      "reputation_level": "neutral",
+      "lines": [
+        "I do not know you, but I know the banner above your face. Keep your distance.",
+        "No village claims me, and even I would not wear a raider's mark among villagers.",
+        "That pattern has emptied homes before. Tell me why you chose to display it."
+      ]
+    },
+    {
+      "id": "ominous_banner_resident_suspicious",
+      "requires_ominous_banner": true,
+      "village_allegiance": "known",
+      "reputation_level": "suspicious",
+      "lines": [
+        "I already doubted your intentions. That banner makes them look much clearer.",
+        "So that is the side you want my village to see. Do not come any closer.",
+        "Suspicion was caution before you wore that mark through our streets. Now it is common sense."
+      ]
+    },
+    {
+      "id": "ominous_banner_wanderer_suspicious",
+      "requires_ominous_banner": true,
+      "village_allegiances": ["unknown", "unaffiliated"],
+      "reputation_level": "suspicious",
+      "lines": [
+        "I had reasons not to trust you. You put the strongest one on your head.",
+        "A wanderer learns which signs mean danger. Yours is impossible to miss.",
+        "You wear a raider's threat openly and still expect conversation? Speak from there."
+      ]
+    },
+    {
+      "id": "ominous_banner_resident_hostile",
+      "requires_ominous_banner": true,
+      "village_allegiance": "known",
+      "reputation_levels": ["hostile", "despised"],
+      "lines": [
+        "That mark confirms what this village already knows about you. Leave.",
+        "You wear our enemies' banner as if you want the whole village to understand your intent.",
+        "I needed no more reason to oppose you. You brought one anyway, stitched in black and gray."
+      ]
+    },
+    {
+      "id": "ominous_banner_wanderer_hostile",
+      "requires_ominous_banner": true,
+      "village_allegiances": ["unknown", "unaffiliated"],
+      "reputation_levels": ["hostile", "despised"],
+      "lines": [
+        "I trusted you before I saw the banner even less than I do now.",
+        "A raider's mark suits the reputation you have made for yourself.",
+        "Keep that symbol and your excuses away from me."
+      ]
+    },
+    {
+      "id": "ominous_banner_resident_feared",
+      "requires_ominous_banner": true,
+      "village_allegiance": "known",
+      "reputation_level": "feared",
+      "lines": [
+        "<shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "Everyone here already fears you. Wearing that mark makes it feel like a promise.",
+        "Please take it off. I cannot see it above your face and believe this conversation is safe."
+      ]
+    },
+    {
+      "id": "ominous_banner_wanderer_feared",
+      "requires_ominous_banner": true,
+      "village_allegiances": ["unknown", "unaffiliated"],
+      "reputation_level": "feared",
+      "lines": [
+        "<shake>I know that mark.</shake> I know you. Please stay back.",
+        "I have survived by leaving when I see signs like yours. Say what you want quickly.",
+        "The banner makes your reputation visible from far away. I wish I had seen it sooner."
+      ]
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 # Changelog
 
+- Added The Mark You Chose advancement for starting a villager conversation while displaying the ominous banner on a worn helmet or held shield.
+
 - Added automatic Totem of Undying handling for adult villagers. Carried totems now take priority in the off-hand unless a player explicitly assigned that slot, replenish after use, and remain equipped while party villagers raise a stored shield from the main hand.
 - Expanded Raise Shields combat behavior so guarded villagers swap to melee weapons only for in-range attacks and raise the shield again afterward, while bow and crossbow users retain their weapon through each complete shot cycle and guard between shots.
 
