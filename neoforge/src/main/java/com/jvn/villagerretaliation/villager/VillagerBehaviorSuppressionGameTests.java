@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.villager;
 
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -40,6 +41,40 @@ public final class VillagerBehaviorSuppressionGameTests {
     }
 
     private VillagerBehaviorSuppressionGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void sleepingVillagerHealsToConfiguredThresholdWithoutReducingHealth(GameTestHelper helper) {
+        boolean previousEnabled = VillagerRetaliationConfig.ENABLE_VILLAGER_SLEEP_HEALING.get();
+        double previousPercent = VillagerRetaliationConfig.VILLAGER_SLEEP_HEALING_MAX_HEALTH_PERCENT.get();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.startSleeping(villager.blockPosition());
+
+        try {
+            VillagerRetaliationConfig.ENABLE_VILLAGER_SLEEP_HEALING.set(true);
+            VillagerRetaliationConfig.VILLAGER_SLEEP_HEALING_MAX_HEALTH_PERCENT.set(0.50D);
+
+            villager.setHealth(4.0F);
+            VillagerSleepHealingService.onVillagerTick(villager);
+            helper.assertValueEqual(villager.getHealth(), villager.getMaxHealth() * 0.50F,
+                    "sleep healing reaches the configured threshold");
+
+            villager.setHealth(16.0F);
+            VillagerSleepHealingService.onVillagerTick(villager);
+            helper.assertValueEqual(villager.getHealth(), 16.0F,
+                    "sleep healing does not lower health above the threshold");
+
+            VillagerRetaliationConfig.ENABLE_VILLAGER_SLEEP_HEALING.set(false);
+            villager.setHealth(4.0F);
+            VillagerSleepHealingService.onVillagerTick(villager);
+            helper.assertValueEqual(villager.getHealth(), 4.0F,
+                    "disabled sleep healing leaves health unchanged");
+        } finally {
+            VillagerRetaliationConfig.ENABLE_VILLAGER_SLEEP_HEALING.set(previousEnabled);
+            VillagerRetaliationConfig.VILLAGER_SLEEP_HEALING_MAX_HEALTH_PERCENT.set(previousPercent);
+            villager.discard();
+        }
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

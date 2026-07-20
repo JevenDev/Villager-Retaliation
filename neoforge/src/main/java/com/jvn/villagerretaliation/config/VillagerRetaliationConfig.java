@@ -237,6 +237,8 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_SHOW_ARMOR = bind("debugOverlay.reputationDebugOverlayShowArmor", Boolean.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_REQUIRE_ADVANCED_TOOLTIPS = bind("debugOverlay.reputationDebugOverlayRequireAdvancedTooltips", Boolean.class);
     public static final ConfigValue<Boolean> REPUTATION_DEBUG_OVERLAY_ONLY_WHEN_SNEAKING = bind("debugOverlay.reputationDebugOverlayOnlyWhenSneaking", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_VILLAGER_SLEEP_HEALING = bind("combat.enableVillagerSleepHealing", Boolean.class);
+    public static final ConfigValue<Double> VILLAGER_SLEEP_HEALING_MAX_HEALTH_PERCENT = bind("combat.villagerSleepHealingMaxHealthPercent", Double.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_DOWNED_STATE = bind("combat.enableVillagerDownedState", Boolean.class);
     public static final ConfigValue<Boolean> PARTY_VILLAGERS_USE_DOWNED_STATE = bind("combat.partyVillagersUseDownedState", Boolean.class);
     public static final ConfigValue<Integer> DOWNED_MINIMUM_TICKS = bind("combat.downedMinimumTicks", Integer.class);

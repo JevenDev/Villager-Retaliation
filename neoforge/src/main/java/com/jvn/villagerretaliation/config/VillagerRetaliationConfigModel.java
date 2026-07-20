@@ -676,6 +676,11 @@ public final class VillagerRetaliationConfigModel {
     }
 
     public static final class Combat {
+        public boolean enableVillagerSleepHealing = true;
+
+        @RangeConstraint(min = 0.01D, max = 1.0D, decimalPlaces = 2)
+        public double villagerSleepHealingMaxHealthPercent = 0.50D;
+
         public boolean enableVillagerDownedState = true;
 
         public boolean partyVillagersUseDownedState = true;
