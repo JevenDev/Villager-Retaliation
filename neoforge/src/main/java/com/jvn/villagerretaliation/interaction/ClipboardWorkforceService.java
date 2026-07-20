@@ -63,8 +63,7 @@ public final class ClipboardWorkforceService {
                 int paymentStorageCount = AssignedStorageService.assignedPaymentStorage(level, villager).size();
                 boolean storageAssigned = storageCount > 0;
                 boolean storageFull = brain.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL;
-                boolean inventoryFull = brain.taskState() == HiredWorkerTaskState.PAUSED_FULL_INVENTORY
-                        || !session.inventory().hasOutputSpace();
+                boolean inventoryFull = brain.taskState() == HiredWorkerTaskState.PAUSED_FULL_INVENTORY;
                 boolean noStorage = brain.taskState() == HiredWorkerTaskState.PAUSED_NO_STORAGE
                         || (role != HiredVillagerRole.BUILDER && !storageAssigned);
                 boolean noWorkArea = role != HiredVillagerRole.BUILDER
@@ -74,6 +73,7 @@ public final class ClipboardWorkforceService {
                 boolean noTargets = !noWorkArea && !waitingForCrops && isNoTargetState(brain);
                 boolean tooFar = role != HiredVillagerRole.BUILDER
                         && !noWorkArea
+                        && !isExpectedWorkExcursion(brain.taskState())
                         && !HiredVillagerWorkService.isInsideEffectiveWorkArea(level, villager, role, session.context(), villager.blockPosition());
                 boolean missingTools = brain.taskState() == HiredWorkerTaskState.PAUSED_MISSING_TOOL;
                 boolean materialStorageUnreachable = isMaterialStorageUnreachable(role, brain);
@@ -185,6 +185,10 @@ public final class ClipboardWorkforceService {
             return false;
         }
         return !state.isWaitingState();
+    }
+
+    private static boolean isExpectedWorkExcursion(HiredWorkerTaskState state) {
+        return state.keepsStorageTarget() || state == HiredWorkerTaskState.RETURNING_TO_WORK_AREA;
     }
 
     private static WorkerStatus status(
