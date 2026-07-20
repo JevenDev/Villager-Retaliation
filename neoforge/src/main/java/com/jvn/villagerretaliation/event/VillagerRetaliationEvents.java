@@ -321,13 +321,13 @@ public final class VillagerRetaliationEvents {
         Entity entity = event.getEntity();
         if (entity instanceof Villager villager) {
             VillagerDownedService.onVillagerTickPre(villager);
+            VillagerSleepHealingService.onVillagerTick(villager);
             if (VillagerDownedService.isDowned(villager)) {
                 return;
             }
             if (villager.level() instanceof ServerLevel level) {
                 VillagerBehaviorSuppressionPolicy.enforce(level, villager);
             }
-            VillagerSleepHealingService.onVillagerTick(villager);
             VillagerRecruitmentService.onVillagerTickPre(villager);
             HiredVillagerFocusService.onVillagerTickPre(villager);
             if (villager.level() instanceof ServerLevel level) {
