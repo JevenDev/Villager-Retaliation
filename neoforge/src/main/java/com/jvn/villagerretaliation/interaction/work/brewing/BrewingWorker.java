@@ -626,7 +626,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, water);
             return WorkResult.idle("interaction.work.brewing.water_bottle_space");
         }
-        swingWorkTool(villager);
+        useWorkItem(level, villager, new ItemStack(Items.GLASS_BOTTLE));
         level.playSound(null, water, SoundEvents.BOTTLE_FILL, SoundSource.BLOCKS, 1.0F, 1.0F);
         stopWorkNavigation(villager);
         HiredWorkerBrain.clearTarget(context);
@@ -900,7 +900,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
                     setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, stand);
                     return WorkResult.idle("interaction.work.brewing.clear_bottle_space");
                 }
-                swingWorkTool(villager);
+                useWorkItem(level, villager, PotionContents.createItemStack(Items.POTION, Potions.WATER));
                 return WorkResult.progressed("interaction.work.brewing.cleared_extra_bottles");
             }
             return WorkResult.progressed("interaction.work.brewing.finishing_larger_batch");
@@ -915,7 +915,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, stand);
                 return WorkResult.idle("interaction.work.brewing.missing_materials");
             }
-            swingWorkTool(villager);
+            useWorkItem(level, villager, PotionContents.createItemStack(Items.POTION, Potions.WATER));
             return WorkResult.progressed("interaction.work.brewing.loaded_water_bottles");
         }
 
@@ -947,7 +947,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         }
         blockEntity.setItem(INGREDIENT_SLOT, new ItemStack(nextIngredient));
         updateBrewingStand(level, blockEntity, stand);
-        swingWorkTool(villager);
+        useWorkItem(level, villager, new ItemStack(nextIngredient));
         return WorkResult.progressed("interaction.work.brewing.loaded_ingredient");
     }
 
@@ -982,7 +982,7 @@ public final class BrewingWorker extends AbstractBlockWorker {
         }
         blockEntity.setItem(FUEL_SLOT, new ItemStack(Items.BLAZE_POWDER));
         updateBrewingStand(level, blockEntity, stand);
-        swingWorkTool(villager);
+        useWorkItem(level, villager, new ItemStack(Items.BLAZE_POWDER));
         return WorkResult.progressed("interaction.work.brewing.loaded_blaze_powder");
     }
 

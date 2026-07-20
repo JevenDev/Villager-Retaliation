@@ -15,6 +15,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.item.ItemStack;
 
 public final class CourierWorker implements HiredRoleWorker {
     private static final String PHASE_TAG = "CourierPhase";
@@ -109,6 +110,7 @@ public final class CourierWorker implements HiredRoleWorker {
         context.state().putInt(ROUTE_INDEX_TAG, 0);
         HiredWorkerBrain.clearFailure(context);
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, input);
+        animateCargo(level, villager, context);
         return WorkResult.progressed(
                 "interaction.work.courier.collected_items",
                 Map.of("count", Integer.toString(moved)));
@@ -156,6 +158,7 @@ public final class CourierWorker implements HiredRoleWorker {
             if (moved > 0) {
                 HiredWorkerBrain.clearFailure(context);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, node);
+                animateCargo(level, villager, context);
                 return WorkResult.progressed(
                         "interaction.work.courier.collected_items",
                         Map.of("count", Integer.toString(moved)));
@@ -221,6 +224,12 @@ public final class CourierWorker implements HiredRoleWorker {
             return WorkResult.idle("interaction.work.courier.output_unreachable");
         }
 
+        ItemStack deliveredStack = context.inventory().collectOutputItems().stream()
+                .map(outputItem -> outputItem.stack())
+                .filter(stack -> !stack.isEmpty())
+                .findFirst()
+                .map(stack -> stack.copyWithCount(1))
+                .orElse(ItemStack.EMPTY);
         int deliveredItems = context.inventory().collectOutputItems().stream()
                 .mapToInt(outputItem -> outputItem.stack().getCount())
                 .sum();
@@ -238,6 +247,7 @@ public final class CourierWorker implements HiredRoleWorker {
         beginReturn(context, route);
         HiredWorkerBrain.clearFailure(context);
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, route.last());
+        HiredWorkAnimation.useItem(level, villager, deliveredStack);
         if (deliveredItems <= 0) {
             return WorkResult.progressed("interaction.work.courier.delivered_items");
         }
@@ -255,6 +265,16 @@ public final class CourierWorker implements HiredRoleWorker {
             distance += Math.sqrt(route.nodes().getLast().distSqr(route.nodes().getFirst()));
         }
         return distance;
+    }
+
+    private static void animateCargo(ServerLevel level, Villager villager, HiredWorkContext context) {
+        ItemStack cargo = context.inventory().collectOutputItems().stream()
+                .map(outputItem -> outputItem.stack())
+                .filter(stack -> !stack.isEmpty())
+                .findFirst()
+                .map(stack -> stack.copyWithCount(1))
+                .orElse(ItemStack.EMPTY);
+        HiredWorkAnimation.useItem(level, villager, cargo);
     }
 
     private static int collectInputsAtNode(

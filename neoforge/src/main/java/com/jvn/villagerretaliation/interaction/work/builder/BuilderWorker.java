@@ -2545,7 +2545,10 @@ public final class BuilderWorker extends AbstractBlockWorker {
             return false;
         }
         faceBlock(villager, group.materialPart().worldPos());
-        swingWorkTool(villager);
+        ItemStack placementItem = actionTool.isEmpty()
+                ? context.inventory().findSupply(materialBlock::materialMatches)
+                : actionTool;
+        swingWorkItem(level, villager, placementItem);
 
         for (PlacementPart part : group.parts()) {
             BlockPos worldPos = part.worldPos();

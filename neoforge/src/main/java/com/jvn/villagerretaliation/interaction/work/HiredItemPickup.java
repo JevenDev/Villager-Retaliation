@@ -82,7 +82,7 @@ public final class HiredItemPickup {
         } else {
             item.setItem(remainder);
         }
-        worker.swingWorkTool(villager);
+        worker.swingWorkItem(level, villager, stack);
         if (messages.idleAfterCollected()) {
             worker.setTaskState(context, HiredWorkerTaskState.IDLE);
         }

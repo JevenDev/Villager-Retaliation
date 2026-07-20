@@ -204,7 +204,7 @@ public final class CookingWorker extends AbstractBlockWorker {
             }
             furnace.setItem(INPUT_SLOT, loaded);
             updateFurnace(level, furnace, station);
-            swingWorkTool(villager);
+            useWorkItem(level, villager, loaded);
             return WorkResult.progressed("interaction.work.cooking.loaded_input", itemReplacements(loaded));
         }
 
@@ -224,7 +224,7 @@ public final class CookingWorker extends AbstractBlockWorker {
             }
             furnace.setItem(FUEL_SLOT, loaded);
             updateFurnace(level, furnace, station);
-            swingWorkTool(villager);
+            useWorkItem(level, villager, loaded);
             return WorkResult.progressed("interaction.work.cooking.loaded_fuel", itemReplacements(loaded));
         }
 
@@ -265,7 +265,7 @@ public final class CookingWorker extends AbstractBlockWorker {
             restoreFurnaceStack(furnace, slot, remainder);
         }
         updateFurnace(level, furnace, station);
-        swingWorkTool(villager);
+        useWorkItem(level, villager, removed);
         var practice = HiredWorkPractice.batch(
                 VillagerSkill.COOKING, "hired:cooking:batch", removed.getCount(), removed.getItem().hashCode());
         return completed
@@ -581,7 +581,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         }
         HiredWorkerBrain.clearFailure(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);
-        swingWorkTool(villager);
+        useWorkItem(level, villager, crafted);
         return WorkResult.completedWithPractice(
                 "interaction.work.cooking.crafted_food",
                 itemReplacements(crafted),

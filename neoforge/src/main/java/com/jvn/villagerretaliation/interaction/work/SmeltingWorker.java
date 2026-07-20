@@ -168,7 +168,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             }
             furnace.setItem(INPUT_SLOT, loaded);
             updateFurnace(level, furnace, station);
-            swingWorkTool(villager);
+            useWorkItem(level, villager, loaded);
             return WorkResult.progressed("interaction.work.smelting.loaded_input", itemReplacements(loaded));
         }
 
@@ -188,7 +188,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             }
             furnace.setItem(FUEL_SLOT, loaded);
             updateFurnace(level, furnace, station);
-            swingWorkTool(villager);
+            useWorkItem(level, villager, loaded);
             return WorkResult.progressed("interaction.work.smelting.loaded_fuel", itemReplacements(loaded));
         }
 
@@ -229,7 +229,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             restoreFurnaceStack(furnace, slot, remainder);
         }
         updateFurnace(level, furnace, station);
-        swingWorkTool(villager);
+        useWorkItem(level, villager, removed);
         var practice = HiredWorkPractice.batch(
                 VillagerSkill.SMITHING, "hired:smelting:batch", removed.getCount(), removed.getItem().hashCode());
         return completed

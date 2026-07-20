@@ -11,7 +11,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -131,9 +130,17 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
     }
 
     protected void swingWorkTool(Villager villager) {
-        if (!villager.swinging) {
-            villager.swing(InteractionHand.MAIN_HAND, true);
+        if (!villager.swinging && villager.level() instanceof ServerLevel level) {
+            HiredWorkAnimation.swing(level, villager, villager.getMainHandItem());
         }
+    }
+
+    protected void swingWorkItem(ServerLevel level, Villager villager, ItemStack item) {
+        HiredWorkAnimation.swing(level, villager, item);
+    }
+
+    protected void useWorkItem(ServerLevel level, Villager villager, ItemStack item) {
+        HiredWorkAnimation.useItem(level, villager, item);
     }
 
     protected int breakProgressGoal(ServerLevel level, BlockPos pos, ItemStack tool) {

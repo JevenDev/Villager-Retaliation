@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.renderer;
 
+import com.jvn.villagerretaliation.client.villager.VillagerWorkAnimationClientCache;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,6 +20,10 @@ public final class VillagerRenderEquipmentState {
     }
 
     public static ItemStack visibleMainHand(AbstractVillager villager) {
+        ItemStack workItem = VillagerWorkAnimationClientCache.displayItem(villager);
+        if (!workItem.isEmpty()) {
+            return workItem;
+        }
         ItemStack visibleMainHand = VillagerRetaliationVillagerEquipment.visibleMainHand(villager);
         long gameTime = villager.level().getGameTime();
         UUID villagerId = villager.getUUID();

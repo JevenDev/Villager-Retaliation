@@ -2077,7 +2077,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
             return;
         }
         facePlacedSapling(villager, pos);
-        villager.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
+        swingWorkItem(level, villager, sapling);
         if (!level.setBlock(pos, saplingState, Block.UPDATE_ALL)) {
             ItemStack remainder = context.inventory().insertSupply(sapling.copyWithCount(1));
             if (!remainder.isEmpty()) {

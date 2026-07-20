@@ -179,9 +179,28 @@ public final class VillagerPoseAnimator {
             case SHIELD_LOWERED -> applyShieldLoweredPose(villager, head, rightArm, leftArm);
             case THROWING_ITEM -> applyThrowingPose(villager, body, head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT, attackTime);
             case CASTING_OR_POTION -> applyPotionPose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT);
+            case WORK_ITEM_USE -> applyWorkItemUsePose(head, rightArm, leftArm, villager.getMainArm() == HumanoidArm.RIGHT, ageInTicks);
             case NONE, HOLDING_ITEM -> {
             }
         }
+    }
+
+    private static void applyWorkItemUsePose(
+            ModelPart head,
+            ModelPart rightArm,
+            ModelPart leftArm,
+            boolean rightHanded,
+            float ageInTicks
+    ) {
+        ModelPart useArm = rightHanded ? rightArm : leftArm;
+        ModelPart supportArm = rightHanded ? leftArm : rightArm;
+        float direction = rightHanded ? 1.0F : -1.0F;
+        float motion = Mth.sin(ageInTicks * 0.65F) * 0.18F;
+        useArm.xRot = -1.05F + head.xRot * 0.35F + motion;
+        useArm.yRot = head.yRot - direction * 0.22F;
+        useArm.zRot = direction * 0.06F;
+        supportArm.xRot = -0.28F - motion * 0.35F;
+        supportArm.yRot = head.yRot + direction * 0.12F;
     }
 
     public static <T extends AbstractVillager> void applyMeleePose(
