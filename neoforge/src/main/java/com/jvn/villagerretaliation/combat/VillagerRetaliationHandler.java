@@ -936,8 +936,8 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean tryAcquireGroundWeapon(Villager villager, long gameTime) {
+        boolean allowWeapons = ACTOR_POLICY.canScavengeGroundWeapons(villager);
         if (!villager.isAlive()
-                || !ACTOR_POLICY.canScavengeGroundWeapons(villager)
                 || VillagerInventoryAccess.hasOpenInventory(villager)
                 || !VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
             return false;
@@ -947,7 +947,9 @@ public final class VillagerRetaliationHandler {
                 villager,
                 ACTOR_POLICY.movementSpeed(villager),
                 () -> RETALIATION.discardTemporaryWeapon(villager),
-                gameTime
+                gameTime,
+                allowWeapons,
+                true
         );
     }
 

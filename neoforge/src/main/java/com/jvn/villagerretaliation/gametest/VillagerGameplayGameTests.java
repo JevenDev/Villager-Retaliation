@@ -31,9 +31,11 @@ import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationTradePricing;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
-import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerArmor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import com.mojang.authlib.GameProfile;
 import java.lang.reflect.Method;
@@ -66,6 +68,7 @@ import net.minecraft.world.entity.ai.behavior.VillagerPanicTrigger;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
 import net.minecraft.world.entity.ai.goal.PanicGoal;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -92,6 +95,63 @@ public final class VillagerGameplayGameTests {
     }
 
     private VillagerGameplayGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void droppedWeaponUpgradesPreferMeleeAndQuality(GameTestHelper helper) {
+        helper.assertTrue(
+                VillagerRetaliationVillagerWeapons.isBetterWeaponChoice(
+                        new ItemStack(Items.IRON_SWORD), new ItemStack(Items.BOW)),
+                "a melee weapon should be preferred over a ranged weapon");
+        helper.assertFalse(
+                VillagerRetaliationVillagerWeapons.isBetterWeaponChoice(
+                        new ItemStack(Items.BOW), new ItemStack(Items.IRON_SWORD)),
+                "a ranged weapon should not replace a usable melee weapon");
+        helper.assertTrue(
+                VillagerRetaliationVillagerWeapons.isBetterWeaponChoice(
+                        new ItemStack(Items.DIAMOND_SWORD), new ItemStack(Items.IRON_SWORD)),
+                "a higher-tier melee weapon should replace a lower-tier melee weapon");
+
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemEntity nearbyBow = new ItemEntity(
+                helper.getLevel(), villager.getX() + 1.0D, villager.getY(), villager.getZ(),
+                new ItemStack(Items.BOW));
+        ItemEntity fartherSword = new ItemEntity(
+                helper.getLevel(), villager.getX() + 3.0D, villager.getY(), villager.getZ(),
+                new ItemStack(Items.IRON_SWORD));
+        helper.getLevel().addFreshEntity(nearbyBow);
+        helper.getLevel().addFreshEntity(fartherSword);
+        helper.assertTrue(
+                VillagerRetaliationVillagerWeapons.findNearestWeapon(villager).orElse(null) == fartherSword,
+                "ground-weapon selection should prefer melee quality before proximity");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerEquipsDroppedArmorUpgradeAndStoresOldPiece(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.LEATHER_CHESTPLATE));
+        ItemEntity upgrade = new ItemEntity(
+                helper.getLevel(), villager.getX(), villager.getY(), villager.getZ(),
+                new ItemStack(Items.IRON_CHESTPLATE));
+        upgrade.setNoPickUpDelay();
+        helper.getLevel().addFreshEntity(upgrade);
+
+        helper.assertTrue(
+                VillagerRetaliationVillagerArmor.equipGroundUpgrade(villager, upgrade),
+                "the villager should equip a valid dropped armor upgrade");
+        helper.assertTrue(
+                villager.getItemBySlot(EquipmentSlot.CHEST).is(Items.IRON_CHESTPLATE),
+                "the stronger chestplate should be equipped");
+        helper.assertTrue(
+                villager.getInventory().hasAnyMatching(stack -> stack.is(Items.LEATHER_CHESTPLATE)),
+                "the displaced armor should be preserved in the villager inventory");
+        helper.assertTrue(upgrade.isRemoved(), "the consumed ground stack should be discarded");
+        helper.assertFalse(
+                VillagerRetaliationVillagerArmor.isBetterArmor(
+                        new ItemStack(Items.LEATHER_CHESTPLATE), villager.getItemBySlot(EquipmentSlot.CHEST)),
+                "weaker armor should not replace the equipped upgrade");
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

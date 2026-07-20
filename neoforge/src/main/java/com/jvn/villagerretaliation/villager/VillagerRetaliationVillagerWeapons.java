@@ -108,6 +108,14 @@ public final class VillagerRetaliationVillagerWeapons {
             }
 
             double distanceSqr = villager.distanceToSqr(itemEntity);
+            if (bestWeapon != null && isBetterWeaponChoice(itemStack, bestWeapon.getItem())) {
+                bestWeapon = itemEntity;
+                bestDistanceSqr = distanceSqr;
+                continue;
+            }
+            if (bestWeapon != null && isBetterWeaponChoice(bestWeapon.getItem(), itemStack)) {
+                continue;
+            }
             if (distanceSqr >= bestDistanceSqr) {
                 continue;
             }
@@ -121,7 +129,10 @@ public final class VillagerRetaliationVillagerWeapons {
 
     public static void equipGroundWeapon(AbstractVillager villager, ItemEntity itemEntity) {
         ItemStack groundStack = itemEntity.getItem();
-        if (groundStack.isEmpty()) {
+        if (!itemEntity.isAlive()
+                || itemEntity.hasPickUpDelay()
+                || groundStack.isEmpty()
+                || !isBetterWeaponChoice(groundStack, getPrimaryWeapon(villager))) {
             return;
         }
 
@@ -331,10 +342,10 @@ public final class VillagerRetaliationVillagerWeapons {
     }
 
     private static int pickupPriority(ItemStack stack) {
-        if (isRangedWeapon(stack)) {
+        if (isMeleeWeapon(stack)) {
             return 0;
         }
-        if (isMeleeWeapon(stack)) {
+        if (isRangedWeapon(stack)) {
             return 1;
         }
         return 2;
