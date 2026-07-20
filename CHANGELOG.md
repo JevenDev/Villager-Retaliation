@@ -1,5 +1,7 @@
 # Changelog
 
+- Fixed villagers attempting to collect seeds and other unrelated item drops while fighting or fleeing; combat threat state now suspends vanilla, hired-farming, and party drop pickup so higher-priority behavior keeps control.
+
 - Fixed defending Player Raid villagers recognizing only their current player target as hostile; every participating raider player now remains an aggressor while defenders fight other party players or recruited villagers.
 - Fixed hired villagers rejecting Follow Me and Stay Here commands from their own hirer as though another player held the contract, then clearing or interfering with accepted follow routes; hired work now pauses before follower navigation begins and yields to the ordinary follow AI while they follow or hold position, while commands from other players remain blocked.
 - Prevented a Ride On rear passenger from damaging an allied front-seat driver, covering players and villagers, melee, projectiles, indirect damage, mutual parties and alliances, vanilla teams, shared village allegiance, and active hirers.

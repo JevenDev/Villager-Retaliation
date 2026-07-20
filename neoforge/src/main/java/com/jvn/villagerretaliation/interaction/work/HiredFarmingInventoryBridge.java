@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
@@ -208,7 +209,8 @@ public final class HiredFarmingInventoryBridge {
     }
 
     private static HiredWorkSession activeFarmingSession(ServerLevel level, Villager villager) {
-        if (!HiredVillagerContractService.isHired(level, villager)
+        if (VillagerRetaliationVillagerCombatUtil.isThreatened(villager)
+                || !HiredVillagerContractService.isHired(level, villager)
                 || HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.FARMING) {
             return null;
         }
