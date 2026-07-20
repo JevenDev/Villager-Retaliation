@@ -494,6 +494,41 @@ public final class PlayerRaidGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void defendingVillagersTreatEntireRaidingPartyAsAggressors(GameTestHelper helper) {
+        BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        Villager recruitedRaider = EntityType.VILLAGER.create(helper.getLevel());
+        Villager defender = EntityType.VILLAGER.create(helper.getLevel());
+        helper.assertTrue(recruitedRaider != null && defender != null,
+                "raid villagers should be creatable");
+        player.moveTo(center.getX() - 8.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        recruitedRaider.moveTo(center.getX() - 1.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        defender.moveTo(center.getX() + 1.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(recruitedRaider), "recruited raider should spawn");
+        helper.assertTrue(helper.getLevel().addFreshEntity(defender), "defender should spawn");
+
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
+        PlayerRaidSavedData.RaidRecord raid = data.create(
+                VillageAllegianceId.random(), helper.getLevel().dimension().location(), center,
+                Set.of(SectionPos.asLong(center)), "Party Aggressor Village", player.getUUID(), UUID.randomUUID(),
+                Set.of(player.getUUID()), Set.of(recruitedRaider.getUUID()),
+                Set.of(defender.getUUID()), Set.of(), 42L);
+        raid.setPhase(PlayerRaidSavedData.Phase.ACTIVE, 43L);
+
+        PlayerRaidService.reconcileCombat(helper.getLevel().getServer(), raid);
+        helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(defender, recruitedRaider),
+                "defender should target a nearer participating recruited villager");
+        helper.assertTrue(VillagerRetaliationHandler.isHostileTowards(defender, player),
+                "every participating raider player should remain an aggressor while another party member is targeted");
+
+        data.remove(raid.id());
+        recruitedRaider.discard();
+        defender.discard();
+        player.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void activePlayerRaidTargetsAlignedIronGolems(GameTestHelper helper) {
         BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
         Villager raider = EntityType.VILLAGER.create(helper.getLevel());
