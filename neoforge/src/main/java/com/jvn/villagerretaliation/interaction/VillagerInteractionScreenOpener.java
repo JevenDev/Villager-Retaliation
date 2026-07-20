@@ -200,6 +200,8 @@ public final class VillagerInteractionScreenOpener {
                 hiredByPlayer,
                 hiredAnyPlayer && !hiredByPlayer,
                 HiredVillagerContractService.getRemainingHireDays(level, villager),
+                com.jvn.villagerretaliation.inventory.VillagerInventoryAccess.canOpenPreferred(
+                        level, villager, player),
                 partyVillager != null,
                 partyVillagerAuthorized,
                 partyVillagerPartyMember,

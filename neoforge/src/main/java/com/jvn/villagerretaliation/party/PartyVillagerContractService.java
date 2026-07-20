@@ -276,6 +276,78 @@ public final class PartyVillagerContractService {
                 : PartyService.getPartyForVillager(level, villager.getUUID()).map(PartyRecord::leaderId);
     }
 
+    public static boolean canRenewExpiredContract(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (!isRetainedPartyInventory(level, villager, player)) {
+            return false;
+        }
+        UUID expiredPartyId = villager.getPersistentData().getUUID(EXPIRED_PARTY_ID_TAG);
+        PartyRecord party = PartyService.getParty(level, expiredPartyId).orElse(null);
+        return party != null
+                && party.leaderId().equals(player.getUUID())
+                && party.playerIds().contains(player.getUUID())
+                && party.villagers().size() < PartyService.MAX_VILLAGERS
+                && PartyService.getPartyForVillager(level, villager.getUUID()).isEmpty()
+                && !HiredVillagerContractService.isHired(level, villager);
+    }
+
+    public static boolean isRetainedPartyInventory(ServerLevel level, Villager villager, ServerPlayer player) {
+        return level != null
+                && villager != null
+                && player != null
+                && !villager.isBaby()
+                && villager.isAlive()
+                && villager.getPersistentData().hasUUID(EXPIRED_PARTY_ID_TAG)
+                && HiredVillagerContractService.canAccessJobInventory(level, villager, player);
+    }
+
+    public static ContractResult renewExpired(ServerPlayer player, Villager villager, int requestedDays) {
+        if (player == null || villager == null || !(villager.level() instanceof ServerLevel level)
+                || !canRenewExpiredContract(level, villager, player)) {
+            return ContractResult.failure("villagerretaliation.party.error.contract_inactive");
+        }
+        int days = VillagerContractTime.availableExtensionDays(
+                level.getServer().overworld().getGameTime(),
+                level.getServer().overworld().getGameTime(),
+                requestedDays);
+        if (requestedDays <= 0 || days != requestedDays) {
+            return ContractResult.failure("villagerretaliation.party.error.contract_maximum");
+        }
+        int cost = Math.multiplyExact(days, DAILY_EMERALD_COST);
+        if (VillagerCurrencyPayment.count(player) < cost) {
+            return ContractResult.failure("villagerretaliation.party.error.insufficient_emeralds");
+        }
+
+        UUID partyId = villager.getPersistentData().getUUID(EXPIRED_PARTY_ID_TAG);
+        PartyRecord party = PartyService.getParty(level, partyId).orElse(null);
+        if (party == null) {
+            return ContractResult.failure("villagerretaliation.party.error.contract_inactive");
+        }
+        long now = level.getServer().overworld().getGameTime();
+        UUID contractId = UUID.randomUUID();
+        PartyVillagerRecord record = new PartyVillagerRecord(
+                villager.getUUID(), player.getUUID(), contractId, party.nextRecruitmentOrder(),
+                PartyCommandMode.FOLLOW, null, null, now,
+                VillagerContractTime.endAfterDays(now, days), days, cost,
+                VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
+                professionTranslationKey(villager), level.dimension().location(), villager.blockPosition());
+        record.setCombatMode(party.combatMode());
+        record.setAttackMode(party.attackMode());
+        PartySavedData.get(level).addVillager(party, record);
+        if (!VillagerCurrencyPayment.tryRemove(player, cost)) {
+            PartyService.removeVillager(level, villager.getUUID());
+            return ContractResult.failure("villagerretaliation.party.error.insufficient_emeralds");
+        }
+        VillagerWalletService.addCurrency(villager, cost, VillagerWalletService.WalletSource.HIRE_PAYMENT);
+        attachEntityState(level, villager, party.id(), record);
+        HiredVillagerContractService.takeOverJobInventoryOverflow(villager);
+        HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
+        VillagerRecruitmentService.applyPartyFollowing(level, villager, player);
+        com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
+        PartySyncService.syncParty(level.getServer(), party.id());
+        return ContractResult.success(
+                "villagerretaliation.party.contract_extended", party.id(), record, days, cost);
+    }
+
     public static boolean isActivePartyVillager(ServerLevel level, Villager villager) {
         if (level == null || villager == null) {
             return false;
