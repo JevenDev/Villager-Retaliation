@@ -539,6 +539,14 @@ public final class VillagerRetaliationHandler {
             return false;
         }
 
+        // A villager can only retain one combat target, but every player snapshotted on the
+        // attacking side of a Player Raid is still an aggressor. Keep interaction hostility
+        // party-wide even while this defender is currently fighting another player or one of
+        // the party's participating recruited villagers.
+        if (PlayerRaidService.areOpposingParticipants(villager, player)) {
+            return true;
+        }
+
         if (VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(player)) {
             RETALIATION.isHostileTowards(villager, player, () -> clearAnger(villager));
             return false;
