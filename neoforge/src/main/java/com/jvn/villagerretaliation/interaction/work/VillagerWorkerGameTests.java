@@ -5344,6 +5344,103 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void clipboardAllowsStorageTripsOutsideWorkArea(GameTestHelper helper) {
+        HiredVillagerIndex.clearRuntimeState();
+        buildFloor(helper, 0, 20, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrClipboardStorageTrip");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(16, 2, 3));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+
+        HiredVillagerContractService.startHireContract(
+                level, villager, hirer, 1, 8, HiredVillagerRole.FARMING);
+        helper.assertTrue(
+                HiredVillagerWorkService.setWorkArea(
+                        hirer,
+                        level,
+                        villager,
+                        helper.absolutePos(new BlockPos(1, 2, 1)),
+                        helper.absolutePos(new BlockPos(5, 4, 5))),
+                "storage-trip fixture work area should be assigned");
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putBoolean("Enabled", true);
+        HiredWorkerBrain.setStorageTarget(session.context(), villager.blockPosition());
+        HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.MOVING_TO_STORAGE, null);
+        HiredVillagerIndex.update(level, villager);
+
+        helper.assertFalse(
+                HiredVillagerWorkService.isInsideEffectiveWorkArea(
+                        level,
+                        villager,
+                        HiredVillagerRole.FARMING,
+                        session.context(),
+                        villager.blockPosition()),
+                "storage-trip fixture villager should be outside the work area");
+        ClipboardWorkforceSnapshot movingSnapshot = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertFalse(
+                movingSnapshot.workers().getFirst().tooFar(),
+                "clipboard should not report too far while moving to output storage");
+
+        HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.RETURNING_TO_WORK_AREA, session.context().workCenter());
+        ClipboardWorkforceSnapshot returningSnapshot = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertFalse(
+                returningSnapshot.workers().getFirst().tooFar(),
+                "clipboard should not report too far while returning from output storage");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        HiredVillagerIndex.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void clipboardInventoryFullRequiresBlockedWorkerState(GameTestHelper helper) {
+        HiredVillagerIndex.clearRuntimeState();
+        buildFloor(helper, 0, 8, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrClipboardInventoryState");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager animalHandler = spawnVillager(helper, new BlockPos(3, 2, 3));
+        animalHandler.setVillagerData(animalHandler.getVillagerData().setProfession(VillagerProfession.BUTCHER));
+
+        HiredVillagerContractService.startHireContract(
+                level, animalHandler, hirer, 1, 8, HiredVillagerRole.ANIMAL_HANDLING);
+        helper.assertTrue(
+                HiredVillagerWorkService.setWorkArea(
+                        hirer,
+                        level,
+                        animalHandler,
+                        helper.absolutePos(new BlockPos(1, 2, 1)),
+                        helper.absolutePos(new BlockPos(6, 4, 5))),
+                "animal-handler fixture work area should be assigned");
+        HiredWorkSession session = HiredWorkSession.active(level, animalHandler);
+        session.state().putBoolean("Enabled", true);
+        HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.IDLE, null);
+        for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+            session.inventory().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+        }
+        helper.assertFalse(session.inventory().hasOutputSpace(), "fixture should have no generic output capacity");
+        HiredVillagerIndex.update(level, animalHandler);
+
+        ClipboardWorkforceSnapshot activeSnapshot = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertFalse(
+                activeSnapshot.workers().getFirst().inventoryFull(),
+                "animal handler should not be reported full unless its job is blocked by inventory capacity");
+
+        HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.PAUSED_FULL_INVENTORY, null);
+        ClipboardWorkforceSnapshot blockedSnapshot = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertTrue(
+                blockedSnapshot.workers().getFirst().inventoryFull(),
+                "clipboard should retain inventory-full warnings for workers actually blocked on capacity");
+
+        HiredVillagerContractService.endHireContract(level, animalHandler, hirer);
+        HiredVillagerIndex.clearRuntimeState();
+        animalHandler.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void assignedRouteSatisfiesWorkSiteAndTakesPriority(GameTestHelper helper) {
         HiredVillagerIndex.clearRuntimeState();
         buildFloor(helper, 0, 32, 0, 32, 1);
