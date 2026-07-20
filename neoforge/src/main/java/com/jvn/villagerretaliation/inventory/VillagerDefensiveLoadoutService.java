@@ -51,11 +51,22 @@ public final class VillagerDefensiveLoadoutService {
     }
 
     public static void onLivingUseTotem(LivingUseTotemEvent event) {
-        if (event.getEntity() instanceof Villager villager
-                && event.getHandHolding() == InteractionHand.OFF_HAND
-                && hasBorrowedTotem(villager)) {
-            // Vanilla shrinks the hand stack after this event. Forgetting ownership here
-            // prevents maintenance from recreating the consumed totem.
+        if (event.isCanceled() || !(event.getEntity() instanceof Villager villager)) {
+            return;
+        }
+
+        InteractionHand hand = event.getHandHolding();
+        EquipmentSlot equipmentSlot = hand == InteractionHand.MAIN_HAND
+                ? EquipmentSlot.MAINHAND
+                : EquipmentSlot.OFFHAND;
+
+        // Vanilla shrinks the live hand stack after this event. Job equipment and
+        // tracked main-hand gear also retain an authoritative saved stack, so consume
+        // that owner now or equipment maintenance will recreate the used totem.
+        HiredJobInventory.consumeEquippedTotem(villager, equipmentSlot, event.getTotem());
+        if (hand == InteractionHand.MAIN_HAND) {
+            VillagerRetaliationVillagerEquipment.forgetConsumedMainHand(villager, event.getTotem());
+        } else if (hasBorrowedTotem(villager)) {
             clearState(villager);
         }
     }
@@ -112,6 +123,9 @@ public final class VillagerDefensiveLoadoutService {
     }
 
     public static void markManualOffhand(Villager villager, boolean manual) {
+        if (villager == null) {
+            return;
+        }
         if (manual) {
             villager.getPersistentData().putBoolean(MANUAL_OFFHAND_TAG, true);
         } else {
