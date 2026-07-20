@@ -369,6 +369,7 @@ public final class FishingWorker extends AbstractBlockWorker {
     private void retrieveCatch(ServerLevel level, Villager villager, HiredWorkContext context, VillagerFishingHook hook) {
         ItemStack rod = context.inventory().getItem(HiredJobInventory.MAINHAND_SLOT);
         VillagerFishingHook.CatchResult result = hook.retrieve(rod);
+        result.spawnExperience(level, villager, rod);
         boolean overflow = false;
         double practiceUnits = 0.0D;
         long repetitionKey = 1L;

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.gametest;
 
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
+import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.WanderingTraderRetaliationHandler;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
@@ -739,6 +740,34 @@ public final class VillagerGameplayGameTests {
         helper.assertValueEqual(VillagerRecoveryService.foodLevel(villager), 9, "resuming should not consume food early");
 
         VillagerRecoveryService.onVillagerUnloaded(villager);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hiredFishingExperienceRequiresMendingRod(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerFishingHook.CatchResult catchResult = new VillagerFishingHook.CatchResult(List.of(), 1, 5);
+        ItemStack ordinaryRod = new ItemStack(Items.FISHING_ROD);
+
+        catchResult.spawnExperience(helper.getLevel(), villager, ordinaryRod);
+        helper.assertTrue(
+                helper.getLevel().getEntitiesOfClass(
+                        ExperienceOrb.class,
+                        villager.getBoundingBox().inflate(2.0D)).isEmpty(),
+                "hired fishing should not generate experience for an ordinary rod");
+
+        ItemStack mendingRod = new ItemStack(Items.FISHING_ROD);
+        var enchantments = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        mendingRod.enchant(enchantments.getOrThrow(Enchantments.MENDING), 1);
+        catchResult.spawnExperience(helper.getLevel(), villager, mendingRod);
+
+        List<ExperienceOrb> experience = helper.getLevel().getEntitiesOfClass(
+                ExperienceOrb.class,
+                villager.getBoundingBox().inflate(2.0D));
+        helper.assertValueEqual(experience.size(), 1,
+                "hired fishing should generate one experience orb for a Mending rod");
+        helper.assertValueEqual(experience.getFirst().value, 5,
+                "hired fishing should preserve the catch experience value");
         helper.succeed();
     }
 
