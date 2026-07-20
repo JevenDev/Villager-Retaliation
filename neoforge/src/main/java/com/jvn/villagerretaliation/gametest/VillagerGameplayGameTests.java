@@ -155,6 +155,58 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyEquipmentCannotBeDuplicatedByGroundUpgrades(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredJobInventory partyInventory = HiredJobInventory.getJobInventory(villager);
+        partyInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        partyInventory.setItem(1, new ItemStack(Items.IRON_CHESTPLATE));
+
+        ItemEntity weaponUpgrade = new ItemEntity(
+                helper.getLevel(), villager.getX(), villager.getY(), villager.getZ(),
+                new ItemStack(Items.DIAMOND_SWORD));
+        ItemEntity armorUpgrade = new ItemEntity(
+                helper.getLevel(), villager.getX(), villager.getY(), villager.getZ(),
+                new ItemStack(Items.DIAMOND_CHESTPLATE));
+        weaponUpgrade.setNoPickUpDelay();
+        armorUpgrade.setNoPickUpDelay();
+        helper.getLevel().addFreshEntity(weaponUpgrade);
+        helper.getLevel().addFreshEntity(armorUpgrade);
+
+        helper.assertFalse(
+                VillagerRetaliationVillagerWeapons.shouldPathfindForWeapon(villager, weaponUpgrade.getItem()),
+                "party main-hand authority should reject ground weapon upgrades");
+        helper.assertFalse(
+                VillagerRetaliationVillagerArmor.shouldPathfindForUpgrade(villager, armorUpgrade.getItem()),
+                "party armor authority should reject ground armor upgrades");
+
+        // Revalidate at pickup time too: a path selected before party equipment was
+        // assigned must not copy the live equipment mirror into personal storage.
+        VillagerRetaliationVillagerWeapons.equipGroundWeapon(villager, weaponUpgrade);
+        helper.assertFalse(
+                VillagerRetaliationVillagerArmor.equipGroundUpgrade(villager, armorUpgrade),
+                "stale armor pickup should yield to party equipment authority");
+        HiredJobInventory.maintainEquipmentSlots(villager);
+
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
+                "party weapon should remain equipped");
+        helper.assertTrue(villager.getItemBySlot(EquipmentSlot.CHEST).is(Items.IRON_CHESTPLATE),
+                "party armor should remain equipped");
+        helper.assertTrue(partyInventory.getItem(HiredJobInventory.MAINHAND_SLOT).is(Items.IRON_SWORD)
+                        && partyInventory.getItem(HiredJobInventory.MAINHAND_SLOT).getCount() == 1,
+                "party inventory should retain exactly one weapon");
+        helper.assertTrue(partyInventory.getItem(1).is(Items.IRON_CHESTPLATE)
+                        && partyInventory.getItem(1).getCount() == 1,
+                "party inventory should retain exactly one armor piece");
+        helper.assertValueEqual(villager.getInventory().countItem(Items.IRON_SWORD), 0,
+                "party weapon must not be copied into personal inventory");
+        helper.assertValueEqual(villager.getInventory().countItem(Items.IRON_CHESTPLATE), 0,
+                "party armor must not be copied into personal inventory");
+        helper.assertTrue(weaponUpgrade.isAlive() && armorUpgrade.isAlive(),
+                "rejected upgrades should remain on the ground");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void villagerMendingArmorAttractsAndConsumesExperience(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         ItemStack armor = new ItemStack(Items.IRON_CHESTPLATE);
