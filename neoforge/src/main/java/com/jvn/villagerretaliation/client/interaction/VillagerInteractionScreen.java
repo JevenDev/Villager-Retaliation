@@ -1041,7 +1041,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addRootOptions() {
         addOption("root.talk", this::openTalkPage);
-        if (hasQuestOptions() && (!this.recruitedPartyVillager || !this.partyVillagerPartyMember)) {
+        if (this.reputationLevel != VillagerReputationLevel.FEARED
+                && hasQuestOptions()
+                && (!this.recruitedPartyVillager || !this.partyVillagerPartyMember)) {
             addOption("root.adventures", this::openAdventuresPage);
         }
         if (this.reputationLevel == VillagerReputationLevel.ROYALTY) {
@@ -3103,7 +3105,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     this::requestTrade,
                     true));
         }
-        if (hasQuestOptions() && (!this.recruitedPartyVillager || !this.partyVillagerPartyMember)) {
+        if (this.reputationLevel != VillagerReputationLevel.FEARED
+                && hasQuestOptions()
+                && (!this.recruitedPartyVillager || !this.partyVillagerPartyMember)) {
             buttons.add(new InteractionMenuButton(
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
                     translate("root.adventures"),

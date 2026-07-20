@@ -144,8 +144,7 @@
     {
       "dispositions": [
         "rude",
-        "hostile",
-        "fearful"
+        "hostile"
       ],
       "id": "global_hostile_opening",
       "lines": [
@@ -159,6 +158,25 @@
         "This had better be important.",
         "Say it from there. That is close enough.",
         "I am listening, but do not mistake that for welcome."
+      ],
+      "show_for_babies": false
+    },
+    {
+      "dispositions": [
+        "fearful"
+      ],
+      "id": "global_feared_opening",
+      "lines": [
+        "<shake>Please do not hurt me.</shake> What do you want?",
+        "You can speak from there. Please, do not come any closer.",
+        "I will listen. Just keep your hands where I can see them.",
+        "Please make this quick. I need to get somewhere safe.",
+        "<shake>I am listening.</shake> Please give me no reason to run.",
+        "What do you need? Say it calmly, and then let me go.",
+        "I do not want trouble. Please keep your distance.",
+        "I will answer if I can. Just do not hurt me.",
+        "Everyone knows what you can do. Please, speak and leave peacefully.",
+        "I am afraid for my life right now. What do you want?"
       ],
       "show_for_babies": false
     },
