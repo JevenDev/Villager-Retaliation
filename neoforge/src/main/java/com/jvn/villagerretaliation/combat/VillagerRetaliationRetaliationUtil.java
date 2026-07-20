@@ -65,7 +65,7 @@ public final class VillagerRetaliationRetaliationUtil {
             Map<UUID, AngerTarget> angerTargets,
             String persistentTagRoot
     ) {
-        if ((VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker)
+        if ((VillagerRetaliationVillagerCombatUtil.shouldIgnoreRetaliationAttacker(attacker)
                 && !VillageCombatAuthorizationService.isAuthorized(villager, attacker)
                 && !PlayerRaidService.areOpposingParticipants(villager, attacker))
                 || !villager.isAlive()
@@ -315,7 +315,7 @@ public final class VillagerRetaliationRetaliationUtil {
             return null;
         }
 
-        boolean targetCurrentlyHostile = !VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target)
+        boolean targetCurrentlyHostile = !VillagerRetaliationVillagerCombatUtil.shouldIgnoreRetaliationAttacker(target)
                 || VillageCombatAuthorizationService.isAuthorized(villager, target)
                 || PlayerRaidService.areOpposingParticipants(villager, target);
         if (!targetCurrentlyHostile) {
