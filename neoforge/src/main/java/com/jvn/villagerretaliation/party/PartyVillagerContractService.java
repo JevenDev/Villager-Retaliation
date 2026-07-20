@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.inventory.VillagerInventoryMenu;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -567,6 +568,7 @@ public final class PartyVillagerContractService {
         villager.getPersistentData().putUUID(PARTY_CONTRACT_ID_TAG, record.contractId());
         villager.getPersistentData().putUUID(PARTY_RECRUITER_ID_TAG, record.recruiterId());
         villager.setPersistenceRequired();
+        VillagerBehaviorSuppressionPolicy.enforce(level, villager);
     }
 
     private static void applyCommandState(
@@ -592,6 +594,9 @@ public final class PartyVillagerContractService {
         villager.getPersistentData().remove(PARTY_CONTRACT_ID_TAG);
         villager.getPersistentData().remove(PARTY_RECRUITER_ID_TAG);
         villager.setPersistenceRequired();
+        if (villager.level() instanceof ServerLevel level) {
+            VillagerBehaviorSuppressionPolicy.restoreAfterRelease(level, villager);
+        }
     }
 
     /** Permanently releases a recruited villager who defends their home from a player raid. */

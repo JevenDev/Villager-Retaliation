@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.allegiance;
 
 import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -339,7 +340,8 @@ public final class VillageAllegianceService {
             Villager villager,
             VillageAllegianceData allegiance) {
         if (allegiance == null || allegiance.state() != AllegianceState.UNAFFILIATED
-                || PartyService.isRecruitedPartyVillager(level, villager.getUUID())) {
+                || VillagerBehaviorSuppressionPolicy.suppresses(
+                        villager, VillagerBehaviorSuppressionPolicy.Behavior.VILLAGE_MIGRATION)) {
             VillageAllegianceReassignmentService.resetResidency(villager);
             return false;
         }

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.mixin;
 
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.GoToPotentialJobSite;
 import net.minecraft.world.entity.npc.Villager;
@@ -17,7 +18,9 @@ public abstract class GoToPotentialJobSiteMixin {
             Villager villager,
             long gameTime,
             CallbackInfo ci) {
-        if (VillagerTaskNavigationUtil.hasActiveHiredWalkTarget(villager)) {
+        if (VillagerBehaviorSuppressionPolicy.suppresses(
+                        villager, VillagerBehaviorSuppressionPolicy.Behavior.JOB_SITE_CLAIMING)
+                || VillagerTaskNavigationUtil.hasActiveHiredWalkTarget(villager)) {
             ci.cancel();
         }
     }

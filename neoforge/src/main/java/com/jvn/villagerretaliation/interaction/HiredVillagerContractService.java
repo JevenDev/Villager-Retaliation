@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.Optional;
 import java.util.Map;
 import java.util.UUID;
@@ -427,6 +428,7 @@ public final class HiredVillagerContractService {
         HiredVillagerIndex.update(level, villager);
         com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);
         com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
+        VillagerBehaviorSuppressionPolicy.enforce(level, villager);
     }
 
     public static void startOneOffBuilderJob(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -457,6 +459,7 @@ public final class HiredVillagerContractService {
         HiredVillagerIndex.update(level, villager);
         com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);
         com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
+        VillagerBehaviorSuppressionPolicy.enforce(level, villager);
     }
 
     public static boolean isOneOffBuilderJob(ServerLevel level, Villager villager) {
@@ -533,6 +536,15 @@ public final class HiredVillagerContractService {
 
     public static HiredVillagerRole activeRole(ServerLevel level, Villager villager) {
         expireHireContractIfNeeded(level, villager);
+        HiredVillagerRole role = contract(villager)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .map(tag -> HiredVillagerRole.bySerializedName(tag.getString(ROLE_TAG)))
+                .orElse(null);
+        return role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
+    }
+
+    /** Non-mutating role lookup for AI policy evaluation. */
+    public static HiredVillagerRole activeRoleWithoutMaintenance(ServerLevel level, Villager villager) {
         HiredVillagerRole role = contract(villager)
                 .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
                 .map(tag -> HiredVillagerRole.bySerializedName(tag.getString(ROLE_TAG)))
@@ -764,6 +776,7 @@ public final class HiredVillagerContractService {
         villager.setPersistenceRequired();
         HiredVillagerIndex.remove(villager);
         com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);
+        VillagerBehaviorSuppressionPolicy.restoreAfterRelease(level, villager);
     }
 
     private static void finalizeBuilderJobForContractEnd(

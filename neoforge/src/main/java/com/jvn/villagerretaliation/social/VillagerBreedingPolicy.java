@@ -1,13 +1,10 @@
 package com.jvn.villagerretaliation.social;
 
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
-import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
-import com.jvn.villagerretaliation.party.PartyService;
-import com.jvn.villagerretaliation.party.PartyVillagerContractService;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
@@ -118,13 +115,14 @@ public final class VillagerBreedingPolicy {
     }
 
     private static BreedingBlockReason evaluateHireState(ServerLevel level, Villager villager) {
-        return HiredVillagerContractService.hasActiveOrPendingContract(villager)
+        return VillagerBehaviorSuppressionPolicy.state(villager)
+                == VillagerBehaviorSuppressionPolicy.ControlState.HIRED
                 ? BreedingBlockReason.HIRED : BreedingBlockReason.NONE;
     }
 
     private static BreedingBlockReason evaluatePartyState(ServerLevel level, Villager villager) {
-        return PartyVillagerContractService.isActivePartyVillager(level, villager)
-                || PartyService.isRecruitedPartyVillager(level, villager.getUUID())
+        return VillagerBehaviorSuppressionPolicy.state(villager)
+                == VillagerBehaviorSuppressionPolicy.ControlState.PARTIED
                 ? BreedingBlockReason.PARTY_MEMBER : BreedingBlockReason.NONE;
     }
 
@@ -137,7 +135,9 @@ public final class VillagerBreedingPolicy {
     }
 
     private static BreedingBlockReason evaluateDownedState(ServerLevel level, Villager villager) {
-        return VillagerDownedService.isDowned(villager) ? BreedingBlockReason.DOWNED : BreedingBlockReason.NONE;
+        return VillagerBehaviorSuppressionPolicy.state(villager)
+                == VillagerBehaviorSuppressionPolicy.ControlState.DOWNED
+                ? BreedingBlockReason.DOWNED : BreedingBlockReason.NONE;
     }
 
     private static BreedingBlockReason evaluateWorkState(ServerLevel level, Villager villager) {

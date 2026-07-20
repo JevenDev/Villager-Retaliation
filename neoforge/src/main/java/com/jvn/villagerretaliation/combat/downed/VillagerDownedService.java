@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import com.jvn.villagerretaliation.compat.secondwind.VillagerSecondWindCompat;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -239,6 +240,9 @@ public final class VillagerDownedService {
         PENDING_ABSORPTION_RESTORE.remove(villager.getUUID());
         villager.setNoAi(previousNoAi);
         villager.setCanPickUpLoot(previousCanPickUpLoot);
+        if (villager.level() instanceof ServerLevel level) {
+            VillagerBehaviorSuppressionPolicy.enforce(level, villager);
+        }
         float percent = VillagerRetaliationConfig.DOWNED_RECOVERY_HEALTH_PERCENT.get().floatValue();
         villager.setHealth(Math.max(1.0F, villager.getMaxHealth() * percent));
         villager.setTarget(null);
@@ -253,6 +257,9 @@ public final class VillagerDownedService {
     }
 
     private static void enforceIncapacitatedState(Villager villager) {
+        if (villager.isSleeping()) {
+            villager.stopSleeping();
+        }
         villager.getNavigation().stop();
         villager.setTarget(null);
         villager.setAggressive(false);
