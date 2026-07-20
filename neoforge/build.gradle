@@ -113,6 +113,15 @@ tasks.register('generateSceneSchemas', JavaExec) {
             rootProject.file('tools/datapack-builder/encounter-v1.schema.json').absolutePath
 }
 
+tasks.register('generateSkillTradeSchema', JavaExec) {
+    group = 'datapack tooling'
+    description = 'Exports the skill-trade JSON Schema for Node/browser datapack tooling.'
+    dependsOn tasks.named('classes')
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.jvn.villagerretaliation.trade.SkillTradeSchemaTool'
+    args rootProject.file('tools/datapack-builder/skill-trades.schema.json').absolutePath
+}
+
 tasks.named('runGameTestServer') {
     onlyIf { !skipGameTests.get() }
 }

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
@@ -165,10 +166,11 @@ public final class SkillTradeResources {
 
     private static SkillTradePoolData read(MinecraftServer server) {
         Map<ResourceLocation, SkillTradeDefinition> definitions = new LinkedHashMap<>();
+        Map<ResourceLocation, ResourceLocation> definitionSources = new LinkedHashMap<>();
         DatapackResourceLoader.forEachJsonResource(
                 server,
                 SKILL_TRADE_ROOT,
-                (location, resource) -> readFile(server, location, resource, definitions));
+                (location, resource) -> readFile(server, location, resource, definitions, definitionSources));
         LOGGER.info("Loaded {} Villager Retaliation skill trade definitions.", definitions.size());
         return new SkillTradePoolData(List.copyOf(definitions.values()));
     }
@@ -177,14 +179,20 @@ public final class SkillTradeResources {
             MinecraftServer server,
             ResourceLocation location,
             Resource resource,
-            Map<ResourceLocation, SkillTradeDefinition> definitions) {
+            Map<ResourceLocation, SkillTradeDefinition> definitions,
+            Map<ResourceLocation, ResourceLocation> definitionSources) {
         DatapackResourceLoader.readObject(location, "skill trade", resource).ifPresent(root -> {
             DatapackDiagnostics.warnUnknownRootKeys(location, "skill trades", root, ROOT_KEYS);
+            if (root.has("replace") && !validBoolean(root.get("replace"))) {
+                DatapackDiagnostics.warnSkippedEntry(
+                        location, "skill trades", "file root.replace", "Expected true or false; entries will load without replacing earlier files.");
+            }
             if (readBoolean(root, "replace", false)) {
                 definitions.clear();
+                definitionSources.clear();
                 LOGGER.info("Villager Retaliation skill trade file {} requested global replace.", location);
             }
-            readEntries(server, location, root, definitions);
+            readEntries(server, location, root, definitions, definitionSources);
         });
     }
 
@@ -192,11 +200,18 @@ public final class SkillTradeResources {
             MinecraftServer server,
             ResourceLocation location,
             JsonObject root,
-            Map<ResourceLocation, SkillTradeDefinition> definitions) {
-        JsonArray entries = root.getAsJsonArray("entries");
+            Map<ResourceLocation, SkillTradeDefinition> definitions,
+            Map<ResourceLocation, ResourceLocation> definitionSources) {
+        JsonElement entriesElement = root.get("entries");
+        if (entriesElement != null && !entriesElement.isJsonArray()) {
+            DatapackDiagnostics.warnSkippedEntry(
+                    location, "skill trades", "entries", "Expected an array of skill-trade objects.");
+            return;
+        }
+        JsonArray entries = entriesElement == null ? null : entriesElement.getAsJsonArray();
         if (entries == null) {
             if (looksLikeEntry(root)) {
-                readEntry(server, location, root, 0, definitions);
+                readEntry(server, location, root, 0, definitions, definitionSources);
             }
             return;
         }
@@ -204,11 +219,12 @@ public final class SkillTradeResources {
         int index = 0;
         for (JsonElement element : entries) {
             if (!element.isJsonObject()) {
-                LOGGER.warn("Villager Retaliation skill trade file {} entry {} is not an object; it will be skipped.", location, index);
+                DatapackDiagnostics.warnSkippedEntry(
+                        location, "skill trade", "entry " + index, "Expected an object; valid sibling entries remain loaded.");
                 index++;
                 continue;
             }
-            readEntry(server, location, element.getAsJsonObject(), index, definitions);
+            readEntry(server, location, element.getAsJsonObject(), index, definitions, definitionSources);
             index++;
         }
     }
@@ -218,16 +234,296 @@ public final class SkillTradeResources {
             ResourceLocation location,
             JsonObject entry,
             int index,
-            Map<ResourceLocation, SkillTradeDefinition> definitions) {
+            Map<ResourceLocation, SkillTradeDefinition> definitions,
+            Map<ResourceLocation, ResourceLocation> definitionSources) {
         DatapackDiagnostics.warnUnknownKeys(location, "skill trades", "entry " + index, entry, ENTRY_KEYS);
+        if (!validateEntryShape(server, location, entry, index)) {
+            return;
+        }
         ResourceLocation id = readEntryId(location, entry, index);
         if (readBoolean(entry, "remove", false)) {
             definitions.remove(id);
+            definitionSources.remove(id);
             return;
         }
 
         Optional<SkillTradeDefinition> definition = parseDefinition(server, location, entry, index, id);
-        definition.ifPresent(value -> definitions.put(value.id(), value));
+        definition.ifPresent(value -> {
+            if (definitions.containsKey(value.id())) {
+                DatapackDiagnostics.warnDuplicateId(
+                        location, "skill trade", value.id().toString(), definitionSources.get(value.id()));
+            }
+            definitions.put(value.id(), value);
+            definitionSources.put(value.id(), location);
+        });
+    }
+
+    private static boolean validateEntryShape(
+            MinecraftServer server, ResourceLocation location, JsonObject entry, int index) {
+        String context = "entry " + index;
+        boolean remove = entry.has("remove") && validBoolean(entry.get("remove")) && entry.get("remove").getAsBoolean();
+        if (!entry.has("id") || !entry.get("id").isJsonPrimitive()
+                || parseLocation(readString(entry, "id"), VillagerRetaliation.MOD_ID).isEmpty()) {
+            return invalid(location, context + ".id", "Expected a stable, valid resource-location id.");
+        }
+        if (entry.has("remove") && !validBoolean(entry.get("remove"))) {
+            return invalid(location, context + ".remove", "Expected true or false.");
+        }
+        if (remove) return true;
+        if (!validStringList(entry, "skills", "skill")) {
+            return invalid(location, context + ".skills", "Expected a skill id or an array of skill ids.");
+        }
+        List<String> skillIds = readStringList(entry, "skills", "skill");
+        if (skillIds.isEmpty() || skillIds.stream().anyMatch(value -> parseSkill(value) == null)) {
+            return invalid(location, context + ".skills", "Expected at least one known Villager Retaliation skill id.");
+        }
+        if (!validStringList(entry, "professions", "profession")) {
+            return invalid(location, context + ".professions", "Expected a profession id or an array of profession ids.");
+        }
+        if (readStringList(entry, "professions", "profession").stream().anyMatch(value -> {
+            Optional<ResourceLocation> profession = parseMinecraftLocation(value);
+            return profession.isEmpty() || (!SkillTradeDefinition.WANDERING_TRADER_PROFESSION.equals(profession.get())
+                    && BuiltInRegistries.VILLAGER_PROFESSION.getOptional(profession.get()).isEmpty());
+        })) {
+            return invalid(location, context + ".professions", "Expected registered villager profession ids.");
+        }
+        for (String key : List.of("min_rank", "minRank", "max_rank", "maxRank")) {
+            if (entry.has(key) && (!entry.get(key).isJsonPrimitive()
+                    || VillagerSkillRank.bySerializedName(entry.get(key).getAsString()) == null)) {
+                return invalid(location, context + "." + key, "Expected novice, apprentice, skilled, expert, or master.");
+            }
+        }
+        VillagerSkillRank minRank = readRank(entry, "min_rank", "minRank", VillagerSkillRank.NOVICE);
+        Optional<VillagerSkillRank> maxRank = readOptionalRank(location, context, entry, "max_rank", "maxRank");
+        if (maxRank.isPresent() && maxRank.get().ordinal() < minRank.ordinal()) {
+            return invalid(location, context + ".max_rank", "Expected a rank equal to or above min_rank.");
+        }
+        String pool = readString(entry, "pool");
+        if (pool.isBlank()) pool = readString(entry, "wanderer_pool", "wandererPool");
+        if (!pool.isBlank() && !Set.of("villager", "generic", "rare", "wanderer_generic", "wanderer_rare",
+                "wandering_trader_generic", "wandering_trader_rare").contains(pool.toLowerCase(Locale.ROOT))) {
+            return invalid(location, context + ".pool", "Expected villager, generic, rare, or a documented wandering-trader alias.");
+        }
+        List<String> professionIds = readStringList(entry, "professions", "profession");
+        boolean wanderingProfession = professionIds.stream()
+                .map(SkillTradeResources::parseMinecraftLocation)
+                .flatMap(Optional::stream)
+                .anyMatch(SkillTradeDefinition.WANDERING_TRADER_PROFESSION::equals);
+        boolean wanderingPool = !pool.isBlank() && !pool.equalsIgnoreCase("villager");
+        if (!pool.isBlank() && !professionIds.isEmpty() && wanderingProfession != wanderingPool) {
+            return invalid(location, context + ".pool", "Pair wandering-trader professions with a wandering pool and resident professions with the villager pool.");
+        }
+        if (!entry.has("result") || !entry.get("result").isJsonObject()) {
+            return invalid(location, context + ".result", "Expected an object containing item/items and count.");
+        }
+        JsonObject result = entry.getAsJsonObject("result");
+        List<String> resultItems = readStringList(result, "items", "item");
+        if (resultItems.isEmpty() || resultItems.stream().anyMatch(value -> readItem(value).isEmpty())) {
+            return invalid(location, context + ".result.item", "Expected at least one registered item id.");
+        }
+        if (!validOptionalInt(result, "count", 1, 64)) {
+            return invalid(location, context + ".result.count", "Expected an integer from 1 to 64.");
+        }
+        if (result.has("enchantments") && !validEnchantments(server, result.get("enchantments"))) {
+            return invalid(location, context + ".result.enchantments", "Expected a valid mode, registered enchantment ids, boolean scaling, and levels from 1 to 255.");
+        }
+        if (entry.has("cost")) {
+            if (!entry.get("cost").isJsonObject()) return invalid(location, context + ".cost", "Expected an object.");
+            JsonObject cost = entry.getAsJsonObject("cost");
+            if (cost.has("item") && readItem(cost, "item").isEmpty()) {
+                return invalid(location, context + ".cost.item", "Expected a registered item id.");
+            }
+            if (!validOptionalInt(cost, "count", 1, 64)) {
+                return invalid(location, context + ".cost.count", "Expected an integer from 1 to 64.");
+            }
+        }
+        if (!validOptionalInt(entry, "villager_level", "villagerLevel", 1, 5)
+                || !validOptionalInt(entry, "weight", null, 1, 10_000)
+                || !validOptionalInt(entry, "xp", null, 0, 10_000)) {
+            return invalid(location, context, "villager_level, weight, or xp is outside its documented integer range.");
+        }
+        if (entry.has("chance") && (!validNumber(entry.get("chance"))
+                || entry.get("chance").getAsDouble() < 0.0D || entry.get("chance").getAsDouble() > 1.0D)) {
+            return invalid(location, context + ".chance", "Expected a number from 0 to 1.");
+        }
+        JsonElement priceMultiplier = entry.has("price_multiplier") ? entry.get("price_multiplier") : entry.get("priceMultiplier");
+        if (priceMultiplier != null && (!validNumber(priceMultiplier)
+                || priceMultiplier.getAsDouble() < 0.0D || priceMultiplier.getAsDouble() > 1.0D)) {
+            return invalid(location, context + ".price_multiplier", "Expected a number from 0 to 1.");
+        }
+        JsonElement maxUses = entry.has("max_uses") ? entry.get("max_uses") : entry.get("maxUses");
+        if (maxUses != null) {
+            if (maxUses.isJsonPrimitive()) {
+                if (!validInteger(maxUses, 1, 64)) return invalid(location, context + ".max_uses", "Expected an integer from 1 to 64.");
+            } else if (!maxUses.isJsonObject()) {
+                return invalid(location, context + ".max_uses", "Expected an integer or object.");
+            } else {
+                JsonObject object = maxUses.getAsJsonObject();
+                if (!validOptionalInt(object, "base", 1, 64) || !validOptionalInt(object, "max_bonus", "maxBonus", 0, 64)
+                        || !validOptionalBoolean(object, "bonus_by_skill", "bonusBySkill")) {
+                    return invalid(location, context + ".max_uses", "Expected base/max_bonus bounds and a boolean bonus_by_skill.");
+                }
+            }
+        }
+        JsonElement quality = entry.has("quality_scaling") ? entry.get("quality_scaling") : entry.get("qualityScaling");
+        if (quality != null && !validBoolean(quality) && !quality.isJsonObject()) {
+            return invalid(location, context + ".quality_scaling", "Expected true, false, or an object of boolean scaling switches.");
+        }
+        if (quality != null && quality.isJsonObject()) {
+            JsonObject object = quality.getAsJsonObject();
+            for (String key : QUALITY_SCALING_KEYS) {
+                if (object.has(key) && !validBoolean(object.get(key))) {
+                    return invalid(location, context + ".quality_scaling." + key, "Expected true or false.");
+                }
+            }
+        }
+        if (entry.has("conditions")) {
+            if (!entry.get("conditions").isJsonObject()) return invalid(location, context + ".conditions", "Expected an object.");
+            JsonObject conditions = entry.getAsJsonObject("conditions");
+            for (String key : CONDITION_KEYS) {
+                if (!conditions.has(key)) continue;
+                JsonElement flags = conditions.get(key);
+                if (!flags.isJsonArray()) return invalid(location, context + ".conditions." + key, "Expected an array of config flag names.");
+                for (JsonElement flag : flags.getAsJsonArray()) {
+                    if (!flag.isJsonPrimitive() || !flag.getAsJsonPrimitive().isString()
+                            || SkillTradeConfigFlag.parse(flag.getAsString()).isEmpty()) {
+                        return invalid(location, context + ".conditions." + key, "Expected only documented skill-trade config flags.");
+                    }
+                }
+            }
+        }
+        JsonElement requestElement = entry.get("request");
+        if (requestElement != null) {
+            if (!requestElement.isJsonObject()) return invalid(location, context + ".request", "Expected an object.");
+            JsonObject request = requestElement.getAsJsonObject();
+            if (request.has("targetable") && !validBoolean(request.get("targetable"))) {
+                return invalid(location, context + ".request.targetable", "Expected true or false.");
+            }
+            if (!validOptionalInt(request, "display_priority", "displayPriority", -100_000, 100_000)
+                    || !validOptionalInt(request, "wait_days", "waitDays", 0, 3650)
+                    || !validOptionalInt(request, "cooldown_days", "cooldownDays", 0, 3650)) {
+                return invalid(location, context + ".request", "Priority or day values are outside their documented integer range.");
+            }
+            String reputation = readString(request, "min_reputation", "minReputation");
+            if (!reputation.isBlank()) {
+                try {
+                    VillagerReputationLevel.valueOf(reputation.toUpperCase(Locale.ROOT));
+                } catch (IllegalArgumentException exception) {
+                    return invalid(location, context + ".request.min_reputation", "Expected a named reputation level.");
+                }
+            }
+            JsonObject extraCost = request.has("extra_cost") && request.get("extra_cost").isJsonObject()
+                    ? request.getAsJsonObject("extra_cost")
+                    : request.has("extraCost") && request.get("extraCost").isJsonObject()
+                            ? request.getAsJsonObject("extraCost") : null;
+            if ((request.has("extra_cost") || request.has("extraCost")) && extraCost == null) {
+                return invalid(location, context + ".request.extra_cost", "Expected an object.");
+            }
+            if (extraCost != null && (readItem(extraCost, "item").isEmpty()
+                    || !validOptionalInt(extraCost, "count", 1, 64))) {
+                return invalid(location, context + ".request.extra_cost", "Expected a registered item and count from 1 to 64.");
+            }
+        }
+        return true;
+    }
+
+    private static boolean invalid(ResourceLocation location, String context, String reason) {
+        DatapackDiagnostics.warnSkippedEntry(location, "skill trade", context, reason);
+        return false;
+    }
+
+    private static boolean validStringList(JsonObject object, String... keys) {
+        for (String key : keys) {
+            JsonElement value = object.get(key);
+            if (value == null) continue;
+            if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) continue;
+            if (!value.isJsonArray()) return false;
+            for (JsonElement child : value.getAsJsonArray()) {
+                if (!child.isJsonPrimitive() || !child.getAsJsonPrimitive().isString()) return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean validBoolean(JsonElement value) {
+        return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean();
+    }
+
+    private static boolean validNumber(JsonElement value) {
+        return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber();
+    }
+
+    private static boolean validInteger(JsonElement value, int min, int max) {
+        if (!validNumber(value)) return false;
+        try {
+            int parsed = value.getAsInt();
+            return parsed >= min && parsed <= max && value.getAsDouble() == parsed;
+        } catch (RuntimeException exception) {
+            return false;
+        }
+    }
+
+    private static boolean validOptionalBoolean(JsonObject object, String snakeKey, String camelKey) {
+        JsonElement value = object.has(snakeKey) ? object.get(snakeKey) : object.get(camelKey);
+        return value == null || validBoolean(value);
+    }
+
+    private static boolean validEnchantments(MinecraftServer server, JsonElement value) {
+        if (!value.isJsonObject()) return false;
+        JsonObject enchantments = value.getAsJsonObject();
+        String mode = readString(enchantments, "mode").toLowerCase(Locale.ROOT);
+        if (!mode.isBlank() && !Set.of("none", "random", "random_from", "random-from", "fixed").contains(mode)) return false;
+        if (!validOptionalBoolean(enchantments, "level_by_skill", "levelBySkill")
+                || !validOptionalInt(enchantments, "min_level", "minLevel", 1, 255)
+                || !validOptionalInt(enchantments, "max_level", "maxLevel", 1, 255)) return false;
+        var registry = server.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
+        for (String candidate : readStringList(enchantments, "candidates", "enchantments")) {
+            Optional<ResourceLocation> id = parseMinecraftLocation(candidate);
+            if (id.isEmpty() || registry.getOptional(id.get()).isEmpty()) return false;
+        }
+        JsonElement fixed = enchantments.get("fixed");
+        if (fixed == null || fixed.isJsonNull()) {
+            return !mode.equals("fixed") || !readStringList(enchantments, "candidates", "enchantments").isEmpty();
+        }
+        if (fixed.isJsonObject()) {
+            for (Map.Entry<String, JsonElement> entry : fixed.getAsJsonObject().entrySet()) {
+                Optional<ResourceLocation> id = parseMinecraftLocation(entry.getKey());
+                if (id.isEmpty() || registry.getOptional(id.get()).isEmpty() || !validInteger(entry.getValue(), 1, 255)) return false;
+            }
+            return true;
+        }
+        if (!fixed.isJsonArray()) return false;
+        for (JsonElement element : fixed.getAsJsonArray()) {
+            String idValue;
+            if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+                idValue = element.getAsString();
+            } else if (element.isJsonObject()) {
+                JsonObject object = element.getAsJsonObject();
+                idValue = readString(object, "id");
+                if (idValue.isBlank()) idValue = readString(object, "enchantment");
+                if (object.has("level") && !validInteger(object.get("level"), 1, 255)) return false;
+            } else return false;
+            Optional<ResourceLocation> id = parseMinecraftLocation(idValue);
+            if (id.isEmpty() || registry.getOptional(id.get()).isEmpty()) return false;
+        }
+        return true;
+    }
+
+    private static boolean validOptionalInt(JsonObject object, String key, int min, int max) {
+        return validOptionalInt(object, key, null, min, max);
+    }
+
+    private static boolean validOptionalInt(JsonObject object, String snakeKey, String camelKey, int min, int max) {
+        JsonElement value = object.has(snakeKey) ? object.get(snakeKey)
+                : camelKey != null && object.has(camelKey) ? object.get(camelKey) : null;
+        if (value == null) return true;
+        if (!validNumber(value)) return false;
+        try {
+            int parsed = value.getAsInt();
+            return parsed >= min && parsed <= max && value.getAsDouble() == parsed;
+        } catch (RuntimeException exception) {
+            return false;
+        }
     }
 
     private static Optional<SkillTradeDefinition> parseDefinition(

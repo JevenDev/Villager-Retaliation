@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -35,6 +36,30 @@ public final class VillagerRangedCombatGameTests {
     }
 
     private VillagerRangedCombatGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void retaliationRunSpeedDoesNotChangeVillagerWalkSpeed(GameTestHelper helper) {
+        buildFloor(helper, 0, 4, 0, 4, 1);
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+
+        helper.assertTrue(
+                Math.abs(villager.getAttributeValue(Attributes.MOVEMENT_SPEED)
+                        - RetaliationCombatStats.WALK_SPEED) < 0.000001D,
+                "villagers should retain their normal vanilla walking speed");
+
+        VillagerRetaliationRetaliationUtil.boostCombatMovement(villager);
+
+        helper.assertTrue(
+                Math.abs(villager.getAttributeValue(Attributes.MOVEMENT_SPEED)
+                        - RetaliationCombatStats.WALK_SPEED) < 0.000001D,
+                "entering retaliation should not replace the villager movement attribute");
+        helper.assertTrue(
+                Math.abs(villager.getAttributeValue(Attributes.MOVEMENT_SPEED)
+                        * VillagerCombatRoles.movementSpeed(villager)
+                        - RetaliationCombatStats.RUN_SPEED) < 0.000001D,
+                "retaliation should use the expected run speed");
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

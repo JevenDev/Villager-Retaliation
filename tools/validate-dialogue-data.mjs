@@ -12,7 +12,8 @@ const roots = {
   forcedDialogue: "neoforge/src/main/resources/data/villagerretaliation/forced_dialogue",
   lootTables: "neoforge/src/main/resources/data/villagerretaliation/loot_table",
   notifications: "neoforge/src/main/resources/data/villagerretaliation/notifications/en_us",
-  quests: "neoforge/src/main/resources/data/villagerretaliation/quests"
+  quests: "neoforge/src/main/resources/data/villagerretaliation/quests",
+  skillTrades: "neoforge/src/main/resources/data/villagerretaliation/skill_trades"
 };
 
 const legacyLineFields = new Set([
@@ -868,6 +869,8 @@ const questRegistryMetadata = await loadQuestRegistryMetadata();
 validateQuestRegistryMetadata(questRegistryMetadata);
 const questV2Schema = await loadQuestV2Schema();
 validateQuestV2Schema(questV2Schema);
+const skillTradeSchema = await loadSkillTradeSchema();
+validateSkillTradeSchema(skillTradeSchema);
 const questV2RegistryIndex = questRegistryIndex(questRegistryMetadata);
 
 if (cli.help) {
@@ -875,8 +878,9 @@ if (cli.help) {
   process.exit(0);
 }
 
-if (cli.questFiles.length > 0) {
-  await validateQuestFiles(cli.questFiles);
+if (cli.questFiles.length > 0 || cli.skillTradeFiles.length > 0) {
+  if (cli.questFiles.length > 0) await validateQuestFiles(cli.questFiles);
+  if (cli.skillTradeFiles.length > 0) await validateSkillTradeFiles(cli.skillTradeFiles);
 } else {
   await validateBuiltInData();
 }
@@ -902,7 +906,8 @@ function parseValidatorArgs(args) {
   const parsed = {
     help: false,
     quiet: false,
-    questFiles: []
+    questFiles: [],
+    skillTradeFiles: []
   };
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
@@ -917,6 +922,10 @@ function parseValidatorArgs(args) {
       } else {
         parsed.questFiles.push(path.resolve(file));
       }
+    } else if (arg === "--skill-trade" || arg === "--skill-trade-file") {
+      const file = args[++index];
+      if (!file) errors.push("tools/validate-dialogue-data.mjs: --skill-trade requires a JSON file path.");
+      else parsed.skillTradeFiles.push(path.resolve(file));
     } else if (arg.startsWith("--")) {
       errors.push(`tools/validate-dialogue-data.mjs: unsupported option "${arg}".`);
     } else {
@@ -928,10 +937,10 @@ function parseValidatorArgs(args) {
 
 function printValidatorHelp() {
   console.log([
-    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--quest path/to/quest.json ...]",
+    "Usage: node tools/validate-dialogue-data.mjs [--quiet] [--quest path/to/quest.json ...] [--skill-trade path/to/file.json ...]",
     "",
     "Without --quest, validates the checked-in built-in datapack dialogue and quest data.",
-    "With --quest, validates only the supplied quest resource files plus generated metadata."
+    "With --quest or --skill-trade, validates the supplied resource files plus generated metadata."
   ].join("\n"));
 }
 
@@ -961,6 +970,8 @@ async function validateBuiltInData() {
       } else if (kind === "quests") {
         indexQuestResource(file, data);
         checkQuestResource(file, data);
+      } else if (kind === "skillTrades") {
+        checkSkillTrades(file, data);
       }
     }
   }
@@ -979,6 +990,71 @@ async function validateQuestFiles(files) {
     checkEquipmentPredicateFlags(file, data);
     indexQuestResource(file, data);
     checkQuestResource(file, data);
+  }
+}
+
+async function validateSkillTradeFiles(files) {
+  for (const file of files) {
+    const data = await parseJson(file);
+    if (data !== undefined) checkSkillTrades(file, data);
+  }
+}
+
+function checkSkillTrades(file, data) {
+  const resource = relative(file);
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    errors.push(`${resource}: root must be an object.`);
+    return;
+  }
+  if (!Array.isArray(data.entries)) {
+    errors.push(`${resource}: entries must be an array.`);
+    return;
+  }
+  const ids = new Set();
+  const resourceId = new RegExp(skillTradeSchema?.$defs?.resource?.pattern || "^[a-z0-9_.-]+:[a-z0-9_./-]+$");
+  const reputations = new Set(skillTradeSchema?.$defs?.request?.properties?.min_reputation?.enum || []);
+  const supportedSkills = new Set(skillTradeSchema?.$defs?.skill?.enum || []);
+  const ranks = skillTradeSchema?.$defs?.rank?.enum || [];
+  const pools = new Set(skillTradeSchema?.$defs?.entry?.properties?.pool?.enum || []);
+  for (const [index, entry] of data.entries.entries()) {
+    const at = `${resource}: entries[${index}]`;
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+      errors.push(`${at} must be an object.`);
+      continue;
+    }
+    if (!resourceId.test(String(entry.id || ""))) errors.push(`${at}.id must be a namespaced resource location.`);
+    else if (ids.has(entry.id)) errors.push(`${at}.id duplicates ${entry.id}.`);
+    else ids.add(entry.id);
+    if (entry.remove === true) continue;
+    const skills = Array.isArray(entry.skills) ? entry.skills : entry.skill ? [entry.skill] : [];
+    if (!skills.length || skills.some((id) => !resourceId.test(String(id)) || (supportedSkills.size && !supportedSkills.has(id)))) errors.push(`${at}.skills must contain supported namespaced skill ids.`);
+    const professions = Array.isArray(entry.professions) ? entry.professions : entry.profession ? [entry.profession] : [];
+    if (professions.some((id) => !resourceId.test(String(id)))) errors.push(`${at}.professions contains an invalid id.`);
+    const resultItems = Array.isArray(entry.result?.items) ? entry.result.items : entry.result?.item ? [entry.result.item] : [];
+    if (!resultItems.length || resultItems.some((id) => !resourceId.test(String(id)))) errors.push(`${at}.result needs a valid item or items list.`);
+    const bounded = (owner, key, min, max) => {
+      if (owner?.[key] === undefined) return;
+      if (!Number.isInteger(owner[key]) || owner[key] < min || owner[key] > max) errors.push(`${at}.${key} must be an integer from ${min} to ${max}.`);
+    };
+    bounded(entry, "villager_level", 1, 5); bounded(entry, "weight", 1, 10000); bounded(entry, "xp", 0, 10000);
+    bounded(entry.result, "count", 1, 64); bounded(entry.cost, "count", 1, 64);
+    if (entry.chance !== undefined && (!Number.isFinite(entry.chance) || entry.chance < 0 || entry.chance > 1)) errors.push(`${at}.chance must be from 0 to 1.`);
+    if (entry.price_multiplier !== undefined && (!Number.isFinite(entry.price_multiplier) || entry.price_multiplier < 0 || entry.price_multiplier > 1)) errors.push(`${at}.price_multiplier must be from 0 to 1.`);
+    if (entry.min_rank !== undefined && !ranks.includes(entry.min_rank)) errors.push(`${at}.min_rank is not supported.`);
+    if (entry.max_rank !== undefined && !ranks.includes(entry.max_rank)) errors.push(`${at}.max_rank is not supported.`);
+    if (entry.min_rank && entry.max_rank && ranks.indexOf(entry.max_rank) < ranks.indexOf(entry.min_rank)) errors.push(`${at}.max_rank must not be below min_rank.`);
+    if (entry.pool !== undefined && !pools.has(entry.pool)) errors.push(`${at}.pool is not supported.`);
+    if (entry.request !== undefined) {
+      const request = entry.request;
+      if (!request || typeof request !== "object" || Array.isArray(request)) {
+        errors.push(`${at}.request must be an object.`);
+        continue;
+      }
+      if (request.targetable !== undefined && typeof request.targetable !== "boolean") errors.push(`${at}.request.targetable must be boolean.`);
+      if (request.min_reputation !== undefined && !reputations.has(request.min_reputation)) errors.push(`${at}.request.min_reputation is not a supported reputation level.`);
+      bounded(request, "wait_days", 0, 3650); bounded(request, "cooldown_days", 0, 3650);
+      if (request.extra_cost && (!resourceId.test(String(request.extra_cost.item || "")) || !Number.isInteger(request.extra_cost.count) || request.extra_cost.count < 1 || request.extra_cost.count > 64)) errors.push(`${at}.request.extra_cost needs an item and count from 1 to 64.`);
+    }
   }
 }
 
@@ -1092,6 +1168,28 @@ async function loadQuestV2Schema() {
   } catch (error) {
     errors.push(`${relative(schemaPath)}: could not read quest module v2 schema: ${error.message}`);
     return null;
+  }
+}
+
+async function loadSkillTradeSchema() {
+  const schemaPath = path.join(root, "tools/datapack-builder/skill-trades.schema.json");
+  try {
+    return JSON.parse(await readFile(schemaPath, "utf8"));
+  } catch (error) {
+    errors.push(`${relative(schemaPath)}: could not read skill-trade schema: ${error.message}`);
+    return null;
+  }
+}
+
+function validateSkillTradeSchema(schema) {
+  const schemaPath = "tools/datapack-builder/skill-trades.schema.json";
+  if (!schema || typeof schema !== "object" || Array.isArray(schema)) {
+    errors.push(`${schemaPath}: root must be an object.`);
+    return;
+  }
+  if (schema.$schema !== "https://json-schema.org/draft/2020-12/schema") errors.push(`${schemaPath}: $schema must be draft 2020-12.`);
+  if (!schema?.$defs?.entry || !schema?.$defs?.request || !schema?.$defs?.resource?.pattern) {
+    errors.push(`${schemaPath}: entry, request, and resource definitions are required.`);
   }
 }
 

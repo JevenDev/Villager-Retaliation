@@ -37,6 +37,8 @@ public final class VillagerTradeRefreshService {
     private static final String OFFER_INDEX_KEY = "OfferIndex";
     private static final String READY_DAY_KEY = "ReadyDay";
     private static final String TRADE_ITEM_KEY = "TradeItem";
+    private static final String TRADE_DEFINITION_KEY = "TradeDefinition";
+    private static final String OFFER_SEED_KEY = "OfferSeed";
 
     private VillagerTradeRefreshService() {
     }
@@ -56,6 +58,8 @@ public final class VillagerTradeRefreshService {
             return;
         }
 
+        reconcile(level, villager);
+        VillagerSpecialOrderService.deliverRefunds(player, villager);
         applyReadyRefreshes(level, villager, player);
         MerchantOffers offers = villager.getOffers();
         if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()
@@ -94,6 +98,8 @@ public final class VillagerTradeRefreshService {
         if (!(player.level() instanceof ServerLevel level) || !villager.isAlive()) {
             return;
         }
+        reconcile(level, villager);
+        VillagerSpecialOrderService.deliverRefunds(player, villager);
         MerchantOffers offers = villager.getOffers();
         if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()
                 || offerIndex < 0
@@ -132,6 +138,9 @@ public final class VillagerTradeRefreshService {
             return new VillagerSpecialOrderService.QueueResult(false, "trade_refresh.special_order_unavailable", Map.of());
         }
 
+        reconcile(level, villager);
+        VillagerSpecialOrderService.deliverRefunds(player, villager);
+
         MerchantOffers offers = villager.getOffers();
         if (!VillagerRetaliationConfig.ENABLE_SKILL_TRADE_OVERHAUL.get()
                 || offerIndex < 0
@@ -169,14 +178,24 @@ public final class VillagerTradeRefreshService {
                     limitResult.get().replacements());
             return;
         }
-        if (createReplacement(level, villager, offerIndex) == null
-                && createReplacementAvoidingCurrentSlot(level, villager, offerIndex) == null) {
+        SkillTradeOfferFactory.RequestSelection selection = selectReplacement(level, villager, offerIndex);
+        if (selection == null) {
             sendState(player, villager);
             ForcedDialogueService.openTradeRefreshDialogue(level, villager, player, "trade_refresh.not_ready", Map.of());
             return;
         }
 
-        scheduleRefresh(villager, player.getUUID(), offerIndex, currentDay(level) + 1L, tradeItem);
+        ResourceLocation professionId = VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
+        SkillTradeOfferFactory.consumeRequestSelection(
+                level, villager, professionId, selection.definition().id());
+        scheduleRefresh(
+                villager,
+                player.getUUID(),
+                offerIndex,
+                currentDay(level) + 1L,
+                tradeItem,
+                selection.definition().id(),
+                selection.offerSeed());
         sendState(player, villager);
         ForcedDialogueService.openTradeRefreshDialogue(
                 level,
@@ -221,9 +240,10 @@ public final class VillagerTradeRefreshService {
             ServerLevel level,
             Villager villager,
             @Nullable ServerPlayer player) {
+        boolean reconciled = reconcile(level, villager);
         VillagerSpecialOrderService.ApplyReadyOrdersResult specialOrderResult =
                 VillagerSpecialOrderService.applyReadyOrdersDetailed(level, villager, player);
-        boolean changed = specialOrderResult.changed();
+        boolean changed = reconciled || specialOrderResult.changed();
         List<String> playerReadyTradeItems = new ArrayList<>(specialOrderResult.playerReadyTradeItems());
         CompoundTag persistentData = villager.getPersistentData();
         if (!persistentData.contains(PENDING_REFRESHES_KEY, Tag.TAG_LIST)) {
@@ -252,12 +272,10 @@ public final class VillagerTradeRefreshService {
                 continue;
             }
 
-            MerchantOffer replacement = createReplacement(level, villager, offerIndex);
+            MerchantOffer replacement = createPersistedReplacement(level, villager, entry);
             if (replacement == null) {
-                replacement = createReplacementAvoidingCurrentSlot(level, villager, offerIndex);
-            }
-            if (replacement == null) {
-                remaining.add(entry.copy());
+                // Invalid or removed definitions cancel independently instead of pinning the slot forever.
+                changed = true;
                 continue;
             }
 
@@ -284,6 +302,7 @@ public final class VillagerTradeRefreshService {
     }
 
     public static boolean hasReadyRefreshesForPlayer(ServerLevel level, Villager villager, ServerPlayer player) {
+        reconcile(level, villager);
         if (VillagerSpecialOrderService.hasReadyOrderForPlayer(level, villager, player.getUUID())) {
             return true;
         }
@@ -307,6 +326,7 @@ public final class VillagerTradeRefreshService {
     }
 
     public static void sendState(ServerPlayer player, Villager villager) {
+        reconcile(player.serverLevel(), villager);
         PacketDistributor.sendToPlayer(player, new VillagerTradeRefreshStatePayload(
                 villager.getId(),
                 pendingOfferIndexes(villager)));
@@ -335,7 +355,14 @@ public final class VillagerTradeRefreshService {
         return List.copyOf(indexes);
     }
 
-    private static void scheduleRefresh(Villager villager, UUID playerId, int offerIndex, long readyDay, String tradeItem) {
+    private static void scheduleRefresh(
+            Villager villager,
+            UUID playerId,
+            int offerIndex,
+            long readyDay,
+            String tradeItem,
+            ResourceLocation definitionId,
+            long offerSeed) {
         CompoundTag persistentData = villager.getPersistentData();
         ListTag pending = persistentData.contains(PENDING_REFRESHES_KEY, Tag.TAG_LIST)
                 ? persistentData.getList(PENDING_REFRESHES_KEY, Tag.TAG_COMPOUND)
@@ -345,6 +372,8 @@ public final class VillagerTradeRefreshService {
         entry.putInt(OFFER_INDEX_KEY, offerIndex);
         entry.putLong(READY_DAY_KEY, readyDay);
         entry.putString(TRADE_ITEM_KEY, tradeItem);
+        entry.putString(TRADE_DEFINITION_KEY, definitionId.toString());
+        entry.putLong(OFFER_SEED_KEY, offerSeed);
         pending.add(entry);
         persistentData.put(PENDING_REFRESHES_KEY, pending);
     }
@@ -381,40 +410,83 @@ public final class VillagerTradeRefreshService {
         return false;
     }
 
-    @Nullable
-    private static MerchantOffer createReplacement(ServerLevel level, Villager villager, int offerIndex) {
-        return createReplacement(level, villager, offerIndex, currentResultStacks(villager.getOffers()));
-    }
-
-    @Nullable
-    private static MerchantOffer createReplacementAvoidingCurrentSlot(ServerLevel level, Villager villager, int offerIndex) {
-        MerchantOffers offers = villager.getOffers();
-        if (offerIndex < 0 || offerIndex >= offers.size()) {
-            return null;
+    public static Set<ResourceLocation> pendingDefinitionIds(Villager villager) {
+        Set<ResourceLocation> ids = new HashSet<>();
+        CompoundTag data = villager.getPersistentData();
+        if (data.contains(PENDING_REFRESHES_KEY, Tag.TAG_LIST)) {
+            ListTag pending = data.getList(PENDING_REFRESHES_KEY, Tag.TAG_COMPOUND);
+            for (int i = 0; i < pending.size(); i++) {
+                ResourceLocation id = ResourceLocation.tryParse(pending.getCompound(i).getString(TRADE_DEFINITION_KEY));
+                if (id != null) ids.add(id);
+            }
         }
-        ItemStack currentResult = offers.get(offerIndex).getResult();
-        return createReplacement(
-                level,
-                villager,
-                offerIndex,
-                currentResult.isEmpty() ? List.of() : List.of(currentResult));
+        ids.addAll(VillagerSpecialOrderService.pendingDefinitionIds(villager));
+        return Set.copyOf(ids);
+    }
+
+    public static boolean reconcile(ServerLevel level, Villager villager) {
+        boolean changed = VillagerSpecialOrderService.reconcile(level, villager);
+        CompoundTag data = villager.getPersistentData();
+        if (!data.contains(PENDING_REFRESHES_KEY, Tag.TAG_LIST)) return changed;
+        ListTag pending = data.getList(PENDING_REFRESHES_KEY, Tag.TAG_COMPOUND);
+        ListTag remaining = new ListTag();
+        int offerCount = villager.getOffers().size();
+        for (int i = 0; i < pending.size(); i++) {
+            CompoundTag entry = pending.getCompound(i);
+            int offerIndex = entry.getInt(OFFER_INDEX_KEY);
+            ResourceLocation id = ResourceLocation.tryParse(entry.getString(TRADE_DEFINITION_KEY));
+            boolean legacy = id == null && !entry.contains(OFFER_SEED_KEY, Tag.TAG_LONG);
+            if (offerIndex < 0 || offerIndex >= offerCount
+                    || (!legacy && (id == null || SkillTradeResources.definition(level.getServer(), id).isEmpty()))) {
+                changed = true;
+                continue;
+            }
+            remaining.add(entry.copy());
+        }
+        if (remaining.isEmpty()) data.remove(PENDING_REFRESHES_KEY); else data.put(PENDING_REFRESHES_KEY, remaining);
+        return changed;
     }
 
     @Nullable
-    private static MerchantOffer createReplacement(
-            ServerLevel level,
-            Villager villager,
-            int offerIndex,
-            List<ItemStack> excludedResultStacks) {
+    private static SkillTradeOfferFactory.RequestSelection selectReplacement(
+            ServerLevel level, Villager villager, int offerIndex) {
         ResourceLocation professionId = VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
         int villagerLevel = villager.getVillagerData().getLevel();
-        return SkillTradeOfferFactory.createVillagerRefreshOffer(
+        Set<ResourceLocation> reserved = pendingDefinitionIds(villager);
+        SkillTradeOfferFactory.RequestSelection selection = SkillTradeOfferFactory.selectVillagerRefreshRequest(
                 level,
                 villager,
                 professionId,
                 villagerLevel,
                 villager.getRandom(),
-                excludedResultStacks);
+                currentResultStacks(villager.getOffers()),
+                reserved);
+        return selection;
+    }
+
+    @Nullable
+    private static MerchantOffer createPersistedReplacement(
+            ServerLevel level, Villager villager, CompoundTag entry) {
+        ResourceLocation definitionId = ResourceLocation.tryParse(entry.getString(TRADE_DEFINITION_KEY));
+        if (definitionId == null || !entry.contains(OFFER_SEED_KEY, Tag.TAG_LONG)) {
+            // Legacy pending requests are resolved once on their first due reconciliation.
+            SkillTradeOfferFactory.RequestSelection migrated = selectReplacement(
+                    level, villager, entry.getInt(OFFER_INDEX_KEY));
+            if (migrated == null) return null;
+            ResourceLocation professionId = VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
+            SkillTradeOfferFactory.consumeRequestSelection(level, villager, professionId, migrated.definition().id());
+            return migrated.offer();
+        }
+        SkillTradeDefinition definition = SkillTradeResources.definition(level.getServer(), definitionId).orElse(null);
+        if (definition == null || !definition.conditions().matches()) return null;
+        ResourceLocation professionId = VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
+        if (!definition.matchesVillager(professionId, villager.getVillagerData().getLevel())) return null;
+        return SkillTradeOfferFactory.createVillagerOfferFromDefinition(
+                level,
+                villager,
+                definition,
+                net.minecraft.util.RandomSource.create(entry.getLong(OFFER_SEED_KEY)),
+                List.of());
     }
 
     private static List<ItemStack> currentResultStacks(MerchantOffers offers) {

@@ -874,6 +874,7 @@ let unsavedShakeTimer = null;
 let exportIssueDialogResolve = null;
 let questRegistryMetadata = null;
 let questV2Schema = null;
+let skillTradeSchema = null;
 let sceneV1Schema = null;
 let encounterV1Schema = null;
 let questMetadataLoadStatus = "loading";
@@ -1034,25 +1035,28 @@ function renderIcons() {
 async function loadQuestAuthoringMetadata() {
   questMetadataLoadStatus = "loading";
   try {
-    const [metadataResponse, schemaResponse, sceneSchemaResponse, encounterSchemaResponse] = await Promise.all([
+    const [metadataResponse, schemaResponse, sceneSchemaResponse, encounterSchemaResponse, skillTradeSchemaResponse] = await Promise.all([
       fetch("quest-registry-metadata.json", { cache: "no-store" }),
       fetch("quest-v2.schema.json", { cache: "no-store" }),
       fetch("scene-v1.schema.json", { cache: "no-store" }),
-      fetch("encounter-v1.schema.json", { cache: "no-store" })
+      fetch("encounter-v1.schema.json", { cache: "no-store" }),
+      fetch("skill-trades.schema.json", { cache: "no-store" })
     ]);
-    if (!metadataResponse.ok || !schemaResponse.ok || !sceneSchemaResponse.ok || !encounterSchemaResponse.ok) {
+    if (!metadataResponse.ok || !schemaResponse.ok || !sceneSchemaResponse.ok || !encounterSchemaResponse.ok || !skillTradeSchemaResponse.ok) {
       throw new Error("Quest metadata fetch failed.");
     }
     questRegistryMetadata = await metadataResponse.json();
     questV2Schema = await schemaResponse.json();
     sceneV1Schema = await sceneSchemaResponse.json();
     encounterV1Schema = await encounterSchemaResponse.json();
+    skillTradeSchema = await skillTradeSchemaResponse.json();
     questMetadataLoadStatus = "ready";
   } catch {
     questRegistryMetadata = null;
     questV2Schema = null;
     sceneV1Schema = null;
     encounterV1Schema = null;
+    skillTradeSchema = null;
     questMetadataLoadStatus = "error";
   }
   invalidateCurrentViewSnapshot();
@@ -3246,6 +3250,10 @@ function forcedDialoguePath() {
   return datapackBackend.forcedDialoguePath(state);
 }
 
+function skillTradesPath() {
+  return datapackBackend.skillTradesPath(state);
+}
+
 function notificationsPath() {
   return datapackBackend.notificationsPath(state);
 }
@@ -3524,6 +3532,52 @@ function questModuleIssueDetail(entry) {
   return null;
 }
 
+function skillTradeIssueDetail(entry) {
+  const fieldIds = ["skillTrade-json"];
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) return issueDetail("Skill trade", "a JSON object", entry, fieldIds);
+  if (!entry.id || !isValidResourceLocation(entry.id)) return issueDetail("Skill trade id", "a stable resource location", entry.id, fieldIds);
+  if (entry.remove === true) return null;
+  const skills = entryValues(entry, ["skills", "skill"]);
+  const supportedSkills = skillTradeSchema?.$defs?.skill?.enum || [];
+  if (!skills.length || skills.some((value) => !isValidResourceLocation(value) || (supportedSkills.length && !supportedSkills.includes(value)))) return issueDetail("Skills", "one or more supported skill ids", entry.skills ?? entry.skill, fieldIds);
+  const professions = entryValues(entry, ["professions", "profession"]);
+  if (professions.some((value) => !isValidResourceLocation(value))) return issueDetail("Professions", "valid profession ids", entry.professions ?? entry.profession, fieldIds);
+  const resultItems = entryValues(entry.result || {}, ["items", "item"]);
+  if (!entry.result || typeof entry.result !== "object" || !resultItems.length || resultItems.some((value) => !isValidResourceLocation(value))) {
+    return issueDetail("Result", "an object with at least one item id", entry.result, fieldIds);
+  }
+  const ranks = skillTradeSchema?.$defs?.rank?.enum || ["novice", "apprentice", "skilled", "expert", "master"];
+  if (entry.min_rank !== undefined && !ranks.includes(entry.min_rank)) return issueDetail("Minimum rank", "a supported rank", entry.min_rank, fieldIds);
+  if (entry.max_rank !== undefined && !ranks.includes(entry.max_rank)) return issueDetail("Maximum rank", "a supported rank", entry.max_rank, fieldIds);
+  if (entry.min_rank && entry.max_rank && ranks.indexOf(entry.max_rank) < ranks.indexOf(entry.min_rank)) return issueDetail("Rank range", "max_rank at or above min_rank", entry, fieldIds);
+  const numericRules = [[entry, "villager_level", 1, 5, true], [entry, "chance", 0, 1, false], [entry, "weight", 1, 10000, true], [entry, "xp", 0, 10000, true], [entry, "price_multiplier", 0, 1, false], [entry.result, "count", 1, 64, true], [entry.cost || {}, "count", 1, 64, true]];
+  for (const [owner, key, min, max, integer] of numericRules) {
+    if (owner[key] === undefined) continue;
+    const value = owner[key];
+    if (typeof value !== "number" || !Number.isFinite(value) || (integer && !Number.isInteger(value)) || value < min || value > max) return issueDetail(humanize(key), `${integer ? "an integer" : "a number"} from ${min} to ${max}`, owner[key], fieldIds);
+  }
+  const pools = skillTradeSchema?.$defs?.entry?.properties?.pool?.enum || [];
+  if (entry.pool !== undefined && pools.length && !pools.includes(entry.pool)) return issueDetail("Pool", "a supported villager or wandering-trader pool", entry.pool, fieldIds);
+  if (entry.max_uses !== undefined && !(Number.isInteger(entry.max_uses) || (entry.max_uses && typeof entry.max_uses === "object" && !Array.isArray(entry.max_uses)))) return issueDetail("Max uses", "an integer or bounded object", entry.max_uses, fieldIds);
+  if (entry.conditions !== undefined && (!entry.conditions || typeof entry.conditions !== "object" || Array.isArray(entry.conditions))) return issueDetail("Conditions", "a config-flag object", entry.conditions, fieldIds);
+  if (entry.quality_scaling !== undefined && typeof entry.quality_scaling !== "boolean" && (!entry.quality_scaling || typeof entry.quality_scaling !== "object" || Array.isArray(entry.quality_scaling))) return issueDetail("Quality scaling", "a boolean or scaling object", entry.quality_scaling, fieldIds);
+  if (entry.request !== undefined) {
+    if (!entry.request || typeof entry.request !== "object" || Array.isArray(entry.request)) return issueDetail("Request", "an object", entry.request, fieldIds);
+    if (entry.request.targetable !== undefined && typeof entry.request.targetable !== "boolean") return issueDetail("Request targetable", "true or false", entry.request.targetable, fieldIds);
+    const reputationValues = skillTradeSchema?.$defs?.request?.properties?.min_reputation?.enum || CONSTANTS.reputationLevels;
+    if (entry.request.min_reputation && !reputationValues.includes(String(entry.request.min_reputation).toLowerCase())) return issueDetail("Request reputation", "a named reputation level", entry.request.min_reputation, fieldIds);
+    for (const key of ["wait_days", "cooldown_days"]) {
+      const value = entry.request[key];
+      if (value !== undefined && (!Number.isInteger(Number(value)) || Number(value) < 0 || Number(value) > 3650)) return issueDetail(humanize(key), "an integer from 0 to 3650", value, fieldIds);
+    }
+    if (entry.request.extra_cost) {
+      const cost = entry.request.extra_cost;
+      if (!isValidResourceLocation(cost.item) || !Number.isInteger(Number(cost.count)) || Number(cost.count) < 1 || Number(cost.count) > 64) return issueDetail("Request extra cost", "an item and count from 1 to 64", cost, fieldIds);
+    }
+  }
+  return null;
+}
+
 function sceneResourceIssueDetail(path, resource) {
   const isScene = path.includes("/quest_scenes/");
   const schema = isScene ? sceneV1Schema : encounterV1Schema;
@@ -3763,6 +3817,7 @@ function firstQuestTransitionConflict(module) {
 
 function entryIssueSeverity(section, kind, entry) {
   if (!entry) return "";
+  if (section === "skillTrades") return skillTradeIssueDetail(entry)?.severity || "";
   if (section === "quests") {
     return questModuleIssueDetail(entry)?.severity || "";
   }
@@ -4076,6 +4131,7 @@ function invalidSocialAttributeRange(entry) {
 
 function entryIssueDetail(section, kind, entry) {
   if (!entry) return null;
+  if (section === "skillTrades") return skillTradeIssueDetail(entry);
   if (section === "quests") {
     return questModuleIssueDetail(entry);
   }
@@ -4370,6 +4426,9 @@ function sectionIssueSeverity(section) {
   if (section === "quests") {
     return entryCollectionIssueSeverity(section, "modules");
   }
+  if (section === "skillTrades") {
+    return entryCollectionIssueSeverity(section, "entries") || (!isValidFileName(state.skillTrades.fileName) ? "error" : "");
+  }
   if (section === "notifications") {
     return entryCollectionIssueSeverity(section, "notifications") || (!isValidFileName(state.notifications.fileName) ? "error" : "");
   }
@@ -4453,6 +4512,7 @@ function entryPath(section, entry, kind = activeDialogueKind, index = 0) {
   if (section === "dialogue") return dialoguePath(kind, entry, index);
   if (section === "forcedDialogue") return forcedDialoguePath();
   if (section === "quests") return questModulePath(entry, index);
+  if (section === "skillTrades") return skillTradesPath();
   if (section === "notifications") return notificationsPath();
   if (section === "gifts") return giftsPath();
   if (section === "pacification") return pacificationPath();
@@ -4631,6 +4691,17 @@ function validate() {
   if (!isValidFileName(state.forcedDialogue.fileName)) {
     addCheck(checks, "error", "Forced dialogue file", "Forced dialogue file names must be lowercase datapack path names.");
   }
+  if (!isValidFileName(state.skillTrades.fileName)) {
+    addCheck(checks, "error", "Skill trade file", "Skill trade file names must be lowercase datapack path names.");
+  }
+  for (const [index, entry] of state.skillTrades.entries.entries()) {
+    const detail = skillTradeIssueDetail(entry);
+    if (detail) addCheck(checks, detail.severity || "error", "Skill trade", `Entry ${index + 1}: ${detail.message}`, {
+      locations: [{ section: "skillTrades", kind: "entries", index, path: entryPath("skillTrades", entry, "entries", index), fieldId: "skillTrade-json" }]
+    });
+  }
+  const duplicateSkillTrade = firstDuplicate(state.skillTrades.entries.map((entry) => entry.id));
+  if (duplicateSkillTrade) addCheck(checks, "warning", "Skill trade ids", `Duplicate skill trade id: ${duplicateSkillTrade}.`);
   if (!isValidFileName(state.notifications.fileName)) {
     addCheck(checks, "error", "Notification file", "Notification file names must be lowercase datapack path names.");
   }
@@ -5328,6 +5399,7 @@ function sectionCounts() {
     ),
     forcedDialogue: totalEntries(state.forcedDialogue.entries),
     quests: totalEntries(state.quests.modules),
+    skillTrades: totalEntries(state.skillTrades.entries),
     notifications: totalEntries(state.notifications.notifications),
     gifts: totalEntries(state.gifts.preferences, state.gifts.rewards),
     pacification: totalEntries(state.pacification.payments),
@@ -5422,6 +5494,7 @@ function fileTreeEntryItems() {
   for (const kind of DIALOGUE_KIND_KEYS) addEntries("dialogue", kind, state.dialogue[kind]);
   addEntries("forcedDialogue", "entries", state.forcedDialogue.entries);
   addEntries("quests", "modules", state.quests.modules);
+  addEntries("skillTrades", "entries", state.skillTrades.entries);
   addEntries("notifications", "notifications", state.notifications.notifications);
   for (const kind of GIFT_KINDS.map((item) => item.key)) addEntries("gifts", kind, state.gifts[kind]);
   addEntries("pacification", "payments", state.pacification.payments);
@@ -5436,6 +5509,7 @@ function entryTreeTitle(entry, kind, index) {
 function entryTreeDetail(entry, section, kind) {
   if (section === "dialogue" && (kind === "options" || kind === "lines")) return entry.request || "";
   if (section === "quests") return entry.id || entry.entry_stage || "";
+  if (section === "skillTrades") return entry.request?.targetable ? "Special Order" : "Skill trade";
   return entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
 }
 
@@ -5524,8 +5598,11 @@ function activeEntryDirectoryData() {
   if (activeSection === "forcedDialogue") {
     return { section: "forcedDialogue", kind: "entries", label: "Forced Dialogue", collection: state.forcedDialogue.entries };
   }
-  if (activeSection === "quests") {
+  if (activeSection === "quests" || activeSection === "skillTrades") {
     return { section: "quests", kind: "modules", label: "Quest Modules", collection: state.quests.modules };
+  }
+  if (activeSection === "skillTrades") {
+    return { section: "skillTrades", kind: "entries", label: "Skill Trades", collection: state.skillTrades.entries };
   }
   if (activeSection === "notifications") {
     return { section: "notifications", kind: "notifications", label: "Notifications", collection: state.notifications.notifications };
@@ -5558,6 +5635,8 @@ function renderEntryDirectory() {
       title: entry.metadata?.title || entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(data.kind)} ${index + 1}`,
       detail: data.section === "dialogue" && (data.kind === "options" || data.kind === "lines")
         ? entry.request || ""
+        : data.section === "skillTrades"
+          ? (entry.request?.targetable ? "Special Order" : "Skill trade")
         : data.section === "quests"
           ? entry.id || entry.entry_stage || ""
           : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "",
@@ -6547,6 +6626,7 @@ function fieldPrefixForSection(section, kind) {
   if (section === "gifts") return "gift";
   if (section === "dialogue") return "dialogue";
   if (section === "quests") return "quest";
+  if (section === "skillTrades") return "skillTrade";
   return kind || section;
 }
 
@@ -6575,6 +6655,7 @@ function renderPanel() {
   if (activeSection === "dialogue") renderDialogue();
   if (activeSection === "forcedDialogue") renderForcedDialogue();
   if (activeSection === "quests") renderQuests();
+  if (activeSection === "skillTrades") renderSkillTrades();
   if (activeSection === "notifications") renderNotifications();
   if (activeSection === "gifts") renderGifts();
   if (activeSection === "pacification") renderPacification();
@@ -6997,6 +7078,8 @@ function renderEntryList(collection, kind, section) {
       const title = entry.metadata?.title || entry.id || entry.key || entry.trigger || entry.label || entry.text || entry.item || entry.name || `${humanize(kind)} ${absoluteIndex + 1}`;
       const detail = section === "dialogue" && (kind === "options" || kind === "lines")
         ? entry.request || ""
+        : section === "skillTrades"
+          ? (entry.request?.targetable ? "Special Order" : "Skill trade")
         : section === "quests"
           ? entry.id || entry.entry_stage || ""
           : entry.request || entry.type || entry.reaction || entry.world_text_kind || entry.structure || entry.biome || entry.items?.join(", ") || "";
@@ -7576,6 +7659,72 @@ function renderNotifications() {
   `;
 }
 
+function skillTradePayload(entry) {
+  if (!entry || typeof entry !== "object") return {};
+  const payload = { ...entry };
+  delete payload.__sourcePath;
+  return payload;
+}
+
+function skillTradeExample() {
+  const namespace = state.meta.namespace || "my_pack";
+  return {
+    id: `${namespace}:farmer_harvest_bundle`,
+    professions: ["minecraft:farmer"],
+    skills: ["villagerretaliation:farming"],
+    min_rank: "skilled",
+    villager_level: 3,
+    chance: 0.75,
+    weight: 10,
+    cost: { item: "minecraft:emerald", count: 8 },
+    result: { item: "minecraft:golden_carrot", count: 8 },
+    max_uses: { base: 4 },
+    xp: 8,
+    price_multiplier: 0.05,
+    quality_scaling: true,
+    request: {
+      targetable: true,
+      display_priority: 20,
+      min_reputation: "respected",
+      wait_days: 2,
+      cooldown_days: 3,
+      extra_cost: { item: "minecraft:emerald", count: 2 }
+    }
+  };
+}
+
+function renderSkillTrades() {
+  const collection = state.skillTrades.entries;
+  const entry = editing?.section === "skillTrades" ? collection[editing.index] : skillTradeExample();
+  const issue = skillTradeIssueDetail(entry);
+  els.panel.innerHTML = `
+    <div class="builder-content">
+      <div class="builder-header">
+        <div class="panel-title-main">
+          ${icon("handshake", "section-icon")}
+          <div>
+            <h2>Skill Trades</h2>
+            <p class="path-label">data/${escapeHtml(state.meta.namespace)}/skill_trades</p>
+          </div>
+        </div>
+        <button class="button button-secondary" type="button" data-action="add-skill-trade-example">${icon("plus", "button-icon")}Add Example</button>
+      </div>
+      <div class="form-grid">
+        ${field({ id: "skillTrades-fileName", label: "Skill trade file", value: state.skillTrades.fileName, help: "Entries export together under the active pack namespace." })}
+      </div>
+      <div class="entry-layout">
+        <form class="entry-form" data-form="skillTrades">
+          ${issue ? `<div class="form-notice has-error">${escapeHtml(issue.message)}</div>` : ""}
+          <div class="form-grid">
+            ${textareaField({ id: "skillTrade-json", label: "Skill trade JSON", value: JSON.stringify(skillTradePayload(entry), null, 2), help: "Supports the complete runtime entry shape, including conditions, scaling, enchantments, and request metadata.", className: "full code-field", rows: 28 })}
+          </div>
+          ${formActions(editing?.section === "skillTrades" ? "Update" : "Add", "save-skill-trade", "clear-skill-trade-form")}
+        </form>
+      </div>
+    </div>
+  `;
+}
+
 function datalist(id, values) {
   return `<datalist id="${id}">${values.map((value) => `<option value="${escapeHtml(value)}"></option>`).join("")}</datalist>`;
 }
@@ -8131,6 +8280,25 @@ function saveQuestModule(event) {
   upsertEntry("quests", "modules", entry);
 }
 
+function readSkillTradeEntry(options = {}) {
+  const source = readValue("skillTrade-json").trim();
+  try {
+    const entry = JSON.parse(stripTextBom(source || "{}"));
+    if (!entry || typeof entry !== "object" || Array.isArray(entry)) throw new Error("not an object");
+    return entry;
+  } catch {
+    if (!options.quiet) showToast("Skill trade JSON must be a JSON object.");
+    return null;
+  }
+}
+
+function saveSkillTrade(event) {
+  event.preventDefault();
+  const entry = readSkillTradeEntry();
+  if (!entry) return;
+  upsertEntry("skillTrades", "entries", entry);
+}
+
 function updateQuestSceneModeEditor(root = document) {
   const form = root.querySelector?.('form[data-form="quests"]');
   const textarea = form?.querySelector("#quest-module-json");
@@ -8338,6 +8506,7 @@ function inferSelectedPath(section) {
   if (section === "dialogue") return dialoguePath(activeDialogueKind, state.dialogue[activeDialogueKind]?.[0] || {}, 0);
   if (section === "forcedDialogue") return forcedDialoguePath();
   if (section === "quests") return questModulePath(state.quests.modules[0] || {}, 0);
+  if (section === "skillTrades") return skillTradesPath();
   if (section === "notifications") return notificationsPath();
   if (section === "gifts") return giftsPath();
   if (section === "pacification") return pacificationPath();
@@ -8622,6 +8791,17 @@ function addQuestModuleExample() {
   selectedPath = questModulePath(entry, index);
   activeSection = "quests";
   editing = { section: "quests", kind: "modules", index };
+  clearEntryFormDirty();
+  render();
+}
+
+function addSkillTradeExample() {
+  const entry = skillTradeExample();
+  const index = state.skillTrades.entries.length;
+  state.skillTrades.entries.push(entry);
+  selectedPath = skillTradesPath();
+  activeSection = "skillTrades";
+  editing = { section: "skillTrades", kind: "entries", index };
   clearEntryFormDirty();
   render();
 }
@@ -9389,6 +9569,7 @@ function updateSectionSettings(target) {
   if (target.id === "dialogue-fileName") state.dialogue.fileName = normalizeFileName(target.value, `${state.meta.slug}_dialogue`);
   if (target.id === "dialogue-locale") state.meta.locale = slugify(target.value, "en_us");
   if (target.id === "forcedDialogue-fileName") state.forcedDialogue.fileName = normalizeFileName(target.value, `${state.meta.slug}_forced_dialogue`);
+  if (target.id === "skillTrades-fileName") state.skillTrades.fileName = normalizeFileName(target.value, `${state.meta.slug}_skill_trades`);
   if (target.id === "notifications-fileName") state.notifications.fileName = normalizeFileName(target.value, `${state.meta.slug}_notifications`);
   if (target.id === "notifications-locale") state.meta.locale = slugify(target.value, "en_us");
   if (target.id === "gifts-fileName") state.gifts.fileName = normalizeFileName(target.value, `${state.meta.slug}_gifts`);
@@ -9962,12 +10143,13 @@ els.panel.addEventListener("click", (event) => {
     deleteEntry(actionButton.dataset.section, actionButton.dataset.kind, Number(actionButton.dataset.index));
     return;
   }
-  if (action === "clear-dialogue-form" || action === "clear-forced-dialogue-form" || action === "clear-quest-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
+  if (action === "clear-dialogue-form" || action === "clear-forced-dialogue-form" || action === "clear-quest-form" || action === "clear-skill-trade-form" || action === "clear-notification-form" || action === "clear-gift-form" || action === "clear-pacification-form" || action === "clear-story-form") {
     clearEditing();
   }
   if (action === "add-dialogue-example" && canLeaveEntryForm()) addDialogueExample();
   if (action === "add-forced-dialogue-example" && canLeaveEntryForm()) addForcedDialogueExample();
   if (action === "add-quest-module-example" && canLeaveEntryForm()) addQuestModuleExample();
+  if (action === "add-skill-trade-example" && canLeaveEntryForm()) addSkillTradeExample();
   if (action === "add-notification-example" && canLeaveEntryForm()) addNotificationExample();
   if (action === "add-gift-example" && canLeaveEntryForm()) addGiftExample();
   if (action === "add-pacification-example" && canLeaveEntryForm()) addPacificationExample();
@@ -10151,6 +10333,7 @@ els.panel.addEventListener("submit", (event) => {
   if (form.dataset.form === "dialogue") saveDialogueEntry(event);
   if (form.dataset.form === "forcedDialogue") saveForcedDialogue(event);
   if (form.dataset.form === "quests") saveQuestModule(event);
+  if (form.dataset.form === "skillTrades") saveSkillTrade(event);
   if (form.dataset.form === "notifications") saveNotification(event);
   if (form.dataset.form === "gifts") saveGiftEntry(event);
   if (form.dataset.form === "pacification") savePacification(event);

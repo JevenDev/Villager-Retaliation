@@ -130,6 +130,7 @@ globalThis.__test = {
   applyEditedFile,
   ingestKnownJson,
   sceneResourceIssueDetail,
+  skillTradeIssueDetail,
   validate,
   dialogueFolderTemplateFiles,
   get dialogueTypes() { return CONSTANTS.dialogueTypes; }
@@ -439,6 +440,42 @@ function testSceneResourceRoundTrip(app) {
   assert(/exactly one template or variants/i.test(app.sceneResourceIssueDetail(scenePath, variantScene)?.message || ""), "Incompatible start_encounter variant sources were not diagnosed.");
 }
 
+function testSkillTradeRoundTrip(app) {
+  app.state = app.createInitialState();
+  const firstPath = "data/alchemy/skill_trades/apothecary/orders.json";
+  const secondPath = "data/exploration/skill_trades/cartographer.json";
+  const first = { entries: [{
+    id: "alchemy:healing_tonic",
+    professions: ["minecraft:cleric"],
+    skills: ["villagerretaliation:medicine"],
+    min_rank: "skilled",
+    result: { item: "minecraft:honey_bottle", count: 2, enchantments: { mode: "fixed", fixed: [{ id: "minecraft:unbreaking", level: 1 }] } },
+    cost: { item: "minecraft:emerald", count: 7 },
+    request: { targetable: true, min_reputation: "trusted", display_priority: 20, wait_days: 2, cooldown_days: 4, extra_cost: { item: "minecraft:gold_ingot", count: 1 } },
+    conditions: { config_flags: ["special_orders"] },
+    quality_scaling: { enabled: true, count_by_skill: true }
+  }] };
+  const second = { entries: [{
+    id: "exploration:survey_map",
+    professions: ["minecraft:cartographer"],
+    skills: ["villagerretaliation:cartography"],
+    result: { item: "minecraft:map" },
+    weight: 5
+  }] };
+  assert(app.ingestKnownJson(firstPath, JSON.stringify(first)), "Nested arbitrary-namespace skill trade import failed.");
+  assert(app.ingestKnownJson(secondPath, JSON.stringify(second)), "Second skill trade import failed.");
+  assert(app.state.skillTrades.entries.length === 2, "Skill trade imports did not merge.");
+  assert(app.skillTradeIssueDetail(first.entries[0]) === null, "Valid custom Special Order was rejected by builder validation.");
+  const files = app.generatedFiles();
+  assert(JSON.stringify(jsonFile(files, firstPath)) === JSON.stringify(first), "Advanced skill trade fields changed during round trip.");
+  assert(JSON.stringify(jsonFile(files, secondPath)) === JSON.stringify(second), "Separate skill trade source path was collapsed during export.");
+  assert(app.applyEditedFile(firstPath, JSON.stringify({ entries: [{ ...first.entries[0], weight: 9 }] })), "Skill trade file edit failed.");
+  assert(app.state.skillTrades.entries.length === 2, "Editing one skill trade file removed sibling files.");
+  assert(jsonFile(app.generatedFiles(), firstPath).entries[0].weight === 9, "Edited skill trade value was not exported.");
+  const invalid = { ...second.entries[0], request: { targetable: "yes", extra_cost: { item: "minecraft:emerald", count: 0 } } };
+  assert(/targetable|extra cost/i.test(app.skillTradeIssueDetail(invalid)?.message || ""), "Invalid Special Order metadata was not diagnosed.");
+}
+
 const app = createAppHarness();
 testTypedFolderOutput(app);
 testTypedImportAndProfessionDefaults(app);
@@ -451,5 +488,6 @@ testAllSurfaceGeneration(app);
 testSurfaceImportsAndEdits(app);
 testBackendPathNormalization(app);
 testSceneResourceRoundTrip(app);
+testSkillTradeRoundTrip(app);
 
 console.log("Datapack builder schema/import smoke test passed.");
