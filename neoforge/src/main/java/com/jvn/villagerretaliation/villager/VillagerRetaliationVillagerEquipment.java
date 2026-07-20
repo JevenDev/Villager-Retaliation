@@ -7,6 +7,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public final class VillagerRetaliationVillagerEquipment {
     private static final String MAINHAND_STATE_TAG = "VillagerRetaliationMainhandState";
@@ -267,6 +268,20 @@ public final class VillagerRetaliationVillagerEquipment {
             clearMainHandState(villager);
         }
         villager.getPersistentData().remove(LEGACY_PICKED_UP_MAINHAND_TAG);
+    }
+
+    public static void forgetConsumedMainHand(AbstractVillager villager, ItemStack usedStack) {
+        if (villager == null || usedStack == null || !usedStack.is(Items.TOTEM_OF_UNDYING)) {
+            return;
+        }
+        ItemStack trackedStack = switch (mainHandOwner(villager)) {
+            case MANUAL, PICKED_UP -> playerManagedMainHand(villager);
+            case ROLE -> roleMainHand(villager);
+            case NONE -> ItemStack.EMPTY;
+        };
+        if (ItemStack.isSameItemSameComponents(trackedStack, usedStack)) {
+            clearMainHandState(villager);
+        }
     }
 
     public static void clearRoleMainHand(AbstractVillager villager) {

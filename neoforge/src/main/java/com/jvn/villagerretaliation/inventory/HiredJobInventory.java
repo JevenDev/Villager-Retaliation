@@ -26,6 +26,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.CustomData;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 
@@ -148,6 +149,31 @@ public final class HiredJobInventory implements Container {
         }
         int slot = jobSlotForEquipmentSlot(equipmentSlot);
         return slot >= 0 && hasPersistedJobStack(villager, slot);
+    }
+
+    static boolean consumeEquippedTotem(Villager villager, EquipmentSlot equipmentSlot, ItemStack usedTotem) {
+        if (villager == null || equipmentSlot == null || usedTotem == null
+                || !usedTotem.is(Items.TOTEM_OF_UNDYING)
+                || !isJobInventoryAvailable(villager)) {
+            return false;
+        }
+        int slot = jobSlotForEquipmentSlot(equipmentSlot);
+        if (slot < 0 || !hasPersistedJobStack(villager, slot)) {
+            return false;
+        }
+
+        HiredJobInventory inventory = getJobInventory(villager);
+        ItemStack authoritativeStack = inventory.items.get(slot);
+        if (!ItemStack.isSameItemSameComponents(authoritativeStack, usedTotem)) {
+            return false;
+        }
+        authoritativeStack.shrink(1);
+        if (authoritativeStack.isEmpty()) {
+            inventory.items.set(slot, ItemStack.EMPTY);
+            inventory.slotTypes[slot] = defaultType(slot);
+        }
+        inventory.save();
+        return true;
     }
 
     public static boolean isProtectedVillagerProperty(ItemStack stack) {

@@ -1335,10 +1335,41 @@ public final class VillagerInventoryGameTests {
 
         mainhand.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
         offhand.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
+        VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(mainhand);
         helper.assertTrue(mainhand.isAlive() && mainhand.getMainHandItem().isEmpty(),
-                "a main-hand totem should be consumed while protecting its villager");
+                "a main-hand totem should stay consumed after tracked-equipment maintenance");
         helper.assertTrue(offhand.isAlive() && offhand.getOffhandItem().isEmpty(),
                 "an off-hand totem should be consumed while protecting its villager");
+
+        mainhand.discard();
+        offhand.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void jobTotemsAreConsumedFromEitherHand(GameTestHelper helper) {
+        Villager mainhand = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Villager offhand = spawnVillager(helper, new BlockPos(3, 2, 1));
+        HiredJobInventory mainInventory = HiredJobInventory.getJobInventory(mainhand);
+        HiredJobInventory offInventory = HiredJobInventory.getJobInventory(offhand);
+        mainInventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.TOTEM_OF_UNDYING));
+        offInventory.setItem(HiredJobInventory.OFFHAND_SLOT, new ItemStack(Items.TOTEM_OF_UNDYING));
+
+        mainhand.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
+        offhand.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
+        HiredJobInventory.clearRuntimeState(mainhand);
+        HiredJobInventory.clearRuntimeState(offhand);
+        HiredJobInventory.maintainEquipmentSlots(mainhand);
+        HiredJobInventory.maintainEquipmentSlots(offhand);
+
+        helper.assertTrue(mainhand.isAlive()
+                        && mainhand.getMainHandItem().isEmpty()
+                        && mainInventory.getItem(HiredJobInventory.MAINHAND_SLOT).isEmpty(),
+                "a job main-hand totem should be consumed from both the live hand and its authority");
+        helper.assertTrue(offhand.isAlive()
+                        && offhand.getOffhandItem().isEmpty()
+                        && offInventory.getItem(HiredJobInventory.OFFHAND_SLOT).isEmpty(),
+                "a job off-hand totem should be consumed from both the live hand and its authority");
 
         mainhand.discard();
         offhand.discard();
