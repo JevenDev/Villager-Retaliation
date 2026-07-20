@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.util;
 import com.jvn.toucanlib.util.ToucanBrainMemories;
 import com.jvn.toucanlib.util.ToucanHazardAttribution;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.party.PartyService;
 import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
@@ -161,6 +162,11 @@ public final class VillagerRetaliationVillagerCombatUtil {
         return attacker instanceof Player player
                 && (player.isSpectator()
                 || VillagerRetaliationConfig.NEARBY_VILLAGERS_IGNORE_CREATIVE_PLAYERS.get() && player.isCreative());
+    }
+
+    public static boolean shouldIgnoreRetaliationAttacker(LivingEntity attacker) {
+        return shouldIgnoreAttacker(attacker)
+                && !(attacker instanceof Villager && PartyService.getPartyForEntity(attacker).isPresent());
     }
 
     public static boolean isConcealedFromVillagers(LivingEntity entity) {

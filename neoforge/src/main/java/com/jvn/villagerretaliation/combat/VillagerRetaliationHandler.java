@@ -281,7 +281,7 @@ public final class VillagerRetaliationHandler {
             return;
         }
 
-        if (attacker.isEmpty() || VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(attacker.get())) {
+        if (attacker.isEmpty() || VillagerRetaliationVillagerCombatUtil.shouldIgnoreRetaliationAttacker(attacker.get())) {
             return;
         }
 

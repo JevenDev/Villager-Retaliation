@@ -18,6 +18,8 @@ import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillageLifecycleState;
 import com.jvn.villagerretaliation.allegiance.VillageNamingService;
 import com.jvn.villagerretaliation.allegiance.VillageFootprintResolver;
+import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.network.VillageBoundsSyncPayload;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -46,6 +48,7 @@ import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.event.tick.EntityTickEvent;
 
 @GameTestHolder
 @PrefixGameTestTemplate(false)
@@ -398,6 +401,56 @@ public final class VillageAllegianceGameTests {
             VillageCombatAuthorizationService.clearFor(target);
             actor.discard();
             target.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void recruitedForeignVillagerAttackRalliesHarmedVillage(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager resident = spawnVillager(helper, new BlockPos(3, 2, 2));
+        Villager witness = spawnVillager(helper, new BlockPos(4, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartySavedData partyData = PartySavedData.get(level);
+        PartyRecord party = partyData.createParty(UUID.randomUUID(), now);
+        partyData.addVillager(party, partyVillagerRecord(attacker.getUUID(), party.leaderId(), now));
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceId attackerHome = registry.create(
+                now, level.dimension().location(), attacker.blockPosition(), "Attacker");
+        VillageAllegianceId harmedVillage = registry.create(
+                now, level.dimension().location(), resident.blockPosition(), "Harmed Village");
+        assign(level, attacker, attackerHome, List.of());
+        assign(level, resident, harmedVillage, List.of());
+        assign(level, witness, harmedVillage, List.of());
+        boolean previousOnlyHitVillager = VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.get();
+        boolean previousLineOfSight = VillagerRetaliationConfig.RETALIATION_WITNESSES_REQUIRE_LINE_OF_SIGHT.get();
+        try {
+            VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.set(false);
+            VillagerRetaliationConfig.RETALIATION_WITNESSES_REQUIRE_LINE_OF_SIGHT.set(false);
+            helper.assertTrue(VillageCombatAuthorizationService.authorize(level, attacker, resident),
+                    "foreign recruited villager should receive attack authorization");
+            helper.assertTrue(resident.hurt(level.damageSources().mobAttack(attacker), 2.0F),
+                    "authorized recruited-villager attack should land");
+            helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(resident, attacker),
+                    "attacked resident should retaliate against the recruited villager");
+            helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(witness, attacker),
+                    "resident witness should rally against the recruited villager");
+            VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(resident));
+            VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(witness));
+            helper.assertTrue(resident.getTarget() == attacker,
+                    "attacked resident should actively defend against the recruited villager");
+            helper.assertTrue(witness.getTarget() == attacker,
+                    "rallied resident should actively defend against the recruited villager");
+        } finally {
+            VillagerRetaliationConfig.ATTACK_AGGROS_ONLY_HIT_VILLAGER.set(previousOnlyHitVillager);
+            VillagerRetaliationConfig.RETALIATION_WITNESSES_REQUIRE_LINE_OF_SIGHT.set(previousLineOfSight);
+            VillageCombatAuthorizationService.clearFor(attacker);
+            VillageCombatAuthorizationService.clearFor(resident);
+            VillageCombatAuthorizationService.clearFor(witness);
+            attacker.discard();
+            resident.discard();
+            witness.discard();
         }
         helper.succeed();
     }
