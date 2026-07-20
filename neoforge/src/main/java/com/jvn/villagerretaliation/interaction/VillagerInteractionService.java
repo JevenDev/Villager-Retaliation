@@ -81,6 +81,7 @@ import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.village.VillageScopeKeys;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -2638,8 +2639,8 @@ public final class VillagerInteractionService {
             }
             return InteractionResult.FAIL;
         }
-        if (villager.level() instanceof ServerLevel level
-                && com.jvn.villagerretaliation.party.PartyVillagerContractService.isActivePartyVillager(level, villager)) {
+        if (VillagerBehaviorSuppressionPolicy.suppresses(
+                villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING)) {
             if (sendFailureMessage) {
                 sendVillagerNotice(player, villager, "interaction.party.trade_unavailable");
             }

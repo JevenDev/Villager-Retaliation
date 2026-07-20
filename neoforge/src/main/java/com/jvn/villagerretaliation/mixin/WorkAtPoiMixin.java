@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.mixin;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerFocusService;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.WorkAtPoi;
 import net.minecraft.world.entity.npc.Villager;
@@ -16,7 +17,9 @@ public abstract class WorkAtPoiMixin {
             ServerLevel level,
             Villager owner,
             CallbackInfoReturnable<Boolean> cir) {
-        if (HiredVillagerFocusService.shouldSuppressClaimedJobSiteBlockUse(level, owner)) {
+        if (VillagerBehaviorSuppressionPolicy.suppresses(
+                        owner, VillagerBehaviorSuppressionPolicy.Behavior.VANILLA_WORKING)
+                || HiredVillagerFocusService.shouldSuppressClaimedJobSiteBlockUse(level, owner)) {
             cir.setReturnValue(false);
         }
     }

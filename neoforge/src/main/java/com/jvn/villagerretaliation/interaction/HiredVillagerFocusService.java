@@ -63,6 +63,28 @@ public final class HiredVillagerFocusService {
         return role != null && shouldSuppressForActiveHiredJob(level, villager, state, role);
     }
 
+    public static boolean shouldAllowCompatibleVanillaFarmerBrain(ServerLevel level, Villager villager) {
+        if (level == null || villager == null || villager.isBaby() || !villager.isAlive()) {
+            return false;
+        }
+        CompoundTag state = HiredVillagerWorkService.state(villager);
+        HiredVillagerWorkService.initializeDefaults(state, villager);
+        if (!state.getBoolean("Enabled")
+                || HiredVillagerContractService.isAwaitingAutoPayment(level, villager)) {
+            return false;
+        }
+        HiredVillagerRole role = HiredVillagerContractService.activeRoleWithoutMaintenance(level, villager);
+        Brain<Villager> brain = villager.getBrain();
+        if (!brain.isActive(Activity.WORK) && scheduledActivity(level, brain) != Activity.WORK) {
+            return false;
+        }
+        return role != null && shouldLetFarmerBrainHandleFields(
+                level,
+                villager,
+                HiredWorkerBrain.snapshot(state, level.getGameTime()),
+                role);
+    }
+
     public static boolean shouldUseVanillaRest(ServerLevel level, Villager villager) {
         Brain<Villager> brain = villager.getBrain();
         return isVanillaRestActive(villager)

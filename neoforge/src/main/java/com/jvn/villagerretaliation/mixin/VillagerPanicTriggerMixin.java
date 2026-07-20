@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.mixin;
 
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.behavior.VillagerPanicTrigger;
 import net.minecraft.world.entity.npc.Villager;
@@ -19,7 +20,7 @@ public abstract class VillagerPanicTriggerMixin {
             Villager villager,
             long gameTime,
             CallbackInfo ci) {
-        if (!VillagerRetaliationVillagerRules.shouldSuppressVanillaFleeBehavior(villager)) {
+        if (!shouldSuppress(villager)) {
             return;
         }
 
@@ -33,7 +34,7 @@ public abstract class VillagerPanicTriggerMixin {
             Villager villager,
             long gameTime,
             CallbackInfoReturnable<Boolean> cir) {
-        if (!VillagerRetaliationVillagerRules.shouldSuppressVanillaFleeBehavior(villager)) {
+        if (!shouldSuppress(villager)) {
             return;
         }
 
@@ -47,8 +48,14 @@ public abstract class VillagerPanicTriggerMixin {
             Villager villager,
             long gameTime,
             CallbackInfo ci) {
-        if (VillagerRetaliationVillagerRules.shouldSuppressVanillaFleeBehavior(villager)) {
+        if (shouldSuppress(villager)) {
             ci.cancel();
         }
+    }
+
+    private static boolean shouldSuppress(Villager villager) {
+        return VillagerBehaviorSuppressionPolicy.suppresses(
+                        villager, VillagerBehaviorSuppressionPolicy.Behavior.VANILLA_PANIC)
+                || VillagerRetaliationVillagerRules.shouldSuppressVanillaFleeBehavior(villager);
     }
 }

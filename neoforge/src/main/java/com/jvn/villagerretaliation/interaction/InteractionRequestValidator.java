@@ -3,7 +3,7 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.reputation.VillagerAmbientIndicatorService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
-import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.Optional;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -125,7 +125,8 @@ public final class InteractionRequestValidator {
             VillagerInteractionService.sendNotice(player, entityId, unavailableNoticeKey);
             return Optional.empty();
         }
-        if (VillagerDownedService.isDowned(villager)) {
+        if (VillagerBehaviorSuppressionPolicy.suppresses(
+                villager, VillagerBehaviorSuppressionPolicy.Behavior.INTERACTION_MENUS)) {
             VillagerConversationService.endForPlayer(player, true);
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.incapacitated");
             return Optional.empty();

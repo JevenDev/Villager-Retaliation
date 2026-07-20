@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.mixin;
 
-import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -24,7 +24,8 @@ public abstract class VillagerProfessionMixin {
                 || newData.getProfession() == VillagerProfession.NONE
                 || newData.getProfession() == VillagerProfession.NITWIT
                 || !villager.getBrain().hasMemoryValue(MemoryModuleType.JOB_SITE)
-                || !PartyService.isRecruitedPartyVillager(level, villager.getUUID())) {
+                || !VillagerBehaviorSuppressionPolicy.suppresses(
+                        villager, VillagerBehaviorSuppressionPolicy.Behavior.JOB_SITE_CLAIMING)) {
             return;
         }
 

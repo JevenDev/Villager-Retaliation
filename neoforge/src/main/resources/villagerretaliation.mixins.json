@@ -22,6 +22,7 @@
     "ShowTradesToPlayerMixin",
     "TradeWithVillagerMixin",
     "VillagerHiredNavigationMixin",
+    "VillagerGossipMixin",
     "VillagerJobInventoryMixin",
     "VillagerMakeLoveMixin",
     "VillagerBrainTickMixin",
@@ -29,6 +30,7 @@
     "VillagerPanicTriggerMixin",
     "VillagerProfessionMixin",
     "VillagerTradeLevelingMixin",
+    "VillagerTradingMixin",
     "WalkNodeEvaluatorMixin",
     "WorkAtPoiMixin"
   ],

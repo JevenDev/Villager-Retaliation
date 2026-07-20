@@ -76,6 +76,7 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerRules;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
@@ -322,6 +323,9 @@ public final class VillagerRetaliationEvents {
             if (VillagerDownedService.isDowned(villager)) {
                 return;
             }
+            if (villager.level() instanceof ServerLevel level) {
+                VillagerBehaviorSuppressionPolicy.enforce(level, villager);
+            }
             VillagerRecruitmentService.onVillagerTickPre(villager);
             HiredVillagerFocusService.onVillagerTickPre(villager);
             if (villager.level() instanceof ServerLevel level) {
@@ -418,6 +422,7 @@ public final class VillagerRetaliationEvents {
             HiredVillagerIndex.update(level, villager);
             VillagerDownedService.onVillagerLoaded(villager);
             PartyVillagerContractService.onVillagerLoaded(villager);
+            VillagerBehaviorSuppressionPolicy.enforce(level, villager);
         }
     }
 
@@ -455,7 +460,8 @@ public final class VillagerRetaliationEvents {
         }
 
         if (event.getTarget() instanceof Villager villager
-                && VillagerDownedService.isDowned(villager)) {
+                && VillagerBehaviorSuppressionPolicy.suppresses(
+                        villager, VillagerBehaviorSuppressionPolicy.Behavior.INTERACTION_MENUS)) {
             if (player instanceof ServerPlayer serverPlayer) {
                 VillagerConversationService.endForVillager(villager, true);
                 VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.incapacitated");
