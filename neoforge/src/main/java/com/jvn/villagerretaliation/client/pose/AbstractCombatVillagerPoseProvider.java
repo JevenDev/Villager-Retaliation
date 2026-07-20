@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.pose;
 
+import com.jvn.villagerretaliation.client.villager.VillagerWorkAnimationClientCache;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
@@ -15,6 +16,9 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
 
     @Override
     public VillagerArmPose getArmPose(T villager, float attackTime) {
+        if (VillagerWorkAnimationClientCache.isUsingItem(villager)) {
+            return VillagerArmPose.WORK_ITEM_USE;
+        }
         if (villager.isUsingItem()) {
             ItemStack useItem = villager.getUseItem();
             if (useItem.is(Items.SHIELD)) {
@@ -66,6 +70,9 @@ abstract class AbstractCombatVillagerPoseProvider<T extends AbstractVillager> im
 
     @Override
     public boolean shouldUseCombatModel(T villager) {
+        if (VillagerWorkAnimationClientCache.isActive(villager)) {
+            return true;
+        }
         if (villager.isUsingItem() && shouldUseCombatModelWhileUsingItem(villager, villager.getUseItem())) {
             return true;
         }

@@ -165,6 +165,16 @@ public final class HiredFarmingInventoryBridge {
         return false;
     }
 
+    public static ItemStack plantingItem(Villager villager, HiredWorkContext context) {
+        for (int slot : plantingSlots(villager, context.inventory())) {
+            ItemStack stack = context.inventory().getItem(slot);
+            if (!stack.isEmpty()) {
+                return stack.copyWithCount(1);
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
     public static boolean isFarmPickupItem(Villager villager, ItemStack stack) {
         return !stack.isEmpty()
                 && (stack.is(Items.WHEAT)

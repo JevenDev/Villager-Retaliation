@@ -232,7 +232,11 @@ public final class FarmingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.farming.output_full_blocked");
         }
 
+        ItemStack plantingItem = HiredFarmingInventoryBridge.plantingItem(villager, context);
         boolean replanted = HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget);
+        if (replanted) {
+            swingWorkItem(level, villager, plantingItem);
+        }
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
         return WorkResult.progressedWithPractice(
@@ -248,6 +252,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
             return WorkResult.idle("interaction.work.farming.target_changed");
         }
+        ItemStack plantingItem = HiredFarmingInventoryBridge.plantingItem(villager, context);
         if (!HiredFarmingInventoryBridge.plantFromJobInventory(level, villager, context, cropTarget)) {
             HiredWorkerBrain.setFailure(context, "missing_planting_item", 0L);
             setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, cropTarget);
@@ -255,7 +260,7 @@ public final class FarmingWorker extends AbstractBlockWorker {
         }
 
         faceBlock(villager, cropTarget);
-        swingWorkTool(villager);
+        swingWorkItem(level, villager, plantingItem);
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.IDLE, cropTarget);
         return WorkResult.progressedWithPractice(

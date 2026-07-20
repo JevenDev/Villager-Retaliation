@@ -154,7 +154,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         int progress = context.progressTicks() + 1;
         if (progress < BREEDING_WORK_TICKS) {
             context.setProgressTicks(progress);
-            swingWorkTool(villager);
+            useWorkItem(level, villager, context.inventory().findSupply(pair.foodPredicate()));
             return WorkResult.progressed("interaction.work.animal_breeding.feeding");
         }
 
@@ -164,6 +164,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, pair.first().blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.pair_changed");
         }
+        ItemStack breedingFood = context.inventory().findSupply(pair.foodPredicate()).copyWithCount(1);
         if (!context.inventory().consumeSupplyExactly(pair.foodPredicate(), 2)) {
             HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, pair.first().blockPosition());
@@ -174,7 +175,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         pair.second().setInLove(hirer);
         rememberHandledAnimals(context, level.getGameTime(), pair.first(), pair.second());
         setTaskState(context, HiredWorkerTaskState.IDLE, pair.first().blockPosition());
-        swingWorkTool(villager);
+        useWorkItem(level, villager, breedingFood);
         return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.completed",
                 java.util.Map.of("target", HiredAnimalBreedingTargets.label(pair.typeId())),
@@ -470,7 +471,9 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         int progress = context.progressTicks() + 1;
         if (progress < PRODUCT_WORK_TICKS) {
             context.setProgressTicks(progress);
-            swingWorkTool(villager);
+            useWorkItem(level, villager, target.kind() == AnimalProductKind.SHEAR
+                    ? new ItemStack(Items.SHEARS)
+                    : new ItemStack(Items.BUCKET));
             return WorkResult.progressed(target.workingMessageKey());
         }
 
@@ -573,7 +576,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         sheep.setSheared(true);
         level.playSound(null, sheep, SoundEvents.SHEEP_SHEAR, SoundSource.NEUTRAL, 1.0F, 1.0F);
         damageSupplyItem(context, shearsSlot, villager);
-        swingWorkTool(villager);
+        useWorkItem(level, villager, new ItemStack(Items.SHEARS));
         setTaskState(context, HiredWorkerTaskState.IDLE, sheep.blockPosition());
         return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.sheared_sheep",
@@ -602,7 +605,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
         }
         level.playSound(null, animal, milkingSound(animal), SoundSource.NEUTRAL, 1.0F, 1.0F);
-        swingWorkTool(villager);
+        useWorkItem(level, villager, new ItemStack(Items.BUCKET));
         setTaskState(context, HiredWorkerTaskState.IDLE, animal.blockPosition());
         return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.milked_animal",
