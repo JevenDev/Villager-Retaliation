@@ -281,6 +281,7 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.busy");
             return InteractionResult.FAIL;
         }
+        VillagerReputationAdvancements.onVillagerConversationStarted(player);
         openInteractionScreen(player, villager);
         focusVillagerOnPlayer(villager, player);
         return InteractionResult.CONSUME;

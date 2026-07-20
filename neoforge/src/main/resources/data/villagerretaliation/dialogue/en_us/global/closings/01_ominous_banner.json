@@ -1,0 +1,74 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.closings",
+      "context.ominous_banner"
+    ],
+    "topic": "global.closings.ominous_banner"
+  },
+  "closings": [
+    {
+      "id": "ominous_banner_closing_revered",
+      "requires_ominous_banner": true,
+      "reputation_levels": ["revered", "royalty"],
+      "lines": [
+        "I still believe you can choose better. Let the first choice be removing that banner.",
+        "We can speak warmly again when you are no longer wearing a raider's threat.",
+        "Your deeds earned respect. Do not let that mark speak louder than all of them."
+      ]
+    },
+    {
+      "id": "ominous_banner_closing_trusted",
+      "requires_ominous_banner": true,
+      "reputation_levels": ["trusted", "respected"],
+      "lines": [
+        "Take it off before you return. I would rather remember the person I trusted.",
+        "Do not make your friends look at that mark again.",
+        "Trust can survive a terrible choice, but only if you stop making it."
+      ]
+    },
+    {
+      "id": "ominous_banner_closing_neutral",
+      "requires_ominous_banner": true,
+      "reputation_level": "neutral",
+      "lines": [
+        "Keep your distance until that banner is gone.",
+        "We are finished. Take the raider mark with you.",
+        "Your next greeting will go better without a threat above your face."
+      ]
+    },
+    {
+      "id": "ominous_banner_closing_suspicious",
+      "requires_ominous_banner": true,
+      "reputation_level": "suspicious",
+      "lines": [
+        "You have done nothing to ease my suspicion. That banner made it worse.",
+        "Leave now. I will be watching which way that mark travels.",
+        "We are done. Do not mistake restraint for trust."
+      ]
+    },
+    {
+      "id": "ominous_banner_closing_hostile",
+      "requires_ominous_banner": true,
+      "reputation_levels": ["hostile", "despised"],
+      "lines": [
+        "Take your banner and get out of my sight.",
+        "No more words. That mark has said enough for you.",
+        "We are finished. Leave before this becomes something other than a conversation."
+      ]
+    },
+    {
+      "id": "ominous_banner_closing_feared",
+      "requires_ominous_banner": true,
+      "reputation_level": "feared",
+      "lines": [
+        "<shake>Please go.</shake> I cannot breathe easily while you wear that.",
+        "That is all I can say. Please take the banner away from here.",
+        "I answered you. Now let me get somewhere safe."
+      ]
+    }
+  ]
+}

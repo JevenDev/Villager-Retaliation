@@ -180,6 +180,7 @@ The mod includes a full reputation advancement tab with milestones for trust, su
 | --- | --- | --- | --- |
 | Village Relations | Task (Tab Root) | Automatically granted when any Villager Retaliation advancement is awarded. | No |
 | Commonfolk | Task | Interact with any villager, or enter a village. | No |
+| The Mark You Chose | Goal | Talk to a villager while displaying an ominous banner on a helmet or shield. | Yes |
 | I'm Sorry! | Task | Pacify a hostile villager with a payment item. | No |
 | A Familiar Face | Task | Reach Trusted reputation with any villager. | No |
 | Respect Is Earned | Task | Reach Respected reputation with any villager. | No |

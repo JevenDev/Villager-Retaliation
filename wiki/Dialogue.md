@@ -105,6 +105,36 @@ Then point a line at it:
 }
 ```
 
+Openings and closings can also react when the player displays an ominous banner: worn directly in the head slot, attached to a worn helmet, or applied to a shield in either hand. Use `requires_ominous_banner`, and optionally narrow the speaker's durable village allegiance with `village_allegiance` or `village_allegiances` (`known`, `unknown`, or `unaffiliated`):
+
+```json
+{
+  "id": "my_pack.opening.ominous_resident",
+  "requires_ominous_banner": true,
+  "village_allegiance": "known",
+  "reputation_levels": ["suspicious", "hostile", "despised"],
+  "text": "Do not carry that raider mark through my village."
+}
+```
+
+Two item tags make ominous-symbol recognition extensible:
+
+| Tag | Purpose |
+| --- | --- |
+| `villagerretaliation:ominous_banner_pattern_carriers` | Items whose `banner_patterns` component should be compared with the vanilla ominous design. It contains banners and shields by default. Add compatible modded shields or wearable banner items here. |
+| `villagerretaliation:ominous_banner_equivalents` | Items that always count as displaying the ominous symbol, without requiring banner-pattern components. Add custom insignia, uniforms, masks, or other modded gear here. |
+
+For other gear-specific dialogue, openings and closings accept the same `player_item`, `player_items`, `player_item_tag`, `player_item_tags`, `player_item_slot`, and `player_item_slots` filters as normal dialogue lines. Slots can be `main_hand`, `off_hand`, `hands`, `armor`, `hotbar`, `inventory`, `equipment`, or `any`. Item-filtered conversation text can use placeholders such as `{player_item}`, `{player_item_id}`, and `{player_item_slot}`.
+
+```json
+{
+  "id": "my_pack.opening.custom_uniform",
+  "player_item_tag": "my_pack:village_guard_uniforms",
+  "player_item_slots": ["armor"],
+  "text": "I recognize that {player_item}."
+}
+```
+
 ## Example: Pacify Line
 
 The items used for pacification live in [Pacification](Pacification.md). The spoken line lives in dialogue.

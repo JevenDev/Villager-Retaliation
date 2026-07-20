@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.dialogue.resources;
 
+import com.jvn.villagerretaliation.allegiance.AllegianceState;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.dialogue.DialogueTreeResources;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
@@ -30,6 +32,7 @@ import com.jvn.villagerretaliation.util.DatapackResourceLoader;
 import com.jvn.villagerretaliation.util.VillagerEquipmentCondition;
 import com.jvn.villagerretaliation.util.VillagerInventoryItemRemoval;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.item.OminousBannerRecognition;
 import com.jvn.villagerretaliation.util.VillagerPlayerItemCondition;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import com.jvn.villagerretaliation.util.VillagerReputationCondition;
@@ -92,6 +95,13 @@ public final class VillagerDialogueResources {
             "id", "text", "lines", "professions", "dispositions",
             "metadata",
             "requires_villager_unarmed", "villager_unarmed", "requires_villager_armed", "villager_armed",
+            "reputation_level", "reputation_levels", "min_reputation", "max_reputation",
+            "requires_ominous_banner", "village_allegiance", "village_allegiances",
+            "player_item", "player_items", "player_item_tag", "player_item_tags", "player_item_slot", "player_item_slots",
+            "min_player_item_durability", "max_player_item_durability", "min_player_item_durability_percent", "max_player_item_durability_percent",
+            "min_held_item_durability", "max_held_item_durability", "min_held_item_durability_percent", "max_held_item_durability_percent",
+            "player_item_enchantment", "player_item_enchantments", "held_item_enchantment", "held_item_enchantments",
+            "min_player_item_enchantment_level", "max_player_item_enchantment_level", "min_held_item_enchantment_level", "max_held_item_enchantment_level",
             "show_for_adults", "show_for_babies", "first_conversation_only", "first_village_interaction_only", "weight");
     private static final Set<String> PACIFY_KEYS = Set.of(
             "id", "text", "lines", "outcomes", "professions", "dispositions",
@@ -206,6 +216,12 @@ public final class VillagerDialogueResources {
         List<ConversationLine> candidates = load(context.level().getServer(), context.locale()).openings().stream()
                 .filter(line -> line.matches(context, disposition))
                 .toList();
+        List<ConversationLine> itemSpecificCandidates = candidates.stream()
+                .filter(ConversationLine::playerItemSpecific)
+                .toList();
+        if (!itemSpecificCandidates.isEmpty()) {
+            candidates = itemSpecificCandidates;
+        }
         List<ConversationLine> firstInteractionCandidates = candidates.stream()
                 .filter(ConversationLine::firstInteractionSpecific)
                 .toList();
@@ -213,15 +229,21 @@ public final class VillagerDialogueResources {
             candidates = firstInteractionCandidates;
         }
         return candidates.stream()
-                .map(line -> line.selectText(context.random()))
+                .map(line -> line.selectText(context))
                 .toList();
     }
 
     public static List<String> closingLines(DialogueContext context, DialogueDisposition disposition) {
-        return load(context.level().getServer(), context.locale()).closings().stream()
+        List<ConversationLine> candidates = load(context.level().getServer(), context.locale()).closings().stream()
                 .filter(line -> line.matches(context, disposition))
-                .map(line -> line.selectText(context.random()))
                 .toList();
+        List<ConversationLine> itemSpecificCandidates = candidates.stream()
+                .filter(ConversationLine::playerItemSpecific)
+                .toList();
+        if (!itemSpecificCandidates.isEmpty()) {
+            candidates = itemSpecificCandidates;
+        }
+        return candidates.stream().map(line -> line.selectText(context)).toList();
     }
 
     public static Optional<String> message(DialogueContext context, String key) {
@@ -1067,6 +1089,7 @@ public final class VillagerDialogueResources {
             JsonObject entry = element.getAsJsonObject();
             String context = entryContext(key, entry, index);
             DatapackDiagnostics.warnUnknownKeys(location, "dialogue " + key, context, entry, CONVERSATION_KEYS);
+            DatapackDiagnostics.warnInertPlayerItemSlots(location, context, entry);
             DialogueEntryMetadata.read(location, "dialogue " + key, context, entry);
             List<String> entryLines = readLines(entry);
             if (entryLines.isEmpty()) {
@@ -1077,6 +1100,9 @@ public final class VillagerDialogueResources {
             String id = readString(entry, "id");
             Set<VillagerProfession> professions = readProfessions(location, context, entry, defaultProfessions);
             Set<DialogueDisposition> dispositions = readEnumSet(entry, "dispositions", DialogueDisposition.class);
+            Set<AllegianceState> villageAllegiances = EnumSet.noneOf(AllegianceState.class);
+            villageAllegiances.addAll(readEnumSet(entry, "village_allegiance", AllegianceState.class));
+            villageAllegiances.addAll(readEnumSet(entry, "village_allegiances", AllegianceState.class));
             int weight = Math.max(1, readInt(entry, "weight", 10));
             boolean showForAdults = readBoolean(entry, "show_for_adults", true);
             boolean showForBabies = readBoolean(entry, "show_for_babies", professions.isEmpty());
@@ -1091,6 +1117,10 @@ public final class VillagerDialogueResources {
                     professions,
                     dispositions,
                     VillagerEquipmentCondition.read(entry),
+                    VillagerReputationCondition.read(entry),
+                    readBoolean(entry, "requires_ominous_banner"),
+                    VillagerPlayerItemCondition.read(entry),
+                    Set.copyOf(villageAllegiances),
                     weight,
                     firstConversationOnly,
                     firstVillageInteractionOnly
@@ -1672,11 +1702,16 @@ public final class VillagerDialogueResources {
             Set<VillagerProfession> professions,
             Set<DialogueDisposition> dispositions,
             VillagerEquipmentCondition equipmentCondition,
+            VillagerReputationCondition reputationCondition,
+            boolean requiresOminousBanner,
+            VillagerPlayerItemCondition playerItemCondition,
+            Set<AllegianceState> villageAllegiances,
             int weight,
             boolean firstConversationOnly,
             boolean firstVillageInteractionOnly) {
-        private String selectText(RandomSource random) {
-            return this.lines.get(random.nextInt(this.lines.size()));
+        private String selectText(DialogueContext context) {
+            String text = this.lines.get(context.random().nextInt(this.lines.size()));
+            return resolveTemplate(text, this.playerItemCondition.replacements(context.player()));
         }
 
         private boolean matches(DialogueContext context, DialogueDisposition disposition) {
@@ -1693,6 +1728,21 @@ public final class VillagerDialogueResources {
             if (!this.equipmentCondition.matches(context.villager())) {
                 return false;
             }
+            if (!this.reputationCondition.matches(context.reputation(), context.reputationLevel())) {
+                return false;
+            }
+            if (this.requiresOminousBanner && !OminousBannerRecognition.isDisplaying(context.player())) {
+                return false;
+            }
+            if (!this.playerItemCondition.matches(context.player())) {
+                return false;
+            }
+            AllegianceState allegiance = VillageAllegianceApi.get(context.villager())
+                    .map(data -> data.state())
+                    .orElse(AllegianceState.UNKNOWN);
+            if (!this.villageAllegiances.isEmpty() && !this.villageAllegiances.contains(allegiance)) {
+                return false;
+            }
             if (this.firstConversationOnly && (!context.firstConversation() || context.hasKnownLastSeenDay())) {
                 return false;
             }
@@ -1704,6 +1754,10 @@ public final class VillagerDialogueResources {
 
         private boolean firstInteractionSpecific() {
             return this.firstConversationOnly || this.firstVillageInteractionOnly;
+        }
+
+        private boolean playerItemSpecific() {
+            return this.requiresOminousBanner || !this.playerItemCondition.isEmpty();
         }
     }
 

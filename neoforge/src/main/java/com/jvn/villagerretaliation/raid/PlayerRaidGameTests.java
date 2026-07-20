@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.raid;
 
+import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
 import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
@@ -8,13 +9,18 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.item.BannerHelmetData;
+import com.jvn.villagerretaliation.item.OminousBannerRecognition;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.village.VillagerRaidMemorySavedData;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -23,9 +29,14 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.DyeColor;
+import net.minecraft.world.entity.raid.Raid;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -37,6 +48,48 @@ public final class PlayerRaidGameTests {
     private static final String EMPTY_TEMPLATE = "empty";
 
     private PlayerRaidGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void ominousBannerRecognitionCoversWornBannersAndHeldShields(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        ItemStack ominousBanner = Raid.getLeaderBannerInstance(
+                helper.getLevel().registryAccess().lookupOrThrow(Registries.BANNER_PATTERN));
+
+        player.setItemSlot(EquipmentSlot.HEAD, new ItemStack(Items.WHITE_BANNER));
+        helper.assertTrue(!OminousBannerRecognition.isDisplaying(player),
+                "an ordinary white banner must not be treated as ominous");
+
+        player.setItemSlot(EquipmentSlot.HEAD, ominousBanner.copy());
+        helper.assertTrue(OminousBannerRecognition.isDisplaying(player),
+                "the vanilla ominous banner should be recognized in the head slot");
+
+        ItemStack helmet = new ItemStack(Items.IRON_HELMET);
+        BannerHelmetData.attach(helmet, ominousBanner, helper.getLevel().registryAccess());
+        player.setItemSlot(EquipmentSlot.HEAD, helmet);
+        helper.assertTrue(OminousBannerRecognition.isDisplaying(player),
+                "the ominous banner should be recognized when attached to a worn helmet");
+
+        player.setItemSlot(EquipmentSlot.HEAD, ItemStack.EMPTY);
+        ItemStack ominousShield = new ItemStack(Items.SHIELD);
+        ominousShield.set(DataComponents.BANNER_PATTERNS, ominousBanner.get(DataComponents.BANNER_PATTERNS));
+        ominousShield.set(DataComponents.BASE_COLOR, DyeColor.WHITE);
+        player.setItemSlot(EquipmentSlot.MAINHAND, ominousShield.copy());
+        helper.assertTrue(OminousBannerRecognition.isDisplaying(player),
+                "an ominous-pattern shield should be recognized in the main hand");
+
+        player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        player.setItemSlot(EquipmentSlot.OFFHAND, ominousShield);
+        helper.assertTrue(OminousBannerRecognition.isDisplaying(player),
+                "an ominous-pattern shield should be recognized in the off hand");
+
+        var advancement = helper.getLevel().getServer().getAdvancements().get(
+                VillagerRetaliation.id("reputation/the_mark_you_chose"));
+        helper.assertTrue(advancement != null, "the ominous conversation advancement should be loaded");
+        VillagerReputationAdvancements.onVillagerConversationStarted(player);
+        helper.assertTrue(player.getAdvancements().getOrStartProgress(advancement).isDone(),
+                "starting a conversation while displaying the ominous shield should award the advancement");
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
