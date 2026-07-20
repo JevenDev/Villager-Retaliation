@@ -96,16 +96,46 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/icons/interaction_container_option_active_icon");
     public static final ResourceLocation INTERACTION_CONTAINER_OPTION_SCROLL_DOWN_ICON_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_container_option_scroll_down_icon");
-    public static final ResourceLocation CLIPBOARD_WORKFORCE_BASE_TEXTURE =
-            texture("gui/clipboard_workforce/clipboard_base");
-    public static final ResourceLocation CLIPBOARD_WORKFORCE_PAPER_TEXTURE =
-            texture("gui/clipboard_workforce/clipboard_paper");
-    public static final ResourceLocation CLIPBOARD_WORKFORCE_TAB_1_TEXTURE =
-            texture("gui/clipboard_workforce/clipboard_tab_1");
-    public static final ResourceLocation CLIPBOARD_WORKFORCE_TAB_2_TEXTURE =
-            texture("gui/clipboard_workforce/clipboard_tab_2");
-    public static final ResourceLocation CLIPBOARD_WORKFORCE_TAB_3_TEXTURE =
-            texture("gui/clipboard_workforce/clipboard_tab_3");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_SECOND_PAGE_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_second_page");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_MAIN_PAGE_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_main_page");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_TAB_1_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_tab_1");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_TAB_2_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_tab_2");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_TAB_3_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_tab_3");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_TAB_1_HIGHLIGHT_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_tab_1_highlight");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_TAB_2_HIGHLIGHT_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_tab_2_highlight");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_TAB_3_HIGHLIGHT_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_tab_3_highlight");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_HOME_TAB_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_home_tab");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_HOME_TAB_HIGHLIGHT_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_home_tab_highlight");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_SCROLL_DOWN_TAB_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_scroll_down_tab");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_SCROLL_UP_TAB_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_scroll_up_tab");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_LEFT_TAB_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_left_tab");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_LEFT_TAB_HIGHLIGHT_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_left_tab_highlight");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_RIGHT_TAB_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_right_tab");
+    public static final ResourceLocation CLIPBOARD_CONTAINER_RIGHT_TAB_HIGHLIGHT_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_container_right_tab_highlight");
+    public static final ResourceLocation CLIPBOARD_DIVIDER_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_divider");
+    public static final ResourceLocation CLIPBOARD_JOBS_ICONS_LEFT_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_jobs_icons_left");
+    public static final ResourceLocation CLIPBOARD_JOBS_ICONS_RIGHT_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_jobs_icons_right");
     public static final ResourceLocation TRADE_REROLL_BUTTON_TEXTURE =
             texture("gui/trade/reroll_button");
     public static final ResourceLocation TRADE_REROLL_BUTTON_HIGHLIGHTED_TEXTURE =

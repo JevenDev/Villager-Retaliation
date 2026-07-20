@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.client.inventory;
 
+import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WarningSummary;
@@ -10,6 +12,7 @@ import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import net.minecraft.Util;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -17,14 +20,85 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
 public final class ClipboardWorkforceScreen extends Screen {
-    private static final int TEXTURE_WIDTH = 180;
-    private static final int TEXTURE_HEIGHT = 198;
+    private static final float CLIPBOARD_ANIMATION_DURATION_MILLIS = 280.0F;
+    private static final float SCROLL_TAB_ANIMATION_DURATION_MILLIS = 180.0F;
+    private static final int SCROLL_TAB_START_INSET = 15;
+    private static final int TEXTURE_WIDTH = 146;
+    private static final int TEXTURE_HEIGHT = 196;
+    private static final int HOME_TAB_LEFT = 3;
+    private static final int HOME_TAB_TOP = 2;
+    private static final int HOME_TAB_WIDTH = 42;
+    private static final int HOME_TAB_HEIGHT = 45;
+    private static final int SCROLL_TAB_WIDTH = 37;
+    private static final int SCROLL_TAB_HEIGHT = 30;
+    private static final int SCROLL_DOWN_TAB_LEFT = (TEXTURE_WIDTH - SCROLL_TAB_WIDTH) / 2;
+    private static final int SCROLL_DOWN_TAB_TOP = TEXTURE_HEIGHT - 22;
+    private static final int SCROLL_UP_TAB_LEFT = TEXTURE_WIDTH - 30 - SCROLL_TAB_WIDTH;
+    private static final int SCROLL_UP_TAB_TOP = 29 - SCROLL_TAB_HEIGHT;
+    private static final int PAGE_SIDE_TAB_WIDTH = 42;
+    private static final int PAGE_SIDE_TAB_HEIGHT = 34;
+    private static final int PAGE_SIDE_TAB_TOP = TEXTURE_HEIGHT - 53;
+    private static final int LEFT_PAGE_TAB_LEFT = 22 - PAGE_SIDE_TAB_WIDTH;
+    private static final int RIGHT_PAGE_TAB_LEFT = TEXTURE_WIDTH - 22;
+    private static final int WORKFORCE_TITLE_TOP = 34;
+    private static final int DIVIDER_WIDTH = 119;
+    private static final int DIVIDER_HEIGHT = 4;
+    private static final int DIVIDER_LINE_OFFSET = 1;
+    private static final int TEXT_PIXEL_HEIGHT = 7;
+    private static final int GLOBAL_TEXT_GAP = 4;
+    private static final int SUMMARY_LEFT = (TEXTURE_WIDTH - DIVIDER_WIDTH) / 2 + 2;
+    private static final int SUMMARY_RIGHT = (TEXTURE_WIDTH - DIVIDER_WIDTH) / 2 + DIVIDER_WIDTH;
+    private static final int SUMMARY_ROW_STEP = TEXT_PIXEL_HEIGHT + GLOBAL_TEXT_GAP;
+    private static final int JOBS_ICON_WIDTH = 24;
+    private static final int JOBS_ICON_HEIGHT = 12;
+    private static final int JOBS_ICON_BASELINE_ROW = 9;
+    private static final int JOBS_LEFT_ICON_RIGHTMOST_PIXEL = 22;
+    private static final int JOBS_RIGHT_ICON_LEFTMOST_PIXEL = 2;
+    private static final int JOBS_ICON_TEXT_GAP = 3;
+    private static final int TEXT_CONTENT_TOP = 34;
+    private static final int TEXT_CONTENT_BOTTOM = TEXTURE_HEIGHT - 15;
+    private static final int TITLE_DIVIDER_TOP = WORKFORCE_TITLE_TOP
+            + TEXT_PIXEL_HEIGHT
+            + GLOBAL_TEXT_GAP
+            - DIVIDER_LINE_OFFSET;
+    private static final int SUMMARY_TOP = TITLE_DIVIDER_TOP
+            + DIVIDER_LINE_OFFSET
+            + 1
+            + GLOBAL_TEXT_GAP;
+    private static final int WARNINGS_TOP = SUMMARY_TOP + SUMMARY_ROW_STEP * 2;
+    private static final int JOBS_DIVIDER_TOP = WARNINGS_TOP
+            + TEXT_PIXEL_HEIGHT
+            + GLOBAL_TEXT_GAP
+            - DIVIDER_LINE_OFFSET;
+    private static final int JOBS_TOP = JOBS_DIVIDER_TOP
+            + DIVIDER_LINE_OFFSET
+            + 1
+            + GLOBAL_TEXT_GAP;
+    private static final int JOB_LIST_DIVIDER_TOP = JOBS_TOP
+            + TEXT_PIXEL_HEIGHT
+            + GLOBAL_TEXT_GAP
+            - DIVIDER_LINE_OFFSET;
+    private static final int JOB_DESCRIPTION_TOP = JOB_LIST_DIVIDER_TOP
+            + DIVIDER_LINE_OFFSET
+            + 1
+            + GLOBAL_TEXT_GAP;
+    private static final int CONTAINER_TAB_RIGHT = 25;
+    private static final int CONTAINER_TAB_1_WIDTH = 36;
+    private static final int CONTAINER_TAB_1_HEIGHT = 46;
+    private static final int CONTAINER_TAB_1_TOP = 31;
+    private static final int CONTAINER_TAB_2_WIDTH = 33;
+    private static final int CONTAINER_TAB_2_HEIGHT = 43;
+    private static final int CONTAINER_TAB_2_TOP = 54;
+    private static final int CONTAINER_TAB_3_WIDTH = 31;
+    private static final int CONTAINER_TAB_3_HEIGHT = 32;
+    private static final int CONTAINER_TAB_3_TOP = 89;
     private static final int TAB_WIDTH = 27;
     private static final int TAB_HEIGHT = 24;
     private static final int TAB_RIGHT = 33;
@@ -88,6 +162,21 @@ public final class ClipboardWorkforceScreen extends Screen {
     private boolean showOverviewSelection;
     private int overviewPage;
     private int workerScroll;
+    private int jobScroll;
+    private boolean closingWithAnimation;
+    private boolean openedSoundPlayed;
+    private long animationStartMillis = -1L;
+    private AlphaMask mainPageHoverMask = AlphaMask.empty(TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    private AlphaMask homeTabHoverMask = AlphaMask.full(HOME_TAB_WIDTH, HOME_TAB_HEIGHT);
+    private AlphaMask containerTab1HoverMask = AlphaMask.full(CONTAINER_TAB_1_WIDTH, CONTAINER_TAB_1_HEIGHT);
+    private AlphaMask containerTab2HoverMask = AlphaMask.full(CONTAINER_TAB_2_WIDTH, CONTAINER_TAB_2_HEIGHT);
+    private AlphaMask containerTab3HoverMask = AlphaMask.full(CONTAINER_TAB_3_WIDTH, CONTAINER_TAB_3_HEIGHT);
+    private AlphaMask leftPageTabHoverMask = AlphaMask.full(PAGE_SIDE_TAB_WIDTH, PAGE_SIDE_TAB_HEIGHT);
+    private AlphaMask rightPageTabHoverMask = AlphaMask.full(PAGE_SIDE_TAB_WIDTH, PAGE_SIDE_TAB_HEIGHT);
+    private AlphaMask scrollDownTabMask = AlphaMask.full(SCROLL_TAB_WIDTH, SCROLL_TAB_HEIGHT);
+    private AlphaMask scrollUpTabMask = AlphaMask.full(SCROLL_TAB_WIDTH, SCROLL_TAB_HEIGHT);
+    private final TabSlideAnimation scrollDownTabAnimation = new TabSlideAnimation();
+    private final TabSlideAnimation scrollUpTabAnimation = new TabSlideAnimation();
 
     public ClipboardWorkforceScreen(ClipboardWorkforceSnapshot snapshot) {
         super(Component.translatable("villagerretaliation.gui.clipboard_workforce.title"));
@@ -95,14 +184,32 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        if (!isJobSitePage()) {
-            renderBackground(graphics, mouseX, mouseY, partialTick);
+    protected void init() {
+        this.closingWithAnimation = false;
+        this.animationStartMillis = Util.getMillis();
+        loadHoverMasks();
+        this.scrollDownTabAnimation.reset(canScrollJobsDown());
+        this.scrollUpTabAnimation.reset(canScrollJobsUp());
+        if (!this.openedSoundPlayed) {
+            this.openedSoundPlayed = true;
+            playBookSound(0.9F);
         }
+    }
+
+    @Override
+    public void tick() {
+        if (this.closingWithAnimation && animationElapsedMillis() >= CLIPBOARD_ANIMATION_DURATION_MILLIS) {
+            Minecraft.getInstance().setScreen(null);
+        }
+    }
+
+    @Override
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        renderBackground(graphics, mouseX, mouseY, partialTick);
         this.rowActions.clear();
         float scale = panelScale();
         int left = panelLeft(scale);
-        int top = panelTop(scale);
+        int top = panelTop(scale) + slideOffsetY(scale);
         double panelMouseX = (mouseX - left) / scale;
         double panelMouseY = (mouseY - top) / scale;
 
@@ -110,21 +217,19 @@ public final class ClipboardWorkforceScreen extends Screen {
         graphics.pose().translate(left, top, 0.0F);
         graphics.pose().scale(scale, scale, 1.0F);
         renderClipboard(graphics, panelMouseX, panelMouseY);
-        switch (this.page) {
-            case OVERVIEW -> renderOverview(graphics, panelMouseX, panelMouseY);
-            case JOB -> renderJobPage(graphics, panelMouseX, panelMouseY);
-            case JOB_SITE -> renderJobSitePage(graphics, panelMouseX, panelMouseY);
-            case WARNINGS -> renderWarningsPage(graphics, panelMouseX, panelMouseY);
-            case STORAGE -> renderStoragePage(graphics, panelMouseX, panelMouseY);
-            case PAYMENT -> renderPaymentPage(graphics, panelMouseX, panelMouseY);
-        }
         graphics.pose().popPose();
-        renderHoveredTooltip(graphics, mouseX, mouseY, panelMouseX, panelMouseY);
+        renderScrollTabTooltip(graphics, mouseX, mouseY, panelMouseX, panelMouseY);
     }
 
-    private static void renderClipboard(GuiGraphics graphics, double mouseX, double mouseY) {
+    private void renderClipboard(GuiGraphics graphics, double mouseX, double mouseY) {
+        int hoveredTab = hoveredContainerTab(mouseX, mouseY);
+        syncScrollTabAnimations();
+        float scrollDownVisibility = this.scrollDownTabAnimation.visibility();
+        float scrollUpVisibility = this.scrollUpTabAnimation.visibility();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         graphics.blit(
-                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_BASE_TEXTURE,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_TEXTURE,
                 0,
                 0,
                 0.0F,
@@ -133,29 +238,8 @@ public final class ClipboardWorkforceScreen extends Screen {
                 TEXTURE_HEIGHT,
                 TEXTURE_WIDTH,
                 TEXTURE_HEIGHT);
-        renderClipboardTab(
-                graphics,
-                mouseX,
-                mouseY,
-                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_1_TEXTURE,
-                TAB_1_TOP,
-                ClipboardStorageOutlineRenderer.nearbyWorkAreaPreviewsEnabled());
-        renderClipboardTab(
-                graphics,
-                mouseX,
-                mouseY,
-                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_2_TEXTURE,
-                TAB_2_TOP,
-                ClipboardStorageOutlineRenderer.nearbyStoragePreviewsEnabled());
-        renderClipboardTab(
-                graphics,
-                mouseX,
-                mouseY,
-                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_TAB_3_TEXTURE,
-                TAB_3_TOP,
-                ClipboardStorageOutlineRenderer.nearbyPaymentPreviewsEnabled());
         graphics.blit(
-                VillagerRetaliationClientAssets.CLIPBOARD_WORKFORCE_PAPER_TEXTURE,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_SECOND_PAGE_TEXTURE,
                 0,
                 0,
                 0.0F,
@@ -164,6 +248,449 @@ public final class ClipboardWorkforceScreen extends Screen {
                 TEXTURE_HEIGHT,
                 TEXTURE_WIDTH,
                 TEXTURE_HEIGHT);
+        graphics.blit(
+                hoveredTab == 4
+                        ? VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_HOME_TAB_HIGHLIGHT_TEXTURE
+                        : VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_HOME_TAB_TEXTURE,
+                HOME_TAB_LEFT,
+                HOME_TAB_TOP,
+                0.0F,
+                0.0F,
+                HOME_TAB_WIDTH,
+                HOME_TAB_HEIGHT,
+                HOME_TAB_WIDTH,
+                HOME_TAB_HEIGHT);
+        renderNumberedContainerTabs(graphics, hoveredTab);
+        if (scrollDownVisibility > 0.0F) {
+            graphics.blit(
+                    VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_SCROLL_DOWN_TAB_TEXTURE,
+                    SCROLL_DOWN_TAB_LEFT,
+                    scrollDownTabTop(scrollDownVisibility),
+                    0.0F,
+                    0.0F,
+                    SCROLL_TAB_WIDTH,
+                    SCROLL_TAB_HEIGHT,
+                    SCROLL_TAB_WIDTH,
+                    SCROLL_TAB_HEIGHT);
+        }
+        if (scrollUpVisibility > 0.0F) {
+            graphics.blit(
+                    VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_SCROLL_UP_TAB_TEXTURE,
+                    SCROLL_UP_TAB_LEFT,
+                    scrollUpTabTop(scrollUpVisibility),
+                    0.0F,
+                    0.0F,
+                    SCROLL_TAB_WIDTH,
+                    SCROLL_TAB_HEIGHT,
+                    SCROLL_TAB_WIDTH,
+                    SCROLL_TAB_HEIGHT);
+        }
+        graphics.blit(
+                hoveredTab == 5
+                        ? VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_LEFT_TAB_HIGHLIGHT_TEXTURE
+                        : VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_LEFT_TAB_TEXTURE,
+                LEFT_PAGE_TAB_LEFT,
+                PAGE_SIDE_TAB_TOP,
+                0.0F,
+                0.0F,
+                PAGE_SIDE_TAB_WIDTH,
+                PAGE_SIDE_TAB_HEIGHT,
+                PAGE_SIDE_TAB_WIDTH,
+                PAGE_SIDE_TAB_HEIGHT);
+        graphics.blit(
+                hoveredTab == 6
+                        ? VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_RIGHT_TAB_HIGHLIGHT_TEXTURE
+                        : VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_RIGHT_TAB_TEXTURE,
+                RIGHT_PAGE_TAB_LEFT,
+                PAGE_SIDE_TAB_TOP,
+                0.0F,
+                0.0F,
+                PAGE_SIDE_TAB_WIDTH,
+                PAGE_SIDE_TAB_HEIGHT,
+                PAGE_SIDE_TAB_WIDTH,
+                PAGE_SIDE_TAB_HEIGHT);
+        graphics.blit(
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_MAIN_PAGE_TEXTURE,
+                0,
+                0,
+                0.0F,
+                0.0F,
+                TEXTURE_WIDTH,
+                TEXTURE_HEIGHT,
+                TEXTURE_WIDTH,
+                TEXTURE_HEIGHT);
+        renderClipboardHeading(graphics);
+        RenderSystem.disableBlend();
+    }
+
+    private void renderScrollTabTooltip(
+            GuiGraphics graphics,
+            int mouseX,
+            int mouseY,
+            double panelMouseX,
+            double panelMouseY) {
+        if (this.closingWithAnimation) {
+            return;
+        }
+        float scrollDownVisibility = this.scrollDownTabAnimation.visibility();
+        if (canScrollJobsDown()
+                && scrollDownVisibility > 0.0F
+                && isExposedTabPixel(
+                        this.scrollDownTabMask,
+                        panelMouseX,
+                        panelMouseY,
+                        SCROLL_DOWN_TAB_LEFT,
+                        scrollDownTabTop(scrollDownVisibility))) {
+            graphics.renderComponentTooltip(
+                    this.font,
+                    List.of(Component.translatable(
+                            "villagerretaliation.gui.clipboard_workforce.scroll_down.tooltip")),
+                    mouseX,
+                    mouseY);
+            return;
+        }
+
+        float scrollUpVisibility = this.scrollUpTabAnimation.visibility();
+        if (canScrollJobsUp()
+                && scrollUpVisibility > 0.0F
+                && isExposedTabPixel(
+                        this.scrollUpTabMask,
+                        panelMouseX,
+                        panelMouseY,
+                        SCROLL_UP_TAB_LEFT,
+                        scrollUpTabTop(scrollUpVisibility))) {
+            graphics.renderComponentTooltip(
+                    this.font,
+                    List.of(Component.translatable(
+                            "villagerretaliation.gui.clipboard_workforce.scroll_up.tooltip")),
+                    mouseX,
+                    mouseY);
+        }
+    }
+
+    private void renderClipboardHeading(GuiGraphics graphics) {
+        Component title = Component.translatable("villagerretaliation.gui.clipboard_workforce.title");
+        int titleLeft = (TEXTURE_WIDTH - this.font.width(title)) / 2;
+        graphics.drawString(this.font, title, titleLeft, WORKFORCE_TITLE_TOP, TEXT, false);
+        renderCenteredDivider(graphics, TITLE_DIVIDER_TOP);
+        renderWorkforceSummary(graphics, SUMMARY_TOP);
+    }
+
+    private void renderWorkforceSummary(GuiGraphics graphics, int top) {
+        graphics.drawString(
+                this.font,
+                Component.translatable("villagerretaliation.gui.clipboard_workforce.summary.hired", this.snapshot.totalHired()),
+                SUMMARY_LEFT,
+                top,
+                TEXT,
+                false);
+
+        int secondRowTop = top + SUMMARY_ROW_STEP;
+        graphics.drawString(
+                this.font,
+                Component.translatable("villagerretaliation.gui.clipboard_workforce.working", this.snapshot.workingCount()),
+                SUMMARY_LEFT,
+                secondRowTop,
+                TEXT,
+                false);
+        Component idle = Component.translatable(
+                "villagerretaliation.gui.clipboard_workforce.idle", this.snapshot.idleCount());
+        graphics.drawString(
+                this.font,
+                idle,
+                SUMMARY_RIGHT - this.font.width(idle),
+                secondRowTop,
+                TEXT,
+                false);
+
+        graphics.drawString(
+                this.font,
+                Component.translatable(
+                        "villagerretaliation.gui.clipboard_workforce.summary.warnings",
+                        this.snapshot.warningCount()),
+                SUMMARY_LEFT,
+                WARNINGS_TOP,
+                WARNING,
+                false);
+        renderCenteredDivider(graphics, JOBS_DIVIDER_TOP);
+        renderJobsHeading(graphics, JOBS_TOP);
+        renderCenteredDivider(graphics, JOB_LIST_DIVIDER_TOP);
+        renderJobDescription(graphics);
+        renderJobList(graphics, jobListTop());
+    }
+
+    private void renderJobsHeading(GuiGraphics graphics, int top) {
+        Component jobs = Component.translatable("villagerretaliation.gui.clipboard_workforce.jobs");
+        int textWidth = this.font.width(jobs);
+        int textLeft = (TEXTURE_WIDTH - textWidth) / 2;
+        int textRight = textLeft + textWidth;
+        int iconTop = top + TEXT_PIXEL_HEIGHT - 1 - JOBS_ICON_BASELINE_ROW;
+        int leftIconLeft = textLeft
+                - JOBS_ICON_TEXT_GAP
+                - JOBS_LEFT_ICON_RIGHTMOST_PIXEL
+                - 1;
+        int rightIconLeft = textRight
+                + JOBS_ICON_TEXT_GAP
+                - JOBS_RIGHT_ICON_LEFTMOST_PIXEL;
+
+        graphics.blit(
+                VillagerRetaliationClientAssets.CLIPBOARD_JOBS_ICONS_LEFT_TEXTURE,
+                leftIconLeft,
+                iconTop,
+                0.0F,
+                0.0F,
+                JOBS_ICON_WIDTH,
+                JOBS_ICON_HEIGHT,
+                JOBS_ICON_WIDTH,
+                JOBS_ICON_HEIGHT);
+        graphics.drawString(this.font, jobs, textLeft, top, TEXT, false);
+        graphics.blit(
+                VillagerRetaliationClientAssets.CLIPBOARD_JOBS_ICONS_RIGHT_TEXTURE,
+                rightIconLeft,
+                iconTop,
+                0.0F,
+                0.0F,
+                JOBS_ICON_WIDTH,
+                JOBS_ICON_HEIGHT,
+                JOBS_ICON_WIDTH,
+                JOBS_ICON_HEIGHT);
+    }
+
+    private void renderJobList(GuiGraphics graphics, int top) {
+        List<JobListRow> rows = sortedJobRows();
+        int listTop = Math.max(TEXT_CONTENT_TOP, top);
+        int visibleRows = visibleJobRows(listTop);
+        int maxScroll = Math.max(0, rows.size() - visibleRows);
+        this.jobScroll = Mth.clamp(this.jobScroll, 0, maxScroll);
+        int end = Math.min(rows.size(), this.jobScroll + visibleRows);
+        int rowTop = listTop;
+        for (int index = this.jobScroll; index < end; index++) {
+            JobListRow row = rows.get(index);
+            int color = row.count() > 0 ? TEXT : MUTED;
+            graphics.drawString(this.font, row.label(), SUMMARY_LEFT, rowTop, color, false);
+            String count = Integer.toString(row.count());
+            graphics.drawString(
+                    this.font,
+                    count,
+                    SUMMARY_RIGHT - this.font.width(count),
+                    rowTop,
+                    color,
+                    false);
+            rowTop += SUMMARY_ROW_STEP;
+        }
+    }
+
+    private void renderJobDescription(GuiGraphics graphics) {
+        int lineTop = JOB_DESCRIPTION_TOP;
+        for (net.minecraft.util.FormattedCharSequence line : jobDescriptionLines()) {
+            graphics.drawString(this.font, line, SUMMARY_LEFT, lineTop, TEXT, false);
+            lineTop += this.font.lineHeight;
+        }
+    }
+
+    private List<net.minecraft.util.FormattedCharSequence> jobDescriptionLines() {
+        return this.font.split(
+                Component.translatable("villagerretaliation.gui.clipboard_workforce.jobs.description"),
+                SUMMARY_RIGHT - SUMMARY_LEFT);
+    }
+
+    private int jobListTop() {
+        int lineCount = Math.max(1, jobDescriptionLines().size());
+        int lastLineTop = JOB_DESCRIPTION_TOP + (lineCount - 1) * this.font.lineHeight;
+        return lastLineTop + TEXT_PIXEL_HEIGHT + GLOBAL_TEXT_GAP;
+    }
+
+    private List<JobListRow> sortedJobRows() {
+        List<JobListRow> rows = new ArrayList<>();
+        for (HiredVillagerRole role : HiredVillagerRole.values()) {
+            rows.add(new JobListRow(roleName(role), jobCount(role)));
+        }
+        rows.sort(Comparator.comparingInt(JobListRow::count)
+                .reversed()
+                .thenComparing(row -> row.label().getString(), String.CASE_INSENSITIVE_ORDER));
+        return rows;
+    }
+
+    private static int visibleJobRows(int top) {
+        int availableHeight = TEXT_CONTENT_BOTTOM - top;
+        if (availableHeight < TEXT_PIXEL_HEIGHT) {
+            return 0;
+        }
+        return 1 + (availableHeight - TEXT_PIXEL_HEIGHT) / SUMMARY_ROW_STEP;
+    }
+
+    private int maxJobScroll() {
+        return Math.max(0, sortedJobRows().size() - visibleJobRows(jobListTop()));
+    }
+
+    private boolean canScrollJobsDown() {
+        return this.jobScroll < maxJobScroll();
+    }
+
+    private boolean canScrollJobsUp() {
+        return this.jobScroll > 0 && maxJobScroll() > 0;
+    }
+
+    private void scrollJobs(int direction) {
+        this.jobScroll = Mth.clamp(this.jobScroll + direction, 0, maxJobScroll());
+    }
+
+    private void syncScrollTabAnimations() {
+        this.scrollDownTabAnimation.setVisible(canScrollJobsDown());
+        this.scrollUpTabAnimation.setVisible(canScrollJobsUp());
+    }
+
+    private static int scrollDownTabTop(float visibility) {
+        return Math.round(Mth.lerp(
+                visibility,
+                SCROLL_DOWN_TAB_TOP - SCROLL_TAB_START_INSET,
+                SCROLL_DOWN_TAB_TOP));
+    }
+
+    private static int scrollUpTabTop(float visibility) {
+        return Math.round(Mth.lerp(
+                visibility,
+                SCROLL_UP_TAB_TOP + SCROLL_TAB_START_INSET,
+                SCROLL_UP_TAB_TOP));
+    }
+
+    private static void renderCenteredDivider(GuiGraphics graphics, int top) {
+        int left = (TEXTURE_WIDTH - DIVIDER_WIDTH) / 2;
+        graphics.blit(
+                VillagerRetaliationClientAssets.CLIPBOARD_DIVIDER_TEXTURE,
+                left,
+                top,
+                0.0F,
+                0.0F,
+                DIVIDER_WIDTH,
+                DIVIDER_HEIGHT,
+                DIVIDER_WIDTH,
+                DIVIDER_HEIGHT);
+    }
+
+    private static void renderContainerTab(
+            GuiGraphics graphics,
+            ResourceLocation texture,
+            int width,
+            int height,
+            int top) {
+        int left = CONTAINER_TAB_RIGHT - width + 1;
+        graphics.blit(texture, left, top, 0.0F, 0.0F, width, height, width, height);
+    }
+
+    private static void renderNumberedContainerTabs(GuiGraphics graphics, int hoveredTab) {
+        if (hoveredTab != 3) {
+            renderContainerTab(
+                    graphics,
+                    VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_TAB_3_TEXTURE,
+                    CONTAINER_TAB_3_WIDTH,
+                    CONTAINER_TAB_3_HEIGHT,
+                    CONTAINER_TAB_3_TOP);
+        }
+        if (hoveredTab != 2) {
+            renderContainerTab(
+                    graphics,
+                    VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_TAB_2_TEXTURE,
+                    CONTAINER_TAB_2_WIDTH,
+                    CONTAINER_TAB_2_HEIGHT,
+                    CONTAINER_TAB_2_TOP);
+        }
+        if (hoveredTab != 1) {
+            renderContainerTab(
+                    graphics,
+                    VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_TAB_1_TEXTURE,
+                    CONTAINER_TAB_1_WIDTH,
+                    CONTAINER_TAB_1_HEIGHT,
+                    CONTAINER_TAB_1_TOP);
+        }
+
+        switch (hoveredTab) {
+            case 1 -> renderContainerTab(
+                    graphics,
+                    VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_TAB_1_HIGHLIGHT_TEXTURE,
+                    CONTAINER_TAB_1_WIDTH,
+                    CONTAINER_TAB_1_HEIGHT,
+                    CONTAINER_TAB_1_TOP);
+            case 2 -> renderContainerTab(
+                    graphics,
+                    VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_TAB_2_HIGHLIGHT_TEXTURE,
+                    CONTAINER_TAB_2_WIDTH,
+                    CONTAINER_TAB_2_HEIGHT,
+                    CONTAINER_TAB_2_TOP);
+            case 3 -> renderContainerTab(
+                    graphics,
+                    VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_TAB_3_HIGHLIGHT_TEXTURE,
+                    CONTAINER_TAB_3_WIDTH,
+                    CONTAINER_TAB_3_HEIGHT,
+                    CONTAINER_TAB_3_TOP);
+            default -> {
+            }
+        }
+    }
+
+    private int hoveredContainerTab(double mouseX, double mouseY) {
+        int clipboardX = (int) Math.floor(mouseX);
+        int clipboardY = (int) Math.floor(mouseY);
+        if (this.mainPageHoverMask.hasAlpha(clipboardX, clipboardY)) {
+            return 0;
+        }
+        if (isTabPixelHovered(
+                this.leftPageTabHoverMask,
+                mouseX,
+                mouseY,
+                LEFT_PAGE_TAB_LEFT,
+                PAGE_SIDE_TAB_TOP)) {
+            return 5;
+        }
+        if (isTabPixelHovered(
+                this.rightPageTabHoverMask,
+                mouseX,
+                mouseY,
+                RIGHT_PAGE_TAB_LEFT,
+                PAGE_SIDE_TAB_TOP)) {
+            return 6;
+        }
+        if (isTabPixelHovered(
+                this.containerTab1HoverMask,
+                mouseX,
+                mouseY,
+                CONTAINER_TAB_RIGHT - CONTAINER_TAB_1_WIDTH + 1,
+                CONTAINER_TAB_1_TOP)) {
+            return 1;
+        }
+        if (isTabPixelHovered(
+                this.containerTab2HoverMask,
+                mouseX,
+                mouseY,
+                CONTAINER_TAB_RIGHT - CONTAINER_TAB_2_WIDTH + 1,
+                CONTAINER_TAB_2_TOP)) {
+            return 2;
+        }
+        if (isTabPixelHovered(
+                this.containerTab3HoverMask,
+                mouseX,
+                mouseY,
+                CONTAINER_TAB_RIGHT - CONTAINER_TAB_3_WIDTH + 1,
+                CONTAINER_TAB_3_TOP)) {
+            return 3;
+        }
+        if (isTabPixelHovered(this.homeTabHoverMask, mouseX, mouseY, HOME_TAB_LEFT, HOME_TAB_TOP)) {
+            return 4;
+        }
+        return 0;
+    }
+
+    private static boolean isTabPixelHovered(AlphaMask mask, double mouseX, double mouseY, int left, int top) {
+        int textureX = (int) Math.floor(mouseX - left);
+        int textureY = (int) Math.floor(mouseY - top);
+        return mask.hasAlpha(textureX, textureY);
+    }
+
+    private boolean isExposedTabPixel(AlphaMask mask, double mouseX, double mouseY, int left, int top) {
+        int clipboardX = (int) Math.floor(mouseX);
+        int clipboardY = (int) Math.floor(mouseY);
+        return !this.mainPageHoverMask.hasAlpha(clipboardX, clipboardY)
+                && isTabPixelHovered(mask, mouseX, mouseY, left, top);
     }
 
     private static void renderClipboardTab(
@@ -192,61 +719,38 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            return super.mouseClicked(mouseX, mouseY, button);
-        }
-        float scale = panelScale();
-        double panelMouseX = (mouseX - panelLeft(scale)) / scale;
-        double panelMouseY = (mouseY - panelTop(scale)) / scale;
-        if (handleClipboardTabClick(panelMouseX, panelMouseY)) {
+        if (this.closingWithAnimation) {
             return true;
         }
-        for (RowAction row : this.rowActions) {
-            if (!row.contains(panelMouseX, panelMouseY)) {
-                continue;
+        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            float scale = panelScale();
+            int left = panelLeft(scale);
+            int top = panelTop(scale) + slideOffsetY(scale);
+            double panelMouseX = (mouseX - left) / scale;
+            double panelMouseY = (mouseY - top) / scale;
+            syncScrollTabAnimations();
+            float scrollDownVisibility = this.scrollDownTabAnimation.visibility();
+            float scrollUpVisibility = this.scrollUpTabAnimation.visibility();
+            if (canScrollJobsDown() && isExposedTabPixel(
+                    this.scrollDownTabMask,
+                    panelMouseX,
+                    panelMouseY,
+                    SCROLL_DOWN_TAB_LEFT,
+                    scrollDownTabTop(scrollDownVisibility))) {
+                scrollJobs(1);
+                playPageSound();
+                return true;
             }
-            switch (row.kind()) {
-                case BACK -> {
-                    playPageSound();
-                    navigateBack();
-                }
-                case PAGE_TURN -> {
-                    playPageSound();
-                    turnOverviewPage();
-                }
-                case JOB -> {
-                    playPageSound();
-                    this.showOverviewSelection = false;
-                    openJob(row.role());
-                }
-                case WARNINGS -> {
-                    playPageSound();
-                    this.showOverviewSelection = false;
-                    this.page = Page.WARNINGS;
-                    this.workerScroll = 0;
-                }
-                case STORAGE -> {
-                    playPageSound();
-                    this.showOverviewSelection = false;
-                    this.page = Page.STORAGE;
-                    this.workerScroll = 0;
-                }
-                case PAYMENT -> {
-                    playPageSound();
-                    this.showOverviewSelection = false;
-                    this.page = Page.PAYMENT;
-                    this.workerScroll = 0;
-                }
-                case WORKER -> {
-                    playPageSound();
-                    openJobSite(row.worker());
-                }
-                case JOB_SITE_ACTION -> {
-                    playPageSound();
-                    requestWorkAreaAction(row.worker(), row.workAreaAction());
-                }
+            if (canScrollJobsUp() && isExposedTabPixel(
+                    this.scrollUpTabMask,
+                    panelMouseX,
+                    panelMouseY,
+                    SCROLL_UP_TAB_LEFT,
+                    scrollUpTabTop(scrollUpVisibility))) {
+                scrollJobs(-1);
+                playPageSound();
+                return true;
             }
-            return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
     }
@@ -264,54 +768,43 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
-        if (this.page == Page.WARNINGS) {
-            int maxScroll = Math.max(0, this.snapshot.warnings().size() - visibleWarningRows());
-            this.workerScroll = Mth.clamp(this.workerScroll - (int) Math.signum(scrollY), 0, maxScroll);
-            return maxScroll > 0;
+        if (this.closingWithAnimation) {
+            return true;
         }
-        if (this.page != Page.JOB) {
-            return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+        if (scrollY != 0.0D) {
+            float scale = panelScale();
+            int left = panelLeft(scale);
+            int top = panelTop(scale) + slideOffsetY(scale);
+            double panelMouseX = (mouseX - left) / scale;
+            double panelMouseY = (mouseY - top) / scale;
+            if (panelMouseX >= SUMMARY_LEFT
+                    && panelMouseX < SUMMARY_RIGHT
+                    && panelMouseY >= Math.max(TEXT_CONTENT_TOP, JOB_DESCRIPTION_TOP)
+                    && panelMouseY < TEXT_CONTENT_BOTTOM) {
+                int maxScroll = maxJobScroll();
+                scrollJobs(-(int) Math.signum(scrollY));
+                return maxScroll > 0;
+            }
         }
-        int maxScroll = Math.max(0, workersForSelectedRole().size() - visibleWorkerRows());
-        this.workerScroll = Mth.clamp(this.workerScroll - (int) Math.signum(scrollY), 0, maxScroll);
-        return maxScroll > 0;
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        return switch (keyCode) {
-            case GLFW.GLFW_KEY_ESCAPE -> {
-                if (this.page == Page.OVERVIEW) {
-                    this.minecraft.setScreen(null);
-                } else {
-                    navigateBack();
-                }
-                yield true;
-            }
-            case GLFW.GLFW_KEY_BACKSPACE -> {
-                navigateBack();
-                yield true;
-            }
-            case GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> {
-                moveOverviewSelection(-1);
-                yield true;
-            }
-            case GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_S -> {
-                moveOverviewSelection(1);
-                yield true;
-            }
-            case GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER -> {
-                playPageSound();
-                activateOverviewSelection();
-                yield true;
-            }
-            default -> super.keyPressed(keyCode, scanCode, modifiers);
-        };
+        if (this.closingWithAnimation) {
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean isPauseScreen() {
         return false;
+    }
+
+    @Override
+    public void onClose() {
+        closeClipboard();
     }
 
     private void renderOverview(GuiGraphics graphics, double mouseX, double mouseY) {
@@ -982,7 +1475,11 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private void playPageSound() {
-        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F, 0.65F));
+        playBookSound(0.65F);
+    }
+
+    private void playBookSound(float pitch) {
+        Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F, pitch));
     }
 
     private boolean contains(double x, double y, int left, int top, int right, int bottom) {
@@ -1034,6 +1531,172 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private int panelTop(float scale) {
         return Math.round((this.height - TEXTURE_HEIGHT * scale) / 2.0F);
+    }
+
+    private int slideOffsetY(float scale) {
+        float visibility = clipboardVisibility();
+        int offscreenDistance = this.height - panelTop(scale) + 12;
+        return Math.round((1.0F - visibility) * offscreenDistance);
+    }
+
+    private float clipboardVisibility() {
+        float progress = Mth.clamp(animationElapsedMillis() / CLIPBOARD_ANIMATION_DURATION_MILLIS, 0.0F, 1.0F);
+        return this.closingWithAnimation ? 1.0F - easeInCubic(progress) : easeOutCubic(progress);
+    }
+
+    private float animationElapsedMillis() {
+        if (this.animationStartMillis < 0L) {
+            return CLIPBOARD_ANIMATION_DURATION_MILLIS;
+        }
+        return Util.getMillis() - this.animationStartMillis;
+    }
+
+    private static float easeOutCubic(float value) {
+        float inverse = 1.0F - value;
+        return 1.0F - inverse * inverse * inverse;
+    }
+
+    private static float easeInCubic(float value) {
+        return value * value * value;
+    }
+
+    private void closeClipboard() {
+        if (this.closingWithAnimation) {
+            return;
+        }
+        this.closingWithAnimation = true;
+        this.animationStartMillis = Util.getMillis();
+        playBookSound(0.72F);
+    }
+
+    private void loadHoverMasks() {
+        ResourceManager resources = Minecraft.getInstance().getResourceManager();
+        this.mainPageHoverMask = AlphaMask.load(
+                resources,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_MAIN_PAGE_TEXTURE,
+                TEXTURE_WIDTH,
+                TEXTURE_HEIGHT,
+                false);
+        this.homeTabHoverMask = AlphaMask.load(
+                resources,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_HOME_TAB_TEXTURE,
+                HOME_TAB_WIDTH,
+                HOME_TAB_HEIGHT,
+                true);
+        this.containerTab1HoverMask = AlphaMask.load(
+                resources,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_TAB_1_TEXTURE,
+                CONTAINER_TAB_1_WIDTH,
+                CONTAINER_TAB_1_HEIGHT,
+                true);
+        this.containerTab2HoverMask = AlphaMask.load(
+                resources,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_TAB_2_TEXTURE,
+                CONTAINER_TAB_2_WIDTH,
+                CONTAINER_TAB_2_HEIGHT,
+                true);
+        this.containerTab3HoverMask = AlphaMask.load(
+                resources,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_TAB_3_TEXTURE,
+                CONTAINER_TAB_3_WIDTH,
+                CONTAINER_TAB_3_HEIGHT,
+                true);
+        this.leftPageTabHoverMask = AlphaMask.load(
+                resources,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_LEFT_TAB_TEXTURE,
+                PAGE_SIDE_TAB_WIDTH,
+                PAGE_SIDE_TAB_HEIGHT,
+                true);
+        this.rightPageTabHoverMask = AlphaMask.load(
+                resources,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_RIGHT_TAB_TEXTURE,
+                PAGE_SIDE_TAB_WIDTH,
+                PAGE_SIDE_TAB_HEIGHT,
+                true);
+        this.scrollDownTabMask = AlphaMask.load(
+                resources,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_SCROLL_DOWN_TAB_TEXTURE,
+                SCROLL_TAB_WIDTH,
+                SCROLL_TAB_HEIGHT,
+                true);
+        this.scrollUpTabMask = AlphaMask.load(
+                resources,
+                VillagerRetaliationClientAssets.CLIPBOARD_CONTAINER_SCROLL_UP_TAB_TEXTURE,
+                SCROLL_TAB_WIDTH,
+                SCROLL_TAB_HEIGHT,
+                true);
+    }
+
+    private record AlphaMask(int width, int height, boolean[] pixels) {
+        private boolean hasAlpha(int x, int y) {
+            return x >= 0 && x < this.width && y >= 0 && y < this.height && this.pixels[x + y * this.width];
+        }
+
+        private static AlphaMask load(
+                ResourceManager resources,
+                ResourceLocation texture,
+                int expectedWidth,
+                int expectedHeight,
+                boolean opaqueFallback) {
+            var resource = resources.getResource(texture);
+            if (resource.isEmpty()) {
+                return opaqueFallback ? full(expectedWidth, expectedHeight) : empty(expectedWidth, expectedHeight);
+            }
+            try (var input = resource.get().open(); NativeImage image = NativeImage.read(input)) {
+                boolean[] pixels = new boolean[expectedWidth * expectedHeight];
+                int width = Math.min(expectedWidth, image.getWidth());
+                int height = Math.min(expectedHeight, image.getHeight());
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        pixels[x + y * expectedWidth] = (image.getPixelRGBA(x, y) >>> 24) != 0;
+                    }
+                }
+                return new AlphaMask(expectedWidth, expectedHeight, pixels);
+            } catch (java.io.IOException | RuntimeException exception) {
+                return opaqueFallback ? full(expectedWidth, expectedHeight) : empty(expectedWidth, expectedHeight);
+            }
+        }
+
+        private static AlphaMask full(int width, int height) {
+            boolean[] pixels = new boolean[width * height];
+            java.util.Arrays.fill(pixels, true);
+            return new AlphaMask(width, height, pixels);
+        }
+
+        private static AlphaMask empty(int width, int height) {
+            return new AlphaMask(width, height, new boolean[width * height]);
+        }
+    }
+
+    private static final class TabSlideAnimation {
+        private float startVisibility;
+        private float targetVisibility;
+        private long startMillis;
+
+        private void reset(boolean visible) {
+            this.startVisibility = 0.0F;
+            this.targetVisibility = visible ? 1.0F : 0.0F;
+            this.startMillis = Util.getMillis();
+        }
+
+        private void setVisible(boolean visible) {
+            float target = visible ? 1.0F : 0.0F;
+            if (this.targetVisibility == target) {
+                return;
+            }
+            this.startVisibility = visibility();
+            this.targetVisibility = target;
+            this.startMillis = Util.getMillis();
+        }
+
+        private float visibility() {
+            float progress = Mth.clamp(
+                    (Util.getMillis() - this.startMillis) / SCROLL_TAB_ANIMATION_DURATION_MILLIS,
+                    0.0F,
+                    1.0F);
+            float eased = progress * progress * (3.0F - 2.0F * progress);
+            return Mth.lerp(eased, this.startVisibility, this.targetVisibility);
+        }
     }
 
     private enum Page {
@@ -1114,6 +1777,9 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private record OverviewRow(RowKind kind, HiredVillagerRole role, Component label, String value, boolean muted) {
+    }
+
+    private record JobListRow(Component label, int count) {
     }
 
     private record JobSiteButton(String label, ClipboardWorkAreaActionPayload.Action action) {
