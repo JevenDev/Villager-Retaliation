@@ -110,25 +110,29 @@ public final class VillagerDialogueService {
             DialogueRequestType requestType,
             String requestedOptionId,
             List<String> recentDialogueIds) {
-        if (requestType == DialogueRequestType.STORY) {
+        boolean feared = context.reputationLevel() == VillagerReputationLevel.FEARED;
+        if (!feared && requestType == DialogueRequestType.STORY) {
             Optional<DialogueResult> storyHint = VillagerStoryHintService.select(context);
             if (storyHint.isPresent()) {
                 return storyHint.get();
             }
         }
-        Optional<DialogueResult> giftMemory = selectGiftMemoryLine(context, requestType, recentDialogueIds);
-        if (giftMemory.isPresent()) {
-            return giftMemory.get();
-        }
-        Optional<DialogueResult> containerTheftMemory = selectContainerTheftMemoryLine(context, requestType, recentDialogueIds);
-        if (containerTheftMemory.isPresent()) {
-            return containerTheftMemory.get();
+        if (!feared) {
+            Optional<DialogueResult> giftMemory = selectGiftMemoryLine(context, requestType, recentDialogueIds);
+            if (giftMemory.isPresent()) {
+                return giftMemory.get();
+            }
+            Optional<DialogueResult> containerTheftMemory = selectContainerTheftMemoryLine(context, requestType, recentDialogueIds);
+            if (containerTheftMemory.isPresent()) {
+                return containerTheftMemory.get();
+            }
         }
 
         LineCandidatePool pool = lineCandidatePool(context, requestType, requestedOptionId, recentDialogueIds);
         List<DialogueLine> candidates = pool.candidates();
         if (candidates.isEmpty()) {
-            return new DialogueResult("fallback", VillagerDialogueResources.message(context, "dialogue.fallback").orElse(""));
+            String fallbackKey = feared ? "dialogue.feared_fallback" : "dialogue.fallback";
+            return new DialogueResult("fallback", VillagerDialogueResources.message(context, fallbackKey).orElse(""));
         }
 
         int totalWeight = candidates.stream().mapToInt(VillagerDialogueService::effectiveWeight).sum();
@@ -145,17 +149,19 @@ public final class VillagerDialogueService {
     }
 
     public static String selectOpeningGreeting(DialogueContext context) {
-        Optional<String> giftMemory = selectOpeningGiftMemoryLine(context);
-        if (giftMemory.isPresent()) {
-            return giftMemory.get();
-        }
-        Optional<String> containerTheftMemory = selectOpeningContainerTheftMemoryLine(context);
-        if (containerTheftMemory.isPresent()) {
-            return containerTheftMemory.get();
-        }
-        Optional<String> longAbsence = selectOpeningLongAbsenceLine(context);
-        if (longAbsence.isPresent()) {
-            return longAbsence.get();
+        if (context.reputationLevel() != VillagerReputationLevel.FEARED) {
+            Optional<String> giftMemory = selectOpeningGiftMemoryLine(context);
+            if (giftMemory.isPresent()) {
+                return giftMemory.get();
+            }
+            Optional<String> containerTheftMemory = selectOpeningContainerTheftMemoryLine(context);
+            if (containerTheftMemory.isPresent()) {
+                return containerTheftMemory.get();
+            }
+            Optional<String> longAbsence = selectOpeningLongAbsenceLine(context);
+            if (longAbsence.isPresent()) {
+                return longAbsence.get();
+            }
         }
         DialogueDisposition disposition = moodFor(context);
         return selectConversationLine(
@@ -229,6 +235,9 @@ public final class VillagerDialogueService {
     private static int smoothedMoodRankFor(DialogueContext context) {
         DialogueDisposition baseline = dispositionFor(context.reputationLevel());
         int baselineRank = moodRank(baseline);
+        if (context.reputationLevel() == VillagerReputationLevel.FEARED) {
+            return baselineRank;
+        }
         int moodRank = baselineRank;
         int maxDrift = 1;
         if (context.hasRecentDirectHitMemory()) {
@@ -382,7 +391,9 @@ public final class VillagerDialogueService {
         List<DialogueLine> availableLines = availableLines(context);
         List<DialogueLine> matched = matchingLines(availableLines, context, requestType, requestedOptionId, disposition, recentIds);
         boolean usedNeutralFallback = false;
-        if (matched.isEmpty() && disposition != DialogueDisposition.NEUTRAL) {
+        if (matched.isEmpty()
+                && disposition != DialogueDisposition.NEUTRAL
+                && context.reputationLevel() != VillagerReputationLevel.FEARED) {
             List<DialogueLine> neutralMatches = matchingLines(
                     availableLines,
                     context,
@@ -430,9 +441,15 @@ public final class VillagerDialogueService {
             List<String> recentDialogueIds) {
         List<String> recentIds = recentDialogueIds == null ? List.of() : recentDialogueIds;
         return availableLines.stream()
+                .filter(line -> context.reputationLevel() != VillagerReputationLevel.FEARED || isFearSpecific(line))
                 .filter(line -> line.matches(context, requestType, requestedOptionId, disposition))
                 .sorted(Comparator.comparingInt(line -> line.recentlyUsed(recentIds) ? 1 : 0))
                 .toList();
+    }
+
+    private static boolean isFearSpecific(DialogueLine line) {
+        return line.dispositions().contains(DialogueDisposition.FEARFUL)
+                || line.reputationCondition().levels().contains(VillagerReputationLevel.FEARED);
     }
 
     private static List<DialogueLine> availableLines(DialogueContext context) {

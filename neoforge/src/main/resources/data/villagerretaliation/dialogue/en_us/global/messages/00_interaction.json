@@ -496,6 +496,25 @@
         "<i>They fall silent.</i>"
       ],
       "id": "global.messages.00_interaction.messages.dialogue.fallback.025"
+    },
+    {
+      "key": "dialogue.feared_fallback",
+      "lines": [
+        "<shake>Please do not hurt me.</shake> I cannot think of an answer right now.",
+        "I will answer if I can. Just <shake>keep your distance</shake>, please.",
+        "I am trying to listen, but all I can think about is getting somewhere safe.",
+        "Please. I do not know what you want me to say. Just let me leave safely.",
+        "<shake>I cannot talk normally while you are this close.</shake>",
+        "My life matters more than this conversation. Please step back.",
+        "I am afraid of what you will do if I give the wrong answer.",
+        "You have your answer: I am scared, and I want to go.",
+        "Please lower your voice. I am already afraid for my life.",
+        "I cannot help you while I am wondering whether I need to run."
+      ],
+      "dispositions": [
+        "fearful"
+      ],
+      "id": "global.messages.00_interaction.messages.dialogue.feared_fallback.026"
     }
   ]
 }
