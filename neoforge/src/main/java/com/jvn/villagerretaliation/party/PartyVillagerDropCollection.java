@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.party;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -45,6 +46,9 @@ public final class PartyVillagerDropCollection {
     }
 
     public static Boolean wantsToPickUp(ServerLevel level, Villager villager, ItemStack stack) {
+        if (VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
+            return false;
+        }
         PartyDropCollectionMode mode = mode(level, villager);
         if (mode == PartyDropCollectionMode.OFF) {
             return null;
@@ -56,6 +60,9 @@ public final class PartyVillagerDropCollection {
     }
 
     public static boolean capturePickup(ServerLevel level, Villager villager, ItemEntity itemEntity) {
+        if (VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
+            return false;
+        }
         PartyDropCollectionMode mode = mode(level, villager);
         if (mode == PartyDropCollectionMode.OFF
                 || mode == PartyDropCollectionMode.SLAIN_ENTITIES

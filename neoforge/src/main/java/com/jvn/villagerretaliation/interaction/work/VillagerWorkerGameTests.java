@@ -5257,6 +5257,47 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    public static void hiredFarmerSuppressesSeedPickupWhileThreatened(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().getRule(GameRules.RULE_MOBGRIEFING).set(true, level.getServer());
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerCombatPickup");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        helper.assertTrue(
+                HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.FARMING),
+                "farmer role should be active for the combat pickup fixture");
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putBoolean("Enabled", true);
+
+        ItemEntity seeds = new ItemEntity(
+                level,
+                villager.getX(),
+                villager.getY(),
+                villager.getZ(),
+                new ItemStack(Items.WHEAT_SEEDS, 5));
+        seeds.setNoPickUpDelay();
+        level.addFreshEntity(seeds);
+        var hostile = helper.spawn(EntityType.ZOMBIE, 4, 2, 2);
+        villager.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, hostile);
+
+        helper.assertFalse(villager.wantsToPickUp(seeds.getItem()),
+                "threatened farmer should reject seeds instead of starting item collection");
+        helper.assertFalse(HiredFarmingInventoryBridge.capturePickup(level, villager, seeds),
+                "combat should suspend the hired farming pickup route");
+        helper.assertTrue(seeds.isAlive(), "combat pickup suppression should leave the seed entity untouched");
+        helper.assertValueEqual(countInventoryItem(session.inventory(), Items.WHEAT_SEEDS), 0,
+                "combat pickup should not add seeds to the job inventory");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        hostile.discard();
+        seeds.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void builderOnlyReportsMissingStorageWhenStorageIsRequired(GameTestHelper helper) {
         HiredVillagerIndex.clearRuntimeState();
         ServerLevel level = helper.getLevel();

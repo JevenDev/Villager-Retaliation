@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.mixin;
 
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingInventoryBridge;
 import com.jvn.villagerretaliation.party.PartyVillagerDropCollection;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
@@ -20,6 +21,10 @@ public abstract class VillagerPickupMixin {
             CallbackInfoReturnable<Boolean> cir) {
         Villager villager = (Villager) (Object) this;
         if (villager.level() instanceof ServerLevel level) {
+            if (VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
+                cir.setReturnValue(false);
+                return;
+            }
             Boolean partyResult = PartyVillagerDropCollection.wantsToPickUp(level, villager, stack);
             if (partyResult != null) {
                 cir.setReturnValue(partyResult);
@@ -37,6 +42,10 @@ public abstract class VillagerPickupMixin {
             ItemEntity itemEntity,
             CallbackInfo ci) {
         Villager villager = (Villager) (Object) this;
+        if (VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
+            ci.cancel();
+            return;
+        }
         if (villager.level() instanceof ServerLevel level
                 && (PartyVillagerDropCollection.capturePickup(level, villager, itemEntity)
                 || HiredFarmingInventoryBridge.capturePickup(level, villager, itemEntity))) {
