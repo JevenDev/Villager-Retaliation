@@ -1,5 +1,10 @@
 # Changelog
 
+- Reworked hired-job qualification around two relevant skills: ordinary roles now require a cumulative total above 60, while canonical vanilla professions automatically qualify for their matching role. Courier remains universal for adults, Nitwit remains profession-restricted, and Builder remains a one-off service.
+- Added skill-based hired-work throughput. Weighted 70/30 role aptitude now scales worker cadence, block work, fishing waits, hired attack recovery, courier cargo, and facility collection trips without changing vanilla workstation processing timers.
+- Added a third Job Stats interaction view with role readiness, qualification progress, profession overrides, aptitude, work speed, transfer capacity, and contributing-skill details.
+- Successful hired work now preserves each action's practice budget while splitting it between the role's primary and support skills at 70/30.
+
 - Fixed villagers attempting to collect seeds and other unrelated item drops while fighting or fleeing; combat threat state now suspends vanilla, hired-farming, and party drop pickup so higher-priority behavior keeps control.
 
 - Fixed defending Player Raid villagers recognizing only their current player target as hostile; every participating raider player now remains an aggressor while defenders fight other party players or recruited villagers.

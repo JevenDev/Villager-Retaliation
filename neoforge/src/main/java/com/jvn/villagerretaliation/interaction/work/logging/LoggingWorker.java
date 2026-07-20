@@ -2132,7 +2132,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 origin,
                 toolId,
                 efficiencyLevel(axe),
-                context.efficiency(),
+                100,
                 () -> calculateTreeHarvestProgressGoal(level, context, origin, axe));
     }
 
@@ -2156,8 +2156,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
         if (total <= 0) {
             total = breakProgressGoal(level, origin, axe);
         }
-        float multiplier = 100.0F / Math.max(25.0F, context.efficiency());
-        return Math.clamp(Math.round(total * multiplier), 1, MAX_TREE_PROGRESS_TICKS);
+        return Math.clamp(total, 1, MAX_TREE_PROGRESS_TICKS);
     }
 
     private record PendingHarvestTargets(List<BlockPos> positions, PendingTargetKind kind) {

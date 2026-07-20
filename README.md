@@ -106,6 +106,30 @@ Without a companion mod, mounted villagers use Minecraft's native mob-jockey beh
 
 An authorized party leader or hirer can take the front seat of a saddled assigned mount. If both seats are occupied, Ride On moves the current villager driver to the rear and temporarily dismounts the former rear rider. After the player leaves, the villagers promote and remount automatically. Villager Retaliation remains responsible for assignment and access rules; Ride On remains responsible for seats, offsets, and passenger transitions.
 
+### Hired Work, Skills, and Job Stats
+
+Every hired role uses one primary skill and one support skill. An adult villager qualifies when those skills total at least 61. A matching vanilla profession automatically qualifies for its canonical role even with lower skills. Courier is available to every adult, Nitwit work is restricted to nitwits, and Builder is offered as a one-off service instead of an ordinary contract.
+
+The interaction screen cycles between **Skills**, **Profile**, and **Job Stats**. Job Stats shows each role's qualification progress and explains any profession override. Selecting a role shows its two contributing skills, weighted aptitude, work speed, and transfer capacity where applicable.
+
+Role aptitude weights the primary skill at 70% and the support skill at 30%. Aptitude produces 75%-125% skill work speed and 50%-150% transfer capacity. This changes real throughput: block work and ordinary task cadence, fishing bite waits, hired combat recovery, courier cargo, and cook, smelter, and brewer collection trips. It does not alter shared furnace, smoker, blast-furnace, or brewing-stand processing timers. Successful hired work keeps the same total practice budget while training both role skills at the same 70/30 split.
+
+| Role | Primary skill | Support skill | Automatic profession |
+| --- | --- | --- | --- |
+| Combat | Guarding | Archery | Weaponsmith |
+| Hunting | Archery | Survival | Fletcher |
+| Mining | Mining | Masonry | Toolsmith |
+| Logging | Gathering | Crafting | — |
+| Farming | Farming | Gathering | Farmer |
+| Fishing | Fishing | Survival | Fisherman |
+| Brewing | Medicine | Scholarship | Cleric |
+| Builder | Masonry | Crafting | Mason |
+| Animal Handling | Animal Handling | Farming | Shepherd, Leatherworker |
+| Cook | Cooking | Gathering | Butcher |
+| Smelter | Smithing | Mining | Armorer |
+| Courier | Gathering | Survival | Every adult |
+| Nitwit | Diplomacy | Survival | Nitwit only |
+
 ### Dialogue and Interaction
 
 Villagers can feel more like actual NPCs instead of silent trade menus.

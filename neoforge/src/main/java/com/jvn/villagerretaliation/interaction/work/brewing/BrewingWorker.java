@@ -48,6 +48,7 @@ import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
 
 public final class BrewingWorker extends AbstractBlockWorker {
+    private static final int BASE_MATERIAL_TRANSFER_ITEMS = 16;
     private static final String TARGET_ITEM_TAG = "BrewingTargetItem";
     private static final String TARGET_POTION_TAG = "BrewingTargetPotion";
     private static final String REMAINING_TAG = "BrewingRemaining";
@@ -1221,13 +1222,19 @@ public final class BrewingWorker extends AbstractBlockWorker {
         }
         faceBlock(villager, storage);
         int movedTotal = 0;
+        int remainingTripCapacity = context.transferLimit(BASE_MATERIAL_TRANSFER_ITEMS);
         for (StorageNeed need : needs) {
-            movedTotal += AssignedStorageService.transferItemsAtAssignedStorage(
+            if (remainingTripCapacity <= 0) {
+                break;
+            }
+            int moved = AssignedStorageService.transferItemsAtAssignedStorage(
                     villager,
                     storage,
                     need.predicate(),
-                    need.count(),
+                    Math.min(need.count(), remainingTripCapacity),
                     context.inventory()::insertSupplyFromStorage);
+            movedTotal += moved;
+            remainingTripCapacity -= moved;
         }
         if (movedTotal <= 0) {
             setBrewingBlocked(context, "brewing_material_inventory_full", materials.materialsSummary(context));

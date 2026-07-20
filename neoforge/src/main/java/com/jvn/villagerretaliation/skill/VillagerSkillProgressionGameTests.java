@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.skill;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributes;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.work.WorkResult;
 import java.util.List;
 import java.util.UUID;
@@ -121,6 +122,28 @@ public final class VillagerSkillProgressionGameTests {
         double largeDelivery = HiredWorkPractice.courier(32, 64.0D).stream().mapToDouble(VillagerSkillPractice::units).sum();
         if (!(twoBlocks > oneBlock && largeTree > smallTree && largeBuild > smallBuild && largeDelivery > smallDelivery)) {
             helper.fail("Successful larger work did not normalize above smaller work");
+            return;
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void hiredRolePracticeSplitsAcrossBothSkillsWithoutDuplicatingUnits(GameTestHelper helper) {
+        List<VillagerSkillPractice> split = HiredWorkSkillGrowthService.normalizeRolePractice(
+                HiredVillagerRole.MINING,
+                List.of(
+                        new VillagerSkillPractice(VillagerSkill.MINING, 0.4D, "test:mining", 42L),
+                        new VillagerSkillPractice(VillagerSkill.MASONRY, 0.6D, "test:mining", 42L)));
+        if (split.size() != 2
+                || split.get(0).skill() != VillagerSkill.MINING
+                || split.get(1).skill() != VillagerSkill.MASONRY
+                || Math.abs(split.get(0).units() - 0.7D) > 0.0001D
+                || Math.abs(split.get(1).units() - 0.3D) > 0.0001D
+                || split.get(0).repetitionKey() != 42L
+                || split.get(1).repetitionKey() != 42L
+                || !split.get(0).source().equals("test:mining")
+                || Math.abs(split.stream().mapToDouble(VillagerSkillPractice::units).sum() - 1.0D) > 0.0001D) {
+            helper.fail("Hired work did not preserve its practice budget while splitting it 70/30");
             return;
         }
         helper.succeed();

@@ -37,13 +37,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -54,7 +52,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TieredItem;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
@@ -185,7 +182,7 @@ public final class HiredVillagerWorkService {
         }
         session.worker().maintain(level, villager, session.context());
 
-        int interval = Math.max(10, VillagerRetaliationConfig.HIRED_WORK_TICK_INTERVAL.get());
+        int interval = effectiveWorkTickInterval(session.efficiency());
         if (Math.floorMod(level.getGameTime() + villager.getUUID().getLeastSignificantBits(), interval) != 0L) {
             return;
         }
@@ -203,7 +200,7 @@ public final class HiredVillagerWorkService {
                 level, villager, hirer, session.role(), session.state(), result.practice());
         if (result.completed()) {
             recordCompletedTask(session.state());
-            session.state().putLong("NextWorkGameTime", level.getGameTime() + nextTaskCooldownTicks(session.efficiency()));
+            session.state().putLong("NextWorkGameTime", level.getGameTime() + completedTaskCooldownTicks(session.efficiency()));
             HiredWorkerBrain.Snapshot snapshot = HiredWorkerBrain.snapshot(session.state(), level.getGameTime());
             maybeNotify(
                     level,
@@ -1843,11 +1840,23 @@ public final class HiredVillagerWorkService {
     }
 
     static int maxWorkRadius(ServerLevel level, Villager villager, HiredVillagerRole role, int roleScore) {
+        return maxWorkRadiusForScore(
+                role,
+                roleScore,
+                VillagerRetaliationConfig.HIRED_WORK_DEFAULT_RADIUS.get(),
+                VillagerRetaliationConfig.HIRED_WORK_MAX_RADIUS.get());
+    }
+
+    public static int maxWorkRadiusForScore(
+            HiredVillagerRole role,
+            int roleScore,
+            int configuredDefaultRadius,
+            int configuredMaxRadius) {
         if (role == HiredVillagerRole.HUNTING) {
             return HUNTING_WORK_RADIUS;
         }
-        int base = baseWorkRadiusCap();
-        int max = Mth.clamp(VillagerRetaliationConfig.HIRED_WORK_MAX_RADIUS.get(), base, MAX_SKILLED_WORK_RADIUS);
+        int base = Mth.clamp(configuredDefaultRadius, MIN_WORK_RADIUS, MAX_SKILLED_WORK_RADIUS);
+        int max = Mth.clamp(configuredMaxRadius, base, MAX_SKILLED_WORK_RADIUS);
         int score = Mth.clamp(roleScore, 0, 100);
         double progress = Math.max(0.0D, Math.min(1.0D, (score - SKILL_RADIUS_BASELINE) / 50.0D));
         return Mth.clamp(base + (int) Math.round((max - base) * progress), MIN_WORK_RADIUS, max);
@@ -2098,63 +2107,52 @@ public final class HiredVillagerWorkService {
             int roleScore) {
         int min = Math.max(1, VillagerRetaliationConfig.HIRED_WORK_MINIMUM_EFFICIENCY_PERCENT.get());
         int max = Math.max(min, VillagerRetaliationConfig.HIRED_WORK_MAXIMUM_EFFICIENCY_PERCENT.get());
-        int efficiency = VillagerRetaliationConfig.HIRED_WORK_BASE_EFFICIENCY_PERCENT.get();
-        efficiency += (roleScore - 50) / 2;
-        if (HiredVillagerRoles.isSkillUnlocked(villager, role, roleScore)) {
-            efficiency += 10;
-        } else if (HiredVillagerRoles.isProfessionPreferred(villager, role)) {
-            efficiency += 3;
-        }
+        int base = Math.max(1, VillagerRetaliationConfig.HIRED_WORK_BASE_EFFICIENCY_PERCENT.get());
+        int skillWorkSpeed = HiredVillagerRoles.skillWorkSpeedPercent(roleScore);
         VillagerMoodState mood = VillagerMoodService.mood(level, villager);
-        efficiency += switch (mood.primaryMood()) {
+        int moodModifier = switch (mood.primaryMood()) {
             case CONTENT, GRATEFUL, PROUD, HOPEFUL -> 8;
             case ANGRY, AFRAID, STRESSED, GRIEVING -> -15;
             case SUSPICIOUS, LONELY -> -8;
             default -> 0;
         };
         ItemStack tool = inventory.getItem(HiredJobInventory.MAINHAND_SLOT);
-        if (!tool.isEmpty()) {
-            efficiency += toolTierBonus(tool);
-        }
-        if ((role == HiredVillagerRole.MINING || role == HiredVillagerRole.LOGGING || role == HiredVillagerRole.FARMING || role == HiredVillagerRole.FISHING) && tool.isEmpty()) {
+        boolean missingRequiredTool = (role == HiredVillagerRole.MINING
+                || role == HiredVillagerRole.LOGGING
+                || role == HiredVillagerRole.FARMING
+                || role == HiredVillagerRole.FISHING) && tool.isEmpty();
+        return calculateEfficiencyPercent(base, skillWorkSpeed, moodModifier, missingRequiredTool, min, max);
+    }
+
+    public static int calculateEfficiencyPercent(
+            int configuredBase,
+            int skillWorkSpeedPercent,
+            int moodModifier,
+            boolean missingRequiredTool,
+            int configuredMinimum,
+            int configuredMaximum) {
+        int minimum = Math.max(1, configuredMinimum);
+        int maximum = Math.max(minimum, configuredMaximum);
+        int efficiency = Math.round(Math.max(1, configuredBase)
+                * Math.clamp(skillWorkSpeedPercent, 75, 125) / 100.0F);
+        efficiency += moodModifier;
+        if (missingRequiredTool) {
             efficiency -= 20;
         }
-        return Mth.clamp(efficiency, min, max);
+        return Mth.clamp(efficiency, minimum, maximum);
     }
 
-    private static int toolTierBonus(ItemStack stack) {
-        if (stack.getItem() instanceof TieredItem tieredItem) {
-            String name = tieredItem.getTier().toString().toLowerCase(Locale.ROOT);
-            if (name.contains("netherite")) {
-                return 28;
-            }
-            if (name.contains("diamond")) {
-                return 20;
-            }
-            if (name.contains("iron")) {
-                return 12;
-            }
-            if (name.contains("stone")) {
-                return 5;
-            }
-        }
-        String path = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
-        if (path.contains("netherite")) {
-            return 28;
-        }
-        if (path.contains("diamond")) {
-            return 20;
-        }
-        if (path.contains("iron")) {
-            return 12;
-        }
-        if (path.contains("stone")) {
-            return 5;
-        }
-        return 0;
+    public static int effectiveWorkTickInterval(int efficiency) {
+        int base = Math.max(10, VillagerRetaliationConfig.HIRED_WORK_TICK_INTERVAL.get());
+        return effectiveWorkTickInterval(base, efficiency);
     }
 
-    private static int nextTaskCooldownTicks(int efficiency) {
+    public static int effectiveWorkTickInterval(int baseInterval, int efficiency) {
+        int base = Math.max(10, baseInterval);
+        return Mth.clamp(Math.round(base * 100.0F / Math.max(1.0F, efficiency)), 5, base * 4);
+    }
+
+    public static int completedTaskCooldownTicks(int efficiency) {
         return Mth.clamp(Math.round(80.0F * 100.0F / Math.max(25.0F, efficiency)), 10, 200);
     }
 

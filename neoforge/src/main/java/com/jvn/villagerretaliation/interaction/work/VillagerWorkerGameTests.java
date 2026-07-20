@@ -37,6 +37,7 @@ import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderTaskState;
@@ -446,6 +447,41 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void lowSkillCookCollectsHalfOfBaselineOutputPerTrip(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        BlockPos stationRel = new BlockPos(3, 2, 2);
+        BlockPos station = helper.absolutePos(stationRel);
+        setBlock(helper, stationRel, Blocks.FURNACE.defaultBlockState());
+        Container furnace = container(level, station);
+        furnace.setItem(2, new ItemStack(Items.COOKED_BEEF, 20));
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = new CompoundTag();
+        state.putLong("CookingCachedStationPos", station.asLong());
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                state,
+                new BlockPos(1, 2, 1),
+                new BlockPos(4, 4, 4),
+                true,
+                50);
+
+        WorkResult result = new CookingWorker().tick(
+                level, villager, fakePlayer(level, "VrLowSkillCookTransfer"), context);
+
+        helper.assertTrue(result.completed(), "collecting a facility output should complete one work action");
+        helper.assertValueEqual(furnace.getItem(2).getCount(), 12, "low-skill cook should leave output beyond the trip limit");
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.COOKED_BEEF),
+                8,
+                "50% transfer capacity should collect 8 items from the 16-item baseline");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void courierRoleIsAvailableToEveryProfessionIncludingUnemployed(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         buildFloor(helper, 0, 6, 0, 6, 1);
@@ -702,7 +738,7 @@ public final class VillagerWorkerGameTests {
         ServerPlayer hirer = fakePlayer(level, "VrHunterActiveAmmo");
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
-        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.BUTCHER));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FLETCHER));
         HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.HUNTING);
 
         CompoundTag state = new CompoundTag();
@@ -1548,39 +1584,138 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void preferredRolesUseLowerThresholdWithoutBypassingSkills(GameTestHelper helper) {
+    public static void cumulativeJobEligibilityUsesCanonicalOverridesAndStrictThreshold(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         buildFloor(helper, 0, 6, 0, 6, 1);
         Villager farmer = spawnVillager(helper, new BlockPos(2, 2, 2));
         farmer.setVillagerData(farmer.getVillagerData().setProfession(VillagerProfession.FARMER));
-        Villager unemployed = spawnVillager(helper, new BlockPos(4, 2, 2));
-        unemployed.setVillagerData(unemployed.getVillagerData().setProfession(VillagerProfession.NONE));
+        Villager mason = spawnVillager(helper, new BlockPos(4, 2, 2));
+        mason.setVillagerData(mason.getVillagerData().setProfession(VillagerProfession.MASON));
 
-        VillagerProfileManager.setSkill(level, farmer, VillagerSkill.FARMING, 34);
-        helper.assertFalse(
-                HiredVillagerRoles.availableContractRoles(level, farmer).contains(HiredVillagerRole.FARMING),
-                "preferred profession must not bypass its skill threshold");
-        VillagerProfileManager.setSkill(level, farmer, VillagerSkill.FARMING, 35);
+        VillagerSkillSet lowSkills = VillagerSkillSet.filled(1);
+        VillagerSkillSet exactlySixty = lowSkills
+                .with(VillagerSkill.MINING, 30)
+                .with(VillagerSkill.MASONRY, 30);
+        VillagerSkillSet sixtyOne = exactlySixty.with(VillagerSkill.MINING, 31);
+
         helper.assertTrue(
                 HiredVillagerRoles.availableContractRoles(level, farmer).contains(HiredVillagerRole.FARMING),
-                "preferred profession should unlock at 35");
-
-        VillagerProfileManager.setSkill(level, unemployed, VillagerSkill.MINING, 54);
-        VillagerProfileManager.setSkill(level, unemployed, VillagerSkill.MASONRY, 54);
+                "a farmer should automatically qualify for canonical Farming work");
         helper.assertFalse(
-                HiredVillagerRoles.availableContractRoles(level, unemployed).contains(HiredVillagerRole.MINING),
-                "nonpreferred role should remain locked below 55");
-        helper.assertFalse(
-                HiredVillagerRoles.availableContractRoles(level, unemployed).contains(HiredVillagerRole.FARMING),
-                "eligibility must not fabricate Farming as a fallback");
-        VillagerProfileManager.setSkill(level, unemployed, VillagerSkill.MINING, 55);
-        VillagerProfileManager.setSkill(level, unemployed, VillagerSkill.MASONRY, 55);
+                HiredVillagerRoles.isSkillUnlocked("none", false, exactlySixty, HiredVillagerRole.MINING),
+                "a cumulative total of exactly 60 must remain locked");
         helper.assertTrue(
-                HiredVillagerRoles.availableContractRoles(level, unemployed).contains(HiredVillagerRole.MINING),
-                "nonpreferred role should unlock at 55");
+                HiredVillagerRoles.isSkillUnlocked("none", false, sixtyOne, HiredVillagerRole.MINING),
+                "a cumulative total of 61 should unlock the role");
+        helper.assertTrue(
+                HiredVillagerRoles.isSkillUnlocked("weaponsmith", false, lowSkills, HiredVillagerRole.COMBAT),
+                "a weaponsmith should bypass Combat's skill threshold");
+        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("fletcher", false, lowSkills, HiredVillagerRole.HUNTING),
+                "a fletcher should bypass Hunting's skill threshold");
+        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("toolsmith", false, lowSkills, HiredVillagerRole.MINING),
+                "a toolsmith should bypass Mining's skill threshold");
+        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("fisherman", false, lowSkills, HiredVillagerRole.FISHING),
+                "a fisherman should bypass Fishing's skill threshold");
+        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("cleric", false, lowSkills, HiredVillagerRole.BREWING),
+                "a cleric should bypass Brewing's skill threshold");
+        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("mason", false, lowSkills, HiredVillagerRole.BUILDER),
+                "a mason should bypass Builder's skill threshold");
+        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("shepherd", false, lowSkills, HiredVillagerRole.ANIMAL_HANDLING),
+                "a shepherd should bypass Animal Handling's skill threshold");
+        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("leatherworker", false, lowSkills, HiredVillagerRole.ANIMAL_HANDLING),
+                "a leatherworker should bypass Animal Handling's skill threshold");
+        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("butcher", false, lowSkills, HiredVillagerRole.COOK),
+                "a butcher should bypass Cook's skill threshold");
+        helper.assertTrue(HiredVillagerRoles.isSkillUnlocked("armorer", false, lowSkills, HiredVillagerRole.SMELTER),
+                "an armorer should bypass Smelter's skill threshold");
+        helper.assertFalse(
+                HiredVillagerRoles.isSkillUnlocked("weaponsmith", false, lowSkills, HiredVillagerRole.MINING),
+                "canonical overrides must not unlock noncanonical roles");
+        helper.assertTrue(
+                HiredVillagerRoles.isSkillUnlocked("none", false, lowSkills, HiredVillagerRole.COURIER),
+                "Courier should be universally available to adults");
+        helper.assertFalse(
+                HiredVillagerRoles.isSkillUnlocked("none", true, VillagerSkillSet.filled(100), HiredVillagerRole.COURIER),
+                "babies must remain ineligible even for universal roles");
+        helper.assertFalse(
+                HiredVillagerRoles.isSkillUnlocked("none", false, VillagerSkillSet.filled(100), HiredVillagerRole.NITWIT),
+                "non-nitwits must not qualify for Nitwit work through skills");
+        helper.assertTrue(
+                HiredVillagerRoles.isSkillUnlocked("nitwit", false, lowSkills, HiredVillagerRole.NITWIT),
+                "nitwits should automatically qualify for Nitwit work");
+        helper.assertTrue(
+                HiredVillagerRoles.canOfferBuilderService(level, mason),
+                "a mason should automatically qualify for one-off Builder services");
+        helper.assertFalse(
+                HiredVillagerRoles.availableContractRoles(level, mason).contains(HiredVillagerRole.BUILDER),
+                "Builder should remain excluded from ordinary contracts");
 
         farmer.discard();
-        unemployed.discard();
+        mason.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void jobCapabilityEndpointsAndTransferLimitsAreMonotonic(GameTestHelper helper) {
+        helper.assertValueEqual(HiredVillagerRoles.aptitude(0, 0), 0, "zero aptitude endpoint");
+        helper.assertValueEqual(HiredVillagerRoles.aptitude(50, 50), 50, "midpoint aptitude");
+        helper.assertValueEqual(HiredVillagerRoles.aptitude(100, 100), 100, "maximum aptitude endpoint");
+        helper.assertValueEqual(HiredVillagerRoles.skillWorkSpeedPercent(0), 75, "minimum work speed");
+        helper.assertValueEqual(HiredVillagerRoles.skillWorkSpeedPercent(50), 100, "midpoint work speed");
+        helper.assertValueEqual(HiredVillagerRoles.skillWorkSpeedPercent(100), 125, "maximum work speed");
+        helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(0), 50, "minimum transfer capacity");
+        helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(50), 100, "midpoint transfer capacity");
+        helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(100), 150, "maximum transfer capacity");
+        helper.assertValueEqual(HiredVillagerRoles.transferLimit(64, 50), 32, "low-skill courier cargo");
+        helper.assertValueEqual(HiredVillagerRoles.transferLimit(64, 100), 64, "baseline courier cargo");
+        helper.assertValueEqual(HiredVillagerRoles.transferLimit(64, 150), 96, "high-skill courier cargo");
+        helper.assertValueEqual(HiredVillagerRoles.transferLimit(16, 50), 8, "low-skill facility collection");
+        helper.assertValueEqual(HiredVillagerRoles.transferLimit(16, 150), 24, "high-skill facility collection");
+        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(400, 75), 533, "low-skill fishing wait");
+        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(400, 100), 400, "baseline fishing wait");
+        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(400, 125), 320, "high-skill fishing wait");
+        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(20, 75), 27, "low-skill attack recovery");
+        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(20, 125), 16, "high-skill attack recovery");
+        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(30, 75), 40, "low-skill block completion");
+        helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(30, 125), 24, "high-skill block completion");
+        helper.assertValueEqual(
+                HiredVillagerWorkService.calculateEfficiencyPercent(100, 75, 0, false, 25, 175),
+                75,
+                "low aptitude efficiency");
+        helper.assertValueEqual(
+                HiredVillagerWorkService.calculateEfficiencyPercent(100, 125, 0, false, 25, 175),
+                125,
+                "high aptitude efficiency");
+        helper.assertValueEqual(
+                HiredVillagerWorkService.calculateEfficiencyPercent(100, 75, 0, true, 25, 175),
+                55,
+                "missing-tool penalty after skill scaling");
+        helper.assertValueEqual(
+                HiredVillagerWorkService.calculateEfficiencyPercent(300, 125, 8, false, 25, 175),
+                175,
+                "maximum configured efficiency clamp");
+        helper.assertValueEqual(
+                HiredVillagerWorkService.calculateEfficiencyPercent(1, 75, -15, true, 25, 175),
+                25,
+                "minimum configured efficiency clamp");
+        helper.assertValueEqual(HiredVillagerWorkService.effectiveWorkTickInterval(40, 75), 53, "low-skill work cadence");
+        helper.assertValueEqual(HiredVillagerWorkService.effectiveWorkTickInterval(40, 100), 40, "baseline work cadence");
+        helper.assertValueEqual(HiredVillagerWorkService.effectiveWorkTickInterval(40, 125), 32, "high-skill work cadence");
+        helper.assertValueEqual(HiredVillagerWorkService.completedTaskCooldownTicks(75), 107, "low-skill completion cooldown");
+        helper.assertValueEqual(HiredVillagerWorkService.completedTaskCooldownTicks(100), 80, "baseline completion cooldown");
+        helper.assertValueEqual(HiredVillagerWorkService.completedTaskCooldownTicks(125), 64, "high-skill completion cooldown");
+        helper.assertValueEqual(
+                HiredVillagerWorkService.maxWorkRadiusForScore(HiredVillagerRole.MINING, 0, 16, 32),
+                16,
+                "low aptitude work radius");
+        helper.assertValueEqual(
+                HiredVillagerWorkService.maxWorkRadiusForScore(HiredVillagerRole.MINING, 50, 16, 32),
+                16,
+                "baseline aptitude work radius");
+        helper.assertValueEqual(
+                HiredVillagerWorkService.maxWorkRadiusForScore(HiredVillagerRole.MINING, 100, 16, 32),
+                32,
+                "maximum aptitude work radius");
         helper.succeed();
     }
 
@@ -3792,7 +3927,7 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
-    public static void courierLimitsEachRouteTripToOneStackOfCargo(GameTestHelper helper) {
+    public static void courierScalesEachRouteTripFromBaselineCargo(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 5, 1);
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = fakePlayer(level, "VrCourierCargoLimit");
@@ -3820,20 +3955,20 @@ public final class VillagerWorkerGameTests {
                 AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "courier output assignment");
 
         CompoundTag state = new CompoundTag();
-        HiredWorkContext context = routeContext(helper, villager, state, List.of(inputRel, outputRel));
+        HiredWorkContext context = routeContext(helper, villager, state, List.of(inputRel, outputRel), 50);
         CourierWorker worker = new CourierWorker();
         runWorkerUntil(helper, worker, level, villager, hirer, context, 220, () ->
-                countItem(container(level, output), Items.COBBLESTONE) == 64
+                countItem(container(level, output), Items.COBBLESTONE) == 32
                         && "pickup".equals(state.getString("CourierPhase")));
 
         helper.assertValueEqual(
                 countItem(container(level, input), Items.COBBLESTONE),
-                36,
-                "courier should leave excess cargo for the next route trip");
+                68,
+                "low-skill courier should leave excess cargo for the next route trip");
         helper.assertValueEqual(
                 countItem(container(level, output), Items.COBBLESTONE),
-                64,
-                "courier should deliver no more than 64 items per route trip");
+                32,
+                "50% transfer capacity should carry 32 items from the 64-item baseline");
         helper.assertFalse(context.inventory().hasOutputItems(), "courier should finish the trip without retained cargo");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
@@ -4912,8 +5047,10 @@ public final class VillagerWorkerGameTests {
         ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
         movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
 
-        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        HiredVillagerContractService.startHireContract(
+                level, villager, hirer, 1, 8, HiredVillagerRole.FARMING);
         HiredVillagerWorkService.initializeWorkArea(level, villager);
         HiredWorkSession session = HiredWorkSession.active(level, villager);
         CompoundTag state = session.state();
@@ -5874,6 +6011,17 @@ public final class VillagerWorkerGameTests {
             BlockPos minRelative,
             BlockPos maxRelative,
             boolean hasWorkArea) {
+        return context(helper, villager, state, minRelative, maxRelative, hasWorkArea, 100);
+    }
+
+    private static HiredWorkContext context(
+            GameTestHelper helper,
+            Villager villager,
+            CompoundTag state,
+            BlockPos minRelative,
+            BlockPos maxRelative,
+            boolean hasWorkArea,
+            int transferCapacityPercent) {
         BlockPos min = helper.absolutePos(minRelative);
         BlockPos max = helper.absolutePos(maxRelative);
         BlockPos center = new BlockPos(
@@ -5890,6 +6038,9 @@ public final class VillagerWorkerGameTests {
                 Math.max(4, Math.max(max.getX() - min.getX(), max.getZ() - min.getZ())),
                 Math.max(2, max.getY() - min.getY()),
                 hasWorkArea,
+                50,
+                100,
+                transferCapacityPercent,
                 100,
                 true,
                 true);
@@ -5900,6 +6051,15 @@ public final class VillagerWorkerGameTests {
             Villager villager,
             CompoundTag state,
             List<BlockPos> routeRelativeNodes) {
+        return routeContext(helper, villager, state, routeRelativeNodes, 100);
+    }
+
+    private static HiredWorkContext routeContext(
+            GameTestHelper helper,
+            Villager villager,
+            CompoundTag state,
+            List<BlockPos> routeRelativeNodes,
+            int transferCapacityPercent) {
         List<BlockPos> routeNodes = new ArrayList<>();
         for (BlockPos node : routeRelativeNodes) {
             routeNodes.add(helper.absolutePos(node));
@@ -5916,6 +6076,9 @@ public final class VillagerWorkerGameTests {
                 disabledArea.horizontalRadius(),
                 disabledArea.verticalRadius(),
                 false,
+                50,
+                100,
+                transferCapacityPercent,
                 100,
                 true,
                 true,

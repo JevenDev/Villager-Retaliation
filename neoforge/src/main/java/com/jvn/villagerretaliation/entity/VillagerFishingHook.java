@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.entity;
 
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.mojang.logging.LogUtils;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -64,17 +65,19 @@ public class VillagerFishingHook extends Projectile {
     private FishHookState currentState = FishHookState.FLYING;
     private int luck;
     private int lureSpeed;
+    private int workSpeedPercent = 100;
 
     public VillagerFishingHook(EntityType<VillagerFishingHook> entityType, Level level) {
         super(entityType, level);
         this.noCulling = true;
     }
 
-    public VillagerFishingHook(LivingEntity owner, Level level, Vec3 target, int luck, int lureSpeed) {
+    public VillagerFishingHook(LivingEntity owner, Level level, Vec3 target, int luck, int lureSpeed, int workSpeedPercent) {
         this(VillagerRetaliationEntityTypes.VILLAGER_FISHING_HOOK.get(), level);
         this.setOwner(owner);
         this.luck = Math.max(0, luck);
         this.lureSpeed = Math.max(0, lureSpeed);
+        this.workSpeedPercent = Math.clamp(workSpeedPercent, 75, 125);
         Vec3 start = castStart(owner);
         Vec3 delta = target.subtract(start);
         double distance = Math.max(0.001D, delta.length());
@@ -303,7 +306,10 @@ public class VillagerFishingHook extends Projectile {
         } else if (this.timeUntilLured > 0) {
             lureFish(serverLevel);
         } else {
-            this.timeUntilLured = Mth.nextInt(this.random, 100, 600) - this.lureSpeed;
+            int normalWait = Math.max(20, Mth.nextInt(this.random, 100, 600) - this.lureSpeed);
+            this.timeUntilLured = Math.max(
+                    20,
+                    HiredVillagerRoles.scaledDurationTicks(normalWait, this.workSpeedPercent));
         }
     }
 
@@ -471,6 +477,7 @@ public class VillagerFishingHook extends Projectile {
         super.addAdditionalSaveData(compound);
         compound.putInt("Luck", this.luck);
         compound.putInt("LureSpeed", this.lureSpeed);
+        compound.putInt("WorkSpeedPercent", this.workSpeedPercent);
     }
 
     @Override
@@ -478,6 +485,9 @@ public class VillagerFishingHook extends Projectile {
         super.readAdditionalSaveData(compound);
         this.luck = compound.getInt("Luck");
         this.lureSpeed = compound.getInt("LureSpeed");
+        if (compound.contains("WorkSpeedPercent")) {
+            this.workSpeedPercent = Math.clamp(compound.getInt("WorkSpeedPercent"), 75, 125);
+        }
     }
 
     @Override

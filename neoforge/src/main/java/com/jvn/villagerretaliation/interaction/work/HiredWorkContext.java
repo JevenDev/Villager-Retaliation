@@ -23,6 +23,9 @@ public record HiredWorkContext(
         int radius,
         int verticalRadius,
         boolean hasWorkArea,
+        int aptitude,
+        int skillWorkSpeedPercent,
+        int transferCapacityPercent,
         int efficiency,
         boolean autoDepositOutputs,
         boolean useAssignedStorageForSupplies,
@@ -50,6 +53,49 @@ public record HiredWorkContext(
                 radius,
                 verticalRadius,
                 hasWorkArea,
+                50,
+                100,
+                100,
+                efficiency,
+                autoDepositOutputs,
+                useAssignedStorageForSupplies,
+                HiredWorkAssignment.of(HiredJobSite.fromWorkArea(new HiredWorkArea(
+                        workCenter,
+                        workMin,
+                        workMax,
+                        radius,
+                        verticalRadius,
+                        hasWorkArea,
+                        hasWorkArea)), HiredRoute.empty()));
+    }
+
+    public HiredWorkContext(
+            HiredJobInventory inventory,
+            CompoundTag state,
+            BlockPos workCenter,
+            BlockPos workMin,
+            BlockPos workMax,
+            int radius,
+            int verticalRadius,
+            boolean hasWorkArea,
+            int aptitude,
+            int skillWorkSpeedPercent,
+            int transferCapacityPercent,
+            int efficiency,
+            boolean autoDepositOutputs,
+            boolean useAssignedStorageForSupplies) {
+        this(
+                inventory,
+                state,
+                workCenter,
+                workMin,
+                workMax,
+                radius,
+                verticalRadius,
+                hasWorkArea,
+                aptitude,
+                skillWorkSpeedPercent,
+                transferCapacityPercent,
                 efficiency,
                 autoDepositOutputs,
                 useAssignedStorageForSupplies,
@@ -86,6 +132,44 @@ public record HiredWorkContext(
                 radius,
                 verticalRadius,
                 hasWorkArea,
+                50,
+                100,
+                100,
+                efficiency,
+                autoDepositOutputs,
+                useAssignedStorageForSupplies,
+                HiredWorkAssignment.of(jobSite, route));
+    }
+
+    public HiredWorkContext(
+            HiredJobInventory inventory,
+            CompoundTag state,
+            BlockPos workCenter,
+            BlockPos workMin,
+            BlockPos workMax,
+            int radius,
+            int verticalRadius,
+            boolean hasWorkArea,
+            int aptitude,
+            int skillWorkSpeedPercent,
+            int transferCapacityPercent,
+            int efficiency,
+            boolean autoDepositOutputs,
+            boolean useAssignedStorageForSupplies,
+            HiredJobSite jobSite,
+            HiredRoute route) {
+        this(
+                inventory,
+                state,
+                workCenter,
+                workMin,
+                workMax,
+                radius,
+                verticalRadius,
+                hasWorkArea,
+                aptitude,
+                skillWorkSpeedPercent,
+                transferCapacityPercent,
                 efficiency,
                 autoDepositOutputs,
                 useAssignedStorageForSupplies,
@@ -104,6 +188,17 @@ public record HiredWorkContext(
                     hasWorkArea);
             assignment = HiredWorkAssignment.of(HiredJobSite.fromWorkArea(area), HiredRoute.empty());
         }
+        aptitude = Math.clamp(aptitude, 0, 100);
+        skillWorkSpeedPercent = Math.clamp(skillWorkSpeedPercent, 75, 125);
+        transferCapacityPercent = Math.clamp(transferCapacityPercent, 50, 150);
+        efficiency = Math.max(1, efficiency);
+    }
+
+    public int transferLimit(int baseItems) {
+        if (baseItems <= 0) {
+            return 0;
+        }
+        return Math.max(1, Math.round(baseItems * this.transferCapacityPercent / 100.0F));
     }
 
     public int progressTicks() {

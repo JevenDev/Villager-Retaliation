@@ -51,6 +51,7 @@ import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRoutineChatTogglePayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeRank;
@@ -325,6 +326,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private long lastOptionScrollRenderMillis = -1L;
     private VillagerSkill selectedSkillDetails;
     private VillagerSocialAttribute selectedProfileAttributeDetails;
+    private HiredVillagerRole selectedJobDetails;
     private SkillsProfilePanel skillsProfilePanel = SkillsProfilePanel.SKILLS;
     private long lastProfileRequestMillis = -1L;
     private HiredBrewingRecipeCatalog.BrewingPotionChoice selectedBrewingPotionChoice;
@@ -368,6 +370,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final NavigationContext navigationContext = new NavigationContext();
     private final ProfilePageContext profilePageContext = new ProfilePageContext();
     private final SkillsPageContext skillsPageContext = new SkillsPageContext();
+    private final JobStatsPageContext jobStatsPageContext = new JobStatsPageContext();
 
     public VillagerInteractionScreen(
             int villagerEntityId,
@@ -735,6 +738,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (tryClickSkillsProfileCycleButton(interactionContentMouseX, interactionMouseY)
                 || trySelectProfileAttributeDetails(interactionContentMouseX, interactionMouseY)
                 || trySelectSkillDetails(interactionContentMouseX, interactionMouseY)
+                || trySelectJobDetails(interactionContentMouseX, interactionMouseY)
                 || tryBeginSkillInfoScrollbarDrag(interactionContentMouseX, interactionMouseY)
                 || tryBeginScrollbarDrag(interactionContentMouseX, interactionMouseY)
                 || tryActivateHoveredOption(interactionContentMouseX, interactionMouseY)) {
@@ -1839,6 +1843,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.profileRefreshRequested = false;
         clearSelectedSkillDetails();
         clearSelectedProfileAttributeDetails();
+        clearSelectedJobDetails();
         this.draggingSkillScrollbar = false;
         this.skillsProfilePanel = SkillsProfilePanel.PROFILE;
         requestProfileRefresh();
@@ -1896,6 +1901,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.profileRefreshRequested = false;
         clearSelectedSkillDetails();
         clearSelectedProfileAttributeDetails();
+        clearSelectedJobDetails();
         this.draggingSkillScrollbar = false;
         this.skillsProfilePanel = SkillsProfilePanel.SKILLS;
         requestProfileRefresh();
@@ -2283,6 +2289,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             clearSelectedProfileAttributeDetails();
             return;
         }
+        if (this.page == DialoguePage.SKILLS && this.selectedJobDetails != null) {
+            clearSelectedJobDetails();
+            return;
+        }
         if (canNavigateBack()) {
             navigateBackPage();
         } else {
@@ -2577,6 +2587,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         resetSkillInfoScroll();
     }
 
+    private void clearSelectedJobDetails() {
+        this.selectedJobDetails = null;
+        resetSkillInfoScroll();
+    }
+
     private void resetSkillInfoScroll() {
         this.skillScroll = 0.0F;
         this.targetSkillScroll = 0.0F;
@@ -2650,6 +2665,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             renderSkillsProfileCycleButtonTooltip(graphics, mouseX, mouseY);
             return;
         }
+        if (this.skillsProfilePanel == SkillsProfilePanel.JOBS) {
+            VillagerInteractionJobStatsPage.render(this.jobStatsPageContext, graphics, mouseX, mouseY);
+            renderSkillsProfileCycleButtonTooltip(graphics, mouseX, mouseY);
+            return;
+        }
         VillagerInteractionSkillsPage.render(this.skillsPageContext, graphics, mouseX, mouseY);
         renderSkillsProfileCycleButtonTooltip(graphics, mouseX, mouseY);
     }
@@ -2699,12 +2719,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void renderSkillsProfileCycleButtonTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (hoveredSkillsProfileCycleButton(mouseX, mouseY) == null) {
+        SkillsProfileCycleButton hovered = hoveredSkillsProfileCycleButton(mouseX, mouseY);
+        if (hovered == null) {
             return;
         }
-        String key = nextSkillsProfilePanel() == SkillsProfilePanel.SKILLS
-                ? "profile.cycle.skills"
-                : "profile.cycle.profile";
+        SkillsProfilePanel target = adjacentSkillsProfilePanel(hovered);
+        String key = switch (target) {
+            case SKILLS -> "profile.cycle.skills";
+            case PROFILE -> "profile.cycle.profile";
+            case JOBS -> "profile.cycle.jobs";
+        };
         renderInteractionTooltip(graphics, List.of(Component.literal(translate(key))), mouseX, mouseY);
     }
 
@@ -2788,6 +2812,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.skillsProfilePanel == SkillsProfilePanel.PROFILE) {
             return profileDialogueInfoText(entry);
         }
+        if (this.skillsProfilePanel == SkillsProfilePanel.JOBS) {
+            return jobStatsDialogueInfoText(entry);
+        }
         return skillsDialogueInfoText(entry);
     }
 
@@ -2837,6 +2864,85 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 translate("profile.skills.info.trade"),
                 translate("profile.skills.info.specialty"),
                 translate("profile.skills.info.recruit"));
+    }
+
+    private String jobStatsDialogueInfoText(Optional<VillagerProfileClientCache.DisplayEntry> entry) {
+        if (this.selectedJobDetails == null) {
+            return String.join(
+                    "\n\n",
+                    translate("job_stats.info.title"),
+                    translate("job_stats.info.qualification"),
+                    translate("job_stats.info.profession"),
+                    translate("job_stats.info.practice"));
+        }
+        HiredVillagerRole role = this.selectedJobDetails;
+        if (entry.isEmpty()) {
+            return jobRoleLabel(role) + "\n\n" + translate("profile.loading");
+        }
+        VillagerProfileClientCache.DisplayEntry profile = entry.get();
+        HiredVillagerRoles.RoleDefinition definition = HiredVillagerRoles.definition(role);
+        int primary = profile.skillValue(definition.primarySkill());
+        int support = profile.skillValue(definition.supportSkill());
+        int total = HiredVillagerRoles.qualificationTotal(profile.skills(), role);
+        int aptitude = HiredVillagerRoles.roleScore(profile.skills(), role);
+        int workSpeed = HiredVillagerRoles.skillWorkSpeedPercent(aptitude);
+        int transferBase = HiredVillagerRoles.baseTransferItems(role);
+        boolean ready = HiredVillagerRoles.isSkillUnlocked(
+                profile.professionKey(), this.baby, profile.skills(), role);
+        List<String> lines = new ArrayList<>();
+        lines.add(jobRoleLabel(role));
+        lines.add("");
+        lines.add(translate("job_stats.detail.readiness", translate(ready ? "job_stats.ready" : "job_stats.locked")));
+        lines.add(translate("job_stats.detail.qualification", total, HiredVillagerRoles.QUALIFICATION_REQUIRED_TOTAL));
+        lines.add(translate("job_stats.detail.primary", localizedSkill(definition.primarySkill()), primary));
+        lines.add(translate("job_stats.detail.support", localizedSkill(definition.supportSkill()), support));
+        lines.add("");
+        lines.add(translate("job_stats.detail.aptitude", aptitude));
+        lines.add(translate("job_stats.detail.work_speed", workSpeed));
+        if (transferBase > 0) {
+            int transfer = HiredVillagerRoles.transferLimit(
+                    transferBase, HiredVillagerRoles.transferCapacityPercent(aptitude));
+            lines.add(translate("job_stats.detail.transfer", transfer));
+        }
+        lines.add(translate("job_stats.detail.effect." + roleEffectKey(role), workSpeed));
+        lines.add("");
+        lines.add(translate("job_stats.detail.reason." + readinessReason(profile, role, ready)));
+        lines.add(translate("job_stats.detail.practice"));
+        return String.join("\n", lines);
+    }
+
+    private String readinessReason(
+            VillagerProfileClientCache.DisplayEntry profile,
+            HiredVillagerRole role,
+            boolean ready) {
+        if (this.baby) {
+            return "baby";
+        }
+        if (HiredVillagerRoles.isUniversal(role)) {
+            return "universal";
+        }
+        if (HiredVillagerRoles.isCanonicalProfession(profile.professionKey(), role)) {
+            return "profession";
+        }
+        if (HiredVillagerRoles.isProfessionRestricted(role)) {
+            return "restricted";
+        }
+        return ready ? "skills" : "locked";
+    }
+
+    private static String roleEffectKey(HiredVillagerRole role) {
+        return switch (role) {
+            case MINING, LOGGING, BUILDER -> "block";
+            case COMBAT, HUNTING -> "combat";
+            case FISHING -> "fishing";
+            case COOK, SMELTER, BREWING, COURIER -> "transfer";
+            case NITWIT -> "nitwit";
+            default -> "cadence";
+        };
+    }
+
+    private static String jobRoleLabel(HiredVillagerRole role) {
+        return translate("job_stats.role." + role.serializedName());
     }
 
     private ResourceLocation skillsDialogueScrollIcon(List<String> lines, int lineScroll) {
@@ -4054,6 +4160,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             clearSelectedProfileAttributeDetails();
             return true;
         }
+        if (this.page == DialoguePage.SKILLS && this.selectedJobDetails != null) {
+            clearSelectedJobDetails();
+            return true;
+        }
 
         navigateBackPage();
         return true;
@@ -4094,17 +4204,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.page != DialoguePage.SKILLS) {
             return false;
         }
-        if (hoveredSkillsProfileCycleButton(mouseX, mouseY) == null) {
+        SkillsProfileCycleButton direction = hoveredSkillsProfileCycleButton(mouseX, mouseY);
+        if (direction == null) {
             return false;
         }
-        showSkillsProfilePanel(nextSkillsProfilePanel());
+        showSkillsProfilePanel(adjacentSkillsProfilePanel(direction));
         return true;
     }
 
-    private SkillsProfilePanel nextSkillsProfilePanel() {
-        return this.skillsProfilePanel == SkillsProfilePanel.SKILLS
-                ? SkillsProfilePanel.PROFILE
-                : SkillsProfilePanel.SKILLS;
+    private SkillsProfilePanel adjacentSkillsProfilePanel(SkillsProfileCycleButton direction) {
+        SkillsProfilePanel[] panels = SkillsProfilePanel.values();
+        int offset = direction == SkillsProfileCycleButton.LEFT ? -1 : 1;
+        return panels[Math.floorMod(this.skillsProfilePanel.ordinal() + offset, panels.length)];
     }
 
     private void showSkillsProfilePanel(SkillsProfilePanel panel) {
@@ -4114,6 +4225,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.skillsProfilePanel = panel;
         clearSelectedSkillDetails();
         clearSelectedProfileAttributeDetails();
+        clearSelectedJobDetails();
         this.draggingSkillScrollbar = false;
         if (panel == SkillsProfilePanel.PROFILE) {
             requestProfileRefresh();
@@ -4158,6 +4270,20 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         this.selectedSkillDetails = clickedSkill == this.selectedSkillDetails ? null : clickedSkill;
+        resetSkillInfoScroll();
+        return true;
+    }
+
+    private boolean trySelectJobDetails(double mouseX, double mouseY) {
+        if (this.page != DialoguePage.SKILLS || this.skillsProfilePanel != SkillsProfilePanel.JOBS) {
+            return false;
+        }
+        HiredVillagerRole clickedRole = VillagerInteractionJobStatsPage.roleAt(
+                this.jobStatsPageContext, mouseX, mouseY);
+        if (clickedRole == null) {
+            return false;
+        }
+        this.selectedJobDetails = clickedRole == this.selectedJobDetails ? null : clickedRole;
         resetSkillInfoScroll();
         return true;
     }
@@ -5031,7 +5157,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private enum SkillsProfilePanel {
         SKILLS,
-        PROFILE
+        PROFILE,
+        JOBS
     }
 
     private enum SkillsProfileCycleButton {
@@ -5883,6 +6010,48 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     VillagerInteractionScreen.this.skillInfoScrollbarThumb(),
                     VillagerInteractionScreen.this.skillScroll,
                     VillagerInteractionScreen.this.maxSkillScroll());
+        }
+    }
+
+    private final class JobStatsPageContext implements VillagerInteractionJobStatsPage.Context {
+        @Override
+        public Font font() {
+            return VillagerInteractionScreen.this.font;
+        }
+
+        @Override
+        public int panelLeft() {
+            return VillagerInteractionScreen.this.skillsPanelLeft();
+        }
+
+        @Override
+        public int panelTop() {
+            return VillagerInteractionScreen.this.skillsPanelTop();
+        }
+
+        @Override
+        public boolean baby() {
+            return VillagerInteractionScreen.this.baby;
+        }
+
+        @Override
+        public String translate(String key, Object... args) {
+            return VillagerInteractionScreen.translate(key, args);
+        }
+
+        @Override
+        public String roleLabel(HiredVillagerRole role) {
+            return VillagerInteractionScreen.jobRoleLabel(role);
+        }
+
+        @Override
+        public Optional<VillagerProfileClientCache.DisplayEntry> profileEntry() {
+            return VillagerProfileClientCache.get(VillagerInteractionScreen.this.villagerEntityId);
+        }
+
+        @Override
+        public void requestProfileRefresh() {
+            VillagerInteractionScreen.this.requestProfileRefresh();
         }
     }
 }
