@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
 import com.jvn.villagerretaliation.interaction.work.AbstractBlockWorker;
 import com.jvn.villagerretaliation.interaction.HiredMiningMode;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.ArrayList;
@@ -263,7 +264,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         HiredWorkerBrain.clearFailure(context);
         setTaskState(context, HiredWorkerTaskState.WORKING, target.blockPos());
 
-        int needed = actualBreakProgressGoal(level, target.blockPos(), tool);
+        int needed = actualBreakProgressGoal(level, context, target.blockPos(), tool);
         int progress = context.progressTicks() + MiningWorkerState.elapsedBreakProgressTicks(level, context);
         if (progress < needed) {
             context.setProgressTicks(progress);
@@ -1167,7 +1168,7 @@ public final class MiningWorker extends AbstractBlockWorker {
         return hasLineOfSightToBlock(level, villager, villager.getEyePosition(), target.blockPos(), target.hitPos());
     }
 
-    private int actualBreakProgressGoal(ServerLevel level, BlockPos pos, ItemStack tool) {
+    private int actualBreakProgressGoal(ServerLevel level, HiredWorkContext context, BlockPos pos, ItemStack tool) {
         BlockState state = level.getBlockState(pos);
         float hardness = state.getDestroySpeed(level, pos);
         if (hardness <= 0.0F) {
@@ -1175,7 +1176,8 @@ public final class MiningWorker extends AbstractBlockWorker {
         }
         float speed = Math.max(0.001F, effectiveDestroySpeed(tool, state));
         int divisor = tool.isCorrectToolForDrops(state) ? 30 : 100;
-        return Math.max(1, (int) Math.ceil(hardness * divisor / speed));
+        int normalGoal = Math.max(1, (int) Math.ceil(hardness * divisor / speed));
+        return HiredVillagerRoles.scaledDurationTicks(normalGoal, context.skillWorkSpeedPercent());
     }
 
     private static boolean isExcavationComplete(ServerLevel level, HiredWorkContext context, HiredMiningMode mode) {

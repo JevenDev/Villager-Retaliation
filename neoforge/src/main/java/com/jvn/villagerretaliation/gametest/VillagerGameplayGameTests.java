@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -420,6 +421,7 @@ public final class VillagerGameplayGameTests {
         ServerPlayer followerOwner = fakePlayer(level, "VrFollowOwner");
         ServerPlayer otherPlayer = fakePlayer(level, "VrFollowOther");
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
 
         helper.assertTrue(
                 VillagerRecruitmentService.startFollowing(level, villager, followerOwner),
@@ -431,7 +433,8 @@ public final class VillagerGameplayGameTests {
                 VillagerRecruitmentService.isFollowing(villager, followerOwner),
                 "rejected stop command should preserve the original follower owner");
 
-        HiredVillagerContractService.startHireContract(level, villager, followerOwner, 1, 8);
+        HiredVillagerContractService.startHireContract(
+                level, villager, followerOwner, 1, 8, HiredVillagerRole.FARMING);
         helper.assertFalse(
                 VillagerRecruitmentService.isFollowingAnyPlayer(villager),
                 "hiring should clear the previous follow state");

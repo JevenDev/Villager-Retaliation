@@ -3,11 +3,9 @@ package com.jvn.villagerretaliation.interaction;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.skill.VillagerProfessionSkills;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
+import com.jvn.villagerretaliation.skill.VillagerSkillSet;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -15,8 +13,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.npc.Villager;
 
 public final class HiredVillagerRoles {
-    public static final int PREFERRED_PROFESSION_THRESHOLD = 35;
-    public static final int NONPREFERRED_PROFESSION_THRESHOLD = 55;
+    public static final int QUALIFICATION_THRESHOLD_EXCLUSIVE = 60;
+    public static final int QUALIFICATION_REQUIRED_TOTAL = QUALIFICATION_THRESHOLD_EXCLUSIVE + 1;
+    public static final double PRIMARY_SKILL_WEIGHT = 0.70D;
+    public static final double SUPPORT_SKILL_WEIGHT = 0.30D;
     private static final Map<HiredVillagerRole, RoleDefinition> DEFINITIONS = definitions();
 
     private HiredVillagerRoles() {
@@ -26,9 +26,11 @@ public final class HiredVillagerRoles {
         if (villager == null || villager.isBaby()) {
             return List.of();
         }
+        VillagerSkillSet skills = VillagerProfileManager.getSkills(level, villager);
+        String professionKey = VillagerProfessionSkills.professionKey(villager);
         List<HiredVillagerRole> roles = new ArrayList<>();
         for (HiredVillagerRole role : HiredVillagerRole.values()) {
-            if (isSkillUnlocked(level, villager, role)) {
+            if (isSkillUnlocked(professionKey, false, skills, role)) {
                 roles.add(role);
             }
         }
@@ -66,22 +68,97 @@ public final class HiredVillagerRoles {
         return best;
     }
 
-    /** Weighted score: 70% primary skill, with 30% divided evenly among support skills. */
+    /** Weighted role aptitude: 70% primary skill and 30% support skill. */
     public static int roleScore(ServerLevel level, Villager villager, HiredVillagerRole role) {
+        return roleScore(VillagerProfileManager.getSkills(level, villager), role);
+    }
+
+    public static int roleScore(VillagerSkillSet skills, HiredVillagerRole role) {
         RoleDefinition definition = definition(role);
-        double score = 0.0D;
-        for (Map.Entry<VillagerSkill, Double> weight : definition.skillWeights().entrySet()) {
-            score += VillagerProfileManager.getSkill(level, villager, weight.getKey()) * weight.getValue();
+        VillagerSkillSet safeSkills = skills == null ? VillagerSkillSet.EMPTY : skills;
+        return aptitude(
+                safeSkills.get(definition.primarySkill()),
+                safeSkills.get(definition.supportSkill()));
+    }
+
+    public static int aptitude(int primaryValue, int supportValue) {
+        int primary = Math.clamp(primaryValue, 0, 100);
+        int support = Math.clamp(supportValue, 0, 100);
+        return Math.clamp((int) Math.round(primary * PRIMARY_SKILL_WEIGHT + support * SUPPORT_SKILL_WEIGHT), 0, 100);
+    }
+
+    public static int qualificationTotal(ServerLevel level, Villager villager, HiredVillagerRole role) {
+        return qualificationTotal(VillagerProfileManager.getSkills(level, villager), role);
+    }
+
+    public static int qualificationTotal(VillagerSkillSet skills, HiredVillagerRole role) {
+        RoleDefinition definition = definition(role);
+        VillagerSkillSet safeSkills = skills == null ? VillagerSkillSet.EMPTY : skills;
+        return Math.clamp(
+                safeSkills.get(definition.primarySkill()) + safeSkills.get(definition.supportSkill()),
+                0,
+                200);
+    }
+
+    public static int skillWorkSpeedPercent(ServerLevel level, Villager villager, HiredVillagerRole role) {
+        return skillWorkSpeedPercent(roleScore(level, villager, role));
+    }
+
+    public static int skillWorkSpeedPercent(VillagerSkillSet skills, HiredVillagerRole role) {
+        return skillWorkSpeedPercent(roleScore(skills, role));
+    }
+
+    public static int skillWorkSpeedPercent(int aptitude) {
+        return Math.clamp(75 + Math.round(Math.clamp(aptitude, 0, 100) / 2.0F), 75, 125);
+    }
+
+    public static int transferCapacityPercent(ServerLevel level, Villager villager, HiredVillagerRole role) {
+        return transferCapacityPercent(roleScore(level, villager, role));
+    }
+
+    public static int transferCapacityPercent(VillagerSkillSet skills, HiredVillagerRole role) {
+        return transferCapacityPercent(roleScore(skills, role));
+    }
+
+    public static int transferCapacityPercent(int aptitude) {
+        return Math.clamp(50 + Math.clamp(aptitude, 0, 100), 50, 150);
+    }
+
+    public static int transferLimit(int baseItems, int transferCapacityPercent) {
+        if (baseItems <= 0) {
+            return 0;
         }
-        return Math.clamp((int) Math.round(score), 0, 100);
+        return Math.max(1, Math.round(baseItems * Math.clamp(transferCapacityPercent, 50, 150) / 100.0F));
+    }
+
+    public static int scaledDurationTicks(int normalTicks, int skillWorkSpeedPercent) {
+        if (normalTicks <= 0) {
+            return 0;
+        }
+        return Math.max(1, Math.round(normalTicks * 100.0F
+                / Math.clamp(skillWorkSpeedPercent, 75, 125)));
+    }
+
+    public static int baseTransferItems(HiredVillagerRole role) {
+        if (role == HiredVillagerRole.COURIER) {
+            return 64;
+        }
+        return role == HiredVillagerRole.COOK
+                || role == HiredVillagerRole.SMELTER
+                || role == HiredVillagerRole.BREWING ? 16 : 0;
     }
 
     public static List<VillagerSkill> roleSkills(HiredVillagerRole role) {
-        return List.copyOf(definition(role).skillWeights().keySet());
+        RoleDefinition definition = definition(role);
+        return List.of(definition.primarySkill(), definition.supportSkill());
     }
 
     public static VillagerSkill primarySkill(HiredVillagerRole role) {
         return definition(role).primarySkill();
+    }
+
+    public static VillagerSkill supportSkill(HiredVillagerRole role) {
+        return definition(role).supportSkill();
     }
 
     public static RoleDefinition definition(HiredVillagerRole role) {
@@ -93,29 +170,66 @@ public final class HiredVillagerRoles {
     }
 
     public static boolean isSkillUnlocked(ServerLevel level, Villager villager, HiredVillagerRole role) {
-        return isSkillUnlocked(villager, role, roleScore(level, villager, role));
+        if (villager == null) {
+            return false;
+        }
+        return isSkillUnlocked(
+                VillagerProfessionSkills.professionKey(villager),
+                villager.isBaby(),
+                VillagerProfileManager.getSkills(level, villager),
+                role);
     }
 
-    public static boolean isSkillUnlocked(Villager villager, HiredVillagerRole role, int roleScore) {
-        if (villager == null || role == null || !isProfessionEligible(villager, definition(role))) {
+    public static boolean isSkillUnlocked(String professionKey, boolean baby, VillagerSkillSet skills, HiredVillagerRole role) {
+        if (baby || role == null) {
             return false;
         }
         RoleDefinition definition = definition(role);
-        if (definition.universallyAvailable()) {
+        String profession = safeProfession(professionKey);
+        if (!definition.restrictedProfessions().isEmpty()
+                && !definition.restrictedProfessions().contains(profession)) {
+            return false;
+        }
+        if (definition.universallyAvailable() || definition.canonicalProfessions().contains(profession)) {
             return true;
         }
-        return roleScore >= eligibilityThreshold(villager, role);
+        return qualificationTotal(skills, role) > QUALIFICATION_THRESHOLD_EXCLUSIVE;
+    }
+
+    /** Compatibility overload for callers that already resolved a cumulative qualification total. */
+    public static boolean isSkillUnlocked(Villager villager, HiredVillagerRole role, int qualificationTotal) {
+        if (villager == null || villager.isBaby() || role == null) {
+            return false;
+        }
+        RoleDefinition definition = definition(role);
+        String profession = VillagerProfessionSkills.professionKey(villager);
+        if (!definition.restrictedProfessions().isEmpty()
+                && !definition.restrictedProfessions().contains(profession)) {
+            return false;
+        }
+        return definition.universallyAvailable()
+                || definition.canonicalProfessions().contains(profession)
+                || qualificationTotal > QUALIFICATION_THRESHOLD_EXCLUSIVE;
     }
 
     public static int eligibilityThreshold(Villager villager, HiredVillagerRole role) {
-        RoleDefinition definition = definition(role);
-        return isProfessionPreferred(villager, role)
-                ? definition.preferredProfessionThreshold()
-                : definition.nonpreferredThreshold();
+        return QUALIFICATION_REQUIRED_TOTAL;
     }
 
     public static boolean isProfessionPreferred(Villager villager, HiredVillagerRole role) {
-        return preferredRoles(villager).contains(role);
+        return villager != null && isCanonicalProfession(VillagerProfessionSkills.professionKey(villager), role);
+    }
+
+    public static boolean isCanonicalProfession(String professionKey, HiredVillagerRole role) {
+        return role != null && definition(role).canonicalProfessions().contains(safeProfession(professionKey));
+    }
+
+    public static boolean isUniversal(HiredVillagerRole role) {
+        return role != null && definition(role).universallyAvailable();
+    }
+
+    public static boolean isProfessionRestricted(HiredVillagerRole role) {
+        return role != null && !definition(role).restrictedProfessions().isEmpty();
     }
 
     public static String roleSummary(ServerLevel level, Villager villager) {
@@ -126,90 +240,60 @@ public final class HiredVillagerRoles {
 
     private static Map<HiredVillagerRole, RoleDefinition> definitions() {
         EnumMap<HiredVillagerRole, RoleDefinition> definitions = new EnumMap<>(HiredVillagerRole.class);
-        definitions.put(HiredVillagerRole.COMBAT, role(VillagerSkill.GUARDING, VillagerSkill.ARCHERY, VillagerSkill.SMITHING));
-        definitions.put(HiredVillagerRole.HUNTING, role(VillagerSkill.ARCHERY, VillagerSkill.SURVIVAL, VillagerSkill.ANIMAL_HANDLING));
-        definitions.put(HiredVillagerRole.MINING, role(VillagerSkill.MINING, VillagerSkill.MASONRY));
+        definitions.put(HiredVillagerRole.COMBAT, role(VillagerSkill.GUARDING, VillagerSkill.ARCHERY, "weaponsmith"));
+        definitions.put(HiredVillagerRole.HUNTING, role(VillagerSkill.ARCHERY, VillagerSkill.SURVIVAL, "fletcher"));
+        definitions.put(HiredVillagerRole.MINING, role(VillagerSkill.MINING, VillagerSkill.MASONRY, "toolsmith"));
         definitions.put(HiredVillagerRole.LOGGING, role(VillagerSkill.GATHERING, VillagerSkill.CRAFTING));
-        definitions.put(HiredVillagerRole.FARMING, role(VillagerSkill.FARMING));
-        definitions.put(HiredVillagerRole.FISHING, role(VillagerSkill.FISHING, VillagerSkill.SURVIVAL));
-        definitions.put(HiredVillagerRole.BREWING, role(VillagerSkill.MEDICINE));
-        definitions.put(HiredVillagerRole.BUILDER, role(VillagerSkill.MASONRY, VillagerSkill.CRAFTING, VillagerSkill.GATHERING));
-        definitions.put(HiredVillagerRole.ANIMAL_HANDLING, role(VillagerSkill.ANIMAL_HANDLING));
-        definitions.put(HiredVillagerRole.NITWIT, restrictedRole(Set.of("nitwit"), VillagerSkill.DIPLOMACY, VillagerSkill.SURVIVAL, VillagerSkill.GATHERING));
-        definitions.put(HiredVillagerRole.COOK, role(VillagerSkill.COOKING));
-        definitions.put(HiredVillagerRole.SMELTER, role(VillagerSkill.SMITHING, VillagerSkill.MINING));
+        definitions.put(HiredVillagerRole.FARMING, role(VillagerSkill.FARMING, VillagerSkill.GATHERING, "farmer"));
+        definitions.put(HiredVillagerRole.FISHING, role(VillagerSkill.FISHING, VillagerSkill.SURVIVAL, "fisherman"));
+        definitions.put(HiredVillagerRole.BREWING, role(VillagerSkill.MEDICINE, VillagerSkill.SCHOLARSHIP, "cleric"));
+        definitions.put(HiredVillagerRole.BUILDER, role(VillagerSkill.MASONRY, VillagerSkill.CRAFTING, "mason"));
+        definitions.put(HiredVillagerRole.ANIMAL_HANDLING, role(
+                VillagerSkill.ANIMAL_HANDLING, VillagerSkill.FARMING, "shepherd", "leatherworker"));
+        definitions.put(HiredVillagerRole.COOK, role(VillagerSkill.COOKING, VillagerSkill.GATHERING, "butcher"));
+        definitions.put(HiredVillagerRole.SMELTER, role(VillagerSkill.SMITHING, VillagerSkill.MINING, "armorer"));
         definitions.put(HiredVillagerRole.COURIER, universalRole(VillagerSkill.GATHERING, VillagerSkill.SURVIVAL));
+        definitions.put(HiredVillagerRole.NITWIT, restrictedRole(
+                VillagerSkill.DIPLOMACY, VillagerSkill.SURVIVAL, Set.of("nitwit"), "nitwit"));
         return Map.copyOf(definitions);
     }
 
-    private static RoleDefinition role(VillagerSkill primary, VillagerSkill... support) {
-        return definition(primary, Set.of(), false, support);
+    private static RoleDefinition role(VillagerSkill primary, VillagerSkill support, String... canonicalProfessions) {
+        return new RoleDefinition(primary, support, Set.of(canonicalProfessions), false, Set.of());
     }
 
-    private static RoleDefinition restrictedRole(Set<String> professions, VillagerSkill primary, VillagerSkill... support) {
-        return definition(primary, professions, false, support);
+    private static RoleDefinition universalRole(VillagerSkill primary, VillagerSkill support) {
+        return new RoleDefinition(primary, support, Set.of(), true, Set.of());
     }
 
-    private static RoleDefinition universalRole(VillagerSkill primary, VillagerSkill... support) {
-        return definition(primary, Set.of(), true, support);
-    }
-
-    private static RoleDefinition definition(
+    private static RoleDefinition restrictedRole(
             VillagerSkill primary,
-            Set<String> professionRestrictions,
-            boolean universal,
-            VillagerSkill... support) {
-        LinkedHashMap<VillagerSkill, Double> weights = new LinkedHashMap<>();
-        if (support.length == 0) {
-            weights.put(primary, 1.0D);
-        } else {
-            weights.put(primary, 0.70D);
-            double supportWeight = 0.30D / support.length;
-            for (VillagerSkill skill : support) {
-                weights.put(skill, supportWeight);
-            }
-        }
-        return new RoleDefinition(
-                primary,
-                weights,
-                PREFERRED_PROFESSION_THRESHOLD,
-                NONPREFERRED_PROFESSION_THRESHOLD,
-                universal,
-                professionRestrictions);
+            VillagerSkill support,
+            Set<String> restrictedProfessions,
+            String... canonicalProfessions) {
+        return new RoleDefinition(primary, support, Set.of(canonicalProfessions), false, restrictedProfessions);
     }
 
-    private static EnumSet<HiredVillagerRole> preferredRoles(Villager villager) {
-        return switch (VillagerProfessionSkills.professionKey(villager)) {
-            case "nitwit" -> EnumSet.of(HiredVillagerRole.NITWIT);
-            case "armorer", "weaponsmith" -> EnumSet.of(HiredVillagerRole.COMBAT, HiredVillagerRole.HUNTING, HiredVillagerRole.MINING, HiredVillagerRole.SMELTER);
-            case "toolsmith" -> EnumSet.of(HiredVillagerRole.MINING, HiredVillagerRole.LOGGING, HiredVillagerRole.BUILDER, HiredVillagerRole.SMELTER);
-            case "mason" -> EnumSet.of(HiredVillagerRole.BUILDER, HiredVillagerRole.MINING);
-            case "farmer" -> EnumSet.of(HiredVillagerRole.FARMING, HiredVillagerRole.COOK, HiredVillagerRole.ANIMAL_HANDLING);
-            case "fisherman" -> EnumSet.of(HiredVillagerRole.FISHING);
-            case "cartographer" -> EnumSet.of(HiredVillagerRole.FISHING, HiredVillagerRole.BUILDER);
-            case "cleric" -> EnumSet.of(HiredVillagerRole.BREWING);
-            case "butcher" -> EnumSet.of(HiredVillagerRole.COOK, HiredVillagerRole.ANIMAL_HANDLING, HiredVillagerRole.HUNTING);
-            case "shepherd", "leatherworker" -> EnumSet.of(HiredVillagerRole.ANIMAL_HANDLING, HiredVillagerRole.HUNTING);
-            case "fletcher" -> EnumSet.of(HiredVillagerRole.COMBAT, HiredVillagerRole.HUNTING, HiredVillagerRole.LOGGING);
-            default -> EnumSet.noneOf(HiredVillagerRole.class);
-        };
-    }
-
-    private static boolean isProfessionEligible(Villager villager, RoleDefinition definition) {
-        return definition.professionRestrictions().isEmpty()
-                || definition.professionRestrictions().contains(VillagerProfessionSkills.professionKey(villager));
+    private static String safeProfession(String professionKey) {
+        return professionKey == null || professionKey.isBlank() ? "none" : professionKey;
     }
 
     public record RoleDefinition(
             VillagerSkill primarySkill,
-            Map<VillagerSkill, Double> skillWeights,
-            int preferredProfessionThreshold,
-            int nonpreferredThreshold,
+            VillagerSkill supportSkill,
+            Set<String> canonicalProfessions,
             boolean universallyAvailable,
-            Set<String> professionRestrictions) {
+            Set<String> restrictedProfessions) {
         public RoleDefinition {
-            skillWeights = Collections.unmodifiableMap(new LinkedHashMap<>(skillWeights));
-            professionRestrictions = Set.copyOf(professionRestrictions);
+            if (primarySkill == null || supportSkill == null || primarySkill == supportSkill) {
+                throw new IllegalArgumentException("Hired roles require two distinct skills");
+            }
+            canonicalProfessions = Set.copyOf(canonicalProfessions);
+            restrictedProfessions = Set.copyOf(restrictedProfessions);
+        }
+
+        public Map<VillagerSkill, Double> skillWeights() {
+            return Map.of(primarySkill, PRIMARY_SKILL_WEIGHT, supportSkill, SUPPORT_SKILL_WEIGHT);
         }
     }
 }

@@ -276,7 +276,7 @@ public final class CourierWorker implements HiredRoleWorker {
     }
 
     private static int collectInput(Villager villager, HiredWorkContext context, BlockPos input) {
-        int remainingCapacity = MAX_CARGO_ITEMS - cargoItemCount(context);
+        int remainingCapacity = context.transferLimit(MAX_CARGO_ITEMS) - cargoItemCount(context);
         if (remainingCapacity <= 0 || !context.inventory().hasOutputSpace()) {
             return 0;
         }

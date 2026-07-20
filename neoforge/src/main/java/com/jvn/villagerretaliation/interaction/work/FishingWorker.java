@@ -303,7 +303,8 @@ public final class FishingWorker extends AbstractBlockWorker {
         int lure = (int)(EnchantmentHelper.getFishingTimeReduction(level, rod, villager) * 20.0F);
         int luck = EnchantmentHelper.getFishingLuckBonus(level, rod, villager);
         discardExistingOwnedHooks(level, villager);
-        VillagerFishingHook hook = new VillagerFishingHook(villager, level, target, luck, lure);
+        VillagerFishingHook hook = new VillagerFishingHook(
+                villager, level, target, luck, lure, context.skillWorkSpeedPercent());
         level.addFreshEntity(hook);
         context.state().putInt(ACTIVE_HOOK_ID_TAG, hook.getId());
         level.playSound(null, villager.getX(), villager.getY(), villager.getZ(), SoundEvents.FISHING_BOBBER_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F));

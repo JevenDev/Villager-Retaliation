@@ -34,6 +34,8 @@ public record HiredWorkSession(
         HiredJobSite jobSite = HiredVillagerWorkService.jobSite(level, villager, safeRole, state, maxRadius);
         HiredWorkArea area = jobSite.workArea();
         HiredRoute route = HiredRoute.fromState(state);
+        int skillWorkSpeedPercent = HiredVillagerRoles.skillWorkSpeedPercent(roleScore);
+        int transferCapacityPercent = HiredVillagerRoles.transferCapacityPercent(roleScore);
         int efficiency = HiredVillagerWorkService.efficiencyPercent(level, villager, safeRole, state, inventory, roleScore);
         HiredWorkContext context = new HiredWorkContext(
                 inventory,
@@ -44,6 +46,9 @@ public record HiredWorkSession(
                 area.horizontalRadius(),
                 area.verticalRadius(),
                 area.usable(),
+                roleScore,
+                skillWorkSpeedPercent,
+                transferCapacityPercent,
                 efficiency,
                 state.getBoolean("AutoDepositOutputs"),
                 state.getBoolean("UseAssignedStorageForSupplies"),

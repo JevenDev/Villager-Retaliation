@@ -159,7 +159,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, station);
                 return WorkResult.idle("interaction.work.smelting.missing_raw_ore");
             }
-            int count = Math.min(carriedOre.getCount(), Math.min(MAX_INPUT_PULL, furnace.getMaxStackSize(carriedOre)));
+            int count = Math.min(carriedOre.getCount(), Math.min(context.transferLimit(MAX_INPUT_PULL), furnace.getMaxStackSize(carriedOre)));
             ItemStack loaded = consumeCarriedSupply(context, carriedOre, count);
             if (loaded.isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "missing_smelting_raw_ore", level.getGameTime() + 100L);
@@ -179,7 +179,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, station);
                 return WorkResult.idle("interaction.work.smelting.missing_fuel");
             }
-            int count = Math.min(carriedFuel.getCount(), Math.min(MAX_FUEL_PULL, furnace.getMaxStackSize(carriedFuel)));
+            int count = Math.min(carriedFuel.getCount(), Math.min(context.transferLimit(MAX_FUEL_PULL), furnace.getMaxStackSize(carriedFuel)));
             ItemStack loaded = consumeCarriedSupply(context, carriedFuel, count);
             if (loaded.isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "missing_smelting_fuel", level.getGameTime() + 100L);
@@ -205,7 +205,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
             ItemStack stack,
             String status,
             boolean completed) {
-        ItemStack planned = stack.copy();
+        ItemStack planned = stack.copyWithCount(Math.min(stack.getCount(), context.transferLimit(MAX_INPUT_PULL)));
         if (!context.canStoreOutputs(List.of(planned))) {
             OutputFullHandling handling = handleOutputFullInventory(
                     level,
@@ -313,13 +313,19 @@ public final class SmeltingWorker extends AbstractBlockWorker {
 
         faceBlock(villager, storage);
         int movedTotal = 0;
+        int remainingTripCapacity = context.transferLimit(MAX_INPUT_PULL);
         for (MaterialNeed need : needs) {
-            movedTotal += AssignedStorageService.transferItemsAtAssignedStorage(
+            if (remainingTripCapacity <= 0) {
+                break;
+            }
+            int moved = AssignedStorageService.transferItemsAtAssignedStorage(
                     villager,
                     storage,
                     need.predicate(),
-                    need.count(),
+                    Math.min(need.count(), remainingTripCapacity),
                     context.inventory()::insertSupplyFromStorage);
+            movedTotal += moved;
+            remainingTripCapacity -= moved;
         }
         if (movedTotal <= 0) {
             HiredWorkerBrain.setFailure(context, "smelting_material_inventory_full", level.getGameTime() + 100L);
@@ -346,7 +352,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
         if (input.isEmpty() && HiredSupplyCrafting.countCarried(context, rawOrePredicate) <= 0) {
             needs.add(new MaterialNeed(
                     rawOrePredicate,
-                    MAX_INPUT_PULL,
+                    context.transferLimit(MAX_INPUT_PULL),
                     "missing_smelting_raw_ore",
                     "interaction.work.smelting.missing_raw_ore"));
         }
@@ -356,7 +362,7 @@ public final class SmeltingWorker extends AbstractBlockWorker {
                 && HiredSupplyCrafting.countCarried(context, fuelPredicate) <= 0) {
             needs.add(new MaterialNeed(
                     fuelPredicate,
-                    MAX_FUEL_PULL,
+                    context.transferLimit(MAX_FUEL_PULL),
                     "missing_smelting_fuel",
                     "interaction.work.smelting.missing_fuel"));
         }

@@ -3,12 +3,16 @@ package com.jvn.villagerretaliation.skill;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoleSettings;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerProfileSavedData;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -50,7 +54,7 @@ public final class HiredWorkSkillGrowthService {
         }
         long dayIndex = Math.floorDiv(level.getServer().overworld().getDayTime(), 24_000L);
         VillagerSkillProgressionResult result = VillagerSkillProgressionService.apply(
-                profile, practice, dayIndex, level.getGameTime(), xpPerUnit);
+                profile, normalizeRolePractice(role, practice), dayIndex, level.getGameTime(), xpPerUnit);
         if (!migrated && !result.profileChanged()) {
             return result;
         }
@@ -61,6 +65,43 @@ public final class HiredWorkSkillGrowthService {
             sendFeedback(hirer, villager, result.increases().getFirst().skill());
         }
         return result;
+    }
+
+    static List<VillagerSkillPractice> normalizeRolePractice(
+            HiredVillagerRole role,
+            List<VillagerSkillPractice> practice) {
+        if (role == null || practice == null || practice.isEmpty()) {
+            return List.of();
+        }
+        Map<PracticeKey, Double> groupedUnits = new LinkedHashMap<>();
+        for (VillagerSkillPractice entry : practice) {
+            if (entry == null) {
+                continue;
+            }
+            PracticeKey key = new PracticeKey(entry.source(), entry.repetitionKey());
+            groupedUnits.merge(key, entry.units(), Double::sum);
+        }
+        List<VillagerSkillPractice> normalized = new ArrayList<>(groupedUnits.size() * 2);
+        for (Map.Entry<PracticeKey, Double> entry : groupedUnits.entrySet()) {
+            double totalUnits = entry.getValue();
+            if (!Double.isFinite(totalUnits) || totalUnits <= 0.0D) {
+                continue;
+            }
+            normalized.add(new VillagerSkillPractice(
+                    HiredVillagerRoles.primarySkill(role),
+                    totalUnits * HiredVillagerRoles.PRIMARY_SKILL_WEIGHT,
+                    entry.getKey().source(),
+                    entry.getKey().repetitionKey()));
+            normalized.add(new VillagerSkillPractice(
+                    HiredVillagerRoles.supportSkill(role),
+                    totalUnits * HiredVillagerRoles.SUPPORT_SKILL_WEIGHT,
+                    entry.getKey().source(),
+                    entry.getKey().repetitionKey()));
+        }
+        return List.copyOf(normalized);
+    }
+
+    private record PracticeKey(String source, long repetitionKey) {
     }
 
     static boolean migrateLegacyProgress(VillagerProfile profile, CompoundTag workState, long gameTime) {

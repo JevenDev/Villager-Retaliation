@@ -2,6 +2,9 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +13,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
@@ -106,7 +110,21 @@ public final class VillagerCombatRoles {
     }
 
     public static int attackCooldown(Villager villager) {
-        return ATTACK_COOLDOWNS.getOrDefault(profession(villager), 20);
+        return hiredAttackRecoveryTicks(villager, ATTACK_COOLDOWNS.getOrDefault(profession(villager), 20));
+    }
+
+    static int hiredAttackRecoveryTicks(Villager villager, int normalTicks) {
+        if (!(villager.level() instanceof ServerLevel level)
+                || !HiredVillagerContractService.hasContract(villager)
+                || !HiredVillagerContractService.isHired(level, villager)) {
+            return normalTicks;
+        }
+        HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
+        if (role != HiredVillagerRole.COMBAT && role != HiredVillagerRole.HUNTING) {
+            return normalTicks;
+        }
+        int speed = HiredVillagerRoles.skillWorkSpeedPercent(level, villager, role);
+        return HiredVillagerRoles.scaledDurationTicks(normalTicks, speed);
     }
 
     public static boolean isArmorer(Villager villager) {

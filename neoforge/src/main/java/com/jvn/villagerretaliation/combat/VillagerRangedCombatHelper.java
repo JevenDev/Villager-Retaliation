@@ -213,7 +213,7 @@ final class VillagerRangedCombatHelper {
         heldTrident.hurtAndBreak(1, villager, LivingEntity.getSlotForHand(hand));
         villager.swing(hand, true);
         villager.playSound(SoundEvents.DROWNED_SHOOT, 1.0F, 1.0F / (villager.getRandom().nextFloat() * 0.4F + 0.8F));
-        ATTACK_DELAY.put(villager.getUUID(), TRIDENT_ATTACK_INTERVAL_TICKS);
+        ATTACK_DELAY.put(villager.getUUID(), attackRecoveryTicks(villager, TRIDENT_ATTACK_INTERVAL_TICKS));
         return true;
     }
 
@@ -256,7 +256,7 @@ final class VillagerRangedCombatHelper {
                 if (drawTicks >= BOW_DRAW_TICKS) {
                     villager.stopUsingItem();
                     if (fireBowLikeIllusioner(villager, target, level, BowItem.getPowerForTime(drawTicks))) {
-                        ATTACK_DELAY.put(villager.getUUID(), BOW_ATTACK_INTERVAL_TICKS);
+                        ATTACK_DELAY.put(villager.getUUID(), attackRecoveryTicks(villager, BOW_ATTACK_INTERVAL_TICKS));
                     } else {
                         ATTACK_DELAY.put(villager.getUUID(), INITIAL_RANGED_WINDUP_TICKS);
                     }
@@ -471,8 +471,15 @@ final class VillagerRangedCombatHelper {
     }
 
     private static int nextCrossbowPostLoadDelay(AbstractVillager villager) {
-        return CROSSBOW_POST_LOAD_DELAY_BASE_TICKS
+        int normalTicks = CROSSBOW_POST_LOAD_DELAY_BASE_TICKS
                 + villager.getRandom().nextInt(CROSSBOW_POST_LOAD_DELAY_RANDOM_TICKS);
+        return attackRecoveryTicks(villager, normalTicks);
+    }
+
+    private static int attackRecoveryTicks(AbstractVillager villager, int normalTicks) {
+        return villager instanceof Villager villageResident
+                ? VillagerCombatRoles.hiredAttackRecoveryTicks(villageResident, normalTicks)
+                : normalTicks;
     }
 
     private static boolean isWithinCrossbowAttackRange(AbstractVillager villager, LivingEntity target, ItemStack weapon) {

@@ -195,7 +195,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, station);
                 return WorkResult.idle("interaction.work.cooking.missing_raw_food");
             }
-            int count = Math.min(carriedFood.getCount(), Math.min(MAX_INPUT_PULL, furnace.getMaxStackSize(carriedFood)));
+            int count = Math.min(carriedFood.getCount(), Math.min(context.transferLimit(MAX_INPUT_PULL), furnace.getMaxStackSize(carriedFood)));
             ItemStack loaded = consumeCarriedSupply(context, carriedFood, count);
             if (loaded.isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "missing_cooking_raw_food", level.getGameTime() + 100L);
@@ -215,7 +215,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                 setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, station);
                 return WorkResult.idle("interaction.work.cooking.missing_fuel");
             }
-            int count = Math.min(carriedFuel.getCount(), Math.min(MAX_FUEL_PULL, furnace.getMaxStackSize(carriedFuel)));
+            int count = Math.min(carriedFuel.getCount(), Math.min(context.transferLimit(MAX_FUEL_PULL), furnace.getMaxStackSize(carriedFuel)));
             ItemStack loaded = consumeCarriedSupply(context, carriedFuel, count);
             if (loaded.isEmpty()) {
                 HiredWorkerBrain.setFailure(context, "missing_cooking_fuel", level.getGameTime() + 100L);
@@ -241,7 +241,7 @@ public final class CookingWorker extends AbstractBlockWorker {
             ItemStack stack,
             String status,
             boolean completed) {
-        ItemStack planned = stack.copy();
+        ItemStack planned = stack.copyWithCount(Math.min(stack.getCount(), context.transferLimit(MAX_INPUT_PULL)));
         if (!context.canStoreOutputs(List.of(planned))) {
             OutputFullHandling handling = handleOutputFullInventory(
                     level,
@@ -353,13 +353,19 @@ public final class CookingWorker extends AbstractBlockWorker {
 
         faceBlock(villager, storage);
         int movedTotal = 0;
+        int remainingTripCapacity = context.transferLimit(MAX_INPUT_PULL);
         for (MaterialNeed need : needs) {
-            movedTotal += AssignedStorageService.transferItemsAtAssignedStorageIgnoringFilter(
+            if (remainingTripCapacity <= 0) {
+                break;
+            }
+            int moved = AssignedStorageService.transferItemsAtAssignedStorageIgnoringFilter(
                     villager,
                     storage,
                     need.predicate(),
-                    need.count(),
+                    Math.min(need.count(), remainingTripCapacity),
                     context.inventory()::insertSupplyFromStorage);
+            movedTotal += moved;
+            remainingTripCapacity -= moved;
         }
         if (movedTotal <= 0) {
             HiredWorkerBrain.setFailure(context, "cooking_material_inventory_full", level.getGameTime() + 100L);
@@ -387,7 +393,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         if (input.isEmpty() && HiredSupplyCrafting.countCarried(context, rawFoodPredicate) <= 0) {
             needs.add(new MaterialNeed(
                     rawFoodPredicate,
-                    MAX_INPUT_PULL,
+                    context.transferLimit(MAX_INPUT_PULL),
                     "missing_cooking_raw_food",
                     "interaction.work.cooking.missing_raw_food"));
         }
@@ -398,7 +404,7 @@ public final class CookingWorker extends AbstractBlockWorker {
                 && HiredSupplyCrafting.countCarried(context, fuelPredicate) <= 0) {
             needs.add(new MaterialNeed(
                     fuelPredicate,
-                    MAX_FUEL_PULL,
+                    context.transferLimit(MAX_FUEL_PULL),
                     "missing_cooking_fuel",
                     "interaction.work.cooking.missing_fuel"));
         }
@@ -640,13 +646,19 @@ public final class CookingWorker extends AbstractBlockWorker {
 
         faceBlock(villager, storage);
         int movedTotal = 0;
+        int remainingTripCapacity = context.transferLimit(MAX_INPUT_PULL);
         for (MaterialNeed need : needs) {
-            movedTotal += AssignedStorageService.transferItemsAtAssignedStorageIgnoringFilter(
+            if (remainingTripCapacity <= 0) {
+                break;
+            }
+            int moved = AssignedStorageService.transferItemsAtAssignedStorageIgnoringFilter(
                     villager,
                     storage,
                     need.predicate(),
-                    need.count(),
+                    Math.min(need.count(), remainingTripCapacity),
                     context.inventory()::insertSupplyFromStorage);
+            movedTotal += moved;
+            remainingTripCapacity -= moved;
         }
         if (movedTotal <= 0) {
             HiredWorkerBrain.setFailure(context, "cooking_material_inventory_full", level.getGameTime() + 100L);
