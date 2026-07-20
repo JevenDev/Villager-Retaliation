@@ -1,0 +1,85 @@
+{
+  "replace": false,
+  "entries": [
+    {
+      "id": "trade_examples:farmer_harvest_crate",
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": [
+        "villagerretaliation:farming"
+      ],
+      "min_rank": "apprentice",
+      "max_rank": "expert",
+      "villager_level": 2,
+      "chance": 0.7,
+      "weight": 12,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 5,
+        "skill_discount": {
+          "enabled": true,
+          "max_percent": 40
+        }
+      },
+      "result": {
+        "item": "minecraft:golden_carrot",
+        "count": 4
+      },
+      "max_uses": {
+        "base": 5,
+        "bonus_by_skill": true,
+        "max_bonus": 3
+      },
+      "xp": 8,
+      "price_multiplier": 0.05,
+      "quality_scaling": {
+        "enabled": true,
+        "count_by_skill": true,
+        "cost_by_skill": true,
+        "max_uses_by_skill": true,
+        "xp_by_skill": false,
+        "rare_chance_by_skill": false,
+        "enchantments_by_skill": false
+      }
+    },
+    {
+      "id": "trade_examples:farmer_master_feast",
+      "professions": [
+        "minecraft:farmer"
+      ],
+      "skills": [
+        "villagerretaliation:farming",
+        "villagerretaliation:cooking"
+      ],
+      "min_rank": "master",
+      "villager_level": 5,
+      "chance": 0.2,
+      "weight": 3,
+      "cost": {
+        "item": "minecraft:emerald",
+        "count": 18
+      },
+      "result": {
+        "item": "minecraft:golden_apple",
+        "count": 1
+      },
+      "max_uses": {
+        "base": 2
+      },
+      "xp": 25,
+      "price_multiplier": 0.1,
+      "request": {
+        "targetable": true,
+        "display_priority": 40,
+        "min_reputation": "trusted",
+        "wait_days": 2,
+        "cooldown_days": 4,
+        "extra_cost": {
+          "item": "minecraft:gold_ingot",
+          "count": 3
+        }
+      }
+    }
+  ]
+}

@@ -399,10 +399,15 @@
       const grouped = new Map();
       for (const entry of state.skillTrades.entries) {
         const sourcePath = entry.__sourcePath || skillTradesPath(state);
-        if (!grouped.has(sourcePath)) grouped.set(sourcePath, []);
-        grouped.get(sourcePath).push(stripBuilderFields(entry));
+        if (!grouped.has(sourcePath)) grouped.set(sourcePath, { entries: [], replace: entry.__sourceReplace });
+        grouped.get(sourcePath).entries.push(stripBuilderFields(entry));
       }
-      return Object.fromEntries([...grouped].map(([sourcePath, entries]) => [sourcePath, safeJson({ entries })]));
+      return Object.fromEntries([...grouped].map(([sourcePath, group]) => {
+        const root = {};
+        if (typeof group.replace === "boolean") root.replace = group.replace;
+        root.entries = group.entries;
+        return [sourcePath, safeJson(root)];
+      }));
     }
 
     function generatedDialogueFiles(state) {
@@ -666,7 +671,7 @@
         state.skillTrades.fileName = normalizeFileName(skillTradeMatch[2].split("/").pop(), state.skillTrades.fileName);
         state.skillTrades.entries = state.skillTrades.entries
           .filter((entry) => (entry.__sourcePath || skillTradesPath(state)) !== path)
-          .concat(cleanArray(parsed.entries).map((entry) => ({ ...entry, __sourcePath: path })));
+          .concat(cleanArray(parsed.entries).map((entry) => ({ ...entry, __sourcePath: path, __sourceReplace: parsed.replace })));
         delete state.extraFiles[path];
         return true;
       }
@@ -851,7 +856,11 @@
       if (skillTradeMatch && Array.isArray(json.entries)) {
         state.meta.namespace = namespaceify(skillTradeMatch[1], state.meta.namespace || "my_pack");
         state.skillTrades.fileName = normalizeFileName(skillTradeMatch[2].split("/").pop(), state.skillTrades.fileName);
+        const start = state.skillTrades.entries.length;
         mergeArray(state, "skillTrades", "entries", json.entries, path);
+        for (let index = start; index < state.skillTrades.entries.length; index++) {
+          state.skillTrades.entries[index].__sourceReplace = json.replace;
+        }
         return true;
       }
 
