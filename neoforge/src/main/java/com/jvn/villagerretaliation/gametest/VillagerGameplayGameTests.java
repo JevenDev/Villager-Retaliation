@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedPose;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -23,6 +24,7 @@ import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
+import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -830,6 +832,88 @@ public final class VillagerGameplayGameTests {
                 "disconnect cleanup should release the player's request state");
         ServerboundRequestLimiter.clear(firstPlayer);
         ServerboundRequestLimiter.clear(secondPlayer);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void giftRequestCooldownIsPerPlayerAndHonorsBoundary(GameTestHelper helper) {
+        UUID firstPlayer = UUID.randomUUID();
+        UUID secondPlayer = UUID.randomUUID();
+        ResourceLocation giftRequest = VillagerGiftRequestPayload.TYPE.id();
+
+        helper.assertTrue(ServerboundRequestLimiter.tryAcquire(firstPlayer, giftRequest, 100L, 10L),
+                "the first gift request should be accepted");
+        helper.assertFalse(ServerboundRequestLimiter.tryAcquire(firstPlayer, giftRequest, 109L, 10L),
+                "a gift request inside the cooldown should be rejected");
+        helper.assertTrue(ServerboundRequestLimiter.tryAcquire(firstPlayer, giftRequest, 110L, 10L),
+                "a gift request at the cooldown boundary should be accepted");
+        helper.assertTrue(ServerboundRequestLimiter.tryAcquire(secondPlayer, giftRequest, 109L, 10L),
+                "gift request cooldowns should be isolated by player");
+
+        ServerboundRequestLimiter.clear(firstPlayer);
+        ServerboundRequestLimiter.clear(secondPlayer);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dailyGiftReputationLimitsRepeatStacksAndRelationshipTotals(GameTestHelper helper) {
+        VillagerInteractionSavedData data = new VillagerInteractionSavedData();
+        UUID villager = UUID.randomUUID();
+        UUID otherVillager = UUID.randomUUID();
+        UUID player = UUID.randomUUID();
+        UUID otherPlayer = UUID.randomUUID();
+
+        helper.assertValueEqual(data.limitPositiveGiftReputation(
+                villager, player, 4L, "minecraft:emerald", 57, 0.10D, 120), 57,
+                "the first positive stack should receive its full value");
+        helper.assertValueEqual(data.limitPositiveGiftReputation(
+                villager, player, 4L, "minecraft:emerald", 57, 0.10D, 120), 5,
+                "a repeated stack should receive ten percent rounded down");
+        helper.assertValueEqual(data.limitPositiveGiftReputation(
+                villager, player, 4L, "minecraft:diamond", 100, 0.10D, 120), 58,
+                "a different item should be truncated to the remaining daily allowance");
+        helper.assertValueEqual(data.limitPositiveGiftReputation(
+                villager, player, 4L, "minecraft:gold_ingot", 20, 0.10D, 120), 0,
+                "positive gift reputation should stop at the daily cap");
+        helper.assertValueEqual(data.limitPositiveGiftReputation(
+                villager, player, 4L, "minecraft:rotten_flesh", -20, 0.10D, 120), -20,
+                "negative gift reputation should remain unchanged");
+        helper.assertValueEqual(data.limitPositiveGiftReputation(
+                otherVillager, player, 4L, "minecraft:emerald", 57, 0.10D, 120), 57,
+                "a different villager should have an independent allowance");
+        helper.assertValueEqual(data.limitPositiveGiftReputation(
+                villager, otherPlayer, 4L, "minecraft:emerald", 57, 0.10D, 120), 57,
+                "a different player should have an independent allowance");
+        helper.assertValueEqual(data.limitPositiveGiftReputation(
+                villager, player, 5L, "minecraft:emerald", 57, 0.10D, 120), 57,
+                "the ledger should reset on the next Minecraft day");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void dailyGiftReputationLedgerSurvivesSaveAndLegacyLoad(GameTestHelper helper) {
+        UUID villager = UUID.randomUUID();
+        UUID player = UUID.randomUUID();
+        VillagerInteractionSavedData data = new VillagerInteractionSavedData();
+        helper.assertValueEqual(data.limitPositiveGiftReputation(
+                villager, player, 8L, "minecraft:emerald", 40, 0.10D, 120), 40,
+                "initial gift reputation");
+
+        CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
+        VillagerInteractionSavedData loaded = VillagerInteractionSavedData.load(
+                saved, helper.getLevel().registryAccess());
+        helper.assertValueEqual(loaded.limitPositiveGiftReputation(
+                villager, player, 8L, "minecraft:emerald", 40, 0.10D, 120), 4,
+                "the repeated-item ledger should survive save and load");
+        helper.assertValueEqual(loaded.limitPositiveGiftReputation(
+                villager, player, 8L, "minecraft:diamond", 100, 0.10D, 120), 76,
+                "the persisted daily total should constrain remaining reputation");
+
+        VillagerInteractionSavedData legacy = VillagerInteractionSavedData.load(
+                new CompoundTag(), helper.getLevel().registryAccess());
+        helper.assertValueEqual(legacy.limitPositiveGiftReputation(
+                villager, player, 8L, "minecraft:emerald", 40, 0.10D, 120), 40,
+                "legacy data should start with an empty gift ledger");
         helper.succeed();
     }
 

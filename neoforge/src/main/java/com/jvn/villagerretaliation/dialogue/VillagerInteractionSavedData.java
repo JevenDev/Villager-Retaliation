@@ -105,6 +105,9 @@ public class VillagerInteractionSavedData extends SavedData {
     private static final String TAG_GIFT_ADVICE_RESULT_VILLAGER_NAME = "GiftAdviceResultVillagerName";
     private static final String TAG_GIFT_ADVICE_RESULT_LIKED = "GiftAdviceResultLiked";
     private static final String TAG_GIFT_ADVICE_RESULT_GAME_TIME = "GiftAdviceResultGameTime";
+    private static final String TAG_GIFT_REPUTATION_DAY = "GiftReputationDay";
+    private static final String TAG_DAILY_POSITIVE_GIFT_REPUTATION = "DailyPositiveGiftReputation";
+    private static final String TAG_DAILY_POSITIVE_GIFT_ITEMS = "DailyPositiveGiftItems";
     private static final int MAX_RECENT_LINES = 5;
     private static final int MAX_CARTOGRAPHER_MAPS = 8;
     private static final int MAX_STORY_HINTS = 12;
@@ -207,6 +210,15 @@ public class VillagerInteractionSavedData extends SavedData {
             }
             entry.giftAdviceResultLiked = entryTag.getBoolean(TAG_GIFT_ADVICE_RESULT_LIKED);
             entry.giftAdviceResultGameTime = readOptionalLong(entryTag, TAG_GIFT_ADVICE_RESULT_GAME_TIME);
+            entry.giftReputationDay = readOptionalLong(entryTag, TAG_GIFT_REPUTATION_DAY);
+            entry.dailyPositiveGiftReputation = Math.max(0, entryTag.getInt(TAG_DAILY_POSITIVE_GIFT_REPUTATION));
+            ListTag dailyPositiveGiftItems = entryTag.getList(TAG_DAILY_POSITIVE_GIFT_ITEMS, Tag.TAG_STRING);
+            for (Tag rawItemId : dailyPositiveGiftItems) {
+                String itemId = rawItemId.getAsString();
+                if (!itemId.isBlank()) {
+                    entry.dailyPositiveGiftItemIds.add(itemId);
+                }
+            }
             if (entryTag.contains(TAG_CONSECUTIVE_REQUEST_TYPE, Tag.TAG_STRING)) {
                 try {
                     entry.consecutiveRequestType = DialogueRequestType.valueOf(entryTag.getString(TAG_CONSECUTIVE_REQUEST_TYPE));
@@ -469,6 +481,10 @@ public class VillagerInteractionSavedData extends SavedData {
                 }
                 entryTag.putBoolean(TAG_GIFT_ADVICE_RESULT_LIKED, playerEntry.getValue().giftAdviceResultLiked);
                 entryTag.putLong(TAG_GIFT_ADVICE_RESULT_GAME_TIME, playerEntry.getValue().giftAdviceResultGameTime);
+                entryTag.putLong(TAG_GIFT_REPUTATION_DAY, playerEntry.getValue().giftReputationDay);
+                entryTag.putInt(TAG_DAILY_POSITIVE_GIFT_REPUTATION, playerEntry.getValue().dailyPositiveGiftReputation);
+                entryTag.put(TAG_DAILY_POSITIVE_GIFT_ITEMS,
+                        writeStringSet(playerEntry.getValue().dailyPositiveGiftItemIds));
                 if (playerEntry.getValue().consecutiveRequestType != null) {
                     entryTag.putString(TAG_CONSECUTIVE_REQUEST_TYPE, playerEntry.getValue().consecutiveRequestType.name());
                     entryTag.putInt(TAG_CONSECUTIVE_REQUEST_COUNT, playerEntry.getValue().consecutiveRequestCount);
@@ -688,6 +704,29 @@ public class VillagerInteractionSavedData extends SavedData {
         InteractionEntry created = new InteractionEntry();
         putEntry(villagerId, playerId, created);
         return created;
+    }
+
+    public int limitPositiveGiftReputation(
+            UUID villagerId,
+            UUID playerId,
+            long day,
+            String itemId,
+            int proposedReputation,
+            double repeatedMultiplier,
+            int dailyCap) {
+        if (proposedReputation <= 0) {
+            return proposedReputation;
+        }
+        InteractionEntry entry = getOrCreate(villagerId, playerId);
+        int awarded = entry.limitPositiveGiftReputation(
+                day,
+                itemId,
+                proposedReputation,
+                repeatedMultiplier,
+                dailyCap
+        );
+        setDirty();
+        return awarded;
     }
 
     InteractionEntry getOrEmptyForRead(UUID villagerId, UUID playerId) {
@@ -1268,6 +1307,9 @@ public class VillagerInteractionSavedData extends SavedData {
         private String giftAdviceResultVillagerName;
         private boolean giftAdviceResultLiked;
         private long giftAdviceResultGameTime = Long.MIN_VALUE;
+        private long giftReputationDay = Long.MIN_VALUE;
+        private int dailyPositiveGiftReputation;
+        private final LinkedHashSet<String> dailyPositiveGiftItemIds = new LinkedHashSet<>();
         private DialogueRequestType consecutiveRequestType;
         private int consecutiveRequestCount;
         private final ArrayDeque<String> recentDialogueIds = new ArrayDeque<>();
@@ -1288,6 +1330,36 @@ public class VillagerInteractionSavedData extends SavedData {
 
         public void markTalked() {
             this.hasTalked = true;
+        }
+
+        private int limitPositiveGiftReputation(
+                long day,
+                String itemId,
+                int proposedReputation,
+                double repeatedMultiplier,
+                int dailyCap) {
+            if (this.giftReputationDay != day) {
+                this.giftReputationDay = day;
+                this.dailyPositiveGiftReputation = 0;
+                this.dailyPositiveGiftItemIds.clear();
+            }
+
+            String normalizedItemId = itemId == null ? "" : itemId;
+            boolean repeated = !normalizedItemId.isBlank()
+                    && this.dailyPositiveGiftItemIds.contains(normalizedItemId);
+            int adjustedReputation = proposedReputation;
+            if (repeated) {
+                double multiplier = Math.clamp(repeatedMultiplier, 0.0D, 1.0D);
+                adjustedReputation = (int) Math.floor(proposedReputation * multiplier);
+            }
+
+            int remaining = Math.max(0, Math.max(0, dailyCap) - this.dailyPositiveGiftReputation);
+            int awarded = Math.min(adjustedReputation, remaining);
+            this.dailyPositiveGiftReputation += awarded;
+            if (!normalizedItemId.isBlank()) {
+                this.dailyPositiveGiftItemIds.add(normalizedItemId);
+            }
+            return awarded;
         }
 
         public boolean routineChatMuted() {
@@ -1928,6 +2000,9 @@ public class VillagerInteractionSavedData extends SavedData {
                     && isBlank(this.giftAdviceResultVillagerName)
                     && !this.giftAdviceResultLiked
                     && this.giftAdviceResultGameTime == Long.MIN_VALUE
+                    && this.giftReputationDay == Long.MIN_VALUE
+                    && this.dailyPositiveGiftReputation == 0
+                    && this.dailyPositiveGiftItemIds.isEmpty()
                     && this.consecutiveRequestType == null
                     && this.consecutiveRequestCount == 0
                     && this.recentDialogueIds.isEmpty()

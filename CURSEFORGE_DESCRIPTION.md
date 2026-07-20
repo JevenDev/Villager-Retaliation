@@ -115,7 +115,7 @@ Default quest keybinds:
 
 Villagers evaluate gifts by global rules and profession preferences. Emeralds, diamonds, food, tools, books, and profession items are usually safer bets than rotten loot or obvious hazards.
 
-Gift reactions include Loved, Liked, Neutral, Disliked, and Hated. A gift stack must fit in the villager's inventory, and trusted villagers may keep favorite gifts as keepsakes.
+Gift reactions include Loved, Liked, Neutral, Disliked, and Hated. A gift stack must fit in the villager's inventory, and trusted villagers may keep favorite gifts as keepsakes. Positive gift reputation is capped per player-villager relationship each Minecraft day, with additional stacks of the same item earning sharply reduced reputation.
 
 ### Skill Trades and Special Orders
 

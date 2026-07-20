@@ -93,6 +93,9 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_GIFTS = bind("gifts.enableVillagerGifts", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_HIGH_REPUTATION_GIFTS = bind("gifts.enableHighReputationGifts", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_GIFT_KEEPSAKES = bind("gifts.enableGiftKeepsakes", Boolean.class);
+    public static final ConfigValue<Double> REPEATED_GIFT_REPUTATION_MULTIPLIER = bind("gifts.repeatedGiftReputationMultiplier", Double.class);
+    public static final ConfigValue<Integer> DAILY_GIFT_REPUTATION_CAP = bind("gifts.dailyGiftReputationCap", Integer.class);
+    public static final ConfigValue<Integer> GIFT_REQUEST_COOLDOWN_TICKS = bind("gifts.giftRequestCooldownTicks", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_SOCIAL_GRAPH = bind("social.enableVillagerSocialGraph", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_MOODS = bind("social.enableVillagerMoods", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_SOCIAL_ATTRIBUTE_BEHAVIOR = bind("social.enableSocialAttributeBehavior", Boolean.class);

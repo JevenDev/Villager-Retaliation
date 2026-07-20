@@ -1,5 +1,7 @@
 # Changelog
 
+- Prevented gift reputation farming with persisted per-player/per-villager daily caps, sharply reduced gains from repeated stacks of the same item, and a server-side gift request cooldown. Added server config controls for all three limits.
+
 - Reworked hired-job qualification around two relevant skills: ordinary roles now require a cumulative total above 60, while canonical vanilla professions automatically qualify for their matching role. Courier remains universal for adults, Nitwit remains profession-restricted, and Builder remains a one-off service.
 - Added skill-based hired-work throughput. Weighted 70/30 role aptitude now scales worker cadence, block work, fishing waits, hired attack recovery, courier cargo, and facility collection trips without changing vanilla workstation processing timers.
 - Added a third Job Stats interaction view with role readiness, qualification progress, profession overrides, aptitude, work speed, transfer capacity, and contributing-skill details.

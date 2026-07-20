@@ -60,6 +60,12 @@ hated
 
 Pick the reaction first, then tune specifics with `reputation_per_item`, profession filters, and `priority`.
 
+## Reputation Limits
+
+Positive gift reputation is tracked separately for each player-villager relationship. By default, the first stack of an item earns its full value, additional stacks of the same item on that Minecraft day earn 10%, and total positive gift reputation is capped at 120 per day. Disliked and hated gift penalties are not reduced or counted against that cap.
+
+Servers can tune this behavior with `gifts.repeatedGiftReputationMultiplier`, `gifts.dailyGiftReputationCap`, and `gifts.giftRequestCooldownTicks`. Item repetition is based on the item ID, so changing stack components does not create a new first gift.
+
 ## Example: Shared Response Text
 
 Gift files stay language-neutral by using a response key:
