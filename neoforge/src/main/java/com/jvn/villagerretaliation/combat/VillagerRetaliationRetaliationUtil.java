@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerArmor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
@@ -398,6 +399,33 @@ public final class VillagerRetaliationRetaliationUtil {
             }
         }
         return moved;
+    }
+
+    public static <T extends AbstractVillager> boolean tryAcquireGroundArmor(
+            T villager,
+            ItemEntity itemEntity,
+            double movementSpeed
+    ) {
+        if (!itemEntity.isAlive()
+                || itemEntity.getItem().isEmpty()
+                || !VillagerRetaliationVillagerArmor.shouldPathfindForUpgrade(villager, itemEntity.getItem())) {
+            clearGroundWeaponPursuitState(villager);
+            return false;
+        }
+
+        if (!itemEntity.hasPickUpDelay()
+                && villager.distanceToSqr(itemEntity) <= VillagerRetaliationVillagerWeapons.WEAPON_PICKUP_REACH_SQR) {
+            VillagerRetaliationVillagerArmor.equipGroundUpgrade(villager, itemEntity);
+            clearGroundWeaponPursuitState(villager);
+            return false;
+        }
+
+        if (shouldRefreshGroundWeaponPursuit(villager, itemEntity)) {
+            villager.getLookControl().setLookAt(itemEntity, 30.0F, 30.0F);
+            VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
+            villager.getNavigation().moveTo(itemEntity, movementSpeed);
+        }
+        return true;
     }
 
     public static boolean moveTowardReachableRetaliationTarget(AbstractVillager villager, LivingEntity target, double movementSpeed) {

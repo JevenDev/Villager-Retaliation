@@ -361,7 +361,9 @@ public final class WanderingTraderRetaliationHandler {
                 trader,
                 ACTOR_POLICY.movementSpeed(trader),
                 () -> RETALIATION.discardTemporaryWeapon(trader),
-                gameTime
+                gameTime,
+                true,
+                false
         );
     }
 

@@ -1,5 +1,8 @@
 # Changelog
 
+- Villagers in combat can now pursue and equip stronger dropped armor, preserving displaced pieces in their personal inventory when space is available.
+- Improved dropped-weapon scavenging so villagers prefer melee weapons over ranged weapons, choose the strongest eligible nearby upgrade before distance, and revalidate drops at pickup time.
+
 - Added The Mark You Chose advancement for starting a villager conversation while displaying the ominous banner on a worn helmet or held shield.
 
 - Added automatic Totem of Undying handling for adult villagers. Carried totems now take priority in the off-hand unless a player explicitly assigned that slot, replenish after use, and remain equipped while party villagers raise a stored shield from the main hand.
