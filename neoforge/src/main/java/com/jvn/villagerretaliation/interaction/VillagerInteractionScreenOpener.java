@@ -31,6 +31,7 @@ import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
+import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
@@ -187,7 +188,9 @@ public final class VillagerInteractionScreenOpener {
                 professionTranslationKey(villager),
                 VillagerPresetNameRegistry.resolveGender(villager).serializedName(),
                 villager.isBaby(),
-                hasTradingProfession(villager),
+                hasTradingProfession(villager)
+                        && !VillagerBehaviorSuppressionPolicy.suppresses(
+                                villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING),
                 reputation.value(),
                 reputation.level(),
                 mood,

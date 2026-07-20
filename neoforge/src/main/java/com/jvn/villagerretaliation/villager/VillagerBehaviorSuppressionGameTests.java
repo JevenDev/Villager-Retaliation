@@ -21,6 +21,8 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
@@ -92,8 +94,10 @@ public final class VillagerBehaviorSuppressionGameTests {
                 "hired breeding must be suppressed");
         helper.assertTrue(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.VILLAGE_MIGRATION),
                 "hired village migration must be suppressed");
-        helper.assertFalse(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING),
-                "hired trading remains an explicit compatible interaction");
+        helper.assertTrue(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING),
+                "hired trading must be suppressed");
+        helper.assertValueEqual(villager.mobInteract(hirer, InteractionHand.MAIN_HAND), InteractionResult.FAIL,
+                "hired vanilla right-click trading must be rejected");
         helper.assertFalse(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.SLEEPING),
                 "hired rest remains an explicit compatibility exception");
 
@@ -145,6 +149,8 @@ public final class VillagerBehaviorSuppressionGameTests {
         assertControlledMemoriesCleared(helper, villager, "party load");
         helper.assertTrue(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING),
                 "party trading must be suppressed");
+        helper.assertValueEqual(villager.mobInteract(leader, InteractionHand.MAIN_HAND), InteractionResult.FAIL,
+                "party vanilla right-click trading must be rejected");
         helper.assertTrue(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.SLEEPING),
                 "party sleeping must be suppressed");
         helper.assertTrue(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.JOB_SITE_CLAIMING),

@@ -130,6 +130,7 @@ public final class VillagerBehaviorSuppressionPolicy {
         rules.put(ControlState.NORMAL, EnumSet.noneOf(Behavior.class));
         rules.put(ControlState.DOWNED, EnumSet.allOf(Behavior.class));
         rules.put(ControlState.HIRED, EnumSet.of(
+                Behavior.TRADING,
                 Behavior.BREEDING,
                 Behavior.GOSSIPING,
                 Behavior.VANILLA_WORKING,

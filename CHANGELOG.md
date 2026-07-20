@@ -1,5 +1,7 @@
 # Changelog
 
+- Fixed recruited and hired villagers sometimes opening the vanilla trading menu; controlled contract states now consistently suppress trading.
+
 - Villagers in combat can now pursue and equip stronger dropped armor, preserving displaced pieces in their personal inventory when space is available.
 - Improved dropped-weapon scavenging so villagers prefer melee weapons over ranged weapons, choose the strongest eligible nearby upgrade before distance, and revalidate drops at pickup time.
 
