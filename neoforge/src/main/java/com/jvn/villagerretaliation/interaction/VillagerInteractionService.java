@@ -75,6 +75,7 @@ import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
 import com.jvn.villagerretaliation.social.VillagerRelationshipSnapshot;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.trade.VillagerTradeRefreshService;
+import com.jvn.villagerretaliation.trade.VillagerSpecialOrderService;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -2665,6 +2666,7 @@ public final class VillagerInteractionService {
             return InteractionResult.FAIL;
         }
         if (villager.level() instanceof ServerLevel level) {
+            VillagerSpecialOrderService.deliverRefunds(player, villager);
             VillagerTradeRefreshService.ReadyRefreshResult readyRefreshes =
                     VillagerTradeRefreshService.applyReadyRefreshesDetailed(level, villager, player);
             VillagerTradeRefreshService.sendState(player, villager);

@@ -106,7 +106,7 @@ public final class VillagerCombatRoles {
     }
 
     public static double movementSpeed(Villager villager) {
-        return RetaliationCombatStats.PIGLIN_ALIGNED_COMBAT_SPEED_MODIFIER;
+        return RetaliationCombatStats.COMBAT_SPEED_MODIFIER;
     }
 
     public static int attackCooldown(Villager villager) {

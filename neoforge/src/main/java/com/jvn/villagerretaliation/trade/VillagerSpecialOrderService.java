@@ -19,7 +19,9 @@ import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
@@ -45,7 +47,12 @@ public final class VillagerSpecialOrderService {
     private static final String STATUS_PENDING = "pending";
     private static final String STATUS_READY = "ready";
     private static final String STATUS_APPLIED = "applied";
-    private static final String STATUS_CANCELLED = "cancelled";
+    private static final String OFFER_SEED_KEY = "OfferSeed";
+    private static final String PAID_ITEM_KEY = "PaidItem";
+    private static final String PAID_COUNT_KEY = "PaidCount";
+    private static final String REFUNDS_KEY = "VillagerRetaliationSpecialOrderRefunds";
+    private static final String REFUND_ITEM_KEY = "Item";
+    private static final String REFUND_COUNT_KEY = "Count";
 
     private VillagerSpecialOrderService() {
     }
@@ -64,6 +71,8 @@ public final class VillagerSpecialOrderService {
             Villager villager,
             ServerPlayer player,
             int offerIndex) {
+        reconcile(level, villager);
+        deliverRefunds(player, villager);
         if (!canUseSpecialOrders(level, villager, player)) {
             return List.of();
         }
@@ -71,9 +80,11 @@ public final class VillagerSpecialOrderService {
         ResourceLocation professionId = VillagerProfessionUtil.id(villager.getVillagerData().getProfession());
         int villagerLevel = villager.getVillagerData().getLevel();
         VillagerReputationLevel playerLevel = VillagerReputationManager.getReputationLevel(level, villager, player.getUUID());
+        Set<ResourceLocation> reservedDefinitions = VillagerTradeRefreshService.pendingDefinitionIds(villager);
         List<SkillTradeDefinition> eligibleDefinitions = new ArrayList<>();
         for (SkillTradeDefinition definition : SkillTradeResources.definitions(level.getServer())) {
-            if (!isEligibleDefinition(level, villager, definition, professionId, villagerLevel, playerLevel)) {
+            if (reservedDefinitions.contains(definition.id())
+                    || !isEligibleDefinition(level, villager, definition, professionId, villagerLevel, playerLevel)) {
                 continue;
             }
             eligibleDefinitions.add(definition);
@@ -148,6 +159,8 @@ public final class VillagerSpecialOrderService {
             ServerPlayer player,
             int offerIndex,
             ResourceLocation definitionId) {
+        reconcile(level, villager);
+        deliverRefunds(player, villager);
         if (!canUseSpecialOrders(level, villager, player)) {
             return QueueResult.failed("trade_refresh.special_order_unavailable", Map.of());
         }
@@ -178,6 +191,12 @@ public final class VillagerSpecialOrderService {
             return QueueResult.failed("trade_refresh.special_order_payment_missing", replacements(
                     level, VillagerLocale.locale(player), option, cost));
         }
+        long offerSeed = villager.getRandom().nextLong();
+        MerchantOffer resolvedOffer = SkillTradeOfferFactory.createVillagerSpecialOrderOfferFromDefinition(
+                level, villager, option.definition(), net.minecraft.util.RandomSource.create(offerSeed));
+        if (resolvedOffer == null) {
+            return QueueResult.failed("trade_refresh.special_order_unavailable", Map.of());
+        }
         if (!cost.isEmpty()) {
             removePayment(player, cost);
         }
@@ -194,6 +213,12 @@ public final class VillagerSpecialOrderService {
         order.putLong(READY_DAY_KEY, readyDay);
         order.putLong(COOLDOWN_END_DAY_KEY, nextCooldownEndDay);
         order.putString(STATUS_KEY, STATUS_PENDING);
+        order.putLong(OFFER_SEED_KEY, offerSeed);
+        if (!cost.isEmpty()) {
+            ResourceLocation paidItemId = BuiltInRegistries.ITEM.getKey(cost.item());
+            order.putString(PAID_ITEM_KEY, paidItemId.toString());
+            order.putInt(PAID_COUNT_KEY, cost.count());
+        }
         orders.add(order);
         persistentData.put(ORDERS_KEY, orders);
         setCooldown(villager, player.getUUID(), nextCooldownEndDay);
@@ -225,6 +250,7 @@ public final class VillagerSpecialOrderService {
         Set<Integer> appliedIndexes = new HashSet<>();
         long currentDay = currentDay(level);
         boolean changed = false;
+        Set<UUID> canceledOwners = new HashSet<>();
         List<String> playerReadyTradeItems = new ArrayList<>();
         for (int i = 0; i < orders.size(); i++) {
             CompoundTag order = orders.getCompound(i);
@@ -242,12 +268,16 @@ public final class VillagerSpecialOrderService {
             int offerIndex = order.getInt(OFFER_INDEX_KEY);
             ResourceLocation definitionId = ResourceLocation.tryParse(order.getString(TRADE_DEFINITION_KEY));
             if (offerIndex < 0 || offerIndex >= offers.size() || definitionId == null || !appliedIndexes.add(offerIndex)) {
+                recordRefund(villager, order);
+                if (order.hasUUID(PLAYER_KEY)) canceledOwners.add(order.getUUID(PLAYER_KEY));
                 changed = true;
                 continue;
             }
 
             Optional<SkillTradeDefinition> definition = SkillTradeResources.definition(level.getServer(), definitionId);
             if (definition.isEmpty()) {
+                recordRefund(villager, order);
+                if (order.hasUUID(PLAYER_KEY)) canceledOwners.add(order.getUUID(PLAYER_KEY));
                 changed = true;
                 continue;
             }
@@ -256,8 +286,12 @@ public final class VillagerSpecialOrderService {
                     level,
                     villager,
                     definition.get(),
-                    villager.getRandom());
+                    order.contains(OFFER_SEED_KEY, Tag.TAG_LONG)
+                            ? net.minecraft.util.RandomSource.create(order.getLong(OFFER_SEED_KEY))
+                            : villager.getRandom());
             if (replacement == null) {
+                recordRefund(villager, order);
+                if (order.hasUUID(PLAYER_KEY)) canceledOwners.add(order.getUUID(PLAYER_KEY));
                 changed = true;
                 continue;
             }
@@ -287,6 +321,7 @@ public final class VillagerSpecialOrderService {
         } else {
             persistentData.put(ORDERS_KEY, remaining);
         }
+        reconcileCanceledCooldowns(villager, remaining, canceledOwners);
         return new ApplyReadyOrdersResult(changed, List.copyOf(playerReadyTradeItems));
     }
 
@@ -309,6 +344,117 @@ public final class VillagerSpecialOrderService {
             }
         }
         return List.copyOf(indexes);
+    }
+
+    public static Set<ResourceLocation> pendingDefinitionIds(Villager villager) {
+        CompoundTag data = villager.getPersistentData();
+        if (!data.contains(ORDERS_KEY, Tag.TAG_LIST)) return Set.of();
+        Set<ResourceLocation> ids = new HashSet<>();
+        ListTag orders = data.getList(ORDERS_KEY, Tag.TAG_COMPOUND);
+        for (int i = 0; i < orders.size(); i++) {
+            CompoundTag order = orders.getCompound(i);
+            if (!isActiveStatus(order.getString(STATUS_KEY))) continue;
+            ResourceLocation id = ResourceLocation.tryParse(order.getString(TRADE_DEFINITION_KEY));
+            if (id != null) ids.add(id);
+        }
+        return Set.copyOf(ids);
+    }
+
+    /** Cancels structurally invalid or datapack-removed orders without allowing one entry to pin a slot. */
+    public static boolean reconcile(ServerLevel level, Villager villager) {
+        CompoundTag data = villager.getPersistentData();
+        if (!data.contains(ORDERS_KEY, Tag.TAG_LIST)) return false;
+        MerchantOffers offers = villager.getOffers();
+        ListTag orders = data.getList(ORDERS_KEY, Tag.TAG_COMPOUND);
+        ListTag remaining = new ListTag();
+        boolean changed = false;
+        Set<UUID> canceledOwners = new HashSet<>();
+        for (int i = 0; i < orders.size(); i++) {
+            CompoundTag order = orders.getCompound(i);
+            if (!isActiveStatus(order.getString(STATUS_KEY))) {
+                changed = true;
+                continue;
+            }
+            int offerIndex = order.getInt(OFFER_INDEX_KEY);
+            ResourceLocation id = ResourceLocation.tryParse(order.getString(TRADE_DEFINITION_KEY));
+            SkillTradeDefinition definition = id == null
+                    ? null : SkillTradeResources.definition(level.getServer(), id).orElse(null);
+            if (offerIndex < 0 || offerIndex >= offers.size() || definition == null) {
+                recordRefund(villager, order);
+                if (order.hasUUID(PLAYER_KEY)) canceledOwners.add(order.getUUID(PLAYER_KEY));
+                changed = true;
+                continue;
+            }
+            remaining.add(order.copy());
+        }
+        if (remaining.isEmpty()) data.remove(ORDERS_KEY); else data.put(ORDERS_KEY, remaining);
+        reconcileCanceledCooldowns(villager, remaining, canceledOwners);
+        return changed;
+    }
+
+    private static void reconcileCanceledCooldowns(Villager villager, ListTag remainingOrders, Set<UUID> canceledOwners) {
+        for (UUID owner : canceledOwners) {
+            long endDay = 0L;
+            for (int i = 0; i < remainingOrders.size(); i++) {
+                CompoundTag order = remainingOrders.getCompound(i);
+                if (order.hasUUID(PLAYER_KEY) && order.getUUID(PLAYER_KEY).equals(owner)) {
+                    endDay = Math.max(endDay, order.getLong(COOLDOWN_END_DAY_KEY));
+                }
+            }
+            if (endDay > 0L) setCooldown(villager, owner, endDay); else removeCooldown(villager, owner);
+        }
+    }
+
+    public static boolean deliverRefunds(ServerPlayer player, Villager villager) {
+        CompoundTag data = villager.getPersistentData();
+        if (!data.contains(REFUNDS_KEY, Tag.TAG_LIST)) return false;
+        ListTag refunds = data.getList(REFUNDS_KEY, Tag.TAG_COMPOUND);
+        ListTag remaining = new ListTag();
+        boolean delivered = false;
+        for (int i = 0; i < refunds.size(); i++) {
+            CompoundTag refund = refunds.getCompound(i);
+            if (!refund.hasUUID(PLAYER_KEY) || !refund.getUUID(PLAYER_KEY).equals(player.getUUID())) {
+                remaining.add(refund.copy());
+                continue;
+            }
+            ResourceLocation itemId = ResourceLocation.tryParse(refund.getString(REFUND_ITEM_KEY));
+            Item item = itemId == null ? null : BuiltInRegistries.ITEM.getOptional(itemId).orElse(null);
+            int count = Math.clamp(refund.getInt(REFUND_COUNT_KEY), 0, 64);
+            if (item == null || count <= 0) continue;
+            ItemStack stack = new ItemStack(item, count);
+            player.getInventory().add(stack);
+            delivered |= stack.getCount() < count;
+            if (!stack.isEmpty()) {
+                if (player.drop(stack.copy(), false) == null) {
+                    CompoundTag retry = refund.copy();
+                    retry.putInt(REFUND_COUNT_KEY, stack.getCount());
+                    remaining.add(retry);
+                } else {
+                    delivered = true;
+                }
+            }
+        }
+        if (remaining.isEmpty()) data.remove(REFUNDS_KEY); else data.put(REFUNDS_KEY, remaining);
+        if (delivered) {
+            player.getInventory().setChanged();
+            player.sendSystemMessage(Component.translatable("villagerretaliation.trade_refresh.refund_delivered"));
+        }
+        return delivered;
+    }
+
+    private static void recordRefund(Villager villager, CompoundTag order) {
+        if (!order.hasUUID(PLAYER_KEY) || order.getInt(PAID_COUNT_KEY) <= 0) return;
+        ResourceLocation itemId = ResourceLocation.tryParse(order.getString(PAID_ITEM_KEY));
+        if (itemId == null || BuiltInRegistries.ITEM.getOptional(itemId).isEmpty()) return;
+        CompoundTag data = villager.getPersistentData();
+        ListTag refunds = data.contains(REFUNDS_KEY, Tag.TAG_LIST)
+                ? data.getList(REFUNDS_KEY, Tag.TAG_COMPOUND) : new ListTag();
+        CompoundTag refund = new CompoundTag();
+        refund.putUUID(PLAYER_KEY, order.getUUID(PLAYER_KEY));
+        refund.putString(REFUND_ITEM_KEY, itemId.toString());
+        refund.putInt(REFUND_COUNT_KEY, Math.clamp(order.getInt(PAID_COUNT_KEY), 1, 64));
+        refunds.add(refund);
+        data.put(REFUNDS_KEY, refunds);
     }
 
     public static int activeOrderCount(Villager villager, UUID playerId) {
@@ -335,6 +481,7 @@ public final class VillagerSpecialOrderService {
     }
 
     public static boolean hasReadyOrderForPlayer(ServerLevel level, Villager villager, UUID playerId) {
+        reconcile(level, villager);
         CompoundTag persistentData = villager.getPersistentData();
         if (!persistentData.contains(ORDERS_KEY, Tag.TAG_LIST)) {
             return false;
@@ -359,6 +506,7 @@ public final class VillagerSpecialOrderService {
     }
 
     public static List<ActiveOrderStatus> activeOrderStatuses(ServerLevel level, Villager villager, UUID playerId) {
+        reconcile(level, villager);
         CompoundTag persistentData = villager.getPersistentData();
         if (!persistentData.contains(ORDERS_KEY, Tag.TAG_LIST)) {
             return List.of();
@@ -654,6 +802,20 @@ public final class VillagerSpecialOrderService {
             cooldowns.add(cooldown);
         }
         persistentData.put(COOLDOWNS_KEY, cooldowns);
+    }
+
+    private static void removeCooldown(Villager villager, UUID playerId) {
+        CompoundTag data = villager.getPersistentData();
+        if (!data.contains(COOLDOWNS_KEY, Tag.TAG_LIST)) return;
+        ListTag cooldowns = data.getList(COOLDOWNS_KEY, Tag.TAG_COMPOUND);
+        ListTag remaining = new ListTag();
+        for (int i = 0; i < cooldowns.size(); i++) {
+            CompoundTag cooldown = cooldowns.getCompound(i);
+            if (!cooldown.hasUUID(PLAYER_KEY) || !cooldown.getUUID(PLAYER_KEY).equals(playerId)) {
+                remaining.add(cooldown.copy());
+            }
+        }
+        if (remaining.isEmpty()) data.remove(COOLDOWNS_KEY); else data.put(COOLDOWNS_KEY, remaining);
     }
 
     private static void pruneCooldowns(Villager villager, long currentDay) {

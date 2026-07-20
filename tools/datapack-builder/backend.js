@@ -37,6 +37,10 @@
           fileName: "my_pack_forced_dialogue",
           entries: []
         },
+        skillTrades: {
+          fileName: "my_pack_skill_trades",
+          entries: []
+        },
         quests: {
           modules: [],
           v1Imports: []
@@ -307,6 +311,10 @@
       return `data/villagerretaliation/notifications/${state.meta.locale}/${state.notifications.fileName}.json`;
     }
 
+    function skillTradesPath(state) {
+      return `data/${contentNamespace(state)}/skill_trades/${state.skillTrades.fileName}.json`;
+    }
+
     function giftsPath(state) {
       return `data/villagerretaliation/gifts/${state.gifts.fileName}.json`;
     }
@@ -347,6 +355,10 @@
         Object.assign(files, generatedForcedDialogueFiles(state));
       }
 
+      if (state.skillTrades.entries.length > 0) {
+        Object.assign(files, generatedSkillTradeFiles(state));
+      }
+
       if (state.notifications.notifications.length > 0) {
         files[notificationsPath(state)] = safeJson({ notifications: state.notifications.notifications });
       }
@@ -381,6 +393,16 @@
       }
 
       return files;
+    }
+
+    function generatedSkillTradeFiles(state) {
+      const grouped = new Map();
+      for (const entry of state.skillTrades.entries) {
+        const sourcePath = entry.__sourcePath || skillTradesPath(state);
+        if (!grouped.has(sourcePath)) grouped.set(sourcePath, []);
+        grouped.get(sourcePath).push(stripBuilderFields(entry));
+      }
+      return Object.fromEntries([...grouped].map(([sourcePath, entries]) => [sourcePath, safeJson({ entries })]));
     }
 
     function generatedDialogueFiles(state) {
@@ -548,6 +570,7 @@
       if (/^data\/[^/]+\/dialogue\/[^/]+\/.+\.json$/.test(path)) return "dialogue";
       if (/^data\/[^/]+\/dialogue_trees\/[^/]+\/.+\.json$/.test(path)) return "dialogue_trees";
       if (/^data\/[^/]+\/forced_dialogue\/.+\.json$/.test(path)) return "forced_dialogue";
+      if (/^data\/[^/]+\/skill_trades\/.+\.json$/.test(path)) return "skill_trades";
       if (/^data\/villagerretaliation\/notifications\/[^/]+\/.+\.json$/.test(path)) return "notifications";
       if (/^data\/villagerretaliation\/gifts\/.+\.json$/.test(path)) return "gifts";
       if (/^data\/villagerretaliation\/pacification\/.+\.json$/.test(path)) return "pacification";
@@ -632,6 +655,19 @@
         const parsed = json();
         if (!parsed) return false;
         replaceForcedDialogueFile(state, path, parsed);
+        return true;
+      }
+
+      const skillTradeMatch = path.match(/^data\/([^/]+)\/skill_trades\/(.+)\.json$/);
+      if (skillTradeMatch) {
+        const parsed = json();
+        if (!parsed || !Array.isArray(parsed.entries)) return false;
+        state.meta.namespace = namespaceify(skillTradeMatch[1], state.meta.namespace || "my_pack");
+        state.skillTrades.fileName = normalizeFileName(skillTradeMatch[2].split("/").pop(), state.skillTrades.fileName);
+        state.skillTrades.entries = state.skillTrades.entries
+          .filter((entry) => (entry.__sourcePath || skillTradesPath(state)) !== path)
+          .concat(cleanArray(parsed.entries).map((entry) => ({ ...entry, __sourcePath: path })));
+        delete state.extraFiles[path];
         return true;
       }
 
@@ -799,6 +835,7 @@
         }
         extra[normalizedPath] = value;
       }
+
       state.extraFiles = { ...state.extraFiles, ...extra };
     }
 
@@ -808,6 +845,14 @@
         json = JSON.parse(stripTextBom(source));
       } catch {
         return false;
+      }
+
+      const skillTradeMatch = path.match(/^data\/([^/]+)\/skill_trades\/(.+)\.json$/);
+      if (skillTradeMatch && Array.isArray(json.entries)) {
+        state.meta.namespace = namespaceify(skillTradeMatch[1], state.meta.namespace || "my_pack");
+        state.skillTrades.fileName = normalizeFileName(skillTradeMatch[2].split("/").pop(), state.skillTrades.fileName);
+        mergeArray(state, "skillTrades", "entries", json.entries, path);
+        return true;
       }
 
       const dialogueInfo = dialoguePathInfo(path);
@@ -971,6 +1016,7 @@
     }
 
     function detectJsonKind(json) {
+      if (Array.isArray(json.entries) && json.entries.some((entry) => entry && typeof entry === "object" && (entry.result || entry.skills || entry.skill))) return { section: "skillTrades", kind: "entries", key: "entries" };
       if (Array.isArray(json.entries) && json.entries.some(isForcedDialogueEntry)) return { section: "forcedDialogue", kind: "entries", key: "entries" };
       if (Array.isArray(json.notifications)) return { section: "notifications", kind: "notifications", key: "notifications" };
       if (Array.isArray(json.preferences)) return { section: "gifts", kind: "preferences", key: "preferences" };
@@ -1223,6 +1269,7 @@
       dialogueFileStem,
       defaultDialogueEntryPath,
       forcedDialoguePath,
+      skillTradesPath,
       notificationsPath,
       giftsPath,
       pacificationPath,

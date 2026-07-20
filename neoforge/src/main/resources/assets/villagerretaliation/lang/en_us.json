@@ -916,6 +916,7 @@
   "villagerretaliation.trade_refresh.button": "Refresh trade",
   "villagerretaliation.trade_refresh.pending": "Refresh requested",
   "villagerretaliation.trade_refresh.tooltip": "Ask about refreshing this trade tomorrow.",
+  "villagerretaliation.trade_refresh.refund_delivered": "This villager returned payment from a canceled Special Order.",
   "villagerretaliation.gui.gift.give": "Give",
   "villagerretaliation.gui.gift.give_stack": "Give Stack",
   "villagerretaliation.gui.gift.known_gifts": "Known gifts",

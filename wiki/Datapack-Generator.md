@@ -30,6 +30,7 @@ The current rewrite in this repo targets `VR 1.0.0-beta.12` plus the current que
 | Builder area | Output root |
 | --- | --- |
 | Quests | `data/<namespace>/quests/` |
+| Skill Trades | `data/<namespace>/skill_trades/` |
 | Dialogue | `data/<namespace>/dialogue/<locale>/` |
 | Forced dialogue | `data/<namespace>/forced_dialogue/` |
 | Imported dialogue trees | `data/<namespace>/dialogue_trees/<locale>/` |
@@ -96,6 +97,7 @@ Import works best when your pack already follows the documented folder layout.
 - Files under `dialogue/<locale>/` import as dialogue.
 - Files under `forced_dialogue/` import as forced dialogue.
 - Quest module v2 files under `quests/` import as editable Quests tab modules.
+- Skill-trade files under `skill_trades/` import as editable Skill Trades entries and retain their namespace and nested source path.
 - Legacy v1 quest files under `quests/` are preserved as JSON pass-through files with migration suggestions.
 - Files under `dialogue_trees/<locale>/` are recognized and preserved as JSON pass-through files.
 - Files under `notifications/<locale>/` import as notifications.
@@ -113,6 +115,7 @@ Before exporting, confirm:
 - Tags start with `#`.
 - Structure and biome ids are fully namespaced.
 - Stable `id` values are present on entries you may translate or override later.
+- Skill-trade ids, skills, professions, items, rank bounds, and Special Order request fields pass inline validation.
 - Quest modules use `schema: "villagerretaliation:quest/v2"`.
 - Response transitions use only one transition source.
 
