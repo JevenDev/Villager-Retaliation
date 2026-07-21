@@ -1051,11 +1051,11 @@ public final class ClipboardWorkforceScreen extends Screen {
             return;
         }
         this.warningScroll = Mth.clamp(this.warningScroll, 0, maxWarningPageScroll());
-        int lineTop = SUMMARY_TOP - this.warningScroll * SUMMARY_ROW_STEP;
+        int lineTop = SUMMARY_TOP - this.warningScroll * this.font.lineHeight;
         for (WarningDisplayEntry entry : entries) {
             int entryTop = lineTop;
             int entryBottom = entryTop
-                    + (entry.lines().size() - 1) * SUMMARY_ROW_STEP
+                    + (entry.lines().size() - 1) * this.font.lineHeight
                     + TEXT_PIXEL_HEIGHT;
             boolean hovered = mouseX >= JOB_DETAIL_BAND_LEFT
                     && mouseX < JOB_DETAIL_BAND_RIGHT
@@ -1088,13 +1088,14 @@ public final class ClipboardWorkforceScreen extends Screen {
                     graphics.drawString(
                             this.font,
                             line,
-                            SUMMARY_LEFT + ROW_ARROW_TEXT_OFFSET,
+                            lineTop == entryTop ? SUMMARY_LEFT + ROW_ARROW_TEXT_OFFSET : SUMMARY_LEFT,
                             lineTop,
                             WARNING,
                             false);
                 }
-                lineTop += SUMMARY_ROW_STEP;
+                lineTop += this.font.lineHeight;
             }
+            lineTop += warningSummaryEntryGap();
         }
     }
 
@@ -1114,7 +1115,7 @@ public final class ClipboardWorkforceScreen extends Screen {
             boolean banded = warningIndex % 2 != 0;
             entries.add(new WarningDisplayEntry(
                     warning,
-                    this.font.split(text, SUMMARY_RIGHT - SUMMARY_LEFT - ROW_ARROW_TEXT_OFFSET),
+                    splitArrowWrappedText(text),
                     banded));
             warningIndex++;
         }
@@ -1122,9 +1123,17 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private int maxWarningSummaryScroll() {
-        int visibleLines = 1 + Math.max(0, TEXT_CONTENT_BOTTOM - SUMMARY_TOP - TEXT_PIXEL_HEIGHT) / SUMMARY_ROW_STEP;
-        int totalLines = warningDisplayEntries().stream().mapToInt(entry -> entry.lines().size()).sum();
-        return Math.max(0, totalLines - visibleLines);
+        List<WarningDisplayEntry> entries = warningDisplayEntries();
+        int totalLines = entries.stream().mapToInt(entry -> entry.lines().size()).sum();
+        int contentHeight = Math.max(0, totalLines - 1) * this.font.lineHeight
+                + TEXT_PIXEL_HEIGHT
+                + Math.max(0, entries.size() - 1) * warningSummaryEntryGap();
+        int overflow = Math.max(0, contentHeight - (TEXT_CONTENT_BOTTOM - SUMMARY_TOP));
+        return ceilDiv(overflow, this.font.lineHeight);
+    }
+
+    private int warningSummaryEntryGap() {
+        return Math.max(0, SUMMARY_ROW_STEP - this.font.lineHeight);
     }
 
     private void renderWarningWorkersPage(GuiGraphics graphics, double mouseX, double mouseY) {
@@ -1251,15 +1260,15 @@ public final class ClipboardWorkforceScreen extends Screen {
                     warningTypeName(type),
                     warningDiagnostic(type));
             entries.add(new WorkerErrorDisplayEntry(
-                    splitWorkerErrorDiagnostic(diagnostic),
+                    splitArrowWrappedText(diagnostic),
                     index % 2 != 0));
         }
         return entries;
     }
 
-    private List<net.minecraft.util.FormattedCharSequence> splitWorkerErrorDiagnostic(Component diagnostic) {
+    private List<net.minecraft.util.FormattedCharSequence> splitArrowWrappedText(Component text) {
         List<net.minecraft.util.FormattedCharSequence> lines = new ArrayList<>();
-        String remaining = diagnostic.getString().strip();
+        String remaining = text.getString().strip();
         boolean firstLine = true;
         while (!remaining.isEmpty()) {
             int width = JOB_DETAIL_BAND_RIGHT
@@ -1939,11 +1948,11 @@ public final class ClipboardWorkforceScreen extends Screen {
         if (mouseX < JOB_DETAIL_BAND_LEFT || mouseX >= JOB_DETAIL_BAND_RIGHT) {
             return null;
         }
-        int lineTop = SUMMARY_TOP - this.warningScroll * SUMMARY_ROW_STEP;
+        int lineTop = SUMMARY_TOP - this.warningScroll * this.font.lineHeight;
         for (WarningDisplayEntry entry : warningDisplayEntries()) {
             int entryTop = lineTop;
             int entryBottom = entryTop
-                    + (entry.lines().size() - 1) * SUMMARY_ROW_STEP
+                    + (entry.lines().size() - 1) * this.font.lineHeight
                     + TEXT_PIXEL_HEIGHT;
             if (entryBottom > SUMMARY_TOP
                     && entryTop < TEXT_CONTENT_BOTTOM
@@ -1951,7 +1960,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                     && mouseY < Math.min(TEXT_CONTENT_BOTTOM, entryBottom + 2)) {
                 return entry.warning();
             }
-            lineTop += entry.lines().size() * SUMMARY_ROW_STEP;
+            lineTop += entry.lines().size() * this.font.lineHeight + warningSummaryEntryGap();
         }
         return null;
     }
