@@ -64,6 +64,7 @@ public final class PlayerRaidService {
     private static final double HORN_REVEAL_RADIUS = 48.0D;
     private static final int HORN_REVEAL_TICKS = 60;
     private static final Map<UUID, ServerBossEvent> BOSS_BARS = new HashMap<>();
+    private static final PlayerRaidConfirmationTracker RAID_CONFIRMATIONS = new PlayerRaidConfirmationTracker();
 
     private PlayerRaidService() {
     }
@@ -128,6 +129,13 @@ public final class PlayerRaidService {
             return false;
         }
         villageId = village.id();
+        long now = level.getServer().overworld().getGameTime();
+        if (VillagerRetaliationConfig.CONFIRM_RAID_HORN.get()
+                && !RAID_CONFIRMATIONS.consumeOrArm(initiator.getUUID(), villageId, now)) {
+            initiator.sendSystemMessage(Component.translatable("villagerretaliation.player_raid.horn_confirmation")
+                    .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+            return false;
+        }
         PlayerRaidSavedData data = PlayerRaidSavedData.get(level);
         boolean overlappingPlayerRaid = data.raids().stream().anyMatch(raid -> raid.running()
                 && raid.dimension().equals(level.dimension().location())
@@ -139,7 +147,6 @@ public final class PlayerRaidService {
             initiator.sendSystemMessage(Component.translatable("villagerretaliation.player_raid.unavailable"));
             return false;
         }
-        long now = level.getServer().overworld().getGameTime();
         if (data.cooldownUntil(registry, villageId) > now) {
             initiator.sendSystemMessage(Component.translatable("villagerretaliation.player_raid.cooldown"));
             return false;
@@ -233,6 +240,7 @@ public final class PlayerRaidService {
         MinecraftServer server = event.getServer();
         long now = server.overworld().getGameTime();
         if (now % 5L != 0L) return;
+        RAID_CONFIRMATIONS.pruneExpired(now);
         PlayerRaidDialogueService.reconcile(server);
         PlayerRaidMercyService.reconcile(server);
         PlayerRaidSavedData data = PlayerRaidSavedData.get(server.overworld());

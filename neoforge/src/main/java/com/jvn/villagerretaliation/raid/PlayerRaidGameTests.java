@@ -51,6 +51,32 @@ public final class PlayerRaidGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void raidHornConfirmationIsPerPlayerPerVillageAndExpires(GameTestHelper helper) {
+        PlayerRaidConfirmationTracker tracker = new PlayerRaidConfirmationTracker();
+        UUID firstPlayer = UUID.randomUUID();
+        UUID secondPlayer = UUID.randomUUID();
+        VillageAllegianceId firstVillage = VillageAllegianceId.random();
+        VillageAllegianceId secondVillage = VillageAllegianceId.random();
+
+        helper.assertFalse(tracker.consumeOrArm(firstPlayer, firstVillage, 100L),
+                "first horn use should arm confirmation");
+        helper.assertFalse(tracker.consumeOrArm(firstPlayer, secondVillage, 101L),
+                "confirmation should not carry to another village");
+        helper.assertFalse(tracker.consumeOrArm(secondPlayer, firstVillage, 102L),
+                "confirmation should not carry to another player");
+        helper.assertTrue(tracker.consumeOrArm(firstPlayer, firstVillage, 103L),
+                "second horn use in the same village should consume confirmation");
+        helper.assertFalse(tracker.consumeOrArm(firstPlayer, firstVillage, 104L),
+                "consumed confirmation should require arming again");
+        helper.assertFalse(tracker.consumeOrArm(
+                        firstPlayer,
+                        firstVillage,
+                        104L + PlayerRaidConfirmationTracker.CONFIRMATION_WINDOW_TICKS),
+                "confirmation should expire after 30 seconds");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void ominousBannerRecognitionCoversWornBannersAndHeldShields(GameTestHelper helper) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         ItemStack ominousBanner = Raid.getLeaderBannerInstance(
