@@ -12,7 +12,9 @@ public record ClipboardWorkAreaEntry(
         BlockPos firstCorner,
         boolean showFirstCorner,
         BlockPos secondCorner,
-        boolean showSecondCorner) {
+        boolean showSecondCorner,
+        String ownerName,
+        String jobName) {
     public ClipboardWorkAreaEntry {
         BlockPos normalizedMin = new BlockPos(
                 Math.min(min.getX(), max.getX()),
@@ -30,9 +32,25 @@ public record ClipboardWorkAreaEntry(
                 Math.floorDiv(min.getZ() + max.getZ(), 2)) : center.immutable();
         firstCorner = firstCorner == null ? min : firstCorner.immutable();
         secondCorner = secondCorner == null ? max : secondCorner.immutable();
+        ownerName = ownerName == null ? "" : ownerName;
+        jobName = jobName == null ? "" : jobName;
     }
 
     public ClipboardWorkAreaEntry(ResourceLocation dimension, BlockPos min, BlockPos max) {
-        this(dimension, min, max, null, false, null, false, null, false);
+        this(dimension, min, max, null, false, null, false, null, false, "", "");
+    }
+
+    public ClipboardWorkAreaEntry(
+            ResourceLocation dimension,
+            BlockPos min,
+            BlockPos max,
+            BlockPos center,
+            boolean showCenter,
+            BlockPos firstCorner,
+            boolean showFirstCorner,
+            BlockPos secondCorner,
+            boolean showSecondCorner) {
+        this(dimension, min, max, center, showCenter, firstCorner, showFirstCorner,
+                secondCorner, showSecondCorner, "", "");
     }
 }

@@ -52,6 +52,7 @@ public final class ClipboardWorkforceService {
         int paymentContainers = 0;
         int dailyWages = 0;
 
+        HiredVillagerIndex.reconcileLoadedFor(player);
         for (HiredVillagerIndex.Target target : HiredVillagerIndex.targetsFor(player)) {
             ServerLevel level = target.level();
             Villager villager = target.villager();

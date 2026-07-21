@@ -27,6 +27,18 @@ public record ClipboardWorkAreaSyncPayload(List<ClipboardWorkAreaEntry> entries,
         return new ClipboardWorkAreaSyncPayload(List.of(new ClipboardWorkAreaEntry(dimension, min, max, center, true, min, false, max, false)), ticks);
     }
 
+    public static ClipboardWorkAreaSyncPayload assigned(
+            ResourceLocation dimension,
+            BlockPos min,
+            BlockPos max,
+            BlockPos center,
+            String ownerName,
+            String jobName,
+            int ticks) {
+        return new ClipboardWorkAreaSyncPayload(List.of(new ClipboardWorkAreaEntry(
+                dimension, min, max, center, true, min, false, max, false, ownerName, jobName)), ticks);
+    }
+
     public static ClipboardWorkAreaSyncPayload selection(ResourceLocation dimension, BlockPos first, BlockPos second, int ticks) {
         return new ClipboardWorkAreaSyncPayload(List.of(new ClipboardWorkAreaEntry(dimension, first, second, null, false, first, true, second, true)), ticks);
     }
@@ -43,6 +55,8 @@ public record ClipboardWorkAreaSyncPayload(List<ClipboardWorkAreaEntry> entries,
             buffer.writeBoolean(entry.showFirstCorner());
             buffer.writeBlockPos(entry.secondCorner());
             buffer.writeBoolean(entry.showSecondCorner());
+            buffer.writeUtf(entry.ownerName(), 64);
+            buffer.writeUtf(entry.jobName(), 64);
         }
         buffer.writeVarInt(payload.ticks());
     }
@@ -60,7 +74,9 @@ public record ClipboardWorkAreaSyncPayload(List<ClipboardWorkAreaEntry> entries,
                     buffer.readBlockPos(),
                     buffer.readBoolean(),
                     buffer.readBlockPos(),
-                    buffer.readBoolean()
+                    buffer.readBoolean(),
+                    buffer.readUtf(64),
+                    buffer.readUtf(64)
             ));
         }
         return new ClipboardWorkAreaSyncPayload(entries, buffer.readVarInt());

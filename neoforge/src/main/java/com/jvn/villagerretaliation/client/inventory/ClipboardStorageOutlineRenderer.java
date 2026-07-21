@@ -116,8 +116,8 @@ public final class ClipboardStorageOutlineRenderer {
                         ResourceKey.create(Registries.DIMENSION, entry.dimension()),
                         entry.pos(),
                         entry.payment(),
-                        "",
-                        ""
+                        entry.ownerName(),
+                        entry.storageType()
                 ));
             }
             assignedVisibleUntilGameTime = minecraft.level.getGameTime() + payload.ticks();
@@ -143,8 +143,8 @@ public final class ClipboardStorageOutlineRenderer {
                         entry.showFirstCorner(),
                         entry.secondCorner(),
                         entry.showSecondCorner(),
-                        "",
-                        ""
+                        entry.ownerName(),
+                        entry.jobName()
                 ));
             }
             workAreasVisibleUntilGameTime = minecraft.level.getGameTime() + payload.ticks();
@@ -236,6 +236,8 @@ public final class ClipboardStorageOutlineRenderer {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || minecraft.player == null) {
             ASSIGNED_POSITIONS.clear();
+            WORK_AREAS.clear();
+            ROUTES.clear();
             DEBUG_ASSIGNED_POSITIONS.clear();
             DEBUG_WORK_AREAS.clear();
             DEBUG_ROUTES.clear();
@@ -248,52 +250,57 @@ public final class ClipboardStorageOutlineRenderer {
         }
 
         renderDebugPreview(event, minecraft);
+        renderTimedClipboardPreviews(event, minecraft);
 
         if (!isHoldingClipboard(minecraft)) {
-            ASSIGNED_POSITIONS.clear();
-            ROUTES.clear();
             return;
         }
 
         ItemStack clipboard = clipboardStack(minecraft);
         ClipboardMode mode = HiredStorageClipboardItem.mode(clipboard);
+        boolean jobSiteEditorOpen = minecraft.screen instanceof ClipboardWorkforceScreen screen
+                && screen.isJobSitePage();
+        if (jobSiteEditorOpen) {
+            return;
+        }
         boolean debugRouteNodes = minecraft.getEntityRenderDispatcher().shouldRenderHitBoxes();
         if (mode.isStorageAssignmentMode() || mode == ClipboardMode.ASSIGN_PAYMENT) {
             List<StoragePosition> selected = HiredStorageClipboardItem.selectedContainers(clipboard);
             renderPositions(event, selected, mode == ClipboardMode.ASSIGN_PAYMENT ? PAYMENT_COLOR : SELECTED_COLOR);
-            if (minecraft.level.getGameTime() <= assignedVisibleUntilGameTime) {
-                renderAssignedPositions(event, ASSIGNED_POSITIONS);
-            } else {
-                ASSIGNED_POSITIONS.clear();
-            }
             return;
         }
 
         if (mode == ClipboardMode.ROUTE) {
-            boolean renderedHeldDraft = renderHeldRouteDraft(event, clipboard, debugRouteNodes);
+            renderHeldRouteDraft(event, clipboard, debugRouteNodes);
             renderRoutePlacementPreview(event, clipboard, debugRouteNodes);
-            if (!renderedHeldDraft && minecraft.level.getGameTime() <= routesVisibleUntilGameTime) {
-                renderRoutes(event, ROUTES, ROUTE_COLOR, debugRouteNodes);
-                renderRouteLabels(event, ROUTES, false, false);
-            } else if (minecraft.level.getGameTime() > routesVisibleUntilGameTime) {
-                ROUTES.clear();
-            }
             return;
         }
 
-        if (mode == ClipboardMode.WORK_AREA || mode == ClipboardMode.SET_WORK_AREA) {
-            boolean renderedHeldDraft = mode == ClipboardMode.SET_WORK_AREA && renderHeldWorkAreaDraft(event, clipboard);
-            if (!renderedHeldDraft && minecraft.level.getGameTime() <= workAreasVisibleUntilGameTime) {
-                renderWorkAreas(event, WORK_AREAS, WORK_AREA_COLOR);
-            } else {
-                WORK_AREAS.clear();
-            }
-            if (minecraft.level.getGameTime() <= assignedVisibleUntilGameTime) {
-                renderAssignedPositions(event, ASSIGNED_POSITIONS);
-            } else {
-                ASSIGNED_POSITIONS.clear();
-            }
+        if (mode == ClipboardMode.SET_WORK_AREA) {
+            renderHeldWorkAreaDraft(event, clipboard);
         }
+    }
+
+    private static void renderTimedClipboardPreviews(RenderLevelStageEvent event, Minecraft minecraft) {
+        long gameTime = minecraft.level.getGameTime();
+        if (gameTime <= workAreasVisibleUntilGameTime) {
+            renderWorkAreas(event, WORK_AREAS, WORK_AREA_COLOR);
+        } else {
+            WORK_AREAS.clear();
+        }
+        if (gameTime <= assignedVisibleUntilGameTime) {
+            renderAssignedPositions(event, ASSIGNED_POSITIONS);
+        } else {
+            ASSIGNED_POSITIONS.clear();
+        }
+        if (gameTime <= routesVisibleUntilGameTime) {
+            boolean debugRouteNodes = minecraft.getEntityRenderDispatcher().shouldRenderHitBoxes();
+            renderRoutes(event, ROUTES, ROUTE_COLOR, debugRouteNodes);
+            renderRouteLabels(event, ROUTES, false, false);
+        } else {
+            ROUTES.clear();
+        }
+        renderDebugLabels(event, WORK_AREAS, List.of(), ASSIGNED_POSITIONS, true, true);
     }
 
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -1027,7 +1034,7 @@ public final class ClipboardStorageOutlineRenderer {
         float alpha = ((color >> 24) & 0xFF) / 255.0F;
         ResourceKey<Level> currentDimension = minecraft.level.dimension();
         for (WorkAreaPosition area : areas) {
-            if (!area.dimension().equals(currentDimension) || !minecraft.level.hasChunkAt(area.min()) || !minecraft.level.hasChunkAt(area.max())) {
+            if (!area.dimension().equals(currentDimension)) {
                 continue;
             }
             LevelRenderer.renderLineBox(poseStack, consumer, workAreaBox(area), red, green, blue, alpha);

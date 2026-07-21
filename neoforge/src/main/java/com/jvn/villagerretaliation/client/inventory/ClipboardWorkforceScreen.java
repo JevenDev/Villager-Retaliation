@@ -161,6 +161,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int HOVER_FILL = 0x30A66A34;
     private static final int SELECTED_FILL = 0x3DA65C2B;
     private static final int ROW_HEIGHT = 11;
+    private static final int JOB_SITE_ROW_STEP = 10;
     private static final int ROW_OPTION_HEIGHT = 12;
     private static final int WORKER_ROW_HEIGHT = 66;
     private static final int WRAPPED_LINE_STEP = 9;
@@ -261,7 +262,9 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        if (!isJobSitePage()) {
+            renderBackground(graphics, mouseX, mouseY, partialTick);
+        }
         this.rowActions.clear();
         float scale = panelScale();
         int left = panelLeft(scale);
@@ -282,6 +285,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         renderScrollTabTooltip(graphics, mouseX, mouseY, panelMouseX, panelMouseY);
         renderPreviewTabTooltip(graphics, mouseX, mouseY, panelMouseX, panelMouseY);
         renderJobDetailTooltip(graphics, mouseX, mouseY, panelMouseX, panelMouseY);
+        renderJobSiteTooltip(graphics, mouseX, mouseY, panelMouseX, panelMouseY);
     }
 
     private void renderClipboard(GuiGraphics graphics, double mouseX, double mouseY) {
@@ -392,7 +396,9 @@ public final class ClipboardWorkforceScreen extends Screen {
                 TEXTURE_WIDTH,
                 TEXTURE_HEIGHT);
         switch (this.page) {
-            case JOB -> renderJobDetailPage(graphics);
+            case JOB -> renderJobDetailPage(graphics, mouseX, mouseY);
+            case JOB_SITE -> renderJobSitePage(graphics, mouseX, mouseY);
+            case ROUTE -> renderRoutePage(graphics);
             case WARNINGS -> renderWarningDetailPage(graphics, mouseX, mouseY);
             case WARNING_WORKERS -> renderWarningWorkersPage(graphics, mouseX, mouseY);
             case WORKER_ERRORS -> renderWorkerErrorsPage(graphics);
@@ -489,6 +495,23 @@ public final class ClipboardWorkforceScreen extends Screen {
                                 .withStyle(ChatFormatting.GRAY)),
                 mouseX,
                 mouseY);
+    }
+
+    private void renderJobSiteTooltip(
+            GuiGraphics graphics,
+            int mouseX,
+            int mouseY,
+            double panelMouseX,
+            double panelMouseY) {
+        if (this.closingWithAnimation || this.page != Page.JOB_SITE) {
+            return;
+        }
+        for (RowAction row : this.rowActions) {
+            if (!row.tooltip().isEmpty() && row.contains(panelMouseX, panelMouseY)) {
+                graphics.renderComponentTooltip(this.font, row.tooltip(), mouseX, mouseY);
+                return;
+            }
+        }
     }
 
     private void renderClipboardHeading(GuiGraphics graphics, double mouseX, double mouseY) {
@@ -711,7 +734,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                 + ceilDiv(overflow - firstJobOffset, SUMMARY_ROW_STEP);
     }
 
-    private void renderJobDetailPage(GuiGraphics graphics) {
+    private void renderJobDetailPage(GuiGraphics graphics, double mouseX, double mouseY) {
         Component title = Component.translatable(
                 "villagerretaliation.gui.clipboard_workforce.job_detail.title",
                 roleName(this.selectedRole));
@@ -738,6 +761,14 @@ public final class ClipboardWorkforceScreen extends Screen {
         this.selectedWorker = worker;
 
         int y = JOB_DETAIL_WORKER_TOP;
+        if (jobDetailWorkerRowHovered(mouseX, mouseY)) {
+            graphics.fill(
+                    JOB_DETAIL_BAND_LEFT,
+                    y - 2,
+                    JOB_DETAIL_BAND_RIGHT,
+                    y + TEXT_PIXEL_HEIGHT + 2,
+                    HOVER_FILL);
+        }
         drawArrowLine(
                 graphics,
                 false,
@@ -1774,6 +1805,20 @@ public final class ClipboardWorkforceScreen extends Screen {
                     return true;
                 }
             }
+            if (this.page == Page.JOB && jobDetailWorkerRowHovered(panelMouseX, panelMouseY)) {
+                openWorkerAssignment(selectedRoleWorker());
+                playPageSound();
+                return true;
+            }
+            if (this.page == Page.JOB_SITE) {
+                for (RowAction row : this.rowActions) {
+                    if (row.kind() == RowKind.JOB_SITE_ACTION && row.contains(panelMouseX, panelMouseY)) {
+                        requestWorkAreaAction(row.worker(), row.workAreaAction());
+                        playPageSound();
+                        return true;
+                    }
+                }
+            }
             if (this.page == Page.WARNINGS) {
                 WarningSummary warning = warningAt(panelMouseX, panelMouseY);
                 if (warning != null) {
@@ -1864,8 +1909,20 @@ public final class ClipboardWorkforceScreen extends Screen {
         if (field == null) {
             return null;
         }
+        if ("worker".equals(field) && routeAssigned(selectedRoleWorker())) {
+            field = "worker_route";
+        }
         String prefix = "villagerretaliation.gui.clipboard_workforce.job_detail.tooltip." + field;
         return new DetailTooltip(prefix + ".title", prefix + ".detail");
+    }
+
+    private boolean jobDetailWorkerRowHovered(double mouseX, double mouseY) {
+        return this.page == Page.JOB
+                && selectedRoleWorker() != null
+                && mouseX >= JOB_DETAIL_BAND_LEFT
+                && mouseX < JOB_DETAIL_BAND_RIGHT
+                && mouseY >= JOB_DETAIL_WORKER_TOP - 2
+                && mouseY < JOB_DETAIL_WORKER_TOP + TEXT_PIXEL_HEIGHT + 2;
     }
 
     private WarningSummary warningAt(double mouseX, double mouseY) {
@@ -2304,18 +2361,55 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private void renderJobSitePage(GuiGraphics graphics, double mouseX, double mouseY) {
-        renderBackRow(graphics, mouseX, mouseY);
-        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site"), TITLE_Y, TEXT);
+        Component title = Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site");
+        graphics.drawString(
+                this.font,
+                title,
+                (TEXTURE_WIDTH - this.font.width(title)) / 2,
+                WORKFORCE_TITLE_TOP,
+                TEXT,
+                false);
+        renderCenteredDivider(graphics, TITLE_DIVIDER_TOP);
         if (this.selectedWorker == null) {
-            drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_unavailable"), CONTENT_LEFT, CONTENT_TOP + JOB_PAGE_ROW_START_OFFSET, MUTED);
+            graphics.drawString(
+                    this.font,
+                    Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_unavailable"),
+                    SUMMARY_LEFT,
+                    SUMMARY_TOP,
+                    MUTED,
+                    false);
             return;
         }
 
-        int y = CONTENT_TOP + JOB_PAGE_ROW_START_OFFSET;
-        drawLine(graphics, Component.literal(this.selectedWorker.displayName()), CONTENT_LEFT, y, CONTENT_RIGHT - 10, TEXT);
-        Component area = workerAreaText(this.selectedWorker);
-        drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area", area), CONTENT_LEFT, y + 10, this.selectedWorker.noWorkArea() ? WARNING : MUTED);
-        y = CONTENT_TOP + 47;
+        int y = SUMMARY_TOP;
+        drawArrowLine(
+                graphics,
+                false,
+                Component.literal(this.selectedWorker.displayName()),
+                SUMMARY_LEFT,
+                y,
+                TEXT);
+        y += JOB_SITE_ROW_STEP;
+        Component centerLine = Component.translatable(
+                "villagerretaliation.gui.clipboard_workforce.job_site_center",
+                this.selectedWorker.workAreaCenter());
+        y = drawJobSiteWrappedLine(
+                graphics,
+                centerLine,
+                y,
+                this.selectedWorker.noWorkArea() ? WARNING : MUTED);
+        Component rangeLine = Component.translatable(
+                "villagerretaliation.gui.clipboard_workforce.job_site_range",
+                this.selectedWorker.horizontalRadius(),
+                this.selectedWorker.verticalRadius());
+        graphics.drawString(
+                this.font,
+                rangeLine,
+                SUMMARY_LEFT,
+                y,
+                this.selectedWorker.noWorkArea() ? WARNING : MUTED,
+                false);
+        y += JOB_SITE_ROW_STEP;
         y = drawJobSiteActionRow(
                 graphics,
                 mouseX,
@@ -2363,7 +2457,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                 mouseX,
                 mouseY,
                 y,
-                "+",
+                Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_expand_horizontal"),
                 List.of(
                         new JobSiteButton("N", ClipboardWorkAreaActionPayload.Action.EXPAND_NORTH),
                         new JobSiteButton("E", ClipboardWorkAreaActionPayload.Action.EXPAND_EAST),
@@ -2374,7 +2468,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                 mouseX,
                 mouseY,
                 y,
-                "-",
+                Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_contract_horizontal"),
                 List.of(
                         new JobSiteButton("N", ClipboardWorkAreaActionPayload.Action.CONTRACT_NORTH),
                         new JobSiteButton("E", ClipboardWorkAreaActionPayload.Action.CONTRACT_EAST),
@@ -2385,7 +2479,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                 mouseX,
                 mouseY,
                 y,
-                "+",
+                Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_expand_vertical"),
                 List.of(
                         new JobSiteButton("Up", ClipboardWorkAreaActionPayload.Action.EXPAND_UP),
                         new JobSiteButton("Down", ClipboardWorkAreaActionPayload.Action.EXPAND_DOWN)));
@@ -2394,10 +2488,70 @@ public final class ClipboardWorkforceScreen extends Screen {
                 mouseX,
                 mouseY,
                 y,
-                "-",
+                Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_contract_vertical"),
                 List.of(
                         new JobSiteButton("Up", ClipboardWorkAreaActionPayload.Action.CONTRACT_UP),
                         new JobSiteButton("Down", ClipboardWorkAreaActionPayload.Action.CONTRACT_DOWN)));
+    }
+
+    private void renderRoutePage(GuiGraphics graphics) {
+        Component title = Component.translatable("villagerretaliation.gui.clipboard_workforce.route.title");
+        graphics.drawString(
+                this.font,
+                title,
+                (TEXTURE_WIDTH - this.font.width(title)) / 2,
+                WORKFORCE_TITLE_TOP,
+                TEXT,
+                false);
+        renderCenteredDivider(graphics, TITLE_DIVIDER_TOP);
+        if (this.selectedWorker == null || !routeAssigned(this.selectedWorker)) {
+            graphics.drawString(
+                    this.font,
+                    Component.translatable("villagerretaliation.gui.clipboard_workforce.route.unavailable"),
+                    SUMMARY_LEFT,
+                    SUMMARY_TOP,
+                    MUTED,
+                    false);
+            return;
+        }
+
+        int y = SUMMARY_TOP;
+        drawArrowLine(
+                graphics,
+                false,
+                Component.literal(this.selectedWorker.displayName()),
+                SUMMARY_LEFT,
+                y,
+                TEXT);
+        y += SUMMARY_ROW_STEP;
+        y = drawWrappedDetailLine(graphics, Component.translatable(
+                "villagerretaliation.gui.clipboard_workforce.route.assignment",
+                this.selectedWorker.workAreaCenter()), y, true, TEXT);
+        y = drawWrappedDetailLine(graphics, Component.translatable(
+                "villagerretaliation.gui.clipboard_workforce.job_detail.status",
+                statusName(this.selectedWorker.status()).copy().withColor(statusColor(this.selectedWorker))),
+                y, false, TEXT);
+        if (!this.selectedWorker.target().isBlank()) {
+            y = drawWrappedDetailLine(graphics, Component.translatable(
+                    "villagerretaliation.gui.clipboard_workforce.route.target",
+                    this.selectedWorker.target()), y, true, TEXT);
+        }
+        var location = this.selectedWorker.location();
+        y = drawWrappedDetailLine(graphics, Component.translatable(
+                "villagerretaliation.gui.clipboard_workforce.route.location",
+                location.position().getX(),
+                location.position().getY(),
+                location.position().getZ()), y, false, TEXT);
+        y += GLOBAL_TEXT_GAP;
+        for (net.minecraft.util.FormattedCharSequence line : this.font.split(
+                Component.translatable("villagerretaliation.gui.clipboard_workforce.route.read_only"),
+                SUMMARY_RIGHT - SUMMARY_LEFT)) {
+            graphics.drawString(this.font, line, SUMMARY_LEFT, y, MUTED, false);
+            y += this.font.lineHeight;
+            if (y >= TEXT_CONTENT_BOTTOM) {
+                break;
+            }
+        }
     }
 
     private void renderStoragePage(GuiGraphics graphics, double mouseX, double mouseY) {
@@ -2461,15 +2615,31 @@ public final class ClipboardWorkforceScreen extends Screen {
             int y,
             Component label,
             ClipboardWorkAreaActionPayload.Action action) {
-        int rowBottom = y + ROW_OPTION_HEIGHT - 3;
-        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom);
+        int rowBottom = y + this.font.lineHeight;
+        boolean hovered = contains(mouseX, mouseY, JOB_DETAIL_BAND_LEFT, y - 2, JOB_DETAIL_BAND_RIGHT, rowBottom);
         if (hovered) {
-            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom, HOVER_FILL);
+            graphics.fill(JOB_DETAIL_BAND_LEFT, y - 2, JOB_DETAIL_BAND_RIGHT, rowBottom, HOVER_FILL);
         }
-        drawLine(graphics, label, CONTENT_LEFT, y, CONTENT_RIGHT - 10, TEXT);
-        drawRight(graphics, Component.literal(">"), CONTENT_RIGHT, y, MUTED);
-        this.rowActions.add(RowAction.jobSiteAction(this.selectedWorker, action, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom));
-        return y + ROW_HEIGHT;
+        graphics.drawString(this.font, fit(label.getString(), SUMMARY_RIGHT - SUMMARY_LEFT - ROW_ARROW_TEXT_OFFSET),
+                SUMMARY_LEFT, y, TEXT, false);
+        graphics.blit(
+                VillagerRetaliationClientAssets.CLIPBOARD_ROW_ARROW_TEXTURE,
+                SUMMARY_RIGHT - ROW_ARROW_WIDTH,
+                y,
+                0.0F,
+                0.0F,
+                ROW_ARROW_WIDTH,
+                ROW_ARROW_HEIGHT,
+                ROW_ARROW_WIDTH,
+                ROW_ARROW_HEIGHT);
+        this.rowActions.add(RowAction.jobSiteAction(
+                this.selectedWorker,
+                action,
+                JOB_DETAIL_BAND_LEFT,
+                y - 2,
+                JOB_DETAIL_BAND_RIGHT,
+                rowBottom));
+        return y + JOB_SITE_ROW_STEP;
     }
 
     private int drawJobSiteDirectionRow(
@@ -2477,41 +2647,83 @@ public final class ClipboardWorkforceScreen extends Screen {
             double mouseX,
             double mouseY,
             int y,
-            String prefix,
+            Component label,
             List<JobSiteButton> buttons) {
-        drawLine(graphics, Component.literal(prefix), CONTENT_LEFT, y, TEXT);
-        int rowBottom = y + ROW_OPTION_HEIGHT - 3;
+        graphics.drawString(this.font, label, SUMMARY_LEFT, y, MUTED, false);
+        int rowBottom = y + this.font.lineHeight;
         int buttonCount = Math.max(1, buttons.size());
-        int buttonLeft = CONTENT_LEFT + 20;
-        int buttonWidth = Math.max(18, (CONTENT_RIGHT - buttonLeft + 1) / buttonCount);
+        int buttonLeft = SUMMARY_LEFT + 48;
+        int buttonWidth = Math.max(18, (SUMMARY_RIGHT - buttonLeft) / buttonCount);
         for (int index = 0; index < buttons.size(); index++) {
             JobSiteButton button = buttons.get(index);
             int left = buttonLeft + index * buttonWidth;
-            int right = index == buttons.size() - 1 ? CONTENT_RIGHT + 1 : left + buttonWidth - 2;
+            int right = index == buttons.size() - 1 ? SUMMARY_RIGHT : left + buttonWidth - 2;
             boolean hovered = contains(mouseX, mouseY, left, y - 2, right, rowBottom);
             if (hovered) {
                 graphics.fill(left, y - 2, right, rowBottom, HOVER_FILL);
             }
-            String label = fit(button.label(), right - left - 2);
-            int labelLeft = left + Math.max(0, (right - left - this.font.width(label)) / 2);
+            String buttonText = fit(button.label(), right - left - 2);
+            int labelLeft = left + Math.max(0, (right - left - this.font.width(buttonText)) / 2);
             int labelTop = y - 2 + Math.max(0, (rowBottom - (y - 2) - this.font.lineHeight) / 2) + 1;
-            graphics.drawString(this.font, label, labelLeft, labelTop, TEXT, false);
+            graphics.drawString(this.font, buttonText, labelLeft, labelTop, TEXT, false);
             this.rowActions.add(RowAction.jobSiteAction(
                     this.selectedWorker,
                     button.action(),
-                    jobSiteButtonTooltip(prefix, button.label()),
+                    jobSiteButtonTooltip(label, button.label()),
                     left,
                     y - 2,
                     right,
                     rowBottom));
         }
-        return y + ROW_HEIGHT;
+        return y + JOB_SITE_ROW_STEP;
     }
 
-    private List<Component> jobSiteButtonTooltip(String prefix, String label) {
+    private int drawJobSiteWrappedLine(GuiGraphics graphics, Component text, int y, int color) {
+        List<net.minecraft.util.FormattedCharSequence> lines = this.font.split(
+                text,
+                SUMMARY_RIGHT - SUMMARY_LEFT);
+        int lineY = y;
+        for (net.minecraft.util.FormattedCharSequence line : lines) {
+            graphics.drawString(this.font, line, SUMMARY_LEFT, lineY, color, false);
+            lineY += JOB_SITE_ROW_STEP;
+        }
+        return lineY;
+    }
+
+    private int drawWrappedDetailLine(
+            GuiGraphics graphics,
+            Component text,
+            int y,
+            boolean banded,
+            int color) {
+        List<net.minecraft.util.FormattedCharSequence> lines = this.font.split(
+                text,
+                SUMMARY_RIGHT - SUMMARY_LEFT);
+        int blockHeight = Math.max(this.font.lineHeight, lines.size() * this.font.lineHeight);
+        if (banded) {
+            graphics.fill(
+                    JOB_DETAIL_BAND_LEFT,
+                    y - 2,
+                    JOB_DETAIL_BAND_RIGHT,
+                    y + blockHeight,
+                    JOB_DETAIL_BAND_COLOR);
+        }
+        int lineY = y;
+        for (net.minecraft.util.FormattedCharSequence line : lines) {
+            graphics.drawString(this.font, line, SUMMARY_LEFT, lineY, color, false);
+            lineY += this.font.lineHeight;
+        }
+        return lineY + 2;
+    }
+
+    private List<Component> jobSiteButtonTooltip(Component group, String direction) {
         return List.of(
-                Component.literal(prefix + " " + label),
-                Component.literal("shift to increment by 5").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+                Component.translatable(
+                        "villagerretaliation.gui.clipboard_workforce.job_site_adjust",
+                        group,
+                        direction),
+                Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_shift_hint")
+                        .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
     }
 
     private void renderOverviewPageButton(GuiGraphics graphics, double mouseX, double mouseY) {
@@ -2639,10 +2851,23 @@ public final class ClipboardWorkforceScreen extends Screen {
         this.showOverviewSelection = false;
     }
 
+    private void openWorkerAssignment(WorkerRow worker) {
+        if (worker == null) {
+            return;
+        }
+        if (routeAssigned(worker)) {
+            this.selectedWorker = worker;
+            this.selectedRole = worker.role();
+            this.page = Page.ROUTE;
+            this.showOverviewSelection = false;
+            return;
+        }
+        openJobSite(worker);
+    }
+
     private void navigateBack() {
-        if (this.page == Page.JOB_SITE) {
+        if (this.page == Page.JOB_SITE || this.page == Page.ROUTE) {
             this.page = Page.JOB;
-            this.selectedWorker = null;
             this.showOverviewSelection = false;
             return;
         }
@@ -2859,7 +3084,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         return x >= left && x <= right && y >= top && y <= bottom;
     }
 
-    private boolean isJobSitePage() {
+    boolean isJobSitePage() {
         return this.page == Page.JOB_SITE;
     }
 
@@ -3066,6 +3291,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         ASSIGNMENT_TRACKER,
         JOB,
         JOB_SITE,
+        ROUTE,
         WARNINGS,
         WARNING_WORKERS,
         WORKER_ERRORS,
