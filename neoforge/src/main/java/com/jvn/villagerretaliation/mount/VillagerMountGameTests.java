@@ -165,6 +165,14 @@ public final class VillagerMountGameTests {
         horse.setTamed(true);
         horse.setOwnerUUID(owner.getUUID());
         horse.setCustomName(Component.literal("Chestnut"));
+        List<DialogueOptionDefinition> rawOwnershipOption = List.of(DialogueOptionDefinition.simple(
+                VillagerMountOwnershipDialogue.OPTION_ID,
+                "That's my {mount}",
+                com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType.QUESTION,
+                -4));
+        helper.assertTrue(VillagerMountOwnershipDialogue.addAvailableOption(
+                        level, owner, villager, rawOwnershipOption).isEmpty(),
+                "A nearby owned horse must not expose mount ownership dialogue for an unmounted villager");
         HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
         VillagerMountAssignmentSavedData.get(level).assign(new VillagerMountAssignment(
                 villager.getUUID(),
@@ -183,11 +191,7 @@ public final class VillagerMountGameTests {
                 level,
                 owner,
                 villager,
-                List.of(DialogueOptionDefinition.simple(
-                        VillagerMountOwnershipDialogue.OPTION_ID,
-                        "That's my {mount}",
-                        com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType.QUESTION,
-                        -4)));
+                rawOwnershipOption);
         helper.assertTrue(options.size() == 1 && options.getFirst().label().equals("That's my Chestnut"),
                 "The challenge option must identify the player's mounted animal by name");
         helper.assertFalse(VillagerMountOwnershipDialogue.isAvailable(level, hirer, villager),

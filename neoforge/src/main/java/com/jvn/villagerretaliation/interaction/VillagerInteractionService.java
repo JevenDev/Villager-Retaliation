@@ -2610,7 +2610,11 @@ public final class VillagerInteractionService {
         DialogueDisposition mood = requestType == null || reputationEffect == null
                 ? VillagerDialogueService.moodFor(context)
                 : VillagerDialogueService.moodFor(context, requestType, reputationEffect);
-        java.util.List<DialogueOptionDefinition> dialogueOptions = VillagerDialogueResources.dialogueOptions(context, mood);
+        java.util.List<DialogueOptionDefinition> dialogueOptions = VillagerMountOwnershipDialogue.addAvailableOption(
+                level,
+                player,
+                villager,
+                VillagerDialogueResources.dialogueOptions(context, mood));
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
         trySendToPlayer(player, new VillagerDialogueResponsePayload(
