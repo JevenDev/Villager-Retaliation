@@ -1,4 +1,4 @@
-﻿const DATA = window.VR_WIKI_DATA || { quests: [], reputation: [], gifts: {}, pacification: [], skillTrades: [], advancements: [] };
+const DATA = window.VR_WIKI_DATA || { quests: [], reputation: [], gifts: {}, pacification: [], skillTrades: [], advancements: [] };
 
 const PAGES = [
   {
@@ -83,10 +83,10 @@ const PAGES = [
   },
   {
     id: "settings",
-    title: "Config And Commands",
+    title: "Controls And Settings",
     group: "Reference",
     icon: "settings",
-    description: "Player-relevant config locations, keybinds, and useful debug commands.",
+    description: "Quest controls, interaction shortcuts, and ways to change local settings.",
     render: renderSettings
   }
 ];
@@ -106,6 +106,53 @@ const els = {
 
 let searchQuery = "";
 let paletteQuery = "";
+let activeRouteKey = "";
+let scrollRestoreFrame = 0;
+
+const NAV_GROUP_STATE_KEY = "villager-retaliation-wiki-nav-groups-v1";
+const ROUTE_SCROLL_STATE_KEY = "villager-retaliation-wiki-scroll-v1";
+
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
+function readLocalState(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeLocalState(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // The wiki still works when storage is unavailable or full.
+  }
+}
+
+function routeKey(route) {
+  return `${route.type}:${route.id || "home"}`;
+}
+
+function saveRouteScroll(key = activeRouteKey) {
+  if (!key) return;
+  const positions = readLocalState(ROUTE_SCROLL_STATE_KEY);
+  positions[key] = Math.max(0, Math.round(window.scrollY));
+  writeLocalState(ROUTE_SCROLL_STATE_KEY, positions);
+}
+
+function restoreRouteScroll(route) {
+  const key = routeKey(route);
+  const positions = readLocalState(ROUTE_SCROLL_STATE_KEY);
+  const savedPosition = Number(positions[key]);
+  activeRouteKey = key;
+  if (scrollRestoreFrame) window.cancelAnimationFrame(scrollRestoreFrame);
+  scrollRestoreFrame = window.requestAnimationFrame(() => {
+    if (activeRouteKey !== key) return;
+    window.scrollTo({ top: Number.isFinite(savedPosition) ? savedPosition : 0, left: 0, behavior: "auto" });
+  });
+}
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -299,22 +346,31 @@ function resultIcon(type) {
 
 function renderNav() {
   const route = currentRoute();
+  const navGroupState = readLocalState(NAV_GROUP_STATE_KEY);
   const currentQuest = route.type === "quest"
     ? DATA.quests.find((item) => item.slug === route.id)
     : null;
   const navPages = PAGES.filter((page) => page.id !== "quests");
   const byGroup = groupBy(navPages, "group");
-  const groups = Object.entries(byGroup).map(([group, pages]) => `
-    <div class="nav-group">
-      <div class="nav-heading">${escapeHtml(group)}</div>
-      ${pages.map((page) => `
-        <a class="nav-link ${(route.type === "page" && route.id === page.id) || (route.type === "advancement" && page.id === "advancements") ? "is-active" : ""}" href="${pageUrl(page.id)}">
-          ${icon(page.icon)}
-          <span>${escapeHtml(page.title)}</span>
-        </a>
-      `).join("")}
-    </div>
-  `).join("");
+  const groups = Object.entries(byGroup).map(([group, pages]) => {
+    const groupIsActive = pages.some((page) =>
+      (route.type === "page" && route.id === page.id)
+      || (route.type === "advancement" && page.id === "advancements")
+    );
+    const groupIsOpen = groupIsActive || navGroupState[group] === true;
+    return `
+    <details class="nav-group nav-page-group" data-nav-group="${escapeHtml(group)}" ${groupIsOpen ? "open" : ""}>
+      <summary class="nav-heading">${icon("chevron-right", "disclosure-icon")}<span>${escapeHtml(group)}</span></summary>
+      <div class="nav-page-links">
+        ${pages.map((page) => `
+          <a class="nav-link ${(route.type === "page" && route.id === page.id) || (route.type === "advancement" && page.id === "advancements") ? "is-active" : ""}" href="${pageUrl(page.id)}">
+            ${icon(page.icon)}
+            <span>${escapeHtml(page.title)}</span>
+          </a>
+        `).join("")}
+      </div>
+    </details>`;
+  }).join("");
 
   const questLinks = DATA.quests.map((quest) => `
     <a class="nav-link nav-link-small ${route.type === "quest" && route.id === quest.slug ? "is-active" : ""}" href="${questUrl(quest.slug)}">
@@ -328,75 +384,92 @@ function renderNav() {
       <span>${escapeHtml(line.label)}</span>
     </a>
   `).join("");
+  const questsAreActive = route.type === "quest"
+    || route.type === "questline"
+    || (route.type === "page" && route.id === "quests");
+  const questsAreOpen = questsAreActive || navGroupState.Quests === true;
 
   els.nav.innerHTML = `${groups}
-    <div class="nav-group">
-      <div class="nav-heading">Quests</div>
-      <a class="nav-link ${route.type === "page" && route.id === "quests" ? "is-active" : ""}" href="${pageUrl("quests")}">
-        ${icon("list")}
-        <span>All quests</span>
-      </a>
-      ${questlineLinks ? `
-        <details class="nav-disclosure" ${route.type === "questline" || currentQuest?.questline ? "open" : ""}>
-          <summary>${icon("chevron-right", "disclosure-icon")}<span>Questlines</span></summary>
-          <div class="nav-disclosure-list">${questlineLinks}</div>
+    <details class="nav-group nav-page-group" data-nav-group="Quests" ${questsAreOpen ? "open" : ""}>
+      <summary class="nav-heading">${icon("chevron-right", "disclosure-icon")}<span>Quests</span></summary>
+      <div class="nav-page-links">
+        <a class="nav-link ${route.type === "page" && route.id === "quests" ? "is-active" : ""}" href="${pageUrl("quests")}">
+          ${icon("list")}
+          <span>All quests</span>
+        </a>
+        ${questlineLinks ? `
+          <details class="nav-disclosure" ${route.type === "questline" || currentQuest?.questline ? "open" : ""}>
+            <summary>${icon("chevron-right", "disclosure-icon")}<span>Questlines</span></summary>
+            <div class="nav-disclosure-list">${questlineLinks}</div>
+          </details>
+        ` : ""}
+        <details class="nav-disclosure" ${route.type === "quest" ? "open" : ""}>
+          <summary>${icon("chevron-right", "disclosure-icon")}<span>Individual quests</span></summary>
+          <div class="nav-disclosure-list">${questLinks}</div>
         </details>
-      ` : ""}
-      <details class="nav-disclosure" ${route.type === "quest" ? "open" : ""}>
-        <summary>${icon("chevron-right", "disclosure-icon")}<span>Individual quests</span></summary>
-        <div class="nav-disclosure-list">${questLinks}</div>
-      </details>
-    </div>`;
-}
+      </div>
+    </details>`;
 
-function render() {
-  renderNav();
-  const route = currentRoute();
-  if (route.type === "quest") {
-    const quest = DATA.quests.find((item) => item.slug === route.id) || DATA.quests[0];
-    if (quest) renderDocument(quest.title, quest.description, renderQuestDetail(quest), {
-      icon: questIcon(quest),
-      parent: "Quest Walkthroughs",
-      section: quest.questlineLabel || quest.groupLabel
+  els.nav.querySelectorAll(".nav-page-group[data-nav-group]").forEach((group) => {
+    group.addEventListener("toggle", () => {
+      const state = readLocalState(NAV_GROUP_STATE_KEY);
+      state[group.dataset.navGroup] = group.open;
+      writeLocalState(NAV_GROUP_STATE_KEY, state);
     });
-    return;
-  }
-  if (route.type === "questline") {
-    const summary = questlineSummaries().find((line) => line.id === route.id) || questlineSummaries()[0];
-    if (summary) renderDocument(summary.label, `${summary.quests.length} connected quests in this progression.`, renderQuestlineDetail(summary), {
-      icon: "map",
-      parent: "Quest Walkthroughs",
-      section: "Questlines"
-    });
-    return;
-  }
-  if (route.type === "advancement") {
-    const advancement = findAdvancement(route.id);
-    renderDocument("Advancements", advancement
-      ? `Focused on ${advancement.title}.`
-      : "The reputation advancement tab, visible and hidden challenges.", renderAdvancements({
-      focusedAdvancementId: advancement?.id || ""
-    }), {
-      icon: "trophy",
-      parent: "Reference"
-    });
-    if (advancement) window.requestAnimationFrame(() => focusAdvancementRow(advancement.id));
-    return;
-  }
-  if (route.type === "search") {
-    renderSearch();
-    return;
-  }
-  const page = PAGES.find((item) => item.id === route.id) || PAGES[0];
-  renderDocument(page.title, page.description, page.render(), {
-    icon: page.icon,
-    parent: page.group,
-    heroImage: page.id === "home"
-      ? "https://cdn.modrinth.com/data/cached_images/16269e99f4ef7ac15b6d24f3b523e5fa5778d5f5.png"
-      : null
   });
 }
 
+function render() {
+  const route = currentRoute();
+  try {
+    renderNav();
+    if (route.type === "quest") {
+      const quest = DATA.quests.find((item) => item.slug === route.id) || DATA.quests[0];
+      if (quest) renderDocument(quest.title, quest.description, renderQuestDetail(quest), {
+        icon: questIcon(quest),
+        parent: "Quest Walkthroughs",
+        section: quest.questlineLabel || quest.groupLabel
+      });
+      return;
+    }
+    if (route.type === "questline") {
+      const summary = questlineSummaries().find((line) => line.id === route.id) || questlineSummaries()[0];
+      if (summary) renderDocument(summary.label, `${summary.quests.length} connected quests in this progression.`, renderQuestlineDetail(summary), {
+        icon: "map",
+        parent: "Quest Walkthroughs",
+        section: "Questlines"
+      });
+      return;
+    }
+    if (route.type === "advancement") {
+      const advancement = findAdvancement(route.id);
+      renderDocument("Advancements", advancement
+        ? `Focused on ${advancement.title}.`
+        : "The reputation advancement tab, visible and hidden challenges.", renderAdvancements({
+        focusedAdvancementId: advancement?.id || ""
+      }), {
+        icon: "trophy",
+        parent: "Reference"
+      });
+      if (advancement) window.requestAnimationFrame(() => focusAdvancementRow(advancement.id));
+      return;
+    }
+    if (route.type === "search") {
+      renderSearch();
+      return;
+    }
+    const page = PAGES.find((item) => item.id === route.id) || PAGES[0];
+    renderDocument(page.title, page.description, page.render(), {
+      icon: page.icon,
+      parent: page.group,
+      heroImage: page.id === "home"
+        ? "https://cdn.modrinth.com/data/cached_images/16269e99f4ef7ac15b6d24f3b523e5fa5778d5f5.png"
+        : null
+    });
+  } finally {
+    restoreRouteScroll(route);
+  }
+}
 function renderDocument(title, description, body, meta = {}) {
   const parent = meta.section ? `${meta.parent} / ${meta.section}` : meta.parent;
   const heroImage = meta.heroImage
@@ -958,7 +1031,7 @@ function renderReputation() {
       <p>Low trust can affect trade prices, pacification, anger duration, fleeing, attack-on-sight behavior, cleric support, dialogue tone, interaction availability, and advancement progress.</p>
     `)}
     ${section("Default Tiers", `
-      <div class="table-wrap"><table><thead><tr><th>Tier</th><th>Default threshold</th><th>Player-facing effect</th></tr></thead><tbody>
+      <div class="table-wrap"><table><thead><tr><th>Tier</th><th>Default threshold</th><th>Effect</th></tr></thead><tbody>
         ${DATA.reputation.map((tier) => `<tr><td>${escapeHtml(tier.level)}</td><td>${escapeHtml(tier.threshold)}</td><td>${escapeHtml(tier.effect)}</td></tr>`).join("")}
       </tbody></table></div>
     `)}
@@ -1337,19 +1410,8 @@ function renderSettings() {
         <div><dt>Quest Tracker</dt><dd><kbd>K</kbd></dd></div>
       </dl>
     `)}
-    ${section("Config Location", `
-      <p>Singleplayer and client config lives at <code>config/villagerretaliation-common.toml</code>. Dedicated servers use <code>&lt;server root&gt;/config/villagerretaliation-common.toml</code>.</p>
-    `)}
-    ${section("Useful Commands", `
-      ${simpleList([
-        "<code>/villagerretaliation setNearbyReputation &lt;integer&gt;</code>",
-        "<code>/villagerretaliation dialogue explain &lt;villager&gt; &lt;request&gt; [option_id]</code>",
-        "<code>/villagerretaliation quest debug providers [radius]</code>",
-        "<code>/villagerretaliation quest debug start &lt;quest_id&gt; &lt;provider_name&gt;</code>",
-        "<code>/villagerretaliation quest debug inspect &lt;quest_id&gt;</code>",
-        "<code>/villagerretaliation profile get|reroll|export &lt;villager&gt;</code>",
-        "<code>/villagerretaliation skill get|reroll|export &lt;villager&gt;</code>"
-      ])}
+    ${section("Changing Settings", `
+      <p>Open Mod Menu and choose Villager Retaliation to adjust available controls and display preferences. Multiplayer gameplay rules are controlled by the server.</p>
     `)}
   `;
 }
@@ -1513,7 +1575,11 @@ els.toc.addEventListener("click", (event) => {
   heading.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
-window.addEventListener("hashchange", render);
+window.addEventListener("hashchange", () => {
+  saveRouteScroll();
+  render();
+});
+window.addEventListener("pagehide", () => saveRouteScroll());
 
 if (!location.hash) location.hash = "#/home";
 render();

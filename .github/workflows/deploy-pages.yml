@@ -46,7 +46,9 @@ jobs:
         run: node --check tools/datapack-builder/app.js
 
       - name: Check player wiki JavaScript syntax
-        run: node --check tools/player-wiki/app.js
+        run: |
+          node --check tools/player-wiki/app.js
+          node --check tools/player-wiki/beta13-content.js
 
       - name: Check quest builder
         run: |
@@ -73,6 +75,7 @@ jobs:
           test -f tools/player-wiki/index.html
           test -f tools/player-wiki/styles.css
           test -f tools/player-wiki/app.js
+          test -f tools/player-wiki/beta13-content.js
           test -f tools/player-wiki/site-data.js
 
       - name: Verify quest builder entry files

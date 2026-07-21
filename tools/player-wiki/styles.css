@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   color-scheme: dark;
   --bg: #17161a;
   --sidebar-bg: #111114;
@@ -189,10 +189,39 @@ code {
 }
 
 .nav-heading {
-  margin: 0 0 5px 6px;
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 5px;
+  padding: 3px 6px;
   color: var(--faint);
   font-size: 14px;
   font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.nav-heading::-webkit-details-marker {
+  display: none;
+}
+
+.nav-heading:hover {
+  color: var(--text);
+}
+
+.nav-heading .disclosure-icon {
+  width: 14px;
+  height: 14px;
+  color: currentColor;
+}
+
+.nav-page-group[open] > .nav-heading .disclosure-icon {
+  transform: rotate(90deg);
+}
+
+.nav-page-links {
+  display: grid;
 }
 
 .nav-link {
@@ -491,9 +520,27 @@ code {
 .doc-section p + .fact-list,
 .doc-section p + .step-list,
 .doc-section p + .plain-list,
+.doc-section p + .pill-row,
 .doc-section p + .quest-flow,
 .doc-section p + .reference-panel,
 .doc-section p + .search-results {
+  margin-top: 12px;
+}
+
+/* Keep block-to-paragraph spacing consistent as well. */
+.doc-section .card-grid + p,
+.doc-section .table-wrap + p,
+.doc-section .fact-list + p,
+.doc-section .step-list + p,
+.doc-section .plain-list + p,
+.doc-section .pill-row + p,
+.doc-section .quest-flow + p,
+.doc-section .reference-panel + p,
+.doc-section .search-results + p {
+  margin-top: 12px;
+}
+
+.doc-section .card-grid + .plain-list {
   margin-top: 12px;
 }
 
@@ -1084,6 +1131,7 @@ code {
 .fact-list div {
   display: grid;
   grid-template-columns: 170px minmax(0, 1fr);
+  align-items: center;
   gap: 12px;
   padding: 9px 0;
   border-bottom: 1px solid var(--line-soft);

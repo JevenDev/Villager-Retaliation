@@ -65576,6 +65576,15 @@ window.VR_WIKI_DATA = {
       "parent": "reputation/once_upon_a_time"
     },
     {
+      "id": "the_mark_you_chose",
+      "title": "The Mark You Chose",
+      "description": "Speak to a villager while displaying an ominous banner.",
+      "frame": "Goal",
+      "hidden": true,
+      "icon": "Shield",
+      "parent": "reputation/commonfolk"
+    },
+    {
       "id": "the_village_has_eyes",
       "title": "The Village Has Eyes",
       "description": "Harm a villager while others are watching.",
@@ -65631,9 +65640,9 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 35005,
+    "dialogueLinesEstimate": 35215,
     "dialogueLineBreakdown": {
-      "dialogue": 33366,
+      "dialogue": 33576,
       "forcedDialogue": 315,
       "dialogueTrees": 0,
       "questModules": 1324
