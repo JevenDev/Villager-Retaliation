@@ -3932,6 +3932,39 @@ public final class VillagerWorkerGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80)
+    public static void sharedRouteNavigatorRecoversAtNearestNodeAfterRouteTimeout(GameTestHelper helper) {
+        buildFloor(helper, 0, 10, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        BlockPos startRel = new BlockPos(1, 2, 2);
+        Villager villager = spawnVillager(helper, startRel);
+        tickVillager(level, villager, 20);
+        villager.moveTo(helper.absolutePos(startRel).getCenter());
+        VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+        BlockPos nearestNodeRel = new BlockPos(4, 2, 2);
+        BlockPos lastNodeRel = new BlockPos(8, 2, 2);
+        BlockPos nearestNode = helper.absolutePos(nearestNodeRel);
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(nearestNodeRel, lastNodeRel));
+        state.putInt("RouteNodeIndex", 1);
+        state.putLong("RouteLastNodeReachedGameTime", level.getGameTime() - 20L * 30L);
+
+        HiredRouteNavigator.maintainRoute(level, villager, context, 0.5D);
+
+        helper.assertValueEqual(state.getInt("RouteNodeIndex"), 0,
+                "timed-out route navigation should re-anchor at the nearest route node");
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        helper.assertTrue(navigationTarget != null && navigationTarget.distSqr(nearestNode) <= 4.0D,
+                "route recovery should immediately pathfind toward the nearest node; target=" + navigationTarget);
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void courierMovesInputToOutputAlongAssignedRoute(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 5, 1);

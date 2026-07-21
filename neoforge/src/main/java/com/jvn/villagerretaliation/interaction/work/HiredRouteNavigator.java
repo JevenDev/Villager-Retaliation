@@ -17,8 +17,10 @@ public final class HiredRouteNavigator {
     private static final String ROUTE_DIRECTION_TAG = "RouteDirection";
     private static final String ROUTE_RETRY_AFTER_GAME_TIME_TAG = "RouteRetryAfterGameTime";
     private static final String ROUTE_FAILED_PATH_COUNT_TAG = "RouteFailedPathCount";
+    private static final String ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG = "RouteLastNodeReachedGameTime";
     private static final double ARRIVAL_DISTANCE_SQR = 4.0D;
     private static final long PATH_RETRY_TICKS = 60L;
+    private static final long ROUTE_RECOVERY_TICKS = 20L * 30L;
     private static final int PATH_FAILURE_SKIP_LIMIT = 3;
     private static final int CLOSE_ENOUGH_DISTANCE = 1;
 
@@ -35,6 +37,12 @@ public final class HiredRouteNavigator {
         BlockPos target = route.nodes().get(nodeIndex);
         double distanceSqr = villager.blockPosition().distSqr(target);
         long gameTime = level.getGameTime();
+        initializeRouteWatchdog(state, gameTime);
+        if (distanceSqr > ARRIVAL_DISTANCE_SQR && routeRecoveryDue(state, gameTime)) {
+            nodeIndex = recoverAtNearestNode(villager, state, route, gameTime);
+            target = route.nodes().get(nodeIndex);
+            distanceSqr = villager.blockPosition().distSqr(target);
+        }
         if (distanceSqr > ARRIVAL_DISTANCE_SQR
                 && gameTime < state.getLong(ROUTE_RETRY_AFTER_GAME_TIME_TAG)) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target);
@@ -43,6 +51,7 @@ public final class HiredRouteNavigator {
 
         NodeMovement movement = moveToRouteNode(level, villager, target, speed);
         if (movement == NodeMovement.ARRIVED) {
+            state.putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
             nodeIndex = advanceRouteNode(state, route, nodeIndex);
             target = route.nodes().get(nodeIndex);
             if (route.nodes().size() == 1) {
@@ -168,6 +177,7 @@ public final class HiredRouteNavigator {
         state.remove(ROUTE_DIRECTION_TAG);
         state.remove(ROUTE_RETRY_AFTER_GAME_TIME_TAG);
         state.remove(ROUTE_FAILED_PATH_COUNT_TAG);
+        state.remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
     }
 
     private static int routeNodeIndex(CompoundTag state, HiredRoute route) {
@@ -191,6 +201,46 @@ public final class HiredRouteNavigator {
             }
         }
         return 0;
+    }
+
+    private static int nearestNodeIndex(HiredRoute route, BlockPos position) {
+        int nearestIndex = 0;
+        double nearestDistanceSqr = Double.MAX_VALUE;
+        for (int index = 0; index < route.nodes().size(); index++) {
+            double distanceSqr = position.distSqr(route.nodes().get(index));
+            if (distanceSqr < nearestDistanceSqr) {
+                nearestDistanceSqr = distanceSqr;
+                nearestIndex = index;
+            }
+        }
+        return nearestIndex;
+    }
+
+    private static void initializeRouteWatchdog(CompoundTag state, long gameTime) {
+        if (!state.contains(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, Tag.TAG_LONG)
+                || state.getLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG) > gameTime) {
+            state.putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
+        }
+    }
+
+    private static boolean routeRecoveryDue(CompoundTag state, long gameTime) {
+        return gameTime - state.getLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG) >= ROUTE_RECOVERY_TICKS;
+    }
+
+    private static int recoverAtNearestNode(
+            Villager villager,
+            CompoundTag state,
+            HiredRoute route,
+            long gameTime) {
+        int nearestIndex = nearestNodeIndex(route, villager.blockPosition());
+        BlockPos nearestNode = route.nodes().get(nearestIndex);
+        state.putInt(ROUTE_NODE_INDEX_TAG, nearestIndex);
+        state.putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
+        clearPathFailure(state);
+        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+        HiredPathMemory.clearNavigationProgress(villager);
+        HiredPathMemory.clearAvoided(villager, nearestNode);
+        return nearestIndex;
     }
 
     private static int advanceRouteNode(CompoundTag state, HiredRoute route, int currentIndex) {
