@@ -7,7 +7,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredSupplyCrafting;
-import com.jvn.villagerretaliation.interaction.work.HiredStorageNavigationGoal;
+import com.jvn.villagerretaliation.interaction.work.HiredProductionMaterials;
 import com.jvn.villagerretaliation.interaction.work.HiredPathTarget;
 import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
@@ -24,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
@@ -1152,114 +1151,54 @@ public final class BrewingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             MaterialPlan materials) {
-        List<StorageNeed> needs = materials.storageNeeds(context);
-        if (needs.isEmpty()) {
-            HiredStorageNavigationGoal.clearStorageTarget(context);
-            HiredWorkerBrain.clearFailure(context);
-            return null;
-        }
-        if (!AssignedStorageService.hasAssignedStorage(level, villager)) {
-            setBrewingBlocked(context, "missing_brewing_materials", materials.materialsSummary(context));
-            HiredWorkerBrain.setFailure(context, "missing_brewing_materials", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("interaction.work.brewing.missing_materials");
-        }
-        Predicate<ItemStack> storageNeedFilter = stack -> matchesAnyNeed(needs, stack);
-        BlockPos storage = AssignedStorageService.nearestAssignedStoragePosContaining(level, villager, storageNeedFilter);
-        if (storage == null) {
-            setBrewingBlocked(context, "missing_brewing_materials", materials.materialsSummary(context));
-            HiredWorkerBrain.setFailure(context, "missing_brewing_materials", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
-            return WorkResult.idle("interaction.work.brewing.missing_materials");
-        }
-        HiredWorkerBrain.setStorageTarget(context, storage);
-        HiredStorageNavigationGoal.Result moveResult = HiredStorageNavigationGoal.moveToStorageTarget(
+        List<HiredProductionMaterials.Need> needs = materials.storageNeeds(context);
+        HiredProductionMaterials.Acquisition acquisition = HiredProductionMaterials.acquireFromAssignedStorage(
                 level,
-                context,
                 villager,
-                storage,
-                0.45D);
-        if (moveResult == HiredStorageNavigationGoal.Result.MOVING) {
-            HiredWorkerBrain.clearFailure(context);
-            setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-            return WorkResult.progressed("interaction.work.brewing.collecting_materials");
-        }
-        if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
-            BlockPos failedStorage = storage;
-            for (BlockPos alternateStorage : AssignedStorageService.assignedStoragePositionsContaining(
-                    level,
-                    villager,
-                    storageNeedFilter)) {
-                if (failedStorage.equals(alternateStorage)) {
-                    continue;
-                }
-                HiredWorkerBrain.setStorageTarget(context, alternateStorage);
-                HiredStorageNavigationGoal.Result alternateMoveResult = HiredStorageNavigationGoal.moveToStorageTarget(
-                        level,
-                        context,
-                        villager,
-                        alternateStorage,
-                        0.45D);
-                if (alternateMoveResult == HiredStorageNavigationGoal.Result.MOVING) {
-                    HiredWorkerBrain.clearFailure(context);
-                    setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
-                    return WorkResult.progressed("interaction.work.brewing.collecting_materials");
-                }
-                if (alternateMoveResult == HiredStorageNavigationGoal.Result.ARRIVED) {
-                    storage = alternateStorage;
-                    HiredWorkerBrain.setStorageTarget(context, storage);
-                    moveResult = HiredStorageNavigationGoal.Result.ARRIVED;
-                    break;
-                }
+                context,
+                needs,
+                0.45D,
+                BASE_MATERIAL_TRANSFER_ITEMS,
+                HiredProductionMaterials.StorageFilterPolicy.RESPECT_INPUT_FILTER);
+        BlockPos storage = acquisition.storagePos();
+        return switch (acquisition.status()) {
+            case NO_NEEDS -> {
+                HiredWorkerBrain.clearFailure(context);
+                yield null;
             }
-            if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
-                HiredWorkerBrain.setStorageTarget(context, failedStorage);
+            case MISSING -> {
+                setBrewingBlocked(context, "missing_brewing_materials", materials.materialsSummary(context));
+                HiredWorkerBrain.setFailure(context, "missing_brewing_materials", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION);
+                yield WorkResult.idle("interaction.work.brewing.missing_materials");
+            }
+            case MOVING -> {
+                HiredWorkerBrain.clearFailure(context);
+                setTaskState(context, HiredWorkerTaskState.MOVING_TO_STORAGE);
+                yield WorkResult.progressed("interaction.work.brewing.collecting_materials");
+            }
+            case UNREACHABLE -> {
                 setBrewingBlocked(context, "brewing_storage_path_failed", materials.materialsSummary(context));
                 HiredWorkerBrain.setFailure(context, "brewing_storage_path_failed", level.getGameTime() + 100L);
-                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, failedStorage);
-                return WorkResult.idle("interaction.work.brewing.materials_unreachable");
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
+                yield WorkResult.idle("interaction.work.brewing.materials_unreachable");
             }
-        }
-        faceBlock(villager, storage);
-        int movedTotal = 0;
-        int remainingTripCapacity = context.transferLimit(BASE_MATERIAL_TRANSFER_ITEMS);
-        for (StorageNeed need : needs) {
-            if (remainingTripCapacity <= 0) {
-                break;
+            case INVENTORY_FULL -> {
+                faceBlock(villager, storage);
+                setBrewingBlocked(context, "brewing_material_inventory_full", materials.materialsSummary(context));
+                HiredWorkerBrain.setFailure(context, "brewing_material_inventory_full", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
+                yield WorkResult.idle("interaction.work.brewing.material_inventory_full");
             }
-            int moved = AssignedStorageService.transferItemsAtAssignedStorage(
-                    villager,
-                    storage,
-                    need.predicate(),
-                    Math.min(need.count(), remainingTripCapacity),
-                    context.inventory()::insertSupplyFromStorage);
-            movedTotal += moved;
-            remainingTripCapacity -= moved;
-        }
-        if (movedTotal <= 0) {
-            setBrewingBlocked(context, "brewing_material_inventory_full", materials.materialsSummary(context));
-            HiredWorkerBrain.setFailure(context, "brewing_material_inventory_full", level.getGameTime() + 100L);
-            setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
-            return WorkResult.idle("interaction.work.brewing.material_inventory_full");
-        }
-        HiredStorageNavigationGoal.clearStorageTarget(context);
-        HiredWorkerBrain.clearFailure(context);
-        clearBrewingBlocked(context);
-        stopWorkNavigation(villager);
-        setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
-        return WorkResult.progressed("interaction.work.brewing.gathered_materials");
-    }
-
-    private static boolean matchesAnyNeed(List<StorageNeed> needs, ItemStack stack) {
-        if (stack == null || stack.isEmpty()) {
-            return false;
-        }
-        for (StorageNeed need : needs) {
-            if (need.predicate().test(stack)) {
-                return true;
+            case COLLECTED -> {
+                faceBlock(villager, storage);
+                HiredWorkerBrain.clearFailure(context);
+                clearBrewingBlocked(context);
+                stopWorkNavigation(villager);
+                setTaskState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, context.workCenter());
+                yield WorkResult.progressed("interaction.work.brewing.gathered_materials");
             }
-        }
-        return false;
+        };
     }
 
     private record BrewingStandPlan(
@@ -1435,16 +1374,9 @@ public final class BrewingWorker extends AbstractBlockWorker {
             return this.missingStatus.isBlank() ? "interaction.work.brewing.missing_materials" : this.missingStatus;
         }
 
-        private List<StorageNeed> storageNeeds(HiredWorkContext context) {
-            List<StorageNeed> needs = new ArrayList<>();
-            for (Map.Entry<Item, Integer> entry : this.items.entrySet()) {
-                int carried = countJobItem(context, entry.getKey());
-                int missing = Math.max(0, entry.getValue() - carried);
-                if (missing > 0) {
-                    Item item = entry.getKey();
-                    needs.add(new StorageNeed(stack -> stack.is(item), missing, itemLabel(item)));
-                }
-            }
+        private List<HiredProductionMaterials.Need> storageNeeds(HiredWorkContext context) {
+            List<HiredProductionMaterials.Need> needs =
+                    new ArrayList<>(HiredProductionMaterials.missingItemNeeds(context, this.items));
             if (this.waterBottleCount > 0) {
                 int carried = countJobWaterBottles(context);
                 int missing = Math.max(0, this.waterBottleCount - carried);
@@ -1452,7 +1384,8 @@ public final class BrewingWorker extends AbstractBlockWorker {
                     if (this.fillWaterBottles) {
                         return needs;
                     }
-                    needs.add(new StorageNeed(HiredBrewingRecipeCatalog::isWaterPotion, missing, waterBottleLabel()));
+                    needs.add(new HiredProductionMaterials.Need(
+                            HiredBrewingRecipeCatalog::isWaterPotion, missing, waterBottleLabel()));
                 }
             }
             return needs;
@@ -1462,12 +1395,12 @@ public final class BrewingWorker extends AbstractBlockWorker {
             if (!this.hasEverything() && !this.missingMaterials().isBlank()) {
                 return this.missingMaterials();
             }
-            List<StorageNeed> needs = storageNeeds(context);
+            List<HiredProductionMaterials.Need> needs = storageNeeds(context);
             if (needs.isEmpty()) {
                 return this.missingMaterials();
             }
             List<String> parts = new ArrayList<>();
-            for (StorageNeed need : needs) {
+            for (HiredProductionMaterials.Need need : needs) {
                 String part = need.count() + " " + need.label();
                 parts.add(part);
                 if (parts.size() >= 4) {
@@ -1504,9 +1437,6 @@ public final class BrewingWorker extends AbstractBlockWorker {
         private static String waterBottleLabel() {
             return PotionContents.createItemStack(Items.POTION, Potions.WATER).getHoverName().getString();
         }
-    }
-
-    private record StorageNeed(Predicate<ItemStack> predicate, int count, String label) {
     }
 
     private record FacilityCandidate(BlockPos pos, double score) {

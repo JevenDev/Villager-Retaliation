@@ -147,6 +147,7 @@ public final class ClipboardWorkforceScreen extends Screen {
             HiredVillagerRole.SMELTER,
             HiredVillagerRole.COURIER,
             HiredVillagerRole.ANIMAL_HANDLING,
+            HiredVillagerRole.CRAFTSMAN,
             HiredVillagerRole.NITWIT);
     private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
     private static final ResourceLocation PAGE_FORWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_forward_highlighted");

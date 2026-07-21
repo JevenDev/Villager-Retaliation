@@ -329,6 +329,11 @@ public final class ClipboardWorkforceService {
         if (brain.taskState() != HiredWorkerTaskState.WAITING_FOR_MATERIALS) {
             return false;
         }
+        if (role == HiredVillagerRole.CRAFTSMAN) {
+            return !noStorage
+                    && !materialStorageUnreachable
+                    && lower(brain.failureReason()).contains("missing_craftsman_materials");
+        }
         if (role == HiredVillagerRole.BREWING) {
             if (noStorage || materialStorageUnreachable) {
                 return false;
@@ -395,6 +400,7 @@ public final class ClipboardWorkforceService {
         }
         return switch (role) {
             case BREWING -> failure.contains("brewing_storage_path_failed");
+            case CRAFTSMAN -> failure.contains("craftsman_storage_path_failed");
             case COOK -> failure.contains("cooking_storage_path_failed");
             case SMELTER -> failure.contains("smelting_storage_path_failed");
             case COURIER -> failure.contains("courier_input_unreachable")
@@ -419,6 +425,7 @@ public final class ClipboardWorkforceService {
             case BREWING -> failure.contains("brewing_material_inventory_full")
                     || failure.contains("brewing_water_bottle_space")
                     || failure.contains("brewing_output_full_after_brew");
+            case CRAFTSMAN -> failure.contains("craftsman_material_inventory_full");
             case COOK -> failure.contains("cooking_material_inventory_full");
             case SMELTER -> failure.contains("smelting_material_inventory_full");
             case BUILDER -> failure.contains("builder_material_inventory_full")

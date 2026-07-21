@@ -954,6 +954,7 @@ public final class VillagerInteractionService {
                  SET_ROLE_FARMING,
                  SET_ROLE_FISHING,
                  SET_ROLE_BREWING,
+                 SET_ROLE_CRAFTSMAN,
                  SET_ROLE_BUILDER,
                  SET_ROLE_ANIMAL_HANDLING,
                  SET_ROLE_NITWIT,
@@ -975,6 +976,7 @@ public final class VillagerInteractionService {
                  CONFIGURE_BUILDER,
                  CONFIGURE_ANIMAL_HANDLING,
                  CONFIGURE_NITWIT,
+                 CYCLE_CRAFTSMAN_MODE,
                  STOP_BREWING,
                  STOP_BUILDER_BUILD -> true;
             default -> false;
@@ -1566,6 +1568,7 @@ public final class VillagerInteractionService {
             case SET_ROLE_FARMING -> HiredVillagerRole.FARMING;
             case SET_ROLE_FISHING -> HiredVillagerRole.FISHING;
             case SET_ROLE_BREWING -> HiredVillagerRole.BREWING;
+            case SET_ROLE_CRAFTSMAN -> HiredVillagerRole.CRAFTSMAN;
             case SET_ROLE_BUILDER -> HiredVillagerRole.BUILDER;
             case SET_ROLE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
             case SET_ROLE_NITWIT -> HiredVillagerRole.NITWIT;
@@ -1624,6 +1627,7 @@ public final class VillagerInteractionService {
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_USE_ASSIGNED_SUPPLIES
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_AUTO_DEPOSIT_OUTPUTS
                 || action == VillagerRecruitRequestPayload.Action.TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING
+                || action == VillagerRecruitRequestPayload.Action.CYCLE_CRAFTSMAN_MODE
                 || action == VillagerRecruitRequestPayload.Action.STOP_BREWING
                 || action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD;
         if (!workAction) {
@@ -1637,12 +1641,21 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.configure.requires_role", Map.of("role", configureRole.label()));
             return true;
         }
+        if (action == VillagerRecruitRequestPayload.Action.CYCLE_CRAFTSMAN_MODE
+                && HiredVillagerContractService.activeRole(level, villager) != HiredVillagerRole.CRAFTSMAN) {
+            return true;
+        }
         switch (action) {
             case VIEW_WORK_STATUS -> HiredVillagerWorkService.sendStatus(player, level, villager);
             case TOGGLE_WORK_ENABLED -> HiredVillagerWorkService.toggleEnabled(player, level, villager);
             case TOGGLE_USE_ASSIGNED_SUPPLIES -> HiredVillagerWorkService.toggleAssignedSupplies(player, level, villager);
             case TOGGLE_AUTO_DEPOSIT_OUTPUTS -> HiredVillagerWorkService.toggleAutoDeposit(player, level, villager);
             case TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING -> HiredVillagerWorkService.toggleHorizontalMiningFloorPatching(player, level, villager);
+            case CYCLE_CRAFTSMAN_MODE -> {
+                var mode = com.jvn.villagerretaliation.interaction.work.CraftsmanWorker
+                        .cycleMode(HiredVillagerWorkService.state(villager));
+                sendVillagerNotice(player, villager, "interaction.work.craftsman.mode_changed", Map.of("mode", mode.label()));
+            }
             case STOP_BREWING -> stopBrewingOrder(player, level, villager);
             case STOP_BUILDER_BUILD -> cancelBuilderOrder(player, level, villager, HiredVillagerWorkService.state(villager));
             default -> HiredVillagerWorkService.configureRole(player, level, villager, configureRole);

@@ -40,6 +40,7 @@ public final class HiredVillagerRoleSettings {
             case FARMING -> "interaction.work_report.farming";
             case FISHING -> "interaction.work_report.fishing";
             case BREWING -> "interaction.work_report.brewing";
+            case CRAFTSMAN -> "interaction.work_report.craftsman";
             case COOK -> "interaction.work_report.cook";
             case SMELTER -> "interaction.work_report.smelter";
             case COURIER -> "interaction.work_report.courier";
@@ -58,6 +59,7 @@ public final class HiredVillagerRoleSettings {
             case FARMING -> "interaction.work_final_report.farming";
             case FISHING -> "interaction.work_final_report.fishing";
             case BREWING -> "interaction.work_final_report.brewing";
+            case CRAFTSMAN -> "interaction.work_final_report.craftsman";
             case COOK -> "interaction.work_final_report.cook";
             case SMELTER -> "interaction.work_final_report.smelter";
             case COURIER -> "interaction.work_final_report.courier";
@@ -81,6 +83,7 @@ public final class HiredVillagerRoleSettings {
             case FARMING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_FARMING.get();
             case FISHING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NAVIGATION.get();
             case BREWING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_BREWING.get();
+            case CRAFTSMAN -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_LOGGING.get();
             case COOK -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_COOKING.get();
             case SMELTER -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_MINING.get();
             case COURIER -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NAVIGATION.get();

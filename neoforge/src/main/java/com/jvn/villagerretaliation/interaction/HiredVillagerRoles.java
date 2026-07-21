@@ -145,7 +145,8 @@ public final class HiredVillagerRoles {
         }
         return role == HiredVillagerRole.COOK
                 || role == HiredVillagerRole.SMELTER
-                || role == HiredVillagerRole.BREWING ? 16 : 0;
+                || role == HiredVillagerRole.BREWING
+                || role == HiredVillagerRole.CRAFTSMAN ? 16 : 0;
     }
 
     public static List<VillagerSkill> roleSkills(HiredVillagerRole role) {
@@ -247,6 +248,7 @@ public final class HiredVillagerRoles {
         definitions.put(HiredVillagerRole.FARMING, role(VillagerSkill.FARMING, VillagerSkill.GATHERING, "farmer"));
         definitions.put(HiredVillagerRole.FISHING, role(VillagerSkill.FISHING, VillagerSkill.SURVIVAL, "fisherman"));
         definitions.put(HiredVillagerRole.BREWING, role(VillagerSkill.MEDICINE, VillagerSkill.SCHOLARSHIP, "cleric"));
+        definitions.put(HiredVillagerRole.CRAFTSMAN, role(VillagerSkill.CRAFTING, VillagerSkill.GATHERING, "toolsmith"));
         definitions.put(HiredVillagerRole.BUILDER, role(VillagerSkill.MASONRY, VillagerSkill.CRAFTING, "mason"));
         definitions.put(HiredVillagerRole.ANIMAL_HANDLING, role(
                 VillagerSkill.ANIMAL_HANDLING, VillagerSkill.FARMING, "shepherd", "leatherworker"));

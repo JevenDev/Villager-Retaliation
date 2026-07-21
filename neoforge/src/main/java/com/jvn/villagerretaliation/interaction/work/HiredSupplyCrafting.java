@@ -64,6 +64,28 @@ public final class HiredSupplyCrafting {
         return craftCarriedSupplyItem(level, context, item, new HashSet<>(), hasCraftingTable(level, context));
     }
 
+    /** Crafts one exact recipe, placing its result in job-output slots. */
+    public static boolean craftCarriedRecipeToOutputsWithStations(
+            ServerLevel level,
+            HiredWorkContext context,
+            CraftingRecipe recipe) {
+        boolean hasCraftingTable = hasCraftingTable(level, context);
+        if (recipe == null || recipe.isSpecial() || !canUseRecipe(recipe, hasCraftingTable)) {
+            return false;
+        }
+        ItemStack result = recipe.getResultItem(level.registryAccess());
+        if (result.isEmpty()) {
+            return false;
+        }
+        Map<Item, Integer> ingredients = new LinkedHashMap<>();
+        if (!prepareRecipeIngredients(level, context, recipe, ingredients, new HashSet<>(), hasCraftingTable)) {
+            return false;
+        }
+        List<ItemStack> produced = craftingRemainders(ingredients);
+        produced.add(0, result.copy());
+        return context.inventory().tryTransformSuppliesToOutputs(ingredients, produced);
+
+    }
     private static boolean craftCarriedSupplyItem(
             ServerLevel level,
             HiredWorkContext context,
