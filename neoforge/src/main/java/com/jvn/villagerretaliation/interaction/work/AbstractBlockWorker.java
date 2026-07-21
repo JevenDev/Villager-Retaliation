@@ -509,6 +509,11 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         }
         if (moveResult == HiredStorageNavigationGoal.Result.FAILED) {
             AssignedStorageService.rememberOutputStorageFailure(level, villager, storage, "storage_path_failed");
+            BlockPos alternateStorage = context.nearestDepositStorage(level, villager);
+            if (alternateStorage != null) {
+                prepareAlternateOutputStorage(context, alternateStorage);
+                return DepositResult.MOVING;
+            }
             HiredWorkerBrain.setFailure(context, "storage_path_failed", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE);
             return DepositResult.UNAVAILABLE;
@@ -532,11 +537,23 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
         }
         AssignedStorageService.closeStorageFeedback(level, storage);
         AssignedStorageService.rememberOutputStorageFull(level, villager, storage);
+        BlockPos alternateStorage = context.nearestDepositStorage(level, villager);
+        if (alternateStorage != null) {
+            prepareAlternateOutputStorage(context, alternateStorage);
+            return DepositResult.MOVING;
+        }
         HiredWorkerBrain.setFailure(context, "storage_full_or_unavailable", level.getGameTime() + 100L);
         HiredWorkerBrain.setStorageTarget(context, storage);
         setTaskState(context, HiredWorkerTaskState.PAUSED_STORAGE_FULL);
         HiredStorageNavigationGoal.wanderNearStorage(level, context, villager, storage, speed);
         return DepositResult.STORAGE_FULL;
+    }
+
+    private static void prepareAlternateOutputStorage(HiredWorkContext context, BlockPos alternateStorage) {
+        context.state().remove(HiredWorkContext.OUTPUT_DEPOSITED_THIS_STORAGE_TRIP_TAG);
+        HiredWorkerBrain.setStorageTarget(context, alternateStorage);
+        HiredWorkerBrain.clearFailure(context);
+        HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_STORAGE, alternateStorage);
     }
 
     protected DepositResult depositOutputsForFullInventory(
@@ -624,7 +641,10 @@ public abstract class AbstractBlockWorker implements HiredRoleWorker {
                 context.inventory()::insertToolFromStorage);
         tool = context.inventory().equipBestTool(predicate, scorer);
         if (moved <= 0 || tool.isEmpty()) {
-            return new ToolStorageResult(ToolStorageStatus.INVENTORY_FULL, ItemStack.EMPTY, storage);
+            ToolStorageStatus status = context.inventory().hasToolSpace()
+                    ? ToolStorageStatus.MISSING
+                    : ToolStorageStatus.INVENTORY_FULL;
+            return new ToolStorageResult(status, ItemStack.EMPTY, storage);
         }
         AssignedStorageService.clearStorageFailure(level, villager, storage);
         HiredStorageNavigationGoal.clearStorageTarget(context);

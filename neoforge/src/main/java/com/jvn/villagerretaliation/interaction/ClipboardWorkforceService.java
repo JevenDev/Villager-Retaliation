@@ -15,8 +15,10 @@ import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
 import com.jvn.villagerretaliation.interaction.work.logging.LoggingWorker;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.network.ClipboardWorkforceSyncPayload;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
+import com.jvn.villagerretaliation.util.WorldLocation;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -63,15 +65,14 @@ public final class ClipboardWorkforceService {
                 int paymentStorageCount = AssignedStorageService.assignedPaymentStorage(level, villager).size();
                 boolean storageAssigned = storageCount > 0;
                 boolean storageFull = brain.taskState() == HiredWorkerTaskState.PAUSED_STORAGE_FULL;
-                boolean inventoryFull = brain.taskState() == HiredWorkerTaskState.PAUSED_FULL_INVENTORY;
-                boolean noStorage = brain.taskState() == HiredWorkerTaskState.PAUSED_NO_STORAGE
-                        || (role != HiredVillagerRole.BUILDER && !storageAssigned);
-                boolean noWorkArea = role != HiredVillagerRole.BUILDER
-                        && (!hasEffectiveWorkAssignment
-                        || brain.taskState() == HiredWorkerTaskState.NO_WORK_AREA);
+                boolean taskInventoryFull = brain.taskState() == HiredWorkerTaskState.PAUSED_FULL_INVENTORY;
+                boolean taskHasNoStorage = brain.taskState() == HiredWorkerTaskState.PAUSED_NO_STORAGE;
+                boolean requiresWorkAssignment = requiresWorkAssignment(role);
+                boolean noWorkArea = requiresWorkAssignment
+                        && !hasEffectiveWorkAssignment;
                 boolean waitingForCrops = !noWorkArea && isWaitingForCrops(role, brain);
                 boolean noTargets = !noWorkArea && !waitingForCrops && isNoTargetState(brain);
-                boolean tooFar = role != HiredVillagerRole.BUILDER
+                boolean tooFar = requiresWorkAssignment
                         && !noWorkArea
                         && !isExpectedWorkExcursion(brain.taskState())
                         && !HiredVillagerWorkService.isInsideEffectiveWorkArea(level, villager, role, session.context(), villager.blockPosition());
@@ -79,9 +80,17 @@ public final class ClipboardWorkforceService {
                 boolean materialStorageUnreachable = isMaterialStorageUnreachable(role, brain);
                 boolean materialInventoryFull = isMaterialInventoryFull(role, brain);
                 boolean buildSiteUnreachable = isBuilderBuildSiteUnreachable(role, brain, session.state());
+                boolean noStorage = taskHasNoStorage && !materialStorageUnreachable;
                 boolean missingMaterials = isMissingMaterials(role, brain, session.state(), noStorage, materialStorageUnreachable);
+                boolean inventoryFull = taskInventoryFull
+                        && !materialInventoryFull
+                        && !materialStorageUnreachable
+                        && session.inventory().isCapacityBlockedForFailure(brain.failureReason());
                 int dailyWage = HiredVillagerContractService.getContractDailyCost(level, villager, player);
+                int contractDays = HiredVillagerContractService.getRemainingHireDays(level, villager);
+                boolean recurringPayment = HiredVillagerContractService.isAutoPaymentEnabled(level, villager);
                 boolean unpaid = HiredVillagerContractService.isAwaitingAutoPayment(level, villager);
+                boolean workerIsWorking = isWorking(brain.taskState(), session.state().getBoolean("Enabled"));
                 WorkerStatus status = status(
                         role,
                         brain.taskState(),
@@ -114,14 +123,14 @@ public final class ClipboardWorkforceService {
                 assignedStorage += storageCount;
                 paymentContainers += paymentStorageCount;
                 dailyWages += dailyWage;
-                if (isWorking(brain.taskState(), session.state().getBoolean("Enabled"))) {
+                if (workerIsWorking) {
                     working++;
                 } else {
                     idle++;
                 }
                 addWarning(warningCounts, WarningType.NO_STORAGE, role, noStorage);
                 addWarning(warningCounts, WarningType.STORAGE_FULL, role, storageFull);
-                addWarning(warningCounts, WarningType.INVENTORY_FULL, role, inventoryFull && !materialInventoryFull);
+                addWarning(warningCounts, WarningType.INVENTORY_FULL, role, inventoryFull);
                 addWarning(warningCounts, WarningType.NO_WORK_AREA, role, noWorkArea);
                 addWarning(warningCounts, WarningType.NO_TARGETS, role, noTargets);
                 addWarning(warningCounts, WarningType.TOO_FAR, role, tooFar);
@@ -148,6 +157,16 @@ public final class ClipboardWorkforceService {
                         routeAssigned ? "route" : session.area().usable() ? session.jobSite().sourceId() : "missing",
                         workModeText(role, session.state()),
                         dailyWage,
+                        VillagerCurrencyResources.format(level.getServer(), dailyWage),
+                        contractDays,
+                        recurringPayment,
+                        workerIsWorking,
+                        WorldLocation.of(level.dimension(), villager.blockPosition()),
+                        storageFull,
+                        missingMaterials,
+                        materialStorageUnreachable,
+                        materialInventoryFull,
+                        buildSiteUnreachable,
                         inventoryFull,
                         unpaid,
                         noStorage,
@@ -189,6 +208,10 @@ public final class ClipboardWorkforceService {
 
     private static boolean isExpectedWorkExcursion(HiredWorkerTaskState state) {
         return state.keepsStorageTarget() || state == HiredWorkerTaskState.RETURNING_TO_WORK_AREA;
+    }
+
+    private static boolean requiresWorkAssignment(HiredVillagerRole role) {
+        return role != HiredVillagerRole.BUILDER && role != HiredVillagerRole.NITWIT;
     }
 
     private static WorkerStatus status(
@@ -252,7 +275,8 @@ public final class ClipboardWorkforceService {
             case MOVING_TO_STORAGE, DEPOSITING -> WorkerStatus.DEPOSITING;
             case WAITING_FOR_MATERIALS -> WorkerStatus.WAITING;
             case WORKING, COLLECTING_OUTPUT -> activeWorkStatus(role);
-            case IDLE, AWAITING_INSTRUCTION, FAILED_COOLDOWN, PAUSED_MISSING_TOOL -> WorkerStatus.WAITING;
+            case IDLE, AWAITING_INSTRUCTION, FAILED_COOLDOWN, PAUSED_MISSING_TOOL, PAUSED_FULL_INVENTORY ->
+                    WorkerStatus.WAITING;
             default -> WorkerStatus.UNKNOWN;
         };
     }
@@ -275,14 +299,22 @@ public final class ClipboardWorkforceService {
     private static boolean isNoTargetState(HiredWorkerBrain.Snapshot brain) {
         String failure = lower(brain.failureReason());
         String scan = lower(brain.lastTargetScanResult());
-        return failure.contains("target_unreachable")
-                || failure.contains("no_target")
-                || scan.contains("no_reachable_targets")
-                || scan.contains("no_targets");
+        if (brain.taskState() == HiredWorkerTaskState.FAILED_COOLDOWN) {
+            return failure.contains("target_unreachable") || failure.contains("no_target");
+        }
+        if (brain.taskState() != HiredWorkerTaskState.IDLE
+                && brain.taskState() != HiredWorkerTaskState.SELECTING_TARGET
+                && brain.taskState() != HiredWorkerTaskState.AWAITING_INSTRUCTION) {
+            return false;
+        }
+        return scan.contains("no_reachable_targets") || scan.contains("no_targets");
     }
 
     private static boolean isWaitingForCrops(HiredVillagerRole role, HiredWorkerBrain.Snapshot brain) {
         return role == HiredVillagerRole.FARMING
+                && (brain.taskState() == HiredWorkerTaskState.IDLE
+                || brain.taskState() == HiredWorkerTaskState.SELECTING_TARGET
+                || brain.taskState() == HiredWorkerTaskState.AWAITING_INSTRUCTION)
                 && lower(brain.lastTargetScanResult()).contains("waiting_for_crops");
     }
 
@@ -292,6 +324,9 @@ public final class ClipboardWorkforceService {
             CompoundTag state,
             boolean noStorage,
             boolean materialStorageUnreachable) {
+        if (brain.taskState() != HiredWorkerTaskState.WAITING_FOR_MATERIALS) {
+            return false;
+        }
         if (role == HiredVillagerRole.BREWING) {
             if (noStorage || materialStorageUnreachable) {
                 return false;
@@ -328,29 +363,43 @@ public final class ClipboardWorkforceService {
         if (role == HiredVillagerRole.MINING) {
             return !noStorage
                     && !materialStorageUnreachable
-                    && brain.taskState() == HiredWorkerTaskState.WAITING_FOR_MATERIALS
                     && (lower(brain.failureReason()).contains("missing_ladders")
                     || lower(brain.failureReason()).contains("missing_hazard_fill_blocks"));
         }
         if (role != HiredVillagerRole.BUILDER || noStorage || materialStorageUnreachable) {
             return false;
         }
-        return brain.taskState() == HiredWorkerTaskState.WAITING_FOR_MATERIALS
-                && BuilderTaskState.phase(state) == BuilderBuildPhase.WAITING_FOR_MATERIALS
-                || lower(brain.failureReason()).contains("missing_builder_materials");
+        String failure = lower(brain.failureReason());
+        return BuilderTaskState.phase(state) == BuilderBuildPhase.WAITING_FOR_MATERIALS
+                && !failure.contains("storage_too_far")
+                && !failure.contains("storage_unreachable")
+                && !failure.contains("output_storage_unreachable")
+                && (failure.isBlank() || failure.equals("missing_builder_materials"));
     }
 
     private static boolean isMaterialStorageUnreachable(
             HiredVillagerRole role,
             HiredWorkerBrain.Snapshot brain) {
         String failure = lower(brain.failureReason());
+        if (role == HiredVillagerRole.BUILDER
+                && brain.taskState() == HiredWorkerTaskState.WAITING_FOR_MATERIALS
+                && failure.equals("missing_builder_materials_storage_too_far")) {
+            return true;
+        }
+        if (brain.taskState() != HiredWorkerTaskState.FAILED_COOLDOWN
+                && brain.taskState() != HiredWorkerTaskState.PAUSED_FULL_INVENTORY
+                && brain.taskState() != HiredWorkerTaskState.PAUSED_NO_STORAGE) {
+            return false;
+        }
         return switch (role) {
             case BREWING -> failure.contains("brewing_storage_path_failed");
             case COOK -> failure.contains("cooking_storage_path_failed");
             case SMELTER -> failure.contains("smelting_storage_path_failed");
             case COURIER -> failure.contains("courier_input_unreachable")
                     || failure.contains("courier_output_unreachable");
-            case BUILDER -> failure.contains("builder_material_storage_unreachable");
+            case BUILDER -> failure.equals("builder_material_storage_unreachable")
+                    || failure.equals("missing_builder_materials_storage_unreachable")
+                    || failure.equals("builder_material_output_storage_unreachable");
             case MINING -> failure.contains("mining_support_storage_path_failed")
                     || failure.contains("hazard_fill_storage_unreachable");
             default -> false;
@@ -360,6 +409,9 @@ public final class ClipboardWorkforceService {
     private static boolean isMaterialInventoryFull(
             HiredVillagerRole role,
             HiredWorkerBrain.Snapshot brain) {
+        if (brain.taskState() != HiredWorkerTaskState.PAUSED_FULL_INVENTORY) {
+            return false;
+        }
         String failure = lower(brain.failureReason());
         return switch (role) {
             case BREWING -> failure.contains("brewing_material_inventory_full")
@@ -368,10 +420,33 @@ public final class ClipboardWorkforceService {
             case COOK -> failure.contains("cooking_material_inventory_full");
             case SMELTER -> failure.contains("smelting_material_inventory_full");
             case BUILDER -> failure.contains("builder_material_inventory_full")
-                    || failure.contains("builder_material_output_slot_full")
-                    || failure.contains("builder_material_output_storage_unreachable");
+                    || failure.contains("builder_material_output_slot_full");
             case MINING -> failure.contains("hazard_fill_inventory_full");
             default -> false;
+        };
+    }
+
+    /** Lightweight status used by persistent world markers between clipboard snapshots. */
+    public static WorkerStatus previewStatus(
+            HiredVillagerRole role,
+            HiredWorkerBrain.Snapshot brain,
+            HiredJobInventory inventory) {
+        if (role == null || brain == null || inventory == null) {
+            return WorkerStatus.UNKNOWN;
+        }
+        return switch (brain.taskState()) {
+            case MOVING_TO_TARGET, RETURNING_TO_WORK_AREA -> WorkerStatus.PATHING;
+            case SELECTING_TARGET, FINDING_CHAIN_TARGET, VALIDATING_TARGET, WORKING, COLLECTING_OUTPUT ->
+                    activeWorkStatus(role);
+            case MOVING_TO_STORAGE, DEPOSITING -> WorkerStatus.DEPOSITING;
+            case PAUSED_STORAGE_FULL -> WorkerStatus.STORAGE_FULL;
+            case PAUSED_NO_STORAGE -> WorkerStatus.NO_STORAGE;
+            case PAUSED_MISSING_TOOL -> WorkerStatus.MISSING_TOOLS;
+            case NO_WORK_AREA -> WorkerStatus.NO_WORK_AREA;
+            case PAUSED_FULL_INVENTORY -> inventory.isCapacityBlockedForFailure(brain.failureReason())
+                    ? WorkerStatus.INVENTORY_FULL
+                    : WorkerStatus.WAITING;
+            case IDLE, WAITING_FOR_MATERIALS, FAILED_COOLDOWN, AWAITING_INSTRUCTION -> WorkerStatus.WAITING;
         };
     }
 
@@ -380,6 +455,9 @@ public final class ClipboardWorkforceService {
             HiredWorkerBrain.Snapshot brain,
             CompoundTag state) {
         if (role != HiredVillagerRole.BUILDER) {
+            return false;
+        }
+        if (brain.taskState() != HiredWorkerTaskState.FAILED_COOLDOWN) {
             return false;
         }
         String failure = lower(brain.failureReason());

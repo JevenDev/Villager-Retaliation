@@ -414,6 +414,11 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 pair.foodPredicate(),
                 context.inventory()::insertSupplyFromStorage);
         if (moved <= 0) {
+            if (context.inventory().hasSupplySpace()) {
+                HiredWorkerBrain.setFailure(context, "missing_breeding_food", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, storage);
+                return WorkResult.idle("interaction.work.animal_breeding.missing_food");
+            }
             HiredWorkerBrain.setFailure(context, "animal_food_inventory_full", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
             return WorkResult.idle("interaction.work.animal_breeding.food_inventory_full");
@@ -530,6 +535,11 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 target.supplyPredicate(),
                 context.inventory()::insertSupplyFromStorage);
         if (moved <= 0) {
+            if (context.inventory().hasSupplySpace()) {
+                HiredWorkerBrain.setFailure(context, target.missingSupplyFailure(), level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, storage);
+                return WorkResult.idle(target.missingSupplyMessageKey());
+            }
             HiredWorkerBrain.setFailure(context, "animal_product_supply_inventory_full", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
             return WorkResult.idle("interaction.work.animal_breeding.product_supply_inventory_full");

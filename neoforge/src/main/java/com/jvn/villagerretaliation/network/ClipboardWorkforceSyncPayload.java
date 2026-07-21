@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.Warnin
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerRow;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerStatus;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.util.WorldLocation;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -14,7 +15,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot) implements CustomPacketPayload {
-    private static final int PROTOCOL_VERSION = 6;
+    private static final int PROTOCOL_VERSION = 9;
     private static final int MAX_JOB_SUMMARIES = 16;
     private static final int MAX_WORKER_ROWS = 256;
     private static final int MAX_WARNING_SUMMARIES = 64;
@@ -95,6 +96,17 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
             buffer.writeUtf(worker.areaStatus(), 32);
             buffer.writeUtf(worker.workMode(), 64);
             buffer.writeVarInt(worker.dailyWage());
+            buffer.writeUtf(worker.dailyPayText(), 64);
+            buffer.writeVarInt(worker.contractDays());
+            buffer.writeBoolean(worker.recurringPayment());
+            buffer.writeBoolean(worker.working());
+            buffer.writeResourceLocation(worker.location().dimension());
+            buffer.writeBlockPos(worker.location().position());
+            buffer.writeBoolean(worker.storageFull());
+            buffer.writeBoolean(worker.missingMaterials());
+            buffer.writeBoolean(worker.materialStorageUnreachable());
+            buffer.writeBoolean(worker.materialInventoryFull());
+            buffer.writeBoolean(worker.buildSiteUnreachable());
             buffer.writeBoolean(worker.inventoryFull());
             buffer.writeBoolean(worker.unpaid());
             buffer.writeBoolean(worker.noStorage());
@@ -126,6 +138,16 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
                     buffer.readUtf(32),
                     buffer.readUtf(64),
                     buffer.readVarInt(),
+                    buffer.readUtf(64),
+                    buffer.readVarInt(),
+                    buffer.readBoolean(),
+                    buffer.readBoolean(),
+                    new WorldLocation(buffer.readResourceLocation(), buffer.readBlockPos()),
+                    buffer.readBoolean(),
+                    buffer.readBoolean(),
+                    buffer.readBoolean(),
+                    buffer.readBoolean(),
+                    buffer.readBoolean(),
                     buffer.readBoolean(),
                     buffer.readBoolean(),
                     buffer.readBoolean(),

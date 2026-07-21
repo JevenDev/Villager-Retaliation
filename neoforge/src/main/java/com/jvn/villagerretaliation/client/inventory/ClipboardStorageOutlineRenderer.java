@@ -1,6 +1,9 @@
 package com.jvn.villagerretaliation.client.inventory;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosition;
+import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerStatus;
+import com.jvn.villagerretaliation.client.config.VillagerRetaliationClientPreferences;
+import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
 import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
@@ -15,12 +18,16 @@ import com.jvn.villagerretaliation.network.ClipboardWorkAreaEntry;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
 import com.jvn.villagerretaliation.network.HiredDebugPreviewSyncPayload;
 import com.jvn.villagerretaliation.network.HiredHitboxDebugPreviewPayload;
+import com.jvn.villagerretaliation.network.ClipboardPreviewMarkerSyncPayload;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -32,6 +39,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -40,6 +48,7 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.Matrix4f;
@@ -83,6 +92,13 @@ public final class ClipboardStorageOutlineRenderer {
     private static boolean nearbyWorkAreaPreviewsEnabled;
     private static boolean nearbyStoragePreviewsEnabled;
     private static boolean nearbyPaymentPreviewsEnabled;
+    private static ClipboardPreviewLens clipboardPreviewLens = ClipboardPreviewLens.NONE;
+    private static String clipboardScopeOwner = "";
+    private static String clipboardScopeJob = "";
+    private static Set<String> clipboardScopeOwners = Set.of();
+    private static Set<String> clipboardTrackedJobs = Set.of();
+    private static List<WorkforceMarker> clipboardWorkforceMarkers = List.of();
+    private static Set<String> clipboardProblemOwners = Set.of();
 
     private ClipboardStorageOutlineRenderer() {
     }
@@ -162,6 +178,9 @@ public final class ClipboardStorageOutlineRenderer {
                 nearbyWorkAreaPreviewsEnabled = false;
                 nearbyStoragePreviewsEnabled = false;
                 nearbyPaymentPreviewsEnabled = false;
+                if (!payload.enabled()) {
+                    clearClipboardPreview();
+                }
                 return;
             }
             if (!anyNearbyPreviewEnabled()) {
@@ -413,6 +432,10 @@ public final class ClipboardStorageOutlineRenderer {
     }
 
     private static void renderDebugPreview(RenderLevelStageEvent event, Minecraft minecraft) {
+        if (clipboardPreviewLens == ClipboardPreviewLens.WORKFORCE) {
+            renderWorkforceMarkers(event, clipboardWorkforceMarkers, false);
+            return;
+        }
         if (!debugPreviewEnabled || !anyNearbyPreviewEnabled()) {
             return;
         }
@@ -424,6 +447,34 @@ public final class ClipboardStorageOutlineRenderer {
             nearbyWorkAreaPreviewsEnabled = false;
             nearbyStoragePreviewsEnabled = false;
             nearbyPaymentPreviewsEnabled = false;
+            return;
+        }
+        if (clipboardPreviewLens == ClipboardPreviewLens.ASSIGNMENTS
+                || clipboardPreviewLens == ClipboardPreviewLens.PROBLEMS) {
+            boolean problemsOnly = clipboardPreviewLens == ClipboardPreviewLens.PROBLEMS;
+            List<WorkAreaPosition> workAreas = DEBUG_WORK_AREAS.stream()
+                    .filter(area -> matchesClipboardScope(area.ownerName(), area.jobName(), problemsOnly))
+                    .toList();
+            List<OutlinedStoragePosition> storage = DEBUG_ASSIGNED_POSITIONS.stream()
+                    .filter(position -> matchesClipboardScope(position.ownerName(), "", problemsOnly))
+                    .toList();
+            List<RoutePosition> routes = DEBUG_ROUTES.stream()
+                    .filter(route -> matchesClipboardScope(route.ownerName(), route.jobName(), problemsOnly))
+                    .toList();
+            renderWorkAreas(event, workAreas, problemsOnly ? ROUTE_INVALID_COLOR : WORK_AREA_COLOR);
+            renderRoutes(event, routes, problemsOnly ? ROUTE_INVALID_COLOR : ROUTE_COLOR, true);
+            renderAssignedPositions(
+                    event,
+                    storage,
+                    true,
+                    true,
+                    problemsOnly ? ROUTE_INVALID_COLOR : ASSIGNED_COLOR,
+                    problemsOnly ? ROUTE_INVALID_COLOR : PAYMENT_COLOR);
+            renderAssignmentTargets(event, clipboardWorkforceMarkers, problemsOnly);
+            renderDebugLabels(event, workAreas, routes, storage, true, true);
+            if (problemsOnly) {
+                renderWorkforceMarkers(event, clipboardWorkforceMarkers, true);
+            }
             return;
         }
         if (nearbyWorkAreaPreviewsEnabled) {
@@ -468,7 +519,251 @@ public final class ClipboardStorageOutlineRenderer {
     }
 
     public static boolean anyNearbyPreviewEnabled() {
-        return nearbyWorkAreaPreviewsEnabled || nearbyStoragePreviewsEnabled || nearbyPaymentPreviewsEnabled;
+        return clipboardPreviewLens != ClipboardPreviewLens.NONE
+                || nearbyWorkAreaPreviewsEnabled
+                || nearbyStoragePreviewsEnabled
+                || nearbyPaymentPreviewsEnabled;
+    }
+
+    public static void acceptClipboardPreviewMarkers(ClipboardPreviewMarkerSyncPayload payload) {
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.execute(() -> {
+            Map<UUID, WorkforceMarker> existing = new HashMap<>();
+            for (WorkforceMarker marker : clipboardWorkforceMarkers) {
+                existing.put(marker.villagerId(), marker);
+            }
+            List<WorkforceMarker> merged = new ArrayList<>();
+            Set<String> selectedOwners = new HashSet<>();
+            for (ClipboardPreviewMarkerSyncPayload.Entry entry : payload.entries()) {
+                WorkforceMarker previous = existing.get(entry.villagerId());
+                merged.add(new WorkforceMarker(
+                        entry.villagerId(),
+                        ResourceKey.create(Registries.DIMENSION, entry.dimension()),
+                        entry.position(),
+                        entry.ownerName(),
+                        entry.jobName(),
+                        workforceStatusName(entry.status()),
+                        entry.target(),
+                        previous != null && previous.warning()));
+                selectedOwners.add(entry.ownerName());
+            }
+            clipboardWorkforceMarkers = List.copyOf(merged);
+            if (clipboardPreviewLens == ClipboardPreviewLens.ASSIGNMENTS) {
+                clipboardScopeOwners = Set.copyOf(selectedOwners);
+            }
+        });
+    }
+
+    public static void setClipboardPreview(
+            ClipboardPreviewLens lens,
+            String scopeOwner,
+            String scopeJob,
+            Set<String> scopeOwners,
+            Set<String> trackedJobs,
+            List<WorkforceMarker> markers,
+            Set<String> problemOwners) {
+        ClipboardPreviewLens nextLens = lens == null ? ClipboardPreviewLens.NONE : lens;
+        String nextOwner = scopeOwner == null ? "" : scopeOwner.trim();
+        String nextJob = scopeJob == null ? "" : scopeJob.trim();
+        Set<String> nextOwners = scopeOwners == null ? Set.of() : Set.copyOf(scopeOwners);
+        Set<String> nextTrackedJobs = trackedJobs == null ? Set.of() : Set.copyOf(trackedJobs);
+        clipboardPreviewLens = nextLens;
+        clipboardScopeOwner = nextOwner;
+        clipboardScopeJob = nextJob;
+        clipboardScopeOwners = nextOwners;
+        clipboardTrackedJobs = nextTrackedJobs;
+        clipboardWorkforceMarkers = markers == null ? List.of() : List.copyOf(markers);
+        clipboardProblemOwners = problemOwners == null ? Set.of() : Set.copyOf(problemOwners);
+    }
+
+    public static void clearClipboardPreview() {
+        clipboardPreviewLens = ClipboardPreviewLens.NONE;
+        clipboardScopeOwner = "";
+        clipboardScopeJob = "";
+        clipboardScopeOwners = Set.of();
+        clipboardTrackedJobs = Set.of();
+        clipboardWorkforceMarkers = List.of();
+        clipboardProblemOwners = Set.of();
+    }
+
+    public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        clearClipboardPreview();
+        DEBUG_ASSIGNED_POSITIONS.clear();
+        DEBUG_WORK_AREAS.clear();
+        DEBUG_ROUTES.clear();
+        debugPreviewEnabled = false;
+        nearbyWorkAreaPreviewsEnabled = false;
+        nearbyStoragePreviewsEnabled = false;
+        nearbyPaymentPreviewsEnabled = false;
+    }
+
+    public static ClipboardPreviewLens clipboardPreviewLens() {
+        return clipboardPreviewLens;
+    }
+
+    public static Set<String> clipboardTrackedJobs() {
+        return clipboardTrackedJobs;
+    }
+
+    private static String workforceStatusName(WorkerStatus status) {
+        WorkerStatus safeStatus = status == null ? WorkerStatus.UNKNOWN : status;
+        return Component.translatable(
+                "villagerretaliation.gui.clipboard_workforce.status."
+                        + safeStatus.name().toLowerCase(java.util.Locale.ROOT)).getString();
+    }
+
+    private static boolean matchesClipboardScope(String ownerNames, String jobName, boolean problemsOnly) {
+        Set<String> owners = splitOwnerNames(ownerNames);
+        if (problemsOnly && owners.stream().noneMatch(clipboardProblemOwners::contains)) {
+            return false;
+        }
+        if (!clipboardScopeOwner.isBlank() && !owners.contains(clipboardScopeOwner)) {
+            return false;
+        }
+        if (clipboardPreviewLens == ClipboardPreviewLens.ASSIGNMENTS
+                && clipboardScopeOwner.isBlank()
+                && clipboardScopeJob.isBlank()
+                && clipboardScopeOwners.isEmpty()
+                && clipboardTrackedJobs.isEmpty()) {
+            return false;
+        }
+        if (clipboardPreviewLens == ClipboardPreviewLens.ASSIGNMENTS && !clipboardTrackedJobs.isEmpty()) {
+            if (clipboardTrackedJobs.stream().anyMatch(job -> job.equalsIgnoreCase(jobName))) {
+                return true;
+            }
+            return owners.stream().anyMatch(clipboardScopeOwners::contains);
+        }
+        if (clipboardScopeJob.isBlank()) {
+            return true;
+        }
+        if (clipboardScopeJob.equalsIgnoreCase(jobName)) {
+            return true;
+        }
+        return owners.stream().anyMatch(clipboardScopeOwners::contains);
+    }
+
+    private static Set<String> splitOwnerNames(String ownerNames) {
+        if (ownerNames == null || ownerNames.isBlank()) {
+            return Set.of();
+        }
+        Set<String> names = new HashSet<>();
+        for (String name : ownerNames.split(",\\s*")) {
+            if (!name.isBlank()) {
+                names.add(name.trim());
+            }
+        }
+        return names;
+    }
+
+    private static void renderWorkforceMarkers(
+            RenderLevelStageEvent event,
+            List<WorkforceMarker> markers,
+            boolean problemsOnly) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || markers.isEmpty()) {
+            return;
+        }
+        ResourceKey<Level> dimension = minecraft.level.dimension();
+        List<WorkforceMarker> visible = markers.stream()
+                .filter(marker -> marker.dimension().equals(dimension))
+                .filter(marker -> !problemsOnly || marker.warning())
+                .filter(marker -> !problemsOnly
+                        || matchesClipboardScope(marker.ownerName(), marker.jobName(), true))
+                .filter(marker -> minecraft.level.hasChunkAt(marker.pos()))
+                .toList();
+        if (visible.isEmpty()) {
+            return;
+        }
+        float partialTick = event.getPartialTick().getGameTimeDeltaPartialTick(true);
+        Map<UUID, Entity> loadedEntities = new HashMap<>();
+        for (Entity entity : minecraft.level.entitiesForRendering()) {
+            loadedEntities.put(entity.getUUID(), entity);
+        }
+        List<ResolvedWorkforceMarker> resolved = visible.stream()
+                .map(marker -> resolveWorkforceMarker(marker, loadedEntities.get(marker.villagerId()), partialTick))
+                .toList();
+        PoseStack poseStack = event.getPoseStack();
+        Vec3 camera = event.getCamera().getPosition();
+        poseStack.pushPose();
+        poseStack.translate(-camera.x, -camera.y, -camera.z);
+        MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.lines());
+        for (ResolvedWorkforceMarker resolvedMarker : resolved) {
+            WorkforceMarker marker = resolvedMarker.marker();
+            int color = marker.warning() ? ROUTE_INVALID_COLOR : SELECTED_COLOR;
+            renderColoredBox(poseStack, consumer, resolvedMarker.box(), color);
+        }
+        bufferSource.endBatch();
+        poseStack.popPose();
+
+        List<DebugLabelPosition> labels = resolved.stream()
+                .map(resolvedMarker -> new DebugLabelPosition(
+                        resolvedMarker.labelPos(),
+                        resolvedMarker.marker().jobName(),
+                        resolvedMarker.marker().status(),
+                        resolvedMarker.marker().warning() ? ROUTE_INVALID_COLOR : SELECTED_COLOR))
+                .toList();
+        renderLabels(event, labels);
+    }
+
+    private static ResolvedWorkforceMarker resolveWorkforceMarker(
+            WorkforceMarker marker,
+            Entity entity,
+            float partialTick) {
+        if (entity != null && entity.isAlive()) {
+            Vec3 renderPos = entity.getPosition(partialTick);
+            Vec3 interpolationOffset = renderPos.subtract(entity.position());
+            AABB box = entity.getBoundingBox().move(interpolationOffset).inflate(0.15D);
+            return new ResolvedWorkforceMarker(
+                    marker,
+                    box,
+                    renderPos.add(0.0D, entity.getBbHeight() + 0.4D, 0.0D));
+        }
+        AABB box = new AABB(marker.pos()).inflate(0.15D).expandTowards(0.0D, 0.9D, 0.0D);
+        return new ResolvedWorkforceMarker(
+                marker,
+                box,
+                new Vec3(marker.pos().getX() + 0.5D, marker.pos().getY() + 2.35D, marker.pos().getZ() + 0.5D));
+    }
+
+    private static void renderAssignmentTargets(
+            RenderLevelStageEvent event,
+            List<WorkforceMarker> markers,
+            boolean problemsOnly) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            return;
+        }
+        ResourceKey<Level> dimension = minecraft.level.dimension();
+        List<WorkforceMarker> visible = markers.stream()
+                .filter(marker -> marker.dimension().equals(dimension))
+                .filter(marker -> marker.targetPos() != null)
+                .filter(marker -> matchesClipboardScope(marker.ownerName(), marker.jobName(), problemsOnly))
+                .filter(marker -> minecraft.level.hasChunkAt(marker.targetPos()))
+                .toList();
+        if (visible.isEmpty()) {
+            return;
+        }
+        int color = problemsOnly ? ROUTE_INVALID_COLOR : WORK_AREA_CENTER_COLOR;
+        PoseStack poseStack = event.getPoseStack();
+        Vec3 camera = event.getCamera().getPosition();
+        poseStack.pushPose();
+        poseStack.translate(-camera.x, -camera.y, -camera.z);
+        MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.lines());
+        for (WorkforceMarker marker : visible) {
+            renderColoredBox(poseStack, consumer, markerBox(marker.targetPos()), color);
+        }
+        bufferSource.endBatch();
+        poseStack.popPose();
+        renderLabels(event, visible.stream()
+                .map(marker -> new DebugLabelPosition(
+                        Vec3.atCenterOf(marker.targetPos()).add(0.0D, 0.85D, 0.0D),
+                        "",
+                        Component.translatable(
+                                "villagerretaliation.gui.clipboard_workforce.preview_tab.assignments.target").getString(),
+                        color))
+                .toList());
     }
 
     private static void renderDebugLabels(
@@ -591,14 +886,17 @@ public final class ClipboardStorageOutlineRenderer {
         Font font = minecraft.font;
         int background = ((int) (minecraft.options.getBackgroundOpacity(0.25F) * 255.0F)) << 24;
         for (DebugLabelPosition label : labels) {
+            String ownerName = showVillagerNames() ? label.ownerName() : "";
+            String firstLine = ownerName.isBlank() ? label.jobName() : ownerName;
+            String secondLine = ownerName.isBlank() ? "" : label.jobName();
             poseStack.pushPose();
             poseStack.translate(label.pos().x - camera.x, label.pos().y - camera.y, label.pos().z - camera.z);
             poseStack.mulPose(minecraft.getEntityRenderDispatcher().cameraOrientation());
             poseStack.scale(DEBUG_LABEL_SCALE, -DEBUG_LABEL_SCALE, DEBUG_LABEL_SCALE);
             Matrix4f pose = poseStack.last().pose();
-            renderLabelLine(font, bufferSource, pose, label.ownerName(), 0.0F, background, label.color());
-            if (!label.jobName().isBlank()) {
-                renderLabelLine(font, bufferSource, pose, label.jobName(), font.lineHeight + 1.0F, background, label.color());
+            renderLabelLine(font, bufferSource, pose, firstLine, 0.0F, background, label.color());
+            if (!secondLine.isBlank()) {
+                renderLabelLine(font, bufferSource, pose, secondLine, font.lineHeight + 1.0F, background, label.color());
             }
             poseStack.popPose();
         }
@@ -628,8 +926,24 @@ public final class ClipboardStorageOutlineRenderer {
             List<OutlinedStoragePosition> positions,
             boolean includeNormalStorage,
             boolean includePaymentStorage) {
-        renderOutlinedStoragePositions(event, positions, ASSIGNED_COLOR, includeNormalStorage, false);
-        renderOutlinedStoragePositions(event, positions, PAYMENT_COLOR, false, includePaymentStorage);
+        renderAssignedPositions(
+                event,
+                positions,
+                includeNormalStorage,
+                includePaymentStorage,
+                ASSIGNED_COLOR,
+                PAYMENT_COLOR);
+    }
+
+    private static void renderAssignedPositions(
+            RenderLevelStageEvent event,
+            List<OutlinedStoragePosition> positions,
+            boolean includeNormalStorage,
+            boolean includePaymentStorage,
+            int storageColor,
+            int paymentColor) {
+        renderOutlinedStoragePositions(event, positions, storageColor, includeNormalStorage, false);
+        renderOutlinedStoragePositions(event, positions, paymentColor, false, includePaymentStorage);
     }
 
     private static void renderOutlinedStoragePositions(
@@ -1028,6 +1342,37 @@ public final class ClipboardStorageOutlineRenderer {
         return VillagerRetaliationItems.isClipboard(mainHand) ? mainHand : minecraft.player.getOffhandItem();
     }
 
+    private static boolean showVillagerNames() {
+        return VillagerRetaliationServerConfigClient.showVillagerNameTags()
+                && VillagerRetaliationClientPreferences.showVillagerNameTags();
+    }
+
+    public enum ClipboardPreviewLens {
+        NONE,
+        WORKFORCE,
+        ASSIGNMENTS,
+        PROBLEMS
+    }
+
+    public record WorkforceMarker(
+            UUID villagerId,
+            ResourceKey<Level> dimension,
+            BlockPos pos,
+            String ownerName,
+            String jobName,
+            String status,
+            BlockPos targetPos,
+            boolean warning) {
+        public WorkforceMarker {
+            villagerId = villagerId == null ? new UUID(0L, 0L) : villagerId;
+            pos = pos.immutable();
+            ownerName = ownerName == null ? "" : ownerName;
+            jobName = jobName == null ? "" : jobName;
+            status = status == null ? "" : status;
+            targetPos = targetPos == null ? null : targetPos.immutable();
+        }
+    }
+
     private record WorkAreaPosition(
             ResourceKey<Level> dimension,
             BlockPos min,
@@ -1066,5 +1411,8 @@ public final class ClipboardStorageOutlineRenderer {
     }
 
     private record DebugLabelPosition(Vec3 pos, String ownerName, String jobName, int color) {
+    }
+
+    private record ResolvedWorkforceMarker(WorkforceMarker marker, AABB box, Vec3 labelPos) {
     }
 }

@@ -486,6 +486,12 @@ public final class VillagerGameplayGameTests {
                 HiredDebugPreviewService.setClipboardPreviewEnabled(player, true);
         helper.assertTrue(repeated.enabled(), "repeated enable should stay enabled");
 
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        HiredDebugPreviewService.onPlayerTick(player);
+        HiredDebugPreviewService.DebugPreviewSummary persisted =
+                HiredDebugPreviewService.setClipboardPreviewEnabled(player, true);
+        helper.assertTrue(persisted.enabled(), "enabled clipboard preview should persist after putting the clipboard away");
+
         HiredDebugPreviewService.setClipboardPreviewEnabled(player, false);
         HiredDebugPreviewService.clearRuntimeState();
         helper.succeed();

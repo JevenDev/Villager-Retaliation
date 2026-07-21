@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.util.WorldLocation;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,6 +46,16 @@ public record ClipboardWorkforceSnapshot(
             String areaStatus,
             String workMode,
             int dailyWage,
+            String dailyPayText,
+            int contractDays,
+            boolean recurringPayment,
+            boolean working,
+            WorldLocation location,
+            boolean storageFull,
+            boolean missingMaterials,
+            boolean materialStorageUnreachable,
+            boolean materialInventoryFull,
+            boolean buildSiteUnreachable,
             boolean inventoryFull,
             boolean unpaid,
             boolean noStorage,

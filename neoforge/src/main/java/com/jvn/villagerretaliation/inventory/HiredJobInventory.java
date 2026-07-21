@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -826,6 +827,51 @@ public final class HiredJobInventory implements Container {
             }
         }
         return false;
+    }
+
+    /** Returns whether the job inventory has room for at least one supply item. */
+    public boolean hasSupplySpace() {
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (canInsertSupplyIntoSlot(this.items, this.slotTypes, slot, true)
+                    && this.items.get(slot).getCount() < this.items.get(slot).getMaxStackSize()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Returns whether job gear or a job-inventory supply slot can accept a tool. */
+    public boolean hasToolSpace() {
+        ItemStack mainhand = this.items.get(MAINHAND_SLOT);
+        if (!ProtectedVillagerProperty.isProtected(mainhand) && mainhand.isEmpty()) {
+            return true;
+        }
+        for (int slot = 0; slot < SLOT_COUNT; slot++) {
+            if (canInsertToolIntoSlot(this.items, this.slotTypes, slot, true)
+                    && this.items.get(slot).getCount() < this.items.get(slot).getMaxStackSize()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Validates a worker capacity failure against this job inventory. This deliberately
+     * does not inspect the villager's personal inventory or any assigned container.
+     */
+    public boolean isCapacityBlockedForFailure(String failureReason) {
+        String failure = failureReason == null ? "" : failureReason.toLowerCase(Locale.ROOT);
+        if (failure.contains("tool_inventory_full") || failure.contains("weapon_inventory_full")) {
+            return !hasToolSpace();
+        }
+        if (failure.contains("food_inventory_full")
+                || failure.contains("supply_inventory_full")
+                || failure.contains("ammo_inventory_full")
+                || failure.contains("arrow_inventory_full")
+                || failure.contains("support_inventory_full")) {
+            return !hasSupplySpace();
+        }
+        return !hasOutputSpace();
     }
 
     public boolean canStoreOutputs(List<ItemStack> stacks) {

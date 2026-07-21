@@ -173,6 +173,12 @@ public final class VillagerRetaliationEvents {
         }
     }
 
+    public static void onPlayerChangedDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            HiredDebugPreviewService.disableForPlayer(player);
+        }
+    }
+
     public static void onPlayerClone(PlayerEvent.Clone event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             VillagerQuestService.clearRuntimeState(player);
@@ -289,6 +295,7 @@ public final class VillagerRetaliationEvents {
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
                 .onEntityPermanentlyRemoved(event.getEntity());
         if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level) {
+            HiredDebugPreviewService.disableForPlayer(player);
             VillagerRetaliationVillagerCombatUtil.resolveDeathAttacker(player, event.getSource())
                     .filter(AbstractVillager.class::isInstance)
                     .map(AbstractVillager.class::cast)

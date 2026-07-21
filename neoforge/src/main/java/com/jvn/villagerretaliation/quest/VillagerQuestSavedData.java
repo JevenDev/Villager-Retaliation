@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.quest.runtime.QuestStateMachine;
 import com.jvn.villagerretaliation.quest.provider.QuestProviderBinding;
 import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import com.jvn.villagerretaliation.util.NbtDataUtil;
+import com.jvn.villagerretaliation.util.WorldLocation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -855,6 +856,10 @@ public class VillagerQuestSavedData extends SavedData {
             return this.issuerPos;
         }
 
+        public WorldLocation issuerLocation() {
+            return WorldLocation.of(this.issuerDimension, this.issuerPos);
+        }
+
         public String issuerVillageKey() {
             return this.issuerVillageKey;
         }
@@ -865,6 +870,10 @@ public class VillagerQuestSavedData extends SavedData {
 
         public BlockPos targetPos() {
             return this.targetPos;
+        }
+
+        public WorldLocation targetLocation() {
+            return WorldLocation.of(this.targetDimension, this.targetPos);
         }
 
         public String targetObjectiveId() {
