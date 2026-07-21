@@ -27,4 +27,6 @@ interface VillagerInteractionSessionScreen {
     void acceptVillagerDialogue(String text, List<DialogueTextSegment> textSegments);
 
     void copyCurrentDialogueTo(VillagerInteractionScreen target);
+
+    void prepareReplacementTransition(VillagerInteractionScreen target);
 }

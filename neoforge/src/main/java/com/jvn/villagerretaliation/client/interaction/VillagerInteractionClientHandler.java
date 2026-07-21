@@ -165,6 +165,7 @@ public final class VillagerInteractionClientHandler {
             previousInteractionScreen.copyCurrentDialogueTo(screen);
         }
         if (replacingSameVillager && !payload.forcedDialogue() && !payload.clipboardMenu()) {
+            previousInteractionScreen.prepareReplacementTransition(screen);
             screen.continueOpenSession();
         }
         minecraft.setScreen(screen);
