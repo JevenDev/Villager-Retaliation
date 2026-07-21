@@ -1081,7 +1081,9 @@ public final class HiredJobInventory implements Container {
                 continue;
             }
             ItemStack previousStack = stack.copy();
-            ItemStack remainder = AssignedStorageService.depositStack(this.villager, stack.copy());
+            ItemStack returnedStack = stack.copy();
+            removeJobItemMarker(returnedStack);
+            ItemStack remainder = AssignedStorageService.depositStack(this.villager, returnedStack);
             int moved = stack.getCount() - remainder.getCount();
             if (moved <= 0) {
                 continue;
@@ -1106,7 +1108,9 @@ public final class HiredJobInventory implements Container {
 
     private boolean depositOneOutputStack(Function<OutputStack, ItemStack> depositor) {
         for (OutputStack output : collectOutputItems()) {
-            ItemStack remainder = depositor.apply(output);
+            ItemStack returnedStack = output.stack().copy();
+            removeJobItemMarker(returnedStack);
+            ItemStack remainder = depositor.apply(new OutputStack(output.slot(), returnedStack));
             int moved = output.stack().getCount() - remainder.getCount();
             if (moved <= 0) {
                 continue;
