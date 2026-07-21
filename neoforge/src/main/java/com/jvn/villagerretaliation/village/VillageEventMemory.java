@@ -383,18 +383,20 @@ public final class VillageEventMemory {
                 ? registry.resolveAt(level, event.pos()).flatMap(registry::canonical)
                 : Optional.empty();
 
-        boolean villagerChanged = false;
+        AppendResult villagerAppend = AppendResult.UNCHANGED;
         if (villagerId != null) {
             ArrayDeque<MemoryEvent> events = data.villagerEventsForWrite(villagerId);
-            villagerChanged = appendIfUnique(events, event);
+            villagerAppend = appendOrMerge(events, event);
         }
 
-        boolean villageChanged = false;
+        AppendResult villageAppend = AppendResult.UNCHANGED;
         if (villageId.isPresent()) {
             ArrayDeque<MemoryEvent> events = data.villageEventsForWrite(villageId.get());
-            villageChanged = appendIfUnique(events, event);
+            villageAppend = appendOrMerge(events, event);
         }
 
+        boolean villagerChanged = villagerAppend.changed();
+        boolean villageChanged = villageAppend.changed();
         boolean changed = villagerChanged || villageChanged;
         if (changed) {
             data.markChanged();
@@ -403,7 +405,7 @@ public final class VillageEventMemory {
 
         // A communal bucket is the incident-level dedupe anchor. Personal witness copies may still be added
         // without firing quest/event callbacks again for the same village incident.
-        boolean dispatched = villageId.isPresent() ? villageChanged : villagerChanged;
+        boolean dispatched = villageId.isPresent() ? villageAppend.added() : villagerAppend.added();
         if (dispatched) {
             VillagerQuestService.onMemoryEvent(level, event);
             VillagerEventTriggerService.onMemoryWritten(level, event);
@@ -411,13 +413,62 @@ public final class VillageEventMemory {
         return new WriteResult(changed, villagerChanged, villageChanged, dispatched);
     }
 
-    private static boolean appendIfUnique(ArrayDeque<MemoryEvent> events, MemoryEvent event) {
+    private static AppendResult appendOrMerge(ArrayDeque<MemoryEvent> events, MemoryEvent event) {
+        if (mergeMatchingGift(events, event)) {
+            return AppendResult.MERGED;
+        }
         if (isDuplicateEvent(events, event)) {
-            return false;
+            return AppendResult.UNCHANGED;
         }
         events.addLast(event);
         trimToMaxEvents(events);
-        return true;
+        return AppendResult.ADDED;
+    }
+
+    private static boolean mergeMatchingGift(ArrayDeque<MemoryEvent> events, MemoryEvent event) {
+        GiftMemory gift = event.gift();
+        if (gift == null) {
+            return false;
+        }
+        Iterator<MemoryEvent> iterator = events.descendingIterator();
+        while (iterator.hasNext()) {
+            MemoryEvent previous = iterator.next();
+            GiftMemory previousGift = previous.gift();
+            if (previousGift == null
+                    || !Objects.equals(previous.sourceId(), event.sourceId())
+                    || !Objects.equals(previous.playerId(), event.playerId())
+                    || !Objects.equals(previousGift.itemId(), gift.itemId())
+                    || previousGift.reaction() != gift.reaction()) {
+                continue;
+            }
+            iterator.remove();
+            events.addLast(new MemoryEvent(
+                    event.tag(),
+                    event.tagId(),
+                    event.gameTime(),
+                    event.dimension(),
+                    event.pos(),
+                    event.sourceId(),
+                    event.playerId(),
+                    new GiftMemory(
+                            gift.villagerName(),
+                            gift.itemName(),
+                            gift.itemId(),
+                            saturatedAdd(previousGift.itemCount(), gift.itemCount()),
+                            gift.reaction(),
+                            saturatedAdd(previousGift.reputationValue(), gift.reputationValue())),
+                    event.containerTheft(),
+                    event.retaliation(),
+                    event.curedVillager(),
+                    event.killedVillager()));
+            return true;
+        }
+        return false;
+    }
+
+    private static int saturatedAdd(int left, int right) {
+        long total = (long) left + right;
+        return (int) Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, total));
     }
 
     public static void clear() {
@@ -766,6 +817,20 @@ public final class VillageEventMemory {
 
     public record WriteResult(boolean changed, boolean villagerChanged, boolean villageChanged, boolean dispatched) {
         public static final WriteResult EMPTY = new WriteResult(false, false, false, false);
+    }
+
+    private enum AppendResult {
+        UNCHANGED,
+        ADDED,
+        MERGED;
+
+        private boolean changed() {
+            return this != UNCHANGED;
+        }
+
+        private boolean added() {
+            return this == ADDED;
+        }
     }
 
     public record MemoryEvent(
