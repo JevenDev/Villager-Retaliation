@@ -1,5 +1,7 @@
 # Changelog
 
+- Fixed recruited-villager retaliation limits ignoring high reputation; Revered recruits now allow five hits before disciplining the player, while Royalty recruits retain their retaliation bypass.
+
 - Improved heavy clipboard and hitbox debug-preview performance by culling off-screen containers, job sites, routes, markers, and text; limiting worst-case visible route and label work; and caching terrain-following route geometry between frames. The visible node, label, and route-segment limits are configurable in the Debug Overlay settings.
 
 - Hidden Job Inventory and Storage job-menu entries until the player has hired that villager; former hirers still see Job Inventory while reclaimable contract gear remains.

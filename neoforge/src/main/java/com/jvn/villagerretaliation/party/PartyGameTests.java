@@ -2246,6 +2246,65 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void recruitedVillagerDisciplineRespectsReveredAndRoyaltyRetaliation(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, uniqueName("party_discipline_reputation"));
+        Villager reveredRecruit = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager royaltyRecruit = spawnVillager(helper, new BlockPos(4, 2, 2));
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(player.getUUID(), now);
+        try {
+            PartySavedData.get(level).addVillager(
+                    party,
+                    villagerRecord(reveredRecruit.getUUID(), player.getUUID(), 0, now));
+            PartySavedData.get(level).addVillager(
+                    party,
+                    villagerRecord(royaltyRecruit.getUUID(), player.getUUID(), 0, now));
+            VillagerReputationManager.setReputation(
+                    level,
+                    reveredRecruit,
+                    player.getUUID(),
+                    VillagerRetaliationConfig.REVERED_THRESHOLD.get());
+            VillagerReputationManager.setReputation(
+                    level,
+                    royaltyRecruit,
+                    player.getUUID(),
+                    VillagerRetaliationConfig.ROYALTY_THRESHOLD.get());
+
+            for (int hit = 1; hit < 5; hit++) {
+                helper.assertValueEqual(
+                        VillagerDisciplineService.recordQualifyingHit(level, reveredRecruit, player),
+                        hit,
+                        "revered recruit abuse count before retaliation");
+                helper.assertFalse(
+                        VillagerDisciplineService.hasIncident(reveredRecruit.getUUID()),
+                        "a revered recruit must tolerate the first four hits");
+            }
+            helper.assertValueEqual(
+                    VillagerDisciplineService.recordQualifyingHit(level, reveredRecruit, player),
+                    5,
+                    "revered recruit retaliation count");
+            helper.assertTrue(
+                    VillagerDisciplineService.hasIncident(reveredRecruit.getUUID()),
+                    "a revered recruit must retaliate on the fifth hit");
+
+            helper.assertValueEqual(
+                    VillagerDisciplineService.recordQualifyingHit(level, royaltyRecruit, player),
+                    0,
+                    "royalty recruit abuse count");
+            helper.assertFalse(
+                    VillagerDisciplineService.hasIncident(royaltyRecruit.getUUID()),
+                    "a royalty recruit must retain the normal royalty retaliation bypass");
+        } finally {
+            VillagerDisciplineService.clearRuntimeState();
+            PartyService.deleteParty(level, party.id());
+            reveredRecruit.discard();
+            royaltyRecruit.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void partyMembershipNoLongerBlanketSuppressesIndirectReputation(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer player = fakePlayer(level, uniqueName("party_reputation_exemption"));
