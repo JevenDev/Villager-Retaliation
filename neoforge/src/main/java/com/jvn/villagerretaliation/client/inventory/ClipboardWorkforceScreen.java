@@ -155,6 +155,9 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int TEXT = 0xFF4B2B1D;
     private static final int MUTED = 0xFF8B6247;
     private static final int WARNING = 0xFF9A3B24;
+    private static final int SUCCESS = 0xFF2E7135;
+    private static final int IDLE = 0xFF936400;
+    private static final int PATHING = 0xFFB44B0B;
     private static final int HOVER_FILL = 0x30A66A34;
     private static final int SELECTED_FILL = 0x3DA65C2B;
     private static final int ROW_HEIGHT = 11;
@@ -278,6 +281,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         syncActivePreview();
         renderScrollTabTooltip(graphics, mouseX, mouseY, panelMouseX, panelMouseY);
         renderPreviewTabTooltip(graphics, mouseX, mouseY, panelMouseX, panelMouseY);
+        renderJobDetailTooltip(graphics, mouseX, mouseY, panelMouseX, panelMouseY);
     }
 
     private void renderClipboard(GuiGraphics graphics, double mouseX, double mouseY) {
@@ -460,6 +464,29 @@ public final class ClipboardWorkforceScreen extends Screen {
         graphics.renderComponentTooltip(
                 this.font,
                 tab.tooltip(scope, this.activePreviewTab == tab),
+                mouseX,
+                mouseY);
+    }
+
+    private void renderJobDetailTooltip(
+            GuiGraphics graphics,
+            int mouseX,
+            int mouseY,
+            double panelMouseX,
+            double panelMouseY) {
+        if (this.closingWithAnimation || this.page != Page.JOB) {
+            return;
+        }
+        DetailTooltip tooltip = detailTooltipAt(panelMouseX, panelMouseY);
+        if (tooltip == null) {
+            return;
+        }
+        graphics.renderComponentTooltip(
+                this.font,
+                List.of(
+                        Component.translatable(tooltip.titleKey()).withStyle(ChatFormatting.GREEN),
+                        Component.translatable(tooltip.detailKey())
+                                .withStyle(ChatFormatting.GRAY)),
                 mouseX,
                 mouseY);
     }
@@ -721,15 +748,10 @@ public final class ClipboardWorkforceScreen extends Screen {
                 y,
                 TEXT);
         y += SUMMARY_ROW_STEP;
-        boolean workerHasWarning = hasWarning(worker);
-        Component workerStatus = workerHasWarning
-                ? statusName(worker.status())
-                : Component.translatable(worker.working()
-                        ? "villagerretaliation.gui.clipboard_workforce.job_detail.working"
-                        : "villagerretaliation.gui.clipboard_workforce.job_detail.idle");
+        Component workerStatus = statusName(worker.status()).copy().withColor(statusColor(worker));
         drawDetailLine(graphics, Component.translatable(
                 "villagerretaliation.gui.clipboard_workforce.job_detail.status",
-                workerStatus), y, true, 0, workerHasWarning ? WARNING : TEXT);
+                workerStatus), y, true, 0, TEXT);
         y += SUMMARY_ROW_STEP;
         drawDetailLine(graphics, Component.translatable(
                 "villagerretaliation.gui.clipboard_workforce.job_detail.location"), y, false, 0);
@@ -759,20 +781,21 @@ public final class ClipboardWorkforceScreen extends Screen {
                 worker.contractDays() == 1
                         ? "villagerretaliation.gui.clipboard_workforce.job_detail.day"
                         : "villagerretaliation.gui.clipboard_workforce.job_detail.days",
-                worker.contractDays());
+                worker.contractDays()).withColor(contractDurationColor(worker.contractDays()));
         drawDetailLine(graphics, Component.translatable(
                 "villagerretaliation.gui.clipboard_workforce.job_detail.contract",
                 contractDuration), y, true, 0);
         y += SUMMARY_ROW_STEP;
         drawDetailLine(graphics, Component.translatable(
                 "villagerretaliation.gui.clipboard_workforce.job_detail.daily_pay",
-                worker.dailyPayText()), y, false, 0);
+                Component.literal(worker.dailyPayText()).withColor(worker.dailyPayColor())), y, false, 0);
         y += SUMMARY_ROW_STEP;
         drawDetailLine(graphics, Component.translatable(
                 "villagerretaliation.gui.clipboard_workforce.job_detail.recurring_payment",
                 Component.translatable(worker.recurringPayment()
                         ? "villagerretaliation.gui.clipboard_workforce.job_detail.on"
-                        : "villagerretaliation.gui.clipboard_workforce.job_detail.off")), y, true, 0);
+                        : "villagerretaliation.gui.clipboard_workforce.job_detail.off")
+                        .withColor(worker.recurringPayment() ? TEXT : WARNING)), y, true, 0);
         y += SUMMARY_ROW_STEP;
         Component storageState = Component.translatable(worker.storageAssigned()
                 ? "villagerretaliation.gui.clipboard_workforce.assigned"
@@ -1821,6 +1844,30 @@ public final class ClipboardWorkforceScreen extends Screen {
         return null;
     }
 
+    private DetailTooltip detailTooltipAt(double mouseX, double mouseY) {
+        if (selectedRoleWorker() == null
+                || mouseX < JOB_DETAIL_BAND_LEFT
+                || mouseX >= JOB_DETAIL_BAND_RIGHT) {
+            return null;
+        }
+        int row = Mth.floor((mouseY - JOB_DETAIL_WORKER_TOP + 2) / SUMMARY_ROW_STEP);
+        String field = switch (row) {
+            case 0 -> "worker";
+            case 1 -> "status";
+            case 2, 3, 4, 5, 6 -> "location";
+            case 7 -> "contract";
+            case 8 -> "daily_pay";
+            case 9 -> "recurring_payment";
+            case 10 -> "storage";
+            default -> null;
+        };
+        if (field == null) {
+            return null;
+        }
+        String prefix = "villagerretaliation.gui.clipboard_workforce.job_detail.tooltip." + field;
+        return new DetailTooltip(prefix + ".title", prefix + ".detail");
+    }
+
     private WarningSummary warningAt(double mouseX, double mouseY) {
         if (mouseX < JOB_DETAIL_BAND_LEFT || mouseX >= JOB_DETAIL_BAND_RIGHT) {
             return null;
@@ -2764,6 +2811,46 @@ public final class ClipboardWorkforceScreen extends Screen {
         playBookSound(0.65F);
     }
 
+    private int contractDurationColor(int days) {
+        if (days <= 1) {
+            return WARNING;
+        }
+        return days <= 3 ? IDLE : SUCCESS;
+    }
+
+    private int statusColor(WorkerRow worker) {
+        if (hasWarning(worker)) {
+            return WARNING;
+        }
+        return switch (worker.status()) {
+            case PATHING -> PATHING;
+            case WAITING, WAITING_FOR_CROPS -> IDLE;
+            case UNKNOWN -> MUTED;
+            case WORKING,
+                    MINING,
+                    LOGGING,
+                    FARMING,
+                    BREWING,
+                    COOKING,
+                    SMELTING,
+                    COURIERING,
+                    BUILDING,
+                    DEPOSITING -> SUCCESS;
+            case NO_WORK_AREA,
+                    NO_TARGETS,
+                    NO_STORAGE,
+                    STORAGE_FULL,
+                    INVENTORY_FULL,
+                    MISSING_TOOLS,
+                    UNPAID,
+                    TOO_FAR,
+                    MISSING_MATERIALS,
+                    MATERIAL_STORAGE_UNREACHABLE,
+                    MATERIAL_INVENTORY_FULL,
+                    BUILD_SITE_UNREACHABLE -> WARNING;
+        };
+    }
+
     private void playBookSound(float pitch) {
         Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.BOOK_PAGE_TURN, 1.0F, pitch));
     }
@@ -3119,6 +3206,9 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private record JobSiteButton(String label, ClipboardWorkAreaActionPayload.Action action) {
+    }
+
+    private record DetailTooltip(String titleKey, String detailKey) {
     }
 
     private record RowAction(

@@ -158,6 +158,7 @@ public final class ClipboardWorkforceService {
                         workModeText(role, session.state()),
                         dailyWage,
                         VillagerCurrencyResources.format(level.getServer(), dailyWage),
+                        VillagerCurrencyResources.text(level.getServer()).textColor(),
                         contractDays,
                         recurringPayment,
                         workerIsWorking,
