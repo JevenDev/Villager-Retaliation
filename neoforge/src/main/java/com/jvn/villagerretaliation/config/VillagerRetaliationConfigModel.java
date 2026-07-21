@@ -657,6 +657,15 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean highlightRaidDefenders = false;
 
+        @RangeConstraint(min = 0, max = 2048)
+        public int debugPreviewMaxVisibleNodes = 512;
+
+        @RangeConstraint(min = 0, max = 2048)
+        public int debugPreviewMaxVisibleLabels = 64;
+
+        @RangeConstraint(min = 0, max = 2048)
+        public int debugPreviewMaxVisibleSegments = 256;
+
         public boolean showVillagerReputationDebugOverlay = false;
 
         @RangeConstraint(min = 0.0D, max = 128.0D, decimalPlaces = 1)

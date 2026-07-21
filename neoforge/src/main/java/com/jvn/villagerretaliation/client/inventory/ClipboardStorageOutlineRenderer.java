@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService.StoragePosit
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.WorkerStatus;
 import com.jvn.villagerretaliation.client.config.VillagerRetaliationClientPreferences;
 import com.jvn.villagerretaliation.client.config.VillagerRetaliationServerConfigClient;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
@@ -77,6 +78,9 @@ public final class ClipboardStorageOutlineRenderer {
     private static final double ROUTE_GUIDE_HEIGHT_ABOVE_SURFACE = 0.55D;
     private static final int ROUTE_GUIDE_SURFACE_SEARCH_UP = 3;
     private static final int ROUTE_GUIDE_SURFACE_SEARCH_DOWN = 6;
+    private static final double MAX_LABEL_DISTANCE_SQR = 96.0D * 96.0D;
+    private static final long ROUTE_GUIDE_CACHE_TICKS = 20L;
+    private static final int MAX_ROUTE_GUIDE_CACHE_ENTRIES = 4096;
     private static final RenderType ROUTE_GUIDE_TYPE = RenderType.debugLineStrip(8.0D);
     private static final List<OutlinedStoragePosition> ASSIGNED_POSITIONS = new ArrayList<>();
     private static final List<WorkAreaPosition> WORK_AREAS = new ArrayList<>();
@@ -84,6 +88,7 @@ public final class ClipboardStorageOutlineRenderer {
     private static final List<OutlinedStoragePosition> DEBUG_ASSIGNED_POSITIONS = new ArrayList<>();
     private static final List<WorkAreaPosition> DEBUG_WORK_AREAS = new ArrayList<>();
     private static final List<RoutePosition> DEBUG_ROUTES = new ArrayList<>();
+    private static final Map<RouteGuideCacheKey, CachedRouteGuide> ROUTE_GUIDE_CACHE = new HashMap<>();
     private static long assignedVisibleUntilGameTime;
     private static long workAreasVisibleUntilGameTime;
     private static long routesVisibleUntilGameTime;
@@ -157,6 +162,7 @@ public final class ClipboardStorageOutlineRenderer {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.execute(() -> {
             ROUTES.clear();
+            ROUTE_GUIDE_CACHE.clear();
             if (minecraft.level == null) {
                 routesVisibleUntilGameTime = 0L;
                 return;
@@ -174,6 +180,7 @@ public final class ClipboardStorageOutlineRenderer {
             DEBUG_WORK_AREAS.clear();
             DEBUG_ASSIGNED_POSITIONS.clear();
             DEBUG_ROUTES.clear();
+            ROUTE_GUIDE_CACHE.clear();
             debugPreviewEnabled = payload.enabled();
             if (minecraft.level == null || !payload.enabled()) {
                 debugPreviewVisibleUntilGameTime = 0L;
@@ -243,6 +250,7 @@ public final class ClipboardStorageOutlineRenderer {
             DEBUG_ASSIGNED_POSITIONS.clear();
             DEBUG_WORK_AREAS.clear();
             DEBUG_ROUTES.clear();
+            ROUTE_GUIDE_CACHE.clear();
             debugPreviewEnabled = false;
             hitboxDebugPreviewSent = false;
             nearbyWorkAreaPreviewsEnabled = false;
@@ -600,6 +608,7 @@ public final class ClipboardStorageOutlineRenderer {
         DEBUG_ASSIGNED_POSITIONS.clear();
         DEBUG_WORK_AREAS.clear();
         DEBUG_ROUTES.clear();
+        ROUTE_GUIDE_CACHE.clear();
         debugPreviewEnabled = false;
         nearbyWorkAreaPreviewsEnabled = false;
         nearbyStoragePreviewsEnabled = false;
@@ -679,6 +688,7 @@ public final class ClipboardStorageOutlineRenderer {
                 .filter(marker -> !problemsOnly
                         || matchesClipboardScope(marker.ownerName(), marker.jobName(), true))
                 .filter(marker -> minecraft.level.hasChunkAt(marker.pos()))
+                .filter(marker -> isVisible(event, markerBox(marker.pos()).inflate(1.0D)))
                 .toList();
         if (visible.isEmpty()) {
             return;
@@ -702,7 +712,7 @@ public final class ClipboardStorageOutlineRenderer {
             int color = marker.warning() ? ROUTE_INVALID_COLOR : SELECTED_COLOR;
             renderColoredBox(poseStack, consumer, resolvedMarker.box(), color);
         }
-        bufferSource.endBatch();
+        bufferSource.endBatch(RenderType.lines());
         poseStack.popPose();
 
         List<DebugLabelPosition> labels = resolved.stream()
@@ -749,6 +759,7 @@ public final class ClipboardStorageOutlineRenderer {
                 .filter(marker -> marker.targetPos() != null)
                 .filter(marker -> matchesClipboardScope(marker.ownerName(), marker.jobName(), problemsOnly))
                 .filter(marker -> minecraft.level.hasChunkAt(marker.targetPos()))
+                .filter(marker -> isVisible(event, markerBox(marker.targetPos())))
                 .toList();
         if (visible.isEmpty()) {
             return;
@@ -763,7 +774,7 @@ public final class ClipboardStorageOutlineRenderer {
         for (WorkforceMarker marker : visible) {
             renderColoredBox(poseStack, consumer, markerBox(marker.targetPos()), color);
         }
-        bufferSource.endBatch();
+        bufferSource.endBatch(RenderType.lines());
         poseStack.popPose();
         renderLabels(event, visible.stream()
                 .map(marker -> new DebugLabelPosition(
@@ -886,15 +897,27 @@ public final class ClipboardStorageOutlineRenderer {
 
     private static void renderLabels(RenderLevelStageEvent event, List<DebugLabelPosition> labels) {
         Minecraft minecraft = Minecraft.getInstance();
-        if (labels.isEmpty()) {
+        int maxVisibleLabels = Math.max(0, VillagerRetaliationConfig.DEBUG_PREVIEW_MAX_VISIBLE_LABELS.get());
+        if (labels.isEmpty() || maxVisibleLabels == 0) {
             return;
         }
         PoseStack poseStack = event.getPoseStack();
         Vec3 camera = event.getCamera().getPosition();
+        List<DebugLabelPosition> visibleLabels = labels.stream()
+                .filter(label -> label.pos().distanceToSqr(camera) <= MAX_LABEL_DISTANCE_SQR)
+                .filter(label -> isVisible(event, AABB.ofSize(label.pos(), 1.0D, 1.0D, 1.0D)))
+                .sorted((first, second) -> Double.compare(
+                        first.pos().distanceToSqr(camera),
+                        second.pos().distanceToSqr(camera)))
+                .limit(maxVisibleLabels)
+                .toList();
+        if (visibleLabels.isEmpty()) {
+            return;
+        }
         MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
         Font font = minecraft.font;
         int background = ((int) (minecraft.options.getBackgroundOpacity(0.25F) * 255.0F)) << 24;
-        for (DebugLabelPosition label : labels) {
+        for (DebugLabelPosition label : visibleLabels) {
             String ownerName = showVillagerNames() ? label.ownerName() : "";
             String firstLine = ownerName.isBlank() ? label.jobName() : ownerName;
             String secondLine = ownerName.isBlank() ? "" : label.jobName();
@@ -910,6 +933,10 @@ public final class ClipboardStorageOutlineRenderer {
             poseStack.popPose();
         }
         bufferSource.endBatch();
+    }
+
+    private static boolean isVisible(RenderLevelStageEvent event, AABB bounds) {
+        return event.getFrustum() == null || event.getFrustum().isVisible(bounds);
     }
 
     private static void renderLabelLine(
@@ -981,7 +1008,8 @@ public final class ClipboardStorageOutlineRenderer {
             if (position.payment() && !includePaymentStorage
                     || !position.payment() && !includeNormalStorage
                     || !position.dimension().equals(currentDimension)
-                    || !minecraft.level.hasChunkAt(position.pos())) {
+                    || !minecraft.level.hasChunkAt(position.pos())
+                    || !isVisible(event, markerBox(position.pos()))) {
                 continue;
             }
             LevelRenderer.renderLineBox(poseStack, consumer, outlineBox(minecraft.level, position.pos()), red, green, blue, alpha);
@@ -1008,7 +1036,9 @@ public final class ClipboardStorageOutlineRenderer {
         float alpha = ((color >> 24) & 0xFF) / 255.0F;
         ResourceKey<Level> currentDimension = minecraft.level.dimension();
         for (StoragePosition position : positions) {
-            if (!position.dimension().equals(currentDimension) || !minecraft.level.hasChunkAt(position.pos())) {
+            if (!position.dimension().equals(currentDimension)
+                    || !minecraft.level.hasChunkAt(position.pos())
+                    || !isVisible(event, markerBox(position.pos()))) {
                 continue;
             }
             AABB box = outlineBox(minecraft.level, position.pos());
@@ -1036,10 +1066,11 @@ public final class ClipboardStorageOutlineRenderer {
         float alpha = ((color >> 24) & 0xFF) / 255.0F;
         ResourceKey<Level> currentDimension = minecraft.level.dimension();
         for (WorkAreaPosition area : areas) {
-            if (!area.dimension().equals(currentDimension)) {
+            AABB areaBox = workAreaBox(area);
+            if (!area.dimension().equals(currentDimension) || !isVisible(event, areaBox)) {
                 continue;
             }
-            LevelRenderer.renderLineBox(poseStack, consumer, workAreaBox(area), red, green, blue, alpha);
+            LevelRenderer.renderLineBox(poseStack, consumer, areaBox, red, green, blue, alpha);
             if (area.showCenter() && minecraft.level.hasChunkAt(area.center())) {
                 renderColoredBox(poseStack, consumer, markerBox(area.center()), WORK_AREA_CENTER_COLOR);
             }
@@ -1067,21 +1098,31 @@ public final class ClipboardStorageOutlineRenderer {
         MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
         VertexConsumer boxConsumer = bufferSource.getBuffer(RenderType.lines());
         ResourceKey<Level> currentDimension = minecraft.level.dimension();
+        int maxVisibleNodes = Math.max(0, VillagerRetaliationConfig.DEBUG_PREVIEW_MAX_VISIBLE_NODES.get());
+        int renderedNodes = 0;
+        int remainingSegments = Math.max(0, VillagerRetaliationConfig.DEBUG_PREVIEW_MAX_VISIBLE_SEGMENTS.get());
         for (RoutePosition route : routes) {
             if (!route.dimension().equals(currentDimension) || route.nodes().isEmpty()) {
                 continue;
             }
-            for (int index = 0; index < route.nodes().size(); index++) {
+            for (int index = 0; index < route.nodes().size() && renderedNodes < maxVisibleNodes; index++) {
                 BlockPos node = route.nodes().get(index);
-                if (minecraft.level.hasChunkAt(node)) {
+                if (minecraft.level.hasChunkAt(node) && isVisible(event, markerBox(node))) {
                     if (debugRouteNodes) {
                         renderDebugRouteNode(poseStack, bufferSource, node);
                     } else {
                         renderColoredBox(poseStack, boxConsumer, markerBox(node), routeNodeColor(route, index));
                     }
+                    renderedNodes++;
                 }
             }
-            renderRouteGuide(minecraft, poseStack, bufferSource, route, color);
+            if (remainingSegments > 0) {
+                remainingSegments -= renderRouteGuide(
+                        event, minecraft, poseStack, bufferSource, route, color, remainingSegments);
+            }
+            if (renderedNodes >= maxVisibleNodes && remainingSegments <= 0) {
+                break;
+            }
         }
         poseStack.popPose();
         bufferSource.endBatch(RenderType.lines());
@@ -1091,27 +1132,34 @@ public final class ClipboardStorageOutlineRenderer {
         }
     }
 
-    private static void renderRouteGuide(
+    private static int renderRouteGuide(
+            RenderLevelStageEvent event,
             Minecraft minecraft,
             PoseStack poseStack,
             MultiBufferSource.BufferSource bufferSource,
             RoutePosition route,
-            int color) {
-        if (route.nodes().size() < 2) {
-            return;
+            int color,
+            int segmentBudget) {
+        if (route.nodes().size() < 2 || segmentBudget <= 0) {
+            return 0;
         }
         VertexConsumer guideConsumer = null;
         boolean renderedGuide = false;
-        for (int index = 1; index < route.nodes().size(); index++) {
+        int renderedSegments = 0;
+        for (int index = 1; index < route.nodes().size() && renderedSegments < segmentBudget; index++) {
             BlockPos previous = route.nodes().get(index - 1);
             BlockPos current = route.nodes().get(index);
-            if (minecraft.level.hasChunkAt(previous) && minecraft.level.hasChunkAt(current)) {
+            AABB segmentBounds = new AABB(Vec3.atCenterOf(previous), Vec3.atCenterOf(current)).inflate(1.0D);
+            if (minecraft.level.hasChunkAt(previous)
+                    && minecraft.level.hasChunkAt(current)
+                    && isVisible(event, segmentBounds)) {
                 boolean includeStart = !renderedGuide;
                 if (!renderedGuide) {
                     guideConsumer = bufferSource.getBuffer(ROUTE_GUIDE_TYPE);
                     renderedGuide = true;
                 }
                 renderRouteGuide(poseStack, guideConsumer, minecraft.level, previous, current, color, includeStart);
+                renderedSegments++;
             } else if (renderedGuide) {
                 bufferSource.endBatch(ROUTE_GUIDE_TYPE);
                 renderedGuide = false;
@@ -1120,15 +1168,19 @@ public final class ClipboardStorageOutlineRenderer {
         if (renderedGuide) {
             bufferSource.endBatch(ROUTE_GUIDE_TYPE);
         }
-        if (route.loop()) {
+        if (route.loop() && renderedSegments < segmentBudget) {
             BlockPos first = route.nodes().getFirst();
             BlockPos last = route.nodes().getLast();
-            if (minecraft.level.hasChunkAt(last) && minecraft.level.hasChunkAt(first)) {
+            if (minecraft.level.hasChunkAt(last)
+                    && minecraft.level.hasChunkAt(first)
+                    && isVisible(event, new AABB(Vec3.atCenterOf(last), Vec3.atCenterOf(first)).inflate(1.0D))) {
                 VertexConsumer loopConsumer = bufferSource.getBuffer(ROUTE_GUIDE_TYPE);
                 renderRouteGuide(poseStack, loopConsumer, minecraft.level, last, first, ROUTE_LOOP_COLOR, true);
                 bufferSource.endBatch(ROUTE_GUIDE_TYPE);
+                renderedSegments++;
             }
         }
+        return renderedSegments;
     }
 
     private static void renderRouteGuide(PoseStack poseStack, VertexConsumer consumer, BlockPos first, BlockPos second, int color) {
@@ -1147,12 +1199,31 @@ public final class ClipboardStorageOutlineRenderer {
             BlockPos second,
             int color,
             boolean includeStart) {
-        int steps = routeGuideSteps(first, second);
-        int firstStep = includeStart ? 0 : 1;
-        for (int step = firstStep; step <= steps; step++) {
-            double progress = step / (double) steps;
-            renderRouteGuideVertex(poseStack, consumer, routeGuidePoint(level, first, second, progress), color);
+        List<Vec3> points = routeGuidePoints(level, first, second);
+        int firstPoint = includeStart ? 0 : 1;
+        for (int index = firstPoint; index < points.size(); index++) {
+            renderRouteGuideVertex(poseStack, consumer, points.get(index), color);
         }
+    }
+
+    private static List<Vec3> routeGuidePoints(Level level, BlockPos first, BlockPos second) {
+        RouteGuideCacheKey key = new RouteGuideCacheKey(level.dimension(), first, second);
+        long gameTime = level.getGameTime();
+        CachedRouteGuide cached = ROUTE_GUIDE_CACHE.get(key);
+        if (cached != null && gameTime <= cached.validUntilGameTime()) {
+            return cached.points();
+        }
+        int steps = routeGuideSteps(first, second);
+        List<Vec3> points = new ArrayList<>(steps + 1);
+        for (int step = 0; step <= steps; step++) {
+            points.add(routeGuidePoint(level, first, second, step / (double) steps));
+        }
+        List<Vec3> immutablePoints = List.copyOf(points);
+        if (ROUTE_GUIDE_CACHE.size() >= MAX_ROUTE_GUIDE_CACHE_ENTRIES) {
+            ROUTE_GUIDE_CACHE.clear();
+        }
+        ROUTE_GUIDE_CACHE.put(key, new CachedRouteGuide(gameTime + ROUTE_GUIDE_CACHE_TICKS, immutablePoints));
+        return immutablePoints;
     }
 
     private static int routeGuideSteps(BlockPos first, BlockPos second) {
@@ -1286,13 +1357,20 @@ public final class ClipboardStorageOutlineRenderer {
         }
         List<DebugLabelPosition> labels = new ArrayList<>();
         ResourceKey<Level> currentDimension = minecraft.level.dimension();
+        Vec3 camera = event.getCamera().getPosition();
         for (RoutePosition route : routes) {
             if (!route.dimension().equals(currentDimension)) {
                 continue;
             }
             for (int index = 0; index < route.nodes().size(); index++) {
                 BlockPos node = route.nodes().get(index);
-                if (minecraft.level.hasChunkAt(node)) {
+                Vec3 labelPos = new Vec3(
+                        node.getX() + 0.5D,
+                        node.getY() + DEBUG_ROUTE_LABEL_HEIGHT,
+                        node.getZ() + 0.5D);
+                if (minecraft.level.hasChunkAt(node)
+                        && labelPos.distanceToSqr(camera) <= MAX_LABEL_DISTANCE_SQR
+                        && isVisible(event, markerBox(node).inflate(1.0D))) {
                     addDebugRouteNodeLabel(labels, routeLabelName(route), node, index + 1);
                 }
             }
@@ -1438,6 +1516,16 @@ public final class ClipboardStorageOutlineRenderer {
     }
 
     private record DebugLabelPosition(Vec3 pos, String ownerName, String jobName, int color) {
+    }
+
+    private record RouteGuideCacheKey(ResourceKey<Level> dimension, BlockPos first, BlockPos second) {
+        private RouteGuideCacheKey {
+            first = first.immutable();
+            second = second.immutable();
+        }
+    }
+
+    private record CachedRouteGuide(long validUntilGameTime, List<Vec3> points) {
     }
 
     private record ResolvedWorkforceMarker(WorkforceMarker marker, AABB box, Vec3 labelPos) {

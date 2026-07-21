@@ -1,5 +1,7 @@
 # Changelog
 
+- Improved heavy clipboard and hitbox debug-preview performance by culling off-screen containers, job sites, routes, markers, and text; limiting worst-case visible route and label work; and caching terrain-following route geometry between frames. The visible node, label, and route-segment limits are configurable in the Debug Overlay settings.
+
 - Hidden Job Inventory and Storage job-menu entries until the player has hired that villager; former hirers still see Job Inventory while reclaimable contract gear remains.
 - Job-inventory stacks deposited into assigned storage after completed work or contract expiry now shed their job metadata so they merge with identical normal items.
 
