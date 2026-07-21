@@ -357,6 +357,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private long interactionStateTransitionStartMillis = -1L;
     private int interactionStateTransitionStartOffsetY;
     private int interactionStateTransitionStartOffsetX;
+    private DialoguePage replacementTransitionPreviousPage;
+    private int replacementTransitionPreviousTop;
     private Button giftButton;
     private String villagerDialogueText = "";
     private List<DialogueTextSegment> villagerDialogueTextSegments = List.of();
@@ -525,6 +527,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 .build());
         this.giftButton.visible = false;
         rebuildOptions();
+        startPreparedReplacementTransition();
     }
 
     @Override
@@ -621,6 +624,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return;
         }
         target.acceptVillagerDialogue(this.villagerDialogueText, this.villagerDialogueTextSegments);
+    }
+
+    @Override
+    public void prepareReplacementTransition(VillagerInteractionScreen target) {
+        if (target == null) {
+            return;
+        }
+        target.replacementTransitionPreviousPage = this.page;
+        target.replacementTransitionPreviousTop = interactionContainerTopForPage(this.page)
+                + interactionStateTransitionOffsetY();
     }
 
     @Override
@@ -2367,7 +2380,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void startInteractionStateTransition(DialoguePage previousPage, DialoguePage nextPage, int previousTop, int nextTop) {
-        if (previousPage == nextPage) {
+        startInteractionStateTransition(previousPage, nextPage, previousTop, nextTop, false);
+    }
+
+    private void startInteractionStateTransition(
+            DialoguePage previousPage,
+            DialoguePage nextPage,
+            int previousTop,
+            int nextTop,
+            boolean animateSamePage) {
+        if (previousPage == nextPage && !animateSamePage) {
             return;
         }
 
@@ -2379,6 +2401,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 ? 0
                 : depthDirection * INTERACTION_STATE_CONTENT_SLIDE_X;
         this.interactionStateTransitionStartMillis = Util.getMillis();
+    }
+
+    private void startPreparedReplacementTransition() {
+        if (this.replacementTransitionPreviousPage == null) {
+            return;
+        }
+        startInteractionStateTransition(
+                this.replacementTransitionPreviousPage,
+                this.page,
+                this.replacementTransitionPreviousTop,
+                interactionContainerTopForPage(this.page),
+                true);
+        this.replacementTransitionPreviousPage = null;
     }
 
     private static boolean usesContainerOnlyTransition(DialoguePage previousPage, DialoguePage nextPage) {
