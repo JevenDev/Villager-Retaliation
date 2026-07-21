@@ -7,6 +7,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Item;
@@ -24,20 +25,24 @@ public final class OminousBannerRecognition {
     }
 
     public static boolean isDisplaying(ServerPlayer player) {
-        if (player == null) {
+        return isDisplaying((LivingEntity) player);
+    }
+
+    public static boolean isDisplaying(LivingEntity entity) {
+        if (entity == null) {
             return false;
         }
-        ItemStack headStack = player.getItemBySlot(EquipmentSlot.HEAD);
-        if (isOminousBanner(headStack, player)) {
+        ItemStack headStack = entity.getItemBySlot(EquipmentSlot.HEAD);
+        if (isOminousBanner(headStack, entity)) {
             return true;
         }
-        if (BannerHelmetData.getAttachedBanner(headStack, player.registryAccess())
-                .filter(stack -> isOminousBanner(stack, player))
+        if (BannerHelmetData.getAttachedBanner(headStack, entity.registryAccess())
+                .filter(stack -> isOminousBanner(stack, entity))
                 .isPresent()) {
             return true;
         }
-        return isOminousBanner(player.getMainHandItem(), player)
-                || isOminousBanner(player.getOffhandItem(), player);
+        return isOminousBanner(entity.getMainHandItem(), entity)
+                || isOminousBanner(entity.getOffhandItem(), entity);
     }
 
     /** Retained as a source-compatible alias for the original helmet-only API. */
@@ -45,8 +50,8 @@ public final class OminousBannerRecognition {
         return isDisplaying(player);
     }
 
-    static boolean isOminousBanner(ItemStack stack, ServerPlayer player) {
-        if (stack == null || stack.isEmpty() || player == null) {
+    static boolean isOminousBanner(ItemStack stack, LivingEntity entity) {
+        if (stack == null || stack.isEmpty() || entity == null) {
             return false;
         }
         if (stack.is(EQUIVALENTS)) {
@@ -56,7 +61,7 @@ public final class OminousBannerRecognition {
             return false;
         }
         ItemStack ominousBanner = Raid.getLeaderBannerInstance(
-                player.registryAccess().lookupOrThrow(Registries.BANNER_PATTERN));
+                entity.registryAccess().lookupOrThrow(Registries.BANNER_PATTERN));
         if (!Objects.equals(
                 stack.get(DataComponents.BANNER_PATTERNS),
                 ominousBanner.get(DataComponents.BANNER_PATTERNS))) {
