@@ -2,6 +2,9 @@ package com.jvn.villagerretaliation.allegiance;
 
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
+import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
+import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
+import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,19 +41,30 @@ public final class VillagerDisciplineService {
     }
 
     public static int recordQualifyingHit(ServerLevel level, Villager villager, ServerPlayer player) {
+        if (!VillagerAggressionPolicy.shouldRetaliateDirectly(villager, player)) {
+            return VillagerAbuseSavedData.get(level)
+                    .record(villager.getUUID(), player.getUUID())
+                    .hits();
+        }
         VillagerAbuseSavedData.AbuseRecord record = VillagerAbuseSavedData.get(level)
                 .recordHit(villager.getUUID(), player.getUUID(), level.getGameTime());
-        String message = record.hits() == 1
-                ? "villagerretaliation.allegiance.warning.first"
-                : record.hits() == 2
-                        ? "villagerretaliation.allegiance.warning.final"
-                        : "villagerretaliation.allegiance.warning.discipline";
+        int retaliationLimit = retaliationLimit(level, villager, player);
+        String message = record.hits() >= retaliationLimit
+                ? "villagerretaliation.allegiance.warning.discipline"
+                : record.hits() == 1
+                        ? "villagerretaliation.allegiance.warning.first"
+                        : "villagerretaliation.allegiance.warning.final";
         player.sendSystemMessage(Component.translatable(message, villager.getDisplayName()));
-        if (record.hits() >= 3) {
+        if (record.hits() >= retaliationLimit) {
             INCIDENTS.put(villager.getUUID(), new DisciplinaryIncident(
                     player.getUUID(), player, level.getGameTime() + INCIDENT_TIMEOUT_TICKS));
         }
         return record.hits();
+    }
+
+    private static int retaliationLimit(ServerLevel level, Villager villager, ServerPlayer player) {
+        return VillagerReputationManager.getReputationLevel(level, villager, player.getUUID())
+                == VillagerReputationLevel.REVERED ? 5 : 3;
     }
 
     public static void onLivingConversionPost(LivingConversionEvent.Post event) {
