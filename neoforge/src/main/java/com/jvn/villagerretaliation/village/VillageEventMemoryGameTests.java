@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.dialogue.DialogueCondition;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
+import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.scene.runtime.SceneContinuation;
@@ -237,6 +238,41 @@ public final class VillageEventMemoryGameTests {
         } finally {
             first.discard();
             second.discard();
+            registry.archive(village);
+            occupiedHome.remove(level);
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void repeatedGiftStacksCollapseIntoOneCommunalMemory(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        BlockPos eventPos = helper.absolutePos(new BlockPos(2, 2, 2));
+        OccupiedHome occupiedHome = addOccupiedHome(level, eventPos);
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
+        VillageAllegianceId village = registry.discoverAt(level, eventPos).orElseThrow();
+        Villager recipient = spawnVillager(level, eventPos);
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        VillageAllegianceApi.assignKnown(level, recipient, village, AllegianceAssignmentSource.ADMIN);
+
+        try {
+            VillageEventMemory.rememberGift(
+                    level, eventPos, recipient, player, "Mara", "64 Emeralds", "minecraft:emerald", 64,
+                    VillagerGiftPreferences.GiftReaction.LOVED, 64);
+            VillageEventMemory.rememberGift(
+                    level, eventPos, recipient, player, "Mara", "64 Emeralds", "minecraft:emerald", 64,
+                    VillagerGiftPreferences.GiftReaction.LOVED, 6);
+
+            List<VillageEventMemory.MemoryEvent> personalGifts = VillageEventMemory.recentForVillager(level, recipient)
+                    .stream().filter(event -> event.gift() != null).toList();
+            List<VillageEventMemory.MemoryEvent> communalGifts = VillageEventMemory.recentForVillage(level, village)
+                    .stream().filter(event -> event.gift() != null).toList();
+            helper.assertValueEqual(personalGifts.size(), 1, "repeated personal gift stacks were not collapsed");
+            helper.assertValueEqual(communalGifts.size(), 1, "repeated communal gift stacks were not collapsed");
+            helper.assertValueEqual(communalGifts.getFirst().gift().itemCount(), 128, "collapsed gift item count");
+            helper.assertValueEqual(communalGifts.getFirst().gift().reputationValue(), 70, "collapsed gift reputation");
+        } finally {
+            recipient.discard();
             registry.archive(village);
             occupiedHome.remove(level);
         }
