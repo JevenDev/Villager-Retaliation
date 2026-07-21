@@ -47,6 +47,7 @@ public record ClipboardWorkforceSnapshot(
             String workMode,
             int dailyWage,
             String dailyPayText,
+            int dailyPayColor,
             int contractDays,
             boolean recurringPayment,
             boolean working,

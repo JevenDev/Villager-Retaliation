@@ -15,7 +15,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot) implements CustomPacketPayload {
-    private static final int PROTOCOL_VERSION = 9;
+    private static final int PROTOCOL_VERSION = 10;
     private static final int MAX_JOB_SUMMARIES = 16;
     private static final int MAX_WORKER_ROWS = 256;
     private static final int MAX_WARNING_SUMMARIES = 64;
@@ -97,6 +97,7 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
             buffer.writeUtf(worker.workMode(), 64);
             buffer.writeVarInt(worker.dailyWage());
             buffer.writeUtf(worker.dailyPayText(), 64);
+            buffer.writeInt(worker.dailyPayColor());
             buffer.writeVarInt(worker.contractDays());
             buffer.writeBoolean(worker.recurringPayment());
             buffer.writeBoolean(worker.working());
@@ -139,6 +140,7 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
                     buffer.readUtf(64),
                     buffer.readVarInt(),
                     buffer.readUtf(64),
+                    buffer.readInt(),
                     buffer.readVarInt(),
                     buffer.readBoolean(),
                     buffer.readBoolean(),
