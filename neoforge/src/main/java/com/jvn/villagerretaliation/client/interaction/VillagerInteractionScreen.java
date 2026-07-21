@@ -265,6 +265,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final boolean hiredByOtherPlayer;
     private int hiredRemainingDays;
     private final boolean inventoryAvailable;
+    private final boolean jobInventoryAvailable;
     private final boolean recruitedPartyVillager;
     private final boolean partyVillagerAuthorized;
     private final boolean partyVillagerPartyMember;
@@ -394,6 +395,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean hiredByOtherPlayer,
             int hiredRemainingDays,
             boolean inventoryAvailable,
+            boolean jobInventoryAvailable,
             boolean recruitedPartyVillager,
             boolean partyVillagerAuthorized,
             boolean partyVillagerPartyMember,
@@ -456,6 +458,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.hiredByOtherPlayer = hiredByOtherPlayer;
         this.hiredRemainingDays = Math.max(0, hiredRemainingDays);
         this.inventoryAvailable = inventoryAvailable;
+        this.jobInventoryAvailable = jobInventoryAvailable;
         this.recruitedPartyVillager = recruitedPartyVillager;
         this.partyVillagerAuthorized = partyVillagerAuthorized;
         this.partyVillagerPartyMember = partyVillagerPartyMember;
@@ -1169,8 +1172,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (canHireVillager()) {
             addOption("recruit.hire", this::openHirePage);
         }
-        addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
-        addOption("recruit.storage", this::openStoragePage);
+        if (this.jobInventoryAvailable) {
+            addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
+        }
+        if (this.hiredByPlayer) {
+            addOption("recruit.storage", this::openStoragePage);
+        }
         if (this.hiredByPlayer) {
             if (!this.oneOffBuilderJob) {
                 addOption("recruit.payment", this::openPaymentPage);

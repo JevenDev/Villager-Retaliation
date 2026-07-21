@@ -1939,16 +1939,61 @@ public final class VillagerWorkerGameTests {
                 AssignedStorageService.OUTPUT_PURPOSE);
         helper.assertValueEqual(shared.assigned(), 1, "output storage should be shareable by another villager");
 
+        container(level, output).setItem(0, new ItemStack(Items.COBBLESTONE, 5));
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         inventory.insertOutput(new ItemStack(Items.COBBLESTONE, 7));
         helper.assertTrue(inventory.depositOutputToAssignedStorage(), "output should deposit to assigned output storage");
-        helper.assertValueEqual(countItem(container(level, output), Items.COBBLESTONE), 7, "output chest item count");
+        helper.assertValueEqual(countItem(container(level, output), Items.COBBLESTONE), 12, "output chest item count");
+        helper.assertTrue(container(level, output).getItem(1).isEmpty(),
+                "returned output should merge into an identical normal stack");
+        helper.assertFalse(HiredJobInventory.isJobItem(container(level, output).getItem(0)),
+                "completed-job output should lose its job metadata in storage");
         helper.assertValueEqual(countItem(container(level, input), Items.COBBLESTONE), 0, "input chest should not receive outputs first");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         AssignedStorageService.removeAllAssignedStorage(level, otherVillager);
         villager.discard();
         otherVillager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void expiredContractCleansReturnedJobInventoryItems(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrExpiredReturnTag");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        BlockPos chestRel = new BlockPos(2, 2, 3);
+        BlockPos chest = helper.absolutePos(chestRel);
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, chest);
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8);
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+        container(level, chest).setItem(0, new ItemStack(Items.DIRT, 3));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.DIRT, 5)).isEmpty(),
+                "contract supplies should fit in job inventory");
+        villager.getPersistentData().getCompound("VillagerRetaliationHireContract")
+                .putLong("EndGameTime", level.getGameTime());
+
+        HiredVillagerContractService.expireHireContractIfNeeded(level, villager);
+
+        helper.assertTrue(inventory.findSupply(stack -> stack.is(Items.DIRT)).isEmpty(),
+                "expired contract should return removable supplies to assigned storage");
+        helper.assertValueEqual(container(level, chest).getItem(0).getCount(), 8,
+                "expired-contract supplies should merge into an identical normal stack");
+        helper.assertTrue(container(level, chest).getItem(1).isEmpty(),
+                "cleaned expired-contract supplies should not occupy a separate stack");
+        helper.assertFalse(HiredJobInventory.isJobItem(container(level, chest).getItem(0)),
+                "expired-contract supplies should lose their job metadata in storage");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
         helper.succeed();
     }
 
