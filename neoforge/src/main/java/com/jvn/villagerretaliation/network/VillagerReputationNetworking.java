@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "54";
+    private static final String PROTOCOL_VERSION = "56";
 
     private VillagerReputationNetworking() {
     }
@@ -172,6 +172,12 @@ public final class VillagerReputationNetworking {
                 HiredDebugPreviewSyncPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer",
                 "acceptDebugPreview"
+        );
+        network.safePlayToClientThreaded(
+                ClipboardPreviewMarkerSyncPayload.TYPE,
+                ClipboardPreviewMarkerSyncPayload.STREAM_CODEC,
+                "com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer",
+                "acceptClipboardPreviewMarkers"
         );
         network.safePlayToClientThreaded(
                 ClipboardWorkforceSyncPayload.TYPE,
@@ -503,9 +509,11 @@ public final class VillagerReputationNetworking {
                 ClipboardPreviewTogglePayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
                         ToucanNetwork.withServerPlayer(context, player ->
-                                com.jvn.villagerretaliation.debug.HiredDebugPreviewService.setClipboardPreviewEnabled(
+                                com.jvn.villagerretaliation.debug.HiredDebugPreviewService.configureClipboardPreview(
                                         player,
-                                        payload.enabled())))
+                                        payload.enabled(),
+                                        payload.lens(),
+                                        payload.trackedJobs())))
         );
         network.playToServer(
                 ItemFilterModeChangePayload.TYPE,

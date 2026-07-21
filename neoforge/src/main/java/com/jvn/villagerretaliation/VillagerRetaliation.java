@@ -99,6 +99,7 @@ public class VillagerRetaliation {
                 .listener(VillageAllegianceService::onEntityJoinLevel)
                 .listener(VillagerRetaliationEvents::onPlayerStartTracking)
                 .listener(VillagerRetaliationEvents::onPlayerLoggedOut)
+                .listener(VillagerRetaliationEvents::onPlayerChangedDimension)
                 .listener(VillageBoundsDebugService::onPlayerLoggedOut)
                 .listener(PlayerRaidDialogueService::onPlayerLoggedOut)
                 .listener(VillagerRetaliationEvents::onPlayerClone)

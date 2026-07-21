@@ -136,6 +136,12 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/clipboard_workforce/clipboard_jobs_icons_left");
     public static final ResourceLocation CLIPBOARD_JOBS_ICONS_RIGHT_TEXTURE =
             texture("gui/clipboard_workforce/clipboard_jobs_icons_right");
+    public static final ResourceLocation CLIPBOARD_ROW_ARROW_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_row_arrow");
+    public static final ResourceLocation CLIPBOARD_WARNING_ARROW_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_warning_arrow");
+    public static final ResourceLocation CLIPBOARD_ASSIGNMENT_CHECKMARK_TEXTURE =
+            texture("gui/clipboard_workforce/clipboard_assignment_checkmark");
     public static final ResourceLocation TRADE_REROLL_BUTTON_TEXTURE =
             texture("gui/trade/reroll_button");
     public static final ResourceLocation TRADE_REROLL_BUTTON_HIGHLIGHTED_TEXTURE =

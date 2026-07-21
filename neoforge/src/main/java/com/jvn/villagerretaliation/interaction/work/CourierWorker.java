@@ -218,7 +218,16 @@ public final class CourierWorker implements HiredRoleWorker {
             return WorkResult.progressed("interaction.work.courier.moving_to_output");
         }
         if (movement == HiredStorageNavigationGoal.Result.FAILED) {
+            AssignedStorageService.rememberOutputStorageFailure(level, villager, output, "courier_output_unreachable");
             clearStoredTarget(context);
+            BlockPos alternateOutput = AssignedStorageService.nearestAssignedOutputStoragePos(level, villager, outputs::contains);
+            if (alternateOutput != null) {
+                storeTarget(context, alternateOutput);
+                HiredWorkerBrain.setStorageTarget(context, alternateOutput);
+                HiredWorkerBrain.clearFailure(context);
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_STORAGE, alternateOutput);
+                return WorkResult.progressed("interaction.work.courier.moving_to_output");
+            }
             HiredWorkerBrain.setFailure(context, "courier_output_unreachable", level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.FAILED_COOLDOWN, output);
             return WorkResult.idle("interaction.work.courier.output_unreachable");
@@ -237,6 +246,17 @@ public final class CourierWorker implements HiredRoleWorker {
                 && context.inventory().depositOutputToAssignedStorageAt(output)) {
         }
         if (context.inventory().hasOutputItems()) {
+            AssignedStorageService.closeStorageFeedback(level, output);
+            AssignedStorageService.rememberOutputStorageFull(level, villager, output);
+            clearStoredTarget(context);
+            BlockPos alternateOutput = AssignedStorageService.nearestAssignedOutputStoragePos(level, villager, outputs::contains);
+            if (alternateOutput != null) {
+                storeTarget(context, alternateOutput);
+                HiredWorkerBrain.setStorageTarget(context, alternateOutput);
+                HiredWorkerBrain.clearFailure(context);
+                HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_STORAGE, alternateOutput);
+                return WorkResult.progressed("interaction.work.courier.moving_to_output");
+            }
             HiredWorkerBrain.setFailure(context, "courier_output_full", level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_STORAGE_FULL, output);
             return WorkResult.idle("interaction.work.courier.output_full");

@@ -2058,6 +2058,64 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100, batch = "assigned_output_storage_fallback")
+    public static void workerSkipsFullOutputStorageAndContinuesToAvailableContainer(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerOutputFallback");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        BlockPos fullChestRel = new BlockPos(3, 2, 2);
+        BlockPos availableChestRel = new BlockPos(5, 2, 3);
+        BlockPos fullChest = helper.absolutePos(fullChestRel);
+        BlockPos availableChest = helper.absolutePos(availableChestRel);
+        setBlock(helper, fullChestRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, availableChestRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, fullChest);
+        AssignedStorageService.removeAssignedContainer(level, availableChest);
+        AssignedStorageService.clearRuntimeState();
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), fullChest),
+                        new AssignedStorageService.StoragePosition(level.dimension(), availableChest)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+
+        Container fullContainer = container(level, fullChest);
+        for (int slot = 0; slot < fullContainer.getContainerSize(); slot++) {
+            fullContainer.setItem(slot, new ItemStack(Items.DIRT, 64));
+        }
+        fullContainer.setChanged();
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(6, 4, 5), true);
+        context.inventory().insertOutput(new ItemStack(Items.COBBLESTONE, 12));
+        OutputDepositProbe worker = new OutputDepositProbe();
+
+        AbstractBlockWorker.DepositResult firstResult = worker.deposit(level, context, villager);
+        helper.assertValueEqual(firstResult, AbstractBlockWorker.DepositResult.MOVING,
+                "a full nearest chest should redirect the worker instead of pausing all storage");
+        HiredWorkerBrain.Snapshot redirected = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertValueEqual(redirected.taskState(), HiredWorkerTaskState.MOVING_TO_STORAGE,
+                "worker should remain in an active storage movement state");
+        helper.assertValueEqual(redirected.storageTargetPos(), availableChest,
+                "worker should target the next available assigned output chest");
+
+        AbstractBlockWorker.DepositResult secondResult = worker.deposit(level, context, villager);
+        helper.assertValueEqual(secondResult, AbstractBlockWorker.DepositResult.DEPOSITED,
+                "worker should deposit into the fallback output chest");
+        helper.assertValueEqual(countItem(container(level, availableChest), Items.COBBLESTONE), 12,
+                "fallback output chest should receive the worker's items");
+        helper.assertValueEqual(countItem(fullContainer, Items.COBBLESTONE), 0,
+                "full output chest should remain unchanged");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        AssignedStorageService.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 420)
     public static void miningWorkerDepositsAndReturnsToExposedOreWorkArea(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 5, 1);
@@ -5572,48 +5630,41 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200, batch = "clipboard_inventory_diagnostics")
     public static void clipboardInventoryFullRequiresBlockedWorkerState(GameTestHelper helper) {
-        HiredVillagerIndex.clearRuntimeState();
         buildFloor(helper, 0, 8, 0, 6, 1);
-        ServerLevel level = helper.getLevel();
-        ServerPlayer hirer = fakePlayer(level, "VrClipboardInventoryState");
-        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
         Villager animalHandler = spawnVillager(helper, new BlockPos(3, 2, 3));
-        animalHandler.setVillagerData(animalHandler.getVillagerData().setProfession(VillagerProfession.BUTCHER));
-
-        HiredVillagerContractService.startHireContract(
-                level, animalHandler, hirer, 1, 8, HiredVillagerRole.ANIMAL_HANDLING);
-        helper.assertTrue(
-                HiredVillagerWorkService.setWorkArea(
-                        hirer,
-                        level,
-                        animalHandler,
-                        helper.absolutePos(new BlockPos(1, 2, 1)),
-                        helper.absolutePos(new BlockPos(6, 4, 5))),
-                "animal-handler fixture work area should be assigned");
-        HiredWorkSession session = HiredWorkSession.active(level, animalHandler);
-        session.state().putBoolean("Enabled", true);
-        HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.IDLE, null);
-        for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
-            session.inventory().setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
-        }
-        helper.assertFalse(session.inventory().hasOutputSpace(), "fixture should have no generic output capacity");
-        HiredVillagerIndex.update(level, animalHandler);
-
-        ClipboardWorkforceSnapshot activeSnapshot = ClipboardWorkforceService.snapshot(hirer);
+        CompoundTag workerState = new CompoundTag();
+        HiredWorkContext workerContext = context(
+                helper,
+                animalHandler,
+                workerState,
+                new BlockPos(1, 2, 1),
+                new BlockPos(6, 4, 5),
+                true);
+        HiredJobInventory inventory = workerContext.inventory();
+        HiredWorkerBrain.setFailure(workerContext, "animal_food_inventory_full", 0L);
+        HiredWorkerBrain.setState(workerState, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, null);
+        HiredWorkerBrain.Snapshot paused = HiredWorkerBrain.snapshot(workerState, helper.getLevel().getGameTime());
         helper.assertFalse(
-                activeSnapshot.workers().getFirst().inventoryFull(),
-                "animal handler should not be reported full unless its job is blocked by inventory capacity");
+                inventory.isCapacityBlockedForFailure("animal_food_inventory_full"),
+                "an empty animal-handler job inventory must not be classified as full");
+        helper.assertValueEqual(
+                ClipboardWorkforceService.previewStatus(HiredVillagerRole.ANIMAL_HANDLING, paused, inventory),
+                ClipboardWorkforceSnapshot.WorkerStatus.WAITING,
+                "an empty paused animal handler should refresh its marker status to waiting");
 
-        HiredWorkerBrain.setState(session.state(), HiredWorkerTaskState.PAUSED_FULL_INVENTORY, null);
-        ClipboardWorkforceSnapshot blockedSnapshot = ClipboardWorkforceService.snapshot(hirer);
+        for (int slot = HiredJobInventory.MAIN_GRID_START; slot < HiredJobInventory.FILTER_SLOT; slot++) {
+            inventory.setItem(slot, new ItemStack(Items.COBBLESTONE, 64));
+        }
         helper.assertTrue(
-                blockedSnapshot.workers().getFirst().inventoryFull(),
-                "clipboard should retain inventory-full warnings for workers actually blocked on capacity");
+                inventory.isCapacityBlockedForFailure("animal_food_inventory_full"),
+                "a completely filled job inventory must retain its supply-capacity warning");
+        helper.assertValueEqual(
+                ClipboardWorkforceService.previewStatus(HiredVillagerRole.ANIMAL_HANDLING, paused, inventory),
+                ClipboardWorkforceSnapshot.WorkerStatus.INVENTORY_FULL,
+                "a genuinely full animal handler should refresh its marker status to inventory full");
 
-        HiredVillagerContractService.endHireContract(level, animalHandler, hirer);
-        HiredVillagerIndex.clearRuntimeState();
         animalHandler.discard();
         helper.succeed();
     }
@@ -5732,6 +5783,113 @@ public final class VillagerWorkerGameTests {
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         HiredVillagerIndex.clearRuntimeState();
         otherVillager.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200, batch = "clipboard_nitwit_diagnostics")
+    public static void clipboardDoesNotInventAssignmentsForNitwitWorkers(GameTestHelper helper) {
+        HiredVillagerIndex.clearRuntimeState();
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrClipboardNitwitDiagnostics");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.NITWIT));
+
+        HiredVillagerContractService.startHireContract(
+                level, villager, hirer, 1, 8, HiredVillagerRole.NITWIT);
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putBoolean("Enabled", true);
+        HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.IDLE, null);
+        HiredVillagerIndex.update(level, villager);
+
+        ClipboardWorkforceSnapshot.WorkerRow row = ClipboardWorkforceService.snapshot(hirer).workers().getFirst();
+        helper.assertFalse(row.noStorage(), "nitwit work should not require an output container");
+        helper.assertFalse(row.noWorkArea(), "nitwit work should not require a work area");
+        helper.assertFalse(row.tooFar(), "nitwit work should not be measured against a nonexistent work area");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        HiredVillagerIndex.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200, batch = "clipboard_stale_target_diagnostics")
+    public static void clipboardIgnoresStaleTargetFailuresDuringActiveWork(GameTestHelper helper) {
+        HiredVillagerIndex.clearRuntimeState();
+        buildFloor(helper, 0, 8, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrClipboardStaleTarget");
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+
+        HiredVillagerContractService.startHireContract(
+                level, villager, hirer, 1, 8, HiredVillagerRole.FARMING);
+        helper.assertTrue(
+                HiredVillagerWorkService.setWorkArea(
+                        hirer,
+                        level,
+                        villager,
+                        helper.absolutePos(new BlockPos(1, 2, 1)),
+                        helper.absolutePos(new BlockPos(6, 4, 5))),
+                "stale-target fixture work area should be assigned");
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putBoolean("Enabled", true);
+        HiredWorkerBrain.setLastTargetScanResult(session.context(), "field_scan_full_no_targets");
+        HiredWorkerBrain.setFailure(session.context(), "target_unreachable", level.getGameTime() + 100L);
+        HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.WORKING, villager.blockPosition());
+        HiredVillagerIndex.update(level, villager);
+
+        ClipboardWorkforceSnapshot active = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertFalse(
+                active.workers().getFirst().noTargets(),
+                "stale target diagnostics must not override an actively working task");
+
+        HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.FAILED_COOLDOWN, villager.blockPosition());
+        ClipboardWorkforceSnapshot blocked = ClipboardWorkforceService.snapshot(hirer);
+        helper.assertTrue(
+                blocked.workers().getFirst().noTargets(),
+                "the same target failure should be reported while it is the current blocked state");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        HiredVillagerIndex.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200, batch = "clipboard_builder_diagnostics")
+    public static void clipboardClassifiesBuilderStorageRootCauses(GameTestHelper helper) {
+        HiredVillagerIndex.clearRuntimeState();
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrClipboardBuilderCauses");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.MASON));
+
+        HiredVillagerContractService.startOneOffBuilderJob(level, villager, hirer);
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putBoolean("Enabled", true);
+        HiredVillagerIndex.update(level, villager);
+
+        HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.WAITING_FOR_MATERIALS, null);
+        HiredWorkerBrain.setFailure(session.context(), "missing_builder_materials_storage_too_far", 0L);
+        ClipboardWorkforceSnapshot.WorkerRow tooFar = ClipboardWorkforceService.snapshot(hirer).workers().getFirst();
+        helper.assertTrue(tooFar.materialStorageUnreachable(), "distant builder storage should be reported as unavailable");
+        helper.assertFalse(tooFar.missingMaterials(), "distant storage should not be mislabeled as missing materials");
+
+        HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.PAUSED_FULL_INVENTORY, villager.blockPosition());
+        HiredWorkerBrain.setFailure(session.context(), "builder_material_output_storage_unreachable", level.getGameTime() + 100L);
+        ClipboardWorkforceSnapshot.WorkerRow unreachable = ClipboardWorkforceService.snapshot(hirer).workers().getFirst();
+        helper.assertTrue(unreachable.materialStorageUnreachable(), "blocked builder output storage should report the path issue");
+        helper.assertFalse(unreachable.materialInventoryFull(), "a blocked storage path is not a material-capacity issue");
+        helper.assertFalse(unreachable.inventoryFull(), "the root storage-path issue should suppress the generic inventory warning");
+
+        HiredWorkerBrain.setFailure(session.context(), "builder_material_inventory_full", level.getGameTime() + 100L);
+        ClipboardWorkforceSnapshot.WorkerRow full = ClipboardWorkforceService.snapshot(hirer).workers().getFirst();
+        helper.assertTrue(full.materialInventoryFull(), "builder material capacity should retain its specialized warning");
+        helper.assertFalse(full.materialStorageUnreachable(), "material capacity should not be reported as an unreachable path");
+        helper.assertFalse(full.inventoryFull(), "specialized material capacity should suppress the generic inventory warning");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        HiredVillagerIndex.clearRuntimeState();
         villager.discard();
         helper.succeed();
     }
@@ -6044,6 +6202,22 @@ public final class VillagerWorkerGameTests {
                 100,
                 true,
                 true);
+    }
+
+    private static final class OutputDepositProbe extends AbstractBlockWorker {
+        private DepositResult deposit(ServerLevel level, HiredWorkContext context, Villager villager) {
+            return depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
+        }
+
+        @Override
+        public HiredVillagerRole role() {
+            return HiredVillagerRole.FARMING;
+        }
+
+        @Override
+        public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
+            return WorkResult.idle("interaction.work.status.idle");
+        }
     }
 
     private static HiredWorkContext routeContext(

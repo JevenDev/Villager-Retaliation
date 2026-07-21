@@ -1,14 +1,19 @@
 package com.jvn.villagerretaliation.debug;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
+import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
+import com.jvn.villagerretaliation.interaction.HiredWorkSession;
 import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardRouteEntry;
+import com.jvn.villagerretaliation.network.ClipboardPreviewMarkerSyncPayload;
 import com.jvn.villagerretaliation.network.HiredDebugPreviewSyncPayload;
 import com.jvn.villagerretaliation.network.HiredHitboxDebugPreviewPayload;
 import com.jvn.villagerretaliation.network.ServerboundRequestLimiter;
@@ -34,8 +39,11 @@ public final class HiredDebugPreviewService {
     public static final double DEFAULT_RADIUS = 128.0D;
     public static final double MAX_RADIUS = 512.0D;
     private static final int REFRESH_TICKS = 80;
+    private static final int MARKER_REFRESH_TICKS = 10;
     private static final int VISIBLE_TICKS = REFRESH_TICKS + 40;
     private static final Map<UUID, DebugPreviewState> ENABLED_PLAYERS = new HashMap<>();
+    private static final Map<UUID, ClipboardPreviewSelection> CLIPBOARD_SELECTIONS = new HashMap<>();
+    private static final Map<UUID, Long> NEXT_MARKER_REFRESH = new HashMap<>();
 
     private HiredDebugPreviewService() {
     }
@@ -62,31 +70,58 @@ public final class HiredDebugPreviewService {
     }
 
     public static DebugPreviewSummary setClipboardPreviewEnabled(ServerPlayer player, boolean enabled) {
+        DebugPreviewState state = ENABLED_PLAYERS.get(player.getUUID());
         if (!enabled) {
-            DebugPreviewState state = ENABLED_PLAYERS.get(player.getUUID());
+            CLIPBOARD_SELECTIONS.remove(player.getUUID());
+            NEXT_MARKER_REFRESH.remove(player.getUUID());
             if (state == null) {
                 return new DebugPreviewSummary(false, 0, 0, 0, DEFAULT_RADIUS);
             }
             return applyState(player, state.withClipboard(false).refreshNow(), DEFAULT_RADIUS);
         }
+        if (state != null && state.clipboardEnabled()) {
+            if (player.level() instanceof ServerLevel level
+                    && level.getGameTime() < state.nextRefreshGameTime()) {
+                return new DebugPreviewSummary(true, 0, 0, 0, state.radius());
+            }
+            return applyState(player, state.refreshNow(), DEFAULT_RADIUS);
+        }
         if (!hasHeldClipboard(player)) {
-            DebugPreviewState state = ENABLED_PLAYERS.get(player.getUUID());
             if (state != null) {
                 return applyState(player, state.withClipboard(false).refreshNow(), DEFAULT_RADIUS);
             }
             return new DebugPreviewSummary(false, 0, 0, 0, DEFAULT_RADIUS);
         }
-        DebugPreviewState state = ENABLED_PLAYERS.get(player.getUUID());
-        if (state != null
-                && state.clipboardEnabled()
-                && player.level() instanceof ServerLevel level
-                && level.getGameTime() < state.nextRefreshGameTime()) {
-            return new DebugPreviewSummary(true, 0, 0, 0, state.radius());
-        }
         DebugPreviewState updated = state == null
                 ? new DebugPreviewState(DEFAULT_RADIUS, 0L, false, true, false)
                 : state.withClipboard(true).refreshNow();
         return applyState(player, updated, DEFAULT_RADIUS);
+    }
+
+    public static DebugPreviewSummary configureClipboardPreview(
+            ServerPlayer player,
+            boolean enabled,
+            String lens,
+            List<String> trackedJobs) {
+        if (player == null) {
+            return new DebugPreviewSummary(false, 0, 0, 0, DEFAULT_RADIUS);
+        }
+        UUID playerId = player.getUUID();
+        if (!enabled) {
+            CLIPBOARD_SELECTIONS.remove(playerId);
+            NEXT_MARKER_REFRESH.remove(playerId);
+            return setClipboardPreviewEnabled(player, false);
+        }
+        ClipboardPreviewSelection selection = new ClipboardPreviewSelection(lens, trackedJobs);
+        CLIPBOARD_SELECTIONS.put(playerId, selection);
+        DebugPreviewSummary summary = setClipboardPreviewEnabled(player, true);
+        long gameTime = player.level() instanceof ServerLevel level ? level.getGameTime() : 0L;
+        if (selection.refreshesMarkers()
+                && gameTime >= NEXT_MARKER_REFRESH.getOrDefault(playerId, 0L)) {
+            syncClipboardMarkers(player, selection);
+            NEXT_MARKER_REFRESH.put(playerId, gameTime + MARKER_REFRESH_TICKS);
+        }
+        return summary;
     }
 
     public static DebugPreviewSummary setHitboxDebugPreviewEnabled(ServerPlayer player, boolean enabled) {
@@ -131,16 +166,15 @@ public final class HiredDebugPreviewService {
             }
             ENABLED_PLAYERS.put(player.getUUID(), state);
         }
-        if (state.clipboardEnabled() && !hasHeldClipboard(player)) {
-            state = state.withClipboard(false).refreshNow();
-            if (!state.active()) {
-                ENABLED_PLAYERS.remove(player.getUUID());
-                PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
-                return;
-            }
-            ENABLED_PLAYERS.put(player.getUUID(), state);
-        }
         long gameTime = level.getGameTime();
+        ClipboardPreviewSelection selection = CLIPBOARD_SELECTIONS.get(player.getUUID());
+        if (state.clipboardEnabled()
+                && selection != null
+                && selection.refreshesMarkers()
+                && gameTime >= NEXT_MARKER_REFRESH.getOrDefault(player.getUUID(), 0L)) {
+            syncClipboardMarkers(player, selection);
+            NEXT_MARKER_REFRESH.put(player.getUUID(), gameTime + MARKER_REFRESH_TICKS);
+        }
         if (gameTime < state.nextRefreshGameTime()) {
             return;
         }
@@ -149,12 +183,55 @@ public final class HiredDebugPreviewService {
 
     public static void clearRuntimeState() {
         ENABLED_PLAYERS.clear();
+        CLIPBOARD_SELECTIONS.clear();
+        NEXT_MARKER_REFRESH.clear();
     }
 
     public static void clearRuntimeState(ServerPlayer player) {
         if (player != null) {
             ENABLED_PLAYERS.remove(player.getUUID());
+            CLIPBOARD_SELECTIONS.remove(player.getUUID());
+            NEXT_MARKER_REFRESH.remove(player.getUUID());
         }
+    }
+
+    public static void disableForPlayer(ServerPlayer player) {
+        if (player == null) {
+            return;
+        }
+        ENABLED_PLAYERS.remove(player.getUUID());
+        CLIPBOARD_SELECTIONS.remove(player.getUUID());
+        NEXT_MARKER_REFRESH.remove(player.getUUID());
+        PacketDistributor.sendToPlayer(player, HiredDebugPreviewSyncPayload.disabled());
+    }
+
+    private static void syncClipboardMarkers(ServerPlayer player, ClipboardPreviewSelection selection) {
+        if (player == null || selection == null || !selection.refreshesMarkers()) {
+            return;
+        }
+        List<ClipboardPreviewMarkerSyncPayload.Entry> entries = new ArrayList<>();
+        for (HiredVillagerIndex.Target target : HiredVillagerIndex.targetsFor(player)) {
+            HiredWorkSession session = HiredWorkSession.active(target.level(), target.villager());
+            HiredVillagerRole role = session.role();
+            if (!selection.includes(role)) {
+                continue;
+            }
+            HiredWorkerBrain.Snapshot brain = HiredWorkerBrain.snapshot(
+                    session.state(), target.level().getGameTime());
+            BlockPos currentTarget = brain.targetPos() == null ? brain.storageTargetPos() : brain.targetPos();
+            entries.add(new ClipboardPreviewMarkerSyncPayload.Entry(
+                    target.villager().getUUID(),
+                    target.level().dimension().location(),
+                    target.villager().blockPosition(),
+                    currentTarget,
+                    VillagerPresetNameRegistry.resolveDisplayName(target.villager()).getString(),
+                    role.label(),
+                    ClipboardWorkforceService.previewStatus(role, brain, session.inventory())));
+            if (entries.size() >= ClipboardPreviewMarkerSyncPayload.MAX_ENTRIES) {
+                break;
+            }
+        }
+        PacketDistributor.sendToPlayer(player, new ClipboardPreviewMarkerSyncPayload(entries));
     }
 
     private static DebugPreviewSummary refreshNow(ServerPlayer player) {
@@ -327,6 +404,34 @@ public final class HiredDebugPreviewService {
     }
 
     public record DebugPreviewSummary(boolean enabled, int villagers, int workAreas, int storage, double radius) {
+    }
+
+    private record ClipboardPreviewSelection(String lens, Set<String> trackedJobs) {
+        private ClipboardPreviewSelection(String lens, List<String> trackedJobs) {
+            this(
+                    lens == null ? "none" : lens.trim().toLowerCase(java.util.Locale.ROOT),
+                    trackedJobs == null
+                            ? Set.of()
+                            : trackedJobs.stream()
+                                    .filter(job -> job != null && !job.isBlank())
+                                    .map(job -> job.trim().toLowerCase(java.util.Locale.ROOT))
+                                    .collect(java.util.stream.Collectors.toUnmodifiableSet()));
+        }
+
+        private boolean tracksAssignments() {
+            return "assignments".equals(this.lens) && !this.trackedJobs.isEmpty();
+        }
+
+        private boolean refreshesMarkers() {
+            return "workforce".equals(this.lens)
+                    || "problems".equals(this.lens)
+                    || tracksAssignments();
+        }
+
+        private boolean includes(HiredVillagerRole role) {
+            return role != null && (!"assignments".equals(this.lens)
+                    || this.trackedJobs.contains(role.serializedName()));
+        }
     }
 
     private record DebugPreviewState(
