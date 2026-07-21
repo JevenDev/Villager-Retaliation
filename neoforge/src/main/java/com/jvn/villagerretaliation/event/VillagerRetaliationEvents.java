@@ -1008,60 +1008,7 @@ public final class VillagerRetaliationEvents {
     }
 
     private static Component villagerDeathMessage(Villager villager, DamageSource source) {
-        Component villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager);
-        Player hazardOwner = ToucanHazardAttribution.resolveVanillaHazardOwner(villager, source)
-                .filter(Player.class::isInstance)
-                .map(Player.class::cast)
-                .orElse(null);
-        if (hazardOwner != null) {
-            return attributedHazardDeathMessage(villagerName, hazardOwner, source);
-        }
-
-        String messageId = "death.attack." + source.getMsgId();
-        Entity attacker = source.getEntity();
-        if (attacker == null || attacker == villager) {
-            return Component.translatable(messageId, villagerName);
-        }
-
-        return Component.translatable(messageId, villagerName, attacker.getDisplayName());
-    }
-
-    private static Component attributedHazardDeathMessage(Component villagerName, Player player, DamageSource source) {
-        return Component.literal("")
-                .append(villagerName)
-                .append(" ")
-                .append(attributedHazardDeathPhrase(source))
-                .append(" by ")
-                .append(player.getDisplayName())
-                .append(" using ")
-                .append(attributedHazardTool(source));
-    }
-
-    private static String attributedHazardDeathPhrase(DamageSource source) {
-        String messageId = source.getMsgId();
-        if (messageId.equals("lava")
-                || messageId.equals("inFire")
-                || messageId.equals("onFire")
-                || messageId.equals("hotFloor")
-                || messageId.equals("fireball")
-                || messageId.equals("unattributedFireball")) {
-            return "burned to death";
-        }
-        return "died";
-    }
-
-    private static String attributedHazardTool(DamageSource source) {
-        String messageId = source.getMsgId();
-        if (messageId.equals("lava")) {
-            return "a lava bucket";
-        }
-        if (messageId.equals("fireball") || messageId.equals("unattributedFireball")) {
-            return "a fire charge";
-        }
-        if (messageId.equals("inFire") || messageId.equals("onFire")) {
-            return "flint and steel";
-        }
-        return "a hazard";
+        return VillagerDeathMessageFactory.create(villager, source);
     }
 
     private static boolean shouldCancelVillagerGolemDamage(Entity victim, Entity attacker, Entity directAttacker) {
