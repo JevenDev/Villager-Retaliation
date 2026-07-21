@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedPose;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionSavedData;
+import com.jvn.villagerretaliation.event.VillagerDeathMessageFactory;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -52,6 +53,8 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -95,6 +98,53 @@ public final class VillagerGameplayGameTests {
     }
 
     private VillagerGameplayGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerLavaDeathReflectsRecentPlayerCombat(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.setCustomName(Component.literal("Ember"));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        helper.assertTrue(
+                villager.hurt(helper.getLevel().damageSources().playerAttack(player), 1.0F),
+                "player damage should enter the villager in combat");
+
+        var lava = helper.getLevel().damageSources().lava();
+        villager.getCombatTracker().recordDamage(lava, 1.0F);
+        Component message = VillagerDeathMessageFactory.create(villager, lava);
+        TranslatableContents translation = translated(message, helper);
+
+        helper.assertValueEqual(translation.getKey(), "death.attack.lava.player", "contextual lava death key");
+        helper.assertValueEqual(((Component) translation.getArgs()[0]).getString(), "Ember", "villager display name");
+        helper.assertValueEqual(
+                ((Component) translation.getArgs()[1]).getString(), player.getDisplayName().getString(),
+                "recent combat opponent");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerFallDeathUsesVanillaAssistanceContext(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.setCustomName(Component.literal("Cliff"));
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        villager.getCombatTracker().recordDamage(helper.getLevel().damageSources().playerAttack(player), 1.0F);
+        villager.fallDistance = 8.0F;
+
+        var fall = helper.getLevel().damageSources().fall();
+        villager.getCombatTracker().recordDamage(fall, 20.0F);
+        TranslatableContents translation = translated(VillagerDeathMessageFactory.create(villager, fall), helper);
+
+        helper.assertValueEqual(translation.getKey(), "death.fell.assist", "assisted-fall death key");
+        helper.assertValueEqual(((Component) translation.getArgs()[0]).getString(), "Cliff", "villager display name");
+        helper.assertValueEqual(
+                ((Component) translation.getArgs()[1]).getString(), player.getDisplayName().getString(),
+                "fall assister");
+        helper.succeed();
+    }
+
+    private static TranslatableContents translated(Component component, GameTestHelper helper) {
+        helper.assertTrue(component.getContents() instanceof TranslatableContents, "death message should remain translatable");
+        return (TranslatableContents) component.getContents();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
