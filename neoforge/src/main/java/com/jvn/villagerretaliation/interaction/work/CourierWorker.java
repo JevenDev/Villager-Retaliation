@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedCo
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -200,7 +201,7 @@ public final class CourierWorker implements HiredRoleWorker {
 
         BlockPos output = storedTarget(context);
         if (output == null || !outputs.contains(output)) {
-            output = AssignedStorageService.nearestAssignedOutputStoragePos(level, villager, outputs::contains);
+            output = selectOutput(level, villager, context, outputs);
             if (output == null) {
                 HiredWorkerBrain.setFailure(context, "courier_output_unavailable", level.getGameTime() + 100L);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE, null);
@@ -220,7 +221,7 @@ public final class CourierWorker implements HiredRoleWorker {
         if (movement == HiredStorageNavigationGoal.Result.FAILED) {
             AssignedStorageService.rememberOutputStorageFailure(level, villager, output, "courier_output_unreachable");
             clearStoredTarget(context);
-            BlockPos alternateOutput = AssignedStorageService.nearestAssignedOutputStoragePos(level, villager, outputs::contains);
+            BlockPos alternateOutput = selectOutput(level, villager, context, outputs);
             if (alternateOutput != null) {
                 storeTarget(context, alternateOutput);
                 HiredWorkerBrain.setStorageTarget(context, alternateOutput);
@@ -242,14 +243,22 @@ public final class CourierWorker implements HiredRoleWorker {
         int deliveredItems = context.inventory().collectOutputItems().stream()
                 .mapToInt(outputItem -> outputItem.stack().getCount())
                 .sum();
+        BlockPos selectedOutput = output;
         while (context.inventory().hasOutputItems()
-                && context.inventory().depositOutputToAssignedStorageAt(output)) {
+                && context.inventory().depositOutputToAssignedStorageAt(
+                        selectedOutput,
+                        stack -> AssignedStorageService.courierOutputStorageAccepts(level, villager, selectedOutput, stack))) {
         }
         if (context.inventory().hasOutputItems()) {
-            AssignedStorageService.closeStorageFeedback(level, output);
-            AssignedStorageService.rememberOutputStorageFull(level, villager, output);
+            boolean acceptsRemainingCargo = context.inventory().collectOutputItems().stream()
+                    .map(outputItem -> outputItem.stack())
+                    .anyMatch(stack -> AssignedStorageService.courierOutputStorageAccepts(level, villager, selectedOutput, stack));
+            if (acceptsRemainingCargo) {
+                AssignedStorageService.closeStorageFeedback(level, output);
+                AssignedStorageService.rememberOutputStorageFull(level, villager, output);
+            }
             clearStoredTarget(context);
-            BlockPos alternateOutput = AssignedStorageService.nearestAssignedOutputStoragePos(level, villager, outputs::contains);
+            BlockPos alternateOutput = selectOutput(level, villager, context, outputs);
             if (alternateOutput != null) {
                 storeTarget(context, alternateOutput);
                 HiredWorkerBrain.setStorageTarget(context, alternateOutput);
@@ -274,6 +283,21 @@ public final class CourierWorker implements HiredRoleWorker {
         return WorkResult.progressedWithPractice(
                 "interaction.work.courier.delivered_items",
                 HiredWorkPractice.courier(deliveredItems, routeDistance(route)));
+    }
+
+    private static BlockPos selectOutput(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            Set<BlockPos> outputs) {
+        List<ItemStack> cargo = context.inventory().collectOutputItems().stream()
+                .map(output -> output.stack())
+                .toList();
+        return AssignedStorageService.nearestAssignedCourierOutputStoragePos(
+                level,
+                villager,
+                cargo,
+                outputs::contains);
     }
 
     static double routeDistance(HiredRoute route) {

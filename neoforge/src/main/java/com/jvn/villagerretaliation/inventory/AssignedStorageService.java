@@ -19,6 +19,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -26,6 +27,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class AssignedStorageService {
@@ -315,6 +317,85 @@ public final class AssignedStorageService {
             Villager villager,
             Predicate<BlockPos> positionFilter) {
         return nearestAssignedStoragePos(level, villager, positionFilter, StorageUse.OUTPUT);
+    }
+
+    /**
+     * Selects a courier destination for its current cargo. Framed outputs that match any cargo
+     * item take priority over unframed outputs, allowing item frames to act as destination filters.
+     */
+    public static BlockPos nearestAssignedCourierOutputStoragePos(
+            ServerLevel level,
+            Villager villager,
+            List<ItemStack> cargo,
+            Predicate<BlockPos> positionFilter) {
+        Predicate<BlockPos> safeFilter = positionFilter == null ? ignored -> true : positionFilter;
+        List<ItemStack> nonEmptyCargo = cargo == null
+                ? List.of()
+                : cargo.stream().filter(stack -> stack != null && !stack.isEmpty()).toList();
+        BlockPos villagerPos = villager.blockPosition();
+        return liveOutputContainerCandidates(level, villager).stream()
+                .filter(candidate -> candidate.anyPositionMatches(safeFilter))
+                .filter(candidate -> !isStorageRecentlyFailed(level, villager, candidate, StorageUse.OUTPUT))
+                .filter(candidate -> nonEmptyCargo.stream().anyMatch(stack -> courierOutputAccepts(level, candidate, stack)))
+                .min((first, second) -> {
+                    int framedComparison = Boolean.compare(
+                            hasCourierItemFrame(level, second),
+                            hasCourierItemFrame(level, first));
+                    return framedComparison != 0
+                            ? framedComparison
+                            : Double.compare(first.distanceToSqr(villagerPos), second.distanceToSqr(villagerPos));
+                })
+                .map(candidate -> candidate.nearestPosition(villagerPos, safeFilter))
+                .orElse(null);
+    }
+
+    public static boolean courierOutputStorageAccepts(
+            ServerLevel level,
+            Villager villager,
+            BlockPos storagePos,
+            ItemStack stack) {
+        if (level == null || villager == null || storagePos == null || stack == null || stack.isEmpty()) {
+            return false;
+        }
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveOutputContainerCandidates(level, villager)) {
+            if (candidate.matches(storagePos)) {
+                return courierOutputAccepts(level, candidate, stack);
+            }
+        }
+        return false;
+    }
+
+    private static boolean courierOutputAccepts(
+            ServerLevel level,
+            VillagerInventoryOverflowService.ContainerCandidate candidate,
+            ItemStack stack) {
+        List<ItemStack> filters = courierItemFrameFilters(level, candidate);
+        return filters.isEmpty() || filters.stream().anyMatch(filter -> stack.is(filter.getItem()));
+    }
+
+    private static boolean hasCourierItemFrame(
+            ServerLevel level,
+            VillagerInventoryOverflowService.ContainerCandidate candidate) {
+        return !courierItemFrameFilters(level, candidate).isEmpty();
+    }
+
+    private static List<ItemStack> courierItemFrameFilters(
+            ServerLevel level,
+            VillagerInventoryOverflowService.ContainerCandidate candidate) {
+        List<ItemStack> filters = new ArrayList<>();
+        for (BlockPos containerPos : candidate.positions()) {
+            for (ItemFrame frame : level.getEntitiesOfClass(
+                    ItemFrame.class,
+                    new AABB(containerPos).inflate(1.0D),
+                    candidateFrame -> candidateFrame.isAlive()
+                            && candidateFrame.getPos()
+                                    .relative(candidateFrame.getDirection().getOpposite())
+                                    .equals(containerPos)
+                            && !candidateFrame.getItem().isEmpty())) {
+                filters.add(frame.getItem().copyWithCount(1));
+            }
+        }
+        return filters;
     }
 
     private static BlockPos nearestAssignedStoragePos(
