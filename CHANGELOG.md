@@ -1,5 +1,7 @@
 # Changelog
 
+- Added a default-on Player Raid horn confirmation. The first horn use warns the player in chat, and a second use by the same player in the same village within 30 seconds declares the raid.
+
 - Fixed recruited-villager retaliation limits ignoring high reputation; Revered recruits now allow five hits before disciplining the player, while Royalty recruits retain their retaliation bypass.
 
 - Improved heavy clipboard and hitbox debug-preview performance by culling off-screen containers, job sites, routes, markers, and text; limiting worst-case visible route and label work; and caching terrain-following route geometry between frames. The visible node, label, and route-segment limits are configurable in the Debug Overlay settings.

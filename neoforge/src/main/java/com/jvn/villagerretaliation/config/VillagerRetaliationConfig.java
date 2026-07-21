@@ -185,6 +185,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> DESPISED_THRESHOLD = bind("reputation.despisedThreshold", Integer.class);
     public static final ConfigValue<Integer> FEARED_THRESHOLD = bind("reputation.fearedThreshold", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_PLAYER_RAIDS = bind("playerRaids.enabled", Boolean.class);
+    public static final ConfigValue<Boolean> CONFIRM_RAID_HORN = bind("playerRaids.confirmRaidHorn", Boolean.class);
     public static final ConfigValue<Integer> PLAYER_RAID_PREPARATION_TICKS = bind("playerRaids.preparationTicks", Integer.class);
     public static final ConfigValue<Integer> PLAYER_RAID_ABANDONMENT_TICKS = bind("playerRaids.abandonmentTicks", Integer.class);
     public static final ConfigValue<Integer> PLAYER_RAID_VILLAGE_COOLDOWN_DAYS = bind("playerRaids.villageCooldownDays", Integer.class);

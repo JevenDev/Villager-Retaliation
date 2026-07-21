@@ -566,6 +566,8 @@ public final class VillagerRetaliationConfigModel {
     public static final class PlayerRaids {
         public boolean enabled = true;
 
+        public boolean confirmRaidHorn = true;
+
         @RangeConstraint(min = 20, max = 20 * 60)
         public int preparationTicks = 200;
 
