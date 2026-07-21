@@ -24,6 +24,7 @@ import com.google.gson.JsonObject;
 import com.jvn.villagerretaliation.combat.PacifyPaymentOffer;
 import com.jvn.villagerretaliation.combat.VillagerPacificationResult;
 import com.jvn.villagerretaliation.mood.VillagerMood;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.util.DatapackDiagnostics;
@@ -1731,8 +1732,14 @@ public final class VillagerDialogueResources {
             if (!this.reputationCondition.matches(context.reputation(), context.reputationLevel())) {
                 return false;
             }
-            if (this.requiresOminousBanner && !OminousBannerRecognition.isDisplaying(context.player())) {
-                return false;
+            if (this.requiresOminousBanner) {
+                if (!OminousBannerRecognition.isDisplaying(context.player())) {
+                    return false;
+                }
+                if (PartyService.getPartyForVillager(context.level(), context.villager().getUUID()).isPresent()
+                        && OminousBannerRecognition.isDisplaying(context.villager())) {
+                    return false;
+                }
             }
             if (!this.playerItemCondition.matches(context.player())) {
                 return false;
