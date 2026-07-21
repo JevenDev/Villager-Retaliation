@@ -25,6 +25,8 @@ public record ClipboardAssignedStorageSyncPayload(List<Entry> entries, int ticks
             buffer.writeResourceLocation(entry.dimension());
             buffer.writeBlockPos(entry.pos());
             buffer.writeBoolean(entry.payment());
+            buffer.writeUtf(entry.ownerName(), 64);
+            buffer.writeUtf(entry.storageType(), 64);
         }
         buffer.writeVarInt(payload.ticks());
     }
@@ -33,7 +35,12 @@ public record ClipboardAssignedStorageSyncPayload(List<Entry> entries, int ticks
         int size = VillagerPayloads.readCollectionSize(buffer, MAX_ENTRIES, "clipboard assigned storage entries");
         List<Entry> entries = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
-            entries.add(new Entry(buffer.readResourceLocation(), buffer.readBlockPos(), buffer.readBoolean()));
+            entries.add(new Entry(
+                    buffer.readResourceLocation(),
+                    buffer.readBlockPos(),
+                    buffer.readBoolean(),
+                    buffer.readUtf(64),
+                    buffer.readUtf(64)));
         }
         return new ClipboardAssignedStorageSyncPayload(entries, buffer.readVarInt());
     }
@@ -43,6 +50,14 @@ public record ClipboardAssignedStorageSyncPayload(List<Entry> entries, int ticks
         return TYPE;
     }
 
-    public record Entry(ResourceLocation dimension, BlockPos pos, boolean payment) {
+    public record Entry(ResourceLocation dimension, BlockPos pos, boolean payment, String ownerName, String storageType) {
+        public Entry {
+            ownerName = ownerName == null ? "" : ownerName;
+            storageType = storageType == null ? "" : storageType;
+        }
+
+        public Entry(ResourceLocation dimension, BlockPos pos, boolean payment) {
+            this(dimension, pos, payment, "", "");
+        }
     }
 }

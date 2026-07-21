@@ -17,6 +17,7 @@ import com.jvn.villagerretaliation.network.ClipboardRouteSyncPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaDraftPayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaSyncPayload;
 import com.jvn.villagerretaliation.util.VillagerLocale;
+import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -91,7 +92,9 @@ public final class HiredStorageClipboardItem extends Item {
         if (level.isClientSide) {
             return InteractionResultHolder.success(stack);
         }
-        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer && player.isShiftKeyDown()) {
+        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer
+                && player.isShiftKeyDown()
+                && mode(stack) != ClipboardMode.NONE) {
             clearSelection(serverPlayer, stack);
             serverPlayer.displayClientMessage(Component.literal("Clipboard selection cleared."), true);
             return InteractionResultHolder.success(stack);
@@ -111,6 +114,9 @@ public final class HiredStorageClipboardItem extends Item {
 
         ServerLevel level = serverPlayer.serverLevel();
         ClipboardMode clipboardMode = mode(stack);
+        if (clipboardMode == ClipboardMode.NONE) {
+            return InteractionResult.SUCCESS;
+        }
         if (clipboardMode == ClipboardMode.WORK_AREA) {
             if (!HiredVillagerWorkService.canManageWork(level, villager, serverPlayer)) {
                 serverPlayer.displayClientMessage(Component.literal("Only the hiring player can inspect this work area."), true);
@@ -202,8 +208,9 @@ public final class HiredStorageClipboardItem extends Item {
             return;
         }
 
-        tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.change_mode").withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.change_mode").withStyle(ChatFormatting.GRAY));
         switch (currentMode) {
+            case NONE -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.none").withStyle(ChatFormatting.GRAY));
             case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> {
                 tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.assign_storage").withStyle(ChatFormatting.GRAY));
                 tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.assign_storage_variant").withStyle(ChatFormatting.GRAY));
@@ -217,12 +224,15 @@ public final class HiredStorageClipboardItem extends Item {
             }
             case ROUTE -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.route").withStyle(ChatFormatting.GRAY));
         }
+        if (currentMode == ClipboardMode.NONE) {
+            return;
+        }
         String clearKey = currentMode == ClipboardMode.SET_WORK_AREA
                 ? "item.villagerretaliation.clipboard.controls.clear_work_area"
                 : currentMode == ClipboardMode.ROUTE
                 ? "item.villagerretaliation.clipboard.controls.clear_route"
                 : "item.villagerretaliation.clipboard.controls.clear";
-        tooltip.add(Component.translatable(clearKey).withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.translatable(clearKey).withStyle(ChatFormatting.GRAY));
     }
 
     public static ClipboardMode mode(ItemStack stack) {
@@ -532,6 +542,10 @@ public final class HiredStorageClipboardItem extends Item {
 
     public static InteractionResult handleRightClickBlock(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
         return switch (mode(stack)) {
+            case NONE -> {
+                ClipboardWorkforceService.openClipboard(player);
+                yield InteractionResult.SUCCESS;
+            }
             case ASSIGN_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_PAYMENT -> selectContainer(level, player, stack, pos);
             case WORK_AREA -> {
                 player.displayClientMessage(Component.literal("Preview Job Site mode: use the clipboard on a hired villager."), true);
@@ -815,11 +829,20 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     public static void sendAssignedStorageOutlines(ServerPlayer player, List<AssignedContainerRecord> records) {
+        sendAssignedStorageOutlines(player, records, "");
+    }
+
+    private static void sendAssignedStorageOutlines(
+            ServerPlayer player,
+            List<AssignedContainerRecord> records,
+            String ownerName) {
         List<ClipboardAssignedStorageSyncPayload.Entry> entries = records.stream()
                 .map(record -> new ClipboardAssignedStorageSyncPayload.Entry(
                         record.dimension().location(),
                         record.pos(),
-                        AssignedStorageService.PAYMENT_PURPOSE.equals(AssignedStorageService.normalizePurpose(record.purpose()))))
+                        AssignedStorageService.PAYMENT_PURPOSE.equals(AssignedStorageService.normalizePurpose(record.purpose())),
+                        ownerName,
+                        storagePurposeLabel(record.purpose())))
                 .toList();
         PacketDistributor.sendToPlayer(player, new ClipboardAssignedStorageSyncPayload(entries, 200));
     }
@@ -830,12 +853,38 @@ public final class HiredStorageClipboardItem extends Item {
             player.displayClientMessage(Component.literal("No work area assigned."), true);
             return;
         }
-        PacketDistributor.sendToPlayer(player, ClipboardWorkAreaSyncPayload.assigned(level.dimension().location(), area.min(), area.max(), area.center(), 200));
-        List<AssignedContainerRecord> assigned = AssignedStorageService.assignedStorage(level, villager);
+        String ownerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        String jobName = HiredVillagerContractService.activeRole(level, villager).label();
+        PacketDistributor.sendToPlayer(player, ClipboardWorkAreaSyncPayload.assigned(
+                level.dimension().location(),
+                area.min(),
+                area.max(),
+                area.center(),
+                ownerName,
+                jobName,
+                200));
+        List<AssignedContainerRecord> assigned = AssignedStorageService.allAssignedStorage(level, villager);
         if (!assigned.isEmpty()) {
-            sendAssignedStorageOutlines(player, assigned);
+            sendAssignedStorageOutlines(player, assigned, ownerName);
         }
         player.displayClientMessage(Component.literal("Showing job site: " + area.rangeDescription() + "."), true);
+    }
+
+    private static String storagePurposeLabel(String purpose) {
+        String normalized = AssignedStorageService.normalizePurpose(purpose);
+        if (AssignedStorageService.PAYMENT_PURPOSE.equals(normalized)) {
+            return "Payment";
+        }
+        if (AssignedStorageService.TOOL_PURPOSE.equals(normalized)) {
+            return "Tool";
+        }
+        if (AssignedStorageService.INPUT_PURPOSE.equals(normalized)) {
+            return "Input";
+        }
+        if (AssignedStorageService.OUTPUT_PURPOSE.equals(normalized)) {
+            return "Output";
+        }
+        return "Storage";
     }
 
     private static void sendSelectedWorkAreaOutline(ServerPlayer player, ServerLevel level, BlockPos first, BlockPos second) {
@@ -1151,6 +1200,7 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     public enum ClipboardMode {
+        NONE("none", "None"),
         ASSIGN_STORAGE("assign_storage", "Assign Global Storage"),
         ASSIGN_TOOL_STORAGE("assign_tool_storage", "Assign Tool Storage"),
         ASSIGN_INPUT_STORAGE("assign_input_storage", "Assign Input Storage"),
@@ -1168,6 +1218,7 @@ public final class HiredStorageClipboardItem extends Item {
                 ASSIGN_OUTPUT_STORAGE
         };
         private static final ClipboardMode[] INVENTORY_CYCLE_VALUES = {
+                NONE,
                 ASSIGN_STORAGE,
                 ASSIGN_PAYMENT,
                 WORK_AREA,
@@ -1192,6 +1243,7 @@ public final class HiredStorageClipboardItem extends Item {
 
         public ChatFormatting color() {
             return switch (this) {
+            case NONE -> ChatFormatting.GRAY;
             case ASSIGN_PAYMENT -> ChatFormatting.GREEN;
             case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> ChatFormatting.BLUE;
             case WORK_AREA -> ChatFormatting.YELLOW;

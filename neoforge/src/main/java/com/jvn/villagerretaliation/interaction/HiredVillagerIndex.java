@@ -72,6 +72,27 @@ public final class HiredVillagerIndex {
         return targets;
     }
 
+    public static void reconcileLoadedFor(ServerPlayer player) {
+        if (player == null || player.server == null) {
+            return;
+        }
+        UUID ownerId = player.getUUID();
+        for (ServerLevel level : player.server.getAllLevels()) {
+            for (Entity entity : level.getAllEntities()) {
+                if (!(entity instanceof Villager villager)
+                        || !villager.isAlive()
+                        || villager.isBaby()
+                        || !HiredVillagerContractService.hasContract(villager)) {
+                    continue;
+                }
+                Optional<UUID> owner = HiredVillagerContractService.getHirer(level, villager);
+                if (owner.isPresent() && owner.get().equals(ownerId)) {
+                    upsert(level, villager, ownerId);
+                }
+            }
+        }
+    }
+
     public static void remove(Villager villager) {
         if (villager != null) {
             remove(villager.getUUID());

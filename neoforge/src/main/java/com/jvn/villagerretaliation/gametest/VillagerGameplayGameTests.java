@@ -459,6 +459,12 @@ public final class VillagerGameplayGameTests {
         helper.assertValueEqual(snapshot.workers().size(), 1, "clipboard worker rows");
         helper.assertValueEqual(snapshot.workers().getFirst().villagerId(), villager.getUUID(), "clipboard worker id");
 
+        HiredVillagerIndex.clearRuntimeState();
+        helper.assertTrue(HiredVillagerIndex.find(player, villager.getUUID()).isEmpty(), "test should simulate a stale runtime index");
+        ClipboardWorkforceSnapshot repairedSnapshot = ClipboardWorkforceService.snapshot(player);
+        helper.assertValueEqual(repairedSnapshot.totalHired(), 1, "clipboard should recover a loaded hired villager");
+        helper.assertTrue(HiredVillagerIndex.find(player, villager.getUUID()).isPresent(), "clipboard snapshot should repair the runtime index");
+
         HiredVillagerContractService.endHireContract(level, villager, player);
         helper.assertTrue(HiredVillagerIndex.find(player, villager.getUUID()).isEmpty(), "ended contract should leave index");
         helper.assertValueEqual(ClipboardWorkforceService.snapshot(player).totalHired(), 0, "clipboard total after end");
