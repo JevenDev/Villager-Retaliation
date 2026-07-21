@@ -10,6 +10,7 @@ public enum HiredVillagerRole {
     FARMING("farming"),
     FISHING("fishing"),
     BREWING("brewing"),
+    CRAFTSMAN("craftsman"),
     BUILDER("builder"),
     ANIMAL_HANDLING("animal_handling"),
     NITWIT("nitwit"),

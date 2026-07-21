@@ -80,6 +80,7 @@ import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
@@ -252,6 +253,50 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(countInventoryItem(inventory, Items.BREAD), 1, "bread output");
 
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void craftsmanExactRecipeProducesJobOutputTransactionally(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 8, 0, 8, 1);
+        setBlock(helper, new BlockPos(3, 2, 3), Blocks.CRAFTING_TABLE.defaultBlockState());
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredWorkContext context = context(
+                helper, villager, new CompoundTag(), new BlockPos(1, 2, 1), new BlockPos(7, 4, 7), true);
+        HiredJobInventory inventory = context.inventory();
+        helper.assertTrue(inventory.insertSupply(new ItemStack(Items.WHEAT, 3)).isEmpty(), "wheat should fit");
+        CraftingRecipe breadRecipe = level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING).stream()
+                .map(holder -> holder.value())
+                .filter(recipe -> recipe.getResultItem(level.registryAccess()).is(Items.BREAD))
+                .findFirst()
+                .orElseThrow();
+
+        helper.assertTrue(
+                HiredSupplyCrafting.craftCarriedRecipeToOutputsWithStations(level, context, breadRecipe),
+                "the selected exact recipe should craft");
+        helper.assertValueEqual(countInventoryItem(inventory, Items.WHEAT), 0, "exact craft input");
+        int outputBread = inventory.outputSlots().stream()
+                .map(inventory::getItem)
+                .filter(stack -> stack.is(Items.BREAD))
+                .mapToInt(ItemStack::getCount)
+                .sum();
+        helper.assertValueEqual(outputBread, 1, "crafted item should be classified as output");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void craftsmanModesCycleAndPersist(GameTestHelper helper) {
+        CompoundTag state = new CompoundTag();
+        helper.assertValueEqual(CraftsmanWorker.mode(state), CraftsmanWorker.Mode.PREFER_FIRST, "default mode");
+        helper.assertValueEqual(CraftsmanWorker.cycleMode(state), CraftsmanWorker.Mode.ROUND_ROBIN, "round robin mode");
+        helper.assertValueEqual(CraftsmanWorker.mode(state), CraftsmanWorker.Mode.ROUND_ROBIN, "stored round robin mode");
+        helper.assertValueEqual(
+                CraftsmanWorker.cycleMode(state),
+                CraftsmanWorker.Mode.FORCED_ROUND_ROBIN,
+                "forced round robin mode");
+        helper.assertValueEqual(CraftsmanWorker.cycleMode(state), CraftsmanWorker.Mode.PREFER_FIRST, "mode wraps");
         helper.succeed();
     }
 

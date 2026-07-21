@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.interaction.work_craftsman"
+  },
+  "messages": [
+    {
+      "key": "interaction.work.craftsman.no_filter",
+      "lines": [
+        "Assign me an item filter with the things you want crafted."
+      ],
+      "id": "global.messages.22_work_craftsman.no_filter"
+    },
+    {
+      "key": "interaction.work.craftsman.no_table",
+      "lines": [
+        "I need a crafting table inside my work area."
+      ],
+      "id": "global.messages.22_work_craftsman.no_table"
+    },
+    {
+      "key": "interaction.work.craftsman.missing_materials",
+      "lines": [
+        "I do not have the materials for the selected recipes."
+      ],
+      "id": "global.messages.22_work_craftsman.missing_materials"
+    },
+    {
+      "key": "interaction.work.craftsman.depositing_outputs",
+      "lines": [
+        "I am putting away the finished items before crafting more."
+      ],
+      "id": "global.messages.22_work_craftsman.depositing_outputs"
+    },
+    {
+      "key": "interaction.work.craftsman.collecting_materials",
+      "lines": [
+        "I am collecting the materials for the next recipe."
+      ],
+      "id": "global.messages.22_work_craftsman.collecting_materials"
+    },
+    {
+      "key": "interaction.work.craftsman.collected_materials",
+      "lines": [
+        "I have the materials for the next recipe."
+      ],
+      "id": "global.messages.22_work_craftsman.collected_materials"
+    },
+    {
+      "key": "interaction.work.craftsman.materials_unreachable",
+      "lines": [
+        "The required materials are in storage, but I cannot reach them."
+      ],
+      "id": "global.messages.22_work_craftsman.materials_unreachable"
+    },
+    {
+      "key": "interaction.work.craftsman.material_inventory_full",
+      "lines": [
+        "My supply slots are too full to collect the recipe materials."
+      ],
+      "id": "global.messages.22_work_craftsman.material_inventory_full"
+    },
+    {
+      "key": "interaction.work.craftsman.table_unreachable",
+      "lines": [
+        "I cannot reach the crafting table."
+      ],
+      "id": "global.messages.22_work_craftsman.table_unreachable"
+    },
+    {
+      "key": "interaction.work.craftsman.moving_to_table",
+      "lines": [
+        "I am heading to the crafting table."
+      ],
+      "id": "global.messages.22_work_craftsman.moving_to_table"
+    },
+    {
+      "key": "interaction.work.craftsman.crafting",
+      "lines": [
+        "I am crafting the next item."
+      ],
+      "id": "global.messages.22_work_craftsman.crafting"
+    },
+    {
+      "key": "interaction.work.craftsman.output_full",
+      "lines": [
+        "I have no room for the crafted output."
+      ],
+      "id": "global.messages.22_work_craftsman.output_full"
+    },
+    {
+      "key": "interaction.work.craftsman.crafted",
+      "lines": [
+        "I crafted {count} {item}."
+      ],
+      "id": "global.messages.22_work_craftsman.crafted"
+    },
+    {
+      "key": "interaction.work.craftsman.mode_changed",
+      "lines": [
+        "Crafting mode set to {mode}."
+      ],
+      "id": "global.messages.22_work_craftsman.mode_changed"
+    },
+    {
+      "key": "interaction.work_report.craftsman",
+      "lines": [
+        "Current work: {status}"
+      ],
+      "id": "global.messages.22_work_craftsman.work_report"
+    },
+    {
+      "key": "interaction.work_final_report.craftsman",
+      "lines": [
+        "Final crafting report: {status}"
+      ],
+      "id": "global.messages.22_work_craftsman.final_report"
+    }
+  ]
+}

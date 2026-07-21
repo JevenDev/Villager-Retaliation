@@ -1240,6 +1240,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addHireRoleOption(HiredVillagerRole.FARMING, "recruit.role_farming");
         addHireRoleOption(HiredVillagerRole.FISHING, "recruit.role_fishing");
         addHireRoleOption(HiredVillagerRole.BREWING, "recruit.role_brewing");
+        addHireRoleOption(HiredVillagerRole.CRAFTSMAN, "recruit.role_craftsman");
         addHireRoleOption(HiredVillagerRole.COOK, "recruit.role_cook");
         addHireRoleOption(HiredVillagerRole.SMELTER, "recruit.role_smelter");
         addHireRoleOption(HiredVillagerRole.COURIER, "recruit.role_courier");
@@ -1342,6 +1343,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addRoleChangeOption(HiredVillagerRole.FARMING, "recruit.role_farming", VillagerRecruitRequestPayload.Action.SET_ROLE_FARMING);
         addRoleChangeOption(HiredVillagerRole.FISHING, "recruit.role_fishing", VillagerRecruitRequestPayload.Action.SET_ROLE_FISHING);
         addRoleChangeOption(HiredVillagerRole.BREWING, "recruit.role_brewing", VillagerRecruitRequestPayload.Action.SET_ROLE_BREWING);
+        addRoleChangeOption(HiredVillagerRole.CRAFTSMAN, "recruit.role_craftsman", VillagerRecruitRequestPayload.Action.SET_ROLE_CRAFTSMAN);
         addRoleChangeOption(HiredVillagerRole.COOK, "recruit.role_cook", VillagerRecruitRequestPayload.Action.SET_ROLE_COOK);
         addRoleChangeOption(HiredVillagerRole.SMELTER, "recruit.role_smelter", VillagerRecruitRequestPayload.Action.SET_ROLE_SMELTER);
         addRoleChangeOption(HiredVillagerRole.COURIER, "recruit.role_courier", VillagerRecruitRequestPayload.Action.SET_ROLE_COURIER);
@@ -1378,6 +1380,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             } else {
                 addOption("recruit.work_config_brewing", this::openBrewingPotionPage);
             }
+        }
+        if (isActiveHiredRole(HiredVillagerRole.CRAFTSMAN)) {
+            addOption("recruit.work_config_craftsman", () -> requestRecruit(VillagerRecruitRequestPayload.Action.CYCLE_CRAFTSMAN_MODE));
         }
         if (isActiveHiredRole(HiredVillagerRole.BUILDER)) {
             if (this.activeBuilderTask) {

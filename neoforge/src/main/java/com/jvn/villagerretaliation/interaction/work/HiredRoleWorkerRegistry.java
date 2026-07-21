@@ -18,6 +18,7 @@ public final class HiredRoleWorkerRegistry {
             worker(new FishingWorker()),
             worker(new NitwitWorker()),
             worker(new BrewingWorker()),
+            worker(new CraftsmanWorker()),
             worker(new BuilderWorker()),
             worker(new AnimalBreedingWorker()),
             worker(new CookingWorker()),
