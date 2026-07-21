@@ -64,6 +64,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.ai.behavior.HarvestFarmland;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
@@ -85,9 +86,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.LadderBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -3980,6 +3983,107 @@ public final class VillagerWorkerGameTests {
                 "courier should stand beside a container route node instead of trying to occupy it");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 400)
+    public static void courierRoutesCargoUsingOutputItemFrames(GameTestHelper helper) {
+        buildFloor(helper, 0, 11, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierFrames");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        BlockPos inputRel = new BlockPos(2, 2, 2);
+        BlockPos steakOutputRel = new BlockPos(6, 2, 2);
+        BlockPos generalOutputRel = new BlockPos(10, 2, 2);
+        BlockPos input = helper.absolutePos(inputRel);
+        BlockPos steakOutput = helper.absolutePos(steakOutputRel);
+        BlockPos generalOutput = helper.absolutePos(generalOutputRel);
+        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, steakOutputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, generalOutputRel, Blocks.CHEST.defaultBlockState());
+        container(level, input).setItem(0, new ItemStack(Items.COOKED_BEEF, 8));
+        container(level, input).setItem(1, new ItemStack(Items.DIRT, 6));
+
+        ItemFrame steakFrame = new ItemFrame(level, steakOutput.relative(Direction.SOUTH), Direction.SOUTH);
+        steakFrame.setItem(new ItemStack(Items.COOKED_BEEF));
+        helper.assertTrue(level.addFreshEntity(steakFrame), "steak output item frame should spawn");
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "framed courier input assignment");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), steakOutput),
+                        new AssignedStorageService.StoragePosition(level.dimension(), generalOutput)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 2, "framed courier output assignments");
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(inputRel, steakOutputRel, generalOutputRel));
+        CourierWorker worker = new CourierWorker();
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 360, () ->
+                countItem(container(level, steakOutput), Items.COOKED_BEEF) == 8
+                        && countItem(container(level, generalOutput), Items.DIRT) == 6
+                        && "pickup".equals(state.getString("CourierPhase")));
+
+        helper.assertValueEqual(countItem(container(level, steakOutput), Items.COOKED_BEEF), 8,
+                "matching steak should use the framed output");
+        helper.assertValueEqual(countItem(container(level, steakOutput), Items.DIRT), 0,
+                "non-matching cargo must not enter the framed output");
+        helper.assertValueEqual(countItem(container(level, generalOutput), Items.DIRT), 6,
+                "non-matching cargo should continue to another output");
+        helper.assertValueEqual(countItem(container(level, generalOutput), Items.COOKED_BEEF), 0,
+                "a matching framed output should take priority over an unframed output");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        steakFrame.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void courierItemFrameFilterCoversBothHalvesOfDoubleChest(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierDoubleFrame");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        BlockPos leftRel = new BlockPos(5, 2, 2);
+        BlockPos rightRel = leftRel.east();
+        BlockPos left = helper.absolutePos(leftRel);
+        BlockPos right = helper.absolutePos(rightRel);
+        setBlock(helper, leftRel, Blocks.CHEST.defaultBlockState()
+                .setValue(ChestBlock.FACING, Direction.NORTH)
+                .setValue(ChestBlock.TYPE, ChestType.LEFT));
+        setBlock(helper, rightRel, Blocks.CHEST.defaultBlockState()
+                .setValue(ChestBlock.FACING, Direction.NORTH)
+                .setValue(ChestBlock.TYPE, ChestType.RIGHT));
+
+        ItemFrame frame = new ItemFrame(level, right.relative(Direction.SOUTH), Direction.SOUTH);
+        frame.setItem(new ItemStack(Items.DIAMOND));
+        helper.assertTrue(level.addFreshEntity(frame), "double-chest item frame should spawn");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), left)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "double chest output assignment");
+
+        helper.assertTrue(AssignedStorageService.courierOutputStorageAccepts(
+                        level, villager, left, new ItemStack(Items.DIAMOND)),
+                "a frame on either double-chest half should filter the combined container");
+        helper.assertFalse(AssignedStorageService.courierOutputStorageAccepts(
+                        level, villager, left, new ItemStack(Items.DIRT)),
+                "the connected chest half must reject non-matching courier cargo");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        frame.discard();
         villager.discard();
         helper.succeed();
     }

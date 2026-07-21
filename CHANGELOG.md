@@ -1,5 +1,7 @@
 # Changelog
 
+- Added item-frame filters for courier output storage. Attached frames apply automatically: couriers prioritize framed containers for matching cargo, route other items to other outputs, and treat both halves of a double chest as one filtered container. Clipboard storage previews now outline a connected chest with one combined box for clearer feedback.
+
 - Fixed hired party villagers duplicating party-owned weapons and armor into personal inventory while attempting to scavenge ground upgrades; authoritative party equipment now rejects both path selection and stale pickup completion.
 - Fixed recruited and hired villagers sometimes opening the vanilla trading menu; controlled contract states now consistently suppress trading.
 

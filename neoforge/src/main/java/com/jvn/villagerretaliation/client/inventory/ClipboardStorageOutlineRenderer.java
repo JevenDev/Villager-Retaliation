@@ -41,7 +41,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -1331,12 +1333,30 @@ public final class ClipboardStorageOutlineRenderer {
     private static AABB outlineBox(Level level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         if (!state.isAir()) {
-            AABB bounds = state.getShape(level, pos).bounds();
+            AABB bounds = blockOutlineBox(level, pos, state);
+            if (state.getBlock() instanceof ChestBlock
+                    && state.hasProperty(ChestBlock.TYPE)
+                    && state.getValue(ChestBlock.TYPE) != ChestType.SINGLE) {
+                BlockPos connectedPos = pos.relative(ChestBlock.getConnectedDirection(state));
+                if (level.hasChunkAt(connectedPos)) {
+                    BlockState connectedState = level.getBlockState(connectedPos);
+                    if (connectedState.getBlock() instanceof ChestBlock
+                            && connectedState.hasProperty(ChestBlock.TYPE)
+                            && connectedState.getValue(ChestBlock.TYPE) != ChestType.SINGLE) {
+                        bounds = bounds.minmax(blockOutlineBox(level, connectedPos, connectedState));
+                    }
+                }
+            }
             if (bounds.getSize() > 0.0D) {
-                return bounds.move(pos).inflate(0.003D);
+                return bounds.inflate(0.003D);
             }
         }
         return new AABB(pos).inflate(0.003D);
+    }
+
+    private static AABB blockOutlineBox(Level level, BlockPos pos, BlockState state) {
+        VoxelShape shape = state.getShape(level, pos);
+        return shape.isEmpty() ? new AABB(pos) : shape.bounds().move(pos);
     }
 
     private static boolean isHoldingClipboard(Minecraft minecraft) {
