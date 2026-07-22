@@ -19,6 +19,8 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
+import com.jvn.villagerretaliation.interaction.RecruitmentPolicy;
+import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentCommand;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentService;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentState;
@@ -607,6 +609,15 @@ public final class VillagerGameplayGameTests {
                 VillagerRecruitmentService.startFollowing(level, villager, followerOwner),
                 "commands require an active hiring relationship");
         helper.assertValueEqual(
+                RecruitmentPolicy.mayCommand(level, villager, followerOwner, VillagerAssignmentCommand.FOLLOW).reason(),
+                RecruitmentPolicy.DenialReason.NOT_HIRED,
+                "policy should explain why an unassigned villager rejects commands");
+        helper.assertTrue(
+                HiredRoleWorkerRegistry.get(HiredVillagerRole.COMBAT) != null
+                        && HiredRoleWorkerRegistry.get(HiredVillagerRole.FARMING) != null,
+                "guard and farming work are concrete role behaviors");
+
+        helper.assertValueEqual(
                 VillagerAssignmentService.snapshot(villager).state(),
                 VillagerAssignmentState.UNASSIGNED,
                 "new villager assignment state");
@@ -627,6 +638,10 @@ public final class VillagerGameplayGameTests {
         helper.assertFalse(
                 VillagerRecruitmentService.startFollowing(level, villager, otherPlayer),
                 "a hired worker should reject follow commands from another player");
+        helper.assertValueEqual(
+                RecruitmentPolicy.mayCommand(level, villager, otherPlayer, VillagerAssignmentCommand.FOLLOW).reason(),
+                RecruitmentPolicy.DenialReason.OWNED_BY_ANOTHER_PLAYER,
+                "policy should distinguish foreign ownership from an absent contract");
         helper.assertTrue(
                 VillagerRecruitmentService.isFollowing(villager, followerOwner),
                 "the rejected command should preserve the contract owner's follow state");

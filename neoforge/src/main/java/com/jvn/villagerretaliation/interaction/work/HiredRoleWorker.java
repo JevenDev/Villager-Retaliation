@@ -5,6 +5,11 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 
+/**
+ * Concrete behavior boundary for a hired role. Implementations receive an already-authorized
+ * work context; assignment persistence, recruitment policy, and client notifications stay outside.
+ */
+
 public interface HiredRoleWorker {
     HiredVillagerRole role();
 

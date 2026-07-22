@@ -7,6 +7,11 @@ import com.jvn.villagerretaliation.interaction.work.builder.BuilderWorker;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import java.util.Map;
 import net.minecraft.world.entity.npc.Villager;
+/**
+ * Registry of real role implementations. Combat guard behavior and farming work behavior are
+ * deliberately concrete implementations rather than entries in a universal job-description DSL.
+ */
+
 
 public final class HiredRoleWorkerRegistry {
     private static final Map<HiredVillagerRole, HiredRoleWorker> WORKERS = Map.ofEntries(
