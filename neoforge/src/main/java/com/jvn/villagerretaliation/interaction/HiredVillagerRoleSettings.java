@@ -83,7 +83,7 @@ public final class HiredVillagerRoleSettings {
             case FARMING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_FARMING.get();
             case FISHING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NAVIGATION.get();
             case BREWING -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_BREWING.get();
-            case CRAFTSMAN -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_LOGGING.get();
+            case CRAFTSMAN -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_CRAFTSMAN.get();
             case COOK -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_COOKING.get();
             case SMELTER -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_MINING.get();
             case COURIER -> VillagerRetaliationConfig.HIRED_WORK_SKILL_GROWTH_NAVIGATION.get();
