@@ -217,7 +217,7 @@ public final class DuelGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE)
+    @GameTest(template = EMPTY_TEMPLATE, batch = "duel_debug_command")
     public static void debugCommandUsesNameAndOptionalDefaults(GameTestHelper helper) throws CommandSyntaxException {
         Participant participant = participant(helper);
         ServerPlayer player = participant.player();
