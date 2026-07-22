@@ -97,6 +97,8 @@
 
 ## Unreleased
 
+- Consolidated hired ownership, commands, roles, anchors, lifecycle timestamps, schema, and state revisions into a canonical villager assignment; recruitment now validates stale state and returns authoritative success/failure snapshots instead of optimistically toggling the client.
+
 ### Fixed
 
 - Fixed recruited party villagers failing to target defending iron golems during active Player Raids; the Villagers attack mode now includes iron golems.

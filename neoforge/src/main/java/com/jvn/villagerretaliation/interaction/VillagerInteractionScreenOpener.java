@@ -201,6 +201,7 @@ public final class VillagerInteractionScreenOpener {
                 primaryMood,
                 VillagerRecruitmentService.isFollowing(villager, player),
                 VillagerRecruitmentService.isStayingHere(villager, player),
+                VillagerAssignmentService.snapshot(villager).revision(),
                 VillagerInteractionTracker.isRoutineChatMuted(level, villager, player),
                 forcedConversation,
                 clipboardMenu,

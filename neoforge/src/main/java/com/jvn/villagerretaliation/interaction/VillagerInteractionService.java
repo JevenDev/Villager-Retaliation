@@ -673,6 +673,46 @@ public final class VillagerInteractionService {
             ServerPlayer player,
             int entityId,
             VillagerRecruitRequestPayload.Action action,
+            HiredVillagerRole selectedRole,
+            long expectedRevision) {
+        Entity rawEntity = player.serverLevel().getEntity(entityId);
+        Villager villager = rawEntity instanceof Villager found ? found : null;
+        VillagerAssignmentSnapshot before = villager == null
+                ? VillagerAssignmentSnapshot.unassigned(0L)
+                : ensureAssignmentSnapshot(player.serverLevel(), villager);
+        if (expectedRevision >= 0L && before.revision() != expectedRevision) {
+            sendRecruitmentResult(player, entityId, false,
+                    com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.STALE_STATE,
+                    before);
+            return;
+        }
+        handleRecruitRequestInternal(player, entityId, action, selectedRole);
+        VillagerAssignmentSnapshot after = villager == null
+                ? VillagerAssignmentSnapshot.unassigned(0L)
+                : ensureAssignmentSnapshot(player.serverLevel(), villager);
+        boolean success = recruitmentTransitionSatisfied(player, action, selectedRole, after);
+        sendRecruitmentResult(
+                player,
+                entityId,
+                success,
+                success
+                        ? com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.NONE
+                        : recruitmentFailureReason(player, villager, action, selectedRole),
+                after);
+    }
+
+    public static void handleRecruitRequest(
+            ServerPlayer player,
+            int entityId,
+            VillagerRecruitRequestPayload.Action action,
+            HiredVillagerRole selectedRole) {
+        handleRecruitRequest(player, entityId, action, selectedRole, -1L);
+    }
+
+    private static void handleRecruitRequestInternal(
+            ServerPlayer player,
+            int entityId,
+            VillagerRecruitRequestPayload.Action action,
             HiredVillagerRole selectedRole) {
         Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
         if (target.isEmpty()) {
@@ -727,8 +767,10 @@ public final class VillagerInteractionService {
                 || action == VillagerRecruitRequestPayload.Action.STAY_HERE
                 || action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
                 || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
-            if (HiredVillagerContractService.isHired(level, villager) && !ownsContract) {
-                sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
+            if (!ownsContract) {
+                sendVillagerNotice(player, villager, HiredVillagerContractService.isHired(level, villager)
+                        ? "interaction.hired_contract_taken"
+                        : "interaction.role_requires_hire");
                 return;
             }
             String responseKey;
@@ -925,6 +967,115 @@ public final class VillagerInteractionService {
             case CONFIRM -> confirmBuilderOrder(player, level, villager, state, structureId);
             case CANCEL -> cancelBuilderOrder(player, level, villager, state);
         }
+    }
+
+    private static VillagerAssignmentSnapshot ensureAssignmentSnapshot(ServerLevel level, Villager villager) {
+        VillagerAssignmentSnapshot snapshot = VillagerAssignmentService.snapshot(villager);
+        if (snapshot.state() == VillagerAssignmentState.UNASSIGNED) {
+            HiredVillagerContractService.currentContractHirer(villager).ifPresent(owner ->
+                    VillagerAssignmentService.hire(
+                            villager,
+                            owner,
+                            HiredVillagerContractService.activeRole(level, villager),
+                            level.getGameTime(),
+                            villager.blockPosition()));
+            snapshot = VillagerAssignmentService.snapshot(villager);
+        }
+        return snapshot;
+    }
+
+    private static boolean recruitmentTransitionSatisfied(
+            ServerPlayer player,
+            VillagerRecruitRequestPayload.Action action,
+            HiredVillagerRole selectedRole,
+            VillagerAssignmentSnapshot assignment) {
+        if (action.name().startsWith("HIRE_")) return assignment.ownedBy(player.getUUID());
+        return switch (action) {
+            case FOLLOW -> assignment.ownedBy(player.getUUID()) && assignment.command() == VillagerAssignmentCommand.FOLLOW;
+            case STAY_HERE -> assignment.ownedBy(player.getUUID()) && assignment.command() == VillagerAssignmentCommand.STAY;
+            case STOP_FOLLOWING, STOP_STAYING_HERE -> assignment.ownedBy(player.getUUID())
+                    && assignment.command() == VillagerAssignmentCommand.WORK;
+            case END_HIRE -> assignment.state() == VillagerAssignmentState.UNASSIGNED;
+            case SET_ROLE_COMBAT, SET_ROLE_HUNTING, SET_ROLE_MINING, SET_ROLE_LOGGING,
+                 SET_ROLE_FARMING, SET_ROLE_FISHING, SET_ROLE_BREWING, SET_ROLE_CRAFTSMAN,
+                 SET_ROLE_BUILDER, SET_ROLE_ANIMAL_HANDLING, SET_ROLE_NITWIT, SET_ROLE_COOK,
+                 SET_ROLE_SMELTER, SET_ROLE_COURIER -> assignment.role() == roleForAction(action);
+            default -> true;
+        };
+    }
+
+    private static HiredVillagerRole roleForAction(VillagerRecruitRequestPayload.Action action) {
+        return switch (action) {
+            case SET_ROLE_COMBAT -> HiredVillagerRole.COMBAT;
+            case SET_ROLE_HUNTING -> HiredVillagerRole.HUNTING;
+            case SET_ROLE_MINING -> HiredVillagerRole.MINING;
+            case SET_ROLE_LOGGING -> HiredVillagerRole.LOGGING;
+            case SET_ROLE_FARMING -> HiredVillagerRole.FARMING;
+            case SET_ROLE_FISHING -> HiredVillagerRole.FISHING;
+            case SET_ROLE_BREWING -> HiredVillagerRole.BREWING;
+            case SET_ROLE_CRAFTSMAN -> HiredVillagerRole.CRAFTSMAN;
+            case SET_ROLE_BUILDER -> HiredVillagerRole.BUILDER;
+            case SET_ROLE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
+            case SET_ROLE_NITWIT -> HiredVillagerRole.NITWIT;
+            case SET_ROLE_COOK -> HiredVillagerRole.COOK;
+            case SET_ROLE_SMELTER -> HiredVillagerRole.SMELTER;
+            case SET_ROLE_COURIER -> HiredVillagerRole.COURIER;
+            default -> null;
+        };
+    }
+
+    private static com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason recruitmentFailureReason(
+            ServerPlayer player, Villager villager, VillagerRecruitRequestPayload.Action action, HiredVillagerRole role) {
+        if (villager == null) return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INVALID_TARGET;
+        if (!VillagerConversationService.validate(player, villager)) {
+            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.CONVERSATION_ENDED;
+        }
+        if (villager.isBaby()) return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INELIGIBLE;
+        if (villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {
+            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.BUSY;
+        }
+        if (!VillagerRecruitmentService.canRecruit(player.serverLevel(), villager, player)) {
+            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.REPUTATION_TOO_LOW;
+        }
+        if (HiredVillagerContractService.isHired(player.serverLevel(), villager)
+                && !HiredVillagerContractService.isHiredBy(player.serverLevel(), villager, player)) {
+            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.ALREADY_OWNED;
+        }
+        HiredVillagerRole requestedRole = role == null ? HiredVillagerRoles.defaultRole(player.serverLevel(), villager) : role;
+        if (requestedRole != null
+                && !HiredVillagerRoles.availableContractRoles(player.serverLevel(), villager).contains(requestedRole)) {
+            return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INVALID_ROLE;
+        }
+        if (action.name().startsWith("HIRE_")) {
+            int days = switch (action) {
+                case HIRE_ONE_DAY -> 1;
+                case HIRE_THREE_DAYS -> 3;
+                case HIRE_FIVE_DAYS -> 5;
+                case HIRE_SEVEN_DAYS -> 7;
+                case HIRE_FIFTEEN_DAYS -> 15;
+                case HIRE_THIRTY_DAYS -> 30;
+                default -> 0;
+            };
+            if (days > 0 && countCurrency(player) < HiredVillagerContractService.getHireCost(
+                    player.serverLevel(), villager, player, days, requestedRole)) {
+                return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INSUFFICIENT_PAYMENT;
+            }
+            HiredVillagerIndex.reconcileLoadedFor(player);
+            if (HiredVillagerIndex.targetsFor(player).size() >= HiredVillagerIndex.MAX_ASSIGNMENTS_PER_PLAYER) {
+                return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.HIRE_CAP_REACHED;
+            }
+        }
+        return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.NOT_OWNER;
+    }
+
+    private static void sendRecruitmentResult(
+            ServerPlayer player,
+            int entityId,
+            boolean success,
+            com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason reason,
+            VillagerAssignmentSnapshot assignment) {
+        trySendToPlayer(player, new com.jvn.villagerretaliation.network.RecruitmentResultPayload(
+                entityId, success, reason, assignment, ""));
     }
 
     private static boolean isContractAdministrationAction(VillagerRecruitRequestPayload.Action action) {
@@ -1446,6 +1597,15 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
             return true;
         }
+        if (villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {
+            sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
+            return true;
+        }
+        HiredVillagerIndex.reconcileLoadedFor(player);
+        if (HiredVillagerIndex.targetsFor(player).size() >= HiredVillagerIndex.MAX_ASSIGNMENTS_PER_PLAYER) {
+            sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
+            return true;
+        }
         if (HiredVillagerContractService.hasForeignJobInventoryOverflow(level, villager, player)) {
             sendVillagerNotice(
                     player,
@@ -1481,8 +1641,11 @@ public final class VillagerInteractionService {
             );
             return true;
         }
+        if (!HiredVillagerContractService.startHireContract(level, villager, player, days, cost, hireRole)) {
+            sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
+            return true;
+        }
         removeCurrency(player, cost);
-        HiredVillagerContractService.startHireContract(level, villager, player, days, cost, hireRole);
         HiredVillagerWorkService.resetForNewContract(level, villager);
         VillagerRecruitmentService.sendHiredNotice(player, villager);
         sendVillagerNotice(

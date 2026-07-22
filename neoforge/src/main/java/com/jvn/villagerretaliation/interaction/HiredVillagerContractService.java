@@ -383,11 +383,11 @@ public final class HiredVillagerContractService {
                 });
     }
 
-    public static void startHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
-        startHireContract(level, villager, player, days, emeraldsPaid, HiredVillagerRoles.defaultRole(level, villager));
+    public static boolean startHireContract(ServerLevel level, Villager villager, ServerPlayer player, int days, int emeraldsPaid) {
+        return startHireContract(level, villager, player, days, emeraldsPaid, HiredVillagerRoles.defaultRole(level, villager));
     }
 
-    public static void startHireContract(
+    public static boolean startHireContract(
             ServerLevel level,
             Villager villager,
             ServerPlayer player,
@@ -395,12 +395,12 @@ public final class HiredVillagerContractService {
             int emeraldsPaid,
             HiredVillagerRole role) {
         if (level == null || villager == null || villager.isBaby() || player == null) {
-            return;
+            return false;
         }
         int safeDays = clampedContractDays(days);
         HiredVillagerRole safeRole = role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
         if (safeRole == null || !HiredVillagerRoles.availableContractRoles(level, villager).contains(safeRole)) {
-            return;
+            return false;
         }
         VillagerRecruitmentService.stopFollowing(villager);
         long startGameTime = level.getGameTime();
@@ -422,6 +422,8 @@ public final class HiredVillagerContractService {
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
         lockProfessionForHire(villager, tag);
         villager.getPersistentData().put(CONTRACT_TAG, tag);
+        VillagerAssignmentService.hire(
+                villager, player.getUUID(), safeRole, startGameTime, villager.blockPosition());
         villager.getPersistentData().remove(OVERFLOW_CLAIM_TAG);
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
         villager.setPersistenceRequired();
@@ -429,6 +431,7 @@ public final class HiredVillagerContractService {
         com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);
         com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
         VillagerBehaviorSuppressionPolicy.enforce(level, villager);
+        return true;
     }
 
     public static void startOneOffBuilderJob(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -453,6 +456,8 @@ public final class HiredVillagerContractService {
         tag.putString(ROLE_TAG, HiredVillagerRole.BUILDER.serializedName());
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
         villager.getPersistentData().put(CONTRACT_TAG, tag);
+        VillagerAssignmentService.hire(
+                villager, player.getUUID(), HiredVillagerRole.BUILDER, startGameTime, villager.blockPosition());
         villager.getPersistentData().remove(OVERFLOW_CLAIM_TAG);
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
         villager.setPersistenceRequired();
@@ -573,6 +578,7 @@ public final class HiredVillagerContractService {
             HiredVillagerWorkService.resetReportProgress(level, villager);
         }
         tag.putString(ROLE_TAG, role.serializedName());
+        VillagerAssignmentService.setRole(villager, role);
         villager.setPersistenceRequired();
         return true;
     }
@@ -773,6 +779,8 @@ public final class HiredVillagerContractService {
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService
                 .clearAssignment(level, villager.getUUID());
         VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+        VillagerRecruitmentService.stopFollowing(villager);
+        VillagerAssignmentService.unassign(villager);
         villager.setPersistenceRequired();
         HiredVillagerIndex.remove(villager);
         com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);

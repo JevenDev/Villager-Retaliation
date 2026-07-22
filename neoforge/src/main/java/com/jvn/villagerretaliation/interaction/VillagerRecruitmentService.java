@@ -117,12 +117,20 @@ public final class VillagerRecruitmentService {
     }
 
     public static boolean isFollowing(Villager villager, ServerPlayer player) {
+        VillagerAssignmentSnapshot assignment = VillagerAssignmentService.snapshot(villager);
+        if (assignment.state() == VillagerAssignmentState.HIRED) {
+            return assignment.ownedBy(player.getUUID()) && assignment.command() == VillagerAssignmentCommand.FOLLOW;
+        }
         return villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
                 && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(player.getUUID())
                 && isFollowMode(villager);
     }
 
     public static boolean isStayingHere(Villager villager, ServerPlayer player) {
+        VillagerAssignmentSnapshot assignment = VillagerAssignmentService.snapshot(villager);
+        if (assignment.state() == VillagerAssignmentState.HIRED) {
+            return assignment.ownedBy(player.getUUID()) && assignment.command() == VillagerAssignmentCommand.STAY;
+        }
         return villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)
                 && villager.getPersistentData().getUUID(FOLLOWING_PLAYER_KEY).equals(player.getUUID())
                 && isStayMode(villager);
@@ -145,6 +153,12 @@ public final class VillagerRecruitmentService {
     }
 
     public static Optional<UUID> followingPlayerId(Villager villager) {
+        VillagerAssignmentSnapshot assignment = VillagerAssignmentService.snapshot(villager);
+        if (assignment.state() == VillagerAssignmentState.HIRED
+                && (assignment.command() == VillagerAssignmentCommand.FOLLOW
+                || assignment.command() == VillagerAssignmentCommand.STAY)) {
+            return assignment.owner();
+        }
         if (!villager.getPersistentData().hasUUID(FOLLOWING_PLAYER_KEY)) {
             return Optional.empty();
         }
@@ -875,6 +889,9 @@ public final class VillagerRecruitmentService {
         villager.getPersistentData().remove(STAY_ANCHOR_X_KEY);
         villager.getPersistentData().remove(STAY_ANCHOR_Y_KEY);
         villager.getPersistentData().remove(STAY_ANCHOR_Z_KEY);
+        VillagerAssignmentSnapshot assignment = VillagerAssignmentService.snapshot(villager);
+        assignment.owner().ifPresent(owner -> VillagerAssignmentService.setCommand(
+                villager, owner, VillagerAssignmentCommand.WORK, null));
         VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
     }
 
@@ -892,6 +909,9 @@ public final class VillagerRecruitmentService {
         BlockPos start = villager.blockPosition();
         HiredVillagerWorkService.pauseForRecruitmentCommand(level, villager);
         FOLLOW_FORMATION_STATES.remove(playerId);
+        if (VillagerAssignmentService.snapshot(villager).ownedBy(playerId)) {
+            VillagerAssignmentService.setCommand(villager, playerId, VillagerAssignmentCommand.FOLLOW, null);
+        }
         villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, playerId);
         villager.getPersistentData().putString(FOLLOW_MODE_KEY, FOLLOW_MODE_FOLLOW);
         villager.getPersistentData().putFloat(FOLLOW_START_HEALTH_KEY, villager.getHealth());
@@ -923,6 +943,9 @@ public final class VillagerRecruitmentService {
             HiredVillagerWorkService.pauseForRecruitmentCommand(level, villager);
         }
         FOLLOW_FORMATION_STATES.remove(playerId);
+        if (VillagerAssignmentService.snapshot(villager).ownedBy(playerId)) {
+            VillagerAssignmentService.setCommand(villager, playerId, VillagerAssignmentCommand.STAY, anchor);
+        }
         villager.getPersistentData().putUUID(FOLLOWING_PLAYER_KEY, playerId);
         villager.getPersistentData().putString(FOLLOW_MODE_KEY, FOLLOW_MODE_STAY);
         villager.getPersistentData().putInt(STAY_ANCHOR_X_KEY, anchor.getX());
@@ -1026,11 +1049,19 @@ public final class VillagerRecruitmentService {
     }
 
     private static boolean isFollowMode(Villager villager) {
+        VillagerAssignmentSnapshot assignment = VillagerAssignmentService.snapshot(villager);
+        if (assignment.state() == VillagerAssignmentState.HIRED) {
+            return assignment.command() == VillagerAssignmentCommand.FOLLOW;
+        }
         return FOLLOW_MODE_FOLLOW.equals(villager.getPersistentData().getString(FOLLOW_MODE_KEY))
                 || !villager.getPersistentData().contains(FOLLOW_MODE_KEY);
     }
 
     private static boolean isStayMode(Villager villager) {
+        VillagerAssignmentSnapshot assignment = VillagerAssignmentService.snapshot(villager);
+        if (assignment.state() == VillagerAssignmentState.HIRED) {
+            return assignment.command() == VillagerAssignmentCommand.STAY;
+        }
         return FOLLOW_MODE_STAY.equals(villager.getPersistentData().getString(FOLLOW_MODE_KEY));
     }
 
@@ -1050,6 +1081,10 @@ public final class VillagerRecruitmentService {
     }
 
     private static BlockPos stayAnchor(Villager villager) {
+        VillagerAssignmentSnapshot assignment = VillagerAssignmentService.snapshot(villager);
+        if (assignment.state() == VillagerAssignmentState.HIRED) {
+            return assignment.workAnchor();
+        }
         if (!villager.getPersistentData().contains(STAY_ANCHOR_X_KEY)
                 || !villager.getPersistentData().contains(STAY_ANCHOR_Y_KEY)
                 || !villager.getPersistentData().contains(STAY_ANCHOR_Z_KEY)) {
@@ -1125,7 +1160,10 @@ public final class VillagerRecruitmentService {
         boolean hiredByAnotherPlayer = villager.level() instanceof ServerLevel level
                 && HiredVillagerContractService.isHired(level, villager)
                 && !HiredVillagerContractService.isHiredBy(level, villager, player);
-        return !hiredByAnotherPlayer
+        boolean hiredByPlayer = villager.level() instanceof ServerLevel level
+                && HiredVillagerContractService.isHiredBy(level, villager, player);
+        return hiredByPlayer
+                && !hiredByAnotherPlayer
                 && !PartyVillagerContractService.hasPartyEntityReference(villager)
                 && followingPlayerId(villager).map(player.getUUID()::equals).orElse(true);
     }
