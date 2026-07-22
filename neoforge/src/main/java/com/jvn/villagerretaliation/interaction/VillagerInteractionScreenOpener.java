@@ -54,6 +54,8 @@ public final class VillagerInteractionScreenOpener {
         DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
         List<DialogueOptionDefinition> dialogueOptions = VillagerMountOwnershipDialogue.addAvailableOption(
                 level, player, villager, VillagerDialogueResources.dialogueOptions(dialogueContext, mood));
+        dialogueOptions = com.jvn.villagerretaliation.duel.DuelDialogueService.addAvailableOptions(
+                level, player, villager, dialogueOptions);
         String greetingText = VillagerDialogueService.selectOpeningGreeting(dialogueContext);
         OpenVillagerInteractionPayload payload = createPayload(
                 level,
@@ -120,6 +122,8 @@ public final class VillagerInteractionScreenOpener {
         DialogueDisposition mood = VillagerDialogueService.moodFor(dialogueContext);
         List<DialogueOptionDefinition> dialogueOptions = VillagerMountOwnershipDialogue.addAvailableOption(
                 level, player, villager, VillagerDialogueResources.dialogueOptions(dialogueContext, mood));
+        dialogueOptions = com.jvn.villagerretaliation.duel.DuelDialogueService.addAvailableOptions(
+                level, player, villager, dialogueOptions);
         trySendToPlayer(player, createPayload(
                 level,
                 player,

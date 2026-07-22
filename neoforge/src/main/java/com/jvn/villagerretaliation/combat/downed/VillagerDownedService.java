@@ -208,7 +208,8 @@ public final class VillagerDownedService {
     }
 
     public static boolean canBypassDownedProtection(Villager villager, DamageSource source) {
-        return source.is(DamageTypes.GENERIC_KILL)
+        return com.jvn.villagerretaliation.duel.DuelService.isAuthorizedFinisher(villager, source)
+                || source.is(DamageTypes.GENERIC_KILL)
                 || source.is(DamageTypes.FELL_OUT_OF_WORLD)
                 || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
     }

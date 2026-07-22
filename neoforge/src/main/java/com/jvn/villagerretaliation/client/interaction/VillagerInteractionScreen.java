@@ -46,6 +46,7 @@ import com.jvn.villagerretaliation.network.VillageAllegianceView;
 import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
+import com.jvn.villagerretaliation.network.VillagerDuelRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
 import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
@@ -1087,6 +1088,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (this.relationships.hasRelationships()) {
                 addOption("root.relationships", this::openRelationshipPage);
             }
+            if (VillagerProfileClientCache.get(this.villagerEntityId)
+                    .map(entry -> entry.value(VillagerSocialAttribute.GUTS) >= VillagerRetaliationConfig.DUEL_MINIMUM_GUTS.get())
+                    .orElse(false)) {
+                addOption("root.duel", this::requestDuel);
+            }
             addRootRecruitmentOptions();
         }
         addOption("root.goodbye", this::leaveConversation);
@@ -2062,6 +2068,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void openRelationshipPage() {
         openPage(DialoguePage.RELATIONSHIPS);
+    }
+
+    private void requestDuel() {
+        sendToServer(new VillagerDuelRequestPayload(this.villagerEntityId, VillagerDuelRequestPayload.Action.OPEN));
     }
 
     private void openAncestryPage() {

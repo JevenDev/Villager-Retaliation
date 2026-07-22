@@ -477,6 +477,7 @@ public final class VillagerWalletService {
         TRADE_PAYOUT,
         TASK_REWARD,
         DEPOSIT_ADJUSTMENT,
+        DUEL,
         DEBUG
     }
 

@@ -462,6 +462,9 @@ public final class VillagerInteractionService {
     }
 
     public static void handleDialogueRequest(ServerPlayer player, int entityId, String optionId) {
+        if (com.jvn.villagerretaliation.duel.DuelDialogueService.handle(player, entityId, optionId)) {
+            return;
+        }
         if (com.jvn.villagerretaliation.raid.PlayerRaidMercyService.handleDialogueRequest(player, entityId, optionId)) {
             return;
         }

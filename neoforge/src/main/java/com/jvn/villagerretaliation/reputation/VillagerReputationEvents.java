@@ -88,6 +88,9 @@ public final class VillagerReputationEvents {
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        if (event.getEntity() instanceof LivingEntity living
+                && com.jvn.villagerretaliation.duel.DuelService.isDuelDamage(living, event.getSource())) return;
+
         if (!VillagerRetaliationConfig.ENABLE_VILLAGER_REPUTATION.get()
                 || event.getNewDamage() <= 0.0F
                 || !(event.getEntity().level() instanceof ServerLevel level)

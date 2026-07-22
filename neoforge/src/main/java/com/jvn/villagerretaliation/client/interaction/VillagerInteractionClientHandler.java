@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import com.jvn.villagerretaliation.network.OpenVillagerInteractionPayload;
+import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
 import com.jvn.villagerretaliation.network.VillagerNameSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
@@ -59,6 +60,10 @@ public final class VillagerInteractionClientHandler {
 
     private VillagerInteractionClientHandler() {
     }
+    public static void openDuel(OpenVillagerDuelPayload payload) {
+        Minecraft.getInstance().setScreen(new VillagerDuelScreen(payload));
+    }
+
 
     public static void open(OpenVillagerInteractionPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();
