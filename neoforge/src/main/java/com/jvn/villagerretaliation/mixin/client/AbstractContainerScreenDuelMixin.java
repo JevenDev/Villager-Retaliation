@@ -22,7 +22,10 @@ public abstract class AbstractContainerScreenDuelMixin {
         }
     }
 
-    @Inject(method = "renderSlotHighlight", at = @At("HEAD"), cancellable = true)
+    @Inject(
+            method = "renderSlotHighlight(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/world/inventory/Slot;IIF)V",
+            at = @At("HEAD"),
+            cancellable = true)
     private void villagerretaliation$hideLockedDuelSlotHighlight(
             GuiGraphics graphics,
             Slot slot,

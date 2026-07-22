@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.mixin.client;
 
 import com.jvn.villagerretaliation.client.duel.DuelInventoryClientState;
+import com.jvn.villagerretaliation.client.duel.DuelInventoryScreenAccess;
 import com.jvn.villagerretaliation.client.duel.DuelInventoryScreenRenderer;
 import com.jvn.villagerretaliation.client.party.PartyInventoryOverlay;
 import net.minecraft.client.gui.GuiGraphics;
@@ -17,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(InventoryScreen.class)
-public abstract class InventoryScreenMixin {
+public abstract class InventoryScreenMixin implements DuelInventoryScreenAccess {
     @Shadow private float xMouse;
     @Shadow private float yMouse;
     @Shadow @Final private RecipeBookComponent recipeBookComponent;
@@ -45,8 +46,8 @@ public abstract class InventoryScreenMixin {
         }
     }
 
-    @Inject(method = "removed", at = @At("HEAD"))
-    private void villagerretaliation$restoreInventorySlots(CallbackInfo callbackInfo) {
+    @Override
+    public void villagerretaliation$restoreDuelInventorySlots() {
         if (this.villagerretaliation$originalSlotX == null) return;
         InventoryScreen screen = (InventoryScreen) (Object) this;
         int count = Math.min(screen.getMenu().slots.size(), this.villagerretaliation$originalSlotX.length);
