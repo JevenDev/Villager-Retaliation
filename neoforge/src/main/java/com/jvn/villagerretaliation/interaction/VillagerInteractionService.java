@@ -30,7 +30,6 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService.AssignmentSu
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem.SelectedStoragePosition;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
-import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderSitePlanner;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderPaymentEscrowService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
@@ -42,7 +41,6 @@ import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCa
 import com.jvn.villagerretaliation.interaction.work.HiredWorkerBrain;
 import com.jvn.villagerretaliation.item.ConstructionBlueprintItem;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
-import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
@@ -131,9 +129,6 @@ public final class VillagerInteractionService {
     private static final String BLUEPRINT_START_OPTION_ID = "construction_blueprint_start";
     private static final String BLUEPRINT_CHANGE_OPTION_ID = "construction_blueprint_change";
     private static final String BLUEPRINT_NEVERMIND_OPTION_ID = "construction_blueprint_nevermind";
-    private static final String ITEM_FILTER_ALLOWLIST_OPTION_ID = "item_filter_use_allowlist";
-    private static final String ITEM_FILTER_DENYLIST_OPTION_ID = "item_filter_use_denylist";
-    private static final String ITEM_FILTER_NEVERMIND_OPTION_ID = "item_filter_nevermind";
     private static final String EDMUNDO_OMINOUS_FORCED_LINE =
             "Loud, I am aware of what you have done. Do not think the village has forgotten. Do not mistake this calm for mercy. Even when the roads fall silent, your name still travels in whispers after dark. Jvn has tried to silence me, it will only be a matter of time before all is revealed.";
 
@@ -358,50 +353,8 @@ public final class VillagerInteractionService {
     }
 
     public static InteractionResult handleItemFilterVillagerRightClick(Villager villager, ServerPlayer player) {
-        if (!(villager.level() instanceof ServerLevel level)
-                || villager.isBaby()
-                || !VillagerRetaliationItems.isItemFilter(player.getMainHandItem())) {
-            sendVillagerNotice(player, villager, "interaction.item_filter.adult_hired_only");
-            return InteractionResult.FAIL;
-        }
-        if (!HiredVillagerContractService.isHired(level, villager)) {
-            sendVillagerNotice(player, villager, "interaction.item_filter.not_hired");
-            return InteractionResult.FAIL;
-        }
-        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.item_filter.requires_hirer");
-            return InteractionResult.FAIL;
-        }
-        if (!VillagerConversationService.startForced(player, villager)) {
-            sendVillagerNotice(player, villager, "interaction.busy");
-            return InteractionResult.FAIL;
-        }
-        closeActiveContainer(player);
-        VillagerInteractionScreenOpener.openForced(player, villager, itemFilterOptions(), true);
-        sendVillagerNotice(player, villager, "interaction.item_filter.prompt");
-        focusVillagerOnPlayer(villager, player);
-        return InteractionResult.SUCCESS;
+        return VillagerItemFilterInteractionHandler.open(villager, player);
     }
-
-    private static List<DialogueOptionDefinition> itemFilterOptions() {
-        return List.of(
-                DialogueOptionDefinition.simple(
-                        ITEM_FILTER_ALLOWLIST_OPTION_ID,
-                        Component.translatable("villagerretaliation.gui.item_filter.assign.allowlist").getString(),
-                        DialogueRequestType.QUESTION,
-                        0),
-                DialogueOptionDefinition.simple(
-                        ITEM_FILTER_DENYLIST_OPTION_ID,
-                        Component.translatable("villagerretaliation.gui.item_filter.assign.denylist").getString(),
-                        DialogueRequestType.QUESTION,
-                        1),
-                DialogueOptionDefinition.simple(
-                        ITEM_FILTER_NEVERMIND_OPTION_ID,
-                        Component.translatable("villagerretaliation.gui.item_filter.assign.nevermind").getString(),
-                        DialogueRequestType.QUESTION,
-                        2));
-    }
-
     private static List<DialogueOptionDefinition> constructionBlueprintOptions() {
         return List.of(
                 DialogueOptionDefinition.simple(BLUEPRINT_START_OPTION_ID, "Start job", DialogueRequestType.QUESTION, 0),
@@ -471,66 +424,13 @@ public final class VillagerInteractionService {
         if (com.jvn.villagerretaliation.raid.PlayerRaidDialogueService.handleDialogueRequest(player, entityId, optionId)) {
             return;
         }
-        if (handleItemFilterDialogueRequest(player, entityId, optionId)) {
+        if (VillagerItemFilterInteractionHandler.handleDialogueRequest(player, entityId, optionId)) {
             return;
         }
         if (handleConstructionBlueprintDialogueRequest(player, entityId, optionId)) {
             return;
         }
         VillagerDialogueRequestHandler.handle(player, entityId, optionId);
-    }
-
-    private static boolean handleItemFilterDialogueRequest(ServerPlayer player, int entityId, String optionId) {
-        if (!ITEM_FILTER_ALLOWLIST_OPTION_ID.equals(optionId)
-                && !ITEM_FILTER_DENYLIST_OPTION_ID.equals(optionId)
-                && !ITEM_FILTER_NEVERMIND_OPTION_ID.equals(optionId)) {
-            return false;
-        }
-        Entity entity = player.serverLevel().getEntity(entityId);
-        if (!(entity instanceof Villager villager)
-                || !VillagerConversationService.isForced(player, villager)
-                || !canUseForcedInteractionSystem(player, villager)
-                || !VillagerConversationService.validate(player, villager)
-                || villager.isBaby()
-                || !HiredVillagerContractService.isHired(player.serverLevel(), villager)
-                || !HiredVillagerContractService.isHiredBy(player.serverLevel(), villager, player)) {
-            VillagerConversationService.endForPlayer(player, true);
-            return true;
-        }
-        if (ITEM_FILTER_NEVERMIND_OPTION_ID.equals(optionId)) {
-            VillagerConversationService.endForPlayer(player, true);
-            return true;
-        }
-        ItemStack heldFilter = player.getMainHandItem();
-        if (!VillagerRetaliationItems.isItemFilter(heldFilter)) {
-            sendVillagerNotice(player, villager, "interaction.item_filter.missing");
-            VillagerConversationService.endForPlayer(player, true);
-            return true;
-        }
-
-        VillagerItemFilterData.Mode selectedMode = ITEM_FILTER_DENYLIST_OPTION_ID.equals(optionId)
-                ? VillagerItemFilterData.Mode.DENYLIST
-                : VillagerItemFilterData.Mode.ALLOWLIST;
-        VillagerItemFilterService.AssignmentResult assignment =
-                VillagerItemFilterService.assignHeldFilter(player, villager, selectedMode);
-        if (!assignment.assigned()) {
-            sendVillagerNotice(player, villager, "interaction.item_filter.missing");
-            VillagerConversationService.endForPlayer(player, true);
-            return true;
-        }
-        String noticeKey;
-        if (assignment.droppedOldFilter()) {
-            noticeKey = "interaction.item_filter.replaced_dropped";
-        } else if (assignment.replaced()) {
-            noticeKey = "interaction.item_filter.replaced";
-        } else if (selectedMode == VillagerItemFilterData.Mode.DENYLIST) {
-            noticeKey = "interaction.item_filter.assigned_denylist";
-        } else {
-            noticeKey = "interaction.item_filter.assigned_allowlist";
-        }
-        sendVillagerNotice(player, villager, noticeKey);
-        VillagerConversationService.endForPlayer(player, true);
-        return true;
     }
 
     public static void handleMouseEasterEggRequest(
