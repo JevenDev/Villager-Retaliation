@@ -422,7 +422,7 @@ public final class HiredVillagerContractService {
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
         lockProfessionForHire(villager, tag);
         villager.getPersistentData().put(CONTRACT_TAG, tag);
-        VillagerAssignmentService.hire(
+        VillagerAssignmentStore.hire(
                 villager, player.getUUID(), safeRole, startGameTime, villager.blockPosition());
         villager.getPersistentData().remove(OVERFLOW_CLAIM_TAG);
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
@@ -456,7 +456,7 @@ public final class HiredVillagerContractService {
         tag.putString(ROLE_TAG, HiredVillagerRole.BUILDER.serializedName());
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
         villager.getPersistentData().put(CONTRACT_TAG, tag);
-        VillagerAssignmentService.hire(
+        VillagerAssignmentStore.hire(
                 villager, player.getUUID(), HiredVillagerRole.BUILDER, startGameTime, villager.blockPosition());
         villager.getPersistentData().remove(OVERFLOW_CLAIM_TAG);
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contractId);
@@ -578,7 +578,7 @@ public final class HiredVillagerContractService {
             HiredVillagerWorkService.resetReportProgress(level, villager);
         }
         tag.putString(ROLE_TAG, role.serializedName());
-        VillagerAssignmentService.setRole(villager, role);
+        VillagerAssignmentStore.setRole(villager, role);
         villager.setPersistenceRequired();
         return true;
     }
@@ -780,7 +780,7 @@ public final class HiredVillagerContractService {
                 .clearAssignment(level, villager.getUUID());
         VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
         VillagerRecruitmentService.stopFollowing(villager);
-        VillagerAssignmentService.unassign(villager);
+        VillagerAssignmentStore.unassign(villager);
         villager.setPersistenceRequired();
         HiredVillagerIndex.remove(villager);
         com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);
