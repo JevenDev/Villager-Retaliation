@@ -5,8 +5,6 @@ import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
-import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
-import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -16,15 +14,12 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.ai.Brain;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.vehicle.Boat;
 import net.minecraft.world.level.pathfinder.Path;
 
-/** Owns command execution and all ephemeral state used to navigate an assignment. */
+/** Executes recruitment movement intents without taking ownership of the villager's Brain. */
 public final class VillagerCommandController {
     private static final double FOLLOW_START_DISTANCE_SQR = 1.5D * 1.5D;
     private static final double FOLLOW_STOP_DISTANCE_SQR = 0.75D * 0.75D;
@@ -37,8 +32,8 @@ public final class VillagerCommandController {
     private static final int PATH_RECALCULATION_MIN_TICKS = 4;
     private static final int PATH_RECALCULATION_RANDOM_TICKS = 7;
     private static final Map<UUID, Long> NEXT_JOURNEY_UPDATE_TICKS = new HashMap<>();
-    private static final Map<UUID, Long> LAST_AI_SUPPRESSION_TICKS = new HashMap<>();
     private static final Map<UUID, PathState> PATH_STATES = new HashMap<>();
+    private static final Map<UUID, BlockPos> OWNED_NAVIGATION_TARGETS = new HashMap<>();
 
     private VillagerCommandController() {
     }
@@ -66,17 +61,14 @@ public final class VillagerCommandController {
         if (villager == null) return;
         UUID villagerId = villager.getUUID();
         NEXT_JOURNEY_UPDATE_TICKS.remove(villagerId);
-        LAST_AI_SUPPRESSION_TICKS.remove(villagerId);
         PATH_STATES.remove(villagerId);
         dismount(villager);
         VillagerAssignmentStore.clearRecruitmentCommand(villager);
-        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+        stopNavigation(villager);
     }
 
     public static void onVillagerTickPre(Villager villager) {
-        if (villager != null && !villager.level().isClientSide && VillagerAssignmentStore.commandOwner(villager).isPresent()) {
-            suppressAiOncePerTick(villager);
-        }
+        // Arbitration happens after the Brain tick so higher-priority activities can declare intent.
     }
 
     /** Executes one command tick and reports lifecycle changes to the coordinator. */
@@ -84,10 +76,6 @@ public final class VillagerCommandController {
         if (!(villager.level() instanceof ServerLevel level)) return TickResult.NONE;
         UUID ownerId = VillagerAssignmentStore.commandOwner(villager).orElse(null);
         if (ownerId == null) return TickResult.NONE;
-        if (com.jvn.villagerretaliation.party.PartyQuickCommandService.overridesRecruitmentMovement(villager)) {
-            return TickResult.NONE;
-        }
-
         boolean partyVillager = PartyVillagerContractService.isActivePartyVillager(level, villager);
         ServerPlayer owner = level.getServer().getPlayerList().getPlayer(ownerId);
         if (VillagerAssignmentStore.isFollowing(villager)) {
@@ -112,8 +100,9 @@ public final class VillagerCommandController {
             dismount(villager);
         }
 
-        if (villager.isSleeping() || villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {
-            suppressAiOncePerTick(villager);
+        VillagerAiArbitration.Priority priority = VillagerAiArbitration.currentPriority(level, villager);
+        if (priority.yieldsCommandMovement()) {
+            yieldNavigation(villager);
             return TickResult.NONE;
         }
         if (VillagerAssignmentStore.isStaying(villager)) {
@@ -122,7 +111,6 @@ public final class VillagerCommandController {
         }
         if (owner == null || owner.level() != level) return TickResult.NONE;
 
-        suppressAiOncePerTick(villager);
         villager.getLookControl().setLookAt(owner, 30.0F, 30.0F);
         if (owner.getVehicle() != null && villager.getVehicle() == owner.getVehicle()) {
             stopNavigation(villager);
@@ -136,7 +124,6 @@ public final class VillagerCommandController {
     }
 
     private static void maintainStay(Villager villager) {
-        suppressAiOncePerTick(villager);
         BlockPos anchor = VillagerAssignmentStore.stayAnchor(villager);
         if (anchor == null) return;
         double x = anchor.getX() + 0.5D;
@@ -144,7 +131,9 @@ public final class VillagerCommandController {
         double distanceSqr = villager.distanceToSqr(x, anchor.getY(), z);
         if (distanceSqr > STAY_RETURN_START_DISTANCE_SQR) {
             villager.getLookControl().setLookAt(x, anchor.getY(), z, 20.0F, 20.0F);
-            villager.getNavigation().moveTo(x, anchor.getY(), z, STAY_SPEED);
+            if (villager.getNavigation().moveTo(x, anchor.getY(), z, STAY_SPEED)) {
+                rememberOwnedNavigationTarget(villager);
+            }
         } else if (distanceSqr < STAY_RETURN_STOP_DISTANCE_SQR) {
             stopNavigation(villager);
         }
@@ -177,7 +166,6 @@ public final class VillagerCommandController {
         if (!targetChanged && !targetMoved && !villager.getNavigation().isDone() && gameTime < state.nextRecalculation()) {
             return true;
         }
-        VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
         boolean moved;
         if (isMountedDriver(villager)) {
             AbstractHorse horse = (AbstractHorse) villager.getControlledVehicle();
@@ -188,6 +176,7 @@ public final class VillagerCommandController {
         }
         long delay = PATH_RECALCULATION_MIN_TICKS + villager.getRandom().nextInt(PATH_RECALCULATION_RANDOM_TICKS);
         PATH_STATES.put(villager.getUUID(), new PathState(target.getUUID(), target.getX(), target.getY(), target.getZ(), gameTime + delay));
+        if (moved) rememberOwnedNavigationTarget(villager);
         return moved;
     }
 
@@ -196,27 +185,17 @@ public final class VillagerCommandController {
         return FOLLOW_SPEED * Mth.clamp(distancePastComfort * 0.12D, 0.85D, 1.45D);
     }
 
-    private static void suppressAiOncePerTick(Villager villager) {
-        if (!(villager.level() instanceof ServerLevel level)) return;
-        Long previous = LAST_AI_SUPPRESSION_TICKS.put(villager.getUUID(), level.getGameTime());
-        if (previous != null && previous == level.getGameTime()) return;
-        suppressAi(villager);
+    private static void rememberOwnedNavigationTarget(Villager villager) {
+        BlockPos target = villager.getNavigation().getTargetPos();
+        if (target != null) OWNED_NAVIGATION_TARGETS.put(villager.getUUID(), target);
     }
 
-    private static void suppressAi(Villager villager) {
-        if (villager.level() instanceof ServerLevel level
-                && PartyVillagerContractService.isActivePartyVillager(level, villager)
-                && (villager.getTarget() != null || villager.getLastHurtByMob() != null)) return;
-        Brain<Villager> brain = villager.getBrain();
-        VillagerRetaliationVillagerBrainUtil.clearMovementMemories(villager);
-        brain.eraseMemory(MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM);
-        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.NEAREST_HOSTILE);
-        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY);
-        VillagerRetaliationVillagerCombatUtil.eraseMemoryIfRegistered(villager, MemoryModuleType.HURT_BY_ENTITY);
-        villager.setTarget(null);
-        villager.setLastHurtByMob(null);
-        brain.setDefaultActivity(Activity.IDLE);
-        brain.setActiveActivityIfPossible(Activity.IDLE);
+    private static void yieldNavigation(Villager villager) {
+        PATH_STATES.remove(villager.getUUID());
+        BlockPos ownedTarget = OWNED_NAVIGATION_TARGETS.remove(villager.getUUID());
+        if (ownedTarget != null && ownedTarget.equals(villager.getNavigation().getTargetPos())) {
+            villager.getNavigation().stop();
+        }
     }
 
     private static boolean isMountedDriver(Villager villager) {
@@ -229,13 +208,16 @@ public final class VillagerCommandController {
 
     private static void stopNavigation(Villager villager) {
         PATH_STATES.remove(villager.getUUID());
-        VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
+        BlockPos ownedTarget = OWNED_NAVIGATION_TARGETS.remove(villager.getUUID());
+        if (ownedTarget != null && ownedTarget.equals(villager.getNavigation().getTargetPos())) {
+            villager.getNavigation().stop();
+        }
     }
 
     public static void clearRuntimeState() {
         NEXT_JOURNEY_UPDATE_TICKS.clear();
-        LAST_AI_SUPPRESSION_TICKS.clear();
         PATH_STATES.clear();
+        OWNED_NAVIGATION_TARGETS.clear();
     }
 
     public enum TickResult {

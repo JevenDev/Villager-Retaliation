@@ -108,10 +108,12 @@ public final class VillagerBehaviorSuppressionGameTests {
                 "hired breeding must be suppressed");
         helper.assertTrue(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.VILLAGE_MIGRATION),
                 "hired village migration must be suppressed");
-        helper.assertTrue(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING),
-                "hired trading must be suppressed");
-        helper.assertValueEqual(villager.mobInteract(hirer, InteractionHand.MAIN_HAND), InteractionResult.FAIL,
-                "hired vanilla right-click trading must be rejected");
+        helper.assertFalse(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING),
+                "hired trading remains available above role and movement intents");
+        helper.assertFalse(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.VANILLA_PANIC),
+                "hired villagers retain vanilla danger arbitration");
+        helper.assertFalse(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.VANILLA_WORKING),
+                "profession activities remain available when no concrete role task owns the tick");
         helper.assertFalse(suppresses(villager, VillagerBehaviorSuppressionPolicy.Behavior.SLEEPING),
                 "hired rest remains an explicit compatibility exception");
 
@@ -141,6 +143,43 @@ public final class VillagerBehaviorSuppressionGameTests {
 
         villager.discard();
         partner.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void followIntentYieldsWithoutErasingBrainState(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "arbitration_hirer");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Villager attacker = spawnVillager(helper, new BlockPos(4, 2, 1));
+
+        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 0);
+        helper.assertTrue(
+                com.jvn.villagerretaliation.interaction.VillagerRecruitmentService.startFollowing(
+                        level, villager, hirer),
+                "hired fixture should accept its owner's follow intent");
+        villager.getBrain().setMemory(MemoryModuleType.NEAREST_HOSTILE, attacker);
+        villager.getBrain().setMemory(MemoryModuleType.HURT_BY_ENTITY, attacker);
+        villager.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new net.minecraft.world.entity.ai.memory.WalkTarget(attacker.position(), 0.6F, 0));
+
+        com.jvn.villagerretaliation.interaction.VillagerRecruitmentService.onVillagerTickPre(villager);
+        com.jvn.villagerretaliation.interaction.VillagerRecruitmentService.onVillagerTickPost(villager);
+
+        helper.assertTrue(villager.getBrain().hasMemoryValue(MemoryModuleType.NEAREST_HOSTILE),
+                "follow intent must preserve hostile memory");
+        helper.assertTrue(villager.getBrain().hasMemoryValue(MemoryModuleType.HURT_BY_ENTITY),
+                "follow intent must preserve damage memory");
+        helper.assertTrue(villager.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET),
+                "yielding follow intent must preserve higher-priority movement memory");
+        helper.assertValueEqual(
+                com.jvn.villagerretaliation.interaction.VillagerAiArbitration.currentPriority(level, villager),
+                com.jvn.villagerretaliation.interaction.VillagerAiArbitration.Priority.IMMEDIATE_DANGER,
+                "damage must outrank follow movement");
+
+        villager.discard();
+        attacker.discard();
         helper.succeed();
     }
 
