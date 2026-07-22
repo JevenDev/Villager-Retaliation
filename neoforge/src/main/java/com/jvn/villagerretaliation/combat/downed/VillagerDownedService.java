@@ -46,8 +46,21 @@ public final class VillagerDownedService {
 
     public static void onLivingDamagePre(LivingDamageEvent.Pre event) {
         if (!(event.getEntity() instanceof Villager villager)
-                || !(villager.level() instanceof ServerLevel level)
-                || canBypassDownedProtection(villager, event.getSource())) {
+                || !(villager.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        boolean authorizedFinisher = com.jvn.villagerretaliation.duel.DuelService
+                .isAuthorizedFinisher(villager, event.getSource());
+        if (authorizedFinisher || canBypassDownedProtection(villager, event.getSource())) {
+            float healthDamage = Math.max(0.0F, event.getNewDamage() - villager.getAbsorptionAmount());
+            if (isDowned(villager) && healthDamage >= villager.getHealth()) {
+                if (authorizedFinisher) {
+                    com.jvn.villagerretaliation.duel.DuelService
+                            .consumeAuthorizedFinisher(villager, event.getSource());
+                }
+                releaseForLethalDamage(villager);
+            }
             return;
         }
 
@@ -123,7 +136,8 @@ public final class VillagerDownedService {
         villager.getPersistentData().put(STATE_KEY, state);
         com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
         NEXT_THREAT_SCAN_TICKS.remove(villager.getUUID());
-        villager.setHealth(Math.max(1.0F, villager.getHealth()));
+        villager.setHealth(1.0F);
+        villager.setAbsorptionAmount(0.0F);
         if (villager.isPassenger()) {
             villager.stopRiding();
         }
@@ -208,8 +222,7 @@ public final class VillagerDownedService {
     }
 
     public static boolean canBypassDownedProtection(Villager villager, DamageSource source) {
-        return com.jvn.villagerretaliation.duel.DuelService.isAuthorizedFinisher(villager, source)
-                || source.is(DamageTypes.GENERIC_KILL)
+        return source.is(DamageTypes.GENERIC_KILL)
                 || source.is(DamageTypes.FELL_OUT_OF_WORLD)
                 || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
     }
@@ -249,6 +262,22 @@ public final class VillagerDownedService {
         villager.setTarget(null);
         villager.setAggressive(false);
         SceneLifecycleIntegration.onActorRecovered(villager);
+        VillagerReputationNetworking.syncDownedStateToTracking(villager, false);
+        VillagerSecondWindCompat.notifyStateChanged(villager);
+    }
+
+    private static void releaseForLethalDamage(Villager villager) {
+        CompoundTag state = state(villager);
+        boolean previousNoAi = state.getBoolean(PREVIOUS_NO_AI_KEY);
+        boolean previousCanPickUpLoot = state.getBoolean(PREVIOUS_PICKUP_KEY);
+        villager.getPersistentData().remove(STATE_KEY);
+        NEXT_THREAT_SCAN_TICKS.remove(villager.getUUID());
+        PENDING_ABSORPTION_RESTORE.remove(villager.getUUID());
+        villager.setNoAi(previousNoAi);
+        villager.setCanPickUpLoot(previousCanPickUpLoot);
+        villager.refreshDimensions();
+        villager.setTarget(null);
+        villager.setAggressive(false);
         VillagerReputationNetworking.syncDownedStateToTracking(villager, false);
         VillagerSecondWindCompat.notifyStateChanged(villager);
     }

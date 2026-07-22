@@ -15,12 +15,13 @@ public final class DuelInventoryClientState {
     private DuelInventoryClientState() {}
 
     public static void accept(DuelInventoryStatePayload payload) {
-        boolean closingAssignedInventory = assignedLoadout()
-                && !payload.active()
-                && Minecraft.getInstance().screen instanceof InventoryScreen;
+        Minecraft minecraft = Minecraft.getInstance();
+        boolean restoredDuelLayout = !payload.active()
+                && minecraft.screen instanceof DuelInventoryScreenAccess screen
+                && screen.villagerretaliation$restoreDuelInventorySlots();
         active = payload.active();
         assignedLoadout = payload.active() && payload.assignedLoadout();
-        if (closingAssignedInventory) Minecraft.getInstance().setScreen(null);
+        if (restoredDuelLayout && minecraft.screen instanceof InventoryScreen) minecraft.setScreen(null);
     }
 
     public static boolean active() {
@@ -55,6 +56,9 @@ public final class DuelInventoryClientState {
     }
 
     public static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+        if (Minecraft.getInstance().screen instanceof DuelInventoryScreenAccess screen) {
+            screen.villagerretaliation$restoreDuelInventorySlots();
+        }
         active = false;
         assignedLoadout = false;
     }

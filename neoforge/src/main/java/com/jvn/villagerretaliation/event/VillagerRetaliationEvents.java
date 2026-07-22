@@ -344,6 +344,9 @@ public final class VillagerRetaliationEvents {
             if (VillagerDownedService.isDowned(villager)) {
                 return;
             }
+            if (com.jvn.villagerretaliation.duel.DuelService.isParticipant(villager)) {
+                return;
+            }
             if (villager.level() instanceof ServerLevel level) {
                 VillagerBehaviorSuppressionPolicy.enforce(level, villager);
             }
@@ -371,6 +374,9 @@ public final class VillagerRetaliationEvents {
         if (entity instanceof Villager villager) {
             if (VillagerDownedService.isDowned(villager)) {
                 com.jvn.villagerretaliation.mount.VillagerMountTravelService.onVillagerDowned(villager);
+                return;
+            }
+            if (com.jvn.villagerretaliation.duel.DuelService.isParticipant(villager)) {
                 return;
             }
             VillagerNaturalJobArmor.maybeRoll(villager);
@@ -405,6 +411,7 @@ public final class VillagerRetaliationEvents {
             VillagerWalletService.tickWallet(villager);
             VillagerSocialGraphService.onEntityTickPost(event);
             VillagerReputationEvents.onEntityTickPost(event);
+            com.jvn.villagerretaliation.duel.DuelService.onVillagerTickPost(villager);
             return;
         }
         if (entity instanceof AbstractVillager villager

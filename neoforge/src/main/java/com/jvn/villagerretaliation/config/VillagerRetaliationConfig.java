@@ -22,6 +22,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> DUEL_COOLDOWN_DAYS = bind("duels.cooldownDays", Integer.class);
     public static final ConfigValue<Integer> DUEL_REFUSAL_LOSSES = bind("duels.refusalLosses", Integer.class);
     public static final ConfigValue<Integer> DUEL_ARENA_RADIUS = bind("duels.arenaRadius", Integer.class);
+    public static final ConfigValue<Boolean> SHOW_DUEL_ARENA_PARTICLES = bind("duels.showArenaParticles", Boolean.class);
     public static final ConfigValue<Integer> DUEL_BOUNDARY_GRACE_TICKS = bind("duels.boundaryGraceTicks", Integer.class);
     public static final ConfigValue<Integer> DUEL_TIMEOUT_TICKS = bind("duels.timeoutTicks", Integer.class);
     public static final ConfigValue<Integer> DUEL_SPECTATOR_RADIUS = bind("duels.spectatorRadius", Integer.class);

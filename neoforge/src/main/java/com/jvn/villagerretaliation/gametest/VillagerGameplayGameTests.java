@@ -470,6 +470,24 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void operatorKillFinishesAlreadyDownedVillager(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        villager.addTag(VillagerDeathProtectionResolver.ESSENTIAL_ENTITY_TAG);
+        villager.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
+        helper.assertTrue(VillagerDownedService.isDowned(villager),
+                "essential villager should be downed before the bypass hit");
+
+        villager.invulnerableTime = 0;
+        villager.hurt(helper.getLevel().damageSources().genericKill(), Float.MAX_VALUE);
+
+        helper.assertTrue(villager.isDeadOrDying() || villager.isRemoved(),
+                "generic kill should finish an already downed villager");
+        helper.assertFalse(VillagerDownedService.isDowned(villager),
+                "lethal bypass damage should release the downed state");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void downedVillagerSuspendsInteractionAndClearsRetargeting(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer player = fakePlayer(level, "VrDownedInteraction");

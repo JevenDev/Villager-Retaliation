@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
 import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.interaction.work.HiredPathResult;
@@ -454,6 +455,7 @@ public final class PartyQuickCommandService {
                 || !villager.isAlive()
                 || target == null
                 || target == villager
+                || DuelService.isParticipant(target)
                 || !target.isAlive()
                 || !villager.canAttack(target)
                 || target.isAlliedTo(villager)

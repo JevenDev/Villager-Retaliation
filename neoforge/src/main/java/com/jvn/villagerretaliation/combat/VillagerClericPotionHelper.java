@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRelations;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -518,7 +519,8 @@ final class VillagerClericPotionHelper {
     }
 
     private static boolean isSupportTarget(Villager villager, LivingEntity entity, float healthThreshold, boolean requireLineOfSight) {
-        if (entity == villager || !entity.isAlive() || entity.isInvertedHealAndHarm()) {
+        if (entity == villager || !entity.isAlive() || entity.isInvertedHealAndHarm()
+                || DuelService.isParticipant(entity)) {
             return false;
         }
         if (!(entity instanceof Villager)
@@ -612,6 +614,13 @@ final class VillagerClericPotionHelper {
     }
 
     private static boolean throwSplashPotionLikeWitch(Villager villager, LivingEntity target, ServerLevel level, ItemStack potionStack) {
+        if (VillagerRetaliationPotionUtil.isHealingPotion(potionStack)
+                && !level.getEntitiesOfClass(
+                        LivingEntity.class,
+                        target.getBoundingBox().inflate(SPLASH_RADIUS),
+                        DuelService::isParticipant).isEmpty()) {
+            return false;
+        }
         potionStack = carriedOrGenerated(villager, potionStack);
         if (potionStack.isEmpty()) return false;
         ThrownPotion thrownPotion = new ThrownPotion(level, villager);

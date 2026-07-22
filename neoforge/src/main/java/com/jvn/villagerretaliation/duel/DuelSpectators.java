@@ -32,12 +32,16 @@ final class DuelSpectators {
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     }
 
-    static void maintain(ServerLevel level, Set<UUID> ids, Vec3 center, Villager duelist) {
+    static void maintain(ServerLevel level, Set<UUID> ids, Vec3 center, int arenaRadius, Villager duelist) {
         int index = 0;
+        double spectatorRingRadius = arenaRadius + 3.0D;
         for (UUID id : ids) {
             if (!(level.getEntity(id) instanceof Villager spectator) || !spectator.isAlive()) continue;
             double angle = Math.PI * 2.0D * index++ / Math.max(1, ids.size());
-            Vec3 target = center.add(Math.cos(angle) * 10.0D, 0.0D, Math.sin(angle) * 10.0D);
+            Vec3 target = new Vec3(
+                    center.x + Math.cos(angle) * spectatorRingRadius,
+                    spectator.getY(),
+                    center.z + Math.sin(angle) * spectatorRingRadius);
             if (spectator.position().distanceToSqr(target) > 4.0D) {
                 spectator.getNavigation().moveTo(target.x, target.y, target.z, 0.6D);
             }
