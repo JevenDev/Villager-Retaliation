@@ -397,6 +397,11 @@ public final class HiredVillagerContractService {
         if (level == null || villager == null || villager.isBaby() || player == null) {
             return false;
         }
+        expireHireContractIfNeeded(level, villager);
+        if (currentContractHirer(villager).isPresent()
+                || VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.HIRED) {
+            return false;
+        }
         int safeDays = clampedContractDays(days);
         HiredVillagerRole safeRole = role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
         if (safeRole == null || !HiredVillagerRoles.availableContractRoles(level, villager).contains(safeRole)) {
@@ -436,6 +441,11 @@ public final class HiredVillagerContractService {
 
     public static void startOneOffBuilderJob(ServerLevel level, Villager villager, ServerPlayer player) {
         if (level == null || villager == null || villager.isBaby() || player == null) {
+            return;
+        }
+        expireHireContractIfNeeded(level, villager);
+        if (currentContractHirer(villager).isPresent()
+                || VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.HIRED) {
             return;
         }
         VillagerRecruitmentService.stopFollowing(villager);

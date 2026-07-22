@@ -76,24 +76,25 @@ public final class VillagerCommandController {
         if (!(villager.level() instanceof ServerLevel level)) return TickResult.NONE;
         UUID ownerId = VillagerAssignmentStore.commandOwner(villager).orElse(null);
         if (ownerId == null) return TickResult.NONE;
-        boolean partyVillager = PartyVillagerContractService.isActivePartyVillager(level, villager);
+        boolean durableCommand = PartyVillagerContractService.isActivePartyVillager(level, villager)
+                || VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.HIRED;
         ServerPlayer owner = level.getServer().getPlayerList().getPlayer(ownerId);
         if (VillagerAssignmentStore.isFollowing(villager)) {
             if (owner == null) {
                 stopNavigation(villager);
-                return partyVillager ? TickResult.WAITING_FOR_OWNER : TickResult.OWNER_LOST;
+                return durableCommand ? TickResult.WAITING_FOR_OWNER : TickResult.OWNER_LOST;
             }
             if (owner.level() != level) {
                 stopNavigation(villager);
-                return partyVillager ? TickResult.WAITING_FOR_OWNER : TickResult.OWNER_CHANGED_DIMENSION;
+                return durableCommand ? TickResult.WAITING_FOR_OWNER : TickResult.OWNER_CHANGED_DIMENSION;
             }
             if (!owner.isAlive() || owner.isSpectator() || !villager.isAlive()) {
-                return partyVillager ? TickResult.WAITING_FOR_OWNER : TickResult.OWNER_LOST;
+                return durableCommand ? TickResult.WAITING_FOR_OWNER : TickResult.OWNER_LOST;
             }
             updateJourney(level, villager);
             syncVehicle(villager, owner);
             double maxDistance = VillagerRetaliationConfig.MAX_FOLLOW_DISTANCE.get();
-            if (!partyVillager && villager.distanceToSqr(owner) > maxDistance * maxDistance) {
+            if (!durableCommand && villager.distanceToSqr(owner) > maxDistance * maxDistance) {
                 return TickResult.LEFT_BEHIND;
             }
         } else if (owner != null) {
