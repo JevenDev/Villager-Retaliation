@@ -49,8 +49,8 @@ public final class VillagerBehaviorSuppressionPolicy {
     }
 
     /**
-     * Vanilla rest and the hired-farmer bridge are deliberate compatibility exceptions. Everything
-     * else for a controlled villager is driven by the mod's work, follow, combat, or recovery loop.
+     * Only a concrete hired-role task suppresses the vanilla Brain. Danger, conversation, trading,
+     * rest, and ordinary schedules remain available to the arbiter.
      */
     public static boolean shouldSuppressVanillaBrainTick(ServerLevel level, Villager villager) {
         ControlState state = state(villager);
@@ -68,7 +68,7 @@ public final class VillagerBehaviorSuppressionPolicy {
         if (villager.isSleeping() || brain.isActive(Activity.REST) || scheduled == Activity.REST) {
             return false;
         }
-        return !HiredVillagerFocusService.shouldAllowCompatibleVanillaFarmerBrain(level, villager);
+        return HiredVillagerFocusService.shouldSuppressVanillaBrainTick(level, villager);
     }
 
     /** Applies transition-safe cleanup and is intentionally idempotent for tick/load enforcement. */
@@ -130,13 +130,9 @@ public final class VillagerBehaviorSuppressionPolicy {
         rules.put(ControlState.NORMAL, EnumSet.noneOf(Behavior.class));
         rules.put(ControlState.DOWNED, EnumSet.allOf(Behavior.class));
         rules.put(ControlState.HIRED, EnumSet.of(
-                Behavior.TRADING,
                 Behavior.BREEDING,
                 Behavior.GOSSIPING,
-                Behavior.VANILLA_WORKING,
                 Behavior.WANDERING,
-                Behavior.VANILLA_ITEM_PICKUP,
-                Behavior.VANILLA_PANIC,
                 Behavior.JOB_SITE_CLAIMING,
                 Behavior.VILLAGE_MIGRATION));
         rules.put(ControlState.PARTIED, EnumSet.of(
