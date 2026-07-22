@@ -1023,6 +1023,48 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void woundedVillagerWithoutRecoverySuppliesKeepsFighting(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Zombie target = spawnZombie(helper, new BlockPos(3, 2, 1));
+        setRecoveryState(villager, 20, 5.0F);
+        villager.setHealth(villager.getMaxHealth() * 0.4F);
+        villager.setTarget(target);
+
+        helper.assertFalse(
+                VillagerRecoveryService.onVillagerTickPost(villager),
+                EMPTY_TEMPLATE);
+        helper.assertTrue(villager.getTarget() == target, EMPTY_TEMPLATE);
+        helper.assertFalse(VillagerRecoveryService.isForcingRecovery(villager), EMPTY_TEMPLATE);
+
+        VillagerRecoveryService.onVillagerUnloaded(villager);
+        target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void woundedVillagerWithFoodRetreatsToRecover(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Zombie target = spawnZombie(helper, new BlockPos(3, 2, 1));
+        setRecoveryState(villager, 9, 0.0F);
+        villager.setHealth(villager.getMaxHealth() * 0.4F);
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.BREAD));
+        villager.setTarget(target);
+
+        helper.assertTrue(
+                VillagerRecoveryService.onVillagerTickPost(villager),
+                EMPTY_TEMPLATE);
+        helper.assertTrue(villager.getTarget() == null, EMPTY_TEMPLATE);
+        helper.assertTrue(VillagerRecoveryService.isForcingRecovery(villager), EMPTY_TEMPLATE);
+        helper.assertTrue(villager.getMainHandItem().is(Items.BREAD), EMPTY_TEMPLATE);
+
+        VillagerRecoveryService.onVillagerUnloaded(villager);
+        target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void villagerFoodUseLastsForItemAnimation(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         ItemStack bread = new ItemStack(Items.BREAD);

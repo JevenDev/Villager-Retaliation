@@ -1,7 +1,8 @@
 package com.jvn.villagerretaliation.duel;
 
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -52,9 +53,7 @@ final class DuelEquipment {
     }
 
     private static void clear(Villager villager) {
-        for (int i = 0; i < villager.getInventory().getContainerSize(); i++) {
-            villager.getInventory().setItem(i, ItemStack.EMPTY);
-        }
+        VillagerInventoryAccess.replaceFullInventory(villager, List.of());
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             villager.setItemSlot(slot, ItemStack.EMPTY);
         }
@@ -71,13 +70,13 @@ final class DuelEquipment {
         player.getInventory().setItem(0, new ItemStack(Items.BOW));
         player.getInventory().setItem(1, new ItemStack(Items.ARROW, 64));
         villager.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
-        villager.getInventory().addItem(new ItemStack(Items.ARROW, 64));
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.ARROW, 64));
     }
 
     private static void armored(ServerPlayer player, Villager villager) {
         melee(player, villager);
         player.getInventory().setItem(1, new ItemStack(Items.IRON_AXE));
-        villager.getInventory().addItem(new ItemStack(Items.IRON_AXE));
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.IRON_AXE));
         equip(player, villager, EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
         equip(player, villager, EquipmentSlot.LEGS, new ItemStack(Items.IRON_LEGGINGS));
         equip(player, villager, EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
@@ -120,25 +119,23 @@ final class DuelEquipment {
     }
 
     record VillagerSnapshot(List<ItemStack> inventory, Map<EquipmentSlot, ItemStack> equipment,
+                            CompoundTag equipmentOwnership,
                             float health, float absorption, List<MobEffectInstance> effects, boolean pickup,
                             VillagerRecoveryService.RecoverySnapshot recovery) {
         static VillagerSnapshot capture(Villager villager) {
-            List<ItemStack> inventory = new ArrayList<>();
-            for (int i = 0; i < villager.getInventory().getContainerSize(); i++) {
-                inventory.add(villager.getInventory().getItem(i).copy());
-            }
+            List<ItemStack> inventory = VillagerInventoryAccess.captureFullInventory(villager);
             Map<EquipmentSlot, ItemStack> equipment = new EnumMap<>(EquipmentSlot.class);
             for (EquipmentSlot slot : EquipmentSlot.values()) equipment.put(slot, villager.getItemBySlot(slot).copy());
-            return new VillagerSnapshot(List.copyOf(inventory), equipment, villager.getHealth(),
+            return new VillagerSnapshot(List.copyOf(inventory), equipment,
+                    VillagerRetaliationVillagerEquipment.captureOwnershipState(villager), villager.getHealth(),
                     villager.getAbsorptionAmount(), villager.getActiveEffects().stream().map(MobEffectInstance::new).toList(),
                     villager.canPickUpLoot(), VillagerRecoveryService.captureRecoveryState(villager));
         }
 
         void restore(Villager villager) {
-            for (int i = 0; i < villager.getInventory().getContainerSize(); i++) {
-                villager.getInventory().setItem(i, i < this.inventory.size() ? this.inventory.get(i).copy() : ItemStack.EMPTY);
-            }
+            VillagerInventoryAccess.replaceFullInventory(villager, this.inventory);
             this.equipment.forEach((slot, stack) -> villager.setItemSlot(slot, stack.copy()));
+            VillagerRetaliationVillagerEquipment.restoreOwnershipState(villager, this.equipmentOwnership);
             villager.removeAllEffects();
             this.effects.forEach(effect -> villager.addEffect(new MobEffectInstance(effect)));
             villager.setHealth(Math.min(villager.getMaxHealth(), Math.max(1.0F, this.health)));

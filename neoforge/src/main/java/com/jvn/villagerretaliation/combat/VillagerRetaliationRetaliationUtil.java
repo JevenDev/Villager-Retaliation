@@ -29,6 +29,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -46,6 +47,7 @@ public final class VillagerRetaliationRetaliationUtil {
     private static final int RANDOM_PATH_RECALCULATION_TICKS = 7;
     private static final double PATHED_TARGET_MOVED_DISTANCE_SQR = 1.0D;
     private static final double MELEE_EDGE_REACH = 0.45D;
+    private static final double AXE_BREAKER_EDGE_REACH = 1.25D;
     private static final double MOUNTED_MELEE_EDGE_REACH = 1.0D;
     private static final double CLOSE_MELEE_STEERING_DISTANCE_SQR = 9.0D;
     private static final int MIN_GROUND_WEAPON_PURSUIT_RECALCULATION_TICKS = 4;
@@ -336,6 +338,9 @@ public final class VillagerRetaliationRetaliationUtil {
     }
 
     public static boolean isUsingRangedCombatMode(AbstractVillager villager) {
+        if (villager instanceof Villager regular && VillagerCombatStateMachine.hasActiveMode(regular)) {
+            return VillagerCombatStateMachine.isUsingRangedMode(regular);
+        }
         return VillagerRetaliationVillagerWeapons.isRangedWeapon(VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager));
     }
 
@@ -348,10 +353,14 @@ public final class VillagerRetaliationRetaliationUtil {
                 ? controlledMount
                 : villager;
         boolean mounted = meleeBody != villager;
-        double edgeReach = mounted ? MOUNTED_MELEE_EDGE_REACH : MELEE_EDGE_REACH;
+        boolean axeBreaker = villager instanceof Villager regular
+                && VillagerCombatStateMachine.isUsingAxeBreakerMode(regular);
+        double edgeReach = axeBreaker
+                ? AXE_BREAKER_EDGE_REACH
+                : mounted ? MOUNTED_MELEE_EDGE_REACH : MELEE_EDGE_REACH;
         return target.isAlive()
                 && villager.hasLineOfSight(target)
-                && (mounted || villager.isWithinMeleeAttackRange(target))
+                && (mounted || axeBreaker || villager.isWithinMeleeAttackRange(target))
                 && isWithinTightMeleeAttackRange(meleeBody, target, edgeReach);
     }
 

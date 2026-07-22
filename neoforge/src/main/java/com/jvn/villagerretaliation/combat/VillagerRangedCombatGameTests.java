@@ -1,5 +1,9 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -22,6 +26,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -114,6 +119,165 @@ public final class VillagerRangedCombatGameTests {
             target.discard();
             villager.discard();
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void combatStateSelectionUsesDistanceAmmoAndShieldPressure(GameTestHelper helper) {
+        helper.assertValueEqual(
+                VillagerCombatStateMachine.selectMode(null, 64.0D, false, true, true, true),
+                VillagerCombatStateMachine.CombatMode.RANGED,
+                EMPTY_TEMPLATE);
+        helper.assertValueEqual(
+                VillagerCombatStateMachine.selectMode(
+                        VillagerCombatStateMachine.CombatMode.RANGED, 25.0D, false, true, true, true),
+                VillagerCombatStateMachine.CombatMode.RANGED,
+                EMPTY_TEMPLATE);
+        helper.assertValueEqual(
+                VillagerCombatStateMachine.selectMode(null, 9.0D, false, true, true, true),
+                VillagerCombatStateMachine.CombatMode.MELEE,
+                EMPTY_TEMPLATE);
+        helper.assertValueEqual(
+                VillagerCombatStateMachine.selectMode(null, 64.0D, false, false, true, false),
+                VillagerCombatStateMachine.CombatMode.MELEE,
+                EMPTY_TEMPLATE);
+        helper.assertValueEqual(
+                VillagerCombatStateMachine.selectMode(null, 64.0D, true, true, true, true),
+                VillagerCombatStateMachine.CombatMode.AXE_BREAKER,
+                EMPTY_TEMPLATE);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void combatStateSwapsBetweenCarriedWeapons(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = spawnZombie(helper, new BlockPos(3, 2, 2));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.CROSSBOW));
+        inventory.markPlayerPlacedSupply(HiredJobInventory.HOTBAR_START);
+        VillagerCombatStateMachine.prepare(villager, target, 64.0D);
+        helper.assertTrue(villager.getMainHandItem().is(Items.CROSSBOW), EMPTY_TEMPLATE);
+        VillagerCombatStateMachine.prepare(villager, target, 9.0D);
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD), EMPTY_TEMPLATE);
+        VillagerCombatStateMachine.clearState(villager);
+        target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void anyVillagerWithShieldGuardsBetweenAttacks(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = spawnZombie(helper, new BlockPos(3, 2, 2));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        villager.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+        villager.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+        VillagerRetaliationHandler.forceAngerSilently(villager, target);
+        VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(villager));
+        VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(villager));
+        helper.assertTrue(villager.isUsingItem()
+                        && villager.getUsedItemHand() == InteractionHand.OFF_HAND
+                        && villager.getUseItem().is(Items.SHIELD),
+                EMPTY_TEMPLATE);
+        VillagerArmorerCombatTactics.resetState(villager);
+        VillagerCombatStateMachine.clearState(villager);
+        target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void emptyCrossbowFallsBackToPersonalMeleeWeapon(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = spawnZombie(helper, new BlockPos(3, 2, 2));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.CROSSBOW));
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.IRON_SWORD));
+        VillagerCombatStateMachine.prepare(villager, target, 64.0D);
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD), EMPTY_TEMPLATE);
+        helper.assertTrue(inventory.getItem(HiredJobInventory.MAINHAND_SLOT).is(Items.CROSSBOW), EMPTY_TEMPLATE);
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.ARROW));
+        VillagerCombatStateMachine.prepare(villager, target, 64.0D);
+        helper.assertTrue(villager.getMainHandItem().is(Items.CROSSBOW), EMPTY_TEMPLATE);
+        helper.assertTrue(VillagerInventoryAccess.hasCarriedItem(villager, stack -> stack.is(Items.IRON_SWORD)), EMPTY_TEMPLATE);
+        VillagerCombatStateMachine.clearState(villager);
+        target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void shieldingTargetPullsAxeFromPersonalInventory(GameTestHelper helper) {
+        Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager target = spawnVillager(helper, new BlockPos(3, 2, 2));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(attacker);
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.CROSSBOW));
+        VillagerInventoryAccess.addItem(attacker, new ItemStack(Items.IRON_AXE));
+        target.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+        target.startUsingItem(InteractionHand.OFF_HAND);
+        helper.assertValueEqual(
+                VillagerCombatStateMachine.prepare(attacker, target, 9.0D),
+                VillagerCombatStateMachine.CombatMode.AXE_BREAKER,
+                EMPTY_TEMPLATE);
+        helper.assertTrue(attacker.getMainHandItem().is(Items.IRON_AXE), EMPTY_TEMPLATE);
+        helper.assertTrue(inventory.getItem(HiredJobInventory.MAINHAND_SLOT).is(Items.CROSSBOW), EMPTY_TEMPLATE);
+        VillagerCombatStateMachine.clearState(attacker);
+        target.stopUsingItem();
+        target.discard();
+        attacker.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void axeBreakerCanStrikeShieldBeforeBodyContact(GameTestHelper helper) {
+        Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Villager target = spawnVillager(helper, new BlockPos(4, 2, 2));
+        VillagerInventoryAccess.addItem(attacker, new ItemStack(Items.IRON_AXE));
+        target.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+        target.startUsingItem(InteractionHand.OFF_HAND);
+        target.moveTo(attacker.getX() + 1.5D, attacker.getY(), attacker.getZ(), 0.0F, 0.0F);
+
+        helper.assertValueEqual(
+                VillagerCombatStateMachine.prepare(attacker, target, attacker.distanceToSqr(target)),
+                VillagerCombatStateMachine.CombatMode.AXE_BREAKER,
+                EMPTY_TEMPLATE);
+        helper.assertTrue(
+                VillagerRetaliationRetaliationUtil.canMeleeHit(attacker, target),
+                EMPTY_TEMPLATE);
+
+        VillagerCombatStateMachine.clearState(attacker);
+        target.stopUsingItem();
+        target.discard();
+        attacker.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void rangedCombatRepairsStaleDownedHitbox(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = spawnZombie(helper, new BlockPos(5, 2, 2));
+        float standingHeight = villager.getDimensions(net.minecraft.world.entity.Pose.STANDING).height();
+        VillagerDownedService.enterDowned(
+                helper.getLevel(),
+                villager,
+                new VillagerDeathProtectionResolver.ProtectionResult(true, List.of(EMPTY_TEMPLATE)));
+        helper.assertTrue(villager.getBbHeight() < standingHeight, EMPTY_TEMPLATE);
+
+        villager.getPersistentData().remove(VillagerDownedService.DOWNED_STATE_TAG);
+        VillagerCombatStateMachine.prepare(villager, target, villager.distanceToSqr(target));
+
+        helper.assertTrue(Math.abs(villager.getBbHeight() - standingHeight) < 1.0E-4F, EMPTY_TEMPLATE);
+        Vec3 torsoStart = new Vec3(villager.getX() - 1.0D, villager.getY() + 1.25D, villager.getZ());
+        Vec3 torsoEnd = new Vec3(villager.getX() + 1.0D, villager.getY() + 1.25D, villager.getZ());
+        Vec3 headStart = new Vec3(villager.getX() - 1.0D, villager.getY() + 1.8D, villager.getZ());
+        Vec3 headEnd = new Vec3(villager.getX() + 1.0D, villager.getY() + 1.8D, villager.getZ());
+        helper.assertTrue(villager.getBoundingBox().clip(torsoStart, torsoEnd).isPresent(), EMPTY_TEMPLATE);
+        helper.assertTrue(villager.getBoundingBox().clip(headStart, headEnd).isPresent(), EMPTY_TEMPLATE);
+
+        VillagerCombatStateMachine.clearState(villager);
+        target.discard();
+        villager.discard();
         helper.succeed();
     }
 

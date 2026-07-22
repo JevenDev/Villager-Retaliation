@@ -320,7 +320,8 @@ public final class VillagerRetaliationHandler {
         }
 
         boolean transientMainHandActive = VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
-                || RETALIATION.hasTemporaryWeapon(villager);
+                || RETALIATION.hasTemporaryWeapon(villager)
+                || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager);
         if (!transientMainHandActive
                 && !VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
             HiredJobInventory.maintainEquipmentSlots(villager);
@@ -332,6 +333,7 @@ public final class VillagerRetaliationHandler {
         }
         boolean maintainingSelectedLoadout = !VillagerInventoryAccess.hasOpenInventory(villager)
                 && !VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+                && !VillagerCombatStateMachine.hasActiveMode(villager)
                 && VillagerCombatLoadoutService.maintainEquippedPreference(villager);
         if (!maintainingSelectedLoadout && shouldMaintainProfessionMainHand(villager, serverLevel.getGameTime())) {
             ensureProfessionMainHand(villager);
@@ -460,12 +462,10 @@ public final class VillagerRetaliationHandler {
             com.jvn.villagerretaliation.party.PartyQuickCommandService.prepareGuardAttack(villager);
         }
         if (!waveringUnarmedCounter && !holdingStandGuard) {
-            tryBorrowInventoryCombatWeapon(villager);
+            VillagerCombatStateMachine.prepare(villager, target, distanceSqr);
             if (tryAcquireGroundWeapon(villager, gameTime)) {
                 return;
             }
-
-            equipCombatWeapon(villager);
         }
         VillagerInteractionTracker.markGearReportsUsedInCombat(level, villager, hasEquippedWeaponGear(villager), hasEquippedArmorGear(villager));
         VillagerRetaliationRetaliationUtil.boostCombatMovement(villager);
@@ -521,6 +521,7 @@ public final class VillagerRetaliationHandler {
             if (syncMeleeAttackAttributes(villager) && villager.doHurtTarget(target)) {
                 VillagerEquipmentDurability.postMeleeHit(villager, target, attackHand);
             }
+            VillagerCombatStateMachine.disableTargetShieldAfterAxeAttack(villager, target);
             RETALIATION.setNextAttackTick(
                     villager,
                     gameTime + VillagerSocialAttributeBehavior.adjustCombatCooldownTicks(
@@ -963,35 +964,6 @@ public final class VillagerRetaliationHandler {
         );
     }
 
-    private static boolean tryBorrowInventoryCombatWeapon(Villager villager) {
-        if (VillagerInventoryAccess.hasOpenInventory(villager)
-                || VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
-            return false;
-        }
-
-        ItemStack weaponBeforePreference = VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager).copy();
-        if (VillagerCombatLoadoutService.ensurePreferredWeapon(villager)) {
-            RETALIATION.discardTemporaryWeapon(villager);
-            ItemStack equippedWeapon = VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager);
-            // Loading a crossbow mutates its components. Only seed a new attack cycle when
-            // the equipped weapon item actually changes, not when the current weapon loads.
-            if (!ItemStack.isSameItem(weaponBeforePreference, equippedWeapon)) {
-                VillagerRangedCombatHelper.seedInitialAttackDelay(villager, equippedWeapon);
-            }
-            return true;
-        }
-        if (VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
-            return false;
-        }
-
-        boolean borrowed = VillagerInventoryAccess.tryBorrowCombatWeapon(villager);
-        if (borrowed) {
-            RETALIATION.discardTemporaryWeapon(villager);
-            VillagerRangedCombatHelper.seedInitialAttackDelay(villager, villager.getMainHandItem());
-        }
-        return borrowed;
-    }
-
     private static void clearAnger(Villager villager) {
         clearAnger(villager, true, true);
     }
@@ -1007,7 +979,8 @@ public final class VillagerRetaliationHandler {
         NEXT_PARTY_KOS_TARGET_SCAN_TICKS.remove(villager.getUUID());
         VillagerHostileTierHarass.clearState(villager);
         VillagerArmorerCombatTactics.resetState(villager);
-        VillagerRangedCombatHelper.clearState(villager);
+        VillagerCombatStateMachine.clearState(villager);
+        VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         boolean preservePotionUse = VillagerClericPotionHelper.isDrinkingPotion(villager);
         if (preservePotionUse && RETALIATION.hasTemporaryWeapon(villager)) {
             VillagerClericPotionHelper.setPostDrinkMainHand(villager, RETALIATION.temporaryWeaponFallback(villager));
@@ -1439,7 +1412,7 @@ public final class VillagerRetaliationHandler {
         villager.setChasing(false);
         villager.setTarget(null);
         VillagerArmorerCombatTactics.resetState(villager);
-        VillagerRangedCombatHelper.clearState(villager);
+        VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         VillagerClericPotionHelper.clearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
@@ -1455,49 +1428,6 @@ public final class VillagerRetaliationHandler {
                 && targetVillager.isSleeping()
                 && PartyService.isRecruitedPartyVillager(level, attacker.getUUID())) {
             targetVillager.stopSleeping();
-        }
-    }
-
-    private static void equipCombatWeapon(Villager villager) {
-        if (VillagerInventoryAccess.hasOpenInventory(villager)) {
-            RETALIATION.restoreTemporaryWeapon(villager);
-            VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
-            return;
-        }
-
-        if (VillagerClericPotionHelper.isActivelyHandlingPotion(villager)) {
-            return;
-        }
-
-        if (VillagerCombatLoadoutService.ensurePreferredWeapon(villager)) {
-            RETALIATION.discardTemporaryWeapon(villager);
-            return;
-        }
-        if (VillagerCombatLoadoutService.preference(villager)
-                != com.jvn.villagerretaliation.party.PartyWeaponPreference.AUTO) {
-            return;
-        }
-
-        if (VillagerInventoryAccess.maintainBorrowedCombatWeapon(villager)) {
-            RETALIATION.discardTemporaryWeapon(villager);
-            return;
-        }
-
-        if (RETALIATION.maintainTemporaryWeapon(villager)) {
-            return;
-        }
-
-        if (VillagerRetaliationVillagerWeapons.maintainAcquiredWeaponAuthority(villager)) {
-            RETALIATION.discardTemporaryWeapon(villager);
-            return;
-        }
-
-        if (VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)) {
-            return;
-        }
-
-        if (tryBorrowInventoryCombatWeapon(villager)) {
-            return;
         }
     }
 
@@ -1559,6 +1489,7 @@ public final class VillagerRetaliationHandler {
 
     private static void handlePassivePotionState(Villager villager) {
         VillagerArmorerCombatTactics.resetStateIfActive(villager);
+        VillagerCombatStateMachine.clearState(villager);
         clearRangedStateIfActive(villager);
         if (VillagerInventoryAccess.hasOpenInventory(villager)) {
             suspendCombatForOpenInventory(villager);
@@ -1596,7 +1527,7 @@ public final class VillagerRetaliationHandler {
     private static void suspendCombatForOpenInventory(Villager villager) {
         VillagerRetaliationVillagerBrainUtil.stopNavigationAndClearPathing(villager);
         VillagerArmorerCombatTactics.resetState(villager);
-        VillagerRangedCombatHelper.clearState(villager);
+        VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         VillagerClericPotionHelper.clearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         RETALIATION.restoreTemporaryWeapon(villager);
@@ -1613,7 +1544,8 @@ public final class VillagerRetaliationHandler {
 
     private static void clearRuntimeState(Villager villager) {
         VillagerArmorerCombatTactics.resetState(villager);
-        VillagerRangedCombatHelper.clearState(villager);
+        VillagerCombatStateMachine.clearState(villager);
+        VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         VillagerClericPotionHelper.restoreHeldItemAndClearState(villager);
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         if (villager.isAlive()) {
@@ -1660,6 +1592,7 @@ public final class VillagerRetaliationHandler {
         WAVERING_UNARMED_COUNTERS.clear();
         LOW_GUTS_RALLY_USED_UNTIL_TICKS.clear();
         VillagerArmorerCombatTactics.clearRuntimeState();
+        VillagerCombatStateMachine.clearRuntimeState();
         VillagerRangedCombatHelper.clearRuntimeState();
         VillagerClericPotionHelper.clearRuntimeState();
         VillagerHostileTierHarass.clearRuntimeState();
@@ -1670,7 +1603,7 @@ public final class VillagerRetaliationHandler {
 
     private static void clearRangedStateIfActive(Villager villager) {
         if (VillagerRangedCombatHelper.hasState(villager) || villager.isUsingItem()) {
-            VillagerRangedCombatHelper.clearState(villager);
+            VillagerRangedCombatHelper.cancelForWeaponSwitch(villager);
         }
     }
 

@@ -19,6 +19,7 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -37,6 +38,7 @@ public final class VillagerDownedService {
     private static final String PREVIOUS_PICKUP_KEY = "PreviousCanPickUpLoot";
     private static final String POSE_KEY = "Pose";
     private static final int DATA_VERSION = 2;
+    public static final String DOWNED_STATE_TAG = STATE_KEY;
     private static final long THREAT_SCAN_INTERVAL_TICKS = 20L;
     private static final Map<UUID, Long> NEXT_THREAT_SCAN_TICKS = new HashMap<>();
     private static final Map<UUID, Float> PENDING_ABSORPTION_RESTORE = new HashMap<>();
@@ -195,6 +197,22 @@ public final class VillagerDownedService {
             villager.setHealth(Math.max(1.0F, villager.getHealth()));
             refreshDownedDimensionsSafely(villager);
             VillagerSecondWindCompat.notifyStateChanged(villager);
+        } else {
+            ensureStandingDimensions(villager);
+        }
+    }
+
+    public static void ensureStandingDimensions(Villager villager) {
+        if (villager == null
+                || isDowned(villager)
+                || villager.isSleeping()
+                || villager.getPose() != Pose.STANDING) {
+            return;
+        }
+        EntityDimensions expected = villager.getDimensions(Pose.STANDING);
+        if (Math.abs(villager.getBbWidth() - expected.width()) > 1.0E-4F
+                || Math.abs(villager.getBbHeight() - expected.height()) > 1.0E-4F) {
+            villager.refreshDimensions();
         }
     }
 
