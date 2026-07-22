@@ -44,12 +44,21 @@ public final class VillagerDuelScreen extends Screen {
         DuelLoadout[] values = DuelLoadout.values();
         this.loadout = values[(this.loadout.ordinal() + 1) % values.length];
         this.loadoutButton.setMessage(loadoutText());
+        disarmConfirmation();
     }
 
     private void cycleStake() {
         this.stakeIndex = (this.stakeIndex + 1) % STAKES.length;
         this.stakeButton.setMessage(stakeText());
+        disarmConfirmation();
         updateState();
+    }
+
+    private void disarmConfirmation() {
+        this.confirmationArmed = false;
+        if (this.confirmButton != null) {
+            this.confirmButton.setMessage(Component.translatable("villagerretaliation.gui.duel.review"));
+        }
     }
 
     private int selectedStake() {
