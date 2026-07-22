@@ -18,7 +18,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.animal.horse.TraderLlama;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -400,16 +399,7 @@ public final class WanderingTraderRetaliationHandler {
     }
 
     private static boolean syncMeleeAttackAttributes(WanderingTrader trader) {
-        AttributeInstance attackDamage = trader.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (attackDamage == null || trader.getAttribute(Attributes.ATTACK_KNOCKBACK) == null) {
-            return false;
-        }
-
-        double desiredBaseDamage = ACTOR_POLICY.meleeAttackDamageBase(trader);
-        if (attackDamage.getBaseValue() != desiredBaseDamage) {
-            attackDamage.setBaseValue(desiredBaseDamage);
-        }
-        return true;
+        return VillagerCombatAttributeCompat.syncMeleeAttackAttributes(trader);
     }
 
     private static void angerNearbyTraders(Entity sourceEntity, LivingEntity attacker, double radius) {

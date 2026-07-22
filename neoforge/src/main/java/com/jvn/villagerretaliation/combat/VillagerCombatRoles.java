@@ -70,7 +70,8 @@ public final class VillagerCombatRoles {
     }
 
     public static double meleeAttackDamageBase(Villager villager) {
-        return RetaliationCombatStats.meleeAttackDamageBase(villager.getMainHandItem());
+        return RetaliationCombatStats.meleeAttackDamageBase(
+                villager.getMainHandItem(), villager.level().getDifficulty());
     }
 
     public static ItemStack preferredWeapon(Villager villager) {

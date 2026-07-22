@@ -12,6 +12,7 @@ import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.compat.secondwind.VillagerSecondWindCompat;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.entity.VillagerRetaliationEntityTypes;
 import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
 import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
@@ -70,6 +71,7 @@ public class VillagerRetaliation {
                 .listener(VillagerSkillTradeEvents::onVillagerTrades)
                 .listener(VillagerSkillTradeEvents::onWandererTrades)
                 .listener(VillagerRetaliationCommands::onRegisterCommands)
+                .listener(DuelService::onAttackEntity)
                 .listener(VillagerRetaliationEvents::onLivingDamagePre)
                 .listener(VillagerMountedCombatPolicy::onProjectileImpact)
                 .listener(VillagerRetaliationEvents::onLivingDamageFinalPre)

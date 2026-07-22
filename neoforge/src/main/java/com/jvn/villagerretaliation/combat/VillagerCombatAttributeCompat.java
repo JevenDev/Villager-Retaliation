@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.combat;
 
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.WanderingTrader;
@@ -26,5 +27,25 @@ public final class VillagerCombatAttributeCompat {
         if (!entity.getAttributes().hasAttribute(Attributes.ATTACK_KNOCKBACK)) {
             attributes.villagerretaliation$addAttribute(Attributes.ATTACK_KNOCKBACK, 0.0D);
         }
+    }
+
+    public static boolean syncMeleeAttackAttributes(LivingEntity entity) {
+        if (!(entity instanceof Villager) && !(entity instanceof WanderingTrader)) {
+            return false;
+        }
+        ensureCombatAttributes(entity);
+        AttributeInstance attackDamage = entity.getAttribute(Attributes.ATTACK_DAMAGE);
+        if (attackDamage == null || entity.getAttribute(Attributes.ATTACK_KNOCKBACK) == null) {
+            return false;
+        }
+
+        // A weapon's equipment modifier already represents its full displayed damage.
+        // Add only fist damage when unarmed, plus a modest difficulty bonus.
+        double desiredBaseDamage = RetaliationCombatStats.meleeAttackDamageBase(
+                entity.getMainHandItem(), entity.level().getDifficulty());
+        if (attackDamage.getBaseValue() != desiredBaseDamage) {
+            attackDamage.setBaseValue(desiredBaseDamage);
+        }
+        return true;
     }
 }

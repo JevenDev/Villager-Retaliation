@@ -44,7 +44,8 @@ public final class WanderingTraderCombatRoles {
     }
 
     public static double meleeAttackDamageBase(WanderingTrader trader) {
-        return RetaliationCombatStats.meleeAttackDamageBase(trader.getMainHandItem());
+        return RetaliationCombatStats.meleeAttackDamageBase(
+                trader.getMainHandItem(), trader.level().getDifficulty());
     }
 
     public static double movementSpeed(WanderingTrader trader) {

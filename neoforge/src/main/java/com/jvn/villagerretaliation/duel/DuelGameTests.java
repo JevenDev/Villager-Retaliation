@@ -1,14 +1,19 @@
 package com.jvn.villagerretaliation.duel;
 
+import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
+import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
@@ -20,15 +25,23 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.world.damagesource.CombatRules;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.neoforged.neoforge.common.damagesource.DamageContainer;
 import net.neoforged.neoforge.common.util.TriState;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -154,6 +167,179 @@ public final class DuelGameTests {
                 "villager inventory must be restored exactly");
         helper.assertTrue(villager.canPickUpLoot(), "villager pickup policy must be restored");
         pickup.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void assignedMeleeLoadoutSuppressesTrackedRangedWeapon(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        VillagerRetaliationVillagerEquipment.setPickedUpMainHand(
+                villager, new ItemStack(Items.CROSSBOW));
+
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.MELEE, 0);
+        helper.assertTrue(start.started(), "melee duel should start: " + start.reason());
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
+                "melee duel should replace the villager's tracked ranged weapon");
+        helper.assertTrue(villager.getItemBySlot(EquipmentSlot.OFFHAND).is(Items.SHIELD),
+                "melee duel should equip the assigned shield");
+
+        helper.runAfterDelay(10, () -> {
+            try {
+                helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
+                        "normal equipment maintenance must not restore a tracked weapon during a duel");
+                helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW),
+                        "active duel should resolve");
+                helper.assertTrue(villager.getMainHandItem().is(Items.CROSSBOW),
+                        "the villager's original weapon should return after the duel");
+                helper.succeed();
+            } finally {
+                DuelService.resolveForTest(player, DuelResult.CANCELLED);
+            }
+        });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void meleeDuelUsesNormalCombatMovementSpeed(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        double normalSpeed = VillagerCombatRoles.movementSpeed(participant.villager());
+        helper.assertTrue(
+                Math.abs(DuelService.duelMovementSpeed(participant.villager()) - normalSpeed) < 0.000001D,
+                "melee duel pursuit should use the normal villager combat movement speed");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void duelMeleeDamageCountsWeaponOnceAndClearsStaleBase(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.ARMORED, 0);
+        helper.assertTrue(start.started(), "armored damage test duel should start: " + start.reason());
+
+        var attackDamage = villager.getAttribute(Attributes.ATTACK_DAMAGE);
+        helper.assertTrue(attackDamage != null, "villager should have the melee attack attribute");
+        attackDamage.setBaseValue(100.0D);
+
+        helper.runAfterDelay(2, () -> {
+            try {
+                DuelService.attackMelee(villager, player);
+                double[] weaponDamage = new double[]{0.0D};
+                villager.getMainHandItem().forEachModifier(EquipmentSlot.MAINHAND, (attribute, modifier) -> {
+                    if (attribute.equals(Attributes.ATTACK_DAMAGE)) {
+                        weaponDamage[0] += modifier.amount();
+                    }
+                });
+                helper.assertTrue(weaponDamage[0] > 0.0D,
+                        "the assigned iron sword should expose an attack-damage modifier");
+                double expectedBase = VillagerCombatRoles.meleeAttackDamageBase(villager);
+                helper.assertTrue(Math.abs(attackDamage.getBaseValue() - expectedBase) < 0.000001D,
+                        "duel attacks must replace a stale attack base with the current difficulty base");
+                helper.assertTrue(Math.abs(attackDamage.getValue() - (expectedBase + weaponDamage[0])) < 0.000001D,
+                        "the equipped weapon's attack modifier should be counted exactly once");
+
+                float damageAfterArmor = CombatRules.getDamageAfterAbsorb(
+                        player,
+                        (float) attackDamage.getValue(),
+                        participant.level().damageSources().mobAttack(villager),
+                        player.getArmorValue(),
+                        (float) player.getAttributeValue(Attributes.ARMOR_TOUGHNESS));
+                helper.assertTrue(damageAfterArmor > 0.0F && damageAfterArmor < 10.0F,
+                        "one iron-sword hit through full iron armor should deal less than half a player's health; got "
+                                + damageAfterArmor);
+                helper.succeed();
+            } finally {
+                DuelService.resolveForTest(player, DuelResult.CANCELLED);
+            }
+        });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 120)
+    public static void validDuelArrowDamageIsHandledWithoutCancellation(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.RANGED, 0);
+        helper.assertTrue(start.started(), "ranged duel should start: " + start.reason());
+
+        helper.runAfterDelay(65, () -> {
+            try {
+                Arrow arrow = new Arrow(
+                        participant.level(), player,
+                        new ItemStack(Items.ARROW), new ItemStack(Items.BOW));
+                LivingIncomingDamageEvent damageEvent = new LivingIncomingDamageEvent(
+                        villager,
+                        new DamageContainer(
+                                participant.level().damageSources().arrow(arrow, player), 4.0F));
+
+                helper.assertTrue(DuelService.onIncomingDamage(damageEvent),
+                        "valid arrow damage should stop at the duel policy");
+                helper.assertFalse(damageEvent.isCanceled(),
+                        "the duel policy should allow an opponent's arrow after the countdown");
+                helper.assertValueEqual(damageEvent.getAmount(), 4.0F,
+                        "valid duel arrow damage should keep its original amount");
+                helper.succeed();
+            } finally {
+                DuelService.resolveForTest(player, DuelResult.CANCELLED);
+            }
+        });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void losingDuelAppliesSlownessAndBlocksAttacks(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.MELEE, 0);
+        helper.assertTrue(start.started(), "loss-penalty duel should start: " + start.reason());
+        helper.assertTrue(DuelService.resolveForTest(player, DuelResult.VILLAGER_WIN),
+                "villager victory should resolve the duel");
+
+        var slowness = player.getEffect(MobEffects.MOVEMENT_SLOWDOWN);
+        helper.assertTrue(slowness != null, "losing player should receive slowness");
+        helper.assertValueEqual(slowness.getAmplifier(), 1,
+                "loss penalty should apply Slowness II");
+        helper.assertTrue(slowness.getDuration() > 0 && slowness.getDuration() <= 100,
+                "loss penalty should last no more than five seconds");
+        helper.assertTrue(DuelService.isPostLossAttackLocked(player),
+                "losing player should have a matching server-side attack lockout");
+
+        AttackEntityEvent attackEvent = new AttackEntityEvent(player, villager);
+        DuelService.onAttackEntity(attackEvent);
+        helper.assertTrue(attackEvent.isCanceled(), "direct attacks should be canceled during the loss penalty");
+
+        LivingIncomingDamageEvent damageEvent = new LivingIncomingDamageEvent(
+                villager,
+                new DamageContainer(participant.level().damageSources().playerAttack(player), 4.0F));
+        helper.assertTrue(DuelService.onIncomingDamage(damageEvent),
+                "outgoing living damage should be handled during the loss penalty");
+        helper.assertTrue(damageEvent.isCanceled() && damageEvent.getAmount() == 0.0F,
+                "outgoing living damage should be reduced to zero during the loss penalty");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void authorizedFinisherKillsPostDuelDownedVillager(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        VillagerDownedService.enterDowned(
+                participant.level(),
+                villager,
+                new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("duel:test")));
+        DuelService.authorizeFinisherForTest(
+                villager, player, participant.level().getGameTime() + 1200L);
+
+        villager.invulnerableTime = 0;
+        villager.hurt(participant.level().damageSources().playerAttack(player), 10.0F);
+
+        helper.assertTrue(villager.isDeadOrDying() || villager.isRemoved(),
+                "the authorized duel opponent should be able to finish the downed villager");
+        helper.assertFalse(VillagerDownedService.isDowned(villager),
+                "a lethal authorized finisher should release the downed state");
         helper.succeed();
     }
 

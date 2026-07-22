@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.duel;
 
 import com.jvn.villagerretaliation.compat.secondwind.VillagerSecondWindCompat;
+import com.jvn.villagerretaliation.combat.VillagerCombatAttributeCompat;
+import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
 import com.jvn.villagerretaliation.combat.VillagerRangedCombatHelper;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
@@ -28,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
@@ -35,11 +38,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.phys.AABB;
@@ -50,6 +56,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
 import net.neoforged.neoforge.common.util.TriState;
@@ -57,9 +64,15 @@ public final class DuelService {
     public static final int[] FIXED_STAKES = {0, 8, 16, 32, 64};
     private static final long DAY_TICKS = 24000L;
     private static final long COUNTDOWN_TICKS = 60L;
+    private static final long ARENA_PARTICLE_INTERVAL_TICKS = 20L;
+    private static final int ARENA_PARTICLE_POINTS = 48;
+    private static final double VILLAGER_CLEARANCE = 3.0D;
+    private static final int LOSS_PENALTY_TICKS = 100;
+    private static final int LOSS_SLOWNESS_AMPLIFIER = 1;
     private static final Map<UUID, ActiveDuel> BY_ID = new HashMap<>();
     private static final Map<UUID, UUID> BY_ENTITY = new HashMap<>();
     private static final Map<UUID, FinisherPermission> FINISHERS = new HashMap<>();
+    private static final Map<UUID, Long> LOSS_ATTACK_LOCKOUTS = new HashMap<>();
 
     private DuelService() {}
 
@@ -171,6 +184,7 @@ public final class DuelService {
         for (ActiveDuel duel : List.copyOf(BY_ID.values())) tick(server, duel);
         long now = server.overworld().getGameTime();
         FINISHERS.entrySet().removeIf(entry -> now > entry.getValue().expiresAt());
+        LOSS_ATTACK_LOCKOUTS.entrySet().removeIf(entry -> now >= entry.getValue());
     }
 
     private static void tick(MinecraftServer server, ActiveDuel duel) {
@@ -185,10 +199,13 @@ public final class DuelService {
             player.closeContainer();
         }
         long now = server.overworld().getGameTime();
-        DuelSpectators.maintain(level, duel.spectators(), duel.center(), villager);
+        DuelSpectators.maintain(level, duel.spectators(), duel.center(), duel.arenaRadius(), villager);
+        showArenaParticles(level, player, duel, now);
+        updateStartCountdown(player, duel, now);
         if (now < duel.countdownEndsAt()) { villager.getNavigation().stop(); villager.setTarget(null); return; }
         if (now >= duel.timeoutAt()) { finish(server, duel, DuelResult.DRAW, false); return; }
         updateBoundary(duel, player, villager, now);
+        updatePlayerBoundaryCountdown(player, duel, now);
         int grace = duel.boundaryGraceTicks();
         if (duel.playerOutsideSince() >= 0L && now - duel.playerOutsideSince() >= grace) { finish(server, duel, DuelResult.VILLAGER_WIN, false); return; }
         if (duel.villagerOutsideSince() >= 0L && now - duel.villagerOutsideSince() >= grace) { finish(server, duel, DuelResult.PLAYER_WIN, false); return; }
@@ -200,13 +217,66 @@ public final class DuelService {
         duel.playerOutsideSince(outside(player.position(), duel.center(), radiusSqr) ? first(duel.playerOutsideSince(), now) : -1L);
         duel.villagerOutsideSince(outside(villager.position(), duel.center(), radiusSqr) ? first(duel.villagerOutsideSince(), now) : -1L);
     }
+
+    private static void updateStartCountdown(ServerPlayer player, ActiveDuel duel, long now) {
+        if (now >= duel.countdownEndsAt()) {
+            if (duel.lastCountdownSecond() != 0) {
+                player.sendSystemMessage(Component.translatable("villagerretaliation.duel.countdown.fight"));
+                duel.lastCountdownSecond(0);
+            }
+            return;
+        }
+        int seconds = ticksToSeconds(duel.countdownEndsAt() - now);
+        if (seconds != duel.lastCountdownSecond()) {
+            player.sendSystemMessage(Component.translatable("villagerretaliation.duel.countdown", seconds));
+            duel.lastCountdownSecond(seconds);
+        }
+    }
+
+    private static void updatePlayerBoundaryCountdown(ServerPlayer player, ActiveDuel duel, long now) {
+        if (duel.playerOutsideSince() < 0L) {
+            duel.lastBoundarySecond(-1);
+            return;
+        }
+        long remainingTicks = duel.boundaryGraceTicks() - (now - duel.playerOutsideSince());
+        int seconds = ticksToSeconds(remainingTicks);
+        if (seconds > 0 && seconds != duel.lastBoundarySecond()) {
+            player.sendSystemMessage(Component.translatable("villagerretaliation.duel.boundary_countdown", seconds));
+            duel.lastBoundarySecond(seconds);
+        }
+    }
+
+    private static int ticksToSeconds(long ticks) {
+        return (int) Math.max(0L, (ticks + 19L) / 20L);
+    }
+
+    private static void showArenaParticles(ServerLevel level, ServerPlayer player, ActiveDuel duel, long now) {
+        if (!VillagerRetaliationConfig.SHOW_DUEL_ARENA_PARTICLES.get()
+                || Math.floorMod(now, ARENA_PARTICLE_INTERVAL_TICKS) != 0L) {
+            return;
+        }
+        for (int point = 0; point < ARENA_PARTICLE_POINTS; point++) {
+            double angle = Math.PI * 2.0D * point / ARENA_PARTICLE_POINTS;
+            double x = duel.center().x + Math.cos(angle) * duel.arenaRadius();
+            double z = duel.center().z + Math.sin(angle) * duel.arenaRadius();
+            level.sendParticles(player, ParticleTypes.END_ROD, true,
+                    x, duel.center().y + 0.15D, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+        }
+    }
     private static boolean isUsingRangedWeapon(Villager villager) {
         var item = villager.getMainHandItem().getItem();
         return item == Items.BOW || item == Items.CROSSBOW || item == Items.TRIDENT;
     }
 
 
-    private static boolean outside(Vec3 position, Vec3 center, double radiusSqr) { return position.distanceToSqr(center) > radiusSqr; }
+    private static boolean outside(Vec3 position, Vec3 center, double radiusSqr) {
+        return horizontalDistanceSqr(position, center) > radiusSqr;
+    }
+    private static double horizontalDistanceSqr(Vec3 position, Vec3 center) {
+        double x = position.x - center.x;
+        double z = position.z - center.z;
+        return x * x + z * z;
+    }
     private static long first(long prior, long now) { return prior < 0L ? now : prior; }
 
     private static void drive(ServerLevel level, ActiveDuel duel, Villager villager, ServerPlayer player, long now) {
@@ -217,15 +287,30 @@ public final class DuelService {
         boolean ranged = duel.loadout() == DuelLoadout.RANGED || duel.loadout() == DuelLoadout.BRING_YOUR_OWN
                 && isUsingRangedWeapon(villager);
         if (ranged && VillagerRangedCombatHelper.tryDuelAttack(villager, player, level, distance)) return;
-        if (distance > 3.0D) villager.getNavigation().moveTo(player, 1.1D);
+        if (distance > 3.0D) villager.getNavigation().moveTo(player, duelMovementSpeed(villager));
         else if (now >= duel.nextAttackAt()) {
             villager.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
-            villager.doHurtTarget(player);
+            attackMelee(villager, player);
             duel.nextAttackAt(now + 20L);
         }
     }
 
+    static double duelMovementSpeed(Villager villager) {
+        return VillagerCombatRoles.movementSpeed(villager);
+    }
+
+    static boolean attackMelee(Villager villager, LivingEntity target) {
+        return VillagerCombatAttributeCompat.syncMeleeAttackAttributes(villager)
+                && villager.doHurtTarget(target);
+    }
+
     public static boolean onIncomingDamage(LivingIncomingDamageEvent event) {
+        if (event.getSource().getEntity() instanceof ServerPlayer player && isPostLossAttackLocked(player)) {
+            event.setCanceled(true);
+            event.setAmount(0.0F);
+            return true;
+        }
+
         if (isProtectedSpectator(event.getEntity(), event.getSource().getEntity())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -239,7 +324,15 @@ public final class DuelService {
         if (!isOpponent(duel, event.getEntity(), attacker) || now < duel.countdownEndsAt()) {
             event.setCanceled(true); event.setAmount(0.0F); return true;
         }
-        return false;
+        // A valid duel hit is allowed, but still handled here so normal allegiance and
+        // profession defenses cannot reinterpret it after the duel rules approve it.
+        return true;
+    }
+
+    public static void onAttackEntity(AttackEntityEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && isPostLossAttackLocked(player)) {
+            event.setCanceled(true);
+        }
     }
 
     public static boolean onFinalDamage(LivingDamageEvent.Pre event) {
@@ -305,6 +398,38 @@ public final class DuelService {
 
     public static boolean isParticipant(LivingEntity entity) { return active(entity) != null; }
 
+    public static void onVillagerTickPost(Villager villager) {
+        if (!(villager.level() instanceof ServerLevel level) || isParticipant(villager)) return;
+        for (ActiveDuel duel : BY_ID.values()) {
+            if (!duel.dimension().equals(level.dimension())) continue;
+            LivingEntity target = villager.getTarget();
+            if (target != null && (target.getUUID().equals(duel.playerId())
+                    || target.getUUID().equals(duel.villagerId()))) {
+                villager.setTarget(null);
+                villager.setAggressive(false);
+            }
+            double clearanceRadius = duel.arenaRadius() + VILLAGER_CLEARANCE;
+            if (horizontalDistanceSqr(villager.position(), duel.center()) > clearanceRadius * clearanceRadius) continue;
+            double x = villager.getX() - duel.center().x;
+            double z = villager.getZ() - duel.center().z;
+            double length = Math.sqrt(x * x + z * z);
+            if (length < 0.001D) {
+                double angle = Math.floorMod(villager.getUUID().hashCode(), 360) * Math.PI / 180.0D;
+                x = Math.cos(angle);
+                z = Math.sin(angle);
+                length = 1.0D;
+            }
+            double destinationRadius = clearanceRadius + 1.5D;
+            double destinationX = duel.center().x + x / length * destinationRadius;
+            double destinationZ = duel.center().z + z / length * destinationRadius;
+            PathfinderMob mover = villager.getRootVehicle() instanceof PathfinderMob mounted
+                    ? mounted : villager;
+            mover.getNavigation().moveTo(destinationX, mover.getY(), destinationZ, 0.75D);
+            villager.getLookControl().setLookAt(
+                    duel.center().x, villager.getEyeY(), duel.center().z, 30.0F, 30.0F);
+        }
+    }
+
     private static boolean isOpponent(ActiveDuel duel, LivingEntity target, LivingEntity attacker) {
         return attacker != null && (target.getUUID().equals(duel.playerId()) && attacker.getUUID().equals(duel.villagerId())
                 || target.getUUID().equals(duel.villagerId()) && attacker.getUUID().equals(duel.playerId()));
@@ -327,9 +452,13 @@ public final class DuelService {
         return true;
     }
 
+    static void authorizeFinisherForTest(Villager villager, ServerPlayer player, long expiresAt) {
+        FINISHERS.put(villager.getUUID(), new FinisherPermission(player.getUUID(), expiresAt));
+    }
+
     public static void clearRuntimeState(MinecraftServer server) {
         for (ActiveDuel duel : List.copyOf(BY_ID.values())) finish(server, duel, DuelResult.CANCELLED, false);
-        BY_ID.clear(); BY_ENTITY.clear(); FINISHERS.clear();
+        BY_ID.clear(); BY_ENTITY.clear(); FINISHERS.clear(); LOSS_ATTACK_LOCKOUTS.clear();
     }
 
     private static void finish(MinecraftServer server, ActiveDuel duel, DuelResult result, boolean knockedOut) {
@@ -364,7 +493,22 @@ public final class DuelService {
         if (level != null) DuelSpectators.release(level, duel.spectators());
         settle(player, villager, duel.stake(), result);
         if (result != DuelResult.CANCELLED && level != null && villager != null) complete(server, level, player, villager, duel, result, knockedOut);
+        if (result == DuelResult.VILLAGER_WIN && player != null) applyLossPenalty(server, player);
         if (player != null) player.sendSystemMessage(Component.translatable("villagerretaliation.duel.result." + result.name().toLowerCase()));
+    }
+
+    private static void applyLossPenalty(MinecraftServer server, ServerPlayer player) {
+        LOSS_ATTACK_LOCKOUTS.put(player.getUUID(), server.overworld().getGameTime() + LOSS_PENALTY_TICKS);
+        player.addEffect(new MobEffectInstance(
+                MobEffects.MOVEMENT_SLOWDOWN, LOSS_PENALTY_TICKS, LOSS_SLOWNESS_AMPLIFIER));
+    }
+
+    static boolean isPostLossAttackLocked(ServerPlayer player) {
+        Long expiresAt = LOSS_ATTACK_LOCKOUTS.get(player.getUUID());
+        if (expiresAt == null) return false;
+        if (player.getServer().overworld().getGameTime() < expiresAt) return true;
+        LOSS_ATTACK_LOCKOUTS.remove(player.getUUID());
+        return false;
     }
 
     private static void complete(MinecraftServer server, ServerLevel level, ServerPlayer player, Villager villager,
@@ -427,9 +571,14 @@ public final class DuelService {
     public static boolean isAuthorizedFinisher(Villager villager, net.minecraft.world.damagesource.DamageSource source) {
         FinisherPermission permission = FINISHERS.get(villager.getUUID());
         if (permission == null || !(source.getEntity() instanceof ServerPlayer player) || !permission.playerId().equals(player.getUUID())) return false;
-        if (villager.level() instanceof ServerLevel level && VillagerDeathProtectionResolver.resolve(level, villager).protectedFromDeath()) return false;
-        FINISHERS.remove(villager.getUUID());
-        return true;
+        return !(villager.level() instanceof ServerLevel level)
+                || !VillagerDeathProtectionResolver.resolve(level, villager).protectedFromDeath();
+    }
+
+    public static void consumeAuthorizedFinisher(Villager villager, net.minecraft.world.damagesource.DamageSource source) {
+        if (isAuthorizedFinisher(villager, source)) {
+            FINISHERS.remove(villager.getUUID());
+        }
     }
 
     private record FinisherPermission(UUID playerId, long expiresAt) {}
@@ -441,6 +590,7 @@ public final class DuelService {
         private final int arenaRadius, boundaryGraceTicks; private final long countdownEndsAt, timeoutAt;
         private final DuelEquipment.Snapshots snapshots; private final Set<UUID> spectators;
         private long playerOutsideSince = -1L, villagerOutsideSince = -1L, nextAttackAt;
+        private int lastCountdownSecond = -1, lastBoundarySecond = -1;
         private DuelResult pendingResult; private boolean villagerKnockedOut;
         ActiveDuel(UUID id, ResourceKey<Level> dimension, UUID playerId, UUID villagerId, DuelLoadout loadout, int stake,
                    Vec3 center, int arenaRadius, int boundaryGraceTicks, long countdownEndsAt, long timeoutAt,
@@ -456,6 +606,8 @@ public final class DuelService {
         long playerOutsideSince(){return playerOutsideSince;} void playerOutsideSince(long v){playerOutsideSince=v;}
         long villagerOutsideSince(){return villagerOutsideSince;} void villagerOutsideSince(long v){villagerOutsideSince=v;}
         long nextAttackAt(){return nextAttackAt;} void nextAttackAt(long v){nextAttackAt=v;}
+        int lastCountdownSecond(){return lastCountdownSecond;} void lastCountdownSecond(int v){lastCountdownSecond=v;}
+        int lastBoundarySecond(){return lastBoundarySecond;} void lastBoundarySecond(int v){lastBoundarySecond=v;}
         DuelResult pendingResult(){return pendingResult;} void pendingResult(DuelResult v){pendingResult=v;}
         boolean villagerKnockedOut(){return villagerKnockedOut;} void villagerKnockedOut(boolean v){villagerKnockedOut=v;}
     }

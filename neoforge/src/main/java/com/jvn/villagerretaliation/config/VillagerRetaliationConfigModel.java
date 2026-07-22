@@ -708,6 +708,8 @@ public final class VillagerRetaliationConfigModel {
         @RangeConstraint(min = 8, max = 128)
         public int arenaRadius = 32;
 
+        public boolean showArenaParticles = true;
+
         @RangeConstraint(min = 0, max = 1200)
         public int boundaryGraceTicks = 200;
 

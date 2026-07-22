@@ -47,8 +47,8 @@ public abstract class InventoryScreenMixin implements DuelInventoryScreenAccess 
     }
 
     @Override
-    public void villagerretaliation$restoreDuelInventorySlots() {
-        if (this.villagerretaliation$originalSlotX == null) return;
+    public boolean villagerretaliation$restoreDuelInventorySlots() {
+        if (this.villagerretaliation$originalSlotX == null) return false;
         InventoryScreen screen = (InventoryScreen) (Object) this;
         int count = Math.min(screen.getMenu().slots.size(), this.villagerretaliation$originalSlotX.length);
         for (int slotId = 0; slotId < count; slotId++) {
@@ -58,6 +58,7 @@ public abstract class InventoryScreenMixin implements DuelInventoryScreenAccess 
         }
         this.villagerretaliation$originalSlotX = null;
         this.villagerretaliation$originalSlotY = null;
+        return true;
     }
 
     private static void positionDuelSlot(Slot slot, int slotId) {

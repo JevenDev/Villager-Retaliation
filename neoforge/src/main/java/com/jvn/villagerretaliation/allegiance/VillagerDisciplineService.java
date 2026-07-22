@@ -1,7 +1,8 @@
 package com.jvn.villagerretaliation.allegiance;
 
-import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.combat.VillagerCombatAttributeCompat;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.reputation.VillagerAggressionPolicy;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -101,7 +102,9 @@ public final class VillagerDisciplineService {
         COMMITTING.add(pair);
         try {
             villager.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
-            villager.doHurtTarget(player);
+            if (VillagerCombatAttributeCompat.syncMeleeAttackAttributes(villager)) {
+                villager.doHurtTarget(player);
+            }
         } finally {
             COMMITTING.remove(pair);
             finish(villager);

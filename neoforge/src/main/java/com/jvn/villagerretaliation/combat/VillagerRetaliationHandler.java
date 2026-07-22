@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.ActiveRetaliationTarget;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -56,7 +57,6 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.TamableAnimal;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -380,6 +380,11 @@ public final class VillagerRetaliationHandler {
 
         ServerLevel level = retaliationTarget.level();
         LivingEntity target = retaliationTarget.target();
+        if (DuelService.isParticipant(target) && !DuelService.isParticipant(villager)) {
+            clearAnger(villager);
+            handlePassivePotionState(villager);
+            return;
+        }
         boolean authorizedTarget = VillageCombatAuthorizationService.isAuthorized(villager, target);
         if (VillageAllegianceCombatPolicy.evaluate(
                 level, villager, target, AllegianceCombatContext.TARGET_CONTINUATION, authorizedTarget).denied()) {
@@ -683,6 +688,7 @@ public final class VillagerRetaliationHandler {
                 || target == null
                 || !villager.isAlive()
                 || !target.isAlive()
+                || DuelService.isParticipant(target) && !DuelService.isParticipant(villager)
                 || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(target)
                 || villager == target
                 || PartyService.areInSameOrAlliedParty(villager, target)
@@ -703,6 +709,10 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void anger(Villager villager, LivingEntity attacker, boolean allowForcedDialogue, boolean announceRetaliation) {
+        if (DuelService.isParticipant(attacker) && !DuelService.isParticipant(villager)) {
+            clearAnger(villager);
+            return;
+        }
         if (villager.isBaby()) {
             return;
         }
@@ -1230,16 +1240,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static boolean syncMeleeAttackAttributes(Villager villager) {
-        AttributeInstance attackDamage = villager.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (attackDamage == null || villager.getAttribute(Attributes.ATTACK_KNOCKBACK) == null) {
-            return false;
-        }
-
-        double desiredBaseDamage = ACTOR_POLICY.meleeAttackDamageBase(villager);
-        if (attackDamage.getBaseValue() != desiredBaseDamage) {
-            attackDamage.setBaseValue(desiredBaseDamage);
-        }
-        return true;
+        return VillagerCombatAttributeCompat.syncMeleeAttackAttributes(villager);
     }
 
     private static void angerNearbyVillagers(Entity sourceEntity, LivingEntity attacker, double radius) {
