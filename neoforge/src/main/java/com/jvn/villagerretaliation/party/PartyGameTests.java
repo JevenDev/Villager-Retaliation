@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.party;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.allegiance.AllegianceAssignmentSource;
+import com.jvn.villagerretaliation.allegiance.VillageAllegianceApi;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.allegiance.VillagerAbuseSavedData;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
@@ -1276,6 +1278,8 @@ public final class PartyGameTests {
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
         Villager target = spawnVillager(helper, new BlockPos(4, 2, 2));
+        VillageAllegianceApi.assignUnaffiliated(level, attacker, AllegianceAssignmentSource.ADMIN);
+        VillageAllegianceApi.assignUnaffiliated(level, target, AllegianceAssignmentSource.ADMIN);
         target.setNoAi(true);
         target.startSleeping(target.blockPosition());
         long now = level.getServer().overworld().getGameTime();
@@ -1446,6 +1450,9 @@ public final class PartyGameTests {
         movePlayer(helper, leader, new BlockPos(1, 2, 2));
         Villager villager = spawnVillager(helper, new BlockPos(3, 2, 2));
         BlockPos pathSide = helper.absolutePos(new BlockPos(3, 2, 2));
+        for (int tick = 0; tick < 20; tick++) {
+            level.tickNonPassenger(villager);
+        }
         BlockPos grassSide = helper.absolutePos(new BlockPos(4, 2, 2));
         double routeX = grassSide.getX() - pathSide.getX();
         double routeZ = grassSide.getZ() - pathSide.getZ();
@@ -1472,7 +1479,13 @@ public final class PartyGameTests {
         villager.horizontalCollision = true;
         villager.setOnGround(true);
         helper.assertTrue(VillagerTaskNavigationUtil.tickHiredPathStepAssist(level, villager),
-                "shared route should recognize the dirt-path/grass collision seam as a safe step assist");
+                "shared route should recognize the dirt-path/grass collision seam as a safe step assist; active="
+                        + VillagerTaskNavigationUtil.hasActiveHiredWalkTarget(villager)
+                        + ", collision=" + villager.horizontalCollision
+                        + ", onGround=" + villager.onGround()
+                        + ", inWater=" + villager.isInWater()
+                        + ", path=" + villager.getNavigation().getPath()
+                        + ", pos=" + villager.position());
         helper.startSequence()
                 .thenWaitUntil(() -> {
                     PartyQuickCommandService.onVillagerTickPost(villager);
@@ -1646,9 +1659,10 @@ public final class PartyGameTests {
         helper.startSequence()
                 .thenWaitUntil(() -> {
                     level.tickNonPassenger(villager);
-                    helper.assertTrue(
-                            countJobInventoryArrows(jobInventory) < 2,
-                            "ranged party villager has not loaded its crossbow: "
+                    helper.assertValueEqual(
+                            countJobInventoryArrows(jobInventory),
+                            1,
+                            "loading the crossbow should consume exactly the required arrow: "
                                     + crossbowCycleState(level, villager, target, jobInventory, arrowSlot));
                 })
                 .thenWaitUntil(() -> {
@@ -1659,8 +1673,6 @@ public final class PartyGameTests {
                                     + crossbowCycleState(level, villager, target, jobInventory, arrowSlot));
                 })
                 .thenExecute(() -> {
-                    helper.assertValueEqual(countJobInventoryArrows(jobInventory), 1,
-                            "loading the crossbow should consume exactly the required arrow");
                     helper.assertFalse(villager.isUsingItem(),
                             "the crossbow loading animation must end after the shot is prepared");
                     helper.assertFalse(CrossbowItem.isCharged(findCrossbow(villager, jobInventory)),

@@ -35,7 +35,7 @@ public final class VillagerSleepHealingService {
 
         // Natural wake-up occurs after dawn. Any wake-up during the night is an
         // interruption and consumes the pending sleep without granting recovery.
-        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_SLEEP_HEALING.get() || !level.isDay()) {
+        if (!VillagerRetaliationConfig.ENABLE_VILLAGER_SLEEP_HEALING.get() || !isAfterDawn(level)) {
             return;
         }
 
@@ -60,5 +60,10 @@ public final class VillagerSleepHealingService {
     static float targetHealth(float maxHealth, double healthPercent) {
         double clampedPercent = Math.clamp(healthPercent, 0.0D, 1.0D);
         return (float) (Math.max(0.0F, maxHealth) * clampedPercent);
+    }
+
+    private static boolean isAfterDawn(ServerLevel level) {
+        return level.dimensionType().hasSkyLight()
+                && Math.floorMod(level.getDayTime(), 24_000L) < 12_000L;
     }
 }

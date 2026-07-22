@@ -684,8 +684,11 @@ public final class VillagerGameplayGameTests {
         ServerLevel level = helper.getLevel();
         ServerPlayer owner = fakePlayer(level, "VrAssignmentReload");
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
-        HiredVillagerContractService.startHireContract(
-                level, villager, owner, 2, 8, HiredVillagerRole.FARMING);
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        helper.assertTrue(
+                HiredVillagerContractService.startHireContract(
+                        level, villager, owner, 2, 8, HiredVillagerRole.FARMING),
+                "farmer fixture should accept a farming contract before migration");
 
         CompoundTag assignment = villager.getPersistentData().getCompound("VillagerRetaliationAssignment");
         assignment.putInt("SchemaVersion", 1);

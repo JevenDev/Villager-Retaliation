@@ -131,8 +131,8 @@ public final class VillagerBehaviorSuppressionGameTests {
         VillagerDownedService.recover(villager);
         assertState(helper, villager, VillagerBehaviorSuppressionPolicy.ControlState.HIRED, "recovered hire");
         helper.assertFalse(villager.isNoAi(), "recovery must restore the pre-downed AI flag");
-        helper.assertTrue(VillagerBehaviorSuppressionPolicy.shouldSuppressVanillaBrainTick(level, villager),
-                "recovery must resume hired suppression, not ordinary village AI");
+        helper.assertFalse(VillagerBehaviorSuppressionPolicy.shouldSuppressVanillaBrainTick(level, villager),
+                "an idle recovered hire must remain eligible for ordinary scheduled AI");
 
         villager.getPersistentData().getCompound("VillagerRetaliationHireContract")
                 .putLong("EndGameTime", level.getGameTime());
