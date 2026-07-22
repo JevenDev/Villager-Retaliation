@@ -68,6 +68,10 @@ public final class VillagerRetaliationConfigModel {
     public Combat combat = new Combat();
 
     @Nest
+    @SectionHeader("duels")
+    public Duels duels = new Duels();
+
+    @Nest
     @SectionHeader("wanderer")
     public Wanderer wanderer = new Wanderer();
 
@@ -685,6 +689,40 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean reputationDebugOverlayOnlyWhenSneaking = false;
     }
+
+    public static final class Duels {
+        public boolean enabled = true;
+
+        @RangeConstraint(min = 1, max = 100)
+        public int minimumGuts = 60;
+
+        @RangeConstraint(min = 0, max = 30)
+        public int cooldownDays = 3;
+
+        @RangeConstraint(min = 1, max = 20)
+        public int refusalLosses = 3;
+
+        @RangeConstraint(min = 8, max = 128)
+        public int arenaRadius = 32;
+
+        @RangeConstraint(min = 0, max = 1200)
+        public int boundaryGraceTicks = 200;
+
+        @RangeConstraint(min = 200, max = 72000)
+        public int timeoutTicks = 6000;
+
+        @RangeConstraint(min = 8, max = 128)
+        public int spectatorRadius = 48;
+
+        @RangeConstraint(min = 0, max = 64)
+        public int spectatorCap = 16;
+
+        @RangeConstraint(min = 0, max = 100)
+        public int watcherReputation = 2;
+    }
+
+
+
 
     public static final class Combat {
         public boolean enableVillagerSleepHealing = true;

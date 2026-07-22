@@ -30,6 +30,8 @@ public final class VillagerDisciplineService {
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        if (event.getEntity() instanceof LivingEntity living
+                && com.jvn.villagerretaliation.duel.DuelService.isDuelDamage(living, event.getSource())) return;
         if (event.getNewDamage() <= 0.0F
                 || !(event.getEntity() instanceof Villager villager)
                 || !(villager.level() instanceof ServerLevel level)

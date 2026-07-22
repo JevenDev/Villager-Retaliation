@@ -162,6 +162,7 @@ public final class VillagerRetaliationEvents {
     public static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onPlayerLoggedOut(event);
         if (event.getEntity() instanceof ServerPlayer player) {
+            com.jvn.villagerretaliation.duel.DuelService.onPlayerLogout(player);
             PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID())
                     .ifPresent(party -> PartySyncService.syncPartyWithOfflinePlayer(
                             player.getServer(),
@@ -191,6 +192,7 @@ public final class VillagerRetaliationEvents {
         com.jvn.villagerretaliation.raid.PlayerRaidService.clearRuntimeState();
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.clearRuntimeState();
         ServerRuntimeState.clear(event.getServer());
+        com.jvn.villagerretaliation.duel.DuelService.clearRuntimeState(event.getServer());
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -205,6 +207,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onServerTickPost(ServerTickEvent.Post event) {
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.onServerTick(event.getServer());
+        com.jvn.villagerretaliation.duel.DuelService.tick(event.getServer());
         VillagerInventoryAccess.onServerTick(event.getServer());
         PartyVillagerContractService.onServerTick(event.getServer());
         SceneRuntime.tick(event.getServer());
@@ -240,6 +243,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamage(LivingDamageEvent.Post event) {
+        if (event.getEntity() instanceof LivingEntity living
+                && com.jvn.villagerretaliation.duel.DuelService.isDuelDamage(living, event.getSource())) return;
+
         HiredCombatSkillPracticeService.onDamageDealt(event);
         if (event.getEntity() instanceof AbstractVillager villager) {
             VillagerEquipmentDurability.hurtArmor(villager, event.getSource(), event.getOriginalDamage());
@@ -265,6 +271,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onLivingDamagePre(LivingIncomingDamageEvent event) {
+        if (com.jvn.villagerretaliation.duel.DuelService.onIncomingDamage(event)) {
+            return;
+        }
         if (VillagerMountedCombatPolicy.shouldCancelDamage(event.getEntity(), event.getSource())) {
             event.setCanceled(true);
             event.setAmount(0.0F);
@@ -285,6 +294,9 @@ public final class VillagerRetaliationEvents {
 
     public static void onLivingDamageFinalPre(LivingDamageEvent.Pre event) {
         VillagerDisciplineService.capFinalDamage(event);
+        if (com.jvn.villagerretaliation.duel.DuelService.onFinalDamage(event)) {
+            return;
+        }
         VillagerDownedService.onLivingDamagePre(event);
     }
 

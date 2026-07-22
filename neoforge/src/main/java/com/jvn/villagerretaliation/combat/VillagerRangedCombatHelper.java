@@ -34,7 +34,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ChargedProjectiles;
 import net.minecraft.world.phys.AABB;
 
-final class VillagerRangedCombatHelper {
+public final class VillagerRangedCombatHelper {
     private static final Map<UUID, Integer> SEE_TIME = new HashMap<>();
     private static final Map<UUID, Integer> ATTACK_DELAY = new HashMap<>();
     private static final Map<UUID, CrossbowState> CROSSBOW_STATE = new HashMap<>();
@@ -53,6 +53,10 @@ final class VillagerRangedCombatHelper {
     private static final double POINT_BLANK_RANGED_EDGE_REACH_SQR = 1.0D;
 
     private VillagerRangedCombatHelper() {
+    }
+
+    public static boolean tryDuelAttack(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
+        return tryAttack(villager, target, level, distanceSqr);
     }
 
     static boolean tryAttack(Villager villager, LivingEntity target, ServerLevel level, double distanceSqr) {
@@ -105,6 +109,10 @@ final class VillagerRangedCombatHelper {
         }
 
         return false;
+    }
+
+    public static void clearDuelState(AbstractVillager villager) {
+        clearState(villager);
     }
 
     static void clearState(AbstractVillager villager) {

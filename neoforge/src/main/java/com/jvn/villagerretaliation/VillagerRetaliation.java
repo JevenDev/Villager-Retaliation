@@ -118,6 +118,7 @@ public class VillagerRetaliation {
                 .listener(ForcedDialogueService::onContainerOpen)
                 .listener(VillagerReputationEvents::onContainerOpen)
                 .listener(ForcedDialogueService::onItemToss)
+                .listener(com.jvn.villagerretaliation.duel.DuelService::onItemToss)
                 .listener(ForcedDialogueService::onContainerClose)
                 .listener(VillagerRetaliationEvents::onEntityLeaveLevel)
                 .listener(VillageAllegianceService::onEntityLeaveLevel);

@@ -17,6 +17,16 @@ public final class VillagerRetaliationConfig {
     public static final ConfigWrapper<?> CONFIG = loadConfig();
 
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_DROPS = bind("general.enableVillagerDrops", Boolean.class);
+    public static final ConfigValue<Boolean> ENABLE_DUELS = bind("duels.enabled", Boolean.class);
+    public static final ConfigValue<Integer> DUEL_MINIMUM_GUTS = bind("duels.minimumGuts", Integer.class);
+    public static final ConfigValue<Integer> DUEL_COOLDOWN_DAYS = bind("duels.cooldownDays", Integer.class);
+    public static final ConfigValue<Integer> DUEL_REFUSAL_LOSSES = bind("duels.refusalLosses", Integer.class);
+    public static final ConfigValue<Integer> DUEL_ARENA_RADIUS = bind("duels.arenaRadius", Integer.class);
+    public static final ConfigValue<Integer> DUEL_BOUNDARY_GRACE_TICKS = bind("duels.boundaryGraceTicks", Integer.class);
+    public static final ConfigValue<Integer> DUEL_TIMEOUT_TICKS = bind("duels.timeoutTicks", Integer.class);
+    public static final ConfigValue<Integer> DUEL_SPECTATOR_RADIUS = bind("duels.spectatorRadius", Integer.class);
+    public static final ConfigValue<Integer> DUEL_SPECTATOR_CAP = bind("duels.spectatorCap", Integer.class);
+    public static final ConfigValue<Integer> DUEL_WATCHER_REPUTATION = bind("duels.watcherReputation", Integer.class);
     public static final ConfigValue<Boolean> ENABLE_WANDERING_TRADER_DROPS = bind("general.enableWanderingTraderDrops", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_RETALIATION = bind("general.enableVillagerRetaliation", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_REPUTATION = bind("general.enableVillagerReputation", Boolean.class);
