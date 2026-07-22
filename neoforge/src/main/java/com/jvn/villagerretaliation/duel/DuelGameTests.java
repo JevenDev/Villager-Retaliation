@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
+import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.netty.channel.embedded.EmbeddedChannel;
@@ -26,6 +27,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
 import net.minecraft.world.damagesource.CombatRules;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -167,6 +169,70 @@ public final class DuelGameTests {
                 "villager inventory must be restored exactly");
         helper.assertTrue(villager.canPickUpLoot(), "villager pickup policy must be restored");
         pickup.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void duelTemporarilyNormalizesAndRestoresParticipantVitals(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        player.setHealth(7.0F);
+        player.getFoodData().setFoodLevel(6);
+        player.getFoodData().setSaturation(1.5F);
+        player.getFoodData().setExhaustion(3.25F);
+        player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 600, 1));
+        villager.setHealth(8.0F);
+        VillagerRecoveryService.restoreRecoveryState(
+                villager, new VillagerRecoveryService.RecoverySnapshot(5, 1.25F, 2.5F, 17));
+        villager.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 500, 2));
+
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.BARE_HANDED, 0);
+        helper.assertTrue(start.started(), "vitals test duel should start: " + start.reason());
+        helper.assertValueEqual(player.getHealth(), player.getMaxHealth(),
+                "the player should start the duel fully healed");
+        helper.assertValueEqual(player.getFoodData().getFoodLevel(), 20,
+                "the player should start the duel fully fed");
+        helper.assertValueEqual(player.getFoodData().getSaturationLevel(), 20.0F,
+                "the player should start the duel with full saturation");
+        helper.assertValueEqual(player.getFoodData().getExhaustionLevel(), 0.0F,
+                "the player should start the duel without exhaustion");
+        helper.assertTrue(player.getActiveEffects().isEmpty(),
+                "the player should start the duel without status effects");
+        helper.assertValueEqual(villager.getHealth(), villager.getMaxHealth(),
+                "the villager should start the duel fully healed");
+        helper.assertValueEqual(VillagerRecoveryService.foodLevel(villager), 20,
+                "the villager should start the duel fully fed");
+        helper.assertValueEqual(VillagerRecoveryService.saturationLevel(villager), 20.0F,
+                "the villager should start the duel with full saturation");
+        helper.assertTrue(villager.getActiveEffects().isEmpty(),
+                "the villager should start the duel without status effects");
+
+        player.setHealth(2.0F);
+        player.getFoodData().setFoodLevel(3);
+        villager.setHealth(3.0F);
+        helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW),
+                "vitals test duel should resolve");
+
+        helper.assertValueEqual(player.getHealth(), 7.0F, "the player's original health must return");
+        helper.assertValueEqual(player.getFoodData().getFoodLevel(), 6,
+                "the player's original hunger must return");
+        helper.assertValueEqual(player.getFoodData().getSaturationLevel(), 1.5F,
+                "the player's original saturation must return");
+        helper.assertValueEqual(player.getFoodData().getExhaustionLevel(), 3.25F,
+                "the player's original exhaustion must return");
+        MobEffectInstance playerEffect = player.getEffect(MobEffects.MOVEMENT_SPEED);
+        helper.assertTrue(playerEffect != null && playerEffect.getDuration() == 600 && playerEffect.getAmplifier() == 1,
+                "the player's original effect must return unchanged");
+        helper.assertValueEqual(villager.getHealth(), 8.0F, "the villager's original health must return");
+        VillagerRecoveryService.RecoverySnapshot restoredVillagerRecovery =
+                VillagerRecoveryService.captureRecoveryState(villager);
+        helper.assertValueEqual(restoredVillagerRecovery,
+                new VillagerRecoveryService.RecoverySnapshot(5, 1.25F, 2.5F, 17),
+                "the villager's original recovery state must return");
+        MobEffectInstance villagerEffect = villager.getEffect(MobEffects.DAMAGE_BOOST);
+        helper.assertTrue(villagerEffect != null && villagerEffect.getDuration() == 500 && villagerEffect.getAmplifier() == 2,
+                "the villager's original effect must return unchanged");
         helper.succeed();
     }
 

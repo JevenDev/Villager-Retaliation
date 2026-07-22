@@ -64,6 +64,27 @@ public final class VillagerRecoveryService {
         return state(villager).saturation();
     }
 
+    public static RecoverySnapshot captureRecoveryState(Villager villager) {
+        RecoveryState recovery = state(villager);
+        return new RecoverySnapshot(
+                recovery.food(), recovery.saturation(), recovery.exhaustion(), recovery.healTimer());
+    }
+
+    public static void prepareForDuel(Villager villager) {
+        save(villager, new RecoveryState(MAX_FOOD, MAX_FOOD, 0.0F, 0));
+    }
+
+    public static void restoreRecoveryState(Villager villager, RecoverySnapshot snapshot) {
+        if (villager == null || snapshot == null) {
+            return;
+        }
+        save(villager, new RecoveryState(
+                Math.clamp(snapshot.food(), 0, MAX_FOOD),
+                Math.clamp(snapshot.saturation(), 0.0F, MAX_FOOD),
+                Math.max(0.0F, snapshot.exhaustion()),
+                Math.max(0, snapshot.healTimer())));
+    }
+
     public static boolean beginForcedRecovery(Villager villager, boolean urgent) {
         if (villager == null || !villager.isAlive() || villager.getHealth() >= villager.getMaxHealth()) {
             return false;
@@ -392,6 +413,9 @@ public final class VillagerRecoveryService {
         RecoveryState withHealTimer(int timer) {
             return new RecoveryState(this.food, this.saturation, this.exhaustion, timer);
         }
+    }
+
+    public record RecoverySnapshot(int food, float saturation, float exhaustion, int healTimer) {
     }
 
     private record UseState(ItemStack stack, ItemStack resumeMainHand, int ticksRemaining) {
