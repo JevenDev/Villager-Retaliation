@@ -1,9 +1,11 @@
 package com.jvn.villagerretaliation.duel;
 
+import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -17,12 +19,16 @@ final class DuelEquipment {
 
     static Snapshots prepare(ServerPlayer player, Villager villager, DuelLoadout loadout) {
         Snapshots snapshots = new Snapshots(PlayerSnapshot.capture(player), VillagerSnapshot.capture(villager));
+        player.removeAllEffects();
         player.setHealth(player.getMaxHealth());
         player.setAbsorptionAmount(0.0F);
-        player.removeAllEffects();
+        player.getFoodData().setFoodLevel(20);
+        player.getFoodData().setSaturation(20.0F);
+        player.getFoodData().setExhaustion(0.0F);
+        villager.removeAllEffects();
         villager.setHealth(villager.getMaxHealth());
         villager.setAbsorptionAmount(0.0F);
-        villager.removeAllEffects();
+        VillagerRecoveryService.prepareForDuel(villager);
         villager.setCanPickUpLoot(false);
         if (loadout == DuelLoadout.BRING_YOUR_OWN) return snapshots;
         clear(player.getInventory());
@@ -86,12 +92,14 @@ final class DuelEquipment {
     record Snapshots(PlayerSnapshot player, VillagerSnapshot villager) {}
 
     record PlayerSnapshot(List<ItemStack> items, List<ItemStack> armor, List<ItemStack> offhand,
-                          int selectedSlot, float health, float absorption, int food, float saturation,
+                          int selectedSlot, float health, float absorption, CompoundTag foodData,
                           List<MobEffectInstance> effects) {
         static PlayerSnapshot capture(ServerPlayer player) {
+            CompoundTag foodData = new CompoundTag();
+            player.getFoodData().addAdditionalSaveData(foodData);
             return new PlayerSnapshot(copy(player.getInventory().items), copy(player.getInventory().armor),
                     copy(player.getInventory().offhand), player.getInventory().selected, player.getHealth(), player.getAbsorptionAmount(),
-                    player.getFoodData().getFoodLevel(), player.getFoodData().getSaturationLevel(),
+                    foodData,
                     player.getActiveEffects().stream().map(MobEffectInstance::new).toList());
         }
 
@@ -107,13 +115,13 @@ final class DuelEquipment {
             this.effects.forEach(effect -> player.addEffect(new MobEffectInstance(effect)));
             player.setHealth(Math.min(player.getMaxHealth(), Math.max(1.0F, this.health)));
             player.setAbsorptionAmount(this.absorption);
-            player.getFoodData().setFoodLevel(this.food);
-            player.getFoodData().setSaturation(this.saturation);
+            player.getFoodData().readAdditionalSaveData(this.foodData.copy());
         }
     }
 
     record VillagerSnapshot(List<ItemStack> inventory, Map<EquipmentSlot, ItemStack> equipment,
-                            float health, float absorption, List<MobEffectInstance> effects, boolean pickup) {
+                            float health, float absorption, List<MobEffectInstance> effects, boolean pickup,
+                            VillagerRecoveryService.RecoverySnapshot recovery) {
         static VillagerSnapshot capture(Villager villager) {
             List<ItemStack> inventory = new ArrayList<>();
             for (int i = 0; i < villager.getInventory().getContainerSize(); i++) {
@@ -123,7 +131,7 @@ final class DuelEquipment {
             for (EquipmentSlot slot : EquipmentSlot.values()) equipment.put(slot, villager.getItemBySlot(slot).copy());
             return new VillagerSnapshot(List.copyOf(inventory), equipment, villager.getHealth(),
                     villager.getAbsorptionAmount(), villager.getActiveEffects().stream().map(MobEffectInstance::new).toList(),
-                    villager.canPickUpLoot());
+                    villager.canPickUpLoot(), VillagerRecoveryService.captureRecoveryState(villager));
         }
 
         void restore(Villager villager) {
@@ -136,6 +144,7 @@ final class DuelEquipment {
             villager.setHealth(Math.min(villager.getMaxHealth(), Math.max(1.0F, this.health)));
             villager.setAbsorptionAmount(this.absorption);
             villager.setCanPickUpLoot(this.pickup);
+            VillagerRecoveryService.restoreRecoveryState(villager, this.recovery);
         }
     }
 
