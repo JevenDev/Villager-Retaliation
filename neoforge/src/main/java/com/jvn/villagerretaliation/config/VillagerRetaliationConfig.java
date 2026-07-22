@@ -156,6 +156,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_COMBAT = bind("balance.hiredWorkSkillGrowth.combat", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_MINING = bind("balance.hiredWorkSkillGrowth.mining", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_LOGGING = bind("balance.hiredWorkSkillGrowth.logging", Double.class);
+    public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_CRAFTSMAN = bind("balance.hiredWorkSkillGrowth.craftsman", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_FARMING = bind("balance.hiredWorkSkillGrowth.farming", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_BREWING = bind("balance.hiredWorkSkillGrowth.brewing", Double.class);
     public static final ConfigValue<Double> HIRED_WORK_SKILL_GROWTH_COOKING = bind("balance.hiredWorkSkillGrowth.cooking", Double.class);
@@ -305,8 +306,13 @@ public final class VillagerRetaliationConfig {
 
     private static ConfigWrapper<?> loadConfig() {
         ConfigWrapper<?> config = instantiateConfigWrapper();
+        boolean migrateCraftsmanSkillGrowth =
+                VillagerRetaliationConfigCompatibility.shouldMigrateCraftsmanSkillGrowth(config.fileLocation());
         if (!migrateLegacyTomlIfNeeded(config)) {
             config.load();
+        }
+        if (migrateCraftsmanSkillGrowth && VillagerRetaliationConfigCompatibility.inheritLegacyCraftsmanSkillGrowth(config)) {
+            config.save();
         }
         return config;
     }

@@ -427,6 +427,9 @@ public final class VillagerRetaliationConfigModel {
         public double logging = 0.2D;
 
         @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
+        public double craftsman = 0.2D;
+
+        @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
         public double farming = 0.2D;
 
         @RangeConstraint(min = 0.0D, max = 10.0D, decimalPlaces = 2)
