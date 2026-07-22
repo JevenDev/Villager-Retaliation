@@ -254,6 +254,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final String genderName;
     private final boolean baby;
     private final boolean canTrade;
+    private final boolean duelVisible;
     private int reputation;
     private VillagerReputationLevel reputationLevel;
     private DialogueDisposition mood;
@@ -387,6 +388,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             String genderName,
             boolean baby,
             boolean canTrade,
+            boolean duelVisible,
             int reputation,
             VillagerReputationLevel reputationLevel,
             DialogueDisposition mood,
@@ -451,6 +453,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.genderName = localizedGenderName(genderName);
         this.baby = baby;
         this.canTrade = canTrade;
+        this.duelVisible = duelVisible;
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         this.mood = mood;
@@ -1092,9 +1095,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             if (this.relationships.hasRelationships()) {
                 addOption("root.relationships", this::openRelationshipPage);
             }
-            if (VillagerProfileClientCache.get(this.villagerEntityId)
-                    .map(entry -> entry.value(VillagerSocialAttribute.GUTS) >= VillagerRetaliationConfig.DUEL_MINIMUM_GUTS.get())
-                    .orElse(false)) {
+            if (this.duelVisible) {
                 addOption("root.duel", this::requestDuel);
             }
             addRootRecruitmentOptions();

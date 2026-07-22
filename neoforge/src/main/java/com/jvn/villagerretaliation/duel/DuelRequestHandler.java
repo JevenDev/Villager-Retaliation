@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.duel;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
@@ -37,7 +38,11 @@ public final class DuelRequestHandler {
         PacketDistributor.sendToPlayer(player, new OpenVillagerDuelPayload(
                 villager.getId(), VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 status.available(), status.reason(), status.villagerWins(), status.villagerLosses(),
-                status.consecutiveLosses(), status.cooldownTicksRemaining(), status.playerCurrency(),
+                status.consecutiveLosses(), status.cooldownTicksRemaining(),
+                VillagerRetaliationConfig.DUEL_ARENA_RADIUS.get(),
+                VillagerRetaliationConfig.DUEL_BOUNDARY_GRACE_TICKS.get(),
+                VillagerRetaliationConfig.DUEL_TIMEOUT_TICKS.get(),
+                VillagerRetaliationConfig.DUEL_COOLDOWN_DAYS.get(), status.playerCurrency(),
                 status.villagerCurrency(), currency));
     }
 }

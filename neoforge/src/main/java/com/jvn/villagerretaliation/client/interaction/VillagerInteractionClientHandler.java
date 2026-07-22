@@ -111,6 +111,7 @@ public final class VillagerInteractionClientHandler {
                 genderName,
                 payload.baby(),
                 payload.canTrade(),
+                payload.duelVisible(),
                 payload.reputation(),
                 payload.reputationLevel(),
                 payload.mood(),
