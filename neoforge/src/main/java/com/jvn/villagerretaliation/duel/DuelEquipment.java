@@ -26,6 +26,7 @@ final class DuelEquipment {
         villager.setCanPickUpLoot(false);
         if (loadout == DuelLoadout.BRING_YOUR_OWN) return snapshots;
         clear(player.getInventory());
+        player.getInventory().selected = 0;
         clear(villager);
         switch (loadout) {
             case BARE_HANDED -> {}

@@ -123,7 +123,9 @@ public final class DuelService {
         Set<UUID> spectators = DuelSpectators.recruit(level, villager, center);
         DuelEquipment.Snapshots snapshots = DuelEquipment.prepare(player, villager, loadout);
         ActiveDuel duel = new ActiveDuel(id, level.dimension(), player.getUUID(), villager.getUUID(), loadout, stake,
-                center, now + COUNTDOWN_TICKS, now + COUNTDOWN_TICKS + VillagerRetaliationConfig.DUEL_TIMEOUT_TICKS.get(),
+                center, VillagerRetaliationConfig.DUEL_ARENA_RADIUS.get(),
+                VillagerRetaliationConfig.DUEL_BOUNDARY_GRACE_TICKS.get(),
+                now + COUNTDOWN_TICKS, now + COUNTDOWN_TICKS + VillagerRetaliationConfig.DUEL_TIMEOUT_TICKS.get(),
                 snapshots, spectators);
         BY_ID.put(id, duel);
         BY_ENTITY.put(player.getUUID(), id);
@@ -165,14 +167,14 @@ public final class DuelService {
         if (now < duel.countdownEndsAt()) { villager.getNavigation().stop(); villager.setTarget(null); return; }
         if (now >= duel.timeoutAt()) { finish(server, duel, DuelResult.DRAW, false); return; }
         updateBoundary(duel, player, villager, now);
-        int grace = VillagerRetaliationConfig.DUEL_BOUNDARY_GRACE_TICKS.get();
+        int grace = duel.boundaryGraceTicks();
         if (duel.playerOutsideSince() >= 0L && now - duel.playerOutsideSince() >= grace) { finish(server, duel, DuelResult.VILLAGER_WIN, false); return; }
         if (duel.villagerOutsideSince() >= 0L && now - duel.villagerOutsideSince() >= grace) { finish(server, duel, DuelResult.PLAYER_WIN, false); return; }
         drive(level, duel, villager, player, now);
     }
 
     private static void updateBoundary(ActiveDuel duel, ServerPlayer player, Villager villager, long now) {
-        double radiusSqr = Math.pow(VillagerRetaliationConfig.DUEL_ARENA_RADIUS.get(), 2.0D);
+        double radiusSqr = Math.pow(duel.arenaRadius(), 2.0D);
         duel.playerOutsideSince(outside(player.position(), duel.center(), radiusSqr) ? first(duel.playerOutsideSince(), now) : -1L);
         duel.villagerOutsideSince(outside(villager.position(), duel.center(), radiusSqr) ? first(duel.villagerOutsideSince(), now) : -1L);
     }
@@ -293,7 +295,14 @@ public final class DuelService {
 
     public static void onPlayerLogout(ServerPlayer player) {
         ActiveDuel duel = active(player);
-        if (duel != null) finish(player.getServer(), duel, DuelResult.VILLAGER_WIN, false);
+        if (duel != null) finish(player.getServer(), duel, DuelResult.VILLAGER_WIN, false, player);
+    }
+
+    static boolean resolveForTest(ServerPlayer player, DuelResult result) {
+        ActiveDuel duel = active(player);
+        if (duel == null) return false;
+        finish(player.getServer(), duel, result, false, player);
+        return true;
     }
 
     public static void clearRuntimeState(MinecraftServer server) {
@@ -302,10 +311,16 @@ public final class DuelService {
     }
 
     private static void finish(MinecraftServer server, ActiveDuel duel, DuelResult result, boolean knockedOut) {
+        finish(server, duel, result, knockedOut, null);
+    }
+
+    private static void finish(MinecraftServer server, ActiveDuel duel, DuelResult result, boolean knockedOut,
+                               ServerPlayer playerHint) {
         if (BY_ID.remove(duel.id()) == null) return;
         BY_ENTITY.remove(duel.playerId(), duel.id()); BY_ENTITY.remove(duel.villagerId(), duel.id());
         ServerLevel level = server.getLevel(duel.dimension());
-        ServerPlayer player = server.getPlayerList().getPlayer(duel.playerId());
+        ServerPlayer listedPlayer = server.getPlayerList().getPlayer(duel.playerId());
+        ServerPlayer player = playerHint != null && playerHint.getUUID().equals(duel.playerId()) ? playerHint : listedPlayer;
         Villager villager = level != null && level.getEntity(duel.villagerId()) instanceof Villager found ? found : null;
         if (level != null) {
             AABB cleanup = AABB.ofSize(duel.center(), 80.0D, 80.0D, 80.0D);
@@ -400,17 +415,21 @@ public final class DuelService {
 
     private static final class ActiveDuel {
         private final UUID id; private final ResourceKey<Level> dimension; private final UUID playerId, villagerId;
-        private final DuelLoadout loadout; private final int stake; private final Vec3 center; private final long countdownEndsAt, timeoutAt;
+        private final DuelLoadout loadout; private final int stake; private final Vec3 center;
+        private final int arenaRadius, boundaryGraceTicks; private final long countdownEndsAt, timeoutAt;
         private final DuelEquipment.Snapshots snapshots; private final Set<UUID> spectators;
         private long playerOutsideSince = -1L, villagerOutsideSince = -1L, nextAttackAt;
         private DuelResult pendingResult; private boolean villagerKnockedOut;
         ActiveDuel(UUID id, ResourceKey<Level> dimension, UUID playerId, UUID villagerId, DuelLoadout loadout, int stake,
-                   Vec3 center, long countdownEndsAt, long timeoutAt, DuelEquipment.Snapshots snapshots, Set<UUID> spectators) {
+                   Vec3 center, int arenaRadius, int boundaryGraceTicks, long countdownEndsAt, long timeoutAt,
+                   DuelEquipment.Snapshots snapshots, Set<UUID> spectators) {
             this.id=id;this.dimension=dimension;this.playerId=playerId;this.villagerId=villagerId;this.loadout=loadout;this.stake=stake;
-            this.center=center;this.countdownEndsAt=countdownEndsAt;this.timeoutAt=timeoutAt;this.snapshots=snapshots;this.spectators=Set.copyOf(spectators);
+            this.center=center;this.arenaRadius=arenaRadius;this.boundaryGraceTicks=boundaryGraceTicks;
+            this.countdownEndsAt=countdownEndsAt;this.timeoutAt=timeoutAt;this.snapshots=snapshots;this.spectators=Set.copyOf(spectators);
         }
         UUID id(){return id;} ResourceKey<Level> dimension(){return dimension;} UUID playerId(){return playerId;} UUID villagerId(){return villagerId;}
-        DuelLoadout loadout(){return loadout;} int stake(){return stake;} Vec3 center(){return center;} long countdownEndsAt(){return countdownEndsAt;}
+        DuelLoadout loadout(){return loadout;} int stake(){return stake;} Vec3 center(){return center;}
+        int arenaRadius(){return arenaRadius;} int boundaryGraceTicks(){return boundaryGraceTicks;} long countdownEndsAt(){return countdownEndsAt;}
         long timeoutAt(){return timeoutAt;} DuelEquipment.Snapshots snapshots(){return snapshots;} Set<UUID> spectators(){return spectators;}
         long playerOutsideSince(){return playerOutsideSince;} void playerOutsideSince(long v){playerOutsideSince=v;}
         long villagerOutsideSince(){return villagerOutsideSince;} void villagerOutsideSince(long v){villagerOutsideSince=v;}
