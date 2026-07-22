@@ -9,7 +9,6 @@ import com.jvn.villagerretaliation.interaction.work.mining.MiningExcavationSuppo
 import com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules;
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
-import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
@@ -3366,7 +3365,7 @@ public final class VillagerWorkerGameTests {
                 .thenSucceed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80000)
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80000, batch = "mining_full_mixed_box")
     public static void miningWorkerServiceExcavatesFullMixedBoxAndDeposits(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         level.setDayTime(1000L);
@@ -3391,10 +3390,11 @@ public final class VillagerWorkerGameTests {
         supplyAndOutput.setItem(3, new ItemStack(Items.DIAMOND_SHOVEL));
         container(level, payment).setItem(0, new ItemStack(Items.EMERALD, 64));
 
-        Villager villager = spawnVillager(helper, new BlockPos(11, 6, 6));
+        Villager villager = spawnVillager(helper, new BlockPos(10, 6, 6));
         villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.TOOLSMITH));
-        pinHiredWorkServicePhase(level, villager);
-        HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 64);
+        helper.assertTrue(
+                HiredVillagerContractService.startHireContract(level, villager, hirer, 4, 64),
+                "toolsmith fixture should accept a mining contract");
         helper.assertTrue(
                 HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.MINING),
                 "toolsmith villager should accept mining role");
@@ -3405,6 +3405,7 @@ public final class VillagerWorkerGameTests {
                 helper.absolutePos(workMinRel),
                 helper.absolutePos(workMaxRel));
         HiredWorkSession session = HiredWorkSession.active(level, villager);
+        session.state().putBoolean("Enabled", true);
         session.state().putString(HiredMiningMode.STATE_TAG, HiredMiningMode.EXCAVATE_AREA.serializedName());
         session.state().putBoolean("UseAssignedStorageForSupplies", true);
         session.state().putBoolean("AutoDepositOutputs", true);
@@ -3423,7 +3424,6 @@ public final class VillagerWorkerGameTests {
                 AssignedStorageService.PAYMENT_PURPOSE);
         helper.assertValueEqual(chestAssignment.assigned(), 1, "mixed mining chest assignment");
         helper.assertValueEqual(paymentAssignment.assigned(), 1, "mixed mining payment assignment");
-
         runHiredMiningServiceUntil(helper, level, villager, workMinRel, workMaxRel, 76000, () ->
                 mixedExcavationBoxCleared(level, helper, workMinRel, workMaxRel)
                         && !HiredJobInventory.getJobInventory(villager).hasOutputItems());
@@ -6178,6 +6178,8 @@ public final class VillagerWorkerGameTests {
         int ticksSinceBlockProgress = 0;
         for (int tick = 0; tick < maxTicks && !done.getAsBoolean(); tick++) {
             level.setDayTime(1000L);
+            ((net.minecraft.world.level.storage.ServerLevelData) level.getLevelData())
+                    .setGameTime(level.getGameTime() + 1L);
             villager.getBrain().setActiveActivityIfPossible(Activity.IDLE);
             HiredVillagerContractService.onVillagerTickPost(villager);
             HiredVillagerWorkService.onVillagerTickPost(villager);
@@ -6250,11 +6252,6 @@ public final class VillagerWorkerGameTests {
                 + ", ladders=" + ladderSummary(level, helper, workMinRel, workMaxRel));
     }
 
-    private static void pinHiredWorkServicePhase(ServerLevel level, Villager villager) {
-        int interval = Math.max(10, VillagerRetaliationConfig.HIRED_WORK_TICK_INTERVAL.get());
-        long least = Math.floorMod(-level.getGameTime(), interval);
-        villager.setUUID(new UUID(0x564d696e6572544cL, least));
-    }
 
     private static void fillMixedExcavationBox(GameTestHelper helper, BlockPos min, BlockPos max) {
         for (int x = min.getX(); x <= max.getX(); x++) {
