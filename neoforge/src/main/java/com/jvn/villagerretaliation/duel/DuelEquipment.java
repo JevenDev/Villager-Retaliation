@@ -23,6 +23,7 @@ final class DuelEquipment {
         villager.setHealth(villager.getMaxHealth());
         villager.setAbsorptionAmount(0.0F);
         villager.removeAllEffects();
+        villager.setCanPickUpLoot(false);
         if (loadout == DuelLoadout.BRING_YOUR_OWN) return snapshots;
         clear(player.getInventory());
         clear(villager);
@@ -84,18 +85,22 @@ final class DuelEquipment {
     record Snapshots(PlayerSnapshot player, VillagerSnapshot villager) {}
 
     record PlayerSnapshot(List<ItemStack> items, List<ItemStack> armor, List<ItemStack> offhand,
-                          float health, float absorption, int food, float saturation, List<MobEffectInstance> effects) {
+                          int selectedSlot, float health, float absorption, int food, float saturation,
+                          List<MobEffectInstance> effects) {
         static PlayerSnapshot capture(ServerPlayer player) {
             return new PlayerSnapshot(copy(player.getInventory().items), copy(player.getInventory().armor),
-                    copy(player.getInventory().offhand), player.getHealth(), player.getAbsorptionAmount(),
+                    copy(player.getInventory().offhand), player.getInventory().selected, player.getHealth(), player.getAbsorptionAmount(),
                     player.getFoodData().getFoodLevel(), player.getFoodData().getSaturationLevel(),
                     player.getActiveEffects().stream().map(MobEffectInstance::new).toList());
         }
 
-        void restore(ServerPlayer player) {
-            restoreList(player.getInventory().items, this.items);
-            restoreList(player.getInventory().armor, this.armor);
-            restoreList(player.getInventory().offhand, this.offhand);
+        void restore(ServerPlayer player, boolean restoreInventory) {
+            if (restoreInventory) {
+                restoreList(player.getInventory().items, this.items);
+                restoreList(player.getInventory().armor, this.armor);
+                restoreList(player.getInventory().offhand, this.offhand);
+                player.getInventory().selected = this.selectedSlot;
+            }
             player.getInventory().setChanged();
             player.removeAllEffects();
             this.effects.forEach(effect -> player.addEffect(new MobEffectInstance(effect)));

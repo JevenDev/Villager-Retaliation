@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.network.DuelInventoryStatePayload;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.profile.VillagerProfile;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
@@ -34,6 +35,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
@@ -46,6 +50,9 @@ import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
 import net.neoforged.neoforge.event.entity.item.ItemTossEvent;
+import net.neoforged.neoforge.event.entity.player.ItemEntityPickupEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerContainerEvent;
+import net.neoforged.neoforge.common.util.TriState;
 public final class DuelService {
     public static final int[] FIXED_STAKES = {0, 8, 16, 32, 64};
     private static final long DAY_TICKS = 24000L;
@@ -75,6 +82,7 @@ public final class DuelService {
         if (!VillagerRetaliationConfig.ENABLE_DUELS.get()) return DuelAvailabilityReason.DISABLED;
         if (villager.isBaby()) return DuelAvailabilityReason.BABY;
         if (!villager.isAlive() || !player.isAlive() || player.isSpectator()) return DuelAvailabilityReason.INVALID;
+        if (player.isCreative()) return DuelAvailabilityReason.INVALID;
         if (player.level() != level || player.distanceToSqr(villager) > 64.0D) return DuelAvailabilityReason.TOO_FAR;
         if (HiredVillagerContractService.isHired(level, villager)) return DuelAvailabilityReason.HIRED;
         if (PartyVillagerContractService.isActivePartyVillager(level, villager)) return DuelAvailabilityReason.PARTY;
@@ -99,6 +107,9 @@ public final class DuelService {
         ServerLevel level = player.serverLevel();
         DuelAvailability available = availability(level, player, villager);
         if (!available.available()) return new StartResult(false, available.reason(), null);
+        if (player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
+        }
         int stake = requestedStake == Integer.MAX_VALUE ? available.maximumStake() : requestedStake;
         if (!validStake(stake, available.maximumStake())) return new StartResult(false, DuelAvailabilityReason.INVALID, null);
         if (!VillagerCurrencyPayment.tryRemove(player, stake)) return new StartResult(false, DuelAvailabilityReason.INVALID, null);
@@ -117,6 +128,8 @@ public final class DuelService {
         BY_ID.put(id, duel);
         BY_ENTITY.put(player.getUUID(), id);
         BY_ENTITY.put(villager.getUUID(), id);
+        player.inventoryMenu.broadcastFullState();
+        syncInventoryState(player, true, loadout != DuelLoadout.BRING_YOUR_OWN);
         DuelSavedData.get(level).markStarted(villager.getUUID(), player.getUUID(), now);
         VillagerConversationService.endForVillager(villager, true);
         player.sendSystemMessage(Component.translatable("villagerretaliation.duel.started", VillagerPresetNameRegistry.resolveDisplayName(villager)));
@@ -144,6 +157,9 @@ public final class DuelService {
         if (player == null) { finish(server, duel, DuelResult.VILLAGER_WIN, false); return; }
         if (player.serverLevel() != level || !player.isAlive()) { finish(server, duel, DuelResult.CANCELLED, false); return; }
         if (duel.pendingResult() != null) { finish(server, duel, duel.pendingResult(), duel.villagerKnockedOut()); return; }
+        if (player.containerMenu != player.inventoryMenu) {
+            player.closeContainer();
+        }
         long now = server.overworld().getGameTime();
         DuelSpectators.maintain(level, duel.spectators(), duel.center(), villager);
         if (now < duel.countdownEndsAt()) { villager.getNavigation().stop(); villager.setTarget(null); return; }
@@ -231,8 +247,38 @@ public final class DuelService {
     }
 
     public static void onItemToss(ItemTossEvent event) {
-        if (event.getPlayer() instanceof ServerPlayer player && active(player) instanceof ActiveDuel duel && duel.loadout() != DuelLoadout.BRING_YOUR_OWN) event.setCanceled(true);
+        if (event.getPlayer() instanceof ServerPlayer player && active(player) != null) {
+            event.setCanceled(true);
+        }
     }
+    public static void onItemPickup(ItemEntityPickupEvent.Pre event) {
+        if (event.getPlayer() instanceof ServerPlayer player && active(player) != null) {
+            event.setCanPickup(TriState.FALSE);
+        }
+    }
+
+    public static void onContainerOpen(PlayerContainerEvent.Open event) {
+        if (event.getEntity() instanceof ServerPlayer player
+                && active(player) != null
+                && event.getContainer() != player.inventoryMenu) {
+            player.closeContainer();
+        }
+    }
+
+    public static boolean allowsInventoryClick(
+            ServerPlayer player,
+            AbstractContainerMenu menu,
+            int slotId,
+            ClickType clickType) {
+        ActiveDuel duel = active(player);
+        if (duel == null) return true;
+        if (menu != player.inventoryMenu || duel.loadout() != DuelLoadout.BRING_YOUR_OWN) return false;
+        if (slotId < InventoryMenu.ARMOR_SLOT_START || slotId > InventoryMenu.SHIELD_SLOT) return false;
+        return clickType != ClickType.THROW
+                && clickType != ClickType.CLONE
+                && clickType != ClickType.QUICK_CRAFT;
+    }
+
     public static boolean isParticipant(LivingEntity entity) { return active(entity) != null; }
 
     private static boolean isOpponent(ActiveDuel duel, LivingEntity target, LivingEntity attacker) {
@@ -267,7 +313,12 @@ public final class DuelService {
                     && (projectile.getOwner().getUUID().equals(duel.playerId()) || projectile.getOwner().getUUID().equals(duel.villagerId())))
                     .forEach(net.minecraft.world.entity.Entity::discard);
         }
-        if (player != null) duel.snapshots().player().restore(player);
+        if (player != null) {
+            boolean assignedLoadout = duel.loadout() != DuelLoadout.BRING_YOUR_OWN;
+            duel.snapshots().player().restore(player, assignedLoadout);
+            player.inventoryMenu.broadcastFullState();
+            syncInventoryState(player, false, false);
+        }
         if (villager != null) {
             duel.snapshots().villager().restore(villager);
             villager.setTarget(null); villager.setAggressive(false); villager.getNavigation().stop();
@@ -314,6 +365,15 @@ public final class DuelService {
             if (!player.getInventory().add(stack)) player.drop(stack, false);
         }
         player.getInventory().setChanged();
+    }
+
+    private static void syncInventoryState(ServerPlayer player, boolean active, boolean assignedLoadout) {
+        try {
+            net.neoforged.neoforge.network.PacketDistributor.sendToPlayer(
+                    player, new DuelInventoryStatePayload(active, assignedLoadout));
+        } catch (UnsupportedOperationException ignored) {
+            // Mock GameTest connections do not negotiate custom payloads.
+        }
     }
 
     private static void train(ServerLevel level, Villager villager, ActiveDuel duel) {

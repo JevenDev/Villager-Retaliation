@@ -38,3 +38,4 @@ crash-reports/
 
 ### OS ###
 .DS_Store
+/.gradle-home/

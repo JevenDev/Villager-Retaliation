@@ -4,6 +4,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AbstractArrowAccessor",
+    "AbstractContainerMenuDuelMixin",
     "AbstractContainerMenuAccessor",
     "AttributeMapMixin",
     "BannerHelmetContainerMenuMixin",
@@ -35,9 +36,14 @@
     "WorkAtPoiMixin"
   ],
   "client": [
+    "client.AbstractContainerScreenAccessor",
+    "client.AbstractContainerScreenDuelMixin",
     "client.ChatComponentMixin",
     "client.BannerHelmetCustomHeadLayerMixin",
     "client.InventoryScreenMixin",
+    "client.RecipeBookComponentAccessor",
+    "client.ScreenInvoker",
+    "client.SlotAccessor",
     "client.MerchantScreenMixin",
     "client.MerchantContainerMixin",
     "client.MerchantResultSlotMixin",
