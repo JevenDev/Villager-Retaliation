@@ -66,21 +66,23 @@ public final class VillagerBreedingGameTests {
         HiredVillagerContractService.endHireContract(level, villager, player);
         helper.assertTrue(VillagerBreedingPolicy.canBreed(level, villager), "dismissal restores eligibility");
 
+        HiredVillagerContractService.startHireContract(level, villager, player, 1, 0);
         helper.assertTrue(VillagerRecruitmentService.startFollowing(level, villager, player), "follow command fixture");
+        helper.assertTrue(VillagerRecruitmentService.isFollowing(villager, player), "follow command state");
         helper.assertValueEqual(
                 VillagerBreedingPolicy.evaluateParent(level, villager).reason(),
-                BreedingBlockReason.FOLLOWING_PLAYER,
-                "follow blocker");
-        VillagerRecruitmentService.stopFollowing(villager);
+                BreedingBlockReason.HIRED,
+                "hired follow remains blocked from breeding");
 
         VillagerReputationManager.setReputation(level, villager, player.getUUID(), 100);
         helper.assertTrue(VillagerRecruitmentService.stayHere(level, villager, player), "stay command fixture");
+        helper.assertTrue(VillagerRecruitmentService.isStayingHere(villager, player), "stay command state");
         helper.assertValueEqual(
                 VillagerBreedingPolicy.evaluateParent(level, villager).reason(),
-                BreedingBlockReason.ORDERED_TO_STAY,
-                "stay blocker");
-        VillagerRecruitmentService.stopFollowing(villager);
-        helper.assertTrue(VillagerBreedingPolicy.canBreed(level, villager), "clearing commands restores eligibility");
+                BreedingBlockReason.HIRED,
+                "hired stay remains blocked from breeding");
+        HiredVillagerContractService.endHireContract(level, villager, player);
+        helper.assertTrue(VillagerBreedingPolicy.canBreed(level, villager), "dismissal clears commands and restores eligibility");
 
         villager.discard();
         helper.succeed();

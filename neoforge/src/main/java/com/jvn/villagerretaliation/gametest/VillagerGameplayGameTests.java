@@ -23,6 +23,7 @@ import com.jvn.villagerretaliation.interaction.RecruitmentPolicy;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentCommand;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentService;
+import com.jvn.villagerretaliation.interaction.VillagerAssignmentStore;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentState;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
@@ -624,6 +625,7 @@ public final class VillagerGameplayGameTests {
 
         HiredVillagerContractService.startHireContract(
                 level, villager, followerOwner, 1, 8, HiredVillagerRole.FARMING);
+        followerOwner.moveTo(villager.getX(), villager.getY(), villager.getZ() + 1.0D, 0.0F, 0.0F);
         helper.assertValueEqual(
                 VillagerAssignmentService.snapshot(villager).command(),
                 VillagerAssignmentCommand.WORK,
@@ -652,6 +654,7 @@ public final class VillagerGameplayGameTests {
                 VillagerRecruitmentService.isFollowing(villager, followerOwner),
                 "hired work ticks should yield to and preserve the contract owner's follow command");
 
+        VillagerReputationManager.setReputation(level, villager, followerOwner.getUUID(), 100);
         helper.assertTrue(
                 VillagerRecruitmentService.stayHere(level, villager, followerOwner),
                 "the hirer should be able to change follow to stay");
@@ -659,6 +662,7 @@ public final class VillagerGameplayGameTests {
                 VillagerAssignmentService.snapshot(villager).command(),
                 VillagerAssignmentCommand.STAY,
                 "stay transition should be persisted canonically");
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.WEAPONSMITH));
         helper.assertTrue(
                 HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.COMBAT),
                 "hirer should be able to change role");
@@ -671,6 +675,102 @@ public final class VillagerGameplayGameTests {
                 VillagerAssignmentService.snapshot(villager).state(),
                 VillagerAssignmentState.UNASSIGNED,
                 "firing should end the assignment lifecycle");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void assignmentSchemaMigratesLegacyFollowStateAndSurvivesReload(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer owner = fakePlayer(level, "VrAssignmentReload");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        HiredVillagerContractService.startHireContract(
+                level, villager, owner, 2, 8, HiredVillagerRole.FARMING);
+
+        CompoundTag assignment = villager.getPersistentData().getCompound("VillagerRetaliationAssignment");
+        assignment.putInt("SchemaVersion", 1);
+        assignment.putString("Command", VillagerAssignmentCommand.WORK.name());
+        villager.getPersistentData().put("VillagerRetaliationAssignment", assignment);
+        villager.getPersistentData().putUUID("VillagerRetaliationFollowingPlayer", owner.getUUID());
+        villager.getPersistentData().putString("VillagerRetaliationFollowMode", "follow");
+        villager.getPersistentData().putFloat("VillagerRetaliationFollowStartHealth", 20.0F);
+        villager.getPersistentData().putFloat("VillagerRetaliationFollowMinHealth", 14.0F);
+        villager.getPersistentData().putInt("VillagerRetaliationFollowStartX", villager.blockPosition().getX());
+        villager.getPersistentData().putInt("VillagerRetaliationFollowStartY", villager.blockPosition().getY());
+        villager.getPersistentData().putInt("VillagerRetaliationFollowStartZ", villager.blockPosition().getZ());
+        villager.getPersistentData().putString("VillagerRetaliationFollowStartBiome", "plains");
+        villager.getPersistentData().putInt("VillagerRetaliationFollowMaxDistance", 17);
+        villager.getPersistentData().putBoolean("VillagerRetaliationFollowUsedBoat", true);
+
+        var migrated = VillagerAssignmentStore.snapshot(villager);
+        var journey = VillagerAssignmentStore.journey(villager);
+        helper.assertValueEqual(migrated.schemaVersion(), 2, "legacy assignment should migrate to schema v2");
+        helper.assertValueEqual(migrated.command(), VillagerAssignmentCommand.FOLLOW, "legacy follow command");
+        helper.assertValueEqual(journey.startBiome(), "plains", "legacy journey biome");
+        helper.assertValueEqual(journey.distanceBlocks(), 17, "legacy journey distance");
+        helper.assertTrue(journey.usedBoat(), "legacy boat trip flag");
+        helper.assertFalse(
+                villager.getPersistentData().contains("VillagerRetaliationFollowingPlayer"),
+                "migration should remove old top-level owner key");
+        helper.assertTrue(
+                villager.getPersistentData().getCompound("VillagerRetaliationAssignment")
+                        .contains("Journey", net.minecraft.nbt.Tag.TAG_COMPOUND),
+                "journey state should live inside the versioned assignment");
+
+        CompoundTag saved = new CompoundTag();
+        villager.saveWithoutId(saved);
+        Villager reloaded = EntityType.VILLAGER.create(level);
+        if (reloaded == null) throw new GameTestAssertException("Could not create reload fixture");
+        reloaded.load(saved);
+        var restored = VillagerAssignmentStore.snapshot(reloaded);
+        helper.assertTrue(restored.ownedBy(owner.getUUID()), "owner should survive entity serialization");
+        helper.assertValueEqual(restored.command(), VillagerAssignmentCommand.FOLLOW, "follow should survive reload");
+        helper.assertValueEqual(VillagerAssignmentStore.journey(reloaded), journey, "journey should survive reload");
+
+        VillagerReputationManager.setReputation(level, reloaded, owner.getUUID(), 100);
+        helper.assertTrue(VillagerRecruitmentService.stayHere(level, reloaded, owner), "owner can switch to stay");
+        CompoundTag stayed = new CompoundTag();
+        reloaded.saveWithoutId(stayed);
+        Villager stayedReloaded = EntityType.VILLAGER.create(level);
+        if (stayedReloaded == null) throw new GameTestAssertException("Could not create stay reload fixture");
+        stayedReloaded.load(stayed);
+        helper.assertValueEqual(
+                VillagerAssignmentStore.snapshot(stayedReloaded).command(),
+                VillagerAssignmentCommand.STAY,
+                "stay should survive reload");
+        helper.assertValueEqual(
+                VillagerAssignmentStore.stayAnchor(stayedReloaded),
+                reloaded.blockPosition(),
+                "stay anchor should survive reload");
+
+        villager.discard();
+        reloaded.discard();
+        stayedReloaded.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void activeAssignmentCannotBeOverwrittenBySecondHirer(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer first = fakePlayer(level, "VrFirstHirer");
+        ServerPlayer second = fakePlayer(level, "VrSecondHirer");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+
+        helper.assertTrue(
+                HiredVillagerContractService.startHireContract(level, villager, first, 2, 8),
+                "first hire should win");
+        helper.assertFalse(
+                HiredVillagerContractService.startHireContract(level, villager, second, 2, 8),
+                "second hire must not overwrite an active assignment");
+        helper.assertTrue(
+                VillagerAssignmentStore.snapshot(villager).ownedBy(first.getUUID()),
+                "the first owner remains authoritative");
+        helper.assertValueEqual(
+                HiredVillagerContractService.currentContractHirer(villager).orElseThrow(),
+                first.getUUID(),
+                "contract and assignment owners must agree");
+
+        HiredVillagerContractService.endHireContract(level, villager, first);
         villager.discard();
         helper.succeed();
     }

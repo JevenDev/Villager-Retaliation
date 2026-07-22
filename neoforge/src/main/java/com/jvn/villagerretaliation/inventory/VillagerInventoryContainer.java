@@ -335,10 +335,6 @@ final class VillagerInventoryContainer implements Container {
             returnBorrowedCombatWeapon(villager);
         }
         ItemStack displacedMainHand = villager.getMainHandItem().copy();
-        if (predicate.test(displacedMainHand)) {
-            return false;
-        }
-
         NonNullList<ItemStack> inventory = loadFullInventory(villager);
         int selectedSlot = selectBestWeaponSlot(inventory, predicate);
         if (selectedSlot < 0) {
@@ -346,6 +342,10 @@ final class VillagerInventoryContainer implements Container {
         }
 
         ItemStack borrowedStack = inventory.get(selectedSlot).copy();
+        if (predicate.test(displacedMainHand)
+                && !VillagerRetaliationVillagerWeapons.isBetterWeaponChoice(borrowedStack, displacedMainHand)) {
+            return false;
+        }
         inventory.set(selectedSlot, ItemStack.EMPTY);
         if (!displacedMainHand.isEmpty()) {
             inventory.set(selectedSlot, displacedMainHand.copy());
