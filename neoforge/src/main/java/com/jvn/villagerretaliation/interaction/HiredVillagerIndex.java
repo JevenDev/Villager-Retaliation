@@ -17,6 +17,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.Level;
 
 public final class HiredVillagerIndex {
+    public static final int MAX_ASSIGNMENTS_PER_PLAYER = 64;
     private static final Map<UUID, Entry> BY_VILLAGER = new HashMap<>();
     private static final Map<UUID, LinkedHashSet<UUID>> BY_OWNER = new HashMap<>();
 

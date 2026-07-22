@@ -50,6 +50,7 @@ import com.jvn.villagerretaliation.network.VillagerDuelRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
 import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
+import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
 import com.jvn.villagerretaliation.network.VillagerRoutineChatTogglePayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
@@ -259,6 +260,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private VillagerMood primaryMood;
     private boolean followingPlayer;
     private boolean stayingHere;
+    private long assignmentRevision;
     private boolean routineChatMuted;
     private final boolean forcedDialogue;
     private final boolean clipboardMenu;
@@ -285,7 +287,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final ResourceLocation walletCurrencyIconSprite;
     private final int walletCurrencyTextColor;
     private final EnumSet<HiredVillagerRole> availableHiredRoles;
-    private final HiredVillagerRole activeHiredRole;
+    private HiredVillagerRole activeHiredRole;
     private boolean activeBrewingOrder;
     private boolean activeBuilderTask;
     private boolean oneOffBuilderJob;
@@ -391,6 +393,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             VillagerMood primaryMood,
             boolean followingPlayer,
             boolean stayingHere,
+            long assignmentRevision,
             boolean routineChatMuted,
             boolean forcedDialogue,
             boolean clipboardMenu,
@@ -454,6 +457,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.primaryMood = primaryMood == null ? VillagerMood.NEUTRAL : primaryMood;
         this.followingPlayer = followingPlayer;
         this.stayingHere = stayingHere;
+        this.assignmentRevision = Math.max(0L, assignmentRevision);
         this.routineChatMuted = routineChatMuted;
         this.forcedDialogue = forcedDialogue;
         this.clipboardMenu = clipboardMenu;
@@ -2475,18 +2479,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void requestRecruit(VillagerRecruitRequestPayload.Action action) {
         HiredVillagerRole selectedRole = isHireDurationAction(action) ? this.pendingHireRole : null;
-        sendToServer(new VillagerRecruitRequestPayload(this.villagerEntityId, action, selectedRole));
-        if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
-            this.followingPlayer = true;
-            this.stayingHere = false;
-        } else if (action == VillagerRecruitRequestPayload.Action.STAY_HERE) {
-            this.followingPlayer = false;
-            this.stayingHere = true;
-        } else if (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
-                || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
-            this.followingPlayer = false;
-            this.stayingHere = false;
-        } else if (action == VillagerRecruitRequestPayload.Action.STOP_BREWING) {
+        sendToServer(new VillagerRecruitRequestPayload(
+                this.villagerEntityId, action, selectedRole, this.assignmentRevision));
+        if (action == VillagerRecruitRequestPayload.Action.STOP_BREWING) {
             this.activeBrewingOrder = false;
             openWorkPage();
         } else if (action == VillagerRecruitRequestPayload.Action.STOP_BUILDER_BUILD) {
@@ -2501,6 +2496,22 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         } else if (action == VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT) {
             this.assignedMount = false;
         }
+    }
+
+    public void acceptRecruitmentResult(RecruitmentResultPayload payload) {
+        if (payload == null || payload.entityId() != this.villagerEntityId) return;
+        boolean ownsAssignment = payload.assignment().owner()
+                .filter(owner -> Minecraft.getInstance().player != null
+                        && owner.equals(Minecraft.getInstance().player.getUUID()))
+                .isPresent();
+        this.hiredByPlayer = ownsAssignment;
+        this.followingPlayer = ownsAssignment
+                && payload.assignment().command() == com.jvn.villagerretaliation.interaction.VillagerAssignmentCommand.FOLLOW;
+        this.stayingHere = ownsAssignment
+                && payload.assignment().command() == com.jvn.villagerretaliation.interaction.VillagerAssignmentCommand.STAY;
+        this.activeHiredRole = payload.assignment().role();
+        this.assignmentRevision = payload.assignment().revision();
+        rebuildOptionsKeepingListPosition();
     }
 
     private void openBuilderReturnPage() {

@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.network.VillagerNameSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndedPayload;
 import com.jvn.villagerretaliation.network.VillagerDialogueResponsePayload;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
+import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.List;
@@ -116,6 +117,7 @@ public final class VillagerInteractionClientHandler {
                 payload.primaryMood(),
                 payload.followingPlayer(),
                 payload.stayingHere(),
+                payload.assignmentRevision(),
                 payload.routineChatMuted(),
                 payload.forcedDialogue(),
                 payload.clipboardMenu(),
@@ -213,6 +215,14 @@ public final class VillagerInteractionClientHandler {
             return;
         }
         pushVillagerChatMessage(minecraft, payload.entityId(), payload.text(), payload.speakerLabel(), payload.textSegments());
+    }
+
+    public static void acceptRecruitmentResult(RecruitmentResultPayload payload) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof VillagerInteractionScreen screen
+                && screen.matchesVillager(payload.entityId())) {
+            screen.acceptRecruitmentResult(payload);
+        }
     }
 
     public static void acceptConversationEnded(VillagerConversationEndedPayload payload) {

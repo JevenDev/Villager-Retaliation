@@ -19,6 +19,9 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
+import com.jvn.villagerretaliation.interaction.VillagerAssignmentCommand;
+import com.jvn.villagerretaliation.interaction.VillagerAssignmentService;
+import com.jvn.villagerretaliation.interaction.VillagerAssignmentState;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
@@ -600,21 +603,20 @@ public final class VillagerGameplayGameTests {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
 
-        helper.assertTrue(
-                VillagerRecruitmentService.startFollowing(level, villager, followerOwner),
-                "uncommitted villager should accept a follow command");
         helper.assertFalse(
-                VillagerRecruitmentService.stopFollowing(level, villager, otherPlayer),
-                "another player should not clear the owner's follow state");
-        helper.assertTrue(
-                VillagerRecruitmentService.isFollowing(villager, followerOwner),
-                "rejected stop command should preserve the original follower owner");
+                VillagerRecruitmentService.startFollowing(level, villager, followerOwner),
+                "commands require an active hiring relationship");
+        helper.assertValueEqual(
+                VillagerAssignmentService.snapshot(villager).state(),
+                VillagerAssignmentState.UNASSIGNED,
+                "new villager assignment state");
 
         HiredVillagerContractService.startHireContract(
                 level, villager, followerOwner, 1, 8, HiredVillagerRole.FARMING);
-        helper.assertFalse(
-                VillagerRecruitmentService.isFollowingAnyPlayer(villager),
-                "hiring should clear the previous follow state");
+        helper.assertValueEqual(
+                VillagerAssignmentService.snapshot(villager).command(),
+                VillagerAssignmentCommand.WORK,
+                "a new hire starts in work command state");
         helper.assertTrue(
                 VillagerRecruitmentService.startFollowing(level, villager, followerOwner),
                 "the contract owner should be able to tell their hired worker to follow");
@@ -635,7 +637,25 @@ public final class VillagerGameplayGameTests {
                 VillagerRecruitmentService.isFollowing(villager, followerOwner),
                 "hired work ticks should yield to and preserve the contract owner's follow command");
 
+        helper.assertTrue(
+                VillagerRecruitmentService.stayHere(level, villager, followerOwner),
+                "the hirer should be able to change follow to stay");
+        helper.assertValueEqual(
+                VillagerAssignmentService.snapshot(villager).command(),
+                VillagerAssignmentCommand.STAY,
+                "stay transition should be persisted canonically");
+        helper.assertTrue(
+                HiredVillagerContractService.setActiveRole(level, villager, HiredVillagerRole.COMBAT),
+                "hirer should be able to change role");
+        helper.assertValueEqual(
+                VillagerAssignmentService.snapshot(villager).command(),
+                VillagerAssignmentCommand.GUARD,
+                "combat role should select guard command");
         HiredVillagerContractService.endHireContract(level, villager, followerOwner);
+        helper.assertValueEqual(
+                VillagerAssignmentService.snapshot(villager).state(),
+                VillagerAssignmentState.UNASSIGNED,
+                "firing should end the assignment lifecycle");
         villager.discard();
         helper.succeed();
     }
