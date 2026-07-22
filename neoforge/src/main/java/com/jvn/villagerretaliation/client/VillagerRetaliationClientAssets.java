@@ -15,6 +15,8 @@ public final class VillagerRetaliationClientAssets {
             texture("entity/wandering_trader/wandering_trader");
     public static final ResourceLocation VILLAGER_TRADE_EXTENDED_TEXTURE =
             texture("gui/trade/villager_extended");
+    public static final ResourceLocation DUEL_INVENTORY_TEXTURE =
+            texture("gui/duel/duel_inventory");
 
     public static final ResourceLocation GIFT_INVENTORY_TEXTURE =
             texture("gui/villager_interaction_screen/gift_inventory");

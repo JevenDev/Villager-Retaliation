@@ -115,10 +115,12 @@ public class VillagerRetaliation {
                 .listener(HiredPathMemory::onFluidPlaceBlock)
                 .listener(HiredOreBlockTracker::onChunkUnload)
                 .listener(VillagerReputationEvents::onTradeWithVillager)
+                .listener(com.jvn.villagerretaliation.duel.DuelService::onContainerOpen)
                 .listener(ForcedDialogueService::onContainerOpen)
                 .listener(VillagerReputationEvents::onContainerOpen)
                 .listener(ForcedDialogueService::onItemToss)
                 .listener(com.jvn.villagerretaliation.duel.DuelService::onItemToss)
+                .listener(com.jvn.villagerretaliation.duel.DuelService::onItemPickup)
                 .listener(ForcedDialogueService::onContainerClose)
                 .listener(VillagerRetaliationEvents::onEntityLeaveLevel)
                 .listener(VillageAllegianceService::onEntityLeaveLevel);
