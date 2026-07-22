@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.duel;
 
 import com.jvn.villagerretaliation.compat.secondwind.VillagerSecondWindCompat;
 import com.jvn.villagerretaliation.combat.VillagerCombatAttributeCompat;
+import com.jvn.villagerretaliation.combat.VillagerCombatBehavior;
 import com.jvn.villagerretaliation.combat.VillagerCombatRoles;
 import com.jvn.villagerretaliation.combat.VillagerRangedCombatHelper;
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
@@ -156,6 +157,8 @@ public final class DuelService {
         long now = level.getServer().overworld().getGameTime();
         Vec3 center = player.position().add(villager.position()).scale(0.5D);
         Set<UUID> spectators = DuelSpectators.recruit(level, villager, center);
+        VillagerCombatBehavior.reset(villager);
+        VillagerDownedService.ensureStandingDimensions(villager);
         DuelEquipment.Snapshots snapshots = DuelEquipment.prepare(player, villager, loadout);
         ActiveDuel duel = new ActiveDuel(id, level.dimension(), player.getUUID(), villager.getUUID(), loadout, stake,
                 center, VillagerRetaliationConfig.DUEL_ARENA_RADIUS.get(),
@@ -284,11 +287,17 @@ public final class DuelService {
         villager.setAggressive(true);
         villager.getLookControl().setLookAt(player, 30.0F, 30.0F);
         double distance = villager.distanceToSqr(player);
-        boolean ranged = duel.loadout() == DuelLoadout.RANGED || duel.loadout() == DuelLoadout.BRING_YOUR_OWN
-                && isUsingRangedWeapon(villager);
+        boolean ranged = VillagerCombatBehavior.prepareAndIsRanged(villager, player, distance);
         if (ranged && VillagerRangedCombatHelper.tryDuelAttack(villager, player, level, distance)) return;
-        if (distance > 3.0D) villager.getNavigation().moveTo(player, duelMovementSpeed(villager));
-        else if (now >= duel.nextAttackAt()) {
+        boolean meleeAttackReady = now >= duel.nextAttackAt();
+        boolean allowMeleeAttack = VillagerCombatBehavior.handleShieldTactics(
+                villager, player, distance, now, meleeAttackReady);
+        double movementSpeed = duelMovementSpeed(villager)
+                * VillagerCombatBehavior.movementSpeedFactor(villager);
+        if (distance > 3.0D && !VillagerCombatBehavior.canMeleeHit(villager, player)) {
+            villager.getNavigation().moveTo(player, movementSpeed);
+        }
+        else if (allowMeleeAttack && meleeAttackReady) {
             villager.swing(net.minecraft.world.InteractionHand.MAIN_HAND, true);
             attackMelee(villager, player);
             duel.nextAttackAt(now + 20L);
@@ -299,9 +308,25 @@ public final class DuelService {
         return VillagerCombatRoles.movementSpeed(villager);
     }
 
+    static boolean driveForTest(ServerPlayer player, long now, boolean attackReady) {
+        ActiveDuel duel = active(player);
+        if (duel == null) {
+            return false;
+        }
+        ServerLevel level = player.serverLevel();
+        if (!(level.getEntity(duel.villagerId()) instanceof Villager villager)) {
+            return false;
+        }
+        duel.nextAttackAt(attackReady ? now : now + 20L);
+        drive(level, duel, villager, player, now);
+        return true;
+    }
+
     static boolean attackMelee(Villager villager, LivingEntity target) {
-        return VillagerCombatAttributeCompat.syncMeleeAttackAttributes(villager)
+        boolean attacked = VillagerCombatAttributeCompat.syncMeleeAttackAttributes(villager)
                 && villager.doHurtTarget(target);
+        VillagerCombatBehavior.onMeleeAttackCommitted(villager, target);
+        return attacked;
     }
 
     public static boolean onIncomingDamage(LivingIncomingDamageEvent event) {
@@ -323,6 +348,10 @@ public final class DuelService {
         long now = ((ServerLevel) event.getEntity().level()).getServer().overworld().getGameTime();
         if (!isOpponent(duel, event.getEntity(), attacker) || now < duel.countdownEndsAt()) {
             event.setCanceled(true); event.setAmount(0.0F); return true;
+        }
+        if (event.getEntity() instanceof Villager villager
+                && VillagerCombatBehavior.tryBlockStructuredCombatDamage(villager, event)) {
+            return true;
         }
         // A valid duel hit is allowed, but still handled here so normal allegiance and
         // profession defenses cannot reinterpret it after the duel rules approve it.
@@ -486,6 +515,7 @@ public final class DuelService {
             syncInventoryState(player, false, false);
         }
         if (villager != null) {
+            VillagerCombatBehavior.reset(villager);
             duel.snapshots().villager().restore(villager);
             villager.setTarget(null); villager.setAggressive(false); villager.getNavigation().stop();
             VillagerRangedCombatHelper.clearDuelState(villager);

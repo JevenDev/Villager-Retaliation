@@ -147,6 +147,14 @@ public final class VillagerInventoryAccess {
         return VillagerInventoryContainer.addItem(villager, stack);
     }
 
+    public static List<ItemStack> captureFullInventory(Villager villager) {
+        return VillagerInventoryContainer.captureFullInventory(villager);
+    }
+
+    public static void replaceFullInventory(Villager villager, List<ItemStack> items) {
+        VillagerInventoryContainer.replaceFullInventory(villager, items);
+    }
+
     public static boolean canAddItems(Villager villager, List<ItemStack> stacks) {
         return VillagerInventoryContainer.canAddItems(villager, stacks);
     }

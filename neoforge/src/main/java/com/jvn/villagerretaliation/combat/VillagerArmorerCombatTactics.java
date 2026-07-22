@@ -26,7 +26,7 @@ final class VillagerArmorerCombatTactics {
     private static final int COUNTER_ATTACK_DELAY_MIN_TICKS = 10;
     private static final int COUNTER_ATTACK_DELAY_MAX_TICKS = 30;
     private static final double BLOCKING_SPEED_FACTOR = 0.45D;
-    private static final double SHIELD_TRIGGER_RANGE = 7.0D;
+    private static final double SHIELD_TRIGGER_RANGE = 4.0D;
     private static final double SHIELD_TRIGGER_RANGE_SQR = SHIELD_TRIGGER_RANGE * SHIELD_TRIGGER_RANGE;
     private static final String PERSISTENT_SHIELD_ROLLED_TAG = "VillagerRetaliationArmorerShieldRolled";
 
@@ -90,7 +90,6 @@ final class VillagerArmorerCombatTactics {
             long gameTime,
             boolean meleeAttackReady) {
         if (!canUseShieldTactics(villager)
-                || !isHardMode(villager)
                 || VillagerRetaliationRetaliationUtil.isUsingRangedCombatMode(villager)) {
             clearTacticState(villager, true);
             return true;
@@ -145,7 +144,7 @@ final class VillagerArmorerCombatTactics {
     }
 
     static void onMeleeAttackCommitted(Villager villager) {
-        if (!VillagerCombatRoles.isArmorer(villager) || !hasShield(villager)) {
+        if (!hasShield(villager)) {
             return;
         }
 
@@ -160,7 +159,8 @@ final class VillagerArmorerCombatTactics {
 
     static void ensureSpawnShieldRoll(Villager villager) {
         if (villager.isBaby()
-                || !canUseShieldTactics(villager)
+                || !VillagerCombatRoles.isArmorer(villager)
+                || !VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get()
                 || !isHardMode(villager)) {
             return;
         }
@@ -169,7 +169,7 @@ final class VillagerArmorerCombatTactics {
     }
 
     static void resetStateIfActive(Villager villager) {
-        if (VillagerCombatRoles.isArmorer(villager) || isActivelyBlocking(villager) || hasTacticState(villager)) {
+        if (isActivelyBlocking(villager) || hasTacticState(villager)) {
             resetState(villager);
         }
     }
@@ -262,8 +262,10 @@ final class VillagerArmorerCombatTactics {
     }
 
     private static boolean canUseShieldTactics(Villager villager) {
-        return VillagerCombatRoles.isArmorer(villager)
-                && VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get();
+        return VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()
+                && hasShield(villager)
+                && (!VillagerCombatRoles.isArmorer(villager)
+                || VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get());
     }
 
     private static boolean hasShield(Villager villager) {

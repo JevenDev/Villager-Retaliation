@@ -51,9 +51,8 @@ public final class VillagerCombatLoadoutService {
         if (preference == PartyWeaponPreference.AUTO) {
             return false;
         }
-        boolean hasAmmo = HiredRangedAmmo.hasAmmo(villager);
         Predicate<ItemStack> preferred = preference == PartyWeaponPreference.RANGED
-                ? stack -> canUseSelectedRangedWeapon(villager, stack, hasAmmo)
+                ? stack -> canUseRangedWeapon(villager, stack)
                 : VillagerRetaliationVillagerWeapons::isMeleeWeapon;
         if (tryEquip(villager, preferred)) {
             return true;
@@ -62,12 +61,45 @@ public final class VillagerCombatLoadoutService {
         // Retain the preference, but fall back safely when its class or ammunition is absent.
         Predicate<ItemStack> fallback = preference == PartyWeaponPreference.RANGED
                 ? VillagerRetaliationVillagerWeapons::isMeleeWeapon
-                : stack -> canUseSelectedRangedWeapon(villager, stack, hasAmmo);
+                : stack -> canUseRangedWeapon(villager, stack);
         return tryEquip(villager, fallback);
     }
 
+    static boolean equipCombatWeapon(Villager villager, Predicate<ItemStack> predicate) {
+        return villager != null && predicate != null && tryEquip(villager, predicate);
+    }
+
+    static boolean hasCombatWeapon(Villager villager, Predicate<ItemStack> predicate) {
+        if (villager == null || predicate == null || VillagerInventoryAccess.hasOpenInventory(villager)) {
+            return false;
+        }
+        if (predicate.test(villager.getMainHandItem())) {
+            return true;
+        }
+        if (HiredJobInventory.isJobInventoryAvailable(villager)
+                && !HiredJobInventory.getJobInventory(villager).findTool(predicate).isEmpty()) {
+            return true;
+        }
+        return VillagerInventoryAccess.hasCarriedItem(villager, predicate);
+    }
+
+    static boolean canUseRangedWeapon(Villager villager, ItemStack stack) {
+        if (!isUsableRanged(stack)) {
+            return false;
+        }
+        if (HiredRangedAmmo.canUseRangedAttack(villager, stack)) {
+            return true;
+        }
+        ItemStack equippedWeapon = VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager);
+        return stack.getItem() instanceof CrossbowItem
+                && ItemStack.isSameItem(stack, equippedWeapon)
+                && (CrossbowItem.isCharged(stack)
+                || VillagerRangedCombatHelper.hasLoadedCrossbowProjectile(villager)
+                || VillagerRangedCombatHelper.hasActiveCrossbowCycle(villager));
+    }
+
     private static boolean tryEquip(Villager villager, Predicate<ItemStack> predicate) {
-        if (predicate.test(villager.getMainHandItem()) || predicate.test(villager.getOffhandItem())) {
+        if (predicate.test(villager.getMainHandItem())) {
             return true;
         }
 
@@ -75,6 +107,9 @@ public final class VillagerCombatLoadoutService {
         if (HiredJobInventory.isJobInventoryAvailable(villager)) {
             if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)) {
                 VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
+                if (predicate.test(villager.getMainHandItem())) {
+                    return true;
+                }
             }
             ItemStack equipped = HiredJobInventory.getJobInventory(villager)
                     .equipBestTool(predicate, ignored -> 0.0D);
@@ -82,19 +117,14 @@ public final class VillagerCombatLoadoutService {
                 return true;
             }
         }
-        return VillagerInventoryAccess.tryBorrowCombatWeapon(villager, predicate);
+        if (VillagerInventoryAccess.tryBorrowCombatWeapon(villager, predicate)) {
+            return predicate.test(villager.getMainHandItem());
+        }
+        return predicate.test(villager.getMainHandItem());
     }
 
     private static boolean isUsableRanged(ItemStack stack) {
-        return (VillagerRetaliationVillagerWeapons.isBowWeapon(stack)
-                || VillagerRetaliationVillagerWeapons.isCrossbowWeapon(stack));
+        return VillagerRetaliationVillagerWeapons.isRangedWeapon(stack);
     }
 
-    private static boolean canUseSelectedRangedWeapon(Villager villager, ItemStack stack, boolean hasAmmo) {
-        return isUsableRanged(stack)
-                && (hasAmmo || stack.getItem() instanceof CrossbowItem
-                && (CrossbowItem.isCharged(stack)
-                || VillagerRangedCombatHelper.hasLoadedCrossbowProjectile(villager)
-                || VillagerRangedCombatHelper.hasActiveCrossbowCycle(villager)));
-    }
 }

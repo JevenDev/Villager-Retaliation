@@ -321,13 +321,14 @@ final class VillagerInventoryContainer implements Container {
         // A personal-inventory menu owns a mutable view of these same slots. Moving a
         // weapon behind that menu's back lets a same-tick click write the old stack
         // back to storage while the borrowed copy remains equipped.
-        // Job/party equipment is likewise authoritative. Borrowing a personal weapon
-        // over it leaves two owners for the live main hand and can cause the job copy
-        // to be returned to personal storage when the borrowed state is released.
-        if (hasOpenInventory(villager)
-                || HiredJobInventory.hasJobEquipmentForSlot(villager, EquipmentSlot.MAINHAND)) {
+        // A job-owned main hand remains in its authoritative slot while a personal
+        // combat weapon temporarily overlays it. The personal source slot stays empty
+        // until return, so the job stack is never duplicated into personal storage.
+        if (hasOpenInventory(villager)) {
             return false;
         }
+        boolean overlaysJobMainHand = HiredJobInventory.hasJobEquipmentForSlot(
+                villager, EquipmentSlot.MAINHAND);
         if (hasBorrowedCombatWeapon(villager)) {
             if (predicate.test(villager.getMainHandItem())) {
                 return maintainBorrowedCombatWeapon(villager);
@@ -347,7 +348,7 @@ final class VillagerInventoryContainer implements Container {
             return false;
         }
         inventory.set(selectedSlot, ItemStack.EMPTY);
-        if (!displacedMainHand.isEmpty()) {
+        if (!displacedMainHand.isEmpty() && !overlaysJobMainHand) {
             inventory.set(selectedSlot, displacedMainHand.copy());
             VillagerRetaliationVillagerEquipment.clearPlayerManagedMainHand(villager);
         }
@@ -740,6 +741,19 @@ final class VillagerInventoryContainer implements Container {
             inventory.set(vanillaSlots + slot, VillagerTradePaymentTracker.isInvalidStoredTradePayment(stack) ? ItemStack.EMPTY : stack);
         }
         return inventory;
+    }
+
+    static List<ItemStack> captureFullInventory(Villager villager) {
+        return loadFullInventory(villager).stream().map(ItemStack::copy).toList();
+    }
+
+    static void replaceFullInventory(Villager villager, List<ItemStack> items) {
+        NonNullList<ItemStack> inventory = NonNullList.withSize(INVENTORY_SLOT_COUNT, ItemStack.EMPTY);
+        for (int slot = 0; slot < inventory.size() && slot < items.size(); slot++) {
+            inventory.set(slot, items.get(slot).copy());
+        }
+        saveFullInventory(villager, inventory);
+        clearBorrowedCombatWeapon(villager);
     }
 
     static void saveFullInventory(Villager villager, NonNullList<ItemStack> inventory) {

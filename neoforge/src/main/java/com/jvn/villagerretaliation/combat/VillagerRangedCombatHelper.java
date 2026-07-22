@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeBehavior;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -127,6 +128,28 @@ public final class VillagerRangedCombatHelper {
                 villager.stopUsingItem();
             }
         }
+    }
+
+    static void cancelForWeaponSwitch(AbstractVillager villager) {
+        ItemStack weapon = VillagerRetaliationVillagerWeapons.getPrimaryWeapon(villager);
+        if (VillagerRetaliationVillagerWeapons.isCrossbowWeapon(weapon)
+                && !CrossbowItem.isCharged(weapon)) {
+            ItemStack reservedProjectile = LOADED_CROSSBOW_PROJECTILES.get(villager.getUUID());
+            if (reservedProjectile != null && HiredRangedAmmo.clearConsumedCrossbowProjectileMarker(reservedProjectile)) {
+                reservedProjectile.remove(DataComponents.INTANGIBLE_PROJECTILE);
+                if (villager instanceof Villager regular) {
+                    ItemStack remainder = reservedProjectile.copy();
+                    if (HiredJobInventory.isJobInventoryAvailable(regular)) {
+                        remainder = HiredJobInventory.getJobInventory(regular).insertSupply(remainder);
+                    }
+                    remainder = VillagerInventoryAccess.addItem(regular, remainder);
+                    if (!remainder.isEmpty()) {
+                        villager.spawnAtLocation(remainder);
+                    }
+                }
+            }
+        }
+        clearState(villager);
     }
 
     static void clearRuntimeState() {

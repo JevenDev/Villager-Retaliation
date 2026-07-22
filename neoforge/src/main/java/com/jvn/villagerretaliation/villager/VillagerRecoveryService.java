@@ -128,7 +128,8 @@ public final class VillagerRecoveryService {
         UseState use = ACTIVE_USES.get(villager.getUUID());
         if (use != null) {
             if (isFood(use.stack())
-                    && (hasCombatTarget || COMBAT_RECOVERY.contains(villager.getUUID()))) {
+                    && hasCombatTarget
+                    && !COMBAT_RECOVERY.contains(villager.getUUID())) {
                 cancelUse(villager, true);
             } else {
                 tickUse(level, villager, use);
@@ -140,7 +141,9 @@ public final class VillagerRecoveryService {
         }
 
         float healthRatio = villager.getHealth() / Math.max(1.0F, villager.getMaxHealth());
-        if (hasCombatTarget && healthRatio < 0.5F) {
+        if (hasCombatTarget
+                && healthRatio < 0.5F
+                && hasCombatRecoveryConsumable(villager, recovery, healthRatio)) {
             COMBAT_RECOVERY.add(villager.getUUID());
             VillagerRetaliationHandler.clearCustomTarget(villager);
         }
@@ -158,7 +161,8 @@ public final class VillagerRecoveryService {
 
         boolean urgent = FORCED_RECOVERY.getOrDefault(villager.getUUID(), false) || combatRecovery;
         boolean inCombat = hasCombatTarget || combatRecovery;
-        ItemStack consumable = selectConsumable(villager, recovery, urgent, inCombat, healthRatio);
+        ItemStack consumable = selectConsumable(
+                villager, recovery, urgent, inCombat, combatRecovery, healthRatio);
         if (!consumable.isEmpty()) {
             startUse(villager, consumable);
             return true;
@@ -200,8 +204,9 @@ public final class VillagerRecoveryService {
             RecoveryState recovery,
             boolean urgent,
             boolean inCombat,
+            boolean combatRecovery,
             float healthRatio) {
-        boolean canEat = !inCombat && recovery.food() < EAT_FOOD_BELOW;
+        boolean canEat = (!inCombat || combatRecovery) && recovery.food() < EAT_FOOD_BELOW;
         if (urgent) {
             if (canEat && healthRatio < 0.25F) {
                 ItemStack enchanted = take(villager, stack -> stack.is(Items.ENCHANTED_GOLDEN_APPLE));
@@ -223,6 +228,18 @@ public final class VillagerRecoveryService {
         return healthRatio < 1.0F
                 ? take(villager, VillagerRecoveryService::isRecoveryPotion)
                 : ItemStack.EMPTY;
+    }
+
+    private static boolean hasCombatRecoveryConsumable(
+            Villager villager,
+            RecoveryState recovery,
+            float healthRatio) {
+        return VillagerInventoryAccess.hasCarriedItem(villager, stack ->
+                isRecoveryPotion(stack)
+                        || recovery.food() < EAT_FOOD_BELOW
+                        && (isOrdinaryFood(stack)
+                        || healthRatio < 0.5F && stack.is(Items.GOLDEN_APPLE)
+                        || healthRatio < 0.25F && stack.is(Items.ENCHANTED_GOLDEN_APPLE)));
     }
 
     private static ItemStack take(Villager villager, Predicate<ItemStack> predicate) {

@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.villager;
 
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import java.util.List;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
@@ -21,6 +22,13 @@ public final class VillagerRetaliationVillagerEquipment {
     private static final String OWNER_PICKED_UP = "PICKED_UP";
     private static final String OWNER_ROLE = "ROLE";
     private static final String OFFHAND_OWNER_TAG = "VillagerRetaliationOffhandOwner";
+
+    private static final List<String> OWNERSHIP_STATE_TAGS = List.of(
+            MAINHAND_STATE_TAG,
+            ROLE_MAINHAND_TAG,
+            ROLE_MAINHAND_ROLLED_KEY_TAG,
+            LEGACY_PICKED_UP_MAINHAND_TAG,
+            OFFHAND_OWNER_TAG);
 
     private VillagerRetaliationVillagerEquipment() {
     }
@@ -56,6 +64,27 @@ public final class VillagerRetaliationVillagerEquipment {
 
     public static boolean isRoleOffhand(AbstractVillager villager) {
         return OWNER_ROLE.equals(villager.getPersistentData().getString(OFFHAND_OWNER_TAG));
+    }
+
+    public static CompoundTag captureOwnershipState(AbstractVillager villager) {
+        CompoundTag snapshot = new CompoundTag();
+        CompoundTag persistentData = villager.getPersistentData();
+        for (String key : OWNERSHIP_STATE_TAGS) {
+            if (persistentData.get(key) != null) {
+                snapshot.put(key, persistentData.get(key).copy());
+            }
+        }
+        return snapshot;
+    }
+
+    public static void restoreOwnershipState(AbstractVillager villager, CompoundTag snapshot) {
+        CompoundTag persistentData = villager.getPersistentData();
+        for (String key : OWNERSHIP_STATE_TAGS) {
+            persistentData.remove(key);
+            if (snapshot != null && snapshot.get(key) != null) {
+                persistentData.put(key, snapshot.get(key).copy());
+            }
+        }
     }
 
     private static void setOffhandOwner(AbstractVillager villager, String owner) {

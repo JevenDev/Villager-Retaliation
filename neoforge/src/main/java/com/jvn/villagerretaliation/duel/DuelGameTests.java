@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -17,6 +18,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.NonNullList;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -26,6 +28,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.CombatRules;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -37,6 +40,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.common.damagesource.DamageContainer;
@@ -259,6 +263,68 @@ public final class DuelGameTests {
                         "active duel should resolve");
                 helper.assertTrue(villager.getMainHandItem().is(Items.CROSSBOW),
                         "the villager's original weapon should return after the duel");
+                helper.succeed();
+            } finally {
+                DuelService.resolveForTest(player, DuelResult.CANCELLED);
+            }
+        });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 140)
+    public static void armoredDuelUsesAxeAndShieldTactics(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        NonNullList<ItemStack> originalInventory = NonNullList.withSize(36, ItemStack.EMPTY);
+        originalInventory.set(0, new ItemStack(Items.BREAD, 3));
+        originalInventory.set(20, new ItemStack(Items.EMERALD_BLOCK));
+        VillagerInventoryAccess.replaceFullInventory(villager, originalInventory);
+        VillagerRetaliationVillagerEquipment.setPickedUpMainHand(
+                villager, new ItemStack(Items.DIAMOND_SWORD));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager, EquipmentSlot.OFFHAND, new ItemStack(Items.TOTEM_OF_UNDYING));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager, EquipmentSlot.HEAD, new ItemStack(Items.DIAMOND_HELMET));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager, EquipmentSlot.CHEST, new ItemStack(Items.DIAMOND_CHESTPLATE));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager, EquipmentSlot.LEGS, new ItemStack(Items.DIAMOND_LEGGINGS));
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager, EquipmentSlot.FEET, new ItemStack(Items.DIAMOND_BOOTS));
+        DuelService.StartResult start = DuelService.start(player, villager, DuelLoadout.ARMORED, 0);
+        helper.assertTrue(start.started(), EMPTY_TEMPLATE);
+
+        helper.runAfterDelay(65, () -> {
+            try {
+                long now = participant.level().getServer().overworld().getGameTime();
+                player.startUsingItem(InteractionHand.OFF_HAND);
+                helper.assertTrue(DuelService.driveForTest(player, now, true), EMPTY_TEMPLATE);
+                helper.assertTrue(villager.getMainHandItem().is(Items.IRON_AXE), EMPTY_TEMPLATE);
+                helper.assertFalse(player.isUsingItem(), EMPTY_TEMPLATE);
+
+                helper.assertTrue(DuelService.driveForTest(player, now + 1L, false), EMPTY_TEMPLATE);
+                helper.assertTrue(villager.isUsingItem(), EMPTY_TEMPLATE);
+                helper.assertTrue(villager.getUsedItemHand() == InteractionHand.OFF_HAND, EMPTY_TEMPLATE);
+                helper.assertTrue(villager.getUseItem().is(Items.SHIELD), EMPTY_TEMPLATE);
+
+                helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW), EMPTY_TEMPLATE);
+                VillagerRetaliationVillagerEquipment.maintainPlayerManagedMainHand(villager);
+                helper.assertTrue(villager.getMainHandItem().is(Items.DIAMOND_SWORD), EMPTY_TEMPLATE);
+                helper.assertTrue(villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING), EMPTY_TEMPLATE);
+                helper.assertTrue(villager.getItemBySlot(EquipmentSlot.HEAD).is(Items.DIAMOND_HELMET), EMPTY_TEMPLATE);
+                helper.assertTrue(villager.getItemBySlot(EquipmentSlot.CHEST).is(Items.DIAMOND_CHESTPLATE), EMPTY_TEMPLATE);
+                helper.assertTrue(villager.getItemBySlot(EquipmentSlot.LEGS).is(Items.DIAMOND_LEGGINGS), EMPTY_TEMPLATE);
+                helper.assertTrue(villager.getItemBySlot(EquipmentSlot.FEET).is(Items.DIAMOND_BOOTS), EMPTY_TEMPLATE);
+                helper.assertValueEqual(countVillagerItem(villager, Items.DIAMOND_SWORD), 1, EMPTY_TEMPLATE);
+                helper.assertValueEqual(countVillagerItem(villager, Items.BREAD), 3, EMPTY_TEMPLATE);
+                helper.assertValueEqual(countVillagerItem(villager, Items.EMERALD_BLOCK), 1, EMPTY_TEMPLATE);
+                helper.assertValueEqual(countVillagerItem(villager, Items.IRON_SWORD), 0, EMPTY_TEMPLATE);
+                helper.assertValueEqual(countVillagerItem(villager, Items.IRON_AXE), 0, EMPTY_TEMPLATE);
+                helper.assertValueEqual(countVillagerItem(villager, Items.SHIELD), 0, EMPTY_TEMPLATE);
+                helper.assertValueEqual(countVillagerItem(villager, Items.IRON_HELMET), 0, EMPTY_TEMPLATE);
+                helper.assertValueEqual(countVillagerItem(villager, Items.IRON_CHESTPLATE), 0, EMPTY_TEMPLATE);
+                helper.assertValueEqual(countVillagerItem(villager, Items.IRON_LEGGINGS), 0, EMPTY_TEMPLATE);
+                helper.assertValueEqual(countVillagerItem(villager, Items.IRON_BOOTS), 0, EMPTY_TEMPLATE);
                 helper.succeed();
             } finally {
                 DuelService.resolveForTest(player, DuelResult.CANCELLED);
@@ -632,6 +698,20 @@ public final class DuelGameTests {
         Villager villager = helper.spawn(EntityType.VILLAGER, 3, 2, 2);
         VillagerProfileManager.setAttribute(level, villager, VillagerSocialAttribute.GUTS, 100);
         return new Participant(level, player, villager);
+    }
+
+    private static int countVillagerItem(Villager villager, Item item) {
+        int count = VillagerInventoryAccess.captureFullInventory(villager).stream()
+                .filter(stack -> stack.is(item))
+                .mapToInt(ItemStack::getCount)
+                .sum();
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            ItemStack equipped = villager.getItemBySlot(slot);
+            if (equipped.is(item)) {
+                count += equipped.getCount();
+            }
+        }
+        return count;
     }
 
     private record Participant(ServerLevel level, ServerPlayer player, Villager villager) {}}

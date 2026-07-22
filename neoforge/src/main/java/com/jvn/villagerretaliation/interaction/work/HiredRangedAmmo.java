@@ -3,9 +3,6 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
-import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
-import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
-import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
@@ -73,11 +70,7 @@ public final class HiredRangedAmmo {
 
     public static boolean requiresAmmo(AbstractVillager villager, ItemStack weapon) {
         return isWeaponRequiringAmmo(weapon)
-                && villager instanceof Villager regular
-                && regular.level() instanceof ServerLevel level
-                && (PartyService.isRecruitedPartyVillager(level, regular.getUUID())
-                || HiredVillagerContractService.isHired(level, regular)
-                && roleRequiresAmmo(HiredVillagerContractService.activeRole(level, regular)));
+                && villager instanceof Villager;
     }
 
     public static boolean canUseRangedAttack(AbstractVillager villager, ItemStack weapon) {
@@ -190,10 +183,6 @@ public final class HiredRangedAmmo {
         HiredWorkerBrain.setFailure(context, FAILURE_INVENTORY_FULL, level.getGameTime() + 100L);
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, storage);
         return WorkResult.idle(STATUS_INVENTORY_FULL);
-    }
-
-    private static boolean roleRequiresAmmo(HiredVillagerRole role) {
-        return role == HiredVillagerRole.COMBAT || role == HiredVillagerRole.HUNTING;
     }
 
     private static WorkResult recoverNearbyArrow(ServerLevel level, Villager villager, HiredWorkContext context, double speed) {
