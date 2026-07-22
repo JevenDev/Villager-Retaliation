@@ -24,6 +24,7 @@ public record OpenVillagerInteractionPayload(
         String genderName,
         boolean baby,
         boolean canTrade,
+        boolean duelVisible,
         int reputation,
         VillagerReputationLevel reputationLevel,
         DialogueDisposition mood,
@@ -102,6 +103,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeUtf(payload.genderName(), GENDER_NAME_LENGTH);
         buffer.writeBoolean(payload.baby());
         buffer.writeBoolean(payload.canTrade());
+        buffer.writeBoolean(payload.duelVisible());
         buffer.writeVarInt(payload.reputation());
         buffer.writeEnum(payload.reputationLevel());
         buffer.writeEnum(payload.mood());
@@ -170,6 +172,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readUtf(VILLAGER_NAME_FALLBACK_LENGTH),
                 buffer.readUtf(PROFESSION_NAME_LENGTH),
                 buffer.readUtf(GENDER_NAME_LENGTH),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readVarInt(),

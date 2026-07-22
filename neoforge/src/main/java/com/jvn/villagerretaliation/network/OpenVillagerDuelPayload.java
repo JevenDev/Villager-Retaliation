@@ -14,6 +14,10 @@ public record OpenVillagerDuelPayload(
         int villagerLosses,
         int consecutiveLosses,
         long cooldownTicks,
+        int arenaRadius,
+        int boundaryGraceTicks,
+        int timeoutTicks,
+        int cooldownDays,
         int playerBalance,
         int villagerBalance,
         String currencyName) implements CustomPacketPayload {
@@ -31,6 +35,10 @@ public record OpenVillagerDuelPayload(
         buffer.writeVarInt(payload.villagerLosses());
         buffer.writeVarInt(payload.consecutiveLosses());
         buffer.writeVarLong(payload.cooldownTicks());
+        buffer.writeVarInt(payload.arenaRadius());
+        buffer.writeVarInt(payload.boundaryGraceTicks());
+        buffer.writeVarInt(payload.timeoutTicks());
+        buffer.writeVarInt(payload.cooldownDays());
         buffer.writeVarInt(payload.playerBalance());
         buffer.writeVarInt(payload.villagerBalance());
         buffer.writeUtf(payload.currencyName(), MAX_TEXT);
@@ -39,7 +47,9 @@ public record OpenVillagerDuelPayload(
     private static OpenVillagerDuelPayload decode(RegistryFriendlyByteBuf buffer) {
         return new OpenVillagerDuelPayload(buffer.readVarInt(), buffer.readUtf(MAX_TEXT), buffer.readBoolean(),
                 buffer.readEnum(DuelAvailabilityReason.class), buffer.readVarInt(), buffer.readVarInt(),
-                buffer.readVarInt(), buffer.readVarLong(), buffer.readVarInt(), buffer.readVarInt(), buffer.readUtf(MAX_TEXT));
+                buffer.readVarInt(), buffer.readVarLong(), buffer.readVarInt(), buffer.readVarInt(),
+                buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
+                buffer.readUtf(MAX_TEXT));
     }
 
     public int maximumStake() {

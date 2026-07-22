@@ -195,6 +195,7 @@ public final class VillagerInteractionScreenOpener {
                 hasTradingProfession(villager)
                         && !VillagerBehaviorSuppressionPolicy.suppresses(
                                 villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING),
+                com.jvn.villagerretaliation.duel.DuelService.availability(level, player, villager).visible(),
                 reputation.value(),
                 reputation.level(),
                 mood,

@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
+import com.jvn.villagerretaliation.duel.DuelAvailabilityReason;
 import com.jvn.villagerretaliation.duel.DuelLoadout;
 import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
 import com.jvn.villagerretaliation.network.VillagerDuelRequestPayload;
@@ -106,11 +107,28 @@ public final class VillagerDuelScreen extends Screen {
                 this.status.playerBalance(), this.status.villagerBalance(), this.status.currencyName()), center,
                 this.height / 2 - 64, 0xD0D0D0);
         Component rules = this.status.available()
-                ? Component.translatable("villagerretaliation.gui.duel.rules")
-                : Component.translatable("villagerretaliation.duel.unavailable." + this.status.reason().name().toLowerCase());
+                ? Component.translatable("villagerretaliation.gui.duel.rules", this.status.arenaRadius(),
+                        formatTicks(this.status.boundaryGraceTicks()), formatTicks(this.status.timeoutTicks()),
+                        this.status.cooldownDays())
+                : unavailableReason();
         graphics.drawCenteredString(this.font, rules, center, this.height / 2 - 50,
                 this.status.available() ? 0xE9C46A : 0xFF7777);
         super.render(graphics, mouseX, mouseY, partialTick);
+    }
+
+    private Component unavailableReason() {
+        if (this.status.reason() == DuelAvailabilityReason.COOLDOWN) {
+            return Component.translatable("villagerretaliation.duel.unavailable.cooldown_remaining",
+                    formatTicks(this.status.cooldownTicks()));
+        }
+        return Component.translatable("villagerretaliation.duel.unavailable."
+                + this.status.reason().name().toLowerCase());
+    }
+
+    private static String formatTicks(long ticks) {
+        long seconds = Math.max(0L, (ticks + 19L) / 20L);
+        if (seconds >= 60L && seconds % 60L == 0L) return (seconds / 60L) + "m";
+        return seconds + "s";
     }
 
     @Override
