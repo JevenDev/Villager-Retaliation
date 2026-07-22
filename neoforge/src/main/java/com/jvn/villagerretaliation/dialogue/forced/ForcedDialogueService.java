@@ -37,6 +37,7 @@ import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.Force
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueStolenItemReturn;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.LocalizedText;
+import com.jvn.villagerretaliation.dialogue.forced.PlayerItemProximityForcedDialogueService.TradeItemMatch;
 import com.jvn.villagerretaliation.event.VillagerEventTriggerSavedData;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -79,9 +80,7 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -156,14 +155,44 @@ public final class ForcedDialogueService {
     private static final long FORCED_SESSION_TIMEOUT_TICKS = 20L * 60L;
     private static final long TRADE_REFRESH_READY_SCAN_INTERVAL_TICKS = 40L;
     private static final long SHARED_PARTICIPANT_SCAN_INTERVAL_TICKS = 20L;
-    private static final long PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS = 80L;
-    private static final long PLAYER_ITEM_PROXIMITY_COOLDOWN_TICKS = 20L * 30L;
     private static final long LOW_GUTS_CONFRONTATION_ESCALATION_WINDOW_TICKS = 20L * 15L;
     private static final Map<UUID, RecentContainerClick> RECENT_CONTAINER_CLICKS = new HashMap<>();
     private static final Map<UUID, ContainerSnapshot> OPEN_CONTAINER_SNAPSHOTS = new HashMap<>();
     private static final Map<UUID, ForcedDialogueSession> FORCED_SESSIONS = new HashMap<>();
     private static final Map<UUID, Long> NEXT_SHARED_PARTICIPANT_SCAN_TICKS = new HashMap<>();
-    private static final Map<PlayerItemProximityKey, Long> NEXT_PLAYER_ITEM_PROXIMITY_TICK = new HashMap<>();
+    private static final PlayerItemProximityForcedDialogueService.Delegate PLAYER_ITEM_PROXIMITY_DELEGATE =
+            new PlayerItemProximityForcedDialogueService.Delegate() {
+                @Override
+                public boolean canUseForcedInteractionSystem(ServerPlayer player, Villager villager) {
+                    return VillagerInteractionService.canUseForcedInteractionSystem(player, villager);
+                }
+
+                @Override
+                public boolean hasForcedSession(ServerPlayer player) {
+                    return FORCED_SESSIONS.containsKey(player.getUUID());
+                }
+
+                @Override
+                public boolean matchesReputation(
+                        ServerLevel level,
+                        Villager villager,
+                        ServerPlayer player,
+                        ForcedDialogueDefinition definition) {
+                    return definitionMatchesReputation(level, villager, player, definition);
+                }
+
+                @Override
+                public boolean trigger(
+                        ServerLevel level,
+                        Villager villager,
+                        ServerPlayer player,
+                        ForcedDialogueDefinition definition,
+                        Optional<TradeItemMatch> tradeItemMatch) {
+                    return ForcedDialogueTriggerGates.isChatOutput(definition)
+                            ? triggerPlayerItemProximityChat(level, villager, player, definition, tradeItemMatch)
+                            : triggerPlayerItemProximity(level, villager, player, definition, tradeItemMatch);
+                }
+            };
 
     private ForcedDialogueService() {
     }
@@ -173,7 +202,7 @@ public final class ForcedDialogueService {
         OPEN_CONTAINER_SNAPSHOTS.clear();
         FORCED_SESSIONS.clear();
         NEXT_SHARED_PARTICIPANT_SCAN_TICKS.clear();
-        NEXT_PLAYER_ITEM_PROXIMITY_TICK.clear();
+        PlayerItemProximityForcedDialogueService.clearRuntimeState();
     }
 
     public static void rememberPotentialContainerOpen(PlayerInteractEvent.RightClickBlock event) {
@@ -3015,141 +3044,7 @@ public final class ForcedDialogueService {
     }
 
     public static void maybeTriggerPlayerItemProximity(ServerLevel level, Villager villager) {
-        if (!ForcedDialogueTriggerGates.playerItemProximityEnabled()
-                || !villager.isAlive()
-                || villager.isBaby()
-                || villager.isTrading()) {
-            return;
-        }
-
-        long gameTime = level.getGameTime();
-        if (!TickThrottle.isSpreadTick(villager.getUUID(), gameTime, PLAYER_ITEM_PROXIMITY_SCAN_INTERVAL_TICKS)) {
-            return;
-        }
-
-        List<ForcedDialogueDefinition> definitions = ForcedDialogueResources.playerItemProximityCandidates(level.getServer());
-        if (definitions.isEmpty()) {
-            return;
-        }
-
-        List<ForcedDialogueDefinition> witnessDefinitions = new ArrayList<>();
-        double maxRadius = 0.0D;
-        for (ForcedDialogueDefinition definition : definitions) {
-            if (!definition.matchesWitness(villager)) {
-                continue;
-            }
-            witnessDefinitions.add(definition);
-            maxRadius = Math.max(maxRadius, definition.witnessRadius());
-        }
-        if (maxRadius <= 0.0D) {
-            return;
-        }
-
-        AABB area = villager.getBoundingBox().inflate(maxRadius);
-        List<ServerPlayer> players = new ArrayList<>();
-        for (ServerPlayer player : level.getEntitiesOfClass(ServerPlayer.class, area)) {
-            if (player.isAlive()
-                    && !player.isSpectator()
-                    && !FORCED_SESSIONS.containsKey(player.getUUID())) {
-                players.add(player);
-            }
-        }
-        if (players.size() > 1) {
-            players.sort(Comparator.comparingDouble(player -> villager.distanceToSqr(player)));
-        }
-        for (ServerPlayer player : players) {
-            if (tryPlayerItemProximityDefinitions(level, villager, player, witnessDefinitions, gameTime, true)
-                    || tryPlayerItemProximityDefinitions(level, villager, player, witnessDefinitions, gameTime, false)) {
-                prunePlayerItemProximityCooldowns(gameTime);
-                return;
-            }
-        }
-    }
-
-    private static boolean tryPlayerItemProximityDefinitions(
-            ServerLevel level,
-            Villager villager,
-            ServerPlayer player,
-            List<ForcedDialogueDefinition> definitions,
-            long gameTime,
-            boolean chatOutput) {
-        for (ForcedDialogueDefinition definition : definitions) {
-            Optional<TradeItemProximityMatch> tradeItemMatch = definition.requiresHeldTradeItem()
-                    ? matchingHeldTradeItem(villager, player)
-                    : Optional.empty();
-            if (ForcedDialogueTriggerGates.isChatOutput(definition) != chatOutput
-                    || (definition.requiresHeldTradeItem() && tradeItemMatch.isEmpty())
-                    || !definition.matchesPlayerItem(player)
-                    || !definitionMatchesReputation(level, villager, player, definition)
-                    || villager.distanceToSqr(player) > definition.witnessRadius() * definition.witnessRadius()
-                    || (definition.requiresLineOfSight() && !villager.hasLineOfSight(player))
-                    || !playerItemProximityReady(gameTime, villager, player, definition)) {
-                continue;
-            }
-
-            boolean triggered = chatOutput
-                    ? triggerPlayerItemProximityChat(level, villager, player, definition, tradeItemMatch)
-                    : triggerPlayerItemProximity(level, villager, player, definition, tradeItemMatch);
-            if (triggered) {
-                markPlayerItemProximityUsed(gameTime, villager, player, definition);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static Optional<TradeItemProximityMatch> matchingHeldTradeItem(Villager villager, ServerPlayer player) {
-        if (!canReactToHeldTradeItem(villager, player)) {
-            return Optional.empty();
-        }
-
-        String locale = VillagerLocale.locale(player);
-        Optional<TradeItemProximityMatch> mainHandMatch = matchingHeldTradeItem(
-                villager, player.getMainHandItem(), "main_hand", locale);
-        if (mainHandMatch.isPresent()) {
-            return mainHandMatch;
-        }
-        return matchingHeldTradeItem(villager, player.getOffhandItem(), "off_hand", locale);
-    }
-
-    private static boolean canReactToHeldTradeItem(Villager villager, ServerPlayer player) {
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        return profession != VillagerProfession.NONE
-                && profession != VillagerProfession.NITWIT
-                && !villager.getOffers().isEmpty()
-                && VillagerInteractionService.canUseForcedInteractionSystem(player, villager);
-    }
-
-    private static Optional<TradeItemProximityMatch> matchingHeldTradeItem(
-            Villager villager,
-            ItemStack heldStack,
-            String slot,
-            String locale) {
-        if (heldStack.isEmpty()) {
-            return Optional.empty();
-        }
-        int offerIndex = 0;
-        for (MerchantOffer offer : villager.getOffers()) {
-            offerIndex++;
-            if (offer.isOutOfStock()) {
-                continue;
-            }
-            ItemStack costA = offer.getCostA();
-            if (isHeldTradeCost(heldStack, costA)) {
-                return Optional.of(new TradeItemProximityMatch(
-                        villager.level().getServer(), locale, heldStack, costA, offer.getResult(), slot, offerIndex));
-            }
-            ItemStack costB = offer.getCostB();
-            if (isHeldTradeCost(heldStack, costB)) {
-                return Optional.of(new TradeItemProximityMatch(
-                        villager.level().getServer(), locale, heldStack, costB, offer.getResult(), slot, offerIndex));
-            }
-        }
-        return Optional.empty();
-    }
-
-    private static boolean isHeldTradeCost(ItemStack heldStack, ItemStack costStack) {
-        return !costStack.isEmpty() && ItemStack.isSameItem(heldStack, costStack);
+        PlayerItemProximityForcedDialogueService.maybeTrigger(level, villager, PLAYER_ITEM_PROXIMITY_DELEGATE);
     }
 
     public static boolean triggerRetaliationStarted(ServerLevel level, Villager villager, ServerPlayer player) {
@@ -3726,7 +3621,7 @@ public final class ForcedDialogueService {
             Villager villager,
             ServerPlayer player,
             ForcedDialogueDefinition definition,
-            Optional<TradeItemProximityMatch> tradeItemMatch) {
+            Optional<TradeItemMatch> tradeItemMatch) {
         if (!rollChance(level, definition.chance())) {
             return false;
         }
@@ -3753,7 +3648,7 @@ public final class ForcedDialogueService {
             Villager villager,
             ServerPlayer player,
             ForcedDialogueDefinition definition,
-            Optional<TradeItemProximityMatch> tradeItemMatch) {
+            Optional<TradeItemMatch> tradeItemMatch) {
         if (!rollChance(level, definition.chance())) {
             return false;
         }
@@ -3850,7 +3745,7 @@ public final class ForcedDialogueService {
     private static Map<String, String> playerItemProximityReplacements(
             ForcedDialogueDefinition definition,
             ServerPlayer player,
-            Optional<TradeItemProximityMatch> tradeItemMatch) {
+            Optional<TradeItemMatch> tradeItemMatch) {
         Map<String, String> replacements = new HashMap<>(definition.playerItemReplacements(player));
         tradeItemMatch.ifPresent(match -> replacements.putAll(match.replacements()));
         return replacements;
@@ -3867,29 +3762,6 @@ public final class ForcedDialogueService {
         }
     }
 
-    private static boolean playerItemProximityReady(
-            long gameTime,
-            Villager villager,
-            ServerPlayer player,
-            ForcedDialogueDefinition definition) {
-        return gameTime >= NEXT_PLAYER_ITEM_PROXIMITY_TICK.getOrDefault(
-                new PlayerItemProximityKey(villager.getUUID(), player.getUUID(), definition.id()),
-                0L);
-    }
-
-    private static void markPlayerItemProximityUsed(
-            long gameTime,
-            Villager villager,
-            ServerPlayer player,
-            ForcedDialogueDefinition definition) {
-        NEXT_PLAYER_ITEM_PROXIMITY_TICK.put(
-                new PlayerItemProximityKey(villager.getUUID(), player.getUUID(), definition.id()),
-                gameTime + PLAYER_ITEM_PROXIMITY_COOLDOWN_TICKS);
-    }
-
-    private static void prunePlayerItemProximityCooldowns(long gameTime) {
-        NEXT_PLAYER_ITEM_PROXIMITY_TICK.entrySet().removeIf(entry -> entry.getValue() + PLAYER_ITEM_PROXIMITY_COOLDOWN_TICKS < gameTime);
-    }
 
     private static boolean definitionMatchesReputation(
             ServerLevel level,
@@ -4554,50 +4426,4 @@ public final class ForcedDialogueService {
         }
     }
 
-    private record PlayerItemProximityKey(
-            UUID villagerId,
-            UUID playerId,
-            String definitionId) {
-    }
-
-    private record TradeItemProximityMatch(
-            MinecraftServer server,
-            String locale,
-            ItemStack heldStack,
-            ItemStack costStack,
-            ItemStack resultStack,
-            String slot,
-            int offerIndex) {
-        private Map<String, String> replacements() {
-            String heldItemName = this.heldStack.getHoverName().getString();
-            String heldItemId = BuiltInRegistries.ITEM.getKey(this.heldStack.getItem()).toString();
-            String costItemName = this.costStack.getHoverName().getString();
-            String costStackName = ForcedDialogueContainers.stackName(this.server, this.locale, this.costStack);
-            String resultItemName = this.resultStack.isEmpty()
-                    ? "something"
-                    : this.resultStack.getHoverName().getString();
-            String resultStackName = this.resultStack.isEmpty()
-                    ? "something"
-                    : ForcedDialogueContainers.stackName(this.server, this.locale, this.resultStack);
-            Map<String, String> replacements = new HashMap<>();
-            replacements.put("player_item", heldItemName);
-            replacements.put("held_item", heldItemName);
-            replacements.put("player_item_id", heldItemId);
-            replacements.put("held_item_id", heldItemId);
-            replacements.put("player_item_slot", this.slot);
-            replacements.put("held_item_slot", this.slot);
-            replacements.put("player_item_count", Integer.toString(this.heldStack.getCount()));
-            replacements.put("held_item_count", Integer.toString(this.heldStack.getCount()));
-            replacements.put("trade_cost_item", costItemName);
-            replacements.put("trade_cost", costStackName);
-            replacements.put("trade_cost_count", Integer.toString(this.costStack.getCount()));
-            replacements.put("trade_result", resultItemName);
-            replacements.put("trade_item", resultItemName);
-            replacements.put("trade_result_stack", resultStackName);
-            replacements.put("trade_item_stack", resultStackName);
-            replacements.put("trade_result_count", Integer.toString(this.resultStack.isEmpty() ? 0 : this.resultStack.getCount()));
-            replacements.put("trade_offer_index", Integer.toString(this.offerIndex));
-            return replacements;
-        }
-    }
 }
