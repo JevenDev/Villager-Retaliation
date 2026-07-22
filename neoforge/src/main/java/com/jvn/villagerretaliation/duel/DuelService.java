@@ -107,11 +107,33 @@ public final class DuelService {
         ServerLevel level = player.serverLevel();
         DuelAvailability available = availability(level, player, villager);
         if (!available.available()) return new StartResult(false, available.reason(), null);
+        return begin(player, villager, loadout, requestedStake, available.maximumStake());
+    }
+
+    public static StartResult startDebug(ServerPlayer player, Villager villager, DuelLoadout loadout, int requestedStake) {
+        if (player == null || villager == null || loadout == null || !player.isAlive() || !villager.isAlive()) {
+            return new StartResult(false, DuelAvailabilityReason.INVALID, null);
+        }
+        if (player.level() != villager.level()) return new StartResult(false, DuelAvailabilityReason.TOO_FAR, null);
+        if (BY_ENTITY.containsKey(player.getUUID())) return new StartResult(false, DuelAvailabilityReason.PLAYER_BUSY, null);
+        if (BY_ENTITY.containsKey(villager.getUUID())) return new StartResult(false, DuelAvailabilityReason.VILLAGER_BUSY, null);
+        int maximumStake = Math.max(0, Math.min(
+                VillagerCurrencyPayment.count(player), VillagerWalletService.getCurrentEmeralds(villager)));
+        return begin(player, villager, loadout, requestedStake, maximumStake);
+    }
+
+    private static StartResult begin(
+            ServerPlayer player,
+            Villager villager,
+            DuelLoadout loadout,
+            int requestedStake,
+            int maximumStake) {
+        ServerLevel level = player.serverLevel();
         if (player.containerMenu != player.inventoryMenu) {
             player.closeContainer();
         }
-        int stake = requestedStake == Integer.MAX_VALUE ? available.maximumStake() : requestedStake;
-        if (!validStake(stake, available.maximumStake())) return new StartResult(false, DuelAvailabilityReason.INVALID, null);
+        int stake = requestedStake == Integer.MAX_VALUE ? maximumStake : requestedStake;
+        if (!validStake(stake, maximumStake)) return new StartResult(false, DuelAvailabilityReason.INVALID, null);
         if (!VillagerCurrencyPayment.tryRemove(player, stake)) return new StartResult(false, DuelAvailabilityReason.INVALID, null);
         if (!VillagerWalletService.spendCurrency(villager, stake, VillagerWalletService.WalletSource.DUEL)) {
             giveCurrency(player, stake);

@@ -16,6 +16,8 @@ import com.jvn.villagerretaliation.allegiance.VillageAssignmentResolution;
 import com.jvn.villagerretaliation.allegiance.VillageAssignmentResolver;
 import com.jvn.villagerretaliation.allegiance.VillagerDisciplineService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.duel.DuelLoadout;
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
@@ -623,8 +625,99 @@ public final class VillagerRetaliationCommands {
         }
     }
 
+    private static LiteralArgumentBuilder<CommandSourceStack> debugDuelCommand() {
+        return literal("duel")
+                .then(targetArgument()
+                        .executes(context -> startDebugDuel(
+                                context, DuelLoadout.BRING_YOUR_OWN.name(), 0))
+                        .then(literal("kit")
+                                .then(argument("kit", StringArgumentType.word())
+                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                List.of("byo", "bring_your_own", "bare_handed", "melee", "ranged", "armored"),
+                                                builder))
+                                        .executes(context -> startDebugDuel(
+                                                context,
+                                                StringArgumentType.getString(context, "kit"),
+                                                0))
+                                        .then(literal("wager")
+                                                .then(argument("wager", IntegerArgumentType.integer(0))
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                                Arrays.stream(DuelService.FIXED_STAKES)
+                                                                        .mapToObj(Integer::toString),
+                                                                builder))
+                                                        .executes(context -> startDebugDuel(
+                                                                context,
+                                                                StringArgumentType.getString(context, "kit"),
+                                                                IntegerArgumentType.getInteger(context, "wager")))))))
+                        .then(literal("wager")
+                                .then(argument("wager", IntegerArgumentType.integer(0))
+                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                Arrays.stream(DuelService.FIXED_STAKES)
+                                                        .mapToObj(Integer::toString),
+                                                builder))
+                                        .executes(context -> startDebugDuel(
+                                                context,
+                                                DuelLoadout.BRING_YOUR_OWN.name(),
+                                                IntegerArgumentType.getInteger(context, "wager")))
+                                        .then(literal("kit")
+                                                .then(argument("kit", StringArgumentType.word())
+                                                        .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                                List.of("byo", "bring_your_own", "bare_handed", "melee", "ranged", "armored"),
+                                                                builder))
+                                                        .executes(context -> startDebugDuel(
+                                                                context,
+                                                                StringArgumentType.getString(context, "kit"),
+                                                                IntegerArgumentType.getInteger(context, "wager"))))))));
+    }
+
+    private static int startDebugDuel(
+            CommandContext<CommandSourceStack> context,
+            String kitName,
+            int wager) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        AbstractVillager target = profileTarget(context);
+        if (!(target instanceof Villager villager)) {
+            if (target != null) source.sendFailure(Component.literal("Duel target must be a villager."));
+            return 0;
+        }
+
+        DuelLoadout loadout = parseDuelLoadout(kitName);
+        if (loadout == null) {
+            source.sendFailure(Component.literal("Unknown duel kit: " + kitName));
+            return 0;
+        }
+
+        DuelService.StartResult result = DuelService.startDebug(player, villager, loadout, wager);
+        if (!result.started()) {
+            String reason = result.reason().name().toLowerCase(Locale.ROOT);
+            source.sendFailure(Component.literal("Could not start debug duel (kit="
+                    + loadout.name().toLowerCase(Locale.ROOT) + ", wager=" + wager + "): ")
+                    .append(Component.translatable("villagerretaliation.duel.unavailable." + reason)));
+            return 0;
+        }
+
+        String villagerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
+        source.sendSuccess(() -> Component.literal("Started debug duel with " + villagerName
+                + " (kit=" + loadout.name().toLowerCase(Locale.ROOT) + ", wager=" + wager + ")."), false);
+        return 1;
+    }
+
+    private static DuelLoadout parseDuelLoadout(String value) {
+        if (value == null) return null;
+        return switch (value.trim().toLowerCase(Locale.ROOT)) {
+            case "byo", "bring_your_own" -> DuelLoadout.BRING_YOUR_OWN;
+            case "bare", "bare_handed", "unarmed" -> DuelLoadout.BARE_HANDED;
+            case "melee" -> DuelLoadout.MELEE;
+            case "ranged" -> DuelLoadout.RANGED;
+            case "armored", "armoured" -> DuelLoadout.ARMORED;
+            default -> null;
+        };
+    }
+
     private static LiteralArgumentBuilder<CommandSourceStack> debugCommands() {
         return literal("debug")
+                .then(debugDuelCommand())
                 .then(literal("raid")
                         .then(literal("win")
                                 .executes(context -> debugFinishRaid(context, true)))

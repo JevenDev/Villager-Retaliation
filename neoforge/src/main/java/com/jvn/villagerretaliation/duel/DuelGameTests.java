@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.mojang.authlib.GameProfile;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -15,6 +16,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.CommonListenerCookie;
@@ -215,6 +217,52 @@ public final class DuelGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void debugCommandUsesNameAndOptionalDefaults(GameTestHelper helper) throws CommandSyntaxException {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        villager.setCustomName(Component.literal("Debug Duelist"));
+        VillagerProfileManager.setAttribute(
+                participant.level(), villager, VillagerSocialAttribute.GUTS, 1);
+        var dispatcher = participant.level().getServer().getCommands().getDispatcher();
+        var source = player.createCommandSourceStack().withPermission(2);
+
+        int defaultResult = dispatcher.execute(
+                "villagerretaliation debug duel \"Debug Duelist\"", source);
+        helper.assertValueEqual(defaultResult, 1,
+                "debug duel command should resolve a quoted villager name");
+        helper.assertTrue(DuelService.isParticipant(player),
+                "default debug command should start a live duel");
+        helper.assertTrue(DuelService.allowsInventoryClick(
+                        player, player.inventoryMenu, InventoryMenu.USE_ROW_SLOT_START, ClickType.PICKUP),
+                "no-option debug duel must default to BYO gear");
+        helper.assertTrue(DuelService.resolveForTest(player, DuelResult.CANCELLED),
+                "default debug duel should cleanly resolve");
+
+        player.getInventory().add(
+                VillagerCurrencyResources.createStack(participant.level().getServer(), 8));
+        int wallet = VillagerWalletService.getCurrentEmeralds(villager);
+        if (wallet < 8) {
+            VillagerWalletService.addCurrency(
+                    villager, 8 - wallet, VillagerWalletService.WalletSource.DUEL);
+        }
+
+        int configuredResult = dispatcher.execute(
+                "villagerretaliation debug duel \"Debug Duelist\" kit armored wager 8", source);
+        helper.assertValueEqual(configuredResult, 1,
+                "debug command should accept optional kit and wager entries");
+        helper.assertTrue(!DuelService.allowsInventoryClick(
+                        player, player.inventoryMenu, InventoryMenu.USE_ROW_SLOT_START, ClickType.PICKUP),
+                "armored command kit must use assigned-gear locking");
+        helper.assertValueEqual(VillagerCurrencyPayment.count(player), 0,
+                "configured wager must be deducted");
+        helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW),
+                "configured debug duel should resolve");
+        helper.assertValueEqual(VillagerCurrencyPayment.count(player), 8,
+                "draw must refund the configured wager");
+        helper.succeed();
+    }
     @GameTest(template = EMPTY_TEMPLATE)
     public static void logoutRestoresAssignedSnapshot(GameTestHelper helper) {
         Participant participant = participant(helper);
