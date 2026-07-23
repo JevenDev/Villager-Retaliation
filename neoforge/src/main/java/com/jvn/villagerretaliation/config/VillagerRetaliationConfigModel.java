@@ -706,7 +706,7 @@ public final class VillagerRetaliationConfigModel {
         public int refusalLosses = 3;
 
         @RangeConstraint(min = 8, max = 128)
-        public int arenaRadius = 32;
+        public int arenaRadius = 16;
 
         public boolean showArenaParticles = true;
 
