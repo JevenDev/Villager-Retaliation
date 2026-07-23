@@ -6,6 +6,9 @@
     "type": "external",
     "adapter": "villagerretaliation:villager"
   },
+  "revive": {
+    "regeneration_ticks": 0
+  },
   "presentation": {
     "show_timer": false,
     "announce": false,
