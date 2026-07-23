@@ -25,7 +25,7 @@ Adult villagers can use melee weapons, bows, crossbows, tridents, shields, armor
 
 ## Environmental blame
 
-Placed lava, flint and steel, and fire charges can attribute nearby fire or lava damage to the responsible player during a configurable window—two real-time minutes by default.
+Placed lava, flint and steel, and fire charges can attribute nearby fire or lava damage to the responsible player during a configurable window-two real-time minutes by default.
 
 :::notice{type="danger"}
 Ordinary villagers and hired workers can still die. Only an active protection rule enables the [downed state](combat/downed.md), and some damage bypasses it.

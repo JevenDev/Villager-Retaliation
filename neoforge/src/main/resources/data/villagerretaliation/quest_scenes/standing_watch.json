@@ -49,7 +49,7 @@
         "watch_captain"
       ],
       "data": {
-        "text": "The watch bell rings. Raiders are coming in two waves—hold the village line near the quest giver.",
+        "text": "The watch bell rings. Raiders are coming in two waves-hold the village line near the quest giver.",
         "offline_policy": "wait",
         "offline_poll_ticks": 20
       },

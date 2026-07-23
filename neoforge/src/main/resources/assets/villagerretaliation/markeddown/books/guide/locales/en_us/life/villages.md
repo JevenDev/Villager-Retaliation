@@ -25,7 +25,7 @@ The interaction screen's **Home** topic identifies where a villager belongs. A p
 
 ## Naming a village
 
-1. Hold a banner—it is not consumed.
+1. Hold a banner-it is not consumed.
 2. Right-click a :item[minecraft:bell] inside the tracked village.
 3. Be Revered or Royalty with at least half of its tracked living adult residents.
 4. Enter a unique 1–32 character name without formatting or control codes.

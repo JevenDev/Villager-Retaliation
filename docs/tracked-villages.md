@@ -6,7 +6,7 @@ Tracked villages are server-authoritative identities seeded by occupied village 
 
 Two ordinary datapack tags control non-POI coverage:
 
-- `villagerretaliation:village_footprint` is a `worldgen/structure` tag. It includes `#minecraft:village` by default, so every vanilla plains, desert, savanna, snowy, and taiga village piece—including road pieces—is covered.
+- `villagerretaliation:village_footprint` is a `worldgen/structure` tag. It includes `#minecraft:village` by default, so every vanilla plains, desert, savanna, snowy, and taiga village piece-including road pieces-is covered.
 - `villagerretaliation:village_terrain` is a block tag containing `minecraft:dirt_path` by default. Sections containing these blocks extend the footprint only when they form a connected chain from the POI/structure footprint; unrelated paths elsewhere remain outside.
 
 Mods and modpacks can append structures or terrain blocks with normal `replace: false` tag files. Structure and terrain scans inspect loaded chunks only and do not force-load worldgen.

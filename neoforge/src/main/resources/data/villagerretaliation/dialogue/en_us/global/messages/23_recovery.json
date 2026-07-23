@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages"
+    ],
+    "topic": "global.recovery"
+  },
+  "messages": [
+    {
+      "key": "recovery.shortage",
+      "lines": [
+        "I'm hurt and completely out of food.",
+        "I can't recover without something to eat.",
+        "No food left-and I really need it.",
+        "I've got nothing left to heal with.",
+        "I need food or a healing potion.",
+        "My supplies are empty. I can't recover.",
+        "I'm starving and still wounded.",
+        "There isn't a bite of food left.",
+        "I need recovery supplies, quickly.",
+        "I'm too hungry to mend these wounds."
+      ],
+      "id": "global.messages.23_recovery.messages.recovery.shortage.000"
+    }
+  ]
+}

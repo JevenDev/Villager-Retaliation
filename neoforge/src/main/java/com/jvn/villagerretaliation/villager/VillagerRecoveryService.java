@@ -40,18 +40,7 @@ public final class VillagerRecoveryService {
     private static final Set<UUID> COMBAT_RECOVERY = new HashSet<>();
     private static final Map<UUID, UseState> ACTIVE_USES = new HashMap<>();
     private static final Map<UUID, Long> NEXT_SHORTAGE_NOTICE = new HashMap<>();
-    private static final String[] SHORTAGE_LINES = {
-            "I'm hurt and completely out of food.",
-            "I can't recover without something to eat.",
-            "No food left—and I really need it.",
-            "I've got nothing left to heal with.",
-            "I need food or a healing potion.",
-            "My supplies are empty. I can't recover.",
-            "I'm starving and still wounded.",
-            "There isn't a bite of food left.",
-            "I need recovery supplies, quickly.",
-            "I'm too hungry to mend these wounds."
-    };
+    private static final String SHORTAGE_MESSAGE_KEY = "recovery.shortage";
 
     private VillagerRecoveryService() {
     }
@@ -413,8 +402,7 @@ public final class VillagerRecoveryService {
             }
         }
         if (nearest != null) {
-            String line = SHORTAGE_LINES[villager.getRandom().nextInt(SHORTAGE_LINES.length)];
-            VillagerInteractionService.sendVillagerNotice(nearest, villager, line, Map.of(), 16.0D);
+            VillagerInteractionService.sendVillagerNotice(nearest, villager, SHORTAGE_MESSAGE_KEY, Map.of(), 16.0D);
             NEXT_SHORTAGE_NOTICE.put(villager.getUUID(), now + SHORTAGE_COOLDOWN);
         }
     }

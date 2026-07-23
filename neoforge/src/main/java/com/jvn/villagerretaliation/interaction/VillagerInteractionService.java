@@ -1045,6 +1045,7 @@ public final class VillagerInteractionService {
                  EXTEND_SEVEN_DAYS,
                  EXTEND_FIFTEEN_DAYS,
                  EXTEND_THIRTY_DAYS,
+                 EXTEND_MAX_DAYS,
                  VIEW_CONTRACT,
                  OPEN_JOB_INVENTORY,
                  FOLLOW,
@@ -1069,6 +1070,7 @@ public final class VillagerInteractionService {
                  EXTEND_SEVEN_DAYS,
                  EXTEND_FIFTEEN_DAYS,
                  EXTEND_THIRTY_DAYS,
+                 EXTEND_MAX_DAYS,
                  VIEW_CONTRACT -> true;
             default -> false;
         };
@@ -1147,6 +1149,9 @@ public final class VillagerInteractionService {
             case EXTEND_SEVEN_DAYS -> 7;
             case EXTEND_FIFTEEN_DAYS -> 15;
             case EXTEND_THIRTY_DAYS -> 30;
+            case EXTEND_MAX_DAYS -> record.availableExtensionDays(
+                    level.getServer().overworld().getGameTime(),
+                    VillagerContractTime.MAX_PREPAID_DAYS);
             default -> 0;
         };
         if (extensionDays > 0) {

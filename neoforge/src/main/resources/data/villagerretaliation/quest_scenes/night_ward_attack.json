@@ -48,7 +48,7 @@
         "healer"
       ],
       "data": {
-        "text": "The ward doors are barred. Three dead are pushing in from the dark—meet them outside.",
+        "text": "The ward doors are barred. Three dead are pushing in from the dark-meet them outside.",
         "offline_policy": "wait",
         "offline_poll_ticks": 20
       },
