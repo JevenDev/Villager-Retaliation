@@ -67,7 +67,7 @@ public final class VillageNamingService {
         Optional<VillageAllegianceId> current = registry.peekAt(level, bell);
         Optional<VillageAllegianceId> requested = registry.canonical(payload.villageId());
         if (current.isEmpty() || requested.isEmpty() || !current.get().equals(requested.get())) {
-            player.sendSystemMessage(Component.literal("That bell no longer belongs to the same village."));
+            player.sendSystemMessage(Component.translatable("villagerretaliation.village_naming.error.village_changed"));
             return;
         }
         VillageAllegianceRegistrySavedData.AllegianceRecord village = registry
@@ -77,20 +77,20 @@ public final class VillageNamingService {
         }
         TrustGate gate = trustGate(level, player, village);
         if (!gate.allowed()) {
-            player.sendSystemMessage(Component.literal("You need Revered or Royalty standing with at least "
-                    + gate.requiredResidents() + " of this village's living adult residents."));
+            player.sendSystemMessage(Component.translatable(
+                    "villagerretaliation.village_naming.error.insufficient_standing", gate.requiredResidents()));
             return;
         }
         Optional<String> validName = VillageAllegianceRegistrySavedData.validateVillageName(payload.name());
         if (validName.isEmpty()) {
-            player.sendSystemMessage(Component.literal("Village names must be 1–32 characters without formatting or control codes."));
+            player.sendSystemMessage(Component.translatable("villagerretaliation.village_naming.error.invalid_name"));
             return;
         }
         if (!registry.rename(village.id(), validName.get())) {
-            player.sendSystemMessage(Component.literal("That village name is already in use."));
+            player.sendSystemMessage(Component.translatable("villagerretaliation.village_naming.error.name_in_use"));
             return;
         }
-        player.sendSystemMessage(Component.literal("This village is now named " + validName.get() + "."));
+        player.sendSystemMessage(Component.translatable("villagerretaliation.village_naming.renamed", validName.get()));
     }
 
     public static TrustGate trustGate(

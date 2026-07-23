@@ -1311,9 +1311,9 @@ public final class VillagerInteractionService {
         }
         if (action == ConstructionBlueprintPlacementPayload.Action.TOGGLE_LOCK) {
             ConstructionBlueprintItem.togglePlacementLocked(blueprint).ifPresent(locked ->
-                    player.displayClientMessage(Component.literal(locked
-                            ? "Blueprint placement locked."
-                            : "Blueprint placement unlocked."), true));
+                    player.displayClientMessage(Component.translatable(locked
+                            ? "villagerretaliation.clipboard.message.blueprint_locked"
+                            : "villagerretaliation.clipboard.message.blueprint_unlocked"), true));
             return;
         }
         if (preview.get().locked() || preview.get().placementLocked()) {
@@ -1330,30 +1330,30 @@ public final class VillagerInteractionService {
             int steps,
             BlockPos targetPos) {
         if (preview.locked() || preview.placementLocked()) {
-            player.displayClientMessage(Component.literal("This blueprint can no longer move the site."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.blueprint_move_unavailable"), true);
             return;
         }
         ServerLevel level = player.serverLevel();
         if (!level.dimension().equals(preview.dimension())) {
-            player.displayClientMessage(Component.literal("Blueprint placement must be changed in its saved dimension."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.blueprint_wrong_dimension"), true);
             return;
         }
 
         Optional<BuilderStructureCatalog.Entry> entry = BuilderStructureCatalog.byId(player.server, preview.structureId());
         if (entry.isEmpty()) {
-            player.displayClientMessage(Component.literal("That blueprint structure is not available."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.blueprint_structure_unavailable"), true);
             return;
         }
 
         PlacementUpdate update = placementUpdate(level, entry.get(), preview, action, Math.max(1, Math.min(8, steps)), targetPos);
         if (update == null || update.plan().isEmpty()) {
-            player.displayClientMessage(Component.literal("That blueprint structure is not available."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.blueprint_structure_unavailable"), true);
             return;
         }
 
         ConstructionBlueprintItem.updatePlacement(blueprint, level, update.plan().get(), update.origin(), update.rotation());
-        player.displayClientMessage(Component.literal("Blueprint site: ")
-                .append(Component.literal(HiredWorkerBrain.formatPos(update.origin()))), true);
+        player.displayClientMessage(Component.translatable(
+                "villagerretaliation.clipboard.message.blueprint_site", HiredWorkerBrain.formatPos(update.origin())), true);
     }
 
     public static void handleClipboardStorageAction(ServerPlayer player, int entityId, ClipboardStorageActionPayload.Action action) {
@@ -1390,7 +1390,7 @@ public final class VillagerInteractionService {
         int stepCount = Math.max(1, Math.min(5, steps));
         Optional<HiredVillagerIndex.Target> target = HiredVillagerIndex.find(player, villagerId);
         if (target.isEmpty()) {
-            player.displayClientMessage(Component.literal("That worker is not available right now."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.worker_unavailable"), true);
             return;
         }
 

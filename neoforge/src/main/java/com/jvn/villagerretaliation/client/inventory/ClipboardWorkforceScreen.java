@@ -2479,10 +2479,10 @@ public final class ClipboardWorkforceScreen extends Screen {
                 y,
                 Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_expand_horizontal"),
                 List.of(
-                        new JobSiteButton("N", ClipboardWorkAreaActionPayload.Action.EXPAND_NORTH),
-                        new JobSiteButton("E", ClipboardWorkAreaActionPayload.Action.EXPAND_EAST),
-                        new JobSiteButton("S", ClipboardWorkAreaActionPayload.Action.EXPAND_SOUTH),
-                        new JobSiteButton("W", ClipboardWorkAreaActionPayload.Action.EXPAND_WEST)));
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.north_short"), ClipboardWorkAreaActionPayload.Action.EXPAND_NORTH),
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.east_short"), ClipboardWorkAreaActionPayload.Action.EXPAND_EAST),
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.south_short"), ClipboardWorkAreaActionPayload.Action.EXPAND_SOUTH),
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.west_short"), ClipboardWorkAreaActionPayload.Action.EXPAND_WEST)));
         y = drawJobSiteDirectionRow(
                 graphics,
                 mouseX,
@@ -2490,10 +2490,10 @@ public final class ClipboardWorkforceScreen extends Screen {
                 y,
                 Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_contract_horizontal"),
                 List.of(
-                        new JobSiteButton("N", ClipboardWorkAreaActionPayload.Action.CONTRACT_NORTH),
-                        new JobSiteButton("E", ClipboardWorkAreaActionPayload.Action.CONTRACT_EAST),
-                        new JobSiteButton("S", ClipboardWorkAreaActionPayload.Action.CONTRACT_SOUTH),
-                        new JobSiteButton("W", ClipboardWorkAreaActionPayload.Action.CONTRACT_WEST)));
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.north_short"), ClipboardWorkAreaActionPayload.Action.CONTRACT_NORTH),
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.east_short"), ClipboardWorkAreaActionPayload.Action.CONTRACT_EAST),
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.south_short"), ClipboardWorkAreaActionPayload.Action.CONTRACT_SOUTH),
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.west_short"), ClipboardWorkAreaActionPayload.Action.CONTRACT_WEST)));
         y = drawJobSiteDirectionRow(
                 graphics,
                 mouseX,
@@ -2501,8 +2501,8 @@ public final class ClipboardWorkforceScreen extends Screen {
                 y,
                 Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_expand_vertical"),
                 List.of(
-                        new JobSiteButton("Up", ClipboardWorkAreaActionPayload.Action.EXPAND_UP),
-                        new JobSiteButton("Down", ClipboardWorkAreaActionPayload.Action.EXPAND_DOWN)));
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.up"), ClipboardWorkAreaActionPayload.Action.EXPAND_UP),
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.down"), ClipboardWorkAreaActionPayload.Action.EXPAND_DOWN)));
         drawJobSiteDirectionRow(
                 graphics,
                 mouseX,
@@ -2510,8 +2510,8 @@ public final class ClipboardWorkforceScreen extends Screen {
                 y,
                 Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site_contract_vertical"),
                 List.of(
-                        new JobSiteButton("Up", ClipboardWorkAreaActionPayload.Action.CONTRACT_UP),
-                        new JobSiteButton("Down", ClipboardWorkAreaActionPayload.Action.CONTRACT_DOWN)));
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.up"), ClipboardWorkAreaActionPayload.Action.CONTRACT_UP),
+                        new JobSiteButton(Component.translatable("villagerretaliation.gui.direction.down"), ClipboardWorkAreaActionPayload.Action.CONTRACT_DOWN)));
     }
 
     private void renderRoutePage(GuiGraphics graphics) {
@@ -2682,7 +2682,7 @@ public final class ClipboardWorkforceScreen extends Screen {
             if (hovered) {
                 graphics.fill(left, y - 2, right, rowBottom, HOVER_FILL);
             }
-            String buttonText = fit(button.label(), right - left - 2);
+            String buttonText = fit(button.label().getString(), right - left - 2);
             int labelLeft = left + Math.max(0, (right - left - this.font.width(buttonText)) / 2);
             int labelTop = y - 2 + Math.max(0, (rowBottom - (y - 2) - this.font.lineHeight) / 2) + 1;
             graphics.drawString(this.font, buttonText, labelLeft, labelTop, TEXT, false);
@@ -2736,7 +2736,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         return lineY + 2;
     }
 
-    private List<Component> jobSiteButtonTooltip(Component group, String direction) {
+    private List<Component> jobSiteButtonTooltip(Component group, Component direction) {
         return List.of(
                 Component.translatable(
                         "villagerretaliation.gui.clipboard_workforce.job_site_adjust",
@@ -3451,7 +3451,7 @@ public final class ClipboardWorkforceScreen extends Screen {
             boolean banded) {
     }
 
-    private record JobSiteButton(String label, ClipboardWorkAreaActionPayload.Action action) {
+    private record JobSiteButton(Component label, ClipboardWorkAreaActionPayload.Action action) {
     }
 
     private record DetailTooltip(String titleKey, String detailKey) {

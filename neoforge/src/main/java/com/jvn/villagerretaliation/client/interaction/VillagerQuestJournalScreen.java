@@ -1074,16 +1074,17 @@ public final class VillagerQuestJournalScreen extends Screen {
         return lastLine.top() + lastLine.height();
     }
 
-    private static String statusLine(QuestTrackerSyncPayload.Entry entry) {
+    private static Component statusLine(QuestTrackerSyncPayload.Entry entry) {
         if (entry.status().isBlank()) {
-            return entry.trackable() && VillagerQuestTrackerOverlay.isTracked(entry) ? "Tracked" : "Not tracked";
+            String key = entry.trackable() && VillagerQuestTrackerOverlay.isTracked(entry) ? "tracked" : "not_tracked";
+            return Component.translatable(GUI_KEY_PREFIX + "status." + key);
         }
         if (!entry.trackable()) {
-            return "Status: " + entry.status();
+            return Component.translatable(GUI_KEY_PREFIX + "status.value", entry.status());
         }
         return VillagerQuestTrackerOverlay.isTracked(entry)
-                ? "Status: " + entry.status() + " | Tracked"
-                : "Status: " + entry.status() + " | Not tracked";
+                ? Component.translatable(GUI_KEY_PREFIX + "status.value_tracked", entry.status())
+                : Component.translatable(GUI_KEY_PREFIX + "status.value_not_tracked", entry.status());
     }
 
     private static String descriptionLine(QuestTrackerSyncPayload.Entry entry) {

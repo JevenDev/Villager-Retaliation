@@ -1,5 +1,7 @@
 # Changelog
 
+- Moved remaining player-facing party-adjacent, interaction, quest, inventory, clipboard, village-naming, map, and raid text into localization entries.
+
 - Fixed the dialogue gift inventory shrinking independently from the interaction container at GUI scale 4.
 
 - Added GUI scale 4 support for the player party inventory, centering the player inventory and its adaptive left-side villager panels together as one group.

@@ -1609,12 +1609,13 @@ public final class HiredVillagerWorkService {
         initializeDefaults(state, villager);
         HiredVillagerRole role = HiredVillagerContractService.activeRole(level, villager);
         if (!HiredVillagerRoleSettings.supportsRoutes(role)) {
-            player.displayClientMessage(Component.literal(role.label() + " jobs do not use routes."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_unsupported_job",
+                    Component.translatable("villagerretaliation.gui.job_stats.role." + role.serializedName())), true);
             return false;
         }
         HiredRoute safeRoute = route == null ? HiredRoute.empty() : route.validatedChain();
         if (safeRoute.isEmpty()) {
-            player.displayClientMessage(Component.literal("Build a route first."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.build_route_first"), true);
             return false;
         }
         safeRoute.save(state);
@@ -1628,7 +1629,7 @@ public final class HiredVillagerWorkService {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
         if (HiredRoute.fromState(state).isEmpty()) {
-            player.displayClientMessage(Component.literal("No route is assigned."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.no_route_assigned"), true);
             return false;
         }
         HiredRoute.clear(state);
