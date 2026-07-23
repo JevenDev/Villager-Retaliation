@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages",
+      "event.duel"
+    ],
+    "topic": "global.duels"
+  },
+  "messages": [
+    {
+      "key": "duel.reaction.gloat",
+      "lines": [
+        "Try not to blink next time, {player}.",
+        "That makes the score {villager_wins} to {villager_losses}. Not that I am counting.",
+        "You brought courage. I brought results.",
+        "A fine attempt, {player}. Almost convincing.",
+        "The whole village saw that one.",
+        "I could offer lessons, but they would cost extra.",
+        "Still feeling gutsy, {player}?",
+        "I won the wager and the bragging rights.",
+        "You move well?for someone I just beat.",
+        "Remember this score: {villager_wins} wins for me, {villager_losses} for you.",
+        "That arena suited me nicely.",
+        "No hard feelings. Just a very clear winner.",
+        "I expected a challenge and received a warm-up.",
+        "Tell your friends I fought bravely. Tell them I won, too.",
+        "Whenever you are ready for another lesson, wait out the cooldown."
+      ],
+      "id": "global.messages.24_duels.messages.duel.reaction.gloat.000"
+    },
+    {
+      "key": "duel.reaction.sulk",
+      "lines": [
+        "You won. There, I said it.",
+        "Do not look so pleased with yourself, {player}.",
+        "The score is {villager_wins} to {villager_losses}. I can still turn it around.",
+        "I had you exactly where I wanted you. Briefly.",
+        "The sun was in my eyes. Somehow.",
+        "Enjoy the wager. I will earn it back.",
+        "I have fought better days.",
+        "Everyone saw that, did they? Wonderful.",
+        "Next time I am bringing a better plan.",
+        "A loss is practice wearing an ugly hat.",
+        "You were faster than I expected, {player}.",
+        "I am not sulking. I am reviewing tactics.",
+        "One bout does not settle everything.",
+        "Fine work. Do not make me compliment you twice.",
+        "I will remember that strike. Mostly because it still hurts."
+      ],
+      "id": "global.messages.24_duels.messages.duel.reaction.sulk.001"
+    }
+  ]
+}
