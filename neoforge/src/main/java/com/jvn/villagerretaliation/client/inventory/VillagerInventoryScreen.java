@@ -1,8 +1,6 @@
 package com.jvn.villagerretaliation.client.inventory;
 
-import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
-import com.jvn.villagerretaliation.client.villager.VillagerHungerClientCache;
 import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
 import com.jvn.villagerretaliation.inventory.ProtectedVillagerProperty;
 import com.jvn.villagerretaliation.inventory.VillagerConfiscatedStolenItemTracker;
@@ -12,13 +10,12 @@ import com.jvn.villagerretaliation.inventory.VillagerTradePaymentTracker;
 import com.jvn.villagerretaliation.network.VillagerJobInventoryRequestPayload;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -29,8 +26,6 @@ import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.PacketDistributor;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInventoryMenu> {
     private static final int TEXTURE_WIDTH = 182;
@@ -43,10 +38,9 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
     private static final int PLAYER_TEXTURE_BESIDE_LEFT = TEXTURE_WIDTH + PLAYER_TEXTURE_GAP;
     private static final int PLAYER_TEXTURE_BESIDE_TOP = (TEXTURE_HEIGHT - PLAYER_TEXTURE_HEIGHT) / 2;
     private static final int ENTITY_LEFT = 66;
-    private static final int ENTITY_TOP = 26;
-    private static final int ENTITY_RIGHT = 115;
-    private static final int ENTITY_BOTTOM = 94;
-    private static final int ENTITY_SCALE = 31;
+    private static final int ENTITY_TOP = 27;
+    private static final int ENTITY_RIGHT = 116;
+    private static final int ENTITY_BOTTOM = 97;
 
     private static final int NAMEPLATE_TOP = 0;
     private static final int TAB_BUTTON_TOP = 1;
@@ -65,19 +59,8 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
 
     private static final int STATS_LEFT = 11;
     private static final int STATS_TOP = 27;
-    private static final int STAT_ICON_SIZE = 11;
-    private static final int STAT_ROW_GAP = 1;
-    private static final int STAT_TEXT_GAP = 3;
-    private static final int HEALTH_COLOR = 0xFFFF1313;
-    private static final int ARMOR_COLOR = 0xFFB8B9C4;
-    private static final int HUNGER_COLOR = 0xFFB88458;
+
     private static final int TEXT_OUTLINE_COLOR = 0xFF000000;
-    private static final ResourceLocation HEALTH_ICON =
-            VillagerRetaliation.id("textures/gui/villager_stats/villager_health_stat.png");
-    private static final ResourceLocation ARMOR_ICON =
-            VillagerRetaliation.id("textures/gui/villager_stats/villager_armor_stat.png");
-    private static final ResourceLocation HUNGER_ICON =
-            VillagerRetaliation.id("textures/gui/villager_stats/villager_hunger_stat.png");
 
     private boolean playerInventoryBeside;
 
@@ -340,32 +323,10 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
 
     private void renderVillagerStats(GuiGraphics graphics) {
         Entity entity = villagerEntity();
-        if (!(entity instanceof LivingEntity livingEntity)) {
-            return;
+        if (entity instanceof LivingEntity livingEntity) {
+            VillagerInventoryUiRenderer.renderStats(
+                    graphics, livingEntity, this.leftPos + STATS_LEFT, this.topPos + STATS_TOP);
         }
-        int left = this.leftPos + STATS_LEFT;
-        int top = this.topPos + STATS_TOP;
-        renderStat(graphics, HEALTH_ICON, formatValue(livingEntity.getHealth()), HEALTH_COLOR, left, top);
-        renderStat(graphics, ARMOR_ICON, Integer.toString(livingEntity.getArmorValue()), ARMOR_COLOR,
-                left, top + STAT_ICON_SIZE + STAT_ROW_GAP);
-        renderStat(graphics, HUNGER_ICON, Integer.toString(VillagerHungerClientCache.hunger(entity)), HUNGER_COLOR,
-                left, top + (STAT_ICON_SIZE + STAT_ROW_GAP) * 2);
-    }
-
-    private void renderStat(GuiGraphics graphics, ResourceLocation icon, String value, int color, int left, int top) {
-        graphics.blit(icon, left, top, 0, 0, STAT_ICON_SIZE, STAT_ICON_SIZE, STAT_ICON_SIZE, STAT_ICON_SIZE);
-        drawStatString(graphics, Component.literal(value), left + STAT_ICON_SIZE + STAT_TEXT_GAP, top + 2, color);
-    }
-
-    private void drawStatString(GuiGraphics graphics, Component text, int x, int y, int color) {
-        for (int offsetX = -1; offsetX <= 1; offsetX++) {
-            for (int offsetY = -1; offsetY <= 1; offsetY++) {
-                if (offsetX != 0 || offsetY != 0) {
-                    graphics.drawString(this.font, text, x + offsetX, y + offsetY, TEXT_OUTLINE_COLOR, false);
-                }
-            }
-        }
-        graphics.drawString(this.font, text, x, y, color, false);
     }
 
     private void drawOutlinedString(GuiGraphics graphics, Component text, int x, int y, int color) {
@@ -374,12 +335,6 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         graphics.drawString(this.font, text, x, y - 1, TEXT_OUTLINE_COLOR, false);
         graphics.drawString(this.font, text, x, y + 1, TEXT_OUTLINE_COLOR, false);
         graphics.drawString(this.font, text, x, y, color, false);
-    }
-
-    private static String formatValue(float value) {
-        return Math.abs(value - Math.round(value)) < 0.01F
-                ? Integer.toString(Math.round(value))
-                : String.format(Locale.ROOT, "%.1f", value);
     }
 
     private void blitNineSlicedTexture(
@@ -437,53 +392,16 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         if (!(entity instanceof LivingEntity livingEntity)) {
             return;
         }
-
-        int left = this.leftPos + ENTITY_LEFT;
-        int top = this.topPos + ENTITY_TOP;
-        int right = this.leftPos + ENTITY_RIGHT;
-        int bottom = this.topPos + ENTITY_BOTTOM;
-        float centerX = (left + right) / 2.0F;
-        float centerY = (top + bottom) / 2.0F;
-        float mouseYaw = (float) Math.atan((centerX - mouseX) / 40.0F);
-        float mousePitch = (float) Math.atan((centerY - mouseY) / 40.0F);
-        Quaternionf entityRotation = new Quaternionf().rotateZ((float) Math.PI);
-        Quaternionf cameraRotation = new Quaternionf().rotateX(mousePitch * 20.0F * ((float) Math.PI / 180.0F));
-        entityRotation.mul(cameraRotation);
-
-        float previousBodyRot = livingEntity.yBodyRot;
-        float previousYRot = livingEntity.getYRot();
-        float previousXRot = livingEntity.getXRot();
-        float previousHeadRotO = livingEntity.yHeadRotO;
-        float previousHeadRot = livingEntity.yHeadRot;
-        livingEntity.yBodyRot = 180.0F + mouseYaw * 20.0F;
-        livingEntity.setYRot(180.0F + mouseYaw * 40.0F);
-        livingEntity.setXRot(-mousePitch * 20.0F);
-        livingEntity.yHeadRot = livingEntity.getYRot();
-        livingEntity.yHeadRotO = livingEntity.getYRot();
-
-        float scale = livingEntity.getScale();
-        try (VillagerModelPreviewRenderContext.Scope ignored = VillagerModelPreviewRenderContext.begin(
+        VillagerInventoryUiRenderer.renderModel(
+                graphics,
                 livingEntity,
-                VillagerModelPreviewRenderContext.PreviewType.INVENTORY)) {
-            InventoryScreen.renderEntityInInventory(
-                    graphics,
-                    centerX,
-                    centerY,
-                    ENTITY_SCALE / scale,
-                    new Vector3f(0.0F, livingEntity.getBbHeight() / 2.0F + 0.0625F * scale, 0.0F),
-                    entityRotation,
-                    cameraRotation,
-                    livingEntity
-            );
-        } finally {
-            livingEntity.yBodyRot = previousBodyRot;
-            livingEntity.setYRot(previousYRot);
-            livingEntity.setXRot(previousXRot);
-            livingEntity.yHeadRotO = previousHeadRotO;
-            livingEntity.yHeadRot = previousHeadRot;
-        }
+                this.leftPos + ENTITY_LEFT,
+                this.topPos + ENTITY_TOP,
+                this.leftPos + ENTITY_RIGHT,
+                this.topPos + ENTITY_BOTTOM,
+                mouseX,
+                mouseY);
     }
-
     private record Bounds(int left, int top, int width, int height) {
         int right() {
             return this.left + this.width;

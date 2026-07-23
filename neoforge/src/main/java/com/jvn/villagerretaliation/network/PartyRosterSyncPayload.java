@@ -72,6 +72,7 @@ public record PartyRosterSyncPayload(
             buffer.writeUtf(player.name(), MAX_NAME_LENGTH);
             buffer.writeBoolean(player.online());
             buffer.writeBoolean(player.leader());
+            buffer.writeBoolean(player.adminPrivileges());
         }
         buffer.writeVarInt(Math.min(MAX_VILLAGERS, payload.villagers().size()));
         for (int i = 0; i < Math.min(MAX_VILLAGERS, payload.villagers().size()); i++) {
@@ -114,6 +115,7 @@ public record PartyRosterSyncPayload(
                     buffer.readUUID(),
                     buffer.readUtf(MAX_NAME_LENGTH),
                     buffer.readBoolean(),
+                    buffer.readBoolean(),
                     buffer.readBoolean()));
         }
         int villagerCount = VillagerPayloads.readCollectionSize(buffer, MAX_VILLAGERS, "party villagers");
@@ -144,7 +146,8 @@ public record PartyRosterSyncPayload(
         return TYPE;
     }
 
-    public record PlayerEntry(UUID playerId, String name, boolean online, boolean leader) {
+    public record PlayerEntry(
+            UUID playerId, String name, boolean online, boolean leader, boolean adminPrivileges) {
     }
 
     public record VillagerEntry(

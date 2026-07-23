@@ -262,7 +262,14 @@ public final class VillagerRetaliationCommands {
                             PartyActionHandler.acceptLatestInvitationCommand(
                                     context.getSource().getPlayerOrException());
                             return 1;
-                        }))
+                        })
+                        .then(argument("player", EntityArgument.player())
+                                .executes(context -> {
+                                    PartyActionHandler.acceptInvitationFromCommand(
+                                            context.getSource().getPlayerOrException(),
+                                            EntityArgument.getPlayer(context, "player"));
+                                    return 1;
+                                })))
                 .then(literal("decline")
                         .executes(context -> {
                             PartyActionHandler.declineLatestInvitationCommand(

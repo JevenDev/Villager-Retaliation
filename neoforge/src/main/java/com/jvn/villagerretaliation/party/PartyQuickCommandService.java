@@ -78,7 +78,7 @@ public final class PartyQuickCommandService {
         }
         PartyRecord party = commandedParty(player);
         if (party == null) {
-            notice(player, "villagerretaliation.party.error.leader_only");
+            notice(player, "villagerretaliation.party.error.admin_privileges_required");
             return;
         }
         List<PartyVillagerRecord> participants = party.villagers().stream()
@@ -128,7 +128,7 @@ public final class PartyQuickCommandService {
         PartyRecord party = commandedParty(player);
         PartyVillagerRecord record = party == null || villagerId == null ? null : party.villager(villagerId);
         if (record == null) {
-            notice(player, "villagerretaliation.party.error.leader_only");
+            notice(player, "villagerretaliation.party.error.admin_privileges_required");
             return;
         }
         record.setQuickCommandsEnabled(enabled);
@@ -1114,7 +1114,7 @@ public final class PartyQuickCommandService {
             return null;
         }
         PartyRecord party = PartyService.getPartyForPlayer(player.serverLevel(), player.getUUID()).orElse(null);
-        return party != null && party.leaderId().equals(player.getUUID()) ? party : null;
+        return party != null && party.hasAdminPrivileges(player.getUUID()) ? party : null;
     }
 
     private static boolean targetRequired(PartyQuickCommand command) {

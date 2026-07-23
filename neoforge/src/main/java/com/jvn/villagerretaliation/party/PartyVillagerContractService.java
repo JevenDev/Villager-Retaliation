@@ -162,7 +162,7 @@ public final class PartyVillagerContractService {
     public static ContractResult setFollowing(ServerPlayer player, Villager villager) {
         PartyVillagerContext context = authorizedContext(player, villager);
         if (context == null) {
-            return ContractResult.failure("villagerretaliation.party.error.leader_only");
+            return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
         context.record().setFollowing();
         PartyService.markChanged(context.level());
@@ -174,7 +174,7 @@ public final class PartyVillagerContractService {
     public static ContractResult setStaying(ServerPlayer player, Villager villager) {
         PartyVillagerContext context = authorizedContext(player, villager);
         if (context == null) {
-            return ContractResult.failure("villagerretaliation.party.error.leader_only");
+            return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
         BlockPos anchor = villager.blockPosition();
         context.record().setStaying(context.level().dimension().location(), anchor);
@@ -187,7 +187,7 @@ public final class PartyVillagerContractService {
     public static ContractResult dismiss(ServerPlayer player, Villager villager) {
         PartyVillagerContext context = authorizedContext(player, villager);
         if (context == null) {
-            return ContractResult.failure("villagerretaliation.party.error.leader_only");
+            return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
         PartyVillagerRecord removed = PartyService.removeVillager(context.level(), villager.getUUID());
         if (removed == null) {
@@ -203,7 +203,7 @@ public final class PartyVillagerContractService {
     public static ContractResult cycleCombatMode(ServerPlayer player, Villager villager) {
         PartyVillagerContext context = authorizedContext(player, villager);
         if (context == null) {
-            return ContractResult.failure("villagerretaliation.party.error.leader_only");
+            return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
         context.record().setCombatMode(context.record().combatMode().next());
         com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.clearCustomTarget(villager);
@@ -213,7 +213,7 @@ public final class PartyVillagerContractService {
     public static ContractResult cycleAttackMode(ServerPlayer player, Villager villager) {
         PartyVillagerContext context = authorizedContext(player, villager);
         if (context == null) {
-            return ContractResult.failure("villagerretaliation.party.error.leader_only");
+            return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
         context.record().setAttackMode(context.record().attackMode().next());
         return settingsChanged(context, "villagerretaliation.party.villager_settings_updated");
@@ -222,7 +222,7 @@ public final class PartyVillagerContractService {
     public static ContractResult cycleDropCollectionMode(ServerPlayer player, Villager villager) {
         PartyVillagerContext context = authorizedContext(player, villager);
         if (context == null) {
-            return ContractResult.failure("villagerretaliation.party.error.leader_only");
+            return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
         context.record().setDropCollectionMode(context.record().dropCollectionMode().next());
         return settingsChanged(context, "villagerretaliation.party.villager_settings_updated");
@@ -519,8 +519,7 @@ public final class PartyVillagerContractService {
         return player != null
                 && party != null
                 && record != null
-                && party.leaderId().equals(player.getUUID())
-                && record.recruiterId().equals(player.getUUID())
+                && party.hasAdminPrivileges(player.getUUID())
                 && party.playerIds().contains(player.getUUID());
     }
 
@@ -539,7 +538,7 @@ public final class PartyVillagerContractService {
 
     private static boolean isAuthorizedInventoryUser(ServerPlayer player, PartyRecord party, PartyVillagerRecord record) {
         return isAuthorizedPartyMember(player, party, record)
-                && (party.leaderId().equals(player.getUUID()) || party.sharedVillagerInventories());
+                && party.hasAdminPrivileges(player.getUUID());
     }
 
     private static void expire(MinecraftServer server, PartyRecord party, PartyVillagerRecord record) {

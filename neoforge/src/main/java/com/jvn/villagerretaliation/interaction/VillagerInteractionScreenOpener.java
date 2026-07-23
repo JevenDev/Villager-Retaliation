@@ -165,8 +165,9 @@ public final class VillagerInteractionScreenOpener {
         PartyVillagerRecord partyVillager = villagerParty == null ? null : villagerParty.villager(villager.getUUID());
         PartyRecord playerParty = PartyService.getPartyForPlayer(level, player.getUUID()).orElse(null);
         boolean partyVillagerAuthorized = partyVillager != null
-                && villagerParty.leaderId().equals(player.getUUID())
-                && partyVillager.recruiterId().equals(player.getUUID());
+                && playerParty != null
+                && villagerParty.id().equals(playerParty.id())
+                && villagerParty.hasAdminPrivileges(player.getUUID());
         boolean partyVillagerPartyMember = villagerParty != null
                 && playerParty != null
                 && villagerParty.id().equals(playerParty.id());

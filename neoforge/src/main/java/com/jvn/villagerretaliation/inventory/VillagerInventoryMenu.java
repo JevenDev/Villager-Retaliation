@@ -27,6 +27,7 @@ import net.minecraft.world.item.ItemStack;
 
 public class VillagerInventoryMenu extends AbstractContainerMenu {
     private static final int PLAYER_INVENTORY_COUNT = 27;
+    private static final int MAX_VILLAGER_SLOT_COUNT = HiredJobInventory.SLOT_COUNT;
     private static final int PLAYER_HOTBAR_COUNT = 9;
 
     private static final int ARMOR_X = 48;
@@ -52,6 +53,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             ResourceLocation.withDefaultNamespace("item/empty_slot_smithing_template_armor_trim");
 
     private Container villagerInventory;
+    private final SimpleContainer paddingInventory = new SimpleContainer(1);
     private final Villager villager;
     private final int villagerEntityId;
     private ViewMode viewMode;
@@ -164,7 +166,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         super(VillagerRetaliationMenus.VILLAGER_INVENTORY.get(), containerId);
         this.viewMode = viewMode == null ? ViewMode.PERSONAL : viewMode;
         this.villagerSlotCount = this.viewMode.slotCount();
-        this.playerInventoryStart = this.villagerSlotCount;
+        this.playerInventoryStart = MAX_VILLAGER_SLOT_COUNT;
         this.playerHotbarStart = this.playerInventoryStart + PLAYER_INVENTORY_COUNT;
         this.playerSlotEnd = this.playerHotbarStart + PLAYER_HOTBAR_COUNT;
         checkContainerSize(villagerInventory, this.villagerSlotCount);
@@ -181,6 +183,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         villagerInventory.startOpen(playerInventory.player);
         initializePersonalTrackingState();
         addVillagerSlots();
+        addPaddingSlot();
         addPlayerSlots(playerInventory);
     }
 
@@ -315,7 +318,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         this.villagerInventory.stopOpen(this.playerInventory.player);
         this.viewMode = viewMode;
         this.villagerSlotCount = this.viewMode.slotCount();
-        this.playerInventoryStart = this.villagerSlotCount;
+        this.playerInventoryStart = MAX_VILLAGER_SLOT_COUNT;
         this.playerHotbarStart = this.playerInventoryStart + PLAYER_INVENTORY_COUNT;
         this.playerSlotEnd = this.playerHotbarStart + PLAYER_HOTBAR_COUNT;
         this.villagerInventory = createVillagerInventory(viewMode);
@@ -326,6 +329,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         accessor.villagerretaliation$getLastSlots().clear();
         accessor.villagerretaliation$getRemoteSlots().clear();
         addVillagerSlots();
+        addPaddingSlot();
         addPlayerSlots(this.playerInventory);
     }
 
@@ -339,6 +343,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         accessor.villagerretaliation$getLastSlots().clear();
         accessor.villagerretaliation$getRemoteSlots().clear();
         addVillagerSlots();
+        addPaddingSlot();
         addPlayerSlots(this.playerInventory);
     }
 
@@ -412,6 +417,20 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         }
     }
 
+    private void addPaddingSlot() {
+        if (this.villagerSlotCount >= MAX_VILLAGER_SLOT_COUNT) return;
+        addSlot(new Slot(this.paddingInventory, 0, -1000, -1000) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return false;
+            }
+
+            @Override
+            public boolean mayPickup(Player player) {
+                return false;
+            }
+        });
+    }
     private void addPlayerSlots(Inventory playerInventory) {
         int inventoryX = this.playerInventoryBeside ? PLAYER_INVENTORY_BESIDE_X : PLAYER_INVENTORY_BELOW_X;
         int inventoryY = this.playerInventoryBeside ? PLAYER_INVENTORY_BESIDE_Y : PLAYER_INVENTORY_BELOW_Y;
