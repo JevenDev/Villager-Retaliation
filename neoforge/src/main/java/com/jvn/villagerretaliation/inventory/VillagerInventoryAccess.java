@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
@@ -183,7 +184,8 @@ public final class VillagerInventoryAccess {
     }
 
     public static boolean hasCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
-        if (HiredJobInventory.isJobInventoryAvailable(villager)
+        if (!DuelService.isParticipant(villager)
+                && HiredJobInventory.isJobInventoryAvailable(villager)
                 && !HiredJobInventory.getJobInventory(villager).findSupply(predicate).isEmpty()) {
             return true;
         }
@@ -191,7 +193,8 @@ public final class VillagerInventoryAccess {
     }
 
     public static ItemStack takeCarriedItem(Villager villager, Predicate<ItemStack> predicate) {
-        if (HiredJobInventory.isJobInventoryAvailable(villager)) {
+        if (!DuelService.isParticipant(villager)
+                && HiredJobInventory.isJobInventoryAvailable(villager)) {
             HiredJobInventory jobInventory = HiredJobInventory.getJobInventory(villager);
             ItemStack available = jobInventory.findSupply(predicate);
             if (!available.isEmpty() && jobInventory.consumeSupply(predicate, 1) > 0) {

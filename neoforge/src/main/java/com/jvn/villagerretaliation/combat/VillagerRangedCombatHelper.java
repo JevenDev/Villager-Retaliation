@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
@@ -139,7 +140,8 @@ public final class VillagerRangedCombatHelper {
                 reservedProjectile.remove(DataComponents.INTANGIBLE_PROJECTILE);
                 if (villager instanceof Villager regular) {
                     ItemStack remainder = reservedProjectile.copy();
-                    if (HiredJobInventory.isJobInventoryAvailable(regular)) {
+                    if (!DuelService.isParticipant(regular)
+                            && HiredJobInventory.isJobInventoryAvailable(regular)) {
                         remainder = HiredJobInventory.getJobInventory(regular).insertSupply(remainder);
                     }
                     remainder = VillagerInventoryAccess.addItem(regular, remainder);
@@ -624,7 +626,9 @@ public final class VillagerRangedCombatHelper {
 
     private static void syncCrossbowStack(AbstractVillager villager, InteractionHand hand, ItemStack weapon) {
         ItemStack updated = weapon.copy();
-        if (villager instanceof Villager regular && HiredJobInventory.isJobInventoryAvailable(regular)) {
+        if (villager instanceof Villager regular
+                && !DuelService.isParticipant(regular)
+                && HiredJobInventory.isJobInventoryAvailable(regular)) {
             HiredJobInventory inventory = HiredJobInventory.getJobInventory(regular);
             int slot = hand == InteractionHand.MAIN_HAND
                     ? HiredJobInventory.MAINHAND_SLOT

@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
@@ -321,6 +322,50 @@ public final class DuelGameTests {
                 DuelService.resolveForTest(player, DuelResult.CANCELLED);
             }
         });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void assignedDuelLoadoutCannotBorrowPartyInventoryWeapons(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        HiredJobInventory partyInventory = HiredJobInventory.getJobInventory(villager);
+        partyInventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.CROSSBOW));
+        partyInventory.setItem(HiredJobInventory.HOTBAR_START + 1, new ItemStack(Items.NETHERITE_AXE));
+        partyInventory.setItem(HiredJobInventory.HOTBAR_START + 2, new ItemStack(Items.ARROW, 16));
+
+        DuelService.StartResult start = DuelService.startDebug(
+                player, villager, DuelLoadout.MELEE, 0);
+        helper.assertTrue(start.started(), "party-inventory isolation duel should start: " + start.reason());
+        try {
+            helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
+                    "the assigned melee weapon should be equipped initially");
+
+            player.moveTo(villager.getX() + 10.0D, villager.getY(), villager.getZ());
+            helper.assertTrue(DuelService.driveForTest(player, participant.level().getGameTime(), true),
+                    "duel combat should run");
+            helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
+                    "long-range tactics must not borrow a crossbow from party inventory");
+
+            player.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
+            player.startUsingItem(InteractionHand.OFF_HAND);
+            helper.assertTrue(DuelService.driveForTest(player, participant.level().getGameTime() + 1L, true),
+                    "shield-breaking duel combat should run");
+            helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
+                    "shield-breaking tactics must not borrow an axe from party inventory");
+
+            helper.assertTrue(partyInventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.CROSSBOW),
+                    "the party crossbow must remain in its original slot");
+            helper.assertTrue(partyInventory.getItem(HiredJobInventory.HOTBAR_START + 1).is(Items.NETHERITE_AXE),
+                    "the party axe must remain in its original slot");
+            helper.assertValueEqual(
+                    partyInventory.getItem(HiredJobInventory.HOTBAR_START + 2).getCount(),
+                    16,
+                    "duel combat must not consume party ammunition");
+            helper.succeed();
+        } finally {
+            DuelService.resolveForTest(player, DuelResult.CANCELLED);
+        }
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 140)

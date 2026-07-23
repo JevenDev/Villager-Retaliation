@@ -1,5 +1,7 @@
 # Changelog
 
+- Fixed assigned duels allowing party villagers to pull weapons or ammunition from party/job inventory; duel combat now isolates its live loadout from every external work-inventory read, write, synchronization, and equipment-maintenance path.
+
 - Added a default-on Player Raid horn confirmation. The first horn use warns the player in chat, and a second use by the same player in the same village within 30 seconds declares the raid.
 
 - Fixed recruited-villager retaliation limits ignoring high reputation; Revered recruits now allow five hits before disciplining the player, while Royalty recruits retain their retaliation bypass.
