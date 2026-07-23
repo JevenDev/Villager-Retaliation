@@ -481,6 +481,12 @@ public final class DuelService {
         return true;
     }
 
+    static boolean resolveVillagerKnockoutForTest(ServerPlayer player) {
+        ActiveDuel duel = active(player);
+        if (duel == null) return false;
+        finish(player.getServer(), duel, DuelResult.PLAYER_WIN, true, player);
+        return true;
+    }
     static void authorizeFinisherForTest(Villager villager, ServerPlayer player, long expiresAt) {
         FINISHERS.put(villager.getUUID(), new FinisherPermission(player.getUUID(), expiresAt));
     }
@@ -517,6 +523,8 @@ public final class DuelService {
         if (villager != null) {
             VillagerCombatBehavior.reset(villager);
             duel.snapshots().villager().restore(villager);
+            // Restore first so a knockout can preserve the exact pre-duel recovery target.
+            if (knockedOut) VillagerDownedService.ensureStandingDimensions(villager);
             villager.setTarget(null); villager.setAggressive(false); villager.getNavigation().stop();
             VillagerRangedCombatHelper.clearDuelState(villager);
         }
@@ -554,8 +562,10 @@ public final class DuelService {
         if (result == DuelResult.PLAYER_WIN && player != null) DuelSpectators.reward(level, duel.spectators(), duel.center(), player);
         if (knockedOut && VillagerSecondWindCompat.isActive()) {
             VillagerDownedService.enterDowned(level, villager,
-                    new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("duel:" + duel.id())));
-            FINISHERS.put(villager.getUUID(), new FinisherPermission(duel.playerId(), server.overworld().getGameTime() + 1200L));
+                    new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("duel:" + duel.id())),
+                    duel.snapshots().villager().health());
+            FINISHERS.put(villager.getUUID(), new FinisherPermission(
+                    duel.playerId(), server.overworld().getGameTime() + 1200L));
         }
     }
 

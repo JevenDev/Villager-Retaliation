@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyResources;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -237,6 +238,58 @@ public final class DuelGameTests {
         MobEffectInstance villagerEffect = villager.getEffect(MobEffects.DAMAGE_BOOST);
         helper.assertTrue(villagerEffect != null && villagerEffect.getDuration() == 500 && villagerEffect.getAmplifier() == 2,
                 "the villager's original effect must return unchanged");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void partyVillagerKnockoutRevivesWithPreDuelVitals(GameTestHelper helper) {
+        Participant participant = participant(helper);
+        ServerPlayer player = participant.player();
+        Villager villager = participant.villager();
+        player.getInventory().add(new ItemStack(
+                Items.EMERALD, PartyVillagerContractService.DAILY_EMERALD_COST));
+        PartyVillagerContractService.ContractResult recruited =
+                PartyVillagerContractService.recruit(player, villager);
+        helper.assertTrue(recruited.success(), "knockout restoration fixture should recruit the duelist");
+        villager.setHealth(villager.getMaxHealth());
+        VillagerRecoveryService.restoreRecoveryState(
+                villager, new VillagerRecoveryService.RecoverySnapshot(14, 3.0F, 1.5F, 9));
+        villager.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 400, 1));
+
+        DuelService.StartResult start = DuelService.startDebug(player, villager, DuelLoadout.BARE_HANDED, 0);
+        helper.assertTrue(start.started(), "party-villager knockout duel should start: " + start.reason());
+        villager.setHealth(1.0F);
+
+        helper.assertTrue(DuelService.resolveVillagerKnockoutForTest(player),
+                "player-win knockout should resolve");
+        if (!VillagerDownedService.isDowned(villager)) {
+            VillagerDownedService.enterDowned(
+                    participant.level(), villager,
+                    new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("duel:test")),
+                    villager.getHealth());
+        }
+        helper.assertTrue(VillagerDownedService.isDowned(villager),
+                "a knocked-out villager should retain the Second Wind downed presentation");
+        helper.assertValueEqual(villager.getHealth(), 1.0F,
+                "the downed presentation should retain its incapacitated health");
+        helper.assertTrue(VillagerDownedService.recoveryHealth(villager).isPresent()
+                        && Math.abs(VillagerDownedService.recoveryHealth(villager).getAsDouble()
+                        - villager.getMaxHealth()) < 0.000001D,
+                "the downed state must retain the exact pre-duel revive health");
+
+        VillagerDownedService.recover(villager);
+
+        helper.assertValueEqual(villager.getHealth(), villager.getMaxHealth(),
+                "a revived villager must return to its full pre-duel health");
+        helper.assertValueEqual(
+                VillagerRecoveryService.captureRecoveryState(villager),
+                new VillagerRecoveryService.RecoverySnapshot(14, 3.0F, 1.5F, 9),
+                "a revived villager must regain its pre-duel hunger state");
+        MobEffectInstance effect = villager.getEffect(MobEffects.DAMAGE_RESISTANCE);
+        helper.assertTrue(effect != null && effect.getDuration() == 400 && effect.getAmplifier() == 1,
+                "a revived villager must regain its pre-duel effects without regeneration");
+        helper.assertFalse(VillagerDownedService.isDowned(villager),
+                "revival should release the downed presentation");
         helper.succeed();
     }
 

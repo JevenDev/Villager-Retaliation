@@ -10,6 +10,7 @@ import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -32,6 +33,7 @@ public final class VillagerDownedService {
     private static final String VERSION_KEY = "Version";
     private static final String ENTERED_AT_KEY = "EnteredAt";
     private static final String RECOVERY_AT_KEY = "RecoveryAt";
+    private static final String RECOVERY_HEALTH_KEY = "RecoveryHealth";
     private static final String QUIET_SINCE_KEY = "QuietSince";
     private static final String SOURCES_KEY = "ProtectionSources";
     private static final String PREVIOUS_NO_AI_KEY = "PreviousNoAi";
@@ -116,6 +118,14 @@ public final class VillagerDownedService {
             ServerLevel level,
             Villager villager,
             VillagerDeathProtectionResolver.ProtectionResult protection) {
+        return enterDowned(level, villager, protection, Float.NaN);
+    }
+
+    public static boolean enterDowned(
+            ServerLevel level,
+            Villager villager,
+            VillagerDeathProtectionResolver.ProtectionResult protection,
+            float recoveryHealth) {
         if (isDowned(villager)) {
             enforceIncapacitatedState(villager);
             return false;
@@ -129,6 +139,9 @@ public final class VillagerDownedService {
         state.putLong(RECOVERY_AT_KEY, now + Math.max(1, VillagerRetaliationConfig.DOWNED_MINIMUM_TICKS.get()));
         state.putLong(QUIET_SINCE_KEY, -1L);
         state.putString(SOURCES_KEY, protection.diagnosticValue());
+        if (Float.isFinite(recoveryHealth) && recoveryHealth > 0.0F) {
+            state.putFloat(RECOVERY_HEALTH_KEY, recoveryHealth);
+        }
         state.putBoolean(PREVIOUS_NO_AI_KEY, villager.isNoAi());
         state.putBoolean(PREVIOUS_PICKUP_KEY, villager.canPickUpLoot());
         VillagerDownedPose pose = VillagerSecondWindCompat.resolvePose(villager)
@@ -245,6 +258,16 @@ public final class VillagerDownedService {
                 || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY);
     }
 
+    public static OptionalDouble recoveryHealth(Villager villager) {
+        if (!isDowned(villager)) return OptionalDouble.empty();
+        CompoundTag state = state(villager);
+        if (!state.contains(RECOVERY_HEALTH_KEY)) return OptionalDouble.empty();
+        float health = state.getFloat(RECOVERY_HEALTH_KEY);
+        return Float.isFinite(health) && health > 0.0F
+                ? OptionalDouble.of(health)
+                : OptionalDouble.empty();
+    }
+
     public static VillagerDownedPose pose(Villager villager) {
         if (isDowned(villager)) {
             String value = state(villager).getString(POSE_KEY);
@@ -276,7 +299,10 @@ public final class VillagerDownedService {
             VillagerBehaviorSuppressionPolicy.enforce(level, villager);
         }
         float percent = VillagerRetaliationConfig.DOWNED_RECOVERY_HEALTH_PERCENT.get().floatValue();
-        villager.setHealth(Math.max(1.0F, villager.getMaxHealth() * percent));
+        float recoveryHealth = state.contains(RECOVERY_HEALTH_KEY)
+                ? state.getFloat(RECOVERY_HEALTH_KEY)
+                : villager.getMaxHealth() * percent;
+        villager.setHealth(Math.min(villager.getMaxHealth(), Math.max(1.0F, recoveryHealth)));
         villager.setTarget(null);
         villager.setAggressive(false);
         SceneLifecycleIntegration.onActorRecovered(villager);

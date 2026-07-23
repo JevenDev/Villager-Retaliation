@@ -6,6 +6,7 @@ import com.mojang.logging.LogUtils;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,7 +30,16 @@ public final class VillagerSecondWindCompat {
         try {
             Class<?> api = Class.forName("com.jvn.secondwind.api.SecondWindApi");
             Class<?> adapterType = Class.forName("com.jvn.secondwind.api.ExternalDownedEntityAdapter");
-            Object adapter = Proxy.newProxyInstance(adapterType.getClassLoader(), new Class<?>[]{adapterType}, (proxy, method, args) -> {
+            Class<?> reviveControlType;
+            try {
+                reviveControlType = Class.forName("com.jvn.secondwind.api.ExternalReviveControl");
+            } catch (ClassNotFoundException ignored) {
+                reviveControlType = null;
+            }
+            Class<?>[] adapterInterfaces = reviveControlType == null
+                    ? new Class<?>[]{adapterType}
+                    : new Class<?>[]{adapterType, reviveControlType};
+            Object adapter = Proxy.newProxyInstance(adapterType.getClassLoader(), adapterInterfaces, (proxy, method, args) -> {
                 if (method.getDeclaringClass() == Object.class) {
                     return switch (method.getName()) {
                         case "toString" -> "Villager Retaliation Second Wind adapter";
@@ -38,11 +48,23 @@ public final class VillagerSecondWindCompat {
                         default -> null;
                     };
                 }
-                LivingEntity entity = args != null && args.length > 0 && args[args.length - 1] instanceof LivingEntity living ? living : null;
+                LivingEntity entity = null;
+                if (args != null) {
+                    for (Object argument : args) {
+                        if (argument instanceof LivingEntity living) {
+                            entity = living;
+                            break;
+                        }
+                    }
+                }
                 return switch (method.getName()) {
                     case "isDowned" -> entity instanceof Villager villager && VillagerDownedService.isDowned(villager);
                     case "canRevive" -> entity instanceof Villager villager && VillagerDownedService.isDowned(villager);
                     case "revive" -> revive(entity);
+                    case "reviveHealthOverride" -> entity instanceof Villager villager
+                            ? VillagerDownedService.recoveryHealth(villager)
+                            : OptionalDouble.empty();
+                    case "applyConfiguredRegeneration" -> false;
                     default -> throw new UnsupportedOperationException("Unknown Second Wind adapter method " + method.getName());
                 };
             });
