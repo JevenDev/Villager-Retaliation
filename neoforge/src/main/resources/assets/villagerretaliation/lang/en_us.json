@@ -648,6 +648,7 @@
   "villagerretaliation.gui.interaction_button.adventures.description": "View quest and adventure options.",
   "villagerretaliation.gui.interaction_button.profile.description": "View profile and skills.",
   "villagerretaliation.gui.interaction_button.allegiance.description": "Ask where they call home.",
+  "villagerretaliation.gui.interaction_button.duel.description": "Choose a loadout and challenge them to a wagered duel.",
   "villagerretaliation.gui.interaction_button.gift.description": "Gift them an item.",
   "villagerretaliation.gui.interaction_button.hire_job.description": "Hire them or manage work.",
   "villagerretaliation.gui.interaction_button.job.description": "Manage their current job.",

@@ -1013,8 +1013,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 addClipboardMenuOptions();
             } else if (this.forcedDialogue) {
                 addDialogueOptions();
-            } else {
-                addRootOptions();
             }
         }
         this.state.resetOptions(!this.options.isEmpty());
@@ -1066,71 +1064,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private void addRootOptions() {
-        addOption("root.talk", this::openTalkPage);
-        if (this.reputationLevel != VillagerReputationLevel.FEARED
-                && hasQuestOptions()
-                && (!this.recruitedPartyVillager || !this.partyVillagerPartyMember)) {
-            addOption("root.adventures", this::openAdventuresPage);
-        }
-        if (this.reputationLevel == VillagerReputationLevel.ROYALTY) {
-            addOption(this.routineChatMuted ? "root.speak" : "root.shush", this::toggleRoutineChat);
-        }
-        if (!this.baby) {
-            addOption("root.profile", this::openProfilePage);
-            addOption("root.allegiance", this::openAllegiancePage);
-            addOption("root.skills", this::openSkillsPage);
-            this.options.add(DialogueOption.enabled(familyButtonText(), this::openFamilyPage));
-            if (!this.recruitedPartyVillager && this.canTrade) {
-                addOption("root.trade", this::requestTrade);
-            }
-            if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
-                addOption("root.gift", this::openGiftPage);
-            }
-            if (canRequestVillagerInventory()) {
-                addOption("root.inventory", this::requestInventory);
-            }
-            this.options.add(DialogueOption.enabled(translate(
-                    this.hiredByPlayer || this.hiredByOtherPlayer || this.recruitedPartyVillager
-                            ? this.recruitedPartyVillager ? "root.party" : "root.job"
-                            : "root.recruit"), this::openRecruitPage));
-            if (this.relationships.hasRelationships()) {
-                addOption("root.relationships", this::openRelationshipPage);
-            }
-            if (this.duelVisible) {
-                addOption("root.duel", this::requestDuel);
-            }
-            addRootRecruitmentOptions();
-        }
-        addOption("root.goodbye", this::leaveConversation);
-    }
-
-    private void addRootRecruitmentOptions() {
-        if (this.recruitedPartyVillager && !this.partyVillagerAuthorized) {
-            return;
-        }
-        if (this.recruitedPartyVillager) {
-            addOption(this.stayingHere ? "party.follow_me" : "party.stay_here", () -> requestRecruit(
-                    this.stayingHere
-                            ? VillagerRecruitRequestPayload.Action.FOLLOW
-                            : VillagerRecruitRequestPayload.Action.STAY_HERE));
-            return;
-        }
-        if (this.followingPlayer) {
-            addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
-            if (canCommandStayHere()) {
-                addOption("recruit.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
-            }
-        } else if (this.stayingHere) {
-            addOption("recruit.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
-            addOption("recruit.stop_staying_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE));
-        } else {
-            addOption("recruit.follow_me", () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW));
-            if (canCommandStayHere()) {
-                addOption("recruit.stay_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STAY_HERE));
-            }
-        }
-    }
 
     private void addProfileOptions() {
     }
@@ -3207,6 +3140,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 translate("interaction_button.allegiance.description"),
                 this::openAllegiancePage,
                 true));
+        if (!this.baby && this.duelVisible) {
+            buttons.add(new InteractionMenuButton(
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
+                    translate("root.duel"),
+                    translate("interaction_button.duel.description"),
+                    this::requestDuel,
+                    true));
+        }
         if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
             buttons.add(new InteractionMenuButton(
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_GIFT_TEXTURE,
@@ -4663,11 +4604,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         DialogueDisposition disposition = this.mood == null ? DialogueDisposition.NEUTRAL : this.mood;
         String key = GUI_KEY_PREFIX + "mood." + disposition.name().toLowerCase(Locale.ROOT);
         return I18n.exists(key) ? I18n.get(key) : disposition.displayName();
-    }
-
-    private String familyButtonText() {
-        int count = this.familyTree.relationshipCount();
-        return count <= 0 ? translate("family.tree") : translate("family.tree_count", count);
     }
 
     private boolean canRequestVillagerInventory() {
