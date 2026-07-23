@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(InventoryScreen.class)
 public abstract class InventoryScreenMixin implements DuelInventoryScreenAccess {
@@ -27,8 +28,8 @@ public abstract class InventoryScreenMixin implements DuelInventoryScreenAccess 
 
     @Inject(method = "init", at = @At("TAIL"))
     private void villagerretaliation$configureDuelInventory(CallbackInfo callbackInfo) {
-        if (!DuelInventoryClientState.assignedLoadout()) return;
         InventoryScreen screen = (InventoryScreen) (Object) this;
+        if (!DuelInventoryClientState.assignedLoadout()) return;
         this.villagerretaliation$originalSlotX = new int[screen.getMenu().slots.size()];
         this.villagerretaliation$originalSlotY = new int[screen.getMenu().slots.size()];
         for (int slotId = 0; slotId < screen.getMenu().slots.size(); slotId++) {
@@ -43,6 +44,13 @@ public abstract class InventoryScreenMixin implements DuelInventoryScreenAccess 
                 (screen.height - DuelInventoryScreenRenderer.HEIGHT) / 2);
         for (int slotId = 0; slotId < screen.getMenu().slots.size(); slotId++) {
             positionDuelSlot(screen.getMenu().slots.get(slotId), slotId);
+        }
+    }
+
+    @Inject(method = "init", at = @At("TAIL"))
+    private void villagerretaliation$restoreCustomPartyInventory(CallbackInfo callbackInfo) {
+        if (!DuelInventoryClientState.assignedLoadout()) {
+            PartyInventoryOverlay.reinitializeCustomPage((InventoryScreen) (Object) this);
         }
     }
 
@@ -76,7 +84,7 @@ public abstract class InventoryScreenMixin implements DuelInventoryScreenAccess 
     }
 
     @Inject(method = "renderBg", at = @At("HEAD"), cancellable = true)
-    private void villagerretaliation$renderPartyOverlayBehindInventory(
+    private void villagerretaliation$renderPartyInventoryPage(
             GuiGraphics graphics,
             float partialTick,
             int mouseX,
@@ -88,12 +96,67 @@ public abstract class InventoryScreenMixin implements DuelInventoryScreenAccess 
             callbackInfo.cancel();
             return;
         }
-        PartyInventoryOverlay.renderInventoryBackground(graphics, screen);
+        if (PartyInventoryOverlay.isCustomPage(screen)) {
+            PartyInventoryOverlay.renderCustomContainer(graphics, screen, mouseX, mouseY);
+            callbackInfo.cancel();
+            return;
+        }
+        PartyInventoryOverlay.renderTabsBehindContainer(graphics, screen);
+    }
+
+    @Inject(method = "renderBg", at = @At("TAIL"))
+    private void villagerretaliation$renderActivePartyInventoryTab(
+            GuiGraphics graphics,
+            float partialTick,
+            int mouseX,
+            int mouseY,
+            CallbackInfo callbackInfo) {
+        InventoryScreen screen = (InventoryScreen) (Object) this;
+        if (!DuelInventoryClientState.assignedLoadout()
+                && !PartyInventoryOverlay.isCustomPage(screen)) {
+            PartyInventoryOverlay.renderActiveTab(graphics, screen);
+        }
+    }
+
+    @Inject(method = "render", at = @At("TAIL"))
+    private void villagerretaliation$renderPartyInventoryTooltips(
+            GuiGraphics graphics,
+            int mouseX,
+            int mouseY,
+            float partialTick,
+            CallbackInfo callbackInfo) {
+        if (!DuelInventoryClientState.assignedLoadout()) {
+            PartyInventoryOverlay.renderTooltips(
+                    graphics,
+                    (InventoryScreen) (Object) this,
+                    mouseX,
+                    mouseY);
+        }
     }
 
     @Inject(method = "renderLabels", at = @At("HEAD"), cancellable = true)
-    private void villagerretaliation$hideDuelInventoryLabels(
+    private void villagerretaliation$hideCustomInventoryLabels(
             GuiGraphics graphics, int mouseX, int mouseY, CallbackInfo callbackInfo) {
-        if (DuelInventoryClientState.assignedLoadout()) callbackInfo.cancel();
+        InventoryScreen screen = (InventoryScreen) (Object) this;
+        if (DuelInventoryClientState.assignedLoadout()
+                || PartyInventoryOverlay.isCustomPage(screen)) {
+            callbackInfo.cancel();
+        }
+    }
+
+    @Inject(method = "isHovering", at = @At("HEAD"), cancellable = true)
+    private void villagerretaliation$hideCustomInventorySlotHover(
+            int left,
+            int top,
+            int width,
+            int height,
+            double mouseX,
+            double mouseY,
+            CallbackInfoReturnable<Boolean> callbackInfo) {
+        InventoryScreen screen = (InventoryScreen) (Object) this;
+        if (PartyInventoryOverlay.isCustomPage(screen)
+                && !PartyInventoryOverlay.showsSlotAt(screen, left, top)) {
+            callbackInfo.setReturnValue(false);
+        }
     }
 }

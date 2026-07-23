@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.mixin.client;
 
 import com.jvn.villagerretaliation.client.duel.DuelInventoryClientState;
+import com.jvn.villagerretaliation.client.party.PartyInventoryOverlay;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -16,6 +17,11 @@ public abstract class AbstractContainerScreenDuelMixin {
     @Inject(method = "renderSlot", at = @At("HEAD"), cancellable = true)
     private void villagerretaliation$hideLockedDuelSlot(
             GuiGraphics graphics, Slot slot, CallbackInfo callbackInfo) {
+        if ((Object) this instanceof InventoryScreen screen
+                && !PartyInventoryOverlay.showsSlot(screen, slot)) {
+            callbackInfo.cancel();
+            return;
+        }
         if ((Object) this instanceof InventoryScreen
                 && !DuelInventoryClientState.visibleAssignedSlot(slot.index)) {
             callbackInfo.cancel();
@@ -33,6 +39,11 @@ public abstract class AbstractContainerScreenDuelMixin {
             int mouseY,
             float partialTick,
             CallbackInfo callbackInfo) {
+        if ((Object) this instanceof InventoryScreen screen
+                && !PartyInventoryOverlay.showsSlot(screen, slot)) {
+            callbackInfo.cancel();
+            return;
+        }
         if ((Object) this instanceof InventoryScreen
                 && !DuelInventoryClientState.visibleAssignedSlot(slot.index)) {
             callbackInfo.cancel();
@@ -46,6 +57,15 @@ public abstract class AbstractContainerScreenDuelMixin {
             int mouseButton,
             ClickType clickType,
             CallbackInfo callbackInfo) {
+        if ((Object) this instanceof InventoryScreen screen
+                && PartyInventoryOverlay.isCustomPage(screen)
+                && !PartyInventoryOverlay.showsSlot(screen, slot)
+                // Vanilla sends the start and end of a quick-craft operation without a slot.
+                // Blocking either one leaves right-click placement and drag splitting unfinished.
+                && (slot != null || clickType != ClickType.QUICK_CRAFT)) {
+            callbackInfo.cancel();
+            return;
+        }
         if (!DuelInventoryClientState.active()) return;
         int resolvedSlotId = slot == null ? slotId : slot.index;
         if (!((Object) this instanceof InventoryScreen)

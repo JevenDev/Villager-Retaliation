@@ -15,6 +15,7 @@ public final class PartyRecord {
     private static final String TAG_LEADER = "Leader";
     private static final String TAG_CREATED_GAME_TIME = "CreatedGameTime";
     private static final String TAG_PLAYERS = "Players";
+    private static final String TAG_ADMIN_PLAYERS = "AdminPlayers";
     private static final String TAG_PLAYER = "Player";
     private static final String TAG_VILLAGERS = "Villagers";
     private static final String TAG_SHARED_QUESTS = "SharedQuests";
@@ -32,6 +33,7 @@ public final class PartyRecord {
     private final UUID leaderId;
     private final long createdGameTime;
     private final List<UUID> playerIds;
+    private final Set<UUID> adminPlayerIds;
     private final List<PartyVillagerRecord> villagers;
     private final List<PartySharedQuestRecord> sharedQuests;
     private final Set<UUID> alliedPartyIds;
@@ -46,8 +48,9 @@ public final class PartyRecord {
     private boolean mountMode;
 
     PartyRecord(UUID id, UUID leaderId, long createdGameTime) {
-        this(id, leaderId, createdGameTime, new ArrayList<>(List.of(leaderId)), new ArrayList<>(), new ArrayList<>(),
-                new LinkedHashSet<>(), new LinkedHashSet<>(), PartyCombatMode.ATTACK_WITH_PARTY, PartyAttackMode.ALL,
+        this(id, leaderId, createdGameTime, new ArrayList<>(List.of(leaderId)), new LinkedHashSet<>(),
+                new ArrayList<>(), new ArrayList<>(), new LinkedHashSet<>(), new LinkedHashSet<>(),
+                PartyCombatMode.ATTACK_WITH_PARTY, PartyAttackMode.ALL,
                 true, false);
     }
 
@@ -56,6 +59,7 @@ public final class PartyRecord {
             UUID leaderId,
             long createdGameTime,
             List<UUID> playerIds,
+            Set<UUID> adminPlayerIds,
             List<PartyVillagerRecord> villagers,
             List<PartySharedQuestRecord> sharedQuests,
             Set<UUID> alliedPartyIds,
@@ -68,6 +72,7 @@ public final class PartyRecord {
         this.leaderId = leaderId;
         this.createdGameTime = Math.max(0L, createdGameTime);
         this.playerIds = playerIds;
+        this.adminPlayerIds = adminPlayerIds;
         this.villagers = villagers;
         this.sharedQuests = sharedQuests;
         this.alliedPartyIds = alliedPartyIds;
@@ -93,6 +98,18 @@ public final class PartyRecord {
 
     public List<UUID> playerIds() {
         return this.playerIdsView;
+    }
+
+    public boolean hasAdminPrivileges(UUID playerId) {
+        return playerId != null
+                && (this.leaderId.equals(playerId) || this.adminPlayerIds.contains(playerId));
+    }
+
+    boolean setAdminPrivileges(UUID playerId, boolean enabled) {
+        if (playerId == null || this.leaderId.equals(playerId) || !this.playerIds.contains(playerId)) {
+            return false;
+        }
+        return enabled ? this.adminPlayerIds.add(playerId) : this.adminPlayerIds.remove(playerId);
     }
 
     public List<PartyVillagerRecord> villagers() {
@@ -197,7 +214,11 @@ public final class PartyRecord {
     }
 
     boolean removePlayer(UUID playerId) {
-        return playerId != null && !this.leaderId.equals(playerId) && this.playerIds.remove(playerId);
+        if (playerId == null || this.leaderId.equals(playerId) || !this.playerIds.remove(playerId)) {
+            return false;
+        }
+        this.adminPlayerIds.remove(playerId);
+        return true;
     }
 
     boolean addVillager(PartyVillagerRecord villager) {
@@ -259,6 +280,7 @@ public final class PartyRecord {
             playersTag.add(playerTag);
         }
         tag.put(TAG_PLAYERS, playersTag);
+        tag.put(TAG_ADMIN_PLAYERS, savePlayerIds(this.adminPlayerIds));
         ListTag villagersTag = new ListTag();
         for (PartyVillagerRecord villager : this.villagers) {
             villagersTag.add(villager.save());
@@ -314,6 +336,7 @@ public final class PartyRecord {
                 leaderId,
                 tag.getLong(TAG_CREATED_GAME_TIME),
                 players,
+                loadPlayerIds(tag, TAG_ADMIN_PLAYERS),
                 villagers,
                 sharedQuests,
                 loadPartyIds(tag, TAG_ALLIED_PARTIES),
@@ -330,6 +353,8 @@ public final class PartyRecord {
         ordered.addAll(this.playerIds);
         this.playerIds.clear();
         this.playerIds.addAll(ordered.stream().limit(PartyService.MAX_PLAYERS).toList());
+        this.adminPlayerIds.retainAll(this.playerIds);
+        this.adminPlayerIds.remove(this.leaderId);
         Set<UUID> uniqueVillagers = new LinkedHashSet<>();
         this.villagers.removeIf(villager -> !uniqueVillagers.add(villager.villagerId()));
         this.villagers.sort(java.util.Comparator.comparingInt(PartyVillagerRecord::recruitmentOrder));
@@ -349,6 +374,26 @@ public final class PartyRecord {
         return !tag.contains(TAG_ATTACK_WITH_PARTY) || tag.getBoolean(TAG_ATTACK_WITH_PARTY)
                 ? PartyCombatMode.ATTACK_WITH_PARTY
                 : PartyCombatMode.SELF_DEFENSE;
+    }
+
+    private static ListTag savePlayerIds(Set<UUID> playerIds) {
+        ListTag ids = new ListTag();
+        for (UUID playerId : playerIds) {
+            CompoundTag idTag = new CompoundTag();
+            idTag.putUUID(TAG_PLAYER, playerId);
+            ids.add(idTag);
+        }
+        return ids;
+    }
+
+    private static Set<UUID> loadPlayerIds(CompoundTag tag, String key) {
+        Set<UUID> playerIds = new LinkedHashSet<>();
+        for (Tag rawPlayer : tag.getList(key, Tag.TAG_COMPOUND)) {
+            if (rawPlayer instanceof CompoundTag playerTag && playerTag.hasUUID(TAG_PLAYER)) {
+                playerIds.add(playerTag.getUUID(TAG_PLAYER));
+            }
+        }
+        return playerIds;
     }
 
     private static ListTag savePartyIds(Set<UUID> partyIds) {

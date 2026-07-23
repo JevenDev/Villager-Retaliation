@@ -257,6 +257,9 @@ public final class PartyGameTests {
         party.setSharedVillagerInventories(false);
         party.setMountMode(true);
         helper.assertTrue(data.addPlayer(party, second), "second player should join");
+        helper.assertTrue(party.hasAdminPrivileges(leader), "party leader should always have admin privileges");
+        helper.assertFalse(party.hasAdminPrivileges(second), "new party members should not have admin privileges");
+        helper.assertTrue(party.setAdminPrivileges(second, true), "leader should be able to grant admin privileges");
         helper.assertTrue(data.addPlayer(party, third), "third player should join");
         helper.assertTrue(data.addPlayer(party, fourth), "fourth player should join");
         helper.assertFalse(data.addPlayer(party, rejectedPlayer), "leader plus three players must fill the player cap");
@@ -320,6 +323,9 @@ public final class PartyGameTests {
         helper.assertValueEqual(restored.attackMode(), PartyAttackMode.HOSTILES,
                 "global attack-mode persistence");
         helper.assertFalse(restored.sharedVillagerInventories(), "shared-inventory policy persistence");
+        helper.assertTrue(restored.hasAdminPrivileges(leader), "leader admin privileges should remain implicit");
+        helper.assertTrue(restored.hasAdminPrivileges(second), "member admin privileges should persist");
+        helper.assertFalse(restored.hasAdminPrivileges(third), "ordinary members should remain non-admin after reload");
         helper.assertTrue(restored.mountMode(), "party mount mode persistence");
         CompoundTag legacyMountParty = party.save();
         legacyMountParty.remove("MountMode");

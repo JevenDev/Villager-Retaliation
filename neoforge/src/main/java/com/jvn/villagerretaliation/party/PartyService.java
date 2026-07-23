@@ -114,8 +114,8 @@ public final class PartyService {
         }
         PartySavedData data = partyData(leader.serverLevel());
         PartyRecord party = data.partyForPlayer(leader.getUUID()).orElse(null);
-        if (party == null || !party.leaderId().equals(leader.getUUID())) {
-            return PartyResult.failure("villagerretaliation.party.error.leader_only");
+        if (party == null || !party.hasAdminPrivileges(leader.getUUID())) {
+            return PartyResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
         if (combatMode != null) {
             party.setCombatMode(combatMode);
@@ -131,6 +131,25 @@ public final class PartyService {
         return PartyResult.success("villagerretaliation.party.settings_updated", party.id(), null);
     }
 
+    public static PartyResult setAdminPrivileges(ServerPlayer leader, UUID playerId, boolean enabled) {
+        if (leader == null || playerId == null) {
+            return PartyResult.failure("villagerretaliation.party.error.not_in_party");
+        }
+        PartySavedData data = partyData(leader.serverLevel());
+        PartyRecord party = data.partyForPlayer(leader.getUUID()).orElse(null);
+        if (party == null || !party.leaderId().equals(leader.getUUID())) {
+            return PartyResult.failure("villagerretaliation.party.error.leader_only");
+        }
+        if (!party.playerIds().contains(playerId) || party.leaderId().equals(playerId)) {
+            return PartyResult.failure("villagerretaliation.party.error.player_not_in_party");
+        }
+        if (party.hasAdminPrivileges(playerId) == enabled) {
+            return PartyResult.success("villagerretaliation.party.settings_updated", party.id(), null);
+        }
+        party.setAdminPrivileges(playerId, enabled);
+        data.changed();
+        return PartyResult.success("villagerretaliation.party.settings_updated", party.id(), null);
+    }
     public static PartyResult createParty(ServerPlayer leader) {
         if (leader == null) {
             return PartyResult.failure("villagerretaliation.party.error.not_in_party");

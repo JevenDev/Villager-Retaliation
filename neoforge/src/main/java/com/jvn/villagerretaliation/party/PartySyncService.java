@@ -90,7 +90,8 @@ public final class PartySyncService {
                     playerId,
                     online == null ? profileName(server, playerId) : online.getGameProfile().getName(),
                     online != null && !playerId.equals(offlinePlayerId),
-                    playerId.equals(party.leaderId())));
+                    playerId.equals(party.leaderId()),
+                    party.hasAdminPrivileges(playerId)));
         }
         long now = server.overworld().getGameTime();
         List<PartyRosterSyncPayload.VillagerEntry> villagers = new ArrayList<>(party.villagers().size());

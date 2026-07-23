@@ -6,7 +6,10 @@ import com.jvn.villagerretaliation.network.PartyInvitationSyncPayload;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
 import java.util.List;
 import java.util.UUID;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -23,7 +26,7 @@ public final class PartyActionHandler {
         String inviterName = inviter == null
                 ? "Player"
                 : inviter.getGameProfile().getName();
-        notice(target, "villagerretaliation.party.invitation_received_command", inviterName);
+        sendInvitationNotice(target, inviterName);
     }
 
     public static void sendInvitationCommand(ServerPlayer inviter, ServerPlayer target) {
@@ -43,6 +46,11 @@ public final class PartyActionHandler {
         acceptInvitation(target, invitation == null ? null : invitation.id());
     }
 
+    public static void acceptInvitationFromCommand(ServerPlayer target, ServerPlayer inviter) {
+        PartyInvitation invitation = latestPendingInvitationFrom(
+                target, inviter == null ? null : inviter.getUUID());
+        acceptInvitation(target, invitation == null ? null : invitation.id());
+    }
     public static void declineLatestInvitationCommand(ServerPlayer target) {
         PartyInvitation invitation = latestPendingInvitation(target);
         declineInvitation(target, invitation == null ? null : invitation.id());
@@ -81,6 +89,7 @@ public final class PartyActionHandler {
             case SET_COMBAT_MODE -> setPolicies(player, payload.combatMode(), null, null);
             case SET_ATTACK_MODE -> setPolicies(player, null, payload.attackMode(), null);
             case SET_SHARED_VILLAGER_INVENTORIES -> setPolicies(player, null, null, payload.enabled());
+            case SET_ADMIN_PRIVILEGES -> setAdminPrivileges(player, payload.targetId(), payload.enabled());
             case SET_QUICK_COMMANDS_ENABLED -> PartyQuickCommandService.setParticipation(
                     player, payload.targetId(), payload.enabled());
         }
@@ -132,6 +141,14 @@ public final class PartyActionHandler {
         PartySyncService.syncParty(leader.getServer(), result.partyId());
     }
 
+    private static void setAdminPrivileges(ServerPlayer leader, UUID playerId, boolean enabled) {
+        PartyService.PartyResult result = PartyService.setAdminPrivileges(leader, playerId, enabled);
+        if (!result.success()) {
+            notice(leader, result.messageKey());
+            return;
+        }
+        PartySyncService.syncParty(leader.getServer(), result.partyId());
+    }
     private static void sendInvitation(ServerPlayer inviter, UUID targetId) {
         ServerPlayer target = targetId == null ? null : inviter.getServer().getPlayerList().getPlayer(targetId);
         if (target == null || !canInteract(inviter, target)) {
@@ -160,8 +177,7 @@ public final class PartyActionHandler {
                         invitation.expiresGameTime()));
             }
         } else {
-            notice(target, "villagerretaliation.party.invitation_received_command",
-                    inviter.getGameProfile().getName());
+            sendInvitationNotice(target, inviter.getGameProfile().getName());
         }
     }
 
@@ -198,8 +214,18 @@ public final class PartyActionHandler {
     }
 
     private static PartyInvitation latestPendingInvitation(ServerPlayer target) {
-        List<PartyInvitation> invitations = PartyService.pendingInvitations(target);
-        return invitations.isEmpty() ? null : invitations.getLast();
+        return latestPendingInvitationFrom(target, null);
+    }
+
+    private static PartyInvitation latestPendingInvitationFrom(ServerPlayer target, UUID inviterId) {
+        PartyInvitation latest = null;
+        for (PartyInvitation invitation : PartyService.pendingInvitations(target)) {
+            if ((inviterId == null || invitation.inviterId().equals(inviterId))
+                    && (latest == null || invitation.createdGameTime() >= latest.createdGameTime())) {
+                latest = invitation;
+            }
+        }
+        return latest;
     }
 
     private static PartyInvitation pendingInvitation(ServerPlayer target, UUID invitationId) {
@@ -228,13 +254,23 @@ public final class PartyActionHandler {
     private static void removePlayer(ServerPlayer leader, UUID targetId) {
         PartyRecord party = PartyService.getPartyForPlayer(leader.serverLevel(), leader.getUUID()).orElse(null);
         PartyService.PartyResult result = PartyService.removePlayer(leader, targetId);
-        notice(leader, result.messageKey());
-        if (result.success() && party != null) {
+        if (!result.success()) {
+            notice(leader, result.messageKey());
+            return;
+        }
+        if (party != null) {
             PartyQuestService.detachPlayer(leader.serverLevel(), party, targetId);
             PartySyncService.clear(leader.getServer(), targetId);
             ServerPlayer removed = leader.getServer().getPlayerList().getPlayer(targetId);
+            String removedName = removed == null ? targetId.toString() : removed.getName().getString();
             if (removed != null) {
-                notice(removed, "villagerretaliation.party.player_removed");
+                styledNotice(removed, "villagerretaliation.party.player_removed.self");
+            }
+            for (UUID playerId : party.playerIds()) {
+                ServerPlayer member = leader.getServer().getPlayerList().getPlayer(playerId);
+                if (member != null) {
+                    styledNotice(member, "villagerretaliation.party.player_removed.other", removedName);
+                }
             }
             PartySyncService.syncParty(leader.getServer(), party.id());
         }
@@ -273,6 +309,28 @@ public final class PartyActionHandler {
         }
     }
 
+    private static void styledNotice(ServerPlayer player, String key, Object... args) {
+        if (player != null && key != null && !key.isBlank()) {
+            player.sendSystemMessage(Component.translatable(key, args)
+                    .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+        }
+    }
+
+    private static void sendInvitationNotice(ServerPlayer target, String inviterName) {
+        if (target == null || inviterName == null || inviterName.isBlank()) return;
+        String command = "/villagerretaliation party accept " + inviterName;
+        Component accept = Component.translatable("villagerretaliation.party.invitation.accept_chat")
+                .withStyle(style -> style
+                        .withColor(ChatFormatting.GREEN)
+                        .withUnderlined(true)
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                                Component.translatable("villagerretaliation.party.invitation.accept_chat.tooltip")))
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, command)));
+        target.sendSystemMessage(Component
+                .translatable("villagerretaliation.party.invitation.prompt", inviterName)
+                .append(" ")
+                .append(accept));
+    }
     private static void send(ServerPlayer player, net.minecraft.network.protocol.common.custom.CustomPacketPayload payload) {
         try {
             PacketDistributor.sendToPlayer(player, payload);

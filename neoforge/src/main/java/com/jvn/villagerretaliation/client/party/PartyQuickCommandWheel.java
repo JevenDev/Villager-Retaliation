@@ -137,7 +137,7 @@ public final class PartyQuickCommandWheel {
                 && minecraft.screen == null
                 && !player.isSpectator()
                 && roster.active()
-                && roster.recipientLeader()
+                && PartyRosterClient.hasAdminPrivileges()
                 && !roster.villagers().isEmpty();
     }
 

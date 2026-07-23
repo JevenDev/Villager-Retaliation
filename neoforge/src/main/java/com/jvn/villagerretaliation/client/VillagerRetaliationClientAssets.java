@@ -38,6 +38,32 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/villager_inventory_container_party_icon");
     public static final ResourceLocation PLAYER_INVENTORY_PARTY_TAB_TEXTURE =
             texture("gui/party/player_inventory_container_party_tab");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_CONTAINER_TEXTURE =
+            texture("gui/party/player_party_inventory_container");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_VILLAGER_CONTAINER_TEXTURE =
+            texture("gui/party/player_party_inventory_container_villager");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_SETTINGS_CONTAINER_TEXTURE =
+            texture("gui/party/player_party_inventory_settings_container");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_SMALL_TAB_TEXTURE =
+            texture("gui/party/player_party_inventory_container_tab_small");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_LARGE_TAB_TEXTURE =
+            texture("gui/party/player_party_inventory_container_tab_large");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_SETTINGS_TAB_ICON =
+            texture("gui/party/player_party_inventory_container_settings_tab");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_INVENTORY_TAB_ICON =
+            texture("gui/party/player_party_inventory_container_inventory_tab");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_PARTY_TAB_ICON =
+            texture("gui/party/player_party_inventory_container_party_tab");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_VILLAGER_ICON =
+            texture("gui/party/player_party_inventory_container_villager_icon");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_PUSH_BUTTON =
+            texture("gui/party/player_party_inventory_container_push_button");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_PUSH_BUTTON_HIGHLIGHTED =
+            texture("gui/party/player_party_inventory_container_push_button_highlighted");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_PUSHED_BUTTON =
+            texture("gui/party/player_party_inventory_container_pushed_button");
+    public static final ResourceLocation PLAYER_PARTY_INVENTORY_PUSHED_BUTTON_HIGHLIGHTED =
+            texture("gui/party/player_party_inventory_container_pushed_button_highlighted");
     public static final ResourceLocation ITEM_FILTER_CONTAINER_TEXTURE =
             texture("gui/item_filter/filter_container");
     public static final ResourceLocation INTERACTION_CONTAINER_TEXTURE =

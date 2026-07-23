@@ -4667,7 +4667,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean canRequestPartyVillagerInventory() {
         return this.recruitedPartyVillager
                 && this.partyVillagerPartyMember
-                && (this.partyVillagerAuthorized || PartyRosterClient.roster().sharedVillagerInventories());
+                && this.partyVillagerAuthorized;
     }
 
     private PartyRosterSyncPayload.VillagerEntry partyVillagerSettings() {
