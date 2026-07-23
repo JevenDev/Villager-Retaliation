@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -90,7 +91,9 @@ public final class HiredJobInventory implements Container {
     }
 
     public static void maintainEquipmentSlots(Villager villager) {
-        if (villager == null || VillagerRecoveryService.isForcingRecovery(villager)) {
+        if (villager == null
+                || VillagerRecoveryService.isForcingRecovery(villager)
+                || DuelService.isParticipant(villager)) {
             return;
         }
         CompoundTag tag = jobInventoryTag(villager);

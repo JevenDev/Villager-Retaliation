@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
@@ -76,7 +77,8 @@ public final class VillagerCombatLoadoutService {
         if (predicate.test(villager.getMainHandItem())) {
             return true;
         }
-        if (HiredJobInventory.isJobInventoryAvailable(villager)
+        if (!DuelService.isParticipant(villager)
+                && HiredJobInventory.isJobInventoryAvailable(villager)
                 && !HiredJobInventory.getJobInventory(villager).findTool(predicate).isEmpty()) {
             return true;
         }
@@ -104,7 +106,8 @@ public final class VillagerCombatLoadoutService {
         }
 
         // Party/job equipment and supply slots are authoritative before personal inventory.
-        if (HiredJobInventory.isJobInventoryAvailable(villager)) {
+        if (!DuelService.isParticipant(villager)
+                && HiredJobInventory.isJobInventoryAvailable(villager)) {
             if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)) {
                 VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
                 if (predicate.test(villager.getMainHandItem())) {
