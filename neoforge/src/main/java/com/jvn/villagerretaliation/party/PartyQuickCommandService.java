@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.party;
 import com.jvn.villagerretaliation.allegiance.AllegianceCombatContext;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
 import com.jvn.villagerretaliation.allegiance.VillageCombatAuthorizationService;
+import com.jvn.villagerretaliation.combat.VillagerCombatBehavior;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.interaction.work.HiredMoveToBlockFaceJob;
@@ -949,6 +950,12 @@ public final class PartyQuickCommandService {
             return;
         }
         if (villager.isUsingItem() && !villager.getUseItem().is(Items.SHIELD)) {
+            return;
+        }
+        if (!VillagerCombatBehavior.canRaiseShield(villager)) {
+            if (villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD)) {
+                villager.stopUsingItem();
+            }
             return;
         }
         ensureGuardShield(villager);

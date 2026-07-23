@@ -188,6 +188,31 @@ public final class VillagerRangedCombatGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void brokenShieldUsesFullPlayerRecoveryTimeAcrossCombatReset(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+        villager.startUsingItem(InteractionHand.OFF_HAND);
+        long disabledAt = villager.level().getGameTime();
+
+        VillagerArmorerCombatTactics.disableShield(villager);
+        helper.assertFalse(villager.isUsingItem(), "breaking a shield should lower it immediately");
+        helper.assertTrue(
+                VillagerArmorerCombatTactics.isShieldDisabled(villager, disabledAt + 99L),
+                "villager shield should remain disabled for the player's full 100-tick cooldown");
+
+        VillagerArmorerCombatTactics.resetState(villager);
+        helper.assertTrue(
+                VillagerArmorerCombatTactics.isShieldDisabled(villager, disabledAt + 99L),
+                "ordinary combat cleanup must not erase an active shield cooldown");
+        helper.assertFalse(
+                VillagerArmorerCombatTactics.isShieldDisabled(villager, disabledAt + 100L),
+                "villager shield should recover on the same tick as a player's shield");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void emptyCrossbowFallsBackToPersonalMeleeWeapon(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         Zombie target = spawnZombie(helper, new BlockPos(3, 2, 2));
