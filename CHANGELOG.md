@@ -1,5 +1,6 @@
 # Changelog
 
+- Fixed duel participants transferring items during a fight: player drop input is now rejected before inventory removal, and both players and villagers are prevented from picking up or dropping world items for the duration of the duel.
 - Fixed assigned duels allowing party villagers to pull weapons or ammunition from party/job inventory; duel combat now isolates its live loadout from every external work-inventory read, write, synchronization, and equipment-maintenance path.
 
 - Added a default-on Player Raid horn confirmation. The first horn use warns the player in chat, and a second use by the same player in the same village within 30 seconds declares the raid.

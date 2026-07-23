@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.mixin;
 
+import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingInventoryBridge;
 import com.jvn.villagerretaliation.party.PartyVillagerDropCollection;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
@@ -22,7 +23,8 @@ public abstract class VillagerPickupMixin {
             CallbackInfoReturnable<Boolean> cir) {
         Villager villager = (Villager) (Object) this;
         if (villager.level() instanceof ServerLevel level) {
-            if (VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
+            if (DuelService.isParticipant(villager)
+                    || VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
                 cir.setReturnValue(false);
                 return;
             }
@@ -48,7 +50,8 @@ public abstract class VillagerPickupMixin {
             ItemEntity itemEntity,
             CallbackInfo ci) {
         Villager villager = (Villager) (Object) this;
-        if (VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
+        if (DuelService.isParticipant(villager)
+                || VillagerRetaliationVillagerCombatUtil.isThreatened(villager)) {
             ci.cancel();
             return;
         }
