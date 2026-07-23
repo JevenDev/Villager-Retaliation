@@ -308,6 +308,7 @@ public final class VillagerDownedService {
         SceneLifecycleIntegration.onActorRecovered(villager);
         VillagerReputationNetworking.syncDownedStateToTracking(villager, false);
         VillagerSecondWindCompat.notifyStateChanged(villager);
+        com.jvn.villagerretaliation.duel.DuelDialogueService.startQueuedPostRecoveryDialogue(villager);
     }
 
     private static void releaseForLethalDamage(Villager villager) {

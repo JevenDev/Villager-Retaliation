@@ -1,15 +1,20 @@
 package com.jvn.villagerretaliation.duel;
 
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -20,28 +25,57 @@ public final class DuelDialogueService {
     private static final String GLOAT = "duel_reaction_gloat";
     private static final String SULK = "duel_reaction_sulk";
     private static final String STORY = "duel_village_story";
-    private static final String[] GLOATS = {
-            "Try not to blink next time, %s.", "That makes the score %s to %s. Not that I am counting.",
-            "You brought courage. I brought results.", "A fine attempt, %s. Almost convincing.",
-            "The whole village saw that one.", "I could offer lessons, but they would cost extra.",
-            "Still feeling gutsy, %s?", "I won the wager and the bragging rights.",
-            "You move well?for someone I just beat.", "Remember this score: %s wins for me, %s for you.",
-            "That arena suited me nicely.", "No hard feelings. Just a very clear winner.",
-            "I expected a challenge and received a warm-up.", "Tell your friends I fought bravely. Tell them I won, too.",
-            "Whenever you are ready for another lesson, wait out the cooldown."
-    };
-    private static final String[] SULKS = {
-            "You won. There, I said it.", "Do not look so pleased with yourself, %s.",
-            "The score is %s to %s. I can still turn it around.", "I had you exactly where I wanted you. Briefly.",
-            "The sun was in my eyes. Somehow.", "Enjoy the wager. I will earn it back.",
-            "I have fought better days.", "Everyone saw that, did they? Wonderful.",
-            "Next time I am bringing a better plan.", "A loss is practice wearing an ugly hat.",
-            "You were faster than I expected, %s.", "I am not sulking. I am reviewing tactics.",
-            "One bout does not settle everything.", "Fine work. Do not make me compliment you twice.",
-            "I will remember that strike. Mostly because it still hurts."
-    };
+    private static final String PENDING_RECOVERY_DIALOGUE_TAG = "VillagerRetaliationPendingDuelDialogue";
+    private static final String PENDING_PLAYER_KEY = "Player";
+    private static final String PENDING_REACTION_KEY = "Reaction";
+    private static final String POST_DUEL_DEFINITION_PREFIX = "villagerretaliation:duel/post_";
+    private static final String GLOAT_MESSAGE_KEY = "duel.reaction.gloat";
+    private static final String SULK_MESSAGE_KEY = "duel.reaction.sulk";
 
     private DuelDialogueService() {}
+
+    /**
+     * Has the duel winner or loser immediately address their opponent. The queued reaction remains available
+     * through the normal interaction screen when a forced conversation cannot be started.
+     */
+    public static void startPostDuelDialogue(ServerPlayer player, Villager villager, DuelResult result) {
+        DuelSavedData.Reaction reaction = reactionFor(result);
+        if (player == null || villager == null || reaction == DuelSavedData.Reaction.NONE) return;
+        openReaction(player, villager, reaction);
+    }
+
+    /** Stores a duel reaction until a knocked-out villager is able to stand and speak again. */
+    public static void queuePostRecoveryDialogue(Villager villager, ServerPlayer player, DuelResult result) {
+        DuelSavedData.Reaction reaction = reactionFor(result);
+        if (villager == null || player == null || reaction == DuelSavedData.Reaction.NONE) return;
+        CompoundTag pending = new CompoundTag();
+        pending.putUUID(PENDING_PLAYER_KEY, player.getUUID());
+        pending.putString(PENDING_REACTION_KEY, reaction.name());
+        villager.getPersistentData().put(PENDING_RECOVERY_DIALOGUE_TAG, pending);
+    }
+
+    /** Opens a deferred post-duel scene once the downed villager has recovered. */
+    public static void startQueuedPostRecoveryDialogue(Villager villager) {
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) return;
+        CompoundTag data = villager.getPersistentData();
+        if (!data.contains(PENDING_RECOVERY_DIALOGUE_TAG)) return;
+        CompoundTag pending = data.getCompound(PENDING_RECOVERY_DIALOGUE_TAG);
+        data.remove(PENDING_RECOVERY_DIALOGUE_TAG);
+        if (!pending.hasUUID(PENDING_PLAYER_KEY)) return;
+
+        DuelSavedData.Reaction reaction;
+        try {
+            reaction = DuelSavedData.Reaction.valueOf(pending.getString(PENDING_REACTION_KEY));
+        } catch (IllegalArgumentException ignored) {
+            return;
+        }
+        if (reaction == DuelSavedData.Reaction.NONE) return;
+
+        ServerPlayer player = level.getServer().getPlayerList().getPlayer(pending.getUUID(PENDING_PLAYER_KEY));
+        if (player != null && player.serverLevel() == level) {
+            openReaction(player, villager, reaction);
+        }
+    }
 
     public static List<DialogueOptionDefinition> addAvailableOptions(ServerLevel level, ServerPlayer player,
                                                                       Villager villager, List<DialogueOptionDefinition> original) {
@@ -71,16 +105,61 @@ public final class DuelDialogueService {
             line = storyLine(memory);
         } else {
             DuelSavedData.Reaction expected = GLOAT.equals(optionId) ? DuelSavedData.Reaction.GLOAT : DuelSavedData.Reaction.SULK;
+            DuelSavedData.DuelRecord record = data.record(villager.getUUID(), player.getUUID());
+            Optional<String> reactionLine = reactionLine(player, villager, record, expected);
+            if (reactionLine.isEmpty()) return true;
             DuelSavedData.Reaction reaction = data.consumeReaction(villager.getUUID(), player.getUUID(), expected);
             if (reaction != expected) return true;
-            DuelSavedData.DuelRecord record = data.record(villager.getUUID(), player.getUUID());
-            String[] choices = reaction == DuelSavedData.Reaction.GLOAT ? GLOATS : SULKS;
-            line = choices[player.getRandom().nextInt(choices.length)].formatted(
-                    player.getGameProfile().getName(), record.villagerWins(), record.villagerLosses());
+            line = reactionLine.get();
         }
         PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(
                 villager.getId(), line, VillagerPresetNameRegistry.resolveDisplayName(villager).getString()));
         return true;
+    }
+
+    private static boolean openReaction(ServerPlayer player, Villager villager, DuelSavedData.Reaction reaction) {
+        DuelSavedData data = DuelSavedData.get(player.serverLevel());
+        DuelSavedData.DuelRecord record = data.record(villager.getUUID(), player.getUUID());
+        if (reaction == DuelSavedData.Reaction.NONE || !hasPendingReaction(record, reaction)) return false;
+
+        Optional<String> line = reactionLine(player, villager, record, reaction);
+        if (line.isEmpty()) return false;
+        if (!ForcedDialogueService.openSimpleForcedDialogue(
+                player,
+                villager,
+                POST_DUEL_DEFINITION_PREFIX + reaction.name().toLowerCase(),
+                line.get())) {
+            return false;
+        }
+        data.consumeReaction(villager.getUUID(), player.getUUID(), reaction);
+        return true;
+    }
+
+    private static boolean hasPendingReaction(DuelSavedData.DuelRecord record, DuelSavedData.Reaction reaction) {
+        return switch (reaction) {
+            case GLOAT -> record.pendingGloats() > 0;
+            case SULK -> record.pendingSulks() > 0;
+            case NONE -> false;
+        };
+    }
+
+    private static DuelSavedData.Reaction reactionFor(DuelResult result) {
+        if (result == DuelResult.VILLAGER_WIN) return DuelSavedData.Reaction.GLOAT;
+        if (result == DuelResult.PLAYER_WIN) return DuelSavedData.Reaction.SULK;
+        return DuelSavedData.Reaction.NONE;
+    }
+
+    private static Optional<String> reactionLine(ServerPlayer player, Villager villager, DuelSavedData.DuelRecord record,
+                                                 DuelSavedData.Reaction reaction) {
+        if (reaction == DuelSavedData.Reaction.NONE) return Optional.empty();
+        String messageKey = reaction == DuelSavedData.Reaction.GLOAT ? GLOAT_MESSAGE_KEY : SULK_MESSAGE_KEY;
+        return VillagerDialogueResources.message(
+                VillagerInteractionService.createDialogueContext(player.serverLevel(), player, villager),
+                messageKey,
+                Map.of(
+                        "player", player.getName().getString(),
+                        "villager_wins", Integer.toString(record.villagerWins()),
+                        "villager_losses", Integer.toString(record.villagerLosses())));
     }
 
     private static Optional<DuelSavedData.DuelMemory> findStory(ServerLevel level, ServerPlayer player, Villager speaker) {

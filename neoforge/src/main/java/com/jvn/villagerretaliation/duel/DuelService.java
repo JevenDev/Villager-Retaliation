@@ -561,12 +561,17 @@ public final class DuelService {
                 record.villagerWins(), record.villagerLosses()));
         if (result == DuelResult.PLAYER_WIN && player != null) DuelSpectators.reward(level, duel.spectators(), duel.center(), player);
         if (knockedOut && VillagerSecondWindCompat.isActive()) {
-            VillagerDownedService.enterDowned(level, villager,
+            boolean enteredDowned = VillagerDownedService.enterDowned(level, villager,
                     new VillagerDeathProtectionResolver.ProtectionResult(true, List.of("duel:" + duel.id())),
                     duel.snapshots().villager().health());
-            FINISHERS.put(villager.getUUID(), new FinisherPermission(
-                    duel.playerId(), server.overworld().getGameTime() + 1200L));
+            if (enteredDowned) {
+                if (player != null) DuelDialogueService.queuePostRecoveryDialogue(villager, player, result);
+                FINISHERS.put(villager.getUUID(), new FinisherPermission(
+                        duel.playerId(), server.overworld().getGameTime() + 1200L));
+                return;
+            }
         }
+        if (player != null) DuelDialogueService.startPostDuelDialogue(player, villager, result);
     }
 
     private static void settle(ServerPlayer player, Villager villager, int stake, DuelResult result) {
