@@ -206,7 +206,8 @@ public final class PartyInventoryOverlay {
         if (emptyPlayerIconAt(screen, mouseX, mouseY)) {
             graphics.renderTooltip(
                     Minecraft.getInstance().font,
-                    Component.translatable("villagerretaliation.gui.party.available_player_slot"),
+                    Component.translatable("villagerretaliation.gui.party.available_player_slot")
+                            .withStyle(ChatFormatting.GRAY),
                     mouseX,
                     mouseY);
             return;
@@ -465,6 +466,9 @@ public final class PartyInventoryOverlay {
         return VillagerInventoryUiRenderer.resolveLivingEntity(entry.entityId(), entry.villagerId());
     }
     private static Bounds villagerContainerBounds(InventoryScreen screen, int count, int index) {
+        if (usesScaleFourSideLayout()) {
+            return scaleFourVillagerContainerBounds(screen, count, index);
+        }
         int centeredLeft = screen.getGuiLeft() + (CONTAINER_WIDTH - VILLAGER_CONTAINER_WIDTH) / 2;
         int partyTabTop = screen.getGuiTop() - LARGE_TAB_HEIGHT + TAB_INSET - 1;
         int aboveTop = partyTabTop - VILLAGER_CONTAINER_GAP - VILLAGER_CONTAINER_HEIGHT;
@@ -505,6 +509,40 @@ public final class PartyInventoryOverlay {
             };
         };
     }
+    private static Bounds scaleFourVillagerContainerBounds(InventoryScreen screen, int count, int index) {
+        int columns = count == 1 ? 1 : 2;
+        int rows = (count + columns - 1) / columns;
+        int groupWidth = columns * VILLAGER_CONTAINER_WIDTH + (columns - 1) * VILLAGER_CONTAINER_GAP;
+        int groupHeight = rows * VILLAGER_CONTAINER_HEIGHT + (rows - 1) * VILLAGER_CONTAINER_GAP;
+        int groupLeft = screen.getGuiLeft() - VILLAGER_CONTAINER_GAP - groupWidth;
+        int groupTop = screen.getGuiTop() + (CONTAINER_HEIGHT - groupHeight) / 2;
+
+        int row = index / columns;
+        int column = index % columns;
+        int panelsInRow = Math.min(columns, count - row * columns);
+        int rowWidth = panelsInRow * VILLAGER_CONTAINER_WIDTH
+                + (panelsInRow - 1) * VILLAGER_CONTAINER_GAP;
+        int rowLeft = groupLeft + (groupWidth - rowWidth) / 2;
+        return new Bounds(
+                rowLeft + column * (VILLAGER_CONTAINER_WIDTH + VILLAGER_CONTAINER_GAP),
+                groupTop + row * (VILLAGER_CONTAINER_HEIGHT + VILLAGER_CONTAINER_GAP),
+                VILLAGER_CONTAINER_WIDTH,
+                VILLAGER_CONTAINER_HEIGHT);
+    }
+    private static int scaleFourPlayerInventoryLeft(InventoryScreen screen, int count) {
+        int columns = count == 1 ? 1 : 2;
+        int panelGroupWidth = columns * VILLAGER_CONTAINER_WIDTH
+                + (columns - 1) * VILLAGER_CONTAINER_GAP;
+        int combinedWidth = panelGroupWidth + VILLAGER_CONTAINER_GAP + CONTAINER_WIDTH;
+        int combinedLeft = (screen.width - combinedWidth) / 2;
+        return combinedLeft + panelGroupWidth + VILLAGER_CONTAINER_GAP;
+    }
+
+
+    private static boolean usesScaleFourSideLayout() {
+        return Minecraft.getInstance().options.guiScale().get() == 4;
+    }
+
 
     public static void onMousePressed(ScreenEvent.MouseButtonPressed.Pre event) {
         if (event.isCanceled()
@@ -888,13 +926,20 @@ public final class PartyInventoryOverlay {
         if (recipeBook.isVisible()) recipeBook.toggleVisibility();
         ((ScreenInvoker) (Object) screen).villagerretaliation$clearWidgets();
         screen.setFocused(null);
+        int villagerCount = page(screen) == Page.PARTY ? villagerContainerCount() : 0;
+        boolean scaleFourSideLayout = villagerCount > 0 && usesScaleFourSideLayout();
+        int left = scaleFourSideLayout
+                ? scaleFourPlayerInventoryLeft(screen, villagerCount)
+                : (screen.width - CONTAINER_WIDTH) / 2;
         ((AbstractContainerScreenAccessor) (Object) screen).villagerretaliation$setLeftPos(
-                (screen.width - CONTAINER_WIDTH) / 2);
+                left);
         int partyTabHeightAboveContainer = LARGE_TAB_HEIGHT - TAB_INSET + 1;
         int villagerContainerTopOffset = VILLAGER_CONTAINER_HEIGHT
                 + VILLAGER_CONTAINER_GAP
                 + partyTabHeightAboveContainer;
-        int top = page(screen) == Page.PARTY && villagerContainerCount() > 0
+        int top = page(screen) == Page.PARTY
+                && villagerContainerCount() > 0
+                && !usesScaleFourSideLayout()
                 ? (screen.height - (villagerContainerTopOffset + CONTAINER_HEIGHT)) / 2
                         + villagerContainerTopOffset
                 : (screen.height - CONTAINER_HEIGHT) / 2;

@@ -55,11 +55,11 @@ final class VillagerInteractionGiftPage {
         graphics.pose().scale(transform.scale(), transform.scale(), 1.0F);
 
         renderGiftSlots(context, graphics, 0, 0, hoveredSlot);
-        renderGiftInfoIcon(graphics, 0, 0);
-        renderGiftButton(context, graphics, localMouseXi, localMouseYi, partialTick, 0, 0);
+        renderGiftInfoIcon(graphics, 0, 0, transform.controlsBeside());
+        renderGiftButton(context, graphics, localMouseXi, localMouseYi, partialTick, 0, 0, transform.controlsBeside());
 
         ItemStack hoveredStack = context.stackForInventorySlot(hoveredSlot);
-        if (isPointInsideGiftInfoIcon(localMouseX, localMouseY, 0, 0)) {
+        if (isPointInsideGiftInfoIcon(localMouseX, localMouseY, 0, 0, transform.controlsBeside())) {
             renderGiftKnowledgeTooltip(context, graphics, localMouseXi, localMouseYi, transform.scale(), transform.left(), transform.top());
         } else if (!hoveredStack.isEmpty()) {
             VillagerInteractionUiUtil.renderBoundedItemTooltipInCurrentPose(
@@ -94,7 +94,7 @@ final class VillagerInteractionGiftPage {
             }
             return true;
         }
-        if (tryClickGiftButton(context, localMouseX, localMouseY)) {
+        if (tryClickGiftButton(context, localMouseX, localMouseY, transform.controlsBeside())) {
             return true;
         }
         return false;
@@ -110,22 +110,30 @@ final class VillagerInteractionGiftPage {
     }
 
     static int giftInventoryLeft(int interactionContainerLeft, int interactionContainerWidth) {
-        float scale = VillagerInteractionLayout.scaleFactor();
-        int scaledInventoryWidth = Math.round(INVENTORY_TEXTURE_WIDTH * scale);
-        return interactionContainerLeft + (interactionContainerWidth - scaledInventoryWidth) / 2;
+        return interactionContainerLeft + (interactionContainerWidth - INVENTORY_TEXTURE_WIDTH) / 2;
     }
 
     static int giftInventoryTop(int nameplateTop) {
-        float scale = VillagerInteractionLayout.scaleFactor();
-        int scaledInventoryHeight = Math.round(INVENTORY_TEXTURE_HEIGHT * scale);
-        return nameplateTop - scaledInventoryHeight - 1;
+        return nameplateTop - INVENTORY_TEXTURE_HEIGHT - 1;
     }
 
     private static GiftTransform giftTransform(int interactionContainerLeft, int nameplateTop, int interactionContainerWidth) {
+        boolean controlsBeside = nameplateTop < INVENTORY_TEXTURE_HEIGHT
+                + INVENTORY_BUTTON_HEIGHT + INVENTORY_BUTTON_GAP + 1;
+        int contentWidth = controlsBeside
+                ? compactGiftContentWidth()
+                : INVENTORY_TEXTURE_WIDTH;
+        int left = interactionContainerLeft + (interactionContainerWidth - contentWidth) / 2;
         return new GiftTransform(
-                giftInventoryLeft(interactionContainerLeft, interactionContainerWidth),
+                left,
                 giftInventoryTop(nameplateTop),
-                VillagerInteractionLayout.scaleFactor());
+                1.0F,
+                controlsBeside);
+    }
+
+    private static int compactGiftContentWidth() {
+        return INVENTORY_TEXTURE_WIDTH + INVENTORY_BUTTON_GAP + GIFT_INFO_ICON_SIZE
+                + GIFT_INFO_ICON_GAP + INVENTORY_BUTTON_WIDTH;
     }
 
     private static void renderGiftSlots(Context context, GuiGraphics graphics, int left, int top, int hoveredSlot) {
@@ -183,33 +191,33 @@ final class VillagerInteractionGiftPage {
         }
     }
 
-    private static void renderGiftButton(Context context, GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int left, int top) {
+    private static void renderGiftButton(Context context, GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int left, int top, boolean controlsBeside) {
         Button giftButton = context.giftButton();
         if (giftButton == null) {
             return;
         }
 
-        updateGiftButton(context, left, top);
+        updateGiftButton(context, left, top, controlsBeside);
         giftButton.render(graphics, mouseX, mouseY, partialTick);
     }
 
-    private static boolean tryClickGiftButton(Context context, double mouseX, double mouseY) {
+    private static boolean tryClickGiftButton(Context context, double mouseX, double mouseY, boolean controlsBeside) {
         Button giftButton = context.giftButton();
         if (giftButton == null) {
             return false;
         }
 
-        updateGiftButton(context, 0, 0);
+        updateGiftButton(context, 0, 0, controlsBeside);
         return giftButton.mouseClicked(mouseX, mouseY, GLFW.GLFW_MOUSE_BUTTON_LEFT);
     }
 
-    private static void updateGiftButton(Context context, int left, int top) {
+    private static void updateGiftButton(Context context, int left, int top, boolean controlsBeside) {
         Button giftButton = context.giftButton();
         if (giftButton == null) {
             return;
         }
 
-        GiftButtonBounds bounds = giftButtonBounds(left, top);
+        GiftButtonBounds bounds = giftButtonBounds(left, top, controlsBeside);
         int selectedSlot = context.selectedInventorySlot();
         boolean enabled = selectedSlot >= 0 && !context.stackForInventorySlot(selectedSlot).isEmpty();
         giftButton.setPosition(bounds.left(), bounds.top());
@@ -224,8 +232,8 @@ final class VillagerInteractionGiftPage {
         return selectedStack.getCount() > 1 ? GUI_KEY_PREFIX + "gift.give_stack" : GUI_KEY_PREFIX + "gift.give";
     }
 
-    private static void renderGiftInfoIcon(GuiGraphics graphics, int left, int top) {
-        GiftInfoIconBounds bounds = giftInfoIconBounds(left, top);
+    private static void renderGiftInfoIcon(GuiGraphics graphics, int left, int top, boolean controlsBeside) {
+        GiftInfoIconBounds bounds = giftInfoIconBounds(left, top, controlsBeside);
         graphics.blit(
                 VillagerRetaliationClientAssets.GIFT_INFO_ICON_TEXTURE,
                 bounds.left(),
@@ -299,19 +307,30 @@ final class VillagerInteractionGiftPage {
         return -1;
     }
 
-    private static boolean isPointInsideGiftInfoIcon(double mouseX, double mouseY, int left, int top) {
-        GiftInfoIconBounds bounds = giftInfoIconBounds(left, top);
+    private static boolean isPointInsideGiftInfoIcon(double mouseX, double mouseY, int left, int top, boolean controlsBeside) {
+        GiftInfoIconBounds bounds = giftInfoIconBounds(left, top, controlsBeside);
         return VillagerClientUiUtil.containsInclusive(mouseX, mouseY, bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
     }
 
-    private static GiftButtonBounds giftButtonBounds(int left, int top) {
+    private static GiftButtonBounds giftButtonBounds(int left, int top, boolean controlsBeside) {
+        if (controlsBeside) {
+            int buttonLeft = left + INVENTORY_TEXTURE_WIDTH + INVENTORY_BUTTON_GAP
+                    + GIFT_INFO_ICON_SIZE + GIFT_INFO_ICON_GAP;
+            int buttonTop = top + (INVENTORY_TEXTURE_HEIGHT - INVENTORY_BUTTON_HEIGHT) / 2;
+            return new GiftButtonBounds(buttonLeft, buttonTop, buttonLeft + INVENTORY_BUTTON_WIDTH, buttonTop + INVENTORY_BUTTON_HEIGHT);
+        }
         int buttonLeft = left + INVENTORY_TEXTURE_WIDTH - INVENTORY_BUTTON_WIDTH;
         int buttonTop = top - INVENTORY_BUTTON_HEIGHT - INVENTORY_BUTTON_GAP;
         return new GiftButtonBounds(buttonLeft, buttonTop, buttonLeft + INVENTORY_BUTTON_WIDTH, buttonTop + INVENTORY_BUTTON_HEIGHT);
     }
 
-    private static GiftInfoIconBounds giftInfoIconBounds(int left, int top) {
-        GiftButtonBounds giftButton = giftButtonBounds(left, top);
+    private static GiftInfoIconBounds giftInfoIconBounds(int left, int top, boolean controlsBeside) {
+        if (controlsBeside) {
+            int iconLeft = left + INVENTORY_TEXTURE_WIDTH + INVENTORY_BUTTON_GAP;
+            int iconTop = top + (INVENTORY_TEXTURE_HEIGHT - GIFT_INFO_ICON_SIZE) / 2;
+            return new GiftInfoIconBounds(iconLeft, iconTop, iconLeft + GIFT_INFO_ICON_SIZE, iconTop + GIFT_INFO_ICON_SIZE);
+        }
+        GiftButtonBounds giftButton = giftButtonBounds(left, top, false);
         int iconLeft = giftButton.left() - GIFT_INFO_ICON_GAP - GIFT_INFO_ICON_SIZE;
         int iconTop = giftButton.top() + (INVENTORY_BUTTON_HEIGHT - GIFT_INFO_ICON_SIZE) / 2;
         return new GiftInfoIconBounds(iconLeft, iconTop, iconLeft + GIFT_INFO_ICON_SIZE, iconTop + GIFT_INFO_ICON_SIZE);
@@ -335,7 +354,7 @@ final class VillagerInteractionGiftPage {
         List<String> knownDislikedGiftNames();
     }
 
-    private record GiftTransform(int left, int top, float scale) {
+    private record GiftTransform(int left, int top, float scale, boolean controlsBeside) {
         double localX(double screenX) {
             return (screenX - this.left) / Math.max(this.scale, 0.001F);
         }
