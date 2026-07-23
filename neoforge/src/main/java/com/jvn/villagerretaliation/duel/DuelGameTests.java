@@ -147,6 +147,9 @@ public final class DuelGameTests {
         helper.assertTrue(!DuelService.allowsInventoryClick(
                         player, player.inventoryMenu, InventoryMenu.USE_ROW_SLOT_START, ClickType.PICKUP),
                 "server must reject assigned-loadout inventory packets");
+        helper.assertTrue(!player.drop(true), "duel participants must not drop their selected stack");
+        helper.assertValueEqual(player.getInventory().getSelected().getItem(), Items.IRON_SWORD,
+                "blocking a duel drop must leave the selected gear in the inventory");
 
         ItemEntity pickup = new ItemEntity(participant.level(), player.getX(), player.getY(), player.getZ(),
                 new ItemStack(Items.DIAMOND));
@@ -162,6 +165,13 @@ public final class DuelGameTests {
         DuelService.onItemToss(tossEvent);
         helper.assertTrue(tossEvent.isCanceled(), "duel participants must not toss items");
 
+        ItemEntity villagerPickup = new ItemEntity(
+                participant.level(), villager.getX(), villager.getY(), villager.getZ(), new ItemStack(Items.EMERALD));
+        helper.assertTrue(!villager.wantsToPickUp(villagerPickup.getItem()),
+                "dueling villagers must reject world items");
+        helper.assertTrue(villager.spawnAtLocation(new ItemStack(Items.DIAMOND)) == null,
+                "dueling villagers must not spawn dropped items");
+
         player.getInventory().setItem(0, ItemStack.EMPTY);
         player.getInventory().add(new ItemStack(Items.DIAMOND, 17));
         helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW), "live duel should resolve once");
@@ -175,6 +185,7 @@ public final class DuelGameTests {
                 "villager inventory must be restored exactly");
         helper.assertTrue(villager.canPickUpLoot(), "villager pickup policy must be restored");
         pickup.discard();
+        villagerPickup.discard();
         helper.succeed();
     }
 
