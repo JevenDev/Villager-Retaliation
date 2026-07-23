@@ -21,7 +21,8 @@ import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 
 final class VillagerArmorerCombatTactics {
-    private static final long SHIELD_AXE_BREAK_TICKS = 100L;
+    // Player#disableShield applies a five-second (100 tick) item cooldown.
+    private static final long PLAYER_SHIELD_DISABLE_TICKS = 100L;
     private static final int COUNTER_SWINGS_AFTER_BLOCK = 1;
     private static final int COUNTER_ATTACK_DELAY_MIN_TICKS = 10;
     private static final int COUNTER_ATTACK_DELAY_MAX_TICKS = 30;
@@ -42,7 +43,7 @@ final class VillagerArmorerCombatTactics {
             LivingIncomingDamageEvent event,
             AngerCallback angerCallback,
             NearbyAngerCallback nearbyAngerCallback) {
-        if (!canUseShieldTactics(villager) || !isActivelyBlocking(villager)) {
+        if (!canBlockWithActiveShield(villager)) {
             return false;
         }
 
@@ -71,7 +72,7 @@ final class VillagerArmorerCombatTactics {
 
             if (!shieldBroke && isAxeAttacker(resolvedAttacker)) {
                 disabledByAxe = true;
-                breakShieldGuard(villager);
+                disableShield(villager);
             }
         }
         if (!shieldBroke && !disabledByAxe) {
@@ -105,13 +106,9 @@ final class VillagerArmorerCombatTactics {
         boolean inShieldTriggerRange = distanceSqr <= SHIELD_TRIGGER_RANGE_SQR;
 
         UUID villagerId = villager.getUUID();
-        long shieldDisabledUntil = SHIELD_DISABLED_UNTIL_TICKS.getOrDefault(villagerId, 0L);
-        if (gameTime < shieldDisabledUntil) {
+        if (isShieldDisabled(villager, gameTime)) {
             stopBlocking(villager);
             return true;
-        }
-        if (shieldDisabledUntil != 0L) {
-            SHIELD_DISABLED_UNTIL_TICKS.remove(villagerId);
         }
 
         int pendingCounterSwings = PENDING_COUNTER_SWINGS.getOrDefault(villagerId, 0);
@@ -189,15 +186,32 @@ final class VillagerArmorerCombatTactics {
         return isActivelyBlocking(villager) ? BLOCKING_SPEED_FACTOR : 1.0D;
     }
 
+    static boolean isShieldDisabled(Villager villager, long gameTime) {
+        UUID villagerId = villager.getUUID();
+        long disabledUntil = SHIELD_DISABLED_UNTIL_TICKS.getOrDefault(villagerId, 0L);
+        if (disabledUntil == 0L) {
+            return false;
+        }
+        if (gameTime < disabledUntil) {
+            return true;
+        }
+        SHIELD_DISABLED_UNTIL_TICKS.remove(villagerId);
+        return false;
+    }
+
     private static boolean applyShieldDurabilityDamage(Villager villager, float blockedDamage) {
-        ItemStack shield = villager.getOffhandItem();
+        InteractionHand shieldHand = villager.getUsedItemHand();
+        ItemStack shield = villager.getItemInHand(shieldHand);
         if (!shield.is(Items.SHIELD)) {
             return false;
         }
 
         int durabilityLoss = blockedDamage >= 3.0F ? 1 + Mth.floor(blockedDamage) : 1;
-        shield.hurtAndBreak(durabilityLoss, villager, EquipmentSlot.OFFHAND);
-        return !villager.getOffhandItem().is(Items.SHIELD);
+        EquipmentSlot shieldSlot = shieldHand == InteractionHand.MAIN_HAND
+                ? EquipmentSlot.MAINHAND
+                : EquipmentSlot.OFFHAND;
+        shield.hurtAndBreak(durabilityLoss, villager, shieldSlot);
+        return !villager.getItemInHand(shieldHand).is(Items.SHIELD);
     }
 
     private static boolean isAxeAttacker(LivingEntity attacker) {
@@ -205,10 +219,10 @@ final class VillagerArmorerCombatTactics {
                 || attacker.getOffhandItem().getItem() instanceof AxeItem;
     }
 
-    private static void breakShieldGuard(Villager villager) {
+    static void disableShield(Villager villager) {
         long gameTime = villager.level().getGameTime();
         UUID villagerId = villager.getUUID();
-        SHIELD_DISABLED_UNTIL_TICKS.put(villagerId, gameTime + SHIELD_AXE_BREAK_TICKS);
+        SHIELD_DISABLED_UNTIL_TICKS.put(villagerId, gameTime + PLAYER_SHIELD_DISABLE_TICKS);
         PENDING_COUNTER_SWINGS.remove(villagerId);
         COUNTER_ATTACK_READY_TICKS.remove(villagerId);
         stopBlocking(villager);
@@ -222,14 +236,13 @@ final class VillagerArmorerCombatTactics {
     }
 
     private static void stopBlocking(Villager villager) {
-        if (villager.isUsingItem() && villager.getUsedItemHand() == InteractionHand.OFF_HAND) {
+        if (villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD)) {
             villager.stopUsingItem();
         }
     }
 
     private static void clearTacticState(Villager villager, boolean stopBlocking) {
         UUID villagerId = villager.getUUID();
-        SHIELD_DISABLED_UNTIL_TICKS.remove(villagerId);
         PENDING_COUNTER_SWINGS.remove(villagerId);
         COUNTER_ATTACK_READY_TICKS.remove(villagerId);
         if (stopBlocking) {
@@ -239,8 +252,7 @@ final class VillagerArmorerCombatTactics {
 
     private static boolean isActivelyBlocking(Villager villager) {
         return villager.isUsingItem()
-                && villager.getUsedItemHand() == InteractionHand.OFF_HAND
-                && hasShield(villager);
+                && villager.getUseItem().is(Items.SHIELD);
     }
 
     private static int nextCounterAttackDelayTicks(Villager villager) {
@@ -274,9 +286,16 @@ final class VillagerArmorerCombatTactics {
 
     private static boolean hasTacticState(Villager villager) {
         UUID villagerId = villager.getUUID();
-        return SHIELD_DISABLED_UNTIL_TICKS.containsKey(villagerId)
-                || PENDING_COUNTER_SWINGS.containsKey(villagerId)
+        return PENDING_COUNTER_SWINGS.containsKey(villagerId)
                 || COUNTER_ATTACK_READY_TICKS.containsKey(villagerId);
+    }
+
+    private static boolean canBlockWithActiveShield(Villager villager) {
+        return VillagerRetaliationConfig.ENABLE_VILLAGER_RETALIATION.get()
+                && isActivelyBlocking(villager)
+                && !isShieldDisabled(villager, villager.level().getGameTime())
+                && (!VillagerCombatRoles.isArmorer(villager)
+                || VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get());
     }
 
     private static boolean isHardMode(Villager villager) {

@@ -38,6 +38,11 @@ public final class VillagerCombatBehavior {
         return VillagerArmorerCombatTactics.movementSpeedFactor(villager);
     }
 
+    public static boolean canRaiseShield(Villager villager) {
+        return !VillagerArmorerCombatTactics.isShieldDisabled(
+                villager, villager.level().getGameTime());
+    }
+
     public static boolean canMeleeHit(Villager villager, LivingEntity target) {
         return VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
     }
