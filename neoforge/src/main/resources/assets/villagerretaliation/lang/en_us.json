@@ -74,6 +74,7 @@
   "gui.villagerretaliation.inventory.job_inventory": "Job Inventory",
   "gui.villagerretaliation.inventory.party_inventory": "Party Inventory",
   "gui.villagerretaliation.inventory.switch_to": "Switch to %s",
+  "gui.villagerretaliation.inventory.contract_time_remaining": "Contract time remaining",
   "villagerretaliation.configuration.title": "%s Configuration",
   "villagerretaliation.configuration.section.villagerretaliation.common.toml": "%s Settings",
   "villagerretaliation.configuration.section.villagerretaliation.common.toml.title": "%s Settings",

@@ -18,6 +18,7 @@ import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
@@ -249,6 +250,16 @@ public final class HiredVillagerContractService {
                 .filter(tag -> !isOneOffBuilderJob(tag))
                 .map(tag -> remainingDays(level, tag))
                 .orElse(0);
+    }
+
+    public static OptionalLong getHireEndGameTime(ServerLevel level, Villager villager) {
+        expireHireContractIfNeeded(level, villager);
+        Optional<CompoundTag> activeContract = contract(villager)
+                .filter(HiredVillagerContractService::isActiveOrAwaitingAutoPayment)
+                .filter(tag -> !isOneOffBuilderJob(tag));
+        return activeContract.isEmpty()
+                ? OptionalLong.empty()
+                : OptionalLong.of(activeContract.get().getLong(END_GAME_TIME_TAG));
     }
 
     public static int getHireCost(ServerLevel level, Villager villager, ServerPlayer player, int days) {

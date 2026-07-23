@@ -84,6 +84,7 @@ public record PartyRosterSyncPayload(
             buffer.writeEnum(villager.commandMode());
             buffer.writeBoolean(villager.available());
             buffer.writeVarInt(villager.remainingDays());
+            buffer.writeVarLong(villager.contractEndGameTime());
             buffer.writeEnum(villager.combatMode());
             buffer.writeEnum(villager.attackMode());
             buffer.writeEnum(villager.dropCollectionMode());
@@ -129,6 +130,7 @@ public record PartyRosterSyncPayload(
                     buffer.readEnum(PartyCommandMode.class),
                     buffer.readBoolean(),
                     buffer.readVarInt(),
+                    buffer.readVarLong(),
                     buffer.readEnum(PartyCombatMode.class),
                     buffer.readEnum(PartyAttackMode.class),
                     buffer.readEnum(PartyDropCollectionMode.class),
@@ -158,6 +160,7 @@ public record PartyRosterSyncPayload(
             PartyCommandMode commandMode,
             boolean available,
             int remainingDays,
+            long contractEndGameTime,
             PartyCombatMode combatMode,
             PartyAttackMode attackMode,
             PartyDropCollectionMode dropCollectionMode,

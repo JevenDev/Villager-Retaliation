@@ -1,5 +1,7 @@
 # Changelog
 
+- Added a live hired-contract countdown beside the villager timer stat, with a full remaining-time tooltip in villager and party inventory views.
+
 - Fixed duel participants transferring items during a fight: player drop input is now rejected before inventory removal, and both players and villagers are prevented from picking up or dropping world items for the duration of the duel.
 - Fixed assigned duels allowing party villagers to pull weapons or ammunition from party/job inventory; duel combat now isolates its live loadout from every external work-inventory read, write, synchronization, and equipment-maintenance path.
 

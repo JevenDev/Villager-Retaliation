@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderCon
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
@@ -29,6 +30,7 @@ public final class VillagerInventoryUiRenderer {
     private static final int HEALTH_COLOR = 0xFFFF1313;
     private static final int ARMOR_COLOR = 0xFFB8B9C4;
     private static final int HUNGER_COLOR = 0xFFB88458;
+    private static final int TIMER_COLOR = 0xFFFFD45C;
     private static final int TEXT_OUTLINE_COLOR = 0xFF000000;
     private static final int NAME_COLOR = 0xFF404040;
     private static final ResourceLocation HEALTH_ICON =
@@ -192,40 +194,77 @@ public final class VillagerInventoryUiRenderer {
         return font.plainSubstrByWidth(text, Math.max(0, maxWidth - font.width(ellipsis))) + ellipsis;
     }
 
-    public static void renderStats(GuiGraphics graphics, LivingEntity entity, int left, int top) {
+    public static void renderStats(
+            GuiGraphics graphics, LivingEntity entity, long remainingContractTicks, int centerX, int top) {
         if (entity == null) return;
         renderStat(
                 graphics,
                 ARMOR_ICON,
                 Integer.toString(entity.getArmorValue()),
                 ARMOR_COLOR,
-                left,
+                centerX,
                 top);
         renderStat(
                 graphics,
                 HEALTH_ICON,
                 formatValue(entity.getHealth()),
                 HEALTH_COLOR,
-                left,
+                centerX,
                 top + STAT_ICON_SIZE + STAT_ROW_GAP);
         renderStat(
                 graphics,
                 HUNGER_ICON,
                 Integer.toString(VillagerHungerClientCache.hunger(entity)),
                 HUNGER_COLOR,
-                left,
+                centerX,
                 top + (STAT_ICON_SIZE + STAT_ROW_GAP) * 2);
         renderStat(
                 graphics,
                 TIMER_ICON,
-                "",
-                HUNGER_COLOR,
-                left,
+                remainingContractTicks < 0L
+                        ? ""
+                        : VillagerContractTimerFormatter.compact(remainingContractTicks),
+                TIMER_COLOR,
+                centerX,
                 top + (STAT_ICON_SIZE + STAT_ROW_GAP) * 3);
     }
 
+    public static boolean isTimerStatHovered(
+            long remainingContractTicks, int centerX, int top, double mouseX, double mouseY) {
+        if (remainingContractTicks < 0L) {
+            return false;
+        }
+        String value = VillagerContractTimerFormatter.compact(remainingContractTicks);
+        int timerTop = top + (STAT_ICON_SIZE + STAT_ROW_GAP) * 3;
+        int width = statWidth(value);
+        int left = centerX - width / 2;
+        return mouseX >= left
+                && mouseX < left + width
+                && mouseY >= timerTop
+                && mouseY < timerTop + STAT_ICON_SIZE;
+    }
+
+    public static void renderTimerStatTooltip(
+            GuiGraphics graphics, long remainingContractTicks, int mouseX, int mouseY) {
+        if (remainingContractTicks < 0L) {
+            return;
+        }
+        Minecraft minecraft = Minecraft.getInstance();
+        graphics.renderTooltip(
+                minecraft.font,
+                List.of(
+                        Component.translatable("gui.villagerretaliation.inventory.contract_time_remaining")
+                                .withStyle(ChatFormatting.GRAY),
+                        Component.literal(VillagerContractTimerFormatter.full(remainingContractTicks))
+                                .withStyle(ChatFormatting.GOLD)),
+                java.util.Optional.empty(),
+                mouseX,
+                mouseY);
+    }
+
     private static void renderStat(
-            GuiGraphics graphics, ResourceLocation icon, String value, int color, int left, int top) {
+            GuiGraphics graphics, ResourceLocation icon, String value, int color, int centerX, int top) {
+        int left = centerX - statWidth(value) / 2;
         graphics.blit(icon, left, top, 0, 0, STAT_ICON_SIZE, STAT_ICON_SIZE, STAT_ICON_SIZE, STAT_ICON_SIZE);
         drawOutlinedString(
                 graphics,
@@ -235,16 +274,18 @@ public final class VillagerInventoryUiRenderer {
                 color);
     }
 
+    private static int statWidth(String value) {
+        int textWidth = Minecraft.getInstance().font.width(value);
+        return STAT_ICON_SIZE + (textWidth == 0 ? 0 : STAT_TEXT_GAP + textWidth);
+    }
+
     private static void drawOutlinedString(
             GuiGraphics graphics, Component text, int left, int top, int color) {
         var font = Minecraft.getInstance().font;
-        for (int offsetX = -1; offsetX <= 1; offsetX++) {
-            for (int offsetY = -1; offsetY <= 1; offsetY++) {
-                if (offsetX != 0 || offsetY != 0) {
-                    graphics.drawString(font, text, left + offsetX, top + offsetY, TEXT_OUTLINE_COLOR, false);
-                }
-            }
-        }
+        graphics.drawString(font, text, left - 1, top, TEXT_OUTLINE_COLOR, false);
+        graphics.drawString(font, text, left + 1, top, TEXT_OUTLINE_COLOR, false);
+        graphics.drawString(font, text, left, top - 1, TEXT_OUTLINE_COLOR, false);
+        graphics.drawString(font, text, left, top + 1, TEXT_OUTLINE_COLOR, false);
         graphics.drawString(font, text, left, top, color, false);
     }
 

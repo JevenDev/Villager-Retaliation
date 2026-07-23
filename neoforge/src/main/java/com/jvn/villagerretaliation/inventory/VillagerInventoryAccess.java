@@ -134,6 +134,15 @@ public final class VillagerInventoryAccess {
                     buffer.writeEnum(workInventoryViewMode);
                     buffer.writeBoolean(personalInventoryAccess);
                     buffer.writeBoolean(jobInventoryAccess);
+                    var partyEnd = com.jvn.villagerretaliation.party.PartyVillagerContractService
+                            .getPartyEndGameTime(player.serverLevel(), villager);
+                    var contractEnd = partyEnd.isPresent()
+                            ? partyEnd
+                            : HiredVillagerContractService.getHireEndGameTime(player.serverLevel(), villager);
+                    buffer.writeBoolean(contractEnd.isPresent());
+                    if (contractEnd.isPresent()) {
+                        buffer.writeVarLong(contractEnd.getAsLong());
+                    }
                 }
         );
         com.jvn.villagerretaliation.network.VillagerReputationNetworking.sendHunger(
