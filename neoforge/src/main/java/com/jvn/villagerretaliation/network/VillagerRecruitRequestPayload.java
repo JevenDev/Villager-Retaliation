@@ -51,6 +51,7 @@ public record VillagerRecruitRequestPayload(
         EXTEND_SEVEN_DAYS,
         EXTEND_FIFTEEN_DAYS,
         EXTEND_THIRTY_DAYS,
+        EXTEND_MAX_DAYS,
         VIEW_CONTRACT,
         OPEN_JOB_INVENTORY,
         SHOW_STORAGE,

@@ -114,21 +114,21 @@ The interaction screen cycles between **Skills**, **Profile**, and **Job Stats**
 
 Role aptitude weights the primary skill at 70% and the support skill at 30%. Aptitude produces 75%-125% skill work speed and 50%-150% transfer capacity. This changes real throughput: block work and ordinary task cadence, fishing bite waits, hired combat recovery, courier cargo, and cook, smelter, and brewer collection trips. It does not alter shared furnace, smoker, blast-furnace, or brewing-stand processing timers. Successful hired work keeps the same total practice budget while training both role skills at the same 70/30 split.
 
-| Role | Primary skill | Support skill | Automatic profession |
-| --- | --- | --- | --- |
-| Combat | Guarding | Archery | Weaponsmith |
-| Hunting | Archery | Survival | Fletcher |
-| Mining | Mining | Masonry | Toolsmith |
-| Logging | Gathering | Crafting | — |
-| Farming | Farming | Gathering | Farmer |
-| Fishing | Fishing | Survival | Fisherman |
-| Brewing | Medicine | Scholarship | Cleric |
-| Builder | Masonry | Crafting | Mason |
+| Role | Primary skill | Support skill | Automatic profession    |
+| --- | --- | --- |-------------------------|
+| Combat | Guarding | Archery | Weaponsmith             |
+| Hunting | Archery | Survival | Fletcher                |
+| Mining | Mining | Masonry | Toolsmith               |
+| Logging | Gathering | Crafting | --                      |
+| Farming | Farming | Gathering | Farmer                  |
+| Fishing | Fishing | Survival | Fisherman               |
+| Brewing | Medicine | Scholarship | Cleric                  |
+| Builder | Masonry | Crafting | Mason                   |
 | Animal Handling | Animal Handling | Farming | Shepherd, Leatherworker |
-| Cook | Cooking | Gathering | Butcher |
-| Smelter | Smithing | Mining | Armorer |
-| Courier | Gathering | Survival | Every adult |
-| Nitwit | Diplomacy | Survival | Nitwit only |
+| Cook | Cooking | Gathering | Butcher                 |
+| Smelter | Smithing | Mining | Armorer                 |
+| Courier | Gathering | Survival | Every adult             |
+| Nitwit | Diplomacy | Survival | Nitwit only             |
 
 ### Dialogue and Interaction
 

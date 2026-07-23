@@ -27,5 +27,5 @@ Open the tab through :advancement-group[villagerretaliation:reputation/root]. Us
 Minecraft only sends unlocked advancement tabs to the client. A link cannot preview or jump to an advancement until its tab is available in your current world.
 :::
 
-Some entries are hidden challenges. Explore both helpful and harmful paths if you want the full tree—but expect villagers to remember the latter.
+Some entries are hidden challenges. Explore both helpful and harmful paths if you want the full tree-but expect villagers to remember the latter.
 

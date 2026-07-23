@@ -46,5 +46,5 @@ If renewal fails, work pauses for a one-day grace period. Restore or fund the as
 :::recipe{id="villagerretaliation:payment_box" align="left"}
 :::
 
-Early cancellation refunds unused prepaid value at a configurable rate—**50% by default**. Unreturned job items can be claimed by the former controller for three Minecraft days. A hired contract alone does **not** grant downed-state protection.
+Early cancellation refunds unused prepaid value at a configurable rate-**50% by default**. Unreturned job items can be claimed by the former controller for three Minecraft days. A hired contract alone does **not** grant downed-state protection.
 

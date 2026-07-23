@@ -25,7 +25,7 @@ Job Stats explains qualification and throughput:
 - Skill-controlled work speed ranges from **75–125%**.
 - Supported transfer capacity ranges from **50–150%**.
 
-Five persistent social attributes—**Knowledge, Guts, Proficiency, Kindness, and Charm**—shape reactions when their server settings are enabled. Skills describe capability; attributes describe personality.
+Five persistent social attributes-**Knowledge, Guts, Proficiency, Kindness, and Charm**-shape reactions when their server settings are enabled. Skills describe capability; attributes describe personality.
 
 ## Food and recovery
 
@@ -42,5 +42,5 @@ Food supports healing but is not a separate work-efficiency bonus. Disabling `na
 - Angry, Afraid, Stressed, or Grieving: -15 points.
 - A missing required tool: -20 points.
 
-Displayed efficiency is clamped to server limits—25–175% by default. Danger, combat, sleep, recovery, party orders, an offline hirer, unloaded chunks, and incomplete setup can all pause work regardless of efficiency.
+Displayed efficiency is clamped to server limits-25–175% by default. Danger, combat, sleep, recovery, party orders, an offline hirer, unloaded chunks, and incomplete setup can all pause work regardless of efficiency.
 

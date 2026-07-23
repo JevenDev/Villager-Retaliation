@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.party.PartyAttackMode;
 import com.jvn.villagerretaliation.party.PartyCombatMode;
 import com.jvn.villagerretaliation.party.PartyDropCollectionMode;
+import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
@@ -55,6 +56,7 @@ import com.jvn.villagerretaliation.network.VillagerRoutineChatTogglePayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
+import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttributeRank;
@@ -1321,7 +1323,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             addOption("party.extend_five_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIVE_DAYS));
             addOption("party.extend_seven_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_SEVEN_DAYS));
             addOption("party.extend_fifteen_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIFTEEN_DAYS));
-            addOption("party.extend_thirty_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_THIRTY_DAYS));
+            addPartyMaxExtensionOption();
             addOption("recruit.nevermind", this::openContractPage);
             return;
         }
@@ -1332,6 +1334,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("recruit.extend_fifteen_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_FIFTEEN_DAYS));
         addOption("recruit.extend_thirty_days", () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_THIRTY_DAYS));
         addOption("recruit.nevermind", this::openContractPage);
+    }
+
+    private void addPartyMaxExtensionOption() {
+        int maxExtensionDays = Math.max(0, VillagerContractTime.MAX_PREPAID_DAYS - this.partyRemainingDays);
+        int cost = maxExtensionDays * PartyVillagerContractService.DAILY_EMERALD_COST;
+        this.options.add(DialogueOption.enabled(
+                translate("party.extend_max_days", maxExtensionDays, cost),
+                () -> requestRecruit(VillagerRecruitRequestPayload.Action.EXTEND_MAX_DAYS)));
     }
 
     private void addRoleOptions() {

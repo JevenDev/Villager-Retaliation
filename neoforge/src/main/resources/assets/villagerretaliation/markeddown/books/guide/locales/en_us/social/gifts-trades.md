@@ -19,7 +19,7 @@ Villagers judge gifts using global rules and then profession preferences. Reacti
 
 Reliable positive gifts include :item[minecraft:emerald], :item[minecraft:diamond], :item[minecraft:gold_ingot], :item[minecraft:golden_apple], bread, fruit, safe food, and useful village goods. Profession tools and materials are often even better.
 
-Hazards and rotten loot—including TNT, lava, fire-starting items, rotten flesh, poisonous food, and ominous items—are usually disliked or hated.
+Hazards and rotten loot-including TNT, lava, fire-starting items, rotten flesh, poisonous food, and ominous items-are usually disliked or hated.
 
 :::details{id="profession-examples" title="Profession gift examples"}
 - Armorers value metal, armor, shields, anvils, and blast furnaces.
