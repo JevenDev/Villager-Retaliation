@@ -362,7 +362,7 @@ public final class EncounterService {
     private static void updateBossBar(MinecraftServer server,EncounterInstance encounter,EncounterTemplate template){
         if(template.spawnMode()!=EncounterTemplate.SpawnMode.RAID_WAVES||!template.bossBar()){hideBossBar(encounter.id());return;}
         int wave=Math.max(0,Math.min(template.waveCount()-1,encounter.currentWaveIndex()));EncounterTemplate.Wave definition=template.wave(wave);
-        ServerBossEvent bar=BOSS_BARS.computeIfAbsent(encounter.id(),ignored->new ServerBossEvent(Component.literal("Raid"),BossEvent.BossBarColor.RED,BossEvent.BossBarOverlay.NOTCHED_10));
+        ServerBossEvent bar=BOSS_BARS.computeIfAbsent(encounter.id(),ignored->new ServerBossEvent(Component.translatable("villagerretaliation.encounter.raid"),BossEvent.BossBarColor.RED,BossEvent.BossBarOverlay.NOTCHED_10));
         String title=definition.bossBarTitle().isBlank()?"Raid - Wave "+(wave+1)+"/"+template.waveCount():definition.bossBarTitle();bar.setName(Component.literal(title));
         bar.setProgress(Math.max(0.0F,Math.min(1.0F,(encounter.expectedCount()-encounter.defeated().size())/(float)Math.max(1,encounter.expectedCount()))));
         for(var player:new ArrayList<>(bar.getPlayers()))if(!encounter.participants().contains(player.getUUID()))bar.removePlayer(player);

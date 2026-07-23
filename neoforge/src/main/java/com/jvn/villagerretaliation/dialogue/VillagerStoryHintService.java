@@ -359,7 +359,7 @@ public final class VillagerStoryHintService {
     private static ItemStack createExplorerMap(ServerLevel level, CachedTarget target, String targetName) {
         ItemStack map = MapItem.create(level, target.pos().getX(), target.pos().getZ(), (byte) 2, true, true);
         MapItemSavedData.addTargetDecoration(map, target.pos(), "+", MapDecorationTypes.RED_X);
-        map.set(DataComponents.ITEM_NAME, Component.literal("Map to " + targetName));
+        map.set(DataComponents.ITEM_NAME, Component.translatable("item.villagerretaliation.story_map", targetName));
         MapItem.renderBiomePreviewMap(level, map);
         return map;
     }

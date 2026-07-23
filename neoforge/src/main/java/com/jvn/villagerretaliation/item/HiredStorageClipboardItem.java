@@ -96,7 +96,7 @@ public final class HiredStorageClipboardItem extends Item {
                 && player.isShiftKeyDown()
                 && mode(stack) != ClipboardMode.NONE) {
             clearSelection(serverPlayer, stack);
-            serverPlayer.displayClientMessage(Component.literal("Clipboard selection cleared."), true);
+            serverPlayer.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.selection_cleared"), true);
             return InteractionResultHolder.success(stack);
         }
         if (player instanceof ServerPlayer serverPlayer) {
@@ -119,7 +119,7 @@ public final class HiredStorageClipboardItem extends Item {
         }
         if (clipboardMode == ClipboardMode.WORK_AREA) {
             if (!HiredVillagerWorkService.canManageWork(level, villager, serverPlayer)) {
-                serverPlayer.displayClientMessage(Component.literal("Only the hiring player can inspect this work area."), true);
+                serverPlayer.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.inspect_owner_only"), true);
                 return InteractionResult.SUCCESS;
             }
             sendWorkAreaOutline(serverPlayer, level, villager);
@@ -149,10 +149,10 @@ public final class HiredStorageClipboardItem extends Item {
             List<AssignedContainerRecord> assigned = AssignedStorageService.assignedPaymentStorage(level, villager);
             if (!assigned.isEmpty()) {
                 sendAssignedStorageOutlines(serverPlayer, assigned);
-                serverPlayer.displayClientMessage(Component.literal("Payment containers: " + assigned.size() + "."), true);
+                serverPlayer.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.payment_containers", assigned.size()), true);
                 return InteractionResult.SUCCESS;
             }
-            serverPlayer.displayClientMessage(Component.literal("Select a payment container, then use the clipboard on a hired villager."), true);
+            serverPlayer.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.select_payment_container"), true);
             return InteractionResult.SUCCESS;
         }
 
@@ -163,7 +163,8 @@ public final class HiredStorageClipboardItem extends Item {
                     return InteractionResult.SUCCESS;
                 }
                 int removed = AssignedStorageService.removeAssignedStorage(level, villager);
-                serverPlayer.displayClientMessage(Component.literal("Removed " + removed + " assigned container" + (removed == 1 ? "" : "s") + "."), true);
+                String key = removed == 1 ? "removed_container" : "removed_containers";
+                serverPlayer.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message." + key, removed), true);
             } else {
                 if (!VillagerInteractionService.canManageAssignedStorage(level, villager, serverPlayer)) {
                     VillagerInteractionService.sendVillagerNotice(serverPlayer, villager, "interaction.storage.inspect_requires_access");
@@ -172,12 +173,12 @@ public final class HiredStorageClipboardItem extends Item {
                 List<AssignedContainerRecord> assigned = AssignedStorageService.assignedStorage(level, villager);
                 sendAssignedStorageOutlines(serverPlayer, assigned);
                 int count = assigned.size();
-                serverPlayer.displayClientMessage(Component.literal("Assigned containers: " + count + "."), true);
+                serverPlayer.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.assigned_containers", count), true);
             }
             return InteractionResult.SUCCESS;
         }
 
-        serverPlayer.displayClientMessage(Component.literal("Select containers, then use the clipboard on a villager."), true);
+        serverPlayer.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.select_containers"), true);
         return InteractionResult.SUCCESS;
     }
 
@@ -189,18 +190,20 @@ public final class HiredStorageClipboardItem extends Item {
 
         int count = currentMode == ClipboardMode.ROUTE ? 0 : selectedContainers(stack).size();
         if (count > 0) {
-            tooltip.add(Component.literal(count + " selected container" + (count == 1 ? "" : "s")).withStyle(ChatFormatting.AQUA));
+            String key = count == 1 ? "selected_container" : "selected_containers";
+            tooltip.add(Component.translatable("item.villagerretaliation.clipboard." + key, count).withStyle(ChatFormatting.AQUA));
         }
         WorkAreaDraft draft = selectedWorkArea(stack);
         if (draft.first() != null || draft.second() != null) {
-            tooltip.add(Component.literal(draft.complete()
-                    ? "Job site draft: " + dimensions(draft.min(), draft.max())
-                    : "Job site corners: " + (draft.first() == null ? "0" : draft.second() == null ? "1" : "2") + "/2")
-                    .withStyle(ChatFormatting.GOLD));
+            Component draftText = draft.complete()
+                    ? Component.translatable("item.villagerretaliation.clipboard.job_site_draft", dimensions(draft.min(), draft.max()))
+                    : Component.translatable("item.villagerretaliation.clipboard.job_site_corners",
+                            draft.first() == null ? 0 : draft.second() == null ? 1 : 2);
+            tooltip.add(draftText.copy().withStyle(ChatFormatting.GOLD));
         }
         RouteDraft routeDraft = selectedRoute(stack);
         if (!routeDraft.isEmpty()) {
-            tooltip.add(Component.literal("Route draft: " + routeDescription(routeDraft.route()))
+            tooltip.add(Component.translatable("item.villagerretaliation.clipboard.route_draft", routeDescription(routeDraft.route()))
                     .withStyle(ChatFormatting.AQUA));
         }
         if (!TooltipKeyState.hasShiftDown()) {
@@ -304,8 +307,8 @@ public final class HiredStorageClipboardItem extends Item {
             slot.setChanged();
         }
         syncClipboardStack(player);
-        player.displayClientMessage(Component.literal("Clipboard mode: ")
-                .append(next.labelComponent()), true);
+        player.displayClientMessage(Component.translatable(
+                "villagerretaliation.clipboard.message.mode", next.labelComponent()), true);
     }
 
     public static List<StoragePosition> selectedContainers(ItemStack stack) {
@@ -450,6 +453,11 @@ public final class HiredStorageClipboardItem extends Item {
         };
     }
 
+    private static Component purposeLabelComponent(String purpose) {
+        String normalized = AssignedStorageService.normalizePurpose(purpose);
+        return Component.translatable("villagerretaliation.clipboard.purpose." + normalized);
+    }
+
     public static WorkAreaDraft selectedWorkArea(ItemStack stack) {
         CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         if (customData.isEmpty() || !customData.contains(TAG)) {
@@ -505,12 +513,12 @@ public final class HiredStorageClipboardItem extends Item {
     public static InteractionResult selectContainer(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
         if (player.isShiftKeyDown()) {
             clearSelection(player, stack);
-            player.displayClientMessage(Component.literal("Clipboard selection cleared."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.selection_cleared"), true);
             return InteractionResult.SUCCESS;
         }
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (!(blockEntity instanceof net.minecraft.world.Container)) {
-            player.displayClientMessage(Component.literal("Select a valid container."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.select_valid_container"), true);
             return InteractionResult.FAIL;
         }
         ClipboardMode clipboardMode = mode(stack);
@@ -518,20 +526,21 @@ public final class HiredStorageClipboardItem extends Item {
                 level,
                 pos,
                 clipboardMode.assignmentPurpose())) {
-            player.displayClientMessage(Component.literal(clipboardMode == ClipboardMode.ASSIGN_PAYMENT
-                    ? "Select a payment box."
-                    : "Payment boxes can only be assigned in payment mode."), true);
+            String key = clipboardMode == ClipboardMode.ASSIGN_PAYMENT ? "select_payment_box" : "payment_box_wrong_mode";
+            player.displayClientMessage(Component.translatable(
+                    "villagerretaliation.clipboard.message." + key), true);
             return InteractionResult.FAIL;
         }
 
         SelectionAddResult result = addSelection(stack, level.dimension(), pos, clipboardMode.assignmentPurpose());
         Component message = switch (result) {
-            case ADDED -> Component.literal(clipboardMode == ClipboardMode.ASSIGN_PAYMENT
-                    ? "Payment box selected."
-                    : purposeLabel(clipboardMode.assignmentPurpose()) + " container selected.");
-            case DUPLICATE -> Component.literal("That container is already selected.");
-            case DIFFERENT_DIMENSION -> Component.literal("Clipboard selections must stay in one dimension.");
-            case FULL -> Component.literal("Clipboard selection is full.");
+            case ADDED -> clipboardMode == ClipboardMode.ASSIGN_PAYMENT
+                    ? Component.translatable("villagerretaliation.clipboard.message.payment_box_selected")
+                    : Component.translatable("villagerretaliation.clipboard.message.container_selected",
+                            purposeLabelComponent(clipboardMode.assignmentPurpose()));
+            case DUPLICATE -> Component.translatable("villagerretaliation.clipboard.message.container_duplicate");
+            case DIFFERENT_DIMENSION -> Component.translatable("villagerretaliation.clipboard.message.selection_wrong_dimension");
+            case FULL -> Component.translatable("villagerretaliation.clipboard.message.selection_full");
         };
         if (result == SelectionAddResult.ADDED) {
             syncClipboardStack(player);
@@ -548,7 +557,7 @@ public final class HiredStorageClipboardItem extends Item {
             }
             case ASSIGN_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_PAYMENT -> selectContainer(level, player, stack, pos);
             case WORK_AREA -> {
-                player.displayClientMessage(Component.literal("Preview Job Site mode: use the clipboard on a hired villager."), true);
+                player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.preview_job_site_mode"), true);
                 yield InteractionResult.SUCCESS;
             }
             case SET_WORK_AREA -> {
@@ -570,7 +579,7 @@ public final class HiredStorageClipboardItem extends Item {
             clearWorkAreaSelection(stack);
             syncClipboardStack(player);
             clearWorkAreaOutline(player);
-            player.displayClientMessage(Component.literal("Work area selection cleared."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.work_area_cleared"), true);
             return InteractionResult.SUCCESS;
         }
         return selectWorkAreaPosition(level, player, stack, pos, WorkAreaPosition.FIRST);
@@ -583,7 +592,7 @@ public final class HiredStorageClipboardItem extends Item {
 
         RouteDraft draft = selectedRoute(stack);
         if (!draft.isEmpty() && !level.dimension().equals(draft.dimension())) {
-            player.displayClientMessage(Component.literal("Route nodes must stay in one dimension."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_single_dimension"), true);
             return InteractionResult.FAIL;
         }
 
@@ -595,7 +604,7 @@ public final class HiredStorageClipboardItem extends Item {
             saveRouteSelection(stack, level.dimension(), updated);
             syncClipboardStack(player);
             sendSelectedRouteOutline(player, level, updated);
-            player.displayClientMessage(Component.literal("Route node 1/" + HiredRoute.MAX_NODES + " added."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_node_added", 1, HiredRoute.MAX_NODES), true);
             return InteractionResult.SUCCESS;
         }
 
@@ -605,36 +614,36 @@ public final class HiredStorageClipboardItem extends Item {
                 saveRouteSelection(stack, level.dimension(), updated);
                 syncClipboardStack(player);
                 sendSelectedRouteOutline(player, level, updated);
-                player.displayClientMessage(Component.literal("Route loop opened."), true);
+                player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_loop_opened"), true);
                 return InteractionResult.SUCCESS;
             }
             if (!HiredRoute.canConnect(nodes.getLast(), nodes.getFirst())) {
-                player.displayClientMessage(Component.literal("Cannot close route loop; the last node is more than "
-                        + HiredRoute.MAX_NODE_DISTANCE + " blocks from the first."), true);
+                player.displayClientMessage(Component.translatable(
+                        "villagerretaliation.clipboard.message.route_loop_too_far", HiredRoute.MAX_NODE_DISTANCE), true);
                 return InteractionResult.FAIL;
             }
             HiredRoute updated = new HiredRoute(nodes, true);
             saveRouteSelection(stack, level.dimension(), updated);
             syncClipboardStack(player);
             sendSelectedRouteOutline(player, level, updated);
-            player.displayClientMessage(Component.literal("Route loop closed."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_loop_closed"), true);
             return InteractionResult.SUCCESS;
         }
 
         if (route.contains(node)) {
-            player.displayClientMessage(Component.literal("That route node is already selected."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_node_duplicate"), true);
             return InteractionResult.SUCCESS;
         }
         if (route.loop()) {
-            player.displayClientMessage(Component.literal("Open the route loop before adding more nodes."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_open_before_adding"), true);
             return InteractionResult.FAIL;
         }
         if (nodes.size() >= HiredRoute.MAX_NODES) {
-            player.displayClientMessage(Component.literal("Route already has the maximum of " + HiredRoute.MAX_NODES + " nodes."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_full", HiredRoute.MAX_NODES), true);
             return InteractionResult.FAIL;
         }
         if (!HiredRoute.canConnect(nodes.getLast(), node)) {
-            player.displayClientMessage(Component.literal("Route nodes must be within " + HiredRoute.MAX_NODE_DISTANCE + " blocks of each other."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_nodes_too_far", HiredRoute.MAX_NODE_DISTANCE), true);
             return InteractionResult.FAIL;
         }
 
@@ -643,19 +652,19 @@ public final class HiredStorageClipboardItem extends Item {
         saveRouteSelection(stack, level.dimension(), updated);
         syncClipboardStack(player);
         sendSelectedRouteOutline(player, level, updated);
-        player.displayClientMessage(Component.literal("Route node " + updated.nodes().size() + "/" + HiredRoute.MAX_NODES + " added."), true);
+        player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_node_added", updated.nodes().size(), HiredRoute.MAX_NODES), true);
         return InteractionResult.SUCCESS;
     }
 
     private static InteractionResult removeRouteNode(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
         RouteDraft draft = selectedRoute(stack);
         if (draft.isEmpty() || !level.dimension().equals(draft.dimension())) {
-            player.displayClientMessage(Component.literal("No route node selected at this block."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_node_missing"), true);
             return InteractionResult.SUCCESS;
         }
         int removedIndex = draft.route().indexOf(pos);
         if (removedIndex < 0) {
-            player.displayClientMessage(Component.literal("No route node selected at this block."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_node_missing"), true);
             return InteractionResult.SUCCESS;
         }
 
@@ -670,14 +679,11 @@ public final class HiredStorageClipboardItem extends Item {
         }
         syncClipboardStack(player);
         sendSelectedRouteOutline(player, level, updated);
-        String message = "Route node removed.";
-        if (draft.route().loop()) {
-            message += " Loop opened.";
-        }
-        if (truncated) {
-            message += " Disconnected downstream nodes were removed.";
-        }
-        player.displayClientMessage(Component.literal(message), true);
+        String key = draft.route().loop()
+                ? truncated ? "route_node_removed_loop_downstream" : "route_node_removed_loop"
+                : truncated ? "route_node_removed_downstream" : "route_node_removed";
+        player.displayClientMessage(Component.translatable(
+                "villagerretaliation.clipboard.message." + key), true);
         return InteractionResult.SUCCESS;
     }
 
@@ -701,19 +707,17 @@ public final class HiredStorageClipboardItem extends Item {
         if (first != null && second != null) {
             sendSelectedWorkAreaOutline(player, level, first, second);
         }
-        player.displayClientMessage(Component.literal(workAreaPositionMessage(position, first, second)), true);
+        player.displayClientMessage(workAreaPositionMessage(position, first, second), true);
         return InteractionResult.SUCCESS;
     }
 
-    private static String workAreaPositionMessage(WorkAreaPosition position, BlockPos first, BlockPos second) {
+    private static Component workAreaPositionMessage(WorkAreaPosition position, BlockPos first, BlockPos second) {
         if (position == WorkAreaPosition.FIRST) {
-            return second == null
-                    ? "Corner 1 set. Right-click the opposite corner, then use the clipboard on the hired villager."
-                    : "Corner 1 set. Use the clipboard on the hired villager to apply this custom work box.";
+            String key = second == null ? "corner_one_next" : "corner_one_ready";
+            return Component.translatable("villagerretaliation.clipboard.message." + key);
         }
-        return first == null
-                ? "Corner 2 set. Left-click the opposite corner, then use the clipboard on the hired villager."
-                : "Corner 2 set. Use the clipboard on the hired villager to apply this custom work box.";
+        String key = first == null ? "corner_two_next" : "corner_two_ready";
+        return Component.translatable("villagerretaliation.clipboard.message." + key);
     }
 
     private static InteractionResult centerWorkAreaDraft(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos center) {
@@ -740,8 +744,8 @@ public final class HiredStorageClipboardItem extends Item {
         saveWorkAreaSelection(stack, level.dimension(), first, second);
         syncClipboardStack(player);
         sendSelectedWorkAreaOutline(player, level, first, second);
-        player.displayClientMessage(Component.literal("Job site draft: " + dimensions(first, second)
-                + " centered at " + positionDescription(center) + "."), true);
+        player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.job_site_draft_centered",
+                dimensions(first, second), positionDescription(center)), true);
         return InteractionResult.SUCCESS;
     }
 
@@ -824,8 +828,8 @@ public final class HiredStorageClipboardItem extends Item {
         syncClipboardStack(player);
         sendSelectedWorkAreaOutline(player, level, min, max);
         WorkAreaDraft updated = selectedWorkArea(stack);
-        player.displayClientMessage(Component.literal("Job site draft: " + dimensions(updated.min(), updated.max())
-                + " centered at " + positionDescription(updated.center()) + "."), true);
+        player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.job_site_draft_centered",
+                dimensions(updated.min(), updated.max()), positionDescription(updated.center())), true);
     }
 
     public static void sendAssignedStorageOutlines(ServerPlayer player, List<AssignedContainerRecord> records) {
@@ -850,7 +854,7 @@ public final class HiredStorageClipboardItem extends Item {
     public static void sendWorkAreaOutline(ServerPlayer player, ServerLevel level, Villager villager) {
         HiredWorkArea area = HiredVillagerWorkService.workArea(level, villager);
         if (!area.usable()) {
-            player.displayClientMessage(Component.literal("No work area assigned."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.no_work_area"), true);
             return;
         }
         String ownerName = VillagerPresetNameRegistry.resolveDisplayName(villager).getString();
@@ -867,7 +871,7 @@ public final class HiredStorageClipboardItem extends Item {
         if (!assigned.isEmpty()) {
             sendAssignedStorageOutlines(player, assigned, ownerName);
         }
-        player.displayClientMessage(Component.literal("Showing job site: " + area.rangeDescription() + "."), true);
+        player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.showing_job_site", area.rangeDescription()), true);
     }
 
     private static String storagePurposeLabel(String purpose) {
@@ -924,17 +928,17 @@ public final class HiredStorageClipboardItem extends Item {
 
     private static void assignSelectedWorkArea(ServerPlayer player, ServerLevel level, Villager villager, ItemStack stack) {
         if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
-            player.displayClientMessage(Component.literal("Only the hiring player can assign this work area."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.assign_work_area_owner_only"), true);
             return;
         }
 
         WorkAreaDraft draft = selectedWorkArea(stack);
         if (draft.first() == null || draft.second() == null) {
-            player.displayClientMessage(Component.literal("Select two work area corners first."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.select_two_corners"), true);
             return;
         }
         if (!level.dimension().equals(draft.dimension())) {
-            player.displayClientMessage(Component.literal("Work area corners must be in this dimension."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.work_area_wrong_dimension"), true);
             return;
         }
 
@@ -947,13 +951,13 @@ public final class HiredStorageClipboardItem extends Item {
 
     private static void handleRouteVillager(ServerPlayer player, ServerLevel level, Villager villager, ItemStack stack) {
         if (!HiredVillagerWorkService.canManageWork(level, villager, player)) {
-            player.displayClientMessage(Component.literal("Only the hiring player can assign this route."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.assign_route_owner_only"), true);
             return;
         }
         if (player.isShiftKeyDown()) {
             if (HiredVillagerWorkService.clearRoute(player, level, villager)) {
                 sendRouteOutline(player, level, HiredRoute.empty());
-                player.displayClientMessage(Component.literal("Route cleared."), true);
+                player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_cleared"), true);
             }
             return;
         }
@@ -961,7 +965,7 @@ public final class HiredStorageClipboardItem extends Item {
         RouteDraft draft = selectedRoute(stack);
         if (!draft.isEmpty()) {
             if (!level.dimension().equals(draft.dimension())) {
-                player.displayClientMessage(Component.literal("Route nodes must be in this dimension."), true);
+                player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_wrong_dimension"), true);
                 return;
             }
             HiredRoute route = draft.route().validatedChain();
@@ -969,7 +973,7 @@ public final class HiredStorageClipboardItem extends Item {
                 clearRouteSelection(stack);
                 syncClipboardStack(player);
                 sendRouteOutline(player, level, route);
-                player.displayClientMessage(Component.literal("Assigned route: " + routeDescription(route) + "."), true);
+                player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_assigned", routeDescription(route)), true);
             }
             return;
         }
@@ -979,11 +983,11 @@ public final class HiredStorageClipboardItem extends Item {
             saveRouteSelection(stack, level.dimension(), assigned);
             syncClipboardStack(player);
             sendRouteOutline(player, level, assigned);
-            player.displayClientMessage(Component.literal("Loaded route for editing: " + routeDescription(assigned) + "."), true);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_loaded", routeDescription(assigned)), true);
             return;
         }
 
-        player.displayClientMessage(Component.literal("Right-click blocks in Route Mode to add route nodes."), true);
+        player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_add_instructions"), true);
     }
 
     private static ItemStack heldClipboard(ServerPlayer player) {

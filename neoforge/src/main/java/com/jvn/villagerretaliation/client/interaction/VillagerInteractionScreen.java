@@ -163,7 +163,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int SKILLS_DIALOGUE_BUTTON_INSET = 1;
     private static final int SKILLS_DIALOGUE_BACK_HINT_GAP = 3;
     private static final int SKILLS_DIALOGUE_BACK_HINT_COLOR = 0x80FFFFFF;
-    private static final String SKILLS_DIALOGUE_BACK_HINT_TEXT = "Esc: Back";
+    private static final String SKILLS_DIALOGUE_BACK_HINT_KEY = GUI_KEY_PREFIX + "skills.back_hint";
     private static final int PROFILE_CONTAINER_WIDTH = 168;
     private static final int PROFILE_CONTAINER_HEIGHT = 120;
     private static final int INTERACTION_BUTTON_SIZE = 28;
@@ -1415,7 +1415,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addLoggingOption(HiredLoggingOptions.BONEMEAL_SAPLINGS, "recruit.logging_bonemeal_saplings", this.loggingBonemealSaplings);
         addLoggingOption(HiredLoggingOptions.PLANT_SAPLINGS, "recruit.logging_plant_saplings", this.loggingPlantSaplings);
         addLoggingOption(HiredLoggingOptions.PICK_UP_DECAY_DROPS, "recruit.logging_pick_up_decay_drops", this.loggingPickUpDecayDrops);
-        this.options.add(DialogueOption.enabled(checkmarkRowLabel("Any logs", this.selectedLoggingFilters.isEmpty()), () -> requestLoggingFilter("any")));
+        this.options.add(DialogueOption.enabled(checkmarkRowLabel(translate("recruit.logging_any"), this.selectedLoggingFilters.isEmpty()), () -> requestLoggingFilter("any")));
         List<ResourceLocation> filters = HiredLoggingFilters.options();
         if (filters.isEmpty()) {
             this.options.add(DialogueOption.enabled(translate("recruit.logging_no_filters"), NO_ACTION));
@@ -2871,7 +2871,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT);
             graphics.drawString(
                     this.font,
-                    SKILLS_DIALOGUE_BACK_HINT_TEXT,
+                    Component.translatable(SKILLS_DIALOGUE_BACK_HINT_KEY),
                     iconLeft + INTERACTION_DIALOGUE_SCROLL_ICON_WIDTH + SKILLS_DIALOGUE_BACK_HINT_GAP,
                     iconTop + (INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT - this.font.lineHeight) / 2,
                     SKILLS_DIALOGUE_BACK_HINT_COLOR,
@@ -4643,7 +4643,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private String localizedReputationLevelName() {
         if (this.reputationLevel == null) {
-            return "Unknown";
+            return translate("reputation.unknown");
         }
         String key = "villagerretaliation.reputation.level." + this.reputationLevel.name().toLowerCase(Locale.ROOT);
         return I18n.exists(key) ? I18n.get(key) : this.reputationLevel.name();

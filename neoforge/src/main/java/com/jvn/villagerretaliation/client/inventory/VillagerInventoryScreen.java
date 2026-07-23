@@ -171,10 +171,12 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         List<Component> tooltip = new ArrayList<>(super.getTooltipFromContainerItem(stack));
         if (this.hoveredSlot != null && this.menu.isVillagerSlot(this.hoveredSlot)) {
             VillagerGiftReturnTracker.giftedBy(stack)
-                    .map(name -> Component.literal("gifted by " + name).withStyle(ChatFormatting.GRAY))
+                    .map(name -> Component.translatable("villagerretaliation.tooltip.gifted_by", name)
+                            .withStyle(ChatFormatting.GRAY))
                     .ifPresent(tooltip::add);
             VillagerTradePaymentTracker.tradedBy(stack)
-                    .map(name -> Component.literal("traded by " + name).withStyle(ChatFormatting.GRAY))
+                    .map(name -> Component.translatable("villagerretaliation.tooltip.traded_by", name)
+                            .withStyle(ChatFormatting.GRAY))
                     .ifPresent(tooltip::add);
             if (VillagerConfiscatedStolenItemTracker.stolenItemBy(stack).isPresent()) {
                 tooltip.add(Component.translatable("villagerretaliation.tooltip.stolen_item").withStyle(ChatFormatting.RED));
