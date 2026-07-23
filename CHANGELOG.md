@@ -1,5 +1,9 @@
 # Changelog
 
+- Fixed the dialogue gift inventory shrinking independently from the interaction container at GUI scale 4.
+
+- Added GUI scale 4 support for the player party inventory, centering the player inventory and its adaptive left-side villager panels together as one group.
+
 - Added optional EMI compatibility so recipe/item panels wrap around villager inventory tabs and expanded party inventory panels instead of covering them.
 
 - Added a live hired-contract countdown beside the villager timer stat, with a full remaining-time tooltip in villager and party inventory views.
