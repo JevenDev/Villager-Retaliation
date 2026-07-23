@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client.inventory;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
+import com.jvn.villagerretaliation.client.ui.ClientScreenArea;
 import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
 import com.jvn.villagerretaliation.inventory.ProtectedVillagerProperty;
 import com.jvn.villagerretaliation.inventory.VillagerConfiscatedStolenItemTracker;
@@ -131,6 +132,19 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
 
     private int playerTextureTop() {
         return this.playerInventoryBeside ? PLAYER_TEXTURE_BESIDE_TOP : PLAYER_TEXTURE_TOP;
+    }
+
+    /** Areas extending beyond the normal container bounds that recipe viewers must avoid. */
+    public List<ClientScreenArea> additionalRecipeViewerExclusionAreas() {
+        if (availableModes().size() <= 1) {
+            return List.of();
+        }
+        Bounds leftTab = leftTabBounds();
+        Bounds rightTab = rightTabBounds();
+        return List.of(
+                new ClientScreenArea(leftTab.left(), leftTab.top(), leftTab.width(), leftTab.height()),
+                new ClientScreenArea(rightTab.left(), rightTab.top(), rightTab.width(), rightTab.height())
+        );
     }
 
     @Override
