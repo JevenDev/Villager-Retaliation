@@ -36,6 +36,10 @@ allprojects {
             name = 'Su5ed'
             url = 'https://maven.su5ed.dev/releases'
         }
+        maven {
+            name = 'TerraformersMC'
+            url = 'https://maven.terraformersmc.com/releases/'
+        }
         exclusiveContent {
             forRepository {
                 maven {

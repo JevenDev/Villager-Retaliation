@@ -1,5 +1,7 @@
 # Changelog
 
+- Added optional EMI compatibility so recipe/item panels wrap around villager inventory tabs and expanded party inventory panels instead of covering them.
+
 - Added a live hired-contract countdown beside the villager timer stat, with a full remaining-time tooltip in villager and party inventory views.
 
 - Fixed duel participants transferring items during a fight: player drop input is now rejected before inventory removal, and both players and villagers are prevented from picking up or dropping world items for the duration of the duel.

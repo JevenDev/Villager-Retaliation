@@ -28,6 +28,8 @@ ${neoforge_owo_dependency}
 
 ${neoforge_architectury_dependency}
 
+${neoforge_emi_dependency}
+
 ${neoforge_toucanlib_dependency}
 
 [[dependencies."${mod_id}"]]

@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.client.party;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.inventory.VillagerInventoryUiRenderer;
+import com.jvn.villagerretaliation.client.ui.ClientScreenArea;
 import com.jvn.villagerretaliation.mixin.client.AbstractContainerScreenAccessor;
 import com.jvn.villagerretaliation.mixin.client.ScreenInvoker;
 import com.jvn.villagerretaliation.network.PartyActionRequestPayload;
@@ -134,6 +135,26 @@ public final class PartyInventoryOverlay {
         if (page(screen) == Page.SETTINGS) return false;
         return screen.getMenu().slots.stream()
                 .anyMatch(slot -> slot.x == left && slot.y == top && showsSlot(screen, slot));
+    }
+
+    /** Areas extending beyond the vanilla inventory bounds that recipe viewers must avoid. */
+    public static List<ClientScreenArea> recipeViewerExclusionAreas(InventoryScreen screen) {
+        if (!tabsAvailable(screen)) {
+            return List.of();
+        }
+        List<ClientScreenArea> areas = new ArrayList<>();
+        for (Page tab : Page.values()) {
+            Bounds bounds = bounds(screen, tab);
+            areas.add(new ClientScreenArea(bounds.left(), bounds.top(), bounds.width(), bounds.height()));
+        }
+        if (page(screen) == Page.PARTY) {
+            int count = villagerContainerCount();
+            for (int index = 0; index < count; index++) {
+                Bounds bounds = villagerContainerBounds(screen, count, index);
+                areas.add(new ClientScreenArea(bounds.left(), bounds.top(), bounds.width(), bounds.height()));
+            }
+        }
+        return List.copyOf(areas);
     }
 
     public static void renderTabsBehindContainer(GuiGraphics graphics, InventoryScreen screen) {
