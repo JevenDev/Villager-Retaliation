@@ -15,6 +15,7 @@ import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.Tag;
@@ -358,6 +359,18 @@ public final class PartyVillagerContractService {
         return record != null && !VillagerContractTime.isExpired(
                 level.getServer().overworld().getGameTime(),
                 record.contractEndGameTime());
+    }
+
+    public static OptionalLong getPartyEndGameTime(ServerLevel level, Villager villager) {
+        if (level == null || villager == null) {
+            return OptionalLong.empty();
+        }
+        PartyRecord party = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
+        PartyVillagerRecord record = party == null ? null : party.villager(villager.getUUID());
+        return record == null || VillagerContractTime.isExpired(
+                level.getServer().overworld().getGameTime(), record.contractEndGameTime())
+                ? OptionalLong.empty()
+                : OptionalLong.of(record.contractEndGameTime());
     }
 
     public static void onVillagerLoaded(Villager villager) {

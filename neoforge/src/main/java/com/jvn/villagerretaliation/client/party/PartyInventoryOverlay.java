@@ -50,7 +50,7 @@ public final class PartyInventoryOverlay {
     private static final int PANEL_SLOT_SIZE = 18;
     private static final int PANEL_NAME_Y = 9;
     private static final int PANEL_NAME_HORIZONTAL_PADDING = 7;
-    private static final int PANEL_STATS_X = 81;
+    private static final int PANEL_STATS_CENTER_X = 94;
     private static final int PANEL_STATS_Y = 24;
     private static final int PANEL_ENTITY_LEFT = 26;
     private static final int PANEL_ENTITY_TOP = 23;
@@ -195,6 +195,13 @@ public final class PartyInventoryOverlay {
             renderRosterTooltip(graphics, summary, mouseX, mouseY);
             return;
         }
+        int timerVillagerIndex = villagerTimerAt(screen, mouseX, mouseY);
+        if (timerVillagerIndex >= 0) {
+            long remainingTicks = remainingContractTicks(
+                    PartyRosterClient.roster().villagers().get(timerVillagerIndex));
+            VillagerInventoryUiRenderer.renderTimerStatTooltip(graphics, remainingTicks, mouseX, mouseY);
+            return;
+        }
         PanelSlot panelSlot = panelSlotAt(screen, mouseX, mouseY);
         if (panelSlot != null) {
             renderPanelSlotTooltip(graphics, panelSlot.stack(), mouseX, mouseY);
@@ -307,7 +314,8 @@ public final class PartyInventoryOverlay {
             VillagerInventoryUiRenderer.renderStats(
                     graphics,
                     villager,
-                    bounds.left() + PANEL_STATS_X,
+                    remainingContractTicks(entry),
+                    bounds.left() + PANEL_STATS_CENTER_X,
                     bounds.top() + PANEL_STATS_Y);
         }
     }
@@ -352,6 +360,33 @@ public final class PartyInventoryOverlay {
                 panel.top() + PANEL_HAND_SLOT_Y,
                 mouseX,
                 mouseY);
+    }
+    private static long remainingContractTicks(PartyRosterSyncPayload.VillagerEntry entry) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (entry == null || minecraft.level == null || entry.contractEndGameTime() < 0L) {
+            return -1L;
+        }
+        return Math.max(0L, entry.contractEndGameTime() - minecraft.level.getGameTime());
+    }
+
+    private static int villagerTimerAt(InventoryScreen screen, double mouseX, double mouseY) {
+        int count = villagerContainerCount();
+        for (int index = 0; index < count; index++) {
+            if (partyVillager(index) == null) {
+                continue;
+            }
+            Bounds panel = villagerContainerBounds(screen, count, index);
+            long remainingTicks = remainingContractTicks(PartyRosterClient.roster().villagers().get(index));
+            if (VillagerInventoryUiRenderer.isTimerStatHovered(
+                    remainingTicks,
+                    panel.left() + PANEL_STATS_CENTER_X,
+                    panel.top() + PANEL_STATS_Y,
+                    mouseX,
+                    mouseY)) {
+                return index;
+            }
+        }
+        return -1;
     }
     private static PanelSlot panelSlotAt(InventoryScreen screen, double mouseX, double mouseY) {
         int count = villagerContainerCount();

@@ -19,6 +19,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ArmorItem;
@@ -56,6 +57,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private final SimpleContainer paddingInventory = new SimpleContainer(1);
     private final Villager villager;
     private final int villagerEntityId;
+    private long contractEndGameTime;
     private ViewMode viewMode;
     private int villagerSlotCount;
     private int playerInventoryStart;
@@ -136,7 +138,8 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                         workInventoryViewMode),
                 workInventoryViewMode,
                 personalInventoryAccess,
-                jobInventoryAccess
+                jobInventoryAccess,
+                contractEndGameTime(villager)
         );
     }
 
@@ -150,7 +153,8 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                 data.viewMode(),
                 data.workInventoryViewMode(),
                 data.personalInventoryAccess(),
-                data.jobInventoryAccess());
+                data.jobInventoryAccess(),
+                data.contractEndGameTime());
     }
 
     private VillagerInventoryMenu(
@@ -162,7 +166,8 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             ViewMode viewMode,
             ViewMode workInventoryViewMode,
             boolean personalInventoryAccess,
-            boolean jobInventoryAccess) {
+            boolean jobInventoryAccess,
+            long contractEndGameTime) {
         super(VillagerRetaliationMenus.VILLAGER_INVENTORY.get(), containerId);
         this.viewMode = viewMode == null ? ViewMode.PERSONAL : viewMode;
         this.villagerSlotCount = this.viewMode.slotCount();
@@ -173,6 +178,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         this.villagerInventory = villagerInventory;
         this.villager = villager;
         this.villagerEntityId = villagerEntityId;
+        this.contractEndGameTime = contractEndGameTime;
         this.workInventoryViewMode = workInventoryViewMode != null && workInventoryViewMode.isWorkInventory()
                 ? workInventoryViewMode
                 : ViewMode.JOB;
@@ -185,6 +191,32 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
         addVillagerSlots();
         addPaddingSlot();
         addPlayerSlots(playerInventory);
+        addDataSlots(new ContainerData() {
+            @Override
+            public int get(int index) {
+                return index == 0
+                        ? (int) VillagerInventoryMenu.this.contractEndGameTime
+                        : (int) (VillagerInventoryMenu.this.contractEndGameTime >>> 32);
+            }
+
+            @Override
+            public void set(int index, int value) {
+                if (index == 0) {
+                    VillagerInventoryMenu.this.contractEndGameTime =
+                            VillagerInventoryMenu.this.contractEndGameTime & 0xFFFFFFFF00000000L
+                                    | value & 0xFFFFFFFFL;
+                } else {
+                    VillagerInventoryMenu.this.contractEndGameTime =
+                            VillagerInventoryMenu.this.contractEndGameTime & 0xFFFFFFFFL
+                                    | (long) value << 32;
+                }
+            }
+
+            @Override
+            public int getCount() {
+                return 2;
+            }
+        });
     }
 
     @Override
@@ -199,6 +231,9 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     @Override
     public void broadcastChanges() {
         refreshVillagerInventory();
+        if (this.villager != null) {
+            this.contractEndGameTime = contractEndGameTime(this.villager);
+        }
         super.broadcastChanges();
         holdVillager();
         checkNetheriteAdvancement();
@@ -606,7 +641,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
     private static ClientMenuData clientData(RegistryFriendlyByteBuf data) {
         if (data == null) {
-            return new ClientMenuData(-1, ViewMode.PERSONAL, ViewMode.JOB, true, false);
+            return new ClientMenuData(-1, ViewMode.PERSONAL, ViewMode.JOB, true, false, -1L);
         }
         int entityId = data.readVarInt();
         ViewMode viewMode = data.isReadable() ? data.readEnum(ViewMode.class) : ViewMode.PERSONAL;
@@ -627,7 +662,14 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                 personalInventoryAccess,
                 jobInventoryAccess,
                 workInventoryViewMode);
-        return new ClientMenuData(entityId, viewMode, workInventoryViewMode, personalInventoryAccess, jobInventoryAccess);
+        long contractEndGameTime = data.isReadable() && data.readBoolean() ? data.readVarLong() : -1L;
+        return new ClientMenuData(
+                entityId,
+                viewMode,
+                workInventoryViewMode,
+                personalInventoryAccess,
+                jobInventoryAccess,
+                contractEndGameTime);
     }
 
     private static boolean personalInventoryAccess(Inventory playerInventory, Villager villager) {
@@ -670,6 +712,27 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
                 && com.jvn.villagerretaliation.party.PartyVillagerContractService.isActivePartyVillager(level, villager)
                 ? ViewMode.PARTY
                 : ViewMode.JOB;
+    }
+
+    private static long contractEndGameTime(Villager villager) {
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return -1L;
+        }
+        var partyEnd = com.jvn.villagerretaliation.party.PartyVillagerContractService
+                .getPartyEndGameTime(level, villager);
+        if (partyEnd.isPresent()) {
+            return partyEnd.getAsLong();
+        }
+        return com.jvn.villagerretaliation.interaction.HiredVillagerContractService
+                .getHireEndGameTime(level, villager)
+                .orElse(-1L);
+    }
+
+    public long remainingContractTicks() {
+        if (this.contractEndGameTime < 0L) {
+            return -1L;
+        }
+        return Math.max(0L, this.contractEndGameTime - this.player.level().getGameTime());
     }
 
     private static int armorSlotFor(EquipmentSlot equipmentSlot) {
@@ -890,7 +953,8 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
             ViewMode viewMode,
             ViewMode workInventoryViewMode,
             boolean personalInventoryAccess,
-            boolean jobInventoryAccess) {
+            boolean jobInventoryAccess,
+            long contractEndGameTime) {
     }
 
     private static ResourceLocation emptyArmorSlotIcon(EquipmentSlot equipmentSlot) {

@@ -57,7 +57,7 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
     private static final int PARTY_ICON_SIZE = 20;
     private static final int PARTY_ICON_BOTTOM_INSET = 93;
 
-    private static final int STATS_LEFT = 11;
+    private static final int STATS_CENTER_X = 27;
     private static final int STATS_TOP = 27;
 
     private static final int TEXT_OUTLINE_COLOR = 0xFF000000;
@@ -92,6 +92,7 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
         renderTabTooltip(graphics, mouseX, mouseY);
+        renderTimerTooltip(graphics, mouseX, mouseY);
     }
 
     @Override
@@ -325,7 +326,21 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         Entity entity = villagerEntity();
         if (entity instanceof LivingEntity livingEntity) {
             VillagerInventoryUiRenderer.renderStats(
-                    graphics, livingEntity, this.leftPos + STATS_LEFT, this.topPos + STATS_TOP);
+                    graphics,
+                    livingEntity,
+                    this.menu.remainingContractTicks(),
+                    this.leftPos + STATS_CENTER_X,
+                    this.topPos + STATS_TOP);
+        }
+    }
+
+    private void renderTimerTooltip(GuiGraphics graphics, int mouseX, int mouseY) {
+        long remainingTicks = this.menu.remainingContractTicks();
+        int statsCenterX = this.leftPos + STATS_CENTER_X;
+        int statsTop = this.topPos + STATS_TOP;
+        if (VillagerInventoryUiRenderer.isTimerStatHovered(
+                remainingTicks, statsCenterX, statsTop, mouseX, mouseY)) {
+            VillagerInventoryUiRenderer.renderTimerStatTooltip(graphics, remainingTicks, mouseX, mouseY);
         }
     }
 
