@@ -37,6 +37,7 @@ import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -155,6 +156,7 @@ public final class VillagerInteractionScreenOpener {
             boolean clipboardMenu,
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions) {
+        DialogueContext dialogueContext = VillagerInteractionService.createDialogueContext(level, player, villager);
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
@@ -252,7 +254,7 @@ public final class VillagerInteractionScreenOpener {
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),
-                allegianceView(level, villager),
+                allegianceView(dialogueContext, level, villager, partyVillager != null),
                 VillagerSocialGraphService.familySnapshot(level, villager),
                 VillagerSocialGraphService.relationshipSnapshot(level, villager)
         );
@@ -275,8 +277,10 @@ public final class VillagerInteractionScreenOpener {
     }
 
     private static VillageAllegianceView allegianceView(
+            DialogueContext context,
             ServerLevel level,
-            Villager villager) {
+            Villager villager,
+            boolean recruitedPartyVillager) {
         VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(level);
         VillageAllegianceData data = VillageAllegianceApi.get(villager).orElse(null);
         Optional<VillageAllegianceRegistrySavedData.AllegianceRecord> home = data != null && data.isKnown()
@@ -296,10 +300,102 @@ public final class VillagerInteractionScreenOpener {
                         : VillageAllegianceView.HomeStatus.WANDERER;
         String currentName = current.map(VillageAllegianceRegistrySavedData.AllegianceRecord::displayName)
                 .orElse("Outside a tracked village");
+        boolean inVillage = current.isPresent();
         boolean atHome = data != null && data.isKnown() && currentId.isPresent()
                 && registry.canonical(data.primary()).filter(currentId.get()::equals).isPresent();
+        Map<String, String> replacements = Map.of(
+                "home_village", homeName,
+                "current_village", currentName);
+        String homeAnswerKey = switch (homeStatus) {
+            case KNOWN -> atHome
+                    ? "allegiance.answer.home_here"
+                    : "allegiance.answer.home_away";
+            case WANDERER -> recruitedPartyVillager
+                    ? "allegiance.answer.wanderer_party"
+                    : inVillage
+                            ? "allegiance.answer.wanderer_settling"
+                            : "allegiance.answer.wanderer";
+            case UNKNOWN -> "allegiance.answer.unknown";
+        };
+        String currentAnswerKey;
+        if (!inVillage) {
+            currentAnswerKey = "allegiance.answer.here_outside";
+        } else if (atHome) {
+            currentAnswerKey = "allegiance.answer.here_home";
+        } else if (homeStatus == VillageAllegianceView.HomeStatus.KNOWN) {
+            currentAnswerKey = "allegiance.answer.here_foreign";
+        } else if (recruitedPartyVillager) {
+            currentAnswerKey = "allegiance.answer.here_party";
+        } else {
+            currentAnswerKey = "allegiance.answer.here_visiting";
+        }
         return new VillageAllegianceView(
-                homeName, currentName, homeStatus, current.isPresent(), atHome);
+                homeName,
+                currentName,
+                homeStatus,
+                inVillage,
+                atHome,
+                dialogueMessage(context, "allegiance.prompt", replacements,
+                        "Is there something you would like to ask about where I belong?"),
+                dialogueMessage(context, "allegiance.option.ask_home", replacements,
+                        "Where do you call home?"),
+                dialogueMessage(context, "allegiance.option.ask_here", replacements,
+                        "Do you belong to this village?"),
+                dialogueMessage(context, "allegiance.option.reassign", replacements,
+                        "Would you make this village your home?"),
+                dialogueMessage(context, homeAnswerKey, replacements,
+                        fallbackHomeAnswer(homeStatus, inVillage, atHome, recruitedPartyVillager, homeName)),
+                dialogueMessage(context, currentAnswerKey, replacements,
+                        fallbackCurrentVillageAnswer(inVillage, atHome, homeStatus, recruitedPartyVillager, currentName, homeName)));
+    }
+
+    private static String dialogueMessage(
+            DialogueContext context,
+            String key,
+            Map<String, String> replacements,
+            String fallback) {
+        return VillagerDialogueResources.message(context, key, replacements).orElse(fallback);
+    }
+
+    private static String fallbackHomeAnswer(
+            VillageAllegianceView.HomeStatus homeStatus,
+            boolean inVillage,
+            boolean atHome,
+            boolean recruitedPartyVillager,
+            String homeName) {
+        return switch (homeStatus) {
+            case KNOWN -> atHome
+                    ? "This is my home. I belong to " + homeName + ", and I intend to look after it."
+                    : "I come from " + homeName + ". I may be traveling, but that is still my home.";
+            case WANDERER -> recruitedPartyVillager
+                    ? "I do not have a home village, but I am traveling with this party. I will not settle somewhere unless someone I trust in our party asks me to."
+                    : inVillage
+                            ? "I do not have a home village yet. If I remain here for a full day, perhaps I will call this place home."
+                            : "I do not have a home village. For now, I go where the road takes me.";
+            case UNKNOWN -> "I am not certain where I belong. I wish I had a clearer answer for you.";
+        };
+    }
+
+    private static String fallbackCurrentVillageAnswer(
+            boolean inVillage,
+            boolean atHome,
+            VillageAllegianceView.HomeStatus homeStatus,
+            boolean recruitedPartyVillager,
+            String currentName,
+            String homeName) {
+        if (!inVillage) {
+            return "We are not standing in a village right now.";
+        }
+        if (atHome) {
+            return "Yes. This is " + currentName + ", and this is where I belong.";
+        }
+        if (homeStatus == VillageAllegianceView.HomeStatus.KNOWN) {
+            return "No. We are in " + currentName + ", but my home is " + homeName + ".";
+        }
+        if (recruitedPartyVillager) {
+            return "No. I am here with my party, but I have not joined " + currentName + ".";
+        }
+        return "Not yet. I am only staying in " + currentName + " for now.";
     }
 
     private static boolean hasTradingProfession(Villager villager) {

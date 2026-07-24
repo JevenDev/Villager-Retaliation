@@ -1,0 +1,89 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "dialogue.ambient",
+      "scope.global",
+      "section.messages",
+      "topic.allegiance"
+    ],
+    "topic": "global.allegiance"
+  },
+  "messages": [
+    {
+      "key": "allegiance.prompt",
+      "lines": ["Is there something you would like to ask about where I belong?"],
+      "id": "global.messages.25_allegiance.messages.allegiance.prompt.000"
+    },
+    {
+      "key": "allegiance.option.ask_home",
+      "lines": ["Where do you call home?"],
+      "id": "global.messages.25_allegiance.messages.allegiance.option.ask_home.001"
+    },
+    {
+      "key": "allegiance.option.ask_here",
+      "lines": ["Do you belong to this village?"],
+      "id": "global.messages.25_allegiance.messages.allegiance.option.ask_here.002"
+    },
+    {
+      "key": "allegiance.option.reassign",
+      "lines": ["Would you make this village your home?"],
+      "id": "global.messages.25_allegiance.messages.allegiance.option.reassign.003"
+    },
+    {
+      "key": "allegiance.answer.home_here",
+      "lines": ["This is my home. I belong to {home_village}, and I intend to look after it."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.home_here.004"
+    },
+    {
+      "key": "allegiance.answer.home_away",
+      "lines": ["I come from {home_village}. I may be traveling, but that is still my home."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.home_away.005"
+    },
+    {
+      "key": "allegiance.answer.wanderer",
+      "lines": ["I do not have a home village. For now, I go where the road takes me."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.wanderer.006"
+    },
+    {
+      "key": "allegiance.answer.wanderer_settling",
+      "lines": ["I do not have a home village yet. If I remain here for a full day, perhaps I will call this place home."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.wanderer_settling.007"
+    },
+    {
+      "key": "allegiance.answer.wanderer_party",
+      "lines": ["I do not have a home village, but I am traveling with this party. I will not settle somewhere unless someone I trust in our party asks me to."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.wanderer_party.008"
+    },
+    {
+      "key": "allegiance.answer.unknown",
+      "lines": ["I am not certain where I belong. I wish I had a clearer answer for you."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.unknown.009"
+    },
+    {
+      "key": "allegiance.answer.here_outside",
+      "lines": ["We are not standing in a village right now."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.here_outside.010"
+    },
+    {
+      "key": "allegiance.answer.here_home",
+      "lines": ["Yes. This is {current_village}, and this is where I belong."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.here_home.011"
+    },
+    {
+      "key": "allegiance.answer.here_foreign",
+      "lines": ["No. We are in {current_village}, but my home is {home_village}."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.here_foreign.012"
+    },
+    {
+      "key": "allegiance.answer.here_party",
+      "lines": ["No. I am here with my party, but I have not joined {current_village}."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.here_party.013"
+    },
+    {
+      "key": "allegiance.answer.here_visiting",
+      "lines": ["Not yet. I am only staying in {current_village} for now."],
+      "id": "global.messages.25_allegiance.messages.allegiance.answer.here_visiting.014"
+    }
+  ]
+}
