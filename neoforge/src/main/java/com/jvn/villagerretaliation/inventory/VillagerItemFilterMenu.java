@@ -125,7 +125,11 @@ public final class VillagerItemFilterMenu extends AbstractContainerMenu {
         return slot.container == this.playerInventory && !isHeldFilterMenuSlot(menuSlot);
     }
 
-    private boolean setGhostEntry(int slot, ItemStack entry) {
+    /**
+     * Updates a ghost entry from a client-side item source such as an EMI drag-and-drop action.
+     * The server validates that this is still the held filter before applying the update.
+     */
+    public boolean setGhostEntry(int slot, ItemStack entry) {
         if (slot < 0 || slot >= GHOST_SLOT_COUNT || !isEditingHeldFilter()) {
             return false;
         }

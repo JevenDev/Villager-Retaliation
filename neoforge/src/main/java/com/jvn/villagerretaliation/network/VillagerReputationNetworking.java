@@ -562,6 +562,16 @@ public final class VillagerReputationNetworking {
                                         payload.modeId())))
         );
         network.playToServer(
+                ItemFilterGhostSlotPayload.TYPE,
+                ItemFilterGhostSlotPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> {
+                            if (player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerItemFilterMenu menu) {
+                                menu.setGhostEntry(payload.slot(), payload.entry());
+                            }
+                        }))
+        );
+        network.playToServer(
                 HiredHitboxDebugPreviewPayload.TYPE,
                 HiredHitboxDebugPreviewPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
