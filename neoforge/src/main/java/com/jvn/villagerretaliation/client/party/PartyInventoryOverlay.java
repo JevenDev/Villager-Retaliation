@@ -1036,6 +1036,11 @@ public final class PartyInventoryOverlay {
                 Component.translatable(valueKey));
     }
 
+    public static int effectListTopOffset(InventoryScreen screen) {
+        if (!PartyRosterClient.roster().active() || isCustomPage(screen)) return 0;
+        return -(LARGE_TAB_HEIGHT - TAB_INSET + 1);
+    }
+
     private static boolean tabsAvailable(InventoryScreen screen) {
         return isCustomPage(screen) || PartyRosterClient.roster().active();
     }

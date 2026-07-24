@@ -33,6 +33,10 @@ public final class VillagerNameTagOverlay {
         if (minecraft.player == null || minecraft.options.hideGui) {
             return;
         }
+        if (event.getEntity().isInvisibleTo(minecraft.player)) {
+            event.setCanRender(TriState.FALSE);
+            return;
+        }
         if (minecraft.player.distanceToSqr(event.getEntity()) > MAX_NAME_TAG_DISTANCE * MAX_NAME_TAG_DISTANCE) {
             return;
         }

@@ -64,6 +64,7 @@ public final class VillagerStatNameTagOverlay {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null
                 || minecraft.options.hideGui
+                || villager.isInvisibleTo(minecraft.player)
                 || minecraft.player.distanceToSqr(villager) > MAX_DISTANCE * MAX_DISTANCE) {
             return;
         }
@@ -104,6 +105,7 @@ public final class VillagerStatNameTagOverlay {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null
                 || minecraft.options.hideGui
+                || villager.isInvisibleTo(minecraft.player)
                 || !VillagerRetaliationServerConfigClient.showVillagerNameTags()
                 || !VillagerRetaliationClientPreferences.showVillagerNameTags()
                 || minecraft.player.distanceToSqr(villager) > MAX_DISTANCE * MAX_DISTANCE) {
