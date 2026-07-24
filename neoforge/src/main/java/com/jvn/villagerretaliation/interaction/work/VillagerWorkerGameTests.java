@@ -4055,6 +4055,93 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80)
+    public static void courierRecoversAtNearestRouteNodeAfterRouteTimeout(GameTestHelper helper) {
+        buildFloor(helper, 0, 10, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierRouteRecovery");
+        BlockPos startRel = new BlockPos(1, 2, 2);
+        Villager villager = spawnVillager(helper, startRel);
+        tickVillager(level, villager, 20);
+        villager.moveTo(helper.absolutePos(startRel).getCenter());
+        VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+        BlockPos nearestNodeRel = new BlockPos(4, 2, 2);
+        BlockPos lastNodeRel = new BlockPos(8, 2, 2);
+        BlockPos nearestNode = helper.absolutePos(nearestNodeRel);
+
+        CompoundTag state = new CompoundTag();
+        state.putString("CourierPhase", "outbound");
+        state.putInt("CourierRouteIndex", 1);
+        state.putLong("CourierRouteLastNodeReachedGameTime", level.getGameTime() - 20L * 30L);
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(nearestNodeRel, lastNodeRel));
+
+        new CourierWorker().tick(level, villager, hirer, context);
+
+        helper.assertValueEqual(state.getInt("CourierRouteIndex"), 0,
+                "timed-out courier route navigation should re-anchor at the nearest route node");
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        helper.assertTrue(navigationTarget != null && navigationTarget.distSqr(nearestNode) <= 4.0D,
+                "courier route recovery should immediately pathfind toward the nearest node; target=" + navigationTarget);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 80)
+    public static void courierCollectsReachableInputBesideRouteNode(GameTestHelper helper) {
+        buildFloor(helper, 0, 14, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierRouteStorageReach");
+        BlockPos standingRel = new BlockPos(3, 2, 2);
+        BlockPos routeNodeRel = new BlockPos(4, 2, 2);
+        BlockPos inputRel = new BlockPos(7, 2, 2);
+        BlockPos outputRel = new BlockPos(12, 2, 2);
+        Villager villager = spawnVillager(helper, standingRel);
+        tickVillager(level, villager, 20);
+        villager.moveTo(helper.absolutePos(standingRel).getCenter());
+        VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+        BlockPos input = helper.absolutePos(inputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, input);
+        AssignedStorageService.removeAssignedContainer(level, output);
+        container(level, input).setItem(0, new ItemStack(Items.DIRT, 12));
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "reachable route input assignment");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "reachable route output assignment");
+
+        CompoundTag state = new CompoundTag();
+        state.putString("CourierPhase", "outbound");
+        state.putInt("CourierRouteIndex", 0);
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(routeNodeRel, outputRel));
+
+        new CourierWorker().tick(level, villager, hirer, context);
+
+        helper.assertValueEqual(countItem(container(level, input), Items.DIRT), 0,
+                "courier should collect an assigned input chest it can reach from a route node");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.DIRT), 12,
+                "courier should place route-collected cargo into its job inventory");
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void courierMovesInputToOutputAlongAssignedRoute(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 5, 1);
@@ -4128,9 +4215,11 @@ public final class VillagerWorkerGameTests {
         container(level, input).setItem(0, new ItemStack(Items.COOKED_BEEF, 8));
         container(level, input).setItem(1, new ItemStack(Items.DIRT, 6));
 
+        ItemStack steakFilter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(steakFilter, 0, new ItemStack(Items.COOKED_BEEF));
         ItemFrame steakFrame = new ItemFrame(level, steakOutput.relative(Direction.SOUTH), Direction.SOUTH);
-        steakFrame.setItem(new ItemStack(Items.COOKED_BEEF));
-        helper.assertTrue(level.addFreshEntity(steakFrame), "steak output item frame should spawn");
+        steakFrame.setItem(steakFilter);
+        helper.assertTrue(level.addFreshEntity(steakFrame), "steak filter item frame should spawn");
 
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
@@ -4168,6 +4257,41 @@ public final class VillagerWorkerGameTests {
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         steakFrame.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void courierOutputItemFrameRespectsDenylistFilter(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierDenyFilter");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        BlockPos outputRel = new BlockPos(5, 2, 2);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+
+        ItemStack denylist = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setMode(denylist, VillagerItemFilterData.Mode.DENYLIST);
+        VillagerItemFilterData.setEntry(denylist, 0, new ItemStack(Items.DIRT));
+        ItemFrame frame = new ItemFrame(level, output.relative(Direction.SOUTH), Direction.SOUTH);
+        frame.setItem(denylist);
+        helper.assertTrue(level.addFreshEntity(frame), "denylist filter item frame should spawn");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "denylist courier output assignment");
+
+        helper.assertFalse(AssignedStorageService.courierOutputStorageAccepts(
+                        level, villager, output, new ItemStack(Items.DIRT)),
+                "denylist item frames should reject listed cargo");
+        helper.assertTrue(AssignedStorageService.courierOutputStorageAccepts(
+                        level, villager, output, new ItemStack(Items.DIAMOND)),
+                "denylist item frames should accept unlisted cargo");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        frame.discard();
         villager.discard();
         helper.succeed();
     }

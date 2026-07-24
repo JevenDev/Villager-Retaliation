@@ -4,6 +4,8 @@ import com.jvn.villagerretaliation.block.PaymentBoxBlockEntity;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignmentResult;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.item.VillagerItemFilterData;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -322,6 +324,7 @@ public final class AssignedStorageService {
     /**
      * Selects a courier destination for its current cargo. Framed outputs that match any cargo
      * item take priority over unframed outputs, allowing item frames to act as destination filters.
+     * A framed villager item filter applies its configured allowlist or denylist instead.
      */
     public static BlockPos nearestAssignedCourierOutputStoragePos(
             ServerLevel level,
@@ -370,7 +373,13 @@ public final class AssignedStorageService {
             VillagerInventoryOverflowService.ContainerCandidate candidate,
             ItemStack stack) {
         List<ItemStack> filters = courierItemFrameFilters(level, candidate);
-        return filters.isEmpty() || filters.stream().anyMatch(filter -> stack.is(filter.getItem()));
+        return filters.isEmpty() || filters.stream().anyMatch(filter -> itemFrameFilterAccepts(filter, stack));
+    }
+
+    private static boolean itemFrameFilterAccepts(ItemStack filter, ItemStack stack) {
+        return VillagerRetaliationItems.isItemFilter(filter)
+                ? VillagerItemFilterData.matches(filter, stack)
+                : stack.is(filter.getItem());
     }
 
     private static boolean hasCourierItemFrame(

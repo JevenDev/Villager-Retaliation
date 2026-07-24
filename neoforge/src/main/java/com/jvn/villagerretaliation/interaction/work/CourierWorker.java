@@ -22,6 +22,7 @@ public final class CourierWorker implements HiredRoleWorker {
     private static final String PHASE_TAG = "CourierPhase";
     private static final String STORAGE_TARGET_TAG = "CourierStorageTarget";
     private static final String ROUTE_INDEX_TAG = "CourierRouteIndex";
+    private static final String ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG = "CourierRouteLastNodeReachedGameTime";
     private static final String PHASE_PICKUP = "pickup";
     private static final String PHASE_OUTBOUND = "outbound";
     private static final String PHASE_DELIVER = "deliver";
@@ -29,6 +30,7 @@ public final class CourierWorker implements HiredRoleWorker {
     private static final int MAX_CARGO_ITEMS = 64;
     private static final double MOVE_SPEED = 0.5D;
     private static final double ROUTE_ARRIVAL_DISTANCE_SQR = 4.0D;
+    private static final long ROUTE_RECOVERY_TICKS = 20L * 30L;
 
     @Override
     public HiredVillagerRole role() {
@@ -48,7 +50,7 @@ public final class CourierWorker implements HiredRoleWorker {
         String phase = phase(context);
         if (context.inventory().hasOutputItems() && PHASE_PICKUP.equals(phase)) {
             setPhase(context, PHASE_OUTBOUND);
-            context.state().putInt(ROUTE_INDEX_TAG, 0);
+            setRouteIndex(context, 0);
             phase = PHASE_OUTBOUND;
         } else if (!context.inventory().hasOutputItems() && PHASE_DELIVER.equals(phase)) {
             beginReturn(context, route);
@@ -108,7 +110,7 @@ public final class CourierWorker implements HiredRoleWorker {
         }
 
         setPhase(context, PHASE_OUTBOUND);
-        context.state().putInt(ROUTE_INDEX_TAG, 0);
+        setRouteIndex(context, 0);
         HiredWorkerBrain.clearFailure(context);
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, input);
         animateCargo(level, villager, context);
@@ -119,7 +121,7 @@ public final class CourierWorker implements HiredRoleWorker {
 
     private static WorkResult beginEmptyOutboundPass(HiredWorkContext context, HiredRoute route) {
         setPhase(context, PHASE_OUTBOUND);
-        context.state().putInt(ROUTE_INDEX_TAG, 0);
+        setRouteIndex(context, 0);
         HiredWorkerBrain.clearFailure(context);
         HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_TARGET, route.first());
         return WorkResult.progressed("interaction.work.courier.following_route_outbound");
@@ -136,6 +138,15 @@ public final class CourierWorker implements HiredRoleWorker {
                 ? Math.clamp(context.state().getInt(ROUTE_INDEX_TAG), 0, lastIndex)
                 : outbound ? 0 : lastIndex;
         BlockPos node = route.nodes().get(index);
+        long gameTime = level.getGameTime();
+        initializeRouteWatchdog(context, gameTime);
+        if (villager.blockPosition().distSqr(node) > ROUTE_ARRIVAL_DISTANCE_SQR
+                && routeRecoveryDue(context, gameTime)) {
+            index = HiredRouteNavigator.restartAtNearestNode(villager, route);
+            setRouteIndex(context, index);
+            context.state().putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
+            node = route.nodes().get(index);
+        }
         HiredRouteNavigator.NodeMovement movement = HiredRouteNavigator.moveToRouteNode(
                 level, villager, node, MOVE_SPEED);
         if (movement == HiredRouteNavigator.NodeMovement.FAILED) {
@@ -154,8 +165,10 @@ public final class CourierWorker implements HiredRoleWorker {
                     : "interaction.work.courier.following_route_return");
         }
 
+        context.state().putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
+
         if (outbound) {
-            int moved = collectInputsAtNode(level, villager, context, node);
+            int moved = collectInputsAtNode(level, villager, context);
             if (moved > 0) {
                 HiredWorkerBrain.clearFailure(context);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, node);
@@ -168,13 +181,14 @@ public final class CourierWorker implements HiredRoleWorker {
 
         boolean finished = outbound ? index >= lastIndex : index <= 0;
         if (!finished) {
-            context.state().putInt(ROUTE_INDEX_TAG, outbound ? index + 1 : index - 1);
+            setRouteIndex(context, outbound ? index + 1 : index - 1);
             return WorkResult.progressed(outbound
                     ? "interaction.work.courier.following_route_outbound"
                     : "interaction.work.courier.following_route_return");
         }
 
         context.state().remove(ROUTE_INDEX_TAG);
+        context.state().remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
         if (outbound) {
             if (context.inventory().hasOutputItems()) {
                 setPhase(context, PHASE_DELIVER);
@@ -324,11 +338,10 @@ public final class CourierWorker implements HiredRoleWorker {
     private static int collectInputsAtNode(
             ServerLevel level,
             Villager villager,
-            HiredWorkContext context,
-            BlockPos node) {
+            HiredWorkContext context) {
         int moved = 0;
         for (BlockPos input : purposePositions(level, villager, AssignedStorageService.INPUT_PURPOSE)) {
-            if (input.distSqr(node) > ROUTE_ARRIVAL_DISTANCE_SQR) {
+            if (!AssignedStorageService.isInInteractionRange(villager, input)) {
                 continue;
             }
             moved += collectInput(villager, context, input);
@@ -369,7 +382,7 @@ public final class CourierWorker implements HiredRoleWorker {
 
     private static void beginReturn(HiredWorkContext context, HiredRoute route) {
         setPhase(context, PHASE_RETURN);
-        context.state().putInt(ROUTE_INDEX_TAG, route.loop() ? 0 : route.nodes().size() - 1);
+        setRouteIndex(context, route.loop() ? 0 : route.nodes().size() - 1);
     }
 
     private static String phase(HiredWorkContext context) {
@@ -379,8 +392,26 @@ public final class CourierWorker implements HiredRoleWorker {
 
     private static void setPhase(HiredWorkContext context, String phase) {
         context.state().putString(PHASE_TAG, phase);
+        context.state().remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
         clearStoredTarget(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);
+    }
+
+    private static void setRouteIndex(HiredWorkContext context, int index) {
+        context.state().putInt(ROUTE_INDEX_TAG, index);
+        context.state().remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
+    }
+
+    private static void initializeRouteWatchdog(HiredWorkContext context, long gameTime) {
+        CompoundTag state = context.state();
+        if (!state.contains(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, Tag.TAG_LONG)
+                || state.getLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG) > gameTime) {
+            state.putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
+        }
+    }
+
+    private static boolean routeRecoveryDue(HiredWorkContext context, long gameTime) {
+        return gameTime - context.state().getLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG) >= ROUTE_RECOVERY_TICKS;
     }
 
     private static BlockPos storedTarget(HiredWorkContext context) {
@@ -402,6 +433,7 @@ public final class CourierWorker implements HiredRoleWorker {
         state.remove(PHASE_TAG);
         state.remove(STORAGE_TARGET_TAG);
         state.remove(ROUTE_INDEX_TAG);
+        state.remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
         HiredStorageNavigationGoal.clearStorageTarget(context);
     }
 
