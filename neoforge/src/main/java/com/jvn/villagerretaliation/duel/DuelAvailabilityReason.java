@@ -16,5 +16,6 @@ public enum DuelAvailabilityReason {
     PLAYER_BUSY,
     VILLAGER_BUSY,
     TOO_FAR,
+    LOADOUT_DISABLED,
     INVALID
 }

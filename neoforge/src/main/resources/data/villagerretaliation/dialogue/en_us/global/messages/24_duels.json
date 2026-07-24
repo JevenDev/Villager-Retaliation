@@ -51,6 +51,149 @@
         "I will remember that strike. Mostly because it still hurts."
       ],
       "id": "global.messages.24_duels.messages.duel.reaction.sulk.001"
+    },
+    {
+      "key": "duel.challenge.first",
+      "lines": [
+        "You want to test yourself against me? Choose how we fight and what rides on it. We stay inside the marked ring until one of us falls or time is called.",
+        "A challenge? Good. Name the weapons and the wager, {player}. We settle it inside the ring.",
+        "So you have come looking for a fair fight. Choose our gear, name the stakes, and let courage decide the rest."
+      ],
+      "id": "global.messages.24_duels.messages.duel.challenge.first.002"
+    },
+    {
+      "key": "duel.challenge.rematch",
+      "lines": [
+        "Back for another bout? Our score is {villager_wins} victories to {villager_losses} in my favor. Choose your terms.",
+        "Another challenge, {player}? The score stands {villager_wins} to {villager_losses}. Name your terms.",
+        "You remember the score: {villager_wins} for me, {villager_losses} for you. Let us hear what you propose this time."
+      ],
+      "id": "global.messages.24_duels.messages.duel.challenge.rematch.003"
+    },
+    {
+      "key": "duel.challenge.loadout",
+      "lines": [
+        "How shall we fight? If we use matched gear, your belongings will be kept safe until the duel is over.",
+        "Choose the tools of our contest. Anything set aside will be returned when the fight is done.",
+        "Fists, blades, bows, armor, or the gear on our backs. What kind of fight do you want?"
+      ],
+      "id": "global.messages.24_duels.messages.duel.challenge.loadout.004"
+    },
+    {
+      "key": "duel.challenge.loadout.standard",
+      "lines": [
+        "How shall we fight? Choose matched gear, and your belongings will be kept safe until the duel is over.",
+        "Choose the tools of our contest. We use equal gear here, and your belongings will be returned when the fight is done.",
+        "Fists, blades, bows, or full armor. What kind of fair fight do you want?"
+      ],
+      "id": "global.messages.24_duels.messages.duel.challenge.loadout.standard.024"
+    },
+    {
+      "key": "duel.challenge.wager",
+      "lines": [
+        "And what rides on the fight? I can match a wager of up to {maximum_wager} {currency}.",
+        "Pride alone, or something more? I can cover as much as {maximum_wager} {currency}.",
+        "Name the wager. Neither of us can put up more than {maximum_wager} {currency}."
+      ],
+      "id": "global.messages.24_duels.messages.duel.challenge.wager.005"
+    },
+    {
+      "key": "duel.challenge.confirm",
+      "lines": [
+        "Those are your terms, then? Look me in the eye and make your challenge.",
+        "Weapons chosen. Wager named. Say the word, {player}.",
+        "No more bargaining. Challenge me, and we settle this in the ring."
+      ],
+      "id": "global.messages.24_duels.messages.duel.challenge.confirm.006"
+    },
+    {
+      "key": "duel.challenge.starting",
+      "lines": [
+        "Then the challenge is made. Ready yourself.",
+        "Agreed. Meet me in the ring.",
+        "Done. Steel your nerves, {player}."
+      ],
+      "id": "global.messages.24_duels.messages.duel.challenge.starting.007"
+    },
+    {
+      "key": "duel.challenge.refusal.disabled",
+      "lines": ["No. Dueling is forbidden here."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.disabled.008"
+    },
+    {
+      "key": "duel.challenge.refusal.low_guts",
+      "lines": ["No. I have no taste for fighting you.", "Find someone else. I want no part of this."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.low_guts.009"
+    },
+    {
+      "key": "duel.challenge.refusal.baby",
+      "lines": ["Absolutely not. I am no duelist."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.baby.010"
+    },
+    {
+      "key": "duel.challenge.refusal.hired",
+      "lines": ["Not while I am under contract."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.hired.011"
+    },
+    {
+      "key": "duel.challenge.refusal.party",
+      "lines": ["We stand together. We do not duel each other."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.party.012"
+    },
+    {
+      "key": "duel.challenge.refusal.downed",
+      "lines": ["Look at me. I am in no state to fight."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.downed.013"
+    },
+    {
+      "key": "duel.challenge.refusal.protected",
+      "lines": ["Not now. Other duties bind me."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.protected.014"
+    },
+    {
+      "key": "duel.challenge.refusal.raid",
+      "lines": ["During a raid? Save your strength for our enemies."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.raid.015"
+    },
+    {
+      "key": "duel.challenge.refusal.busy",
+      "lines": ["Not now. I have other trouble to settle."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.busy.016"
+    },
+    {
+      "key": "duel.challenge.refusal.cooldown",
+      "lines": ["Not yet. Give me time before we fight again.", "One bout at a time, {player}. Come back later."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.cooldown.017"
+    },
+    {
+      "key": "duel.challenge.refusal.refuses",
+      "lines": ["No. I will not duel you again."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.refuses.018"
+    },
+    {
+      "key": "duel.challenge.refusal.player_busy",
+      "lines": ["Finish the duel you already started."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.player_busy.019"
+    },
+    {
+      "key": "duel.challenge.refusal.villager_busy",
+      "lines": ["You can see that I already have an opponent."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.villager_busy.020"
+    },
+    {
+      "key": "duel.challenge.refusal.too_far",
+      "lines": ["Come closer if you mean to challenge me."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.too_far.021"
+    },
+    {
+      "key": "duel.challenge.refusal.invalid",
+      "lines": ["No. This challenge cannot be made."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.invalid.022"
+    },
+    {
+      "key": "duel.challenge.refusal.available",
+      "lines": ["Very well. Name your terms."],
+      "id": "global.messages.24_duels.messages.duel.challenge.refusal.available.023"
     }
   ]
 }

@@ -28,13 +28,15 @@ public final class DuelRequestHandler {
         DuelService.StartResult result = DuelService.start(player, villager, request.loadout(), request.stake());
         if (!result.started()) {
             player.sendSystemMessage(Component.translatable("villagerretaliation.duel.unavailable." + result.reason().name().toLowerCase()));
-            sendStatus(player, villager);
         }
+        sendStatus(player, villager);
     }
 
     private static void sendStatus(ServerPlayer player, Villager villager) {
         DuelAvailability status = DuelService.availability(player.serverLevel(), player, villager);
         String currency = VillagerCurrencyResources.text(player.server).pluralName();
+        DuelDialogueService.SetupDialogue dialogue = DuelDialogueService.setupDialogue(
+                player, villager, status, currency);
         PacketDistributor.sendToPlayer(player, new OpenVillagerDuelPayload(
                 villager.getId(), VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 status.available(), status.reason(), status.villagerWins(), status.villagerLosses(),
@@ -43,6 +45,9 @@ public final class DuelRequestHandler {
                 VillagerRetaliationConfig.DUEL_BOUNDARY_GRACE_TICKS.get(),
                 VillagerRetaliationConfig.DUEL_TIMEOUT_TICKS.get(),
                 VillagerRetaliationConfig.DUEL_COOLDOWN_DAYS.get(), status.playerCurrency(),
-                status.villagerCurrency(), currency));
+                status.villagerCurrency(), currency,
+                VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.get(),
+                dialogue.opening(), dialogue.loadout(), dialogue.wager(),
+                dialogue.confirmation(), dialogue.starting()));
     }
 }

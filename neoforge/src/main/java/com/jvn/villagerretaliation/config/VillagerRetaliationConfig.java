@@ -18,6 +18,7 @@ public final class VillagerRetaliationConfig {
 
     public static final ConfigValue<Boolean> ENABLE_VILLAGER_DROPS = bind("general.enableVillagerDrops", Boolean.class);
     public static final ConfigValue<Boolean> ENABLE_DUELS = bind("duels.enabled", Boolean.class);
+    public static final ConfigValue<Boolean> ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT = bind("duels.allowBringYourOwnLoadout", Boolean.class);
     public static final ConfigValue<Integer> DUEL_MINIMUM_GUTS = bind("duels.minimumGuts", Integer.class);
     public static final ConfigValue<Integer> DUEL_COOLDOWN_DAYS = bind("duels.cooldownDays", Integer.class);
     public static final ConfigValue<Integer> DUEL_REFUSAL_LOSSES = bind("duels.refusalLosses", Integer.class);
