@@ -8,6 +8,11 @@ public final class ClipboardWorkforceClient {
     }
 
     public static void accept(ClipboardWorkforceSyncPayload payload) {
-        Minecraft.getInstance().setScreen(new ClipboardWorkforceScreen(payload.snapshot()));
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.screen instanceof ClipboardWorkforceScreen screen) {
+            screen.updateSnapshot(payload.snapshot());
+        } else if (payload.openScreen()) {
+            minecraft.setScreen(new ClipboardWorkforceScreen(payload.snapshot()));
+        }
     }
 }

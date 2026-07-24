@@ -14,8 +14,8 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot) implements CustomPacketPayload {
-    private static final int PROTOCOL_VERSION = 10;
+public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot, boolean openScreen) implements CustomPacketPayload {
+    private static final int PROTOCOL_VERSION = 11;
     private static final int MAX_JOB_SUMMARIES = 16;
     private static final int MAX_WORKER_ROWS = 256;
     private static final int MAX_WARNING_SUMMARIES = 64;
@@ -23,9 +23,14 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
     public static final StreamCodec<RegistryFriendlyByteBuf, ClipboardWorkforceSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(ClipboardWorkforceSyncPayload::encode, ClipboardWorkforceSyncPayload::decode);
 
+    public ClipboardWorkforceSyncPayload {
+        snapshot = snapshot == null ? ClipboardWorkforceSnapshot.empty() : snapshot;
+    }
+
     private static void encode(RegistryFriendlyByteBuf buffer, ClipboardWorkforceSyncPayload payload) {
-        ClipboardWorkforceSnapshot snapshot = payload.snapshot() == null ? ClipboardWorkforceSnapshot.empty() : payload.snapshot();
+        ClipboardWorkforceSnapshot snapshot = payload.snapshot();
         buffer.writeVarInt(PROTOCOL_VERSION);
+        buffer.writeBoolean(payload.openScreen());
         buffer.writeVarInt(snapshot.totalHired());
         buffer.writeVarInt(snapshot.maxHired());
         buffer.writeVarInt(snapshot.workingCount());
@@ -41,6 +46,7 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
 
     private static ClipboardWorkforceSyncPayload decode(RegistryFriendlyByteBuf buffer) {
         int protocolVersion = buffer.readVarInt();
+        boolean openScreen = buffer.readBoolean();
         return new ClipboardWorkforceSyncPayload(new ClipboardWorkforceSnapshot(
                 buffer.readVarInt(),
                 buffer.readVarInt(),
@@ -53,7 +59,7 @@ public record ClipboardWorkforceSyncPayload(ClipboardWorkforceSnapshot snapshot)
                 readJobs(buffer),
                 readWorkers(buffer),
                 readWarnings(buffer)
-        ));
+        ), openScreen);
     }
 
     private static void writeJobs(RegistryFriendlyByteBuf buffer, List<JobSummary> jobs) {

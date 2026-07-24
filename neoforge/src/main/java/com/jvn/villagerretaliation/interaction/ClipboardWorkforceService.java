@@ -21,8 +21,10 @@ import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
 import com.jvn.villagerretaliation.util.WorldLocation;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
@@ -31,11 +33,74 @@ import net.minecraft.world.entity.npc.Villager;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class ClipboardWorkforceService {
+    private static final int LIVE_UPDATE_INTERVAL_TICKS = 20;
+    private static final long LIVE_UPDATE_HEARTBEAT_TICKS = 20L * 30L;
+    private static final Map<UUID, LiveSyncState> LIVE_SYNC_STATES = new HashMap<>();
     private ClipboardWorkforceService() {
     }
 
     public static void openClipboard(ServerPlayer player) {
-        PacketDistributor.sendToPlayer(player, new ClipboardWorkforceSyncPayload(snapshot(player)));
+        if (player == null) {
+            return;
+        }
+        ClipboardWorkforceSnapshot snapshot = snapshot(player);
+        LIVE_SYNC_STATES.put(player.getUUID(), new LiveSyncState(snapshot, player.serverLevel().getGameTime()));
+        sendSnapshot(player, snapshot, true);
+    }
+
+    /**
+     * Updates only dashboards that are currently open. Work is spread across the update interval by player UUID,
+     * and packets are sent only when the presentation snapshot changes (or on a low-frequency heartbeat).
+     */
+    public static void onPlayerTick(ServerPlayer player) {
+        if (player == null || !player.isAlive() || player.isSpectator()) {
+            return;
+        }
+        LiveSyncState previous = LIVE_SYNC_STATES.get(player.getUUID());
+        if (previous == null || !(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+
+        long gameTime = level.getGameTime();
+        if (gameTime == previous.gameTime() || !isLiveUpdateTick(player, gameTime)) {
+            return;
+        }
+
+        ClipboardWorkforceSnapshot updated = snapshot(player);
+        boolean heartbeatDue = gameTime < previous.gameTime()
+                || gameTime - previous.gameTime() >= LIVE_UPDATE_HEARTBEAT_TICKS;
+        if (!heartbeatDue && updated.equals(previous.snapshot())) {
+            return;
+        }
+
+        sendSnapshot(player, updated, false);
+        LIVE_SYNC_STATES.put(player.getUUID(), new LiveSyncState(updated, gameTime));
+    }
+
+    public static void closeClipboard(ServerPlayer player) {
+        if (player != null) {
+            LIVE_SYNC_STATES.remove(player.getUUID());
+        }
+    }
+
+    public static void clearRuntimeState(ServerPlayer player) {
+        closeClipboard(player);
+    }
+
+    public static void clearRuntimeState() {
+        LIVE_SYNC_STATES.clear();
+    }
+
+    private static boolean isLiveUpdateTick(ServerPlayer player, long gameTime) {
+        return Math.floorMod(gameTime + player.getUUID().hashCode(), LIVE_UPDATE_INTERVAL_TICKS) == 0L;
+    }
+
+    private static void sendSnapshot(ServerPlayer player, ClipboardWorkforceSnapshot snapshot, boolean openScreen) {
+        try {
+            PacketDistributor.sendToPlayer(player, new ClipboardWorkforceSyncPayload(snapshot, openScreen));
+        } catch (UnsupportedOperationException ignored) {
+            // The client can lack the payload while a server is being reloaded or disconnected.
+        }
     }
 
     public static ClipboardWorkforceSnapshot snapshot(ServerPlayer player) {
@@ -208,6 +273,8 @@ public final class ClipboardWorkforceService {
         return !state.isWaitingState();
     }
 
+    private record LiveSyncState(ClipboardWorkforceSnapshot snapshot, long gameTime) {
+    }
     private static boolean isExpectedWorkExcursion(HiredWorkerTaskState state) {
         return state.keepsStorageTarget() || state == HiredWorkerTaskState.RETURNING_TO_WORK_AREA;
     }
