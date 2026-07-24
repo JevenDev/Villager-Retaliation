@@ -2549,6 +2549,10 @@ public final class VillagerInteractionService {
         VillagerConversationService.endForPlayer(player, false);
     }
 
+    public static void handleConversationActivity(ServerPlayer player, int entityId) {
+        VillagerConversationService.recordActivity(player, entityId);
+    }
+
     public static DialogueContext createDialogueContext(ServerLevel level, ServerPlayer player, Villager villager) {
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         return createDialogueContext(

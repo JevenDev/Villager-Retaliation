@@ -43,6 +43,7 @@ import com.jvn.villagerretaliation.network.HiredHuntingTargetPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingFilterPayload;
 import com.jvn.villagerretaliation.network.HiredLoggingOptionPayload;
 import com.jvn.villagerretaliation.network.PartyRosterSyncPayload;
+import com.jvn.villagerretaliation.network.VillagerConversationActivityPayload;
 import com.jvn.villagerretaliation.network.VillagerConversationEndRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerAllegianceActionPayload;
 import com.jvn.villagerretaliation.network.VillageAllegianceView;
@@ -114,6 +115,7 @@ import org.lwjgl.glfw.GLFW;
 
 public class VillagerInteractionScreen extends Screen implements VillagerInteractionSessionScreen {
     private static final String GUI_KEY_PREFIX = "villagerretaliation.gui.";
+    private static final long ACTIVITY_SIGNAL_INTERVAL_MILLIS = 1_000L;
     private static final String BACK_LABEL_KEY = GUI_KEY_PREFIX + "back";
     private static final String FORCED_LEAVE_OPTION_ID = "leave";
     private static final String DIALOGUE_TREE_LEAVE_OPTION_ID = DialogueTreeService.LEAVE_OPTION_ID;
@@ -340,6 +342,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private float skillScroll;
     private float targetSkillScroll;
     private long lastOptionScrollRenderMillis = -1L;
+    private long lastActivitySignalMillis = -1L;
     private VillagerSkill selectedSkillDetails;
     private VillagerSocialAttribute selectedProfileAttributeDetails;
     private HiredVillagerRole selectedJobDetails;
@@ -736,6 +739,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.closingWithAnimation) {
             return true;
         }
+        noteInteractionActivity();
         if (tryOpenVanillaChat(keyCode, scanCode)) {
             return true;
         }
@@ -772,13 +776,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.closingWithAnimation) {
             return true;
         }
+        noteInteractionActivity();
         if (!isLeftMouseButton(button)) {
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
         double interactionMouseY = interactionMouseY(mouseY);
         double interactionContentMouseX = interactionContentMouseX(mouseX);
-        if (this.page == DialoguePage.GIFT && tryClickGiftPage(interactionContentMouseX, interactionMouseY)) {
+        if (this.page == DialoguePage.GIFT
+                && (tryClickGiftPage(interactionContentMouseX, interactionMouseY)
+                || this.giftButton != null && this.giftButton.isMouseOver(interactionContentMouseX, interactionMouseY))) {
             return true;
         }
 
@@ -786,9 +793,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return true;
         }
 
-        if (trySkipDialogueTextAnimation(mouseX, interactionMouseY)) {
-            return true;
-        }
 
         if (tryClickSkillsProfileCycleButton(interactionContentMouseX, interactionMouseY)
                 || trySelectProfileAttributeDetails(interactionContentMouseX, interactionMouseY)
@@ -797,6 +801,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 || tryBeginSkillInfoScrollbarDrag(interactionContentMouseX, interactionMouseY)
                 || tryBeginScrollbarDrag(interactionContentMouseX, interactionMouseY)
                 || tryActivateHoveredOption(interactionContentMouseX, interactionMouseY)) {
+            return true;
+        }
+        if (trySkipDialogueTextAnimation()) {
             return true;
         }
 
@@ -808,6 +815,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.closingWithAnimation) {
             return true;
         }
+        noteInteractionActivity();
         double interactionMouseY = interactionMouseY(mouseY);
         double interactionContentMouseX = interactionContentMouseX(mouseX);
         if (this.page == DialoguePage.SKILLS
@@ -839,6 +847,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.closingWithAnimation) {
             return true;
         }
+        noteInteractionActivity();
         double interactionMouseY = interactionMouseY(mouseY);
         if (isLeftMouseButton(button) && this.draggingSkillScrollbar) {
             return dragSkillScrollbar(interactionMouseY);
@@ -851,6 +860,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        noteInteractionActivity();
         if (isLeftMouseButton(button) && this.draggingSkillScrollbar) {
             this.draggingSkillScrollbar = false;
             return true;
@@ -860,6 +870,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return true;
         }
         return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        noteInteractionActivity();
+        super.mouseMoved(mouseX, mouseY);
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        noteInteractionActivity();
+        return super.charTyped(codePoint, modifiers);
     }
 
     @Override
@@ -2818,6 +2840,18 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
+    void noteInteractionActivity() {
+        if (this.closingWithAnimation) {
+            return;
+        }
+        long now = Util.getMillis();
+        if (this.lastActivitySignalMillis >= 0L && now - this.lastActivitySignalMillis < ACTIVITY_SIGNAL_INTERVAL_MILLIS) {
+            return;
+        }
+        this.lastActivitySignalMillis = now;
+        sendToServer(new VillagerConversationActivityPayload(this.villagerEntityId));
+    }
+
     private void sendToServer(CustomPacketPayload payload) {
         PacketDistributor.sendToServer(payload);
     }
@@ -3897,8 +3931,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return List.copyOf(styledLines);
     }
 
-    private boolean trySkipDialogueTextAnimation(double mouseX, double mouseY) {
-        if (isDialogueTextAnimationComplete() || !isPointInsideInteractionDialogue(mouseX, mouseY)) {
+    private boolean trySkipDialogueTextAnimation() {
+        if (isDialogueTextAnimationComplete()) {
             return false;
         }
         this.dialogueTextAnimationSkipped = true;
@@ -3937,18 +3971,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return true;
     }
 
-    private boolean isPointInsideInteractionDialogue(double mouseX, double mouseY) {
-        if (!shouldRenderInteractionContainer() || this.villagerDialogueText.isBlank()) {
-            return false;
-        }
-
-        int left = interactionContainerLeft();
-        int top = interactionContainerTop();
-        return mouseX >= left + INTERACTION_DIALOGUE_LEFT
-                && mouseX < left + INTERACTION_DIALOGUE_RIGHT
-                && mouseY >= top + INTERACTION_DIALOGUE_TOP
-                && mouseY < top + INTERACTION_DIALOGUE_BOTTOM;
-    }
 
     private boolean isPointInsideInteractionDialogueScrollArea(double mouseX, double mouseY) {
         if (!shouldRenderInteractionContainer() || this.villagerDialogueText.isBlank()) {

@@ -97,6 +97,19 @@ public final class VillagerConversationService {
         return true;
     }
 
+    /** Records client activity for the session identified by the supplied villager entity id. */
+    public static void recordActivity(ServerPlayer player, int villagerEntityId) {
+        VillagerConversationSession session = SESSIONS_BY_PLAYER.get(player.getUUID());
+        if (session == null || !session.active() || session.villagerEntityId() != villagerEntityId) {
+            return;
+        }
+
+        Entity entity = player.serverLevel().getEntity(villagerEntityId);
+        if (entity instanceof Villager villager) {
+            validate(player, villager);
+        }
+    }
+
     public static boolean isForced(ServerPlayer player, Villager villager) {
         VillagerConversationSession session = SESSIONS_BY_PLAYER.get(player.getUUID());
         return session != null && session.active() && session.forced() && session.villagerId().equals(villager.getUUID());
