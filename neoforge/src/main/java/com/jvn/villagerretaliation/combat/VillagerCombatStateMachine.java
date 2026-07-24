@@ -93,15 +93,22 @@ final class VillagerCombatStateMachine {
         return MODES.containsKey(villager.getUUID());
     }
 
-    static void disableTargetShieldAfterAxeAttack(Villager villager, LivingEntity target) {
+    /**
+     * Performs an axe shield break as its own combat action. Calling this before a
+     * melee hit keeps the blocked swing from also damaging the shield's holder.
+     *
+     * @return {@code true} when the attack was consumed breaking a shield
+     */
+    static boolean tryBreakTargetShield(Villager villager, LivingEntity target) {
         if (!(villager.getMainHandItem().getItem() instanceof AxeItem) || !isShielding(target)) {
-            return;
+            return false;
         }
         if (target instanceof ServerPlayer player) {
             player.disableShield();
-            return;
+        } else {
+            target.stopUsingItem();
         }
-        target.stopUsingItem();
+        return true;
     }
 
     static void clearState(Villager villager) {

@@ -47,8 +47,11 @@ public final class VillagerCombatBehavior {
         return VillagerRetaliationRetaliationUtil.canMeleeHit(villager, target);
     }
 
+    public static boolean tryBreakTargetShield(Villager villager, LivingEntity target) {
+        return VillagerCombatStateMachine.tryBreakTargetShield(villager, target);
+    }
+
     public static void onMeleeAttackCommitted(Villager villager, LivingEntity target) {
-        VillagerCombatStateMachine.disableTargetShieldAfterAxeAttack(villager, target);
         VillagerArmorerCombatTactics.onMeleeAttackCommitted(villager);
     }
 

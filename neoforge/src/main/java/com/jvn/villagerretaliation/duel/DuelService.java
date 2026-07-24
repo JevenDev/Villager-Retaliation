@@ -332,7 +332,8 @@ public final class DuelService {
     }
 
     static boolean attackMelee(Villager villager, LivingEntity target) {
-        boolean attacked = VillagerCombatAttributeCompat.syncMeleeAttackAttributes(villager)
+        boolean shieldBroken = VillagerCombatBehavior.tryBreakTargetShield(villager, target);
+        boolean attacked = !shieldBroken && VillagerCombatAttributeCompat.syncMeleeAttackAttributes(villager)
                 && villager.doHurtTarget(target);
         VillagerCombatBehavior.onMeleeAttackCommitted(villager, target);
         return attacked;
