@@ -1,5 +1,9 @@
 # Changelog
 
+- Rebalanced couriers to collect a separate skill-scaled allowance from every assigned input container: one guaranteed stack plus up to one bonus stack, capped at two stacks per container.
+
+- Refined courier routes so assigned input and output containers tether to their nearest route node within 16 blocks, use node-to-container-and-back detours, collect from later inputs consistently, and retrace route nodes on the return trip.
+
 - Moved remaining player-facing party-adjacent, interaction, quest, inventory, clipboard, village-naming, map, and raid text into localization entries.
 
 - Fixed the dialogue gift inventory shrinking independently from the interaction container at GUI scale 4.
