@@ -14,6 +14,7 @@ For larger packs, split forced dialogue by event so authors can find the rule th
 data/my_pack/forced_dialogue/events/container_theft.json
 data/my_pack/forced_dialogue/events/container_opened.json
 data/my_pack/forced_dialogue/events/retaliation_started.json
+data/my_pack/forced_dialogue/events/retaliation_disengaged.json
 data/my_pack/forced_dialogue/quests/lost_civilization.json
 ```
 
@@ -170,6 +171,8 @@ Use forced dialogue when:
 - the player must answer before returning to normal interaction
 - you need event-specific buttons such as apology, payment, or escalation
 - you want a reactive bark tied to a trigger instead of a Talk menu request
+
+Retaliation chat barks can also use `low_guts_pursuit_abandoned`, `low_guts_counter_completed`, `retaliation_target_escaped`, and `retaliation_search_expired`. These triggers communicate why a villager deliberately stopped fighting without opening a locked conversation.
 
 Use normal [Dialogue](Dialogue.md) when the player chooses to ask something on purpose.
 

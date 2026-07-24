@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.Act
 import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil.AngerTarget;
 import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
+import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueResources.ForcedDialogueTrigger;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
@@ -369,7 +370,12 @@ public final class VillagerRetaliationHandler {
                 villager,
                 RETALIATION,
                 ACTOR_POLICY::canFightBack,
-                () -> clearAnger(villager)
+                () -> clearAnger(villager),
+                target -> ForcedDialogueService.triggerRetaliationDisengagementChat(
+                        serverLevel,
+                        villager,
+                        target,
+                        ForcedDialogueTrigger.RETALIATION_SEARCH_EXPIRED)
         );
         if (retaliationTarget == null) {
             if (tryFleeVisibleCreeper(villager)) {
@@ -421,6 +427,11 @@ public final class VillagerRetaliationHandler {
         wakeSleepingVillagerTargetForPartyAttacker(level, villager, target);
         if (!PlayerRaidService.areOpposingParticipants(villager, target)
                 && !VillagerRetaliationRetaliationUtil.isWithinRetaliationPursuitRange(villager, target)) {
+            ForcedDialogueService.triggerRetaliationDisengagementChat(
+                    level,
+                    villager,
+                    target,
+                    ForcedDialogueTrigger.RETALIATION_TARGET_ESCAPED);
             clearAnger(villager);
             handlePassivePotionState(villager);
             return;
@@ -433,6 +444,11 @@ public final class VillagerRetaliationHandler {
         }
         boolean waveringUnarmedCounter = isWaveringUnarmedCounter(villager, target, gameTime);
         if (shouldGiveUpWaveringUnarmedCounter(villager, target, gameTime)) {
+            ForcedDialogueService.triggerRetaliationDisengagementChat(
+                    level,
+                    villager,
+                    target,
+                    ForcedDialogueTrigger.LOW_GUTS_PURSUIT_ABANDONED);
             clearWaveringUnarmedCounter(villager, target);
             clearAnger(villager, false);
             enterFleeState(villager, target, gameTime);
@@ -532,6 +548,11 @@ public final class VillagerRetaliationHandler {
             );
             VillagerArmorerCombatTactics.onMeleeAttackCommitted(villager);
             if (waveringUnarmedCounter) {
+                ForcedDialogueService.triggerRetaliationDisengagementChat(
+                        level,
+                        villager,
+                        target,
+                        ForcedDialogueTrigger.LOW_GUTS_COUNTER_COMPLETED);
                 clearWaveringUnarmedCounter(villager, target);
                 clearAnger(villager, false, false);
                 enterFleeState(villager, target, gameTime);

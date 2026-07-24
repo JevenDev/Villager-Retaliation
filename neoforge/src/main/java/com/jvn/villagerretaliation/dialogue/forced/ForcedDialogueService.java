@@ -3130,6 +3130,36 @@ public final class ForcedDialogueService {
                 .anyMatch(definition -> triggerRetaliationChat(level, villager, target, definition, targetTypeId));
     }
 
+    public static void triggerRetaliationDisengagementChat(
+            ServerLevel level,
+            Villager villager,
+            LivingEntity target,
+            ForcedDialogueTrigger trigger) {
+        if (!(target instanceof ServerPlayer player)
+                || !ForcedDialogueTriggerGates.retaliationEnabled()
+                || !isRetaliationDisengagementTrigger(trigger)) {
+            return;
+        }
+
+        ResourceLocation targetTypeId = BuiltInRegistries.ENTITY_TYPE.getKey(player.getType());
+        ForcedDialogueResources
+                .selectCandidates(level.getServer(), trigger, null, targetTypeId)
+                .stream()
+                .filter(ForcedDialogueTriggerGates::isChatOutput)
+                .filter(definition -> definition.matchesWitness(villager))
+                .filter(definition -> definitionMatchesReputation(level, villager, player, definition))
+                .filter(definition -> villager.distanceToSqr(player) <= definition.witnessRadius() * definition.witnessRadius())
+                .filter(definition -> !definition.requiresLineOfSight() || villager.hasLineOfSight(player))
+                .anyMatch(definition -> triggerRetaliationChat(level, villager, player, definition, 0, targetTypeId));
+    }
+
+    private static boolean isRetaliationDisengagementTrigger(ForcedDialogueTrigger trigger) {
+        return trigger == ForcedDialogueTrigger.LOW_GUTS_PURSUIT_ABANDONED
+                || trigger == ForcedDialogueTrigger.LOW_GUTS_COUNTER_COMPLETED
+                || trigger == ForcedDialogueTrigger.RETALIATION_TARGET_ESCAPED
+                || trigger == ForcedDialogueTrigger.RETALIATION_SEARCH_EXPIRED;
+    }
+
     private static boolean triggerRetaliationChat(
             ServerLevel level,
             Villager villager,

@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 import net.minecraft.core.particles.ParticleTypes;
@@ -277,6 +278,17 @@ public final class VillagerRetaliationRetaliationUtil {
             Predicate<T> canFightBack,
             Runnable clearAnger
     ) {
+        return resolveActiveRetaliationTarget(villager, retaliationRuntime, canFightBack, clearAnger, target -> {
+        });
+    }
+
+    @Nullable
+    public static <T extends AbstractVillager> ActiveRetaliationTarget resolveActiveRetaliationTarget(            T villager,
+            VillagerRetaliationRetaliationRuntime<T> retaliationRuntime,
+            Predicate<T> canFightBack,
+            Runnable clearAnger,
+            Consumer<LivingEntity> onAngerExpired
+    ) {
         retaliationRuntime.restorePersistedAngerIfNeeded(villager);
         AngerTarget angerTarget = retaliationRuntime.angerTarget(villager);
         if (angerTarget == null) {
@@ -330,6 +342,7 @@ public final class VillagerRetaliationRetaliationUtil {
         if (villager.hasLineOfSight(target)) {
             retaliationRuntime.refreshAngerTarget(villager, angerTarget, gameTime);
         } else if (hasExpiredAnger(villager, target, angerTarget, gameTime)) {
+            onAngerExpired.accept(target);
             clearAnger.run();
             return null;
         }
