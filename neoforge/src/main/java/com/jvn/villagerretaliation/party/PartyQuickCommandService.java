@@ -17,7 +17,6 @@ import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
 import com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload;
 import com.jvn.villagerretaliation.util.VillagerEntityResolver;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
-import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,11 +34,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.ClipContext;
@@ -461,25 +457,11 @@ public final class PartyQuickCommandService {
                 || !villager.canAttack(target)
                 || target.isAlliedTo(villager)
                 || PartyService.areInSameOrAlliedParty(villager, target)
-                || !playerRaidOpponents && !attackModeAllows(record.attackMode(), villager, target)) {
+                || !playerRaidOpponents && !PartyTargetPolicy.allows(record.attackMode(), villager, target)) {
             return false;
         }
         return playerRaidOpponents || !VillageAllegianceCombatPolicy.evaluate(
                 level, villager, target, AllegianceCombatContext.PARTY_ATTACK, false).denied();
-    }
-
-    private static boolean attackModeAllows(
-            PartyAttackMode mode,
-            Villager villager,
-            LivingEntity target) {
-        PartyAttackMode resolved = mode == null ? PartyAttackMode.ALL : mode;
-        return resolved.allows(
-                target instanceof Animal,
-                VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target),
-                target instanceof Player,
-                target instanceof Villager,
-                target instanceof IronGolem,
-                PartyService.getPartyForEntity(target).isPresent());
     }
 
     private static int moveTo(ServerPlayer player, List<PartyVillagerRecord> records, BlockPos requestedTarget) {

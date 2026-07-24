@@ -22,10 +22,10 @@ import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.mood.VillagerMoodService;
 import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
-import com.jvn.villagerretaliation.party.PartyAttackMode;
 import com.jvn.villagerretaliation.party.PartyCombatMode;
 import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
+import com.jvn.villagerretaliation.party.PartyTargetPolicy;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import com.jvn.villagerretaliation.profile.VillagerSocialAttribute;
@@ -908,7 +908,7 @@ public final class VillagerRetaliationHandler {
                         && !(target instanceof IronGolem)
                         && VillagerRetaliationVillagerCombatUtil.shouldIgnoreAttacker(target))
                 || !VillagerRetaliationRetaliationUtil.hasClearLineOfSight(villager, target)
-                || !attackModeAllows(record.attackMode(), villager, target)) {
+                || !PartyTargetPolicy.allows(record.attackMode(), villager, target)) {
             return false;
         }
         return !VillageAllegianceCombatPolicy.evaluate(
@@ -1067,7 +1067,7 @@ public final class VillagerRetaliationHandler {
                     || !villager.isAlive()
                     || com.jvn.villagerretaliation.party.PartyQuickCommandService.suppressesPartyTargetAcquisition(villager)
                     || !canWitnessRetaliationEvent(villager, partyMember)
-                    || (attackingWithParty && !attackModeAllows(member.attackMode(), villager, target))
+                    || (attackingWithParty && !PartyTargetPolicy.allows(member.attackMode(), villager, target))
                     || !shouldRetaliateAgainstAttacker(villager, target)) {
                 continue;
             }
@@ -1092,17 +1092,6 @@ public final class VillagerRetaliationHandler {
             }
             anger(villager, target);
         }
-    }
-
-    private static boolean attackModeAllows(PartyAttackMode mode, Villager villager, LivingEntity target) {
-        PartyAttackMode resolved = mode == null ? PartyAttackMode.ALL : mode;
-        return resolved.allows(
-                target instanceof Animal,
-                VillagerRetaliationVillagerCombatUtil.isNaturalHostileTarget(villager, target),
-                target instanceof Player,
-                target instanceof Villager,
-                target instanceof IronGolem,
-                PartyService.getPartyForEntity(target).isPresent());
     }
 
     private static boolean isHiredHunter(ServerLevel level, Villager villager) {
