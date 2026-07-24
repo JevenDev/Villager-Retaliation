@@ -2069,50 +2069,46 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void openAllegiancePage() {
-        acceptVillagerDialogue(translate("allegiance.prompt"), List.of());
+        acceptVillagerDialogue(allegianceText(this.allegiance.prompt(), "allegiance.prompt"), List.of());
         openPage(DialoguePage.ALLEGIANCE);
     }
 
     private void addAllegianceOptions() {
-        addOption("allegiance.ask_home", this::showHomeVillageDialogue);
-        addOption("allegiance.ask_here", this::showCurrentVillageDialogue);
+        this.options.add(DialogueOption.enabled(
+                allegianceText(this.allegiance.askHomeLabel(), "allegiance.ask_home"),
+                this::showHomeVillageDialogue));
+        this.options.add(DialogueOption.enabled(
+                allegianceText(this.allegiance.askCurrentVillageLabel(), "allegiance.ask_here"),
+                this::showCurrentVillageDialogue));
         if (!this.baby && this.allegiance.inVillage() && !this.allegiance.atHome()) {
-            addOption("allegiance.reassign", () -> sendToServer(new VillagerAllegianceActionPayload(
-                    this.villagerEntityId,
-                    VillagerAllegianceActionPayload.Action.REASSIGN_TO_CURRENT_VILLAGE)));
+            this.options.add(DialogueOption.enabled(
+                    allegianceText(this.allegiance.reassignLabel(), "allegiance.reassign"),
+                    () -> sendToServer(new VillagerAllegianceActionPayload(
+                            this.villagerEntityId,
+                            VillagerAllegianceActionPayload.Action.REASSIGN_TO_CURRENT_VILLAGE))));
         }
     }
 
     private void showHomeVillageDialogue() {
-        String key = switch (this.allegiance.homeStatus()) {
-            case KNOWN -> this.allegiance.atHome()
-                    ? "allegiance.answer.home_here"
-                    : "allegiance.answer.home_away";
-            case WANDERER -> this.recruitedPartyVillager
-                    ? "allegiance.answer.wanderer_party"
-                    : this.allegiance.inVillage()
-                            ? "allegiance.answer.wanderer_settling"
-                            : "allegiance.answer.wanderer";
-            case UNKNOWN -> "allegiance.answer.unknown";
-        };
-        acceptVillagerDialogue(translate(key, this.allegiance.homeVillage()), List.of());
+        acceptVillagerDialogue(allegianceText(this.allegiance.homeAnswer(), "allegiance.answer.unknown"), List.of());
     }
 
     private void showCurrentVillageDialogue() {
-        String key;
-        if (!this.allegiance.inVillage()) {
-            key = "allegiance.answer.here_outside";
-        } else if (this.allegiance.atHome()) {
-            key = "allegiance.answer.here_home";
-        } else if (this.allegiance.homeStatus() == VillageAllegianceView.HomeStatus.KNOWN) {
-            key = "allegiance.answer.here_foreign";
-        } else if (this.recruitedPartyVillager) {
-            key = "allegiance.answer.here_party";
-        } else {
-            key = "allegiance.answer.here_visiting";
+        acceptVillagerDialogue(allegianceText(this.allegiance.currentVillageAnswer(), "allegiance.answer.here_outside"), List.of());
+    }
+
+    private static String allegianceText(String text, String fallbackKey) {
+        if (text != null && !text.isBlank()) {
+            return text;
         }
-        acceptVillagerDialogue(translate(
-                key, this.allegiance.currentVillage(), this.allegiance.homeVillage()), List.of());
+        return switch (fallbackKey) {
+            case "allegiance.prompt" -> "Is there something you would like to ask about where I belong?";
+            case "allegiance.ask_home" -> "Where do you call home?";
+            case "allegiance.ask_here" -> "Do you belong to this village?";
+            case "allegiance.reassign" -> "Would you make this village your home?";
+            case "allegiance.answer.here_outside" -> "We are not standing in a village right now.";
+            default -> "I am not certain where I belong. I wish I had a clearer answer for you.";
+        };
     }
 
     private void openSkillsPage() {
