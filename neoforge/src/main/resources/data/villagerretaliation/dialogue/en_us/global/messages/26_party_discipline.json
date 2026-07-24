@@ -1,0 +1,62 @@
+{
+  "metadata": {
+    "tags": [
+      "content.dialogue",
+      "scope.global",
+      "section.messages",
+      "topic.party_discipline"
+    ],
+    "topic": "global.party_discipline"
+  },
+  "messages": [
+    {
+      "id": "global.messages.26_party_discipline.messages.allegiance.party_abuse.ordinary.000",
+      "key": "allegiance.party_abuse.ordinary",
+      "lines": [
+        "{villager} warns you not to strike them again.",
+        "{villager} asks you to keep your hands to yourself.",
+        "{villager} tells you to stop that at once.",
+        "{villager} says another blow will not be forgiven.",
+        "{villager} warns that your temper is testing their patience.",
+        "{villager} asks you to step back and calm down.",
+        "{villager} says this is not how allies behave.",
+        "{villager} warns you to treat them with respect.",
+        "{villager} tells you that one hit was already too many.",
+        "{villager} asks you not to make this worse.",
+        "{villager} warns that trust is easy to damage.",
+        "{villager} says they will not accept another strike.",
+        "{villager} tells you to mind your actions.",
+        "{villager} asks for the courtesy of restraint.",
+        "{villager} warns you to choose kindness over violence."
+      ]
+    },
+    {
+      "id": "global.messages.26_party_discipline.messages.allegiance.party_abuse.final.001",
+      "key": "allegiance.party_abuse.final",
+      "lines": [
+        "{villager} gives you a final warning.",
+        "{villager} says this is your last warning.",
+        "{villager} says one more strike will have consequences.",
+        "{villager} warns that their patience is spent.",
+        "{villager} tells you not to test them again.",
+        "{villager} says they will defend themselves next time.",
+        "{villager} warns that another blow ends their mercy.",
+        "{villager} tells you this is the last chance to stop.",
+        "{villager} says their forgiveness has reached its limit.",
+        "{villager} warns that the next strike will be answered.",
+        "{villager} tells you to stand down before it is too late.",
+        "{villager} says there will be no further warnings.",
+        "{villager} warns that their restraint is nearly gone.",
+        "{villager} tells you they will not be hurt again.",
+        "{villager} says this is the last kindness they can offer."
+      ]
+    },
+    {
+      "id": "global.messages.26_party_discipline.messages.allegiance.party_abuse.discipline.002",
+      "key": "allegiance.party_abuse.discipline",
+      "lines": [
+        "{villager} refuses to tolerate further abuse."
+      ]
+    }
+  ]
+}
