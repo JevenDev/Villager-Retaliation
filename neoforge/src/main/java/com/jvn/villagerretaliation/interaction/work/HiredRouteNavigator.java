@@ -232,11 +232,21 @@ public final class HiredRouteNavigator {
             CompoundTag state,
             HiredRoute route,
             long gameTime) {
-        int nearestIndex = nearestNodeIndex(route, villager.blockPosition());
-        BlockPos nearestNode = route.nodes().get(nearestIndex);
+        int nearestIndex = restartAtNearestNode(villager, route);
         state.putInt(ROUTE_NODE_INDEX_TAG, nearestIndex);
         state.putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
         clearPathFailure(state);
+        return nearestIndex;
+    }
+
+    /**
+     * Cancels a stalled route path so its caller can immediately retry from the closest route node.
+     *
+     * @return the index of the closest route node
+     */
+    public static int restartAtNearestNode(Villager villager, HiredRoute route) {
+        int nearestIndex = nearestNodeIndex(route, villager.blockPosition());
+        BlockPos nearestNode = route.nodes().get(nearestIndex);
         VillagerTaskNavigationUtil.stopHiredNavigation(villager);
         HiredPathMemory.clearNavigationProgress(villager);
         HiredPathMemory.clearAvoided(villager, nearestNode);
