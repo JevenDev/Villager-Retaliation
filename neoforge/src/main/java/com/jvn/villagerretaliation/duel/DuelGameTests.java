@@ -18,6 +18,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.netty.channel.embedded.EmbeddedChannel;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
@@ -105,12 +106,14 @@ public final class DuelGameTests {
         UUID eventId = UUID.randomUUID();
         data.remember(new DuelSavedData.DuelMemory(eventId, villager, player, "Ada", "Player",
                 DuelResult.VILLAGER_WIN, 16, 600L, new BlockPos(1, 2, 3).asLong(), village,
-                record.villagerWins(), record.villagerLosses()));
+                Set.of(speaker), record.villagerWins(), record.villagerLosses()));
         data.acknowledgeStory(speaker, player, eventId);
         CompoundTag saved = data.save(new CompoundTag(), helper.getLevel().registryAccess());
         DuelSavedData loaded = DuelSavedData.load(saved, helper.getLevel().registryAccess());
         helper.assertValueEqual(loaded.record(villager, player), record, "duel record did not survive NBT");
         helper.assertValueEqual(loaded.history().size(), 1, "duel history did not survive NBT");
+        helper.assertTrue(loaded.history().get(0).witnessIds().contains(speaker),
+                "duel story witnesses did not survive NBT");
         helper.assertTrue(loaded.storyAcknowledged(speaker, player, eventId),
                 "story acknowledgement did not survive NBT");
         helper.succeed();
@@ -122,7 +125,7 @@ public final class DuelGameTests {
         UUID villager = UUID.randomUUID(), player = UUID.randomUUID(), village = UUID.randomUUID();
         for (int index = 0; index < 70; index++) {
             data.remember(new DuelSavedData.DuelMemory(UUID.randomUUID(), villager, player, "Ada", "Player",
-                    DuelResult.DRAW, 0, index, BlockPos.ZERO.asLong(), village, 0, 0));
+                    DuelResult.DRAW, 0, index, BlockPos.ZERO.asLong(), village, Set.of(), 0, 0));
         }
         helper.assertValueEqual(data.history().size(), 64, "village duel history must remain bounded");
         helper.succeed();

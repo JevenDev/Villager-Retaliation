@@ -36,6 +36,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -67,6 +69,8 @@ public final class DuelService {
     private static final long COUNTDOWN_TICKS = 60L;
     private static final long ARENA_PARTICLE_INTERVAL_TICKS = 20L;
     private static final int ARENA_PARTICLE_POINTS = 48;
+    private static final float DUEL_VICTORY_SOUND_VOLUME = 0.8F;
+    private static final float DUEL_VICTORY_SOUND_PITCH = 1.4F;
     private static final double VILLAGER_CLEARANCE = 3.0D;
     private static final int LOSS_PENALTY_TICKS = 100;
     private static final int LOSS_SLOWNESS_AMPLIFIER = 1;
@@ -537,7 +541,18 @@ public final class DuelService {
         settle(player, villager, duel.stake(), result);
         if (result != DuelResult.CANCELLED && level != null && villager != null) complete(server, level, player, villager, duel, result, knockedOut);
         if (result == DuelResult.VILLAGER_WIN && player != null) applyLossPenalty(server, player);
+        if (result == DuelResult.PLAYER_WIN && player != null) playPlayerDuelVictorySound(player);
         if (player != null) player.sendSystemMessage(Component.translatable("villagerretaliation.duel.result." + result.name().toLowerCase()));
+    }
+
+    private static void playPlayerDuelVictorySound(ServerPlayer player) {
+        player.serverLevel().playSound(
+                null,
+                player.blockPosition(),
+                SoundEvents.PLAYER_LEVELUP,
+                SoundSource.PLAYERS,
+                DUEL_VICTORY_SOUND_VOLUME,
+                DUEL_VICTORY_SOUND_PITCH);
     }
 
     private static void applyLossPenalty(MinecraftServer server, ServerPlayer player) {
@@ -563,7 +578,7 @@ public final class DuelService {
         data.remember(new DuelSavedData.DuelMemory(duel.id(), villager.getUUID(), duel.playerId(),
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(), player == null ? "Player" : player.getGameProfile().getName(),
                 result, duel.stake(), server.overworld().getGameTime(), BlockPos.containing(duel.center()).asLong(), villageId,
-                record.villagerWins(), record.villagerLosses()));
+                duel.spectators(), record.villagerWins(), record.villagerLosses()));
         if (result == DuelResult.PLAYER_WIN && player != null) DuelSpectators.reward(level, duel.spectators(), duel.center(), player);
         if (knockedOut && VillagerSecondWindCompat.isActive()) {
             boolean enteredDowned = VillagerDownedService.enterDowned(level, villager,
