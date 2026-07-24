@@ -9,11 +9,13 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot.Worker
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.network.ClipboardPreviewTogglePayload;
 import com.jvn.villagerretaliation.network.ClipboardWorkAreaActionPayload;
+import com.jvn.villagerretaliation.network.ClipboardWorkforceSubscriptionPayload;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.Util;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -172,7 +174,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int JOB_PAGE_ROW_START_OFFSET = 15;
     private static final int WORKER_ROW_BOTTOM_INSET = 7;
 
-    private final ClipboardWorkforceSnapshot snapshot;
+    private ClipboardWorkforceSnapshot snapshot;
     private final List<RowAction> rowActions = new ArrayList<>();
     private Page page = Page.OVERVIEW;
     private HiredVillagerRole selectedRole = HiredVillagerRole.MINING;
@@ -217,6 +219,30 @@ public final class ClipboardWorkforceScreen extends Screen {
     public ClipboardWorkforceScreen(ClipboardWorkforceSnapshot snapshot) {
         super(Component.translatable("villagerretaliation.gui.clipboard_workforce.title"));
         this.snapshot = snapshot == null ? ClipboardWorkforceSnapshot.empty() : snapshot;
+    }
+
+    /** Applies a live server snapshot without resetting the player's current page or dashboard selections. */
+    public void updateSnapshot(ClipboardWorkforceSnapshot snapshot) {
+        this.snapshot = snapshot == null ? ClipboardWorkforceSnapshot.empty() : snapshot;
+        if (this.selectedWorker != null) {
+            UUID selectedWorkerId = this.selectedWorker.villagerId();
+            this.selectedWorker = this.snapshot.workers().stream()
+                    .filter(worker -> worker.villagerId().equals(selectedWorkerId))
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (this.selectedWarning != null) {
+            WarningSummary previousWarning = this.selectedWarning;
+            this.selectedWarning = this.snapshot.warnings().stream()
+                    .filter(warning -> warning.type() == previousWarning.type() && warning.role() == previousWarning.role())
+                    .findFirst()
+                    .orElse(null);
+        }
+        this.jobScroll = Mth.clamp(this.jobScroll, 0, maxJobScroll());
+        this.warningScroll = Mth.clamp(this.warningScroll, 0, maxWarningPageScroll());
+        this.assignmentTrackingScroll = Mth.clamp(
+                this.assignmentTrackingScroll, 0, maxAssignmentTrackingScroll());
+        this.lastPreviewStateKey = "";
     }
 
     @Override
@@ -2197,6 +2223,12 @@ public final class ClipboardWorkforceScreen extends Screen {
     @Override
     public void onClose() {
         closeClipboard();
+    }
+
+    @Override
+    public void removed() {
+        PacketDistributor.sendToServer(new ClipboardWorkforceSubscriptionPayload(false));
+        super.removed();
     }
 
     private void renderOverview(GuiGraphics graphics, double mouseX, double mouseY) {

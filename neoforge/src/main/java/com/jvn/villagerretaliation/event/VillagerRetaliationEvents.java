@@ -20,6 +20,7 @@ import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.scene.SceneRuntime;
 import com.jvn.villagerretaliation.scene.encounter.EncounterService;
 import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
+import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.VillagerCombatSurvivalService;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedPose;
@@ -150,6 +151,7 @@ public final class VillagerRetaliationEvents {
         if (event.getEntity() instanceof ServerPlayer player) {
             SceneLifecycleIntegration.onPlayerConnection(player);
             VillagerQuestService.clearRuntimeState(player);
+            ClipboardWorkforceService.clearRuntimeState(player);
             VillagerQuestService.attachPendingPartyQuests(player);
             VillagerReputationNetworking.sendServerConfig(player);
             PartySyncService.sendTo(player);
@@ -169,6 +171,7 @@ public final class VillagerRetaliationEvents {
                             party.id(),
                             player.getUUID()));
             VillagerQuestService.clearRuntimeState(player);
+            ClipboardWorkforceService.clearRuntimeState(player);
             HiredDebugPreviewService.clearRuntimeState(player);
             ServerboundRequestLimiter.clear(player.getUUID());
         }
@@ -183,6 +186,7 @@ public final class VillagerRetaliationEvents {
     public static void onPlayerClone(PlayerEvent.Clone event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             VillagerQuestService.clearRuntimeState(player);
+            ClipboardWorkforceService.clearRuntimeState(player);
             PartySyncService.sendTo(player);
         }
     }
@@ -191,6 +195,7 @@ public final class VillagerRetaliationEvents {
         gameTestOriginSeeded = false;
         com.jvn.villagerretaliation.raid.PlayerRaidService.clearRuntimeState();
         com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.clearRuntimeState();
+        ClipboardWorkforceService.clearRuntimeState();
         ServerRuntimeState.clear(event.getServer());
         com.jvn.villagerretaliation.duel.DuelService.clearRuntimeState(event.getServer());
     }
@@ -368,6 +373,7 @@ public final class VillagerRetaliationEvents {
             VillagerReputationAdvancements.onPlayerTick(player);
             VillagerRecruitmentService.onPlayerTick(player);
             VillagerQuestService.onPlayerTick(player);
+            ClipboardWorkforceService.onPlayerTick(player);
             HiredDebugPreviewService.onPlayerTick(player);
             return;
         }
