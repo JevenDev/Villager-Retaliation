@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.mojang.authlib.GameProfile;
@@ -180,6 +181,39 @@ public final class VillagerBehaviorSuppressionGameTests {
 
         villager.discard();
         attacker.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void vanillaTradeFallbackCannotBypassInteractionOwnership(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "suppression_trade_fallback");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        boolean previousInteractionScreen = VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get();
+        boolean previousShiftBypass = VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get();
+        double previousDialogueDistance = VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get();
+
+        try {
+            VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.set(true);
+            VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.set(true);
+            VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.set(0.25D);
+            player.moveTo(villager.getX(), villager.getY(), villager.getZ() + 1.0D, 0.0F, 0.0F);
+
+            helper.assertTrue(VillagerInteractionService.shouldSuppressVanillaTradeFallback(
+                            villager, player, InteractionHand.MAIN_HAND),
+                    "dialogue distance must not turn a valid interaction packet into vanilla trading");
+
+            player.setShiftKeyDown(true);
+            helper.assertFalse(VillagerInteractionService.shouldSuppressVanillaTradeFallback(
+                            villager, player, InteractionHand.MAIN_HAND),
+                    "the configured adult shift-click trading bypass must remain available");
+        } finally {
+            VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.set(previousInteractionScreen);
+            VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.set(previousShiftBypass);
+            VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.set(previousDialogueDistance);
+            player.setShiftKeyDown(false);
+            villager.discard();
+        }
         helper.succeed();
     }
 

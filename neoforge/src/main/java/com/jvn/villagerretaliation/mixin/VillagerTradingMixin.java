@@ -1,6 +1,6 @@
 package com.jvn.villagerretaliation.mixin;
 
-import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.npc.Villager;
@@ -18,8 +18,7 @@ public abstract class VillagerTradingMixin {
             InteractionHand hand,
             CallbackInfoReturnable<InteractionResult> cir) {
         Villager villager = (Villager) (Object) this;
-        if (VillagerBehaviorSuppressionPolicy.suppresses(
-                villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING)) {
+        if (VillagerInteractionService.shouldSuppressVanillaTradeFallback(villager, player, hand)) {
             cir.setReturnValue(InteractionResult.FAIL);
         }
     }

@@ -166,6 +166,39 @@ public final class VillagerInteractionService {
         return player.distanceToSqr(villager) <= maxDistance * maxDistance;
     }
 
+    /**
+     * Final guard for vanilla's {@link Villager#mobInteract(Player, InteractionHand)} path.
+     *
+     * <p>NeoForge can deliver an entity-specific hit before the ordinary entity interaction, and
+     * vanilla measures interaction reach against the hit box rather than entity-center distance.
+     * Consequently, the normal event interceptor can legitimately decline a boundary click while
+     * vanilla still accepts it and opens trading. Do not apply the dialogue-distance check here:
+     * a click that cannot open our screen must still not become an accidental vanilla-trade bypass.
+     */
+    public static boolean shouldSuppressVanillaTradeFallback(
+            Villager villager,
+            Player player,
+            InteractionHand hand) {
+        if (VillagerBehaviorSuppressionPolicy.suppresses(
+                villager, VillagerBehaviorSuppressionPolicy.Behavior.TRADING)
+                || VillagerRetaliationHandler.isHostileTowards(villager, player)) {
+            return true;
+        }
+        if (hand != InteractionHand.MAIN_HAND
+                || (!VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get() && !player.isInvisible())
+                || !hasEmptyHandForVillagerInteraction(player)
+                || shouldBypassInteractionScreen(player.getItemInHand(hand))
+                || villager.isTrading()
+                || !villager.isAlive()
+                || player.isSpectator()
+                || !player.isAlive()) {
+            return false;
+        }
+        return villager.isBaby()
+                || !player.isShiftKeyDown()
+                || !VillagerRetaliationConfig.SHIFT_RIGHT_CLICK_BYPASSES_INTERACTION_SCREEN.get();
+    }
+
     public static boolean shouldHandleSleepingInteraction(Villager villager, ServerPlayer player, InteractionHand hand) {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
