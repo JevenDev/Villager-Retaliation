@@ -893,6 +893,10 @@ public final class VillagerGameplayGameTests {
         helper.assertValueEqual(applied.max(), HiredWorkArea.maxPos(first, second), "applied draft max");
         helper.assertTrue(applied.explicitlyAssigned(), "applied draft should become the explicit work site");
         helper.assertTrue(HiredStorageClipboardItem.selectedWorkArea(clipboard).first() == null, "applied draft should clear held clipboard draft");
+        helper.assertValueEqual(
+                HiredStorageClipboardItem.mode(clipboard),
+                HiredStorageClipboardItem.ClipboardMode.ASSIGN_STORAGE,
+                "applying a draft should reset the held clipboard mode");
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         villager.discard();
