@@ -13,13 +13,16 @@ import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.neoforge.network.PacketDistributor;
 
 public final class VillagerItemFilterScreen extends AbstractContainerScreen<VillagerItemFilterMenu> {
+    private static final int TEXTURE_WIDTH = 176;
+    private static final int TEXTURE_HEIGHT = 166;
+
     private Button allowlistButton;
     private Button denylistButton;
 
     public VillagerItemFilterScreen(VillagerItemFilterMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        this.imageWidth = 175;
-        this.imageHeight = 165;
+        this.imageWidth = TEXTURE_WIDTH;
+        this.imageHeight = TEXTURE_HEIGHT;
         this.inventoryLabelY = 72;
     }
 
