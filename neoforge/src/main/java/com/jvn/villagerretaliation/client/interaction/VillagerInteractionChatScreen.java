@@ -36,6 +36,7 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        this.interactionScreen.noteInteractionActivity();
         if (keyCode == GLFW.GLFW_KEY_ESCAPE) {
             returnToInteractionScreen();
             return true;
@@ -52,7 +53,20 @@ final class VillagerInteractionChatScreen extends ChatScreen implements Villager
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        this.interactionScreen.noteInteractionActivity();
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public void mouseMoved(double mouseX, double mouseY) {
+        this.interactionScreen.noteInteractionActivity();
+        super.mouseMoved(mouseX, mouseY);
+    }
+
+    @Override
+    public boolean charTyped(char codePoint, int modifiers) {
+        this.interactionScreen.noteInteractionActivity();
+        return super.charTyped(codePoint, modifiers);
     }
 
     @Override
