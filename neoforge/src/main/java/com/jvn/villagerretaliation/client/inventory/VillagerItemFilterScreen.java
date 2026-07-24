@@ -86,4 +86,20 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
         this.allowlistButton.active = mode != VillagerItemFilterData.Mode.ALLOWLIST;
         this.denylistButton.active = mode != VillagerItemFilterData.Mode.DENYLIST;
     }
+
+    /**
+     * Returns the ghost-slot index at the given screen coordinates, or {@code -1} when none is hit.
+     * Kept independent of EMI so this screen can still load when EMI is absent.
+     */
+    public int ghostSlotAt(int mouseX, int mouseY) {
+        for (int slot = 0; slot < VillagerItemFilterMenu.GHOST_SLOT_COUNT; slot++) {
+            var ghostSlot = this.menu.slots.get(slot);
+            int slotX = this.leftPos + ghostSlot.x;
+            int slotY = this.topPos + ghostSlot.y;
+            if (mouseX >= slotX && mouseX < slotX + 18 && mouseY >= slotY && mouseY < slotY + 18) {
+                return slot;
+            }
+        }
+        return -1;
+    }
 }
