@@ -79,7 +79,7 @@ public final class HiredVillagerWorkService {
     private static final String SLEEPING_STATUS = "interaction.work.status.sleeping";
     private static final double HIRED_WORK_NOTICE_RADIUS = 32.0D;
     private static final double HIRED_WORK_NOTICE_RADIUS_SQR = HIRED_WORK_NOTICE_RADIUS * HIRED_WORK_NOTICE_RADIUS;
-    private static final int MIN_ROUTINE_REPORT_COOLDOWN_SECONDS = 300;
+    private static final int MIN_ROUTINE_REPORT_COOLDOWN_SECONDS = 600;
     private static final int MIN_WORK_RADIUS = 4;
     private static final int SKILL_RADIUS_BASELINE = 50;
     private static final int MAX_SKILLED_WORK_RADIUS = 32;

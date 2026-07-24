@@ -375,7 +375,7 @@ public final class VillagerRetaliationConfigModel {
         public int hiredWorkTickInterval = 40;
 
         @RangeConstraint(min = 0, max = 600)
-        public int hiredWorkNoticeCooldownSeconds = 300;
+        public int hiredWorkNoticeCooldownSeconds = 600;
 
         @RangeConstraint(min = 4, max = 32)
         public int hiredWorkDefaultRadius = 16;
