@@ -8,4 +8,5 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface AbstractContainerScreenAccessor {
     @Accessor("leftPos") void villagerretaliation$setLeftPos(int leftPos);
     @Accessor("topPos") void villagerretaliation$setTopPos(int topPos);
+    @Accessor("topPos") int villagerretaliation$getTopPos();
 }
