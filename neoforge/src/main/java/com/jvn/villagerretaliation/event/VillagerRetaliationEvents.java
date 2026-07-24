@@ -692,6 +692,22 @@ public final class VillagerRetaliationEvents {
                 && VillagerInteractionService.shouldHandleSleepingInteraction(villager, serverPlayer, event.getHand())) {
             event.setCancellationResult(VillagerInteractionService.handleSleepingVillagerInteraction(villager, serverPlayer));
             event.setCanceled(true);
+            return;
+        }
+        if (event.getTarget() instanceof Villager villager
+                && event.getEntity() instanceof ServerPlayer serverPlayer
+                && VillagerInteractionService.shouldHandleInteraction(villager, serverPlayer, event.getHand())) {
+            event.setCancellationResult(VillagerInteractionService.handleVillagerRightClick(villager, serverPlayer));
+            event.setCanceled(true);
+            return;
+        }
+        if (event.getTarget() instanceof Villager villager
+                && event.getEntity() instanceof Player player
+                && !(player instanceof ServerPlayer)
+                && VillagerInteractionService.shouldSuppressClientVanillaInteraction(
+                        villager, player, event.getHand())) {
+            event.setCancellationResult(InteractionResult.CONSUME);
+            event.setCanceled(true);
         }
     }
 
