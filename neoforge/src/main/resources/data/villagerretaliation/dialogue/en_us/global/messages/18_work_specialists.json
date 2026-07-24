@@ -21,7 +21,17 @@
         "I am giving the job room to think.",
         "I am helping quietly, which is a kind of helping.",
         "I am waiting for the right moment to be useful.",
-        "I am almost certainly contributing."
+        "I am almost certainly contributing.",
+        "I am helping in my own hard-to-measure way. I am between useful thoughts right now.",
+        "I am between useful thoughts right now. I am letting the work settle before I improve it again.",
+        "I am letting the work settle before I improve it again. I am preparing a very careful amount of help.",
+        "I am preparing a very careful amount of help. I am not idle. I am loosely arranged.",
+        "I am not idle. I am loosely arranged. I am saving my next excellent contribution.",
+        "I am saving my next excellent contribution. I am giving the job room to think.",
+        "I am giving the job room to think. I am helping quietly, which is a kind of helping.",
+        "I am helping quietly, which is a kind of helping. I am waiting for the right moment to be useful.",
+        "I am waiting for the right moment to be useful. I am almost certainly contributing.",
+        "I am almost certainly contributing. I am helping in my own hard-to-measure way."
       ],
       "id": "global.messages.18_work_specialists.messages.interaction.work.nitwit.cooldown.000"
     },
@@ -37,7 +47,17 @@
         "The sky continues to do sky things.",
         "I looked up and found the usual amount of sky.",
         "No changes in the sky department.",
-        "I can confirm the sky has not wandered off."
+        "I can confirm the sky has not wandered off.",
+        "Nitwit report: I found the sky. Still up there. Sky check complete. It remains above us.",
+        "Sky check complete. It remains above us. I inspected the sky and found no missing pieces.",
+        "I inspected the sky and found no missing pieces. The sky is accounted for. You are welcome.",
+        "The sky is accounted for. You are welcome. Important report: up is still up.",
+        "Important report: up is still up. I checked overhead. Nothing has fallen out yet.",
+        "I checked overhead. Nothing has fallen out yet. The sky continues to do sky things.",
+        "The sky continues to do sky things. I looked up and found the usual amount of sky.",
+        "I looked up and found the usual amount of sky. No changes in the sky department.",
+        "No changes in the sky department. I can confirm the sky has not wandered off.",
+        "I can confirm the sky has not wandered off. Nitwit report: I found the sky. Still up there."
       ],
       "id": "global.messages.18_work_specialists.messages.interaction.work.nitwit.report.sky.001"
     },
@@ -53,7 +73,17 @@
         "I am supervising the broad shape of the job.",
         "Everything is under my unusual observation.",
         "I am providing management from over here.",
-        "I am making sure the work knows I am nearby."
+        "I am making sure the work knows I am nearby.",
+        "Nitwit report: I am supervising the general direction of things. I am watching the work from a very thoughtful angle.",
+        "I am watching the work from a very thoughtful angle. I am making sure the area feels supervised.",
+        "I am making sure the area feels supervised. I am overseeing matters without crowding them.",
+        "I am overseeing matters without crowding them. The work has my attention, mostly in its direction.",
+        "The work has my attention, mostly in its direction. I am keeping an eye on the idea of progress.",
+        "I am keeping an eye on the idea of progress. I am supervising the broad shape of the job.",
+        "I am supervising the broad shape of the job. Everything is under my unusual observation.",
+        "Everything is under my unusual observation. I am providing management from over here.",
+        "I am providing management from over here. I am making sure the work knows I am nearby.",
+        "I am making sure the work knows I am nearby. Nitwit report: I am supervising the general direction of things."
       ],
       "id": "global.messages.18_work_specialists.messages.interaction.work.nitwit.report.supervising.002"
     },
@@ -69,7 +99,17 @@
         "Nothing attacked me, but a shadow considered it.",
         "I have concerns about a few corners.",
         "Danger check done. The shadows remain on notice.",
-        "I looked brave near several dark places."
+        "I looked brave near several dark places.",
+        "Nitwit report: danger check complete. I disliked several shadows. I inspected the shadows. Some were suspicious.",
+        "I inspected the shadows. Some were suspicious. Danger report: most shadows behaved, but I am watching them.",
+        "Danger report: most shadows behaved, but I am watching them. I found no monsters, only dramatic darkness.",
+        "I found no monsters, only dramatic darkness. The shadows have been warned.",
+        "The shadows have been warned. I checked the gloomy spots and frowned professionally.",
+        "I checked the gloomy spots and frowned professionally. Nothing attacked me, but a shadow considered it.",
+        "Nothing attacked me, but a shadow considered it. I have concerns about a few corners.",
+        "I have concerns about a few corners. Danger check done. The shadows remain on notice.",
+        "Danger check done. The shadows remain on notice. I looked brave near several dark places.",
+        "I looked brave near several dark places. Nitwit report: danger check complete. I disliked several shadows."
       ],
       "id": "global.messages.18_work_specialists.messages.interaction.work.nitwit.report.shadows.003"
     },
@@ -85,7 +125,17 @@
         "I found the work and gave it a serious look.",
         "If pointing counts, I am ahead of schedule.",
         "I can direct attention toward the work area.",
-        "I am prepared to point with purpose."
+        "I am prepared to point with purpose.",
+        "Nitwit report: I can point at work, if that helps. I located the work and pointed at it with confidence.",
+        "I located the work and pointed at it with confidence. I can indicate where progress might happen.",
+        "I can indicate where progress might happen. I have identified a direction for usefulness.",
+        "I have identified a direction for usefulness. I pointed at the job. The job knows.",
+        "I pointed at the job. The job knows. I am ready to gesture helpfully at the next task.",
+        "I am ready to gesture helpfully at the next task. I found the work and gave it a serious look.",
+        "I found the work and gave it a serious look. If pointing counts, I am ahead of schedule.",
+        "If pointing counts, I am ahead of schedule. I can direct attention toward the work area.",
+        "I can direct attention toward the work area. I am prepared to point with purpose.",
+        "I am prepared to point with purpose. Nitwit report: I can point at work, if that helps."
       ],
       "id": "global.messages.18_work_specialists.messages.interaction.work.nitwit.report.pointing.004"
     },
@@ -101,7 +151,17 @@
         "That's all I have for now: I am ready to tend the animals once there are lures and a safe pen.",
         "Understood. I am ready to tend the animals once there are lures and a safe pen.",
         "Nothing else to add yet. I am ready to tend the animals once there are lures and a safe pen.",
-        "For the moment: I am ready to tend the animals once there are lures and a safe pen."
+        "For the moment: I am ready to tend the animals once there are lures and a safe pen.",
+        "I am ready to tend the animals once there are lures and a safe pen. All right. I am ready to tend the animals once there are lures and a safe pen.",
+        "All right. I am ready to tend the animals once there are lures and a safe pen. Here's where I am with it: I am ready to tend the animals once there are lures and a safe pen.",
+        "Here's where I am with it: I am ready to tend the animals once there are lures and a safe pen. For now, that is the situation. I am ready to tend the animals once there are lures and a safe pen.",
+        "For now, that is the situation. I am ready to tend the animals once there are lures and a safe pen. Just so you know. I am ready to tend the animals once there are lures and a safe pen.",
+        "Just so you know. I am ready to tend the animals once there are lures and a safe pen. Plainly put: I am ready to tend the animals once there are lures and a safe pen.",
+        "Plainly put: I am ready to tend the animals once there are lures and a safe pen. That's all I have for now: I am ready to tend the animals once there are lures and a safe pen.",
+        "That's all I have for now: I am ready to tend the animals once there are lures and a safe pen. Understood. I am ready to tend the animals once there are lures and a safe pen.",
+        "Understood. I am ready to tend the animals once there are lures and a safe pen. Nothing else to add yet. I am ready to tend the animals once there are lures and a safe pen.",
+        "Nothing else to add yet. I am ready to tend the animals once there are lures and a safe pen. For the moment: I am ready to tend the animals once there are lures and a safe pen.",
+        "For the moment: I am ready to tend the animals once there are lures and a safe pen. I am ready to tend the animals once there are lures and a safe pen."
       ],
       "id": "global.messages.18_work_specialists.messages.interaction.work.animal_handling.placeholder.005"
     }

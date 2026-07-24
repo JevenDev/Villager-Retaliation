@@ -27,7 +27,12 @@
         "{villager} says they will not accept another strike.",
         "{villager} tells you to mind your actions.",
         "{villager} asks for the courtesy of restraint.",
-        "{villager} warns you to choose kindness over violence."
+        "{villager} warns you to choose kindness over violence.",
+        "{villager} warns you not to strike them again. {villager} asks you to keep your hands to yourself.",
+        "{villager} asks you to keep your hands to yourself. {villager} tells you to stop that at once.",
+        "{villager} tells you to stop that at once. {villager} says another blow will not be forgiven.",
+        "{villager} says another blow will not be forgiven. {villager} warns that your temper is testing their patience.",
+        "{villager} warns that your temper is testing their patience. {villager} asks you to step back and calm down."
       ]
     },
     {
@@ -48,14 +53,38 @@
         "{villager} says there will be no further warnings.",
         "{villager} warns that their restraint is nearly gone.",
         "{villager} tells you they will not be hurt again.",
-        "{villager} says this is the last kindness they can offer."
+        "{villager} says this is the last kindness they can offer.",
+        "{villager} gives you a final warning. {villager} says this is your last warning.",
+        "{villager} says this is your last warning. {villager} says one more strike will have consequences.",
+        "{villager} says one more strike will have consequences. {villager} warns that their patience is spent.",
+        "{villager} warns that their patience is spent. {villager} tells you not to test them again.",
+        "{villager} tells you not to test them again. {villager} says they will defend themselves next time."
       ]
     },
     {
       "id": "global.messages.26_party_discipline.messages.allegiance.party_abuse.discipline.002",
       "key": "allegiance.party_abuse.discipline",
       "lines": [
-        "{villager} refuses to tolerate further abuse."
+        "{villager} refuses to tolerate further abuse.",
+        "Listen. {villager} refuses to tolerate further abuse.",
+        "Understand this. {villager} refuses to tolerate further abuse.",
+        "Let me be clear. {villager} refuses to tolerate further abuse.",
+        "I will say it plainly. {villager} refuses to tolerate further abuse.",
+        "Here is the truth. {villager} refuses to tolerate further abuse.",
+        "As things stand, {villager} refuses to tolerate further abuse.",
+        "From where I stand, {villager} refuses to tolerate further abuse.",
+        "For the moment, {villager} refuses to tolerate further abuse.",
+        "Right now, {villager} refuses to tolerate further abuse.",
+        "{villager} refuses to tolerate further abuse. Keep that in mind.",
+        "{villager} refuses to tolerate further abuse. Remember that.",
+        "{villager} refuses to tolerate further abuse. That much is clear.",
+        "{villager} refuses to tolerate further abuse. That is where things stand.",
+        "{villager} refuses to tolerate further abuse. I mean it.",
+        "{villager} refuses to tolerate further abuse. Do not forget it.",
+        "{villager} refuses to tolerate further abuse. That is the whole of it.",
+        "{villager} refuses to tolerate further abuse. Nothing about that has changed.",
+        "{villager} refuses to tolerate further abuse. I have said what needed saying.",
+        "{villager} refuses to tolerate further abuse. Take it seriously."
       ]
     }
   ]
