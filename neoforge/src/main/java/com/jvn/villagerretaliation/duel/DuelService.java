@@ -118,6 +118,11 @@ public final class DuelService {
     }
 
     public static StartResult start(ServerPlayer player, Villager villager, DuelLoadout loadout, int requestedStake) {
+        if (loadout == null) return new StartResult(false, DuelAvailabilityReason.INVALID, null);
+        if (loadout == DuelLoadout.BRING_YOUR_OWN
+                && !VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.get()) {
+            return new StartResult(false, DuelAvailabilityReason.LOADOUT_DISABLED, null);
+        }
         ServerLevel level = player.serverLevel();
         DuelAvailability available = availability(level, player, villager);
         if (!available.available()) return new StartResult(false, available.reason(), null);

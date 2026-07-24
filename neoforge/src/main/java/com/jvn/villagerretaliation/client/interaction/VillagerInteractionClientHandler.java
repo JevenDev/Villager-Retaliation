@@ -61,10 +61,12 @@ public final class VillagerInteractionClientHandler {
 
     private VillagerInteractionClientHandler() {
     }
-    public static void openDuel(OpenVillagerDuelPayload payload) {
-        Minecraft.getInstance().setScreen(new VillagerDuelScreen(payload));
-    }
 
+    public static void acceptDuelStatus(OpenVillagerDuelPayload payload) {
+        if (Minecraft.getInstance().screen instanceof VillagerInteractionScreen screen) {
+            screen.updateDuelStatus(payload);
+        }
+    }
 
     public static void open(OpenVillagerInteractionPayload payload) {
         Minecraft minecraft = Minecraft.getInstance();

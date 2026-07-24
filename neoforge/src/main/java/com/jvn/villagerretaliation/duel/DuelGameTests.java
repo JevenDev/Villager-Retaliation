@@ -585,29 +585,52 @@ public final class DuelGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void bringYourOwnRequiresConfig(GameTestHelper helper) {
+        boolean previous = VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.get();
+        try {
+            VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.set(false);
+            Participant participant = participant(helper);
+            DuelService.StartResult start = DuelService.start(
+                    participant.player(), participant.villager(), DuelLoadout.BRING_YOUR_OWN, 0);
+            helper.assertFalse(start.started(), "BYO duel must not start while disabled");
+            helper.assertValueEqual(start.reason(), DuelAvailabilityReason.LOADOUT_DISABLED,
+                    "disabled BYO duel rejection reason");
+            helper.succeed();
+        } finally {
+            VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.set(previous);
+        }
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void bringYourOwnMutationsPersistWithoutSnapshotDuplication(GameTestHelper helper) {
-        Participant participant = participant(helper);
-        ServerPlayer player = participant.player();
-        player.getInventory().setItem(0, new ItemStack(Items.APPLE, 3));
+        boolean previous = VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.get();
+        try {
+            VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.set(true);
+            Participant participant = participant(helper);
+            ServerPlayer player = participant.player();
+            player.getInventory().setItem(0, new ItemStack(Items.APPLE, 3));
 
-        DuelService.StartResult start = DuelService.start(
-                player, participant.villager(), DuelLoadout.BRING_YOUR_OWN, 0);
-        helper.assertTrue(start.started(), "BYO duel should start: " + start.reason());
-        helper.assertTrue(DuelService.allowsInventoryClick(
-                        player, player.inventoryMenu, InventoryMenu.USE_ROW_SLOT_START, ClickType.PICKUP),
-                "BYO players should be able to move gear they brought");
-        helper.assertTrue(!DuelService.allowsInventoryClick(
-                        player, player.inventoryMenu, 1, ClickType.PICKUP),
-                "crafting slots must remain locked during BYO duels");
-        helper.assertTrue(!DuelService.allowsInventoryClick(
-                        player, player.inventoryMenu, InventoryMenu.USE_ROW_SLOT_START, ClickType.THROW),
-                "BYO players must not drop items");
+            DuelService.StartResult start = DuelService.start(
+                    player, participant.villager(), DuelLoadout.BRING_YOUR_OWN, 0);
+            helper.assertTrue(start.started(), "BYO duel should start when configured: " + start.reason());
+            helper.assertTrue(DuelService.allowsInventoryClick(
+                            player, player.inventoryMenu, InventoryMenu.USE_ROW_SLOT_START, ClickType.PICKUP),
+                    "BYO players should be able to move gear they brought");
+            helper.assertTrue(!DuelService.allowsInventoryClick(
+                            player, player.inventoryMenu, 1, ClickType.PICKUP),
+                    "crafting slots must remain locked during BYO duels");
+            helper.assertTrue(!DuelService.allowsInventoryClick(
+                            player, player.inventoryMenu, InventoryMenu.USE_ROW_SLOT_START, ClickType.THROW),
+                    "BYO players must not drop items");
 
-        player.getInventory().getItem(0).shrink(1);
-        helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW), "BYO duel should resolve");
-        helper.assertValueEqual(player.getInventory().countItem(Items.APPLE), 2,
-                "consumed BYO items must stay consumed instead of being restored and duplicated");
-        helper.succeed();
+            player.getInventory().getItem(0).shrink(1);
+            helper.assertTrue(DuelService.resolveForTest(player, DuelResult.DRAW), "BYO duel should resolve");
+            helper.assertValueEqual(player.getInventory().countItem(Items.APPLE), 2,
+                    "consumed BYO items must stay consumed instead of being restored and duplicated");
+            helper.succeed();
+        } finally {
+            VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.set(previous);
+        }
     }
 
     @GameTest(template = EMPTY_TEMPLATE)

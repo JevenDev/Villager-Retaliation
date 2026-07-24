@@ -20,8 +20,15 @@ public record OpenVillagerDuelPayload(
         int cooldownDays,
         int playerBalance,
         int villagerBalance,
-        String currencyName) implements CustomPacketPayload {
+        String currencyName,
+        boolean bringYourOwnAllowed,
+        String openingDialogue,
+        String loadoutDialogue,
+        String wagerDialogue,
+        String confirmationDialogue,
+        String startingDialogue) implements CustomPacketPayload {
     private static final int MAX_TEXT = 128;
+    private static final int MAX_DIALOGUE_TEXT = 1024;
     public static final Type<OpenVillagerDuelPayload> TYPE = VillagerPayloads.type("open_villager_duel");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerDuelPayload> STREAM_CODEC =
             VillagerPayloads.codec(OpenVillagerDuelPayload::encode, OpenVillagerDuelPayload::decode);
@@ -42,6 +49,12 @@ public record OpenVillagerDuelPayload(
         buffer.writeVarInt(payload.playerBalance());
         buffer.writeVarInt(payload.villagerBalance());
         buffer.writeUtf(payload.currencyName(), MAX_TEXT);
+        buffer.writeBoolean(payload.bringYourOwnAllowed());
+        buffer.writeUtf(payload.openingDialogue(), MAX_DIALOGUE_TEXT);
+        buffer.writeUtf(payload.loadoutDialogue(), MAX_DIALOGUE_TEXT);
+        buffer.writeUtf(payload.wagerDialogue(), MAX_DIALOGUE_TEXT);
+        buffer.writeUtf(payload.confirmationDialogue(), MAX_DIALOGUE_TEXT);
+        buffer.writeUtf(payload.startingDialogue(), MAX_DIALOGUE_TEXT);
     }
 
     private static OpenVillagerDuelPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -49,7 +62,9 @@ public record OpenVillagerDuelPayload(
                 buffer.readEnum(DuelAvailabilityReason.class), buffer.readVarInt(), buffer.readVarInt(),
                 buffer.readVarInt(), buffer.readVarLong(), buffer.readVarInt(), buffer.readVarInt(),
                 buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt(),
-                buffer.readUtf(MAX_TEXT));
+                buffer.readUtf(MAX_TEXT), buffer.readBoolean(), buffer.readUtf(MAX_DIALOGUE_TEXT), buffer.readUtf(MAX_DIALOGUE_TEXT),
+                buffer.readUtf(MAX_DIALOGUE_TEXT), buffer.readUtf(MAX_DIALOGUE_TEXT),
+                buffer.readUtf(MAX_DIALOGUE_TEXT));
     }
 
     public int maximumStake() {

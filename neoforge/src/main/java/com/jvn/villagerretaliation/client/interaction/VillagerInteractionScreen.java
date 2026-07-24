@@ -12,6 +12,8 @@ import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.client.villager.VillagerModelPreviewRenderContext;
 import com.jvn.villagerretaliation.config.DialogueTextSpeed;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.duel.DuelAvailabilityReason;
+import com.jvn.villagerretaliation.duel.DuelLoadout;
 import com.jvn.villagerretaliation.party.PartyAttackMode;
 import com.jvn.villagerretaliation.party.PartyCombatMode;
 import com.jvn.villagerretaliation.party.PartyDropCollectionMode;
@@ -48,6 +50,7 @@ import com.jvn.villagerretaliation.network.VillagerDialogueRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerGiftRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerInventoryRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerDuelRequestPayload;
+import com.jvn.villagerretaliation.network.OpenVillagerDuelPayload;
 import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
 import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
@@ -246,6 +249,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_OPTION_TEXT_COLOR = 0xFFFFFFFF;
     private static final int INTERACTION_REPUTATION_TEXT_COLOR = 0xFFFFFF55;
     private static final int TEXT_OUTLINE_COLOR = 0xFF000000;
+    private static final int[] DUEL_STAKES = {0, 8, 16, 32, 64, Integer.MAX_VALUE};
     private static final Runnable NO_ACTION = () -> {
     };
 
@@ -307,6 +311,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final Set<String> selectedAnimalBreedingTargets = new LinkedHashSet<>();
     private int animalCullCap;
     private boolean forceCameraTowardsVillager;
+    private OpenVillagerDuelPayload duelStatus;
+    private DuelLoadout duelLoadout = DuelLoadout.BARE_HANDED;
+    private int duelStakeIndex;
+    private boolean duelStartPending;
     private final List<DialogueOption> options = new ArrayList<>();
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
     private final List<String> knownLikedGiftNames = new ArrayList<>();
@@ -584,6 +592,26 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
         this.awaitingForcedDialogueResponse = false;
         if (this.page == DialoguePage.TALK || this.page == DialoguePage.ADVENTURES) {
+            rebuildOptionsKeepingListPosition();
+        }
+    }
+
+    public void updateDuelStatus(OpenVillagerDuelPayload status) {
+        if (status == null || !matchesVillager(status.entityId())) {
+            return;
+        }
+        boolean started = this.duelStartPending && status.reason() == DuelAvailabilityReason.PLAYER_BUSY;
+        this.duelStartPending = false;
+        this.duelStatus = status;
+        if (!status.bringYourOwnAllowed() && this.duelLoadout == DuelLoadout.BRING_YOUR_OWN) {
+            this.duelLoadout = DuelLoadout.BARE_HANDED;
+        }
+        if (started) {
+            leaveConversation();
+            return;
+        }
+        if (isDuelSetupPage(this.page)) {
+            refreshDuelDialogue();
             rebuildOptionsKeepingListPosition();
         }
     }
@@ -944,6 +972,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             }
         } else if (this.page == DialoguePage.ADVENTURES) {
             addDialogueOptions(true);
+        } else if (this.page == DialoguePage.DUEL) {
+            addDuelOptions();
+        } else if (this.page == DialoguePage.DUEL_LOADOUT) {
+            addDuelLoadoutOptions();
+        } else if (this.page == DialoguePage.DUEL_WAGER) {
+            addDuelWagerOptions();
+        } else if (this.page == DialoguePage.DUEL_CONFIRM) {
+            addDuelConfirmOptions();
         } else if (this.page == DialoguePage.PROFILE) {
             addProfileOptions();
         } else if (this.page == DialoguePage.SKILLS) {
@@ -1066,6 +1102,206 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
 
     private void addProfileOptions() {
+    }
+
+    private void addDuelOptions() {
+        if (this.duelStatus == null) {
+            addPassiveOption("duel.loading");
+            return;
+        }
+        if (!this.duelStatus.available()) {
+            addOption("duel.leave", this::navigateToRootPage);
+            return;
+        }
+        this.options.add(DialogueOption.enabled(
+                translate("duel.choose_loadout", selectedDuelLoadoutLabel()),
+                () -> openPage(DialoguePage.DUEL_LOADOUT)));
+        this.options.add(DialogueOption.enabled(
+                translate("duel.choose_wager", selectedDuelStakeLabel()),
+                () -> openPage(DialoguePage.DUEL_WAGER)));
+        addOption("duel.issue_challenge", () -> openPage(DialoguePage.DUEL_CONFIRM));
+        addOption("duel.nevermind", this::navigateToRootPage);
+    }
+
+    private void addDuelLoadoutOptions() {
+        if (!canConfigureDuel()) {
+            addDuelSetupUnavailableOption();
+            addOption("duel.back", () -> openPage(DialoguePage.DUEL));
+            return;
+        }
+        for (DuelLoadout loadout : DuelLoadout.values()) {
+            boolean allowed = loadout != DuelLoadout.BRING_YOUR_OWN || this.duelStatus.bringYourOwnAllowed();
+            this.options.add(DialogueOption.enabled(
+                    checkmarkRowLabel(duelLoadoutOptionLabel(loadout), this.duelLoadout == loadout),
+                    allowed
+                            ? () -> {
+                                this.duelLoadout = loadout;
+                                openPage(DialoguePage.DUEL);
+                            }
+                            : NO_ACTION,
+                    !allowed));
+        }
+        addOption("duel.back", () -> openPage(DialoguePage.DUEL));
+    }
+
+    private void addDuelWagerOptions() {
+        if (!canConfigureDuel()) {
+            addDuelSetupUnavailableOption();
+            addOption("duel.back", () -> openPage(DialoguePage.DUEL));
+            return;
+        }
+        int maximumStake = duelMaximumStake();
+        Set<Integer> offeredStakes = new LinkedHashSet<>();
+        for (int index = 0; index < DUEL_STAKES.length; index++) {
+            int optionIndex = index;
+            int stake = duelStakeForIndex(optionIndex);
+            if (!offeredStakes.add(stake)) {
+                continue;
+            }
+            boolean affordable = stake <= maximumStake;
+            this.options.add(DialogueOption.enabled(
+                    checkmarkRowLabel(
+                            duelStakeOptionLabel(stake, DUEL_STAKES[optionIndex] == Integer.MAX_VALUE),
+                            selectedDuelStake() == stake),
+                    affordable
+                            ? () -> {
+                                this.duelStakeIndex = optionIndex;
+                                openPage(DialoguePage.DUEL);
+                            }
+                            : NO_ACTION,
+                    !affordable));
+        }
+        addOption("duel.back", () -> openPage(DialoguePage.DUEL));
+    }
+
+    private void addDuelConfirmOptions() {
+        if (this.duelStartPending) {
+            addPassiveOption("duel.starting");
+            return;
+        }
+        if (!canConfigureDuel()) {
+            addDuelSetupUnavailableOption();
+            addOption("duel.back", () -> openPage(DialoguePage.DUEL));
+            return;
+        }
+        int stake = selectedDuelStake();
+        if (stake > duelMaximumStake()) {
+            addPassiveOption("duel.wager_unavailable");
+            addOption("duel.back", () -> openPage(DialoguePage.DUEL_WAGER));
+            return;
+        }
+        addOption("duel.confirm", this::startDuel);
+        addOption("duel.change_terms", () -> openPage(DialoguePage.DUEL));
+    }
+
+    private void addDuelSetupUnavailableOption() {
+        this.options.add(DialogueOption.enabled(
+                this.duelStatus == null ? translate("duel.loading") : duelUnavailableText(),
+                NO_ACTION,
+                true));
+    }
+
+    private boolean canConfigureDuel() {
+        return this.duelStatus != null && this.duelStatus.available();
+    }
+
+    private int duelMaximumStake() {
+        return this.duelStatus == null ? 0 : this.duelStatus.maximumStake();
+    }
+
+    private int selectedDuelStake() {
+        return duelStakeForIndex(this.duelStakeIndex);
+    }
+
+    private int duelStakeForIndex(int index) {
+        int resolvedIndex = Math.max(0, Math.min(index, DUEL_STAKES.length - 1));
+        int configuredStake = DUEL_STAKES[resolvedIndex];
+        return configuredStake == Integer.MAX_VALUE ? duelMaximumStake() : configuredStake;
+    }
+
+    private int selectedDuelWireStake() {
+        int resolvedIndex = Math.max(0, Math.min(this.duelStakeIndex, DUEL_STAKES.length - 1));
+        return DUEL_STAKES[resolvedIndex];
+    }
+
+    private String selectedDuelLoadoutLabel() {
+        return duelLoadoutLabel(this.duelLoadout);
+    }
+
+    private static String duelLoadoutLabel(DuelLoadout loadout) {
+        return translate("duel.loadout." + loadout.name().toLowerCase(Locale.ROOT));
+    }
+
+    private static String duelLoadoutOptionLabel(DuelLoadout loadout) {
+        return translate("duel.loadout_option." + loadout.name().toLowerCase(Locale.ROOT));
+    }
+
+    private String selectedDuelStakeLabel() {
+        int stake = selectedDuelStake();
+        return stake == 0
+                ? translate("duel.stake.none")
+                : translate("duel.stake.summary", stake, duelCurrencyName());
+    }
+
+    private String duelStakeOptionLabel(int stake, boolean maximum) {
+        if (stake == 0) {
+            return translate("duel.stake_option.none");
+        }
+        return translate(maximum ? "duel.stake_option.maximum" : "duel.stake_option.amount",
+                stake, duelCurrencyName());
+    }
+
+    private String duelCurrencyName() {
+        return this.duelStatus == null ? "" : this.duelStatus.currencyName();
+    }
+
+    private String duelUnavailableText() {
+        if (this.duelStatus == null) {
+            return translate("duel.loading");
+        }
+        if (this.duelStatus.reason() == DuelAvailabilityReason.COOLDOWN) {
+            return I18n.get("villagerretaliation.duel.unavailable.cooldown_remaining",
+                    formatDuelTicks(this.duelStatus.cooldownTicks()));
+        }
+        return I18n.get("villagerretaliation.duel.unavailable."
+                + this.duelStatus.reason().name().toLowerCase(Locale.ROOT));
+    }
+
+    private void refreshDuelDialogue() {
+        if (this.duelStatus == null) {
+            return;
+        }
+        String dialogue = this.duelStartPending
+                ? this.duelStatus.startingDialogue()
+                : switch (this.page) {
+                    case DUEL_LOADOUT -> this.duelStatus.loadoutDialogue();
+                    case DUEL_WAGER -> this.duelStatus.wagerDialogue();
+                    case DUEL_CONFIRM -> this.duelStatus.confirmationDialogue();
+                    default -> this.duelStatus.openingDialogue();
+                };
+        acceptVillagerDialogue(dialogue, List.of());
+    }
+
+    private void startDuel() {
+        if (!canConfigureDuel() || selectedDuelStake() > duelMaximumStake()) {
+            return;
+        }
+        this.duelStartPending = true;
+        refreshDuelDialogue();
+        rebuildOptionsKeepingListPosition();
+        sendToServer(new VillagerDuelRequestPayload(
+                this.villagerEntityId,
+                VillagerDuelRequestPayload.Action.START,
+                this.duelLoadout,
+                selectedDuelWireStake()));
+    }
+
+    private static String formatDuelTicks(long ticks) {
+        long seconds = Math.max(0L, (ticks + 19L) / 20L);
+        if (seconds >= 60L && seconds % 60L == 0L) {
+            return (seconds / 60L) + "m";
+        }
+        return seconds + "s";
     }
 
     private void addSkillsOptions() {
@@ -2018,7 +2254,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.RELATIONSHIPS);
     }
 
-    private void requestDuel() {
+    private void openDuelPage() {
+        this.duelStartPending = false;
+        openPage(DialoguePage.DUEL);
+        requestDuelStatus();
+    }
+
+    private void requestDuelStatus() {
         sendToServer(new VillagerDuelRequestPayload(this.villagerEntityId, VillagerDuelRequestPayload.Action.OPEN));
     }
 
@@ -2165,6 +2407,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void navigateBackPage() {
+        if (this.page == DialoguePage.DUEL_LOADOUT
+                || this.page == DialoguePage.DUEL_WAGER
+                || this.page == DialoguePage.DUEL_CONFIRM) {
+            openPage(DialoguePage.DUEL);
+            return;
+        }
         if (this.page == DialoguePage.ANCESTRY || this.page == DialoguePage.DESCENDANTS) {
             openPage(DialoguePage.FAMILY);
             return;
@@ -2587,6 +2835,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int previousInteractionTop = interactionContainerTopForPage(previousPage) + interactionStateTransitionOffsetY();
         rememberCurrentPageOptionListPosition();
         this.page = page;
+        if (isDuelSetupPage(page)) {
+            refreshDuelDialogue();
+        }
         rebuildOptions();
         restoreRememberedPageOptionListPosition(page);
         startInteractionStateTransition(previousPage, page, previousInteractionTop, interactionContainerTopForPage(page));
@@ -3145,7 +3396,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
                     translate("root.duel"),
                     translate("interaction_button.duel.description"),
-                    this::requestDuel,
+                    this::openDuelPage,
                     true));
         }
         if (VillagerRetaliationConfig.ENABLE_VILLAGER_GIFTS.get()) {
@@ -4701,7 +4952,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int interactionOptionViewportHeight() {
-        return INTERACTION_OPTION_VISIBLE_ROWS * INTERACTION_OPTION_STRIDE;
+        int maximumHeight = INTERACTION_OPTION_VISIBLE_ROWS * INTERACTION_OPTION_STRIDE;
+        if (this.options.isEmpty()) {
+            return INTERACTION_OPTION_HEIGHT;
+        }
+        return Math.min(maximumHeight, Mth.ceil(optionContentHeight()));
     }
 
     private int fullOptionViewportHeight() {
@@ -5116,8 +5371,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static int interactionPageDepth(DialoguePage page) {
         return switch (page) {
             case ROOT -> 0;
-            case TALK, ADVENTURES, PROFILE, SKILLS, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT -> 1;
-            case ANCESTRY, DESCENDANTS, STORAGE, PAYMENT, HIRE, CONTRACT, ROLE, WORK -> 2;
+            case TALK, ADVENTURES, DUEL, PROFILE, SKILLS, ALLEGIANCE, GIFT, FAMILY, RELATIONSHIPS, RECRUIT -> 1;
+            case DUEL_LOADOUT, DUEL_WAGER, DUEL_CONFIRM, ANCESTRY, DESCENDANTS, STORAGE, PAYMENT, HIRE, CONTRACT, ROLE, WORK -> 2;
             case HIRE_DURATION,
                     END_CONTRACT_CONFIRMATION,
                     CONTRACT_EXTENSION,
@@ -5138,10 +5393,21 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         };
     }
 
+    private static boolean isDuelSetupPage(DialoguePage page) {
+        return page == DialoguePage.DUEL
+                || page == DialoguePage.DUEL_LOADOUT
+                || page == DialoguePage.DUEL_WAGER
+                || page == DialoguePage.DUEL_CONFIRM;
+    }
+
     private enum DialoguePage {
         ROOT,
         TALK,
         ADVENTURES,
+        DUEL,
+        DUEL_LOADOUT,
+        DUEL_WAGER,
+        DUEL_CONFIRM,
         PROFILE,
         SKILLS,
         ALLEGIANCE,

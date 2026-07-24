@@ -696,6 +696,8 @@ public final class VillagerRetaliationConfigModel {
     public static final class Duels {
         public boolean enabled = true;
 
+        public boolean allowBringYourOwnLoadout = false;
+
         @RangeConstraint(min = 1, max = 100)
         public int minimumGuts = 60;
 

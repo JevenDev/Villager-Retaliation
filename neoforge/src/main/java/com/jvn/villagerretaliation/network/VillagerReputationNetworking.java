@@ -105,7 +105,7 @@ public final class VillagerReputationNetworking {
                 OpenVillagerDuelPayload.TYPE,
                 OpenVillagerDuelPayload.STREAM_CODEC,
                 "com.jvn.villagerretaliation.client.interaction.VillagerInteractionClientHandler",
-                "openDuel"
+                "acceptDuelStatus"
         );
         network.safePlayToClientThreaded(
                 DuelInventoryStatePayload.TYPE,

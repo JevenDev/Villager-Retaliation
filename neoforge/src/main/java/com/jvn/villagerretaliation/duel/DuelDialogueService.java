@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.duel;
 
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
@@ -33,6 +34,44 @@ public final class DuelDialogueService {
     private static final String SULK_MESSAGE_KEY = "duel.reaction.sulk";
 
     private DuelDialogueService() {}
+
+    public static SetupDialogue setupDialogue(
+            ServerPlayer player,
+            Villager villager,
+            DuelAvailability status,
+            String currencyName) {
+        var context = VillagerInteractionService.createDialogueContext(player.serverLevel(), player, villager);
+        Map<String, String> replacements = Map.of(
+                "player", player.getName().getString(),
+                "villager_wins", Integer.toString(status.villagerWins()),
+                "villager_losses", Integer.toString(status.villagerLosses()),
+                "maximum_wager", Integer.toString(Math.min(status.playerCurrency(), status.villagerCurrency())),
+                "currency", currencyName);
+        String openingKey;
+        if (!status.available()) {
+            openingKey = "duel.challenge.refusal." + status.reason().name().toLowerCase(java.util.Locale.ROOT);
+        } else if (status.villagerWins() == 0 && status.villagerLosses() == 0) {
+            openingKey = "duel.challenge.first";
+        } else {
+            openingKey = "duel.challenge.rematch";
+        }
+        String loadoutKey = VillagerRetaliationConfig.ALLOW_BRING_YOUR_OWN_DUEL_LOADOUT.get()
+                ? "duel.challenge.loadout"
+                : "duel.challenge.loadout.standard";
+        return new SetupDialogue(
+                VillagerDialogueResources.message(context, openingKey, replacements).orElse(""),
+                VillagerDialogueResources.message(context, loadoutKey, replacements).orElse(""),
+                VillagerDialogueResources.message(context, "duel.challenge.wager", replacements).orElse(""),
+                VillagerDialogueResources.message(context, "duel.challenge.confirm", replacements).orElse(""),
+                VillagerDialogueResources.message(context, "duel.challenge.starting", replacements).orElse(""));
+    }
+
+    public record SetupDialogue(
+            String opening,
+            String loadout,
+            String wager,
+            String confirmation,
+            String starting) {}
 
     /**
      * Has the duel winner or loser immediately address their opponent. The queued reaction remains available
