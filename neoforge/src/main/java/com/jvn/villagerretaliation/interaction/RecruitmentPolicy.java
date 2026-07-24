@@ -32,24 +32,23 @@ public final class RecruitmentPolicy {
         if (!inputs.allowed()) return inputs;
         if (command == null) return Decision.denied(DenialReason.UNSUPPORTED_COMMAND);
         VillagerAssignmentSnapshot assignment = VillagerAssignmentStore.snapshot(villager);
-        if (!assignment.ownedBy(player.getUUID())) {
-            return Decision.denied(assignment.state() == VillagerAssignmentState.HIRED
-                    ? DenialReason.OWNED_BY_ANOTHER_PLAYER
-                    : DenialReason.NOT_HIRED);
-        }
         if (PartyVillagerContractService.hasPartyEntityReference(villager)) {
             return Decision.denied(DenialReason.PARTY_CONTROLLED);
         }
-        VillagerReputationLevel required = command == VillagerAssignmentCommand.STAY
-                ? VillagerReputationLevel.TRUSTED
-                : VillagerReputationLevel.NEUTRAL;
-        if (!hasTrust(level, villager, player, required)) {
-            return Decision.denied(DenialReason.INSUFFICIENT_REPUTATION);
+        if (assignment.state() == VillagerAssignmentState.HIRED) {
+            return assignment.ownedBy(player.getUUID())
+                    ? Decision.allowedDecision()
+                    : Decision.denied(DenialReason.OWNED_BY_ANOTHER_PLAYER);
+        }
+        if (command != VillagerAssignmentCommand.FOLLOW) {
+            return Decision.denied(DenialReason.NOT_HIRED);
         }
         return VillagerAssignmentStore.commandOwner(villager)
                 .filter(owner -> !owner.equals(player.getUUID()))
                 .map(owner -> Decision.denied(DenialReason.COMMANDED_BY_ANOTHER_PLAYER))
-                .orElseGet(Decision::allowedDecision);
+                .orElseGet(() -> hasTrust(level, villager, player, VillagerReputationLevel.NEUTRAL)
+                        ? Decision.allowedDecision()
+                        : Decision.denied(DenialReason.INSUFFICIENT_REPUTATION));
     }
 
     public static Decision mayEquip(ServerLevel level, Villager villager, ServerPlayer player) {

@@ -624,13 +624,17 @@ public final class VillagerGameplayGameTests {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
 
-        helper.assertFalse(
+        VillagerReputationManager.setReputation(level, villager, followerOwner.getUUID(), 0);
+        helper.assertTrue(
                 VillagerRecruitmentService.startFollowing(level, villager, followerOwner),
-                "commands require an active hiring relationship");
+                "a neutral villager should accept a follow request without a hire contract");
         helper.assertValueEqual(
                 RecruitmentPolicy.mayCommand(level, villager, followerOwner, VillagerAssignmentCommand.FOLLOW).reason(),
-                RecruitmentPolicy.DenialReason.NOT_HIRED,
-                "policy should explain why an unassigned villager rejects commands");
+                RecruitmentPolicy.DenialReason.NONE,
+                "policy should allow neutral villagers to follow without a hire contract");
+        helper.assertTrue(
+                VillagerRecruitmentService.stopFollowing(level, villager, followerOwner),
+                "a player should be able to stop their own unpaid follower");
         helper.assertTrue(
                 HiredRoleWorkerRegistry.get(HiredVillagerRole.COMBAT) != null
                         && HiredRoleWorkerRegistry.get(HiredVillagerRole.FARMING) != null,
@@ -671,6 +675,11 @@ public final class VillagerGameplayGameTests {
         helper.assertTrue(
                 VillagerRecruitmentService.isFollowing(villager, followerOwner),
                 "hired work ticks should yield to and preserve the contract owner's follow command");
+        followerOwner.moveTo(villager.getX() + 6.0D, villager.getY(), villager.getZ(), 0.0F, 0.0F);
+        VillagerRecruitmentService.onVillagerTickPost(villager);
+        helper.assertFalse(
+                villager.getNavigation().isDone(),
+                "a hired villager ordered to follow should begin navigating toward their hirer");
 
         VillagerReputationManager.setReputation(level, villager, followerOwner.getUUID(), 100);
         helper.assertTrue(

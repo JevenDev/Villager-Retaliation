@@ -586,11 +586,14 @@ public final class VillagerInteractionService {
                     before);
             return;
         }
+        boolean wasFollowingPlayer = villager != null && VillagerRecruitmentService.isFollowing(villager, player);
+        boolean wasStayingHere = villager != null && VillagerRecruitmentService.isStayingHere(villager, player);
         handleRecruitRequestInternal(player, entityId, action, selectedRole);
         VillagerAssignmentSnapshot after = villager == null
                 ? VillagerAssignmentSnapshot.unassigned(0L)
                 : ensureAssignmentSnapshot(player.serverLevel(), villager);
-        boolean success = recruitmentTransitionSatisfied(player, action, selectedRole, after);
+        boolean success = recruitmentTransitionSatisfied(
+                player, villager, action, selectedRole, after, wasFollowingPlayer, wasStayingHere);
         sendRecruitmentResult(
                 player,
                 entityId,
@@ -639,11 +642,14 @@ public final class VillagerInteractionService {
                 || (belongsToPartyContract && isPartyContractMemberAction(action));
         boolean canOpenJobInventory = action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
                 && com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization.canAccess(level, villager, player);
-        boolean canIssueFollowCommand = action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
-                || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE
-                || (action == VillagerRecruitRequestPayload.Action.FOLLOW
-                        || action == VillagerRecruitRequestPayload.Action.STAY_HERE)
-                        && VillagerRecruitmentService.canFollow(level, villager, player);
+        boolean canIssueFollowCommand = action == VillagerRecruitRequestPayload.Action.FOLLOW
+                && VillagerRecruitmentService.canFollow(level, villager, player);
+        boolean canIssueStayCommand = action == VillagerRecruitRequestPayload.Action.STAY_HERE
+                && VillagerRecruitmentService.canCommandStayHere(level, villager, player);
+        boolean canStopFollowCommand = (action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
+                && VillagerRecruitmentService.isFollowing(villager, player))
+                || (action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE
+                && VillagerRecruitmentService.isStayingHere(villager, player));
         if (action == VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY
                 && recruitedParty != null
                 && !canOpenJobInventory) {
@@ -654,7 +660,9 @@ public final class VillagerInteractionService {
                 && !canAdministerContract
                 && !canAdministerPartyContract
                 && !canOpenJobInventory
-                && !canIssueFollowCommand) {
+                && !canIssueFollowCommand
+                && !canIssueStayCommand
+                && !canStopFollowCommand) {
             sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
             return;
         }
@@ -667,12 +675,7 @@ public final class VillagerInteractionService {
                 || action == VillagerRecruitRequestPayload.Action.STAY_HERE
                 || action == VillagerRecruitRequestPayload.Action.STOP_FOLLOWING
                 || action == VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE) {
-            if (!ownsContract) {
-                sendVillagerNotice(player, villager, HiredVillagerContractService.isHired(level, villager)
-                        ? "interaction.hired_contract_taken"
-                        : "interaction.role_requires_hire");
-                return;
-            }
+
             String responseKey;
             if (action == VillagerRecruitRequestPayload.Action.FOLLOW) {
                 if (!VillagerRecruitmentService.startFollowing(level, villager, player)) {
@@ -886,15 +889,18 @@ public final class VillagerInteractionService {
 
     private static boolean recruitmentTransitionSatisfied(
             ServerPlayer player,
+            Villager villager,
             VillagerRecruitRequestPayload.Action action,
             HiredVillagerRole selectedRole,
-            VillagerAssignmentSnapshot assignment) {
+            VillagerAssignmentSnapshot assignment,
+            boolean wasFollowingPlayer,
+            boolean wasStayingHere) {
         if (action.name().startsWith("HIRE_")) return assignment.ownedBy(player.getUUID());
         return switch (action) {
-            case FOLLOW -> assignment.ownedBy(player.getUUID()) && assignment.command() == VillagerAssignmentCommand.FOLLOW;
-            case STAY_HERE -> assignment.ownedBy(player.getUUID()) && assignment.command() == VillagerAssignmentCommand.STAY;
-            case STOP_FOLLOWING, STOP_STAYING_HERE -> assignment.ownedBy(player.getUUID())
-                    && assignment.command() == VillagerAssignmentCommand.WORK;
+            case FOLLOW -> VillagerRecruitmentService.isFollowing(villager, player);
+            case STAY_HERE -> VillagerRecruitmentService.isStayingHere(villager, player);
+            case STOP_FOLLOWING -> wasFollowingPlayer && !VillagerRecruitmentService.isFollowing(villager, player);
+            case STOP_STAYING_HERE -> wasStayingHere && !VillagerRecruitmentService.isStayingHere(villager, player);
             case END_HIRE -> assignment.state() == VillagerAssignmentState.UNASSIGNED;
             case SET_ROLE_COMBAT, SET_ROLE_HUNTING, SET_ROLE_MINING, SET_ROLE_LOGGING,
                  SET_ROLE_FARMING, SET_ROLE_FISHING, SET_ROLE_BREWING, SET_ROLE_CRAFTSMAN,
