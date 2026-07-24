@@ -31,6 +31,9 @@ public final class PartyVillagerRecord {
     private static final String TAG_COMBAT_MODE = "PartyCombatMode";
     private static final String TAG_ATTACK_MODE = "AttackMode";
     private static final String TAG_KILL_ON_SIGHT = "KillOnSight";
+    private static final String TAG_POLICY_OVERRIDES = "PolicyOverrides";
+    private static final String TAG_COMBAT_MODE_OVERRIDE = "CombatModeOverride";
+    private static final String TAG_ATTACK_MODE_OVERRIDE = "AttackModeOverride";
     private static final String TAG_DROP_COLLECTION = "DropCollection";
     private static final String TAG_QUICK_COMMANDS_ENABLED = "QuickCommandsEnabled";
     private static final String TAG_WEAPON_PREFERENCE = "WeaponPreference";
@@ -51,8 +54,10 @@ public final class PartyVillagerRecord {
     private String cachedProfession;
     private ResourceLocation lastKnownDimension;
     private BlockPos lastKnownPosition;
-    private PartyCombatMode combatMode = PartyCombatMode.ATTACK_WITH_PARTY;
-    private PartyAttackMode attackMode = PartyAttackMode.ALL;
+    private PartyCombatMode combatModeOverride;
+    private PartyAttackMode attackModeOverride;
+    private PartyCombatMode partyCombatMode = PartyCombatMode.ATTACK_WITH_PARTY;
+    private PartyAttackMode partyAttackMode = PartyAttackMode.ALL;
     private PartyDropCollectionMode dropCollectionMode = PartyDropCollectionMode.OFF;
     private boolean quickCommandsEnabled = true;
     private PartyWeaponPreference weaponPreference = PartyWeaponPreference.AUTO;
@@ -148,11 +153,11 @@ public final class PartyVillagerRecord {
     }
 
     public PartyCombatMode combatMode() {
-        return this.combatMode;
+        return this.combatModeOverride == null ? this.partyCombatMode : this.combatModeOverride;
     }
 
     public PartyAttackMode attackMode() {
-        return this.attackMode;
+        return this.attackModeOverride == null ? this.partyAttackMode : this.attackModeOverride;
     }
 
     public PartyDropCollectionMode dropCollectionMode() {
@@ -172,11 +177,24 @@ public final class PartyVillagerRecord {
     }
 
     void setCombatMode(PartyCombatMode mode) {
-        this.combatMode = mode == null ? PartyCombatMode.ATTACK_WITH_PARTY : mode;
+        PartyCombatMode resolved = mode == null ? this.partyCombatMode : mode;
+        this.combatModeOverride = resolved == this.partyCombatMode ? null : resolved;
     }
 
     void setAttackMode(PartyAttackMode mode) {
-        this.attackMode = mode == null ? PartyAttackMode.ALL : mode;
+        PartyAttackMode resolved = mode == null ? this.partyAttackMode : mode;
+        this.attackModeOverride = resolved == this.partyAttackMode ? null : resolved;
+    }
+
+    void bindPartyPolicies(PartyCombatMode combatMode, PartyAttackMode attackMode) {
+        this.partyCombatMode = combatMode == null ? PartyCombatMode.ATTACK_WITH_PARTY : combatMode;
+        this.partyAttackMode = attackMode == null ? PartyAttackMode.ALL : attackMode;
+        if (this.combatModeOverride == this.partyCombatMode) {
+            this.combatModeOverride = null;
+        }
+        if (this.attackModeOverride == this.partyAttackMode) {
+            this.attackModeOverride = null;
+        }
     }
 
     void setDropCollectionMode(PartyDropCollectionMode mode) {
@@ -270,8 +288,13 @@ public final class PartyVillagerRecord {
             tag.putInt(TAG_LAST_Y, this.lastKnownPosition.getY());
             tag.putInt(TAG_LAST_Z, this.lastKnownPosition.getZ());
         }
-        tag.putString(TAG_COMBAT_MODE, this.combatMode.name());
-        tag.putString(TAG_ATTACK_MODE, this.attackMode.name());
+        tag.putBoolean(TAG_POLICY_OVERRIDES, true);
+        if (this.combatModeOverride != null) {
+            tag.putString(TAG_COMBAT_MODE_OVERRIDE, this.combatModeOverride.name());
+        }
+        if (this.attackModeOverride != null) {
+            tag.putString(TAG_ATTACK_MODE_OVERRIDE, this.attackModeOverride.name());
+        }
         tag.putString(TAG_DROP_COLLECTION, this.dropCollectionMode.name());
         tag.putBoolean(TAG_QUICK_COMMANDS_ENABLED, this.quickCommandsEnabled);
         tag.putString(TAG_WEAPON_PREFERENCE, this.weaponPreference.name());
@@ -311,8 +334,17 @@ public final class PartyVillagerRecord {
                         ? new BlockPos(tag.getInt(TAG_LAST_X), tag.getInt(TAG_LAST_Y), tag.getInt(TAG_LAST_Z))
                         : null
         );
-        record.setCombatMode(loadCombatMode(tag));
-        record.setAttackMode(PartyAttackMode.byName(tag.getString(TAG_ATTACK_MODE)));
+        if (tag.getBoolean(TAG_POLICY_OVERRIDES)) {
+            if (tag.contains(TAG_COMBAT_MODE_OVERRIDE, Tag.TAG_STRING)) {
+                record.combatModeOverride = PartyCombatMode.byName(tag.getString(TAG_COMBAT_MODE_OVERRIDE));
+            }
+            if (tag.contains(TAG_ATTACK_MODE_OVERRIDE, Tag.TAG_STRING)) {
+                record.attackModeOverride = PartyAttackMode.byName(tag.getString(TAG_ATTACK_MODE_OVERRIDE));
+            }
+        } else {
+            record.combatModeOverride = loadCombatMode(tag);
+            record.attackModeOverride = PartyAttackMode.byName(tag.getString(TAG_ATTACK_MODE));
+        }
         record.setDropCollectionMode(PartyDropCollectionMode.byName(tag.getString(TAG_DROP_COLLECTION)));
         record.setQuickCommandsEnabled(!tag.contains(TAG_QUICK_COMMANDS_ENABLED)
                 || tag.getBoolean(TAG_QUICK_COMMANDS_ENABLED));

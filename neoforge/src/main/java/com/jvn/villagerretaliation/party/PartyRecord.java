@@ -83,6 +83,7 @@ public final class PartyRecord {
         this.alliedPartyIdsView = Collections.unmodifiableSet(this.alliedPartyIds);
         this.combatMode = combatMode == null ? PartyCombatMode.ATTACK_WITH_PARTY : combatMode;
         this.attackMode = attackMode == null ? PartyAttackMode.ALL : attackMode;
+        this.villagers.forEach(villager -> villager.bindPartyPolicies(this.combatMode, this.attackMode));
         this.sharedVillagerInventories = sharedVillagerInventories;
         this.mountMode = mountMode;
         normalizePlayers();
@@ -180,12 +181,12 @@ public final class PartyRecord {
 
     void setCombatMode(PartyCombatMode mode) {
         this.combatMode = mode == null ? PartyCombatMode.ATTACK_WITH_PARTY : mode;
-        this.villagers.forEach(villager -> villager.setCombatMode(this.combatMode));
+        this.villagers.forEach(villager -> villager.bindPartyPolicies(this.combatMode, this.attackMode));
     }
 
     void setAttackMode(PartyAttackMode mode) {
         this.attackMode = mode == null ? PartyAttackMode.ALL : mode;
-        this.villagers.forEach(villager -> villager.setAttackMode(this.attackMode));
+        this.villagers.forEach(villager -> villager.bindPartyPolicies(this.combatMode, this.attackMode));
     }
 
     void setSharedVillagerInventories(boolean enabled) {
@@ -230,8 +231,7 @@ public final class PartyRecord {
                 return false;
             }
         }
-        villager.setCombatMode(this.combatMode);
-        villager.setAttackMode(this.attackMode);
+        villager.bindPartyPolicies(this.combatMode, this.attackMode);
         this.villagers.add(villager);
         this.villagers.sort(java.util.Comparator.comparingInt(PartyVillagerRecord::recruitmentOrder));
         return true;

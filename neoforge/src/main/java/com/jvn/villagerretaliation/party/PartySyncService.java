@@ -162,21 +162,11 @@ public final class PartySyncService {
     }
 
     static PartyCombatModeState combatModeState(PartyRecord party) {
-        if (party.villagers().isEmpty()) {
-            return PartyCombatModeState.of(party.combatMode());
-        }
-        PartyCombatMode first = party.villagers().getFirst().combatMode();
-        boolean mixed = party.villagers().stream().anyMatch(villager -> villager.combatMode() != first);
-        return mixed ? PartyCombatModeState.CUSTOM : PartyCombatModeState.of(first);
+        return PartyCombatModeState.of(party.combatMode());
     }
 
     static PartyAttackModeState attackModeState(PartyRecord party) {
-        if (party.villagers().isEmpty()) {
-            return PartyAttackModeState.of(party.attackMode());
-        }
-        PartyAttackMode first = party.villagers().getFirst().attackMode();
-        boolean mixed = party.villagers().stream().anyMatch(villager -> villager.attackMode() != first);
-        return mixed ? PartyAttackModeState.CUSTOM : PartyAttackModeState.of(first);
+        return PartyAttackModeState.of(party.attackMode());
     }
 
     private static String profileName(MinecraftServer server, UUID playerId) {

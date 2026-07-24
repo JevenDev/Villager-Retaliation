@@ -123,6 +123,7 @@ public final class PartyService {
         }
         if (attackMode != null) {
             party.setAttackMode(attackMode);
+            clearPartyCombatTargets(leader.getServer(), party);
         }
         if (sharedVillagerInventories != null) {
             party.setSharedVillagerInventories(sharedVillagerInventories);

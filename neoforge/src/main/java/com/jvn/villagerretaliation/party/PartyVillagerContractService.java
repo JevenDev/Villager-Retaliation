@@ -217,6 +217,7 @@ public final class PartyVillagerContractService {
             return ContractResult.failure("villagerretaliation.party.error.admin_privileges_required");
         }
         context.record().setAttackMode(context.record().attackMode().next());
+        com.jvn.villagerretaliation.combat.VillagerRetaliationHandler.clearCustomTarget(villager);
         return settingsChanged(context, "villagerretaliation.party.villager_settings_updated");
     }
 

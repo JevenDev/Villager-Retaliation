@@ -289,10 +289,10 @@ public final class PartyGameTests {
         customized.setAttackMode(PartyAttackMode.PLAYERS);
         customized.setDropCollectionMode(PartyDropCollectionMode.SLAIN_ENTITIES);
         customized.setQuickCommandsEnabled(false);
-        helper.assertValueEqual(PartySyncService.combatModeState(party), PartyCombatModeState.CUSTOM,
-                "mixed per-villager combat modes should synchronize as custom");
-        helper.assertValueEqual(PartySyncService.attackModeState(party), PartyAttackModeState.CUSTOM,
-                "mixed per-villager attack modes should synchronize as custom");
+        helper.assertValueEqual(PartySyncService.combatModeState(party), PartyCombatModeState.KILL_ON_SIGHT,
+                "party combat state should report the inherited default despite individual overrides");
+        helper.assertValueEqual(PartySyncService.attackModeState(party), PartyAttackModeState.HOSTILES,
+                "party attack state should report the inherited default despite individual overrides");
         PartySharedQuestRecord shared = new PartySharedQuestRecord(
                 VillagerRetaliation.id("party_persistence_fixture"),
                 villagers.getFirst(),
@@ -377,6 +377,9 @@ public final class PartyGameTests {
         CompoundTag legacyVillager = (CompoundTag) legacyParty
                 .getList("Villagers", net.minecraft.nbt.Tag.TAG_COMPOUND)
                 .get(0);
+        legacyVillager.remove("PolicyOverrides");
+        legacyVillager.remove("CombatModeOverride");
+        legacyVillager.remove("AttackModeOverride");
         legacyVillager.remove("PartyCombatMode");
         legacyVillager.putBoolean("KillOnSight", true);
         PartyRecord migrated = PartySavedData.load(legacySaved, level.registryAccess())
@@ -830,9 +833,9 @@ public final class PartyGameTests {
                     "collected drops are routed to the party inventory output slots");
             helper.assertTrue(PartyService.setPolicies(
                     leader, PartyCombatMode.ATTACK_WITH_PARTY, null, null).success(),
-                    "global combat mode should bulk update villagers");
-            helper.assertValueEqual(record.combatMode(), PartyCombatMode.ATTACK_WITH_PARTY,
-                    "bulk combat mode overwrites individual setting");
+                    "global combat mode should update the inherited default");
+            helper.assertValueEqual(record.combatMode(), PartyCombatMode.SELF_DEFENSE,
+                    "global defaults should preserve an individual combat override");
 
             helper.assertTrue(PartyVillagerContractService.setStaying(leader, villager).success(),
                     "leader stay command");
@@ -1266,6 +1269,44 @@ public final class PartyGameTests {
                             + ", transientTarget=" + attacker.getTarget()
                             + ", mode=" + attackerRecord.combatMode() + "/" + attackerRecord.attackMode());
             PartyService.deleteParty(level, firstParty.id());
+            attacker.discard();
+            target.discard();
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 220)
+    public static void changingAttackModeClearsExistingKillOnSightTarget(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        for (int x = 0; x <= 6; x++) {
+            for (int z = 0; z <= 6; z++) {
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+            }
+        }
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_kos_mode_change"));
+        movePlayer(helper, leader, new BlockPos(12, 2, 12));
+        Villager attacker = spawnVillager(helper, new BlockPos(2, 2, 2));
+        attacker.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
+        var target = helper.spawn(EntityType.COW, new BlockPos(4, 2, 2));
+        target.setNoAi(true);
+
+        long now = level.getServer().overworld().getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartyVillagerRecord attackerRecord = villagerRecord(attacker.getUUID(), leader.getUUID(), 0, now);
+        PartySavedData.get(level).addVillager(party, attackerRecord);
+        helper.assertTrue(PartyService.setPolicies(
+                leader, PartyCombatMode.KILL_ON_SIGHT, PartyAttackMode.ANIMALS, null).success(),
+                "leader should enable animal KOS");
+
+        helper.runAfterDelay(60, () -> {
+            helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(attacker, target),
+                    "animal KOS should acquire the nearby cow before the policy changes");
+            helper.assertTrue(PartyService.setPolicies(
+                    leader, null, PartyAttackMode.NONE, null).success(),
+                    "leader should disable proactive targets");
+            helper.assertFalse(VillagerRetaliationHandler.hasRetaliationTarget(attacker, target),
+                    "changing attack mode to NONE must immediately clear the old KOS target");
+            PartyService.deleteParty(level, party.id());
             attacker.discard();
             target.discard();
             helper.succeed();
