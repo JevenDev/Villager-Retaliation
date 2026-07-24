@@ -11,109 +11,169 @@
   "messages": [
     {
       "key": "interaction.work.courier.missing_route",
-      "lines": ["I need an assigned route before I can carry deliveries."],
+      "lines": [
+        "I need an assigned route before I can carry deliveries."
+      ],
       "id": "global.messages.22_work_courier.messages.missing_route.000"
     },
     {
       "key": "interaction.work.courier.missing_input_storage",
-      "lines": ["I need at least one input container assigned for pickups."],
+      "lines": [
+        "I need at least one input container assigned for pickups."
+      ],
       "id": "global.messages.22_work_courier.messages.missing_input_storage.001"
     },
     {
       "key": "interaction.work.courier.input_empty",
-      "lines": ["The assigned input containers have nothing for me to carry yet."],
+      "lines": [
+        "The assigned input containers have nothing for me to carry yet."
+      ],
       "id": "global.messages.22_work_courier.messages.input_empty.002"
     },
     {
       "key": "interaction.work.courier.moving_to_input",
-      "lines": ["I am heading to the input storage for another load."],
+      "lines": [
+        "I am heading to the input storage for another load."
+      ],
       "id": "global.messages.22_work_courier.messages.moving_to_input.003"
     },
     {
       "key": "interaction.work.courier.input_unreachable",
-      "lines": ["I found the input storage, but I cannot reach it."],
+      "lines": [
+        "I found the input storage, but I cannot reach it."
+      ],
       "id": "global.messages.22_work_courier.messages.input_unreachable.004"
     },
     {
       "key": "interaction.work.courier.collected_items",
-      "lines": ["I collected {count} item(s) and am starting the delivery."],
+      "lines": [
+        "I collected {count} item(s) and am starting the delivery."
+      ],
       "id": "global.messages.22_work_courier.messages.collected_items.005"
     },
     {
       "key": "interaction.work.courier.following_route_outbound",
-      "lines": ["I am carrying the delivery along the assigned route."],
+      "lines": [
+        "I am carrying the delivery along the assigned route."
+      ],
       "id": "global.messages.22_work_courier.messages.following_route_outbound.006"
     },
     {
       "key": "interaction.work.courier.following_route_return",
-      "lines": ["I am following the route back toward the input storage."],
+      "lines": [
+        "I am following the route back toward the input storage."
+      ],
       "id": "global.messages.22_work_courier.messages.following_route_return.007"
     },
     {
       "key": "interaction.work.courier.route_unreachable",
-      "lines": ["I cannot reach the next point on my assigned route."],
+      "lines": [
+        "I cannot reach the next point on my assigned route."
+      ],
       "id": "global.messages.22_work_courier.messages.route_unreachable.008"
     },
     {
       "key": "interaction.work.courier.route_complete_outbound",
-      "lines": ["I reached the delivery end of the route."],
+      "lines": [
+        "I reached the delivery end of the route."
+      ],
       "id": "global.messages.22_work_courier.messages.route_complete_outbound.009"
     },
     {
       "key": "interaction.work.courier.route_complete_return",
-      "lines": ["I made it back along the route and am ready for another load."],
+      "lines": [
+        "I made it back along the route and am ready for another load."
+      ],
       "id": "global.messages.22_work_courier.messages.route_complete_return.010"
     },
     {
       "key": "interaction.work.courier.missing_output_storage",
-      "lines": ["I need at least one output container assigned for deliveries."],
+      "lines": [
+        "I need at least one output container assigned for deliveries."
+      ],
       "id": "global.messages.22_work_courier.messages.missing_output_storage.011"
     },
     {
       "key": "interaction.work.courier.output_unavailable",
-      "lines": ["None of the assigned output containers are available right now."],
+      "lines": [
+        "None of the assigned output containers are available right now."
+      ],
       "id": "global.messages.22_work_courier.messages.output_unavailable.012"
     },
     {
       "key": "interaction.work.courier.moving_to_output",
-      "lines": ["I am taking this load to the assigned output storage."],
+      "lines": [
+        "I am taking this load to the assigned output storage."
+      ],
       "id": "global.messages.22_work_courier.messages.moving_to_output.013"
     },
     {
       "key": "interaction.work.courier.output_unreachable",
-      "lines": ["I reached the delivery area, but I cannot get to the output container."],
+      "lines": [
+        "I reached the delivery area, but I cannot get to the output container."
+      ],
       "id": "global.messages.22_work_courier.messages.output_unreachable.014"
     },
     {
       "key": "interaction.work.courier.output_full",
-      "lines": ["The assigned output storage has no room for this delivery."],
+      "lines": [
+        "The assigned output storage has no room for this delivery."
+      ],
       "id": "global.messages.22_work_courier.messages.output_full.015"
     },
     {
       "key": "interaction.work.courier.depositing_items",
-      "lines": ["I am unloading the delivery into output storage."],
+      "lines": [
+        "I am unloading the delivery into output storage."
+      ],
       "id": "global.messages.22_work_courier.messages.depositing_items.016"
     },
     {
       "key": "interaction.work.courier.delivered_items",
-      "lines": ["The delivery is unloaded. I am heading back for another."],
+      "lines": [
+        "The delivery is unloaded. I am heading back for another."
+      ],
       "id": "global.messages.22_work_courier.messages.delivered_items.017"
     },
     {
       "key": "interaction.work_report.courier",
       "lines": [
-        "I am still moving loads between the assigned containers.",
-        "The delivery route is active. I will keep the storage moving.",
-        "I am carrying supplies along the route you assigned."
+        "I am still moving loads along the assigned route.",
+        "The delivery work is moving along.",
+        "I am keeping at the delivery work.",
+        "I am staying with the task you assigned me.",
+        "I am making steady progress with the delivery work.",
+        "There is still more to do, and I am on it.",
+        "I am keeping things in good order as I work.",
+        "I am still working through the delivery work.",
+        "I have the job covered for now.",
+        "I am giving this work my full attention.",
+        "The delivery work has not been forgotten.",
+        "I am keeping the work moving where I can.",
+        "I am still on the job you gave me.",
+        "I am taking the work one step at a time.",
+        "I am staying focused until this job is done."
       ],
       "id": "global.messages.22_work_courier.messages.work_report.018"
     },
     {
       "key": "interaction.work_final_report.courier",
       "lines": [
-        "I completed another delivery and am heading back for more.",
-        "Another load reached the output storage safely.",
-        "The latest delivery is unloaded. The route continues."
+        "I finished another delivery.",
+        "That bit of delivery work is done for now.",
+        "I made some progress on the delivery work.",
+        "I took care of another part of the job.",
+        "The delivery work is moving along nicely.",
+        "I wrapped up another bit of work.",
+        "I have finished this part and am moving on.",
+        "Another part of the delivery work is taken care of.",
+        "I made another pass and kept things moving.",
+        "That task is handled for now.",
+        "I completed another part of the work.",
+        "I have made a little more progress.",
+        "This part is done, and I am staying with it.",
+        "I finished what I could for now.",
+        "The job is still moving forward."
       ],
       "id": "global.messages.22_work_courier.messages.work_final_report.019"
     }

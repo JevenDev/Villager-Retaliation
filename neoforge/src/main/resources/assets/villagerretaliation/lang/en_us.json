@@ -535,7 +535,7 @@
   "text.config.villagerretaliation.option.balance.hiredWorkMinimumEfficiencyPercent": "Hired Work Minimum Efficiency Percent",
   "text.config.villagerretaliation.option.balance.hiredWorkMinimumEfficiencyPercent.tooltip": "Lower clamp applied after skill work speed, mood, and missing-tool penalties.",
   "text.config.villagerretaliation.option.balance.hiredWorkNoticeCooldownSeconds": "Hired Work Notice Cooldown",
-  "text.config.villagerretaliation.option.balance.hiredWorkNoticeCooldownSeconds.tooltip": "Minimum seconds between blocked-storage notices and the base cooldown for routine hired-worker progress. Routine progress waits at least five minutes.",
+  "text.config.villagerretaliation.option.balance.hiredWorkNoticeCooldownSeconds.tooltip": "Minimum seconds between blocked-storage notices and the base cooldown for routine hired-worker progress. Routine progress waits at least ten minutes.",
   "text.config.villagerretaliation.option.balance.hiredWorkSkillGrowth": "Hired Work Skill Growth",
   "text.config.villagerretaliation.option.balance.hiredWorkSkillGrowth.animalHandling": "Animal Handling Job Skill Growth",
   "text.config.villagerretaliation.option.balance.hiredWorkSkillGrowth.animalHandling.tooltip": "Skill XP per normalized successful breeding, product collection, or culling unit.",

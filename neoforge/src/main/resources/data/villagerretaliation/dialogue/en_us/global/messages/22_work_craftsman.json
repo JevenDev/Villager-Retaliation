@@ -110,14 +110,42 @@
     {
       "key": "interaction.work_report.craftsman",
       "lines": [
-        "Current work: {status}"
+        "I am working on {status} right now.",
+        "My current task is {status}.",
+        "I am focused on {status} at the moment.",
+        "Right now I am handling {status}.",
+        "The work is currently {status}.",
+        "I am keeping the job moving with {status}.",
+        "I am still busy with {status}.",
+        "I have reached the {status} part of the job.",
+        "The next thing on my hands is {status}.",
+        "I am taking care of {status} now.",
+        "I am making progress while {status}.",
+        "I am staying with {status} until it is sorted.",
+        "I am working through {status} one step at a time.",
+        "The job has me on {status} for now.",
+        "I am keeping an eye on {status}."
       ],
       "id": "global.messages.22_work_craftsman.work_report"
     },
     {
       "key": "interaction.work_final_report.craftsman",
       "lines": [
-        "Final crafting report: {status}"
+        "I finished another crafting step.",
+        "That part of the crafting is done.",
+        "I made some progress at the table.",
+        "I wrapped up another recipe.",
+        "The latest crafting task is handled.",
+        "I finished what I could for now.",
+        "Another bit of work is complete.",
+        "I have moved on after finishing that step.",
+        "The crafting is moving forward.",
+        "I completed another part of the order.",
+        "That recipe is taken care of.",
+        "I made another pass at the crafting table.",
+        "This part of the job is finished.",
+        "I have done another bit of the work.",
+        "The crafting task is still moving along."
       ],
       "id": "global.messages.22_work_craftsman.final_report"
     }

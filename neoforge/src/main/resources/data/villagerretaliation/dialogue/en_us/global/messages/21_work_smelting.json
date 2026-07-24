@@ -159,18 +159,42 @@
     {
       "key": "interaction.work_report.smelter",
       "lines": [
-        "I am still tending the smelting station and keeping ore and fuel moving.",
-        "The smelting work is still going. I am watching the furnace.",
-        "I am keeping the furnace or blast furnace supplied for the job."
+        "I am still tending the smelting station.",
+        "The smelting work is moving along.",
+        "I am keeping at the smelting work.",
+        "I am staying with the task you assigned me.",
+        "I am making steady progress with the smelting work.",
+        "There is still more to do, and I am on it.",
+        "I am keeping things in good order as I work.",
+        "I am still working through the smelting work.",
+        "I have the job covered for now.",
+        "I am giving this work my full attention.",
+        "The smelting work has not been forgotten.",
+        "I am keeping the work moving where I can.",
+        "I am still on the job you gave me.",
+        "I am taking the work one step at a time.",
+        "I am staying focused until this job is done."
       ],
       "id": "global.messages.21_work_smelting.messages.interaction.work_report.smelter.021"
     },
     {
       "key": "interaction.work_final_report.smelter",
       "lines": [
-        "I handled another batch of ore. I am still watching the station.",
-        "The smelting moved along. I will keep the ore and fuel going.",
-        "I collected another batch of ingots and the work continues."
+        "I finished another batch of ore.",
+        "That bit of smelting work is done for now.",
+        "I made some progress on the smelting work.",
+        "I took care of another part of the job.",
+        "The smelting work is moving along nicely.",
+        "I wrapped up another bit of work.",
+        "I have finished this part and am moving on.",
+        "Another part of the smelting work is taken care of.",
+        "I made another pass and kept things moving.",
+        "That task is handled for now.",
+        "I completed another part of the work.",
+        "I have made a little more progress.",
+        "This part is done, and I am staying with it.",
+        "I finished what I could for now.",
+        "The job is still moving forward."
       ],
       "id": "global.messages.21_work_smelting.messages.interaction.work_final_report.smelter.022"
     }
