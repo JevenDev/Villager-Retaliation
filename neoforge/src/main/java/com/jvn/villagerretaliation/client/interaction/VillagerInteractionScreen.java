@@ -3195,9 +3195,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         lines.add(translate("job_stats.detail.aptitude", aptitude));
         lines.add(translate("job_stats.detail.work_speed", workSpeed));
         if (transferBase > 0) {
-            int transfer = HiredVillagerRoles.transferLimit(
-                    transferBase, HiredVillagerRoles.transferCapacityPercent(aptitude));
-            lines.add(translate("job_stats.detail.transfer", transfer));
+            int transfer = role == HiredVillagerRole.COURIER
+                    ? HiredVillagerRoles.courierTransferLimit(aptitude)
+                    : HiredVillagerRoles.transferLimit(
+                            transferBase, HiredVillagerRoles.transferCapacityPercent(aptitude));
+            lines.add(translate(role == HiredVillagerRole.COURIER
+                    ? "job_stats.detail.courier_transfer"
+                    : "job_stats.detail.transfer", transfer));
         }
         lines.add(translate("job_stats.detail.effect." + roleEffectKey(role), workSpeed));
         lines.add("");

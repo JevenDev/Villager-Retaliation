@@ -1286,6 +1286,7 @@
   "villagerretaliation.gui.job_stats.detail.reason.universal": "Available to every adult villager.",
   "villagerretaliation.gui.job_stats.detail.support": "Support (30%%): %s %s/100",
   "villagerretaliation.gui.job_stats.detail.transfer": "Transfer capacity: up to %s items per trip",
+  "villagerretaliation.gui.job_stats.detail.courier_transfer": "Pickup capacity: up to %s items per assigned input container",
   "villagerretaliation.gui.job_stats.detail.work_speed": "Skill work speed: %s%%",
   "villagerretaliation.gui.job_stats.info.practice": "Higher aptitude makes work faster or increases each collection trip. Successful hired work trains both listed skills.",
   "villagerretaliation.gui.job_stats.info.profession": "A matching vanilla profession automatically qualifies for its canonical job. Adult villagers can always be couriers; only nitwits can take Nitwit work.",

@@ -1713,9 +1713,9 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(0), 50, "minimum transfer capacity");
         helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(50), 100, "midpoint transfer capacity");
         helper.assertValueEqual(HiredVillagerRoles.transferCapacityPercent(100), 150, "maximum transfer capacity");
-        helper.assertValueEqual(HiredVillagerRoles.transferLimit(64, 50), 32, "low-skill courier cargo");
-        helper.assertValueEqual(HiredVillagerRoles.transferLimit(64, 100), 64, "baseline courier cargo");
-        helper.assertValueEqual(HiredVillagerRoles.transferLimit(64, 150), 96, "high-skill courier cargo");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(0), 64, "courier minimum per container");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(50), 96, "courier midpoint per container");
+        helper.assertValueEqual(HiredVillagerRoles.courierTransferLimit(100), 128, "courier maximum per container");
         helper.assertValueEqual(HiredVillagerRoles.transferLimit(16, 50), 8, "low-skill facility collection");
         helper.assertValueEqual(HiredVillagerRoles.transferLimit(16, 150), 24, "high-skill facility collection");
         helper.assertValueEqual(HiredVillagerRoles.scaledDurationTicks(400, 75), 533, "low-skill fishing wait");
@@ -4335,28 +4335,36 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
-    public static void courierScalesEachRouteTripFromBaselineCargo(GameTestHelper helper) {
-        buildFloor(helper, 0, 8, 0, 5, 1);
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 500)
+    public static void courierAppliesSkillScaledCapacityPerInputContainer(GameTestHelper helper) {
+        buildFloor(helper, 0, 12, 0, 5, 1);
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = fakePlayer(level, "VrCourierCargoLimit");
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
-        BlockPos inputRel = new BlockPos(4, 2, 2);
-        BlockPos outputRel = new BlockPos(7, 2, 2);
-        BlockPos input = helper.absolutePos(inputRel);
+        BlockPos firstInputRel = new BlockPos(4, 2, 2);
+        BlockPos secondInputRel = new BlockPos(7, 2, 2);
+        BlockPos outputRel = new BlockPos(10, 2, 2);
+        BlockPos firstInput = helper.absolutePos(firstInputRel);
+        BlockPos secondInput = helper.absolutePos(secondInputRel);
         BlockPos output = helper.absolutePos(outputRel);
-        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, firstInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, secondInputRel, Blocks.CHEST.defaultBlockState());
         setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
-        AssignedStorageService.removeAssignedContainer(level, input);
+        AssignedStorageService.removeAssignedContainer(level, firstInput);
+        AssignedStorageService.removeAssignedContainer(level, secondInput);
         AssignedStorageService.removeAssignedContainer(level, output);
-        container(level, input).setItem(0, new ItemStack(Items.COBBLESTONE, 64));
-        container(level, input).setItem(1, new ItemStack(Items.COBBLESTONE, 36));
+        container(level, firstInput).setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+        container(level, firstInput).setItem(1, new ItemStack(Items.COBBLESTONE, 36));
+        container(level, secondInput).setItem(0, new ItemStack(Items.COBBLESTONE, 64));
+        container(level, secondInput).setItem(1, new ItemStack(Items.COBBLESTONE, 36));
 
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
-                List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "courier input assignment");
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), firstInput),
+                        new AssignedStorageService.StoragePosition(level.dimension(), secondInput)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "courier input assignments");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -4364,21 +4372,24 @@ public final class VillagerWorkerGameTests {
                 AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "courier output assignment");
 
         CompoundTag state = new CompoundTag();
-        HiredWorkContext context = routeContext(helper, villager, state, List.of(inputRel, outputRel), 50);
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(firstInputRel, secondInputRel, outputRel));
         CourierWorker worker = new CourierWorker();
-        runWorkerUntil(helper, worker, level, villager, hirer, context, 220, () ->
-                countItem(container(level, output), Items.COBBLESTONE) == 32
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 400, () ->
+                countItem(container(level, output), Items.COBBLESTONE) == 192
                         && "pickup".equals(state.getString("CourierPhase")));
 
-        helper.assertValueEqual(
-                countItem(container(level, input), Items.COBBLESTONE),
-                68,
-                "low-skill courier should leave excess cargo for the next route trip");
-        helper.assertValueEqual(
-                countItem(container(level, output), Items.COBBLESTONE),
-                32,
-                "50% transfer capacity should carry 32 items from the 64-item baseline");
-        helper.assertFalse(context.inventory().hasOutputItems(), "courier should finish the trip without retained cargo");
+        helper.assertValueEqual(countItem(container(level, firstInput), Items.COBBLESTONE), 4,
+                "mid-skill courier should take 96 items from the first input");
+        helper.assertValueEqual(countItem(container(level, secondInput), Items.COBBLESTONE), 4,
+                "mid-skill courier should independently take 96 items from the second input");
+        helper.assertValueEqual(countItem(container(level, output), Items.COBBLESTONE), 192,
+                "each assigned input should receive its own skill-scaled pickup allowance");
+        helper.assertFalse(context.inventory().hasOutputItems(),
+                "courier should finish the route without retained cargo");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         villager.discard();
@@ -4448,15 +4459,18 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
-    public static void courierHandlesContainerRouteNodesAndRepeatsMultipleInputLoop(GameTestHelper helper) {
-        buildFloor(helper, 0, 12, 0, 5, 1);
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 1200)
+    public static void courierDetoursToMultipleInputsAndRetracesRoute(GameTestHelper helper) {
+        buildFloor(helper, 0, 18, 0, 20, 1);
         ServerLevel level = helper.getLevel();
         ServerPlayer hirer = fakePlayer(level, "VrCourierMultiInput");
-        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
-        BlockPos firstInputRel = new BlockPos(2, 2, 2);
-        BlockPos secondInputRel = new BlockPos(6, 2, 2);
-        BlockPos outputRel = new BlockPos(10, 2, 2);
+        BlockPos firstNodeRel = new BlockPos(2, 2, 2);
+        BlockPos secondNodeRel = new BlockPos(8, 2, 2);
+        BlockPos lastNodeRel = new BlockPos(16, 2, 2);
+        Villager villager = spawnVillager(helper, firstNodeRel);
+        BlockPos firstInputRel = new BlockPos(8, 2, 6);
+        BlockPos secondInputRel = new BlockPos(16, 2, 18);
+        BlockPos outputRel = new BlockPos(2, 2, 4);
         BlockPos firstInput = helper.absolutePos(firstInputRel);
         BlockPos secondInput = helper.absolutePos(secondInputRel);
         BlockPos output = helper.absolutePos(outputRel);
@@ -4487,14 +4501,22 @@ public final class VillagerWorkerGameTests {
                 helper,
                 villager,
                 state,
-                List.of(firstInputRel, secondInputRel, outputRel));
+                List.of(firstNodeRel, secondNodeRel, lastNodeRel));
         CourierWorker worker = new CourierWorker();
+        boolean[] sawMiddleReturnNode = {false};
 
-        runWorkerUntil(helper, worker, level, villager, hirer, context, 360, () ->
-                countItem(container(level, output), Items.COBBLESTONE) == 20
-                        && countItem(container(level, output), Items.DIRT) == 13
-                        && "pickup".equals(state.getString("CourierPhase")));
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 1000, () -> {
+            if ("return".equals(state.getString("CourierPhase"))
+                    && state.getInt("CourierRouteIndex") == 1) {
+                sawMiddleReturnNode[0] = true;
+            }
+            return countItem(container(level, output), Items.COBBLESTONE) == 20
+                    && countItem(container(level, output), Items.DIRT) == 13
+                    && "pickup".equals(state.getString("CourierPhase"));
+        });
 
+        helper.assertTrue(sawMiddleReturnNode[0],
+                "courier should revisit the middle route node while retracing its return path");
         helper.assertValueEqual(countItem(container(level, firstInput), Items.COBBLESTONE), 0,
                 "courier should empty the first route input");
         helper.assertValueEqual(countItem(container(level, secondInput), Items.DIRT), 0,
@@ -4502,7 +4524,7 @@ public final class VillagerWorkerGameTests {
 
         container(level, firstInput).setItem(0, new ItemStack(Items.COBBLESTONE, 7));
         container(level, secondInput).setItem(0, new ItemStack(Items.DIRT, 5));
-        runWorkerUntil(helper, worker, level, villager, hirer, context, 360, () ->
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 1000, () ->
                 countItem(container(level, output), Items.COBBLESTONE) == 27
                         && countItem(container(level, output), Items.DIRT) == 18
                         && "pickup".equals(state.getString("CourierPhase")));
@@ -4515,8 +4537,8 @@ public final class VillagerWorkerGameTests {
                 "courier should deposit every carried stack before returning");
         helper.assertTrue(villager.blockPosition().distSqr(context.route().first()) <= 4.0D,
                 "courier should await the next load at the route beginning");
-        helper.assertFalse(villager.blockPosition().equals(firstInput),
-                "courier should use a valid adjacent standing block for the first container node");
+        helper.assertFalse(villager.blockPosition().equals(output),
+                "courier should return from the output detour to the first route node");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         villager.discard();

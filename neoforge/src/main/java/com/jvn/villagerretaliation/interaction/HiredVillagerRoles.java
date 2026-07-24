@@ -131,6 +131,10 @@ public final class HiredVillagerRoles {
         return Math.max(1, Math.round(baseItems * Math.clamp(transferCapacityPercent, 50, 150) / 100.0F));
     }
 
+    public static int courierTransferLimit(int aptitude) {
+        return 64 + Math.round(64 * Math.clamp(aptitude, 0, 100) / 100.0F);
+    }
+
     public static int scaledDurationTicks(int normalTicks, int skillWorkSpeedPercent) {
         if (normalTicks <= 0) {
             return 0;
