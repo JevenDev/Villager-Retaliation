@@ -194,6 +194,48 @@
       "key": "duel.challenge.refusal.available",
       "lines": ["Very well. Name your terms."],
       "id": "global.messages.24_duels.messages.duel.challenge.refusal.available.023"
+    },
+    {
+      "key": "duel.option.reaction.gloat",
+      "lines": ["About your duel victory..."],
+      "id": "global.messages.24_duels.messages.duel.option.reaction.gloat.025"
+    },
+    {
+      "key": "duel.option.reaction.sulk",
+      "lines": ["About your duel loss..."],
+      "id": "global.messages.24_duels.messages.duel.option.reaction.sulk.026"
+    },
+    {
+      "key": "duel.option.story",
+      "lines": ["About the duel you saw..."],
+      "id": "global.messages.24_duels.messages.duel.option.story.027"
+    },
+    {
+      "key": "duel.story.player_win",
+      "lines": [
+        "I saw you win against {villager}.",
+        "I saw that duel. You had {villager} beaten cleanly.",
+        "You handled yourself well against {villager}. I saw it."
+      ],
+      "id": "global.messages.24_duels.messages.duel.story.player_win.028"
+    },
+    {
+      "key": "duel.story.villager_win",
+      "lines": [
+        "I saw you lose against {villager}.",
+        "I saw that duel. {villager} had the better day.",
+        "That bout with {villager} did not go your way. I saw it."
+      ],
+      "id": "global.messages.24_duels.messages.duel.story.villager_win.029"
+    },
+    {
+      "key": "duel.story.draw",
+      "lines": [
+        "I saw your duel with {villager} end in a draw.",
+        "That fight with {villager} ended even. I saw the whole thing.",
+        "Neither you nor {villager} had the last word in that duel."
+      ],
+      "id": "global.messages.24_duels.messages.duel.story.draw.030"
     }
   ]
 }

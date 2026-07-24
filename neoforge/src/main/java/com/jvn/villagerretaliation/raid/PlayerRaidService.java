@@ -28,6 +28,8 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerBossEvent;
 import net.minecraft.server.level.ServerLevel;
@@ -63,6 +65,10 @@ public final class PlayerRaidService {
     private static final long OUTCOME_DISPLAY_TICKS = 100L;
     private static final double HORN_REVEAL_RADIUS = 48.0D;
     private static final int HORN_REVEAL_TICKS = 60;
+    private static final float RAID_VICTORY_HORN_VOLUME = 1.2F;
+    private static final float RAID_VICTORY_HORN_PITCH = 0.85F;
+    private static final float RAID_VICTORY_FANFARE_VOLUME = 0.8F;
+    private static final float RAID_VICTORY_FANFARE_PITCH = 1.0F;
     private static final Map<UUID, ServerBossEvent> BOSS_BARS = new HashMap<>();
     private static final PlayerRaidConfirmationTracker RAID_CONFIRMATIONS = new PlayerRaidConfirmationTracker();
 
@@ -574,7 +580,32 @@ public final class PlayerRaidService {
                 ? "villagerretaliation.player_raid.victory"
                 : "villagerretaliation.player_raid.defended", raid.villageName());
         server.getPlayerList().broadcastSystemMessage(message, false);
+        if (raidersWon) {
+            playRaiderVictorySound(server, raid);
+        }
         PlayerRaidDialogueService.announceOutcome(server, raid, raidersWon);
+    }
+
+    private static void playRaiderVictorySound(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
+        for (UUID raiderId : raid.raiderPlayers()) {
+            ServerPlayer player = server.getPlayerList().getPlayer(raiderId);
+            if (player != null) {
+                player.serverLevel().playSound(
+                        null,
+                        player.blockPosition(),
+                        SoundEvents.GOAT_HORN_PLAY,
+                        SoundSource.PLAYERS,
+                        RAID_VICTORY_HORN_VOLUME,
+                        RAID_VICTORY_HORN_PITCH);
+                player.serverLevel().playSound(
+                        null,
+                        player.blockPosition(),
+                        SoundEvents.UI_TOAST_CHALLENGE_COMPLETE,
+                        SoundSource.PLAYERS,
+                        RAID_VICTORY_FANFARE_VOLUME,
+                        RAID_VICTORY_FANFARE_PITCH);
+            }
+        }
     }
 
     /** Operator hook used by the debug command to settle the relevant running Player Raid. */

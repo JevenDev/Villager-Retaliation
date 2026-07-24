@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
+import com.jvn.villagerretaliation.interaction.VillagerInteractionScreenOpener;
 import com.jvn.villagerretaliation.network.VillagerInteractionNoticePayload;
 import com.jvn.villagerretaliation.village.VillageEventMemory;
 import com.jvn.villagerretaliation.villager.VillagerPresetNameRegistry;
@@ -32,6 +33,12 @@ public final class DuelDialogueService {
     private static final String POST_DUEL_DEFINITION_PREFIX = "villagerretaliation:duel/post_";
     private static final String GLOAT_MESSAGE_KEY = "duel.reaction.gloat";
     private static final String SULK_MESSAGE_KEY = "duel.reaction.sulk";
+    private static final String GLOAT_OPTION_MESSAGE_KEY = "duel.option.reaction.gloat";
+    private static final String SULK_OPTION_MESSAGE_KEY = "duel.option.reaction.sulk";
+    private static final String STORY_OPTION_MESSAGE_KEY = "duel.option.story";
+    private static final String STORY_PLAYER_WIN_MESSAGE_KEY = "duel.story.player_win";
+    private static final String STORY_VILLAGER_WIN_MESSAGE_KEY = "duel.story.villager_win";
+    private static final String STORY_DRAW_MESSAGE_KEY = "duel.story.draw";
 
     private DuelDialogueService() {}
 
@@ -121,12 +128,16 @@ public final class DuelDialogueService {
         List<DialogueOptionDefinition> options = new ArrayList<>(original);
         DuelSavedData data = DuelSavedData.get(level);
         DuelSavedData.DuelRecord record = data.record(villager.getUUID(), player.getUUID());
+        var context = VillagerInteractionService.createDialogueContext(level, player, villager);
         if (record.pendingGloats() > 0)
-            options.add(DialogueOptionDefinition.transmitted(GLOAT, "About your duel victory...", DialogueRequestType.QUESTION, true, 850));
+            VillagerDialogueResources.message(context, GLOAT_OPTION_MESSAGE_KEY).ifPresent(label ->
+                    options.add(DialogueOptionDefinition.transmitted(GLOAT, label, DialogueRequestType.QUESTION, true, 850)));
         if (record.pendingSulks() > 0)
-            options.add(DialogueOptionDefinition.transmitted(SULK, "About your duel loss...", DialogueRequestType.QUESTION, true, 851));
+            VillagerDialogueResources.message(context, SULK_OPTION_MESSAGE_KEY).ifPresent(label ->
+                    options.add(DialogueOptionDefinition.transmitted(SULK, label, DialogueRequestType.QUESTION, true, 851)));
         if (findStory(level, player, villager).isPresent())
-            options.add(DialogueOptionDefinition.transmitted(STORY, "Tell me about that duel.", DialogueRequestType.STORY, true, 852));
+            VillagerDialogueResources.message(context, STORY_OPTION_MESSAGE_KEY).ifPresent(label ->
+                    options.add(DialogueOptionDefinition.transmitted(STORY, label, DialogueRequestType.STORY, true, 852)));
         return List.copyOf(options);
     }
 
@@ -141,7 +152,9 @@ public final class DuelDialogueService {
             if (found.isEmpty()) return true;
             DuelSavedData.DuelMemory memory = found.get();
             data.acknowledgeStory(villager.getUUID(), player.getUUID(), memory.id());
-            line = storyLine(memory);
+            Optional<String> storyLine = storyLine(player, villager, memory);
+            if (storyLine.isEmpty()) return true;
+            line = storyLine.get();
         } else {
             DuelSavedData.Reaction expected = GLOAT.equals(optionId) ? DuelSavedData.Reaction.GLOAT : DuelSavedData.Reaction.SULK;
             DuelSavedData.DuelRecord record = data.record(villager.getUUID(), player.getUUID());
@@ -153,6 +166,7 @@ public final class DuelDialogueService {
         }
         PacketDistributor.sendToPlayer(player, new VillagerInteractionNoticePayload(
                 villager.getId(), line, VillagerPresetNameRegistry.resolveDisplayName(villager).getString()));
+        VillagerInteractionScreenOpener.refreshNormal(player, villager);
         return true;
     }
 
@@ -209,20 +223,25 @@ public final class DuelDialogueService {
         for (int i = history.size() - 1; i >= 0; i--) {
             DuelSavedData.DuelMemory memory = history.get(i);
             if (village.equals(memory.villageId()) && !speaker.getUUID().equals(memory.villagerId())
+                    && memory.witnessIds().contains(speaker.getUUID())
                     && !data.storyAcknowledged(speaker.getUUID(), player.getUUID(), memory.id())) return Optional.of(memory);
         }
         return Optional.empty();
     }
 
-    private static String storyLine(DuelSavedData.DuelMemory memory) {
-        return switch (memory.result()) {
-            case PLAYER_WIN -> "%s challenged %s and won a duel worth %s each. The score now stands %s to %s."
-                    .formatted(memory.playerName(), memory.villagerName(), memory.wager(), memory.villagerWins(), memory.villagerLosses());
-            case VILLAGER_WIN -> "%s bested %s in a wagered duel. The score now stands %s to %s."
-                    .formatted(memory.villagerName(), memory.playerName(), memory.villagerWins(), memory.villagerLosses());
-            case DRAW -> "%s and %s fought until the duel was called a draw."
-                    .formatted(memory.villagerName(), memory.playerName());
+    private static Optional<String> storyLine(ServerPlayer player, Villager villager, DuelSavedData.DuelMemory memory) {
+        String messageKey = switch (memory.result()) {
+            case PLAYER_WIN -> STORY_PLAYER_WIN_MESSAGE_KEY;
+            case VILLAGER_WIN -> STORY_VILLAGER_WIN_MESSAGE_KEY;
+            case DRAW -> STORY_DRAW_MESSAGE_KEY;
             case CANCELLED -> "";
         };
+        if (messageKey.isBlank()) return Optional.empty();
+        return VillagerDialogueResources.message(
+                VillagerInteractionService.createDialogueContext(player.serverLevel(), player, villager),
+                messageKey,
+                Map.of(
+                        "player", memory.playerName(),
+                        "villager", memory.villagerName()));
     }
 }

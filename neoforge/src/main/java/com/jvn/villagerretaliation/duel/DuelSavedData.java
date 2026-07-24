@@ -50,6 +50,7 @@ public final class DuelSavedData extends SavedData {
                     tag.getString("VillagerName"), tag.getString("PlayerName"), result,
                     tag.getInt("Wager"), tag.getLong("GameTime"), tag.getLong("Position"),
                     tag.hasUUID("Village") ? tag.getUUID("Village") : null,
+                    readUuidSet(tag, "Witnesses"),
                     tag.getInt("VillagerWins"), tag.getInt("VillagerLosses")));
         }
         for (Tag raw : root.getList("StoryAcknowledgements", Tag.TAG_COMPOUND)) {
@@ -95,6 +96,11 @@ public final class DuelSavedData extends SavedData {
             tag.putLong("GameTime", memory.gameTime());
             tag.putLong("Position", memory.packedPosition());
             if (memory.villageId() != null) tag.putUUID("Village", memory.villageId());
+            ListTag witnesses = new ListTag();
+            for (UUID witnessId : memory.witnessIds()) {
+                witnesses.add(new net.minecraft.nbt.IntArrayTag(net.minecraft.core.UUIDUtil.uuidToIntArray(witnessId)));
+            }
+            tag.put("Witnesses", witnesses);
             tag.putInt("VillagerWins", memory.villagerWins());
             tag.putInt("VillagerLosses", memory.villagerLosses());
             historyTags.add(tag);
@@ -112,6 +118,16 @@ public final class DuelSavedData extends SavedData {
         });
         root.put("StoryAcknowledgements", acknowledgementTags);
         return root;
+    }
+
+    private static Set<UUID> readUuidSet(CompoundTag tag, String key) {
+        Set<UUID> ids = new HashSet<>();
+        for (Tag raw : tag.getList(key, Tag.TAG_INT_ARRAY)) {
+            if (raw instanceof net.minecraft.nbt.IntArrayTag array && array.getAsIntArray().length == 4) {
+                ids.add(net.minecraft.core.UUIDUtil.uuidFromIntArray(array.getAsIntArray()));
+            }
+        }
+        return ids;
     }
 
     public DuelRecord record(UUID villagerId, UUID playerId) {
@@ -225,5 +241,9 @@ public final class DuelSavedData extends SavedData {
 
     public record DuelMemory(UUID id, UUID villagerId, UUID playerId, String villagerName, String playerName,
                              DuelResult result, int wager, long gameTime, long packedPosition, UUID villageId,
-                             int villagerWins, int villagerLosses) {}
+                             Set<UUID> witnessIds, int villagerWins, int villagerLosses) {
+        public DuelMemory {
+            witnessIds = witnessIds == null ? Set.of() : Set.copyOf(witnessIds);
+        }
+    }
 }
