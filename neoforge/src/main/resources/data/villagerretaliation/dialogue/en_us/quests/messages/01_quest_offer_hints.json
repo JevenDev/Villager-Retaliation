@@ -21,7 +21,17 @@
         "Help the village a bit more, and I may have work for you.",
         "When I know I can rely on you, I may have a task.",
         "Build some trust with me first, then ask again.",
-        "I may open that work to you when you have proven yourself here."
+        "I may open that work to you when you have proven yourself here.",
+        "I may have work when I trust you more. I might have something for you once I know you better.",
+        "I might have something for you once I know you better. Come back when I have a little more reason to trust you.",
+        "Come back when I have a little more reason to trust you. I keep that sort of work for people I trust.",
+        "I keep that sort of work for people I trust. There may be work later, once you have earned more trust here.",
+        "There may be work later, once you have earned more trust here. I am not ready to hand you that responsibility yet.",
+        "I am not ready to hand you that responsibility yet. Help the village a bit more, and I may have work for you.",
+        "Help the village a bit more, and I may have work for you. When I know I can rely on you, I may have a task.",
+        "When I know I can rely on you, I may have a task. Build some trust with me first, then ask again.",
+        "Build some trust with me first, then ask again. I may open that work to you when you have proven yourself here.",
+        "I may open that work to you when you have proven yourself here. I may have work when I trust you more."
       ]
     },
     {
@@ -31,13 +41,23 @@
         "I may have work when I reach {level}.",
         "Ask again when I am trading at {level}.",
         "Once I reach {level}, I may have work worth discussing.",
-        "I need more experience first; come back when I am {level}.",
+        "I need more experience first. come back when I am {level}.",
         "That work can wait until I have reached {level}.",
         "When my trade rank is {level}, I may be ready to offer it.",
-        "I am not seasoned enough yet; try again when I am {level}.",
+        "I am not seasoned enough yet. try again when I am {level}.",
         "I may have something once I have worked my way up to {level}.",
         "Come back when my trade level is {level}.",
-        "That sort of work belongs to a {level} villager."
+        "That sort of work belongs to a {level} villager.",
+        "I may have work when I reach {level}. Ask again when I am trading at {level}.",
+        "Ask again when I am trading at {level}. Once I reach {level}, I may have work worth discussing.",
+        "Once I reach {level}, I may have work worth discussing. I need more experience first. come back when I am {level}.",
+        "I need more experience first. come back when I am {level}. That work can wait until I have reached {level}.",
+        "That work can wait until I have reached {level}. When my trade rank is {level}, I may be ready to offer it.",
+        "When my trade rank is {level}, I may be ready to offer it. I am not seasoned enough yet. try again when I am {level}.",
+        "I am not seasoned enough yet. try again when I am {level}. I may have something once I have worked my way up to {level}.",
+        "I may have something once I have worked my way up to {level}. Come back when my trade level is {level}.",
+        "Come back when my trade level is {level}. That sort of work belongs to a {level} villager.",
+        "That sort of work belongs to a {level} villager. I may have work when I reach {level}."
       ]
     },
     {
@@ -53,7 +73,17 @@
         "I may be ready once I get better at {skill}.",
         "Come back when my {skill} is stronger.",
         "I cannot offer that properly until my {skill} improves.",
-        "More {skill} first; then I may have work."
+        "More {skill} first. then I may have work.",
+        "I may have work when I improve {skill}. Ask me again once my {skill} is better.",
+        "Ask me again once my {skill} is better. I need more practice with {skill} before I can offer that work.",
+        "I need more practice with {skill} before I can offer that work. When my {skill} improves, I may have something for you.",
+        "When my {skill} improves, I may have something for you. That task needs better {skill} than I have right now.",
+        "That task needs better {skill} than I have right now. Let me build up {skill} first, then ask again.",
+        "Let me build up {skill} first, then ask again. I may be ready once I get better at {skill}.",
+        "I may be ready once I get better at {skill}. Come back when my {skill} is stronger.",
+        "Come back when my {skill} is stronger. I cannot offer that properly until my {skill} improves.",
+        "I cannot offer that properly until my {skill} improves. More {skill} first. then I may have work.",
+        "More {skill} first. then I may have work. I may have work when I improve {skill}."
       ]
     },
     {
@@ -62,14 +92,24 @@
       "lines": [
         "I may have work when we settle earlier work first.",
         "Finish the earlier matter first, then ask me again.",
-        "One thing at a time; we should settle the previous work first.",
+        "One thing at a time. we should settle the previous work first.",
         "I may have more once the earlier job is done.",
         "That can wait until the current chain of work is settled.",
         "Come back after the earlier work is finished.",
         "I need the previous matter closed before I offer this.",
         "We should not open that work until the earlier task is handled.",
         "Settle what came before, and I may have more for you.",
-        "I may speak on that after the earlier work is complete."
+        "I may speak on that after the earlier work is complete.",
+        "I may have work when we settle earlier work first. Finish the earlier matter first, then ask me again.",
+        "Finish the earlier matter first, then ask me again. One thing at a time. we should settle the previous work first.",
+        "One thing at a time. we should settle the previous work first. I may have more once the earlier job is done.",
+        "I may have more once the earlier job is done. That can wait until the current chain of work is settled.",
+        "That can wait until the current chain of work is settled. Come back after the earlier work is finished.",
+        "Come back after the earlier work is finished. I need the previous matter closed before I offer this.",
+        "I need the previous matter closed before I offer this. We should not open that work until the earlier task is handled.",
+        "We should not open that work until the earlier task is handled. Settle what came before, and I may have more for you.",
+        "Settle what came before, and I may have more for you. I may speak on that after the earlier work is complete.",
+        "I may speak on that after the earlier work is complete. I may have work when we settle earlier work first."
       ]
     },
     {
@@ -80,12 +120,22 @@
         "Not just now, but ask again later.",
         "The moment is not right for that work yet.",
         "I may have something once things line up.",
-        "Give it time; that work is not ready yet.",
+        "Give it time. that work is not ready yet.",
         "Come back later, when the request is ready.",
         "I am waiting for the right moment before offering that.",
         "That work may open up later.",
         "It is not ready right now, but it may be soon.",
-        "Ask again when the village has room for that work."
+        "Ask again when the village has room for that work.",
+        "I may have work when the timing is better. Not just now, but ask again later.",
+        "Not just now, but ask again later. The moment is not right for that work yet.",
+        "The moment is not right for that work yet. I may have something once things line up.",
+        "I may have something once things line up. Give it time. that work is not ready yet.",
+        "Give it time. that work is not ready yet. Come back later, when the request is ready.",
+        "Come back later, when the request is ready. I am waiting for the right moment before offering that.",
+        "I am waiting for the right moment before offering that. That work may open up later.",
+        "That work may open up later. It is not ready right now, but it may be soon.",
+        "It is not ready right now, but it may be soon. Ask again when the village has room for that work.",
+        "Ask again when the village has room for that work. I may have work when the timing is better."
       ]
     }
   ]

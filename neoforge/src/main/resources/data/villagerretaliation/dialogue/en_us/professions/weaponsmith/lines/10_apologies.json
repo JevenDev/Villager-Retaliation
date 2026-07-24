@@ -13,7 +13,17 @@
         "If you can't control your hand, no apology will be enough. Control it.",
         "Good. Let this be the last time I hear that tone for this reason.",
         "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "That came out sharper than it should have. I am sorry.",
+        "A weapon is honest about harm. People should try being that honest before causing it. Good. Now keep your temper sheathed unless the village needs it drawn.",
+        "Good. Now keep your temper sheathed unless the village needs it drawn. Harm is easy to make and hard to take back. At least you know which you did.",
+        "Harm is easy to make and hard to take back. At least you know which you did. Fine. Keep the sharp parts of yourself pointed where they belong.",
+        "Fine. Keep the sharp parts of yourself pointed where they belong. An apology is not a sheath, but it may keep the edge from cutting twice.",
+        "An apology is not a sheath, but it may keep the edge from cutting twice. I respect honest remorse more than polished excuses.",
+        "I respect honest remorse more than polished excuses. If you can't control your hand, no apology will be enough. Control it.",
+        "If you can't control your hand, no apology will be enough. Control it. Good. Let this be the last time I hear that tone for this reason.",
+        "Good. Let this be the last time I hear that tone for this reason. I was wrong. I would rather say it plainly than dress it up.",
+        "I was wrong. I would rather say it plainly than dress it up. That came out sharper than it should have. I am sorry.",
+        "That came out sharper than it should have. I am sorry. A weapon is honest about harm. People should try being that honest before causing it."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,
