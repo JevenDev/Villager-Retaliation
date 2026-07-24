@@ -534,10 +534,10 @@ public final class VillagerRetaliationHandler {
         if (canMeleeHit && allowMeleeAttack && meleeAttackReady) {
             var attackHand = VillagerRetaliationVillagerCombatUtil.selectAttackHand(villager);
             villager.swing(attackHand, true);
-            if (syncMeleeAttackAttributes(villager) && villager.doHurtTarget(target)) {
+            boolean shieldBroken = VillagerCombatStateMachine.tryBreakTargetShield(villager, target);
+            if (!shieldBroken && syncMeleeAttackAttributes(villager) && villager.doHurtTarget(target)) {
                 VillagerEquipmentDurability.postMeleeHit(villager, target, attackHand);
             }
-            VillagerCombatStateMachine.disableTargetShieldAfterAxeAttack(villager, target);
             RETALIATION.setNextAttackTick(
                     villager,
                     gameTime + VillagerSocialAttributeBehavior.adjustCombatCooldownTicks(
