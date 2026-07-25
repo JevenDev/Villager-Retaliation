@@ -69,6 +69,15 @@ public final class VillagerDownedService {
         }
 
         if (isDowned(villager)) {
+            VillagerDeathProtectionResolver.ProtectionResult protection =
+                    VillagerDeathProtectionResolver.resolve(level, villager, event.getSource());
+            float healthDamage = Math.max(0.0F, event.getNewDamage() - villager.getAbsorptionAmount());
+            if (!protection.protectedFromDeath()) {
+                if (healthDamage >= villager.getHealth()) {
+                    releaseForLethalDamage(villager);
+                }
+                return;
+            }
             float consequenceHealth = Math.min(villager.getMaxHealth(), 2.0F);
             if (event.getNewDamage() > 0.0F && consequenceHealth > 1.0F) {
                 float absorption = villager.getAbsorptionAmount();
@@ -92,7 +101,7 @@ public final class VillagerDownedService {
         }
 
         VillagerDeathProtectionResolver.ProtectionResult protection =
-                VillagerDeathProtectionResolver.resolve(level, villager);
+                VillagerDeathProtectionResolver.resolve(level, villager, event.getSource());
         if (!protection.protectedFromDeath()) {
             return;
         }

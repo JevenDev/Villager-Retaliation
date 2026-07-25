@@ -747,7 +747,19 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean enableVillagerDownedState = true;
 
+        public boolean allVillagersUseDownedState = false;
+
+        public boolean raidVillagersUseDownedState = false;
+
+        public boolean hiredVillagersUseDownedState = false;
+
         public boolean partyVillagersUseDownedState = true;
+
+        public boolean playerDamageDownsEligibleVillagers = true;
+
+        public boolean mobDamageDownsEligibleVillagers = true;
+
+        public boolean environmentalDamageDownsEligibleVillagers = true;
 
         @RangeConstraint(min = 1, max = 20 * 60 * 10)
         public int downedMinimumTicks = 160;
