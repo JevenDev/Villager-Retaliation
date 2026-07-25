@@ -16,6 +16,23 @@ public final class VillagerConfigurationGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void villagerHungerOptionsHaveExpectedDefaultsAndBindings(GameTestHelper helper) {
+        VillagerRetaliationConfigModel.Balance balanceDefaults =
+                new VillagerRetaliationConfigModel.Balance();
+        VillagerRetaliationConfigModel.DebugOverlay debugDefaults =
+                new VillagerRetaliationConfigModel.DebugOverlay();
+        helper.assertTrue(balanceDefaults.hungerEffectAffectsVillagers,
+                "Hunger status effects should affect villagers by default");
+        helper.assertFalse(debugDefaults.reputationDebugOverlayShowHunger,
+                "Debug hunger should remain opt-in like debug health and armor");
+        helper.assertTrue(
+                VillagerRetaliationConfig.HUNGER_EFFECT_AFFECTS_VILLAGERS.option()
+                        != VillagerRetaliationConfig.REPUTATION_DEBUG_OVERLAY_SHOW_HUNGER.option(),
+                "Gameplay and debug hunger settings must use distinct config bindings");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void craftsmanSkillGrowthHasIndependentBindingAndCompatibleDefault(GameTestHelper helper) {
         VillagerRetaliationConfigModel.HiredWorkSkillGrowth defaults =
                 new VillagerRetaliationConfigModel.HiredWorkSkillGrowth();

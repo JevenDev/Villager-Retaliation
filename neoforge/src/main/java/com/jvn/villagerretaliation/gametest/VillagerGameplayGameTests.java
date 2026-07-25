@@ -67,6 +67,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ExperienceOrb;
@@ -1154,6 +1156,40 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void hungerEffectDrainsVillagerHungerWhenConfigured(GameTestHelper helper) {
+        boolean previous = VillagerRetaliationConfig.HUNGER_EFFECT_AFFECTS_VILLAGERS.get();
+        Villager affected = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Villager unaffected = spawnVillager(helper, new BlockPos(3, 2, 1));
+        try {
+            setRecoveryState(affected, 20, 0.0F, 4.0F);
+            setRecoveryState(unaffected, 20, 0.0F, 4.0F);
+            affected.addEffect(new MobEffectInstance(MobEffects.HUNGER, 200, 9));
+            unaffected.addEffect(new MobEffectInstance(MobEffects.HUNGER, 200, 9));
+
+            VillagerRetaliationConfig.HUNGER_EFFECT_AFFECTS_VILLAGERS.set(true);
+            VillagerRecoveryService.onVillagerTickPost(affected);
+            helper.assertValueEqual(
+                    VillagerRecoveryService.foodLevel(affected),
+                    19,
+                    "enabled Hunger effect should add exhaustion and drain villager food");
+
+            VillagerRetaliationConfig.HUNGER_EFFECT_AFFECTS_VILLAGERS.set(false);
+            VillagerRecoveryService.onVillagerTickPost(unaffected);
+            helper.assertValueEqual(
+                    VillagerRecoveryService.foodLevel(unaffected),
+                    20,
+                    "disabled Hunger effect should leave villager food unchanged");
+        } finally {
+            VillagerRetaliationConfig.HUNGER_EFFECT_AFFECTS_VILLAGERS.set(previous);
+            VillagerRecoveryService.onVillagerUnloaded(affected);
+            VillagerRecoveryService.onVillagerUnloaded(unaffected);
+            affected.discard();
+            unaffected.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void woundedVillagerWithoutRecoverySuppliesKeepsFighting(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         Zombie target = spawnZombie(helper, new BlockPos(3, 2, 1));
@@ -1656,10 +1692,14 @@ public final class VillagerGameplayGameTests {
     }
 
     private static void setRecoveryState(Villager villager, int food, float saturation) {
+        setRecoveryState(villager, food, saturation, 0.0F);
+    }
+
+    private static void setRecoveryState(Villager villager, int food, float saturation, float exhaustion) {
         CompoundTag tag = new CompoundTag();
         tag.putInt("Food", food);
         tag.putFloat("Saturation", saturation);
-        tag.putFloat("Exhaustion", 0.0F);
+        tag.putFloat("Exhaustion", exhaustion);
         tag.putInt("HealTimer", 0);
         villager.getPersistentData().put("VillagerRetaliationRecovery", tag);
     }
