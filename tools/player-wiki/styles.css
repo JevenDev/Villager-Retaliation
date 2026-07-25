@@ -1538,6 +1538,10 @@ tr:last-child td {
   background: color-mix(in srgb, var(--warn) 18%, var(--panel));
 }
 
+.advancement-spoiler-content {
+  padding: 0 12px 12px;
+}
+
 .back-row {
   margin-top: 18px;
 }

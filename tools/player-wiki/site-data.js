@@ -65868,9 +65868,9 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 82542,
+    "dialogueLinesEstimate": 82098,
     "dialogueLineBreakdown": {
-      "dialogue": 80843,
+      "dialogue": 80399,
       "forcedDialogue": 375,
       "dialogueTrees": 0,
       "questModules": 1324
