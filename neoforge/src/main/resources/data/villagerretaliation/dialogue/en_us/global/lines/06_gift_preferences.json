@@ -13,7 +13,17 @@
         "That {attack_weapon} made a simple conversation feel less simple.",
         "I am trying to answer you without forgetting why I am careful.",
         "Some wounds fade faster than the caution they leave behind.",
-        "If I seem distant, that {attack_weapon} is part of the reason."
+        "If I seem distant, that {attack_weapon} is part of the reason.",
+        "I still remember that {attack_weapon}. Conversations get colder after that. It is hard to speak plainly while remembering that {attack_weapon}.",
+        "It is hard to speak plainly while remembering that {attack_weapon}. That {attack_weapon} stayed in my memory longer than the bruise did.",
+        "That {attack_weapon} stayed in my memory longer than the bruise did. You may be done with that moment, but I am not.",
+        "You may be done with that moment, but I am not. Trust does not stand as close after a hit like that.",
+        "Trust does not stand as close after a hit like that. I hear your words, but I remember your hands.",
+        "I hear your words, but I remember your hands. That {attack_weapon} made a simple conversation feel less simple.",
+        "That {attack_weapon} made a simple conversation feel less simple. I am trying to answer you without forgetting why I am careful.",
+        "I am trying to answer you without forgetting why I am careful. Some wounds fade faster than the caution they leave behind.",
+        "Some wounds fade faster than the caution they leave behind. If I seem distant, that {attack_weapon} is part of the reason.",
+        "If I seem distant, that {attack_weapon} is part of the reason. I still remember that {attack_weapon}. Conversations get colder after that."
       ],
       "conditions": [
         {
@@ -42,7 +52,17 @@
         "If the bell stays silent, I will call that a good day.",
         "Peace has been keeping its voice down. I appreciate that.",
         "The village is breathing easy for now.",
-        "A calm day can be rare enough to treat kindly."
+        "A calm day can be rare enough to treat kindly.",
+        "The bell has been quiet today. I would like to keep it that way. Quiet bells are good bells. Let us not give this one a reason.",
+        "Quiet bells are good bells. Let us not give this one a reason. Today has been calm so far. I am protective of that.",
+        "Today has been calm so far. I am protective of that. A quiet morning is worth guarding.",
+        "A quiet morning is worth guarding. No alarms yet today. I am hoping it stays that simple.",
+        "No alarms yet today. I am hoping it stays that simple. The square feels steady today. That is a welcome thing.",
+        "The square feels steady today. That is a welcome thing. If the bell stays silent, I will call that a good day.",
+        "If the bell stays silent, I will call that a good day. Peace has been keeping its voice down. I appreciate that.",
+        "Peace has been keeping its voice down. I appreciate that. The village is breathing easy for now.",
+        "The village is breathing easy for now. A calm day can be rare enough to treat kindly.",
+        "A calm day can be rare enough to treat kindly. The bell has been quiet today. I would like to keep it that way."
       ],
       "weight": 22
     },
@@ -55,11 +75,21 @@
         "I know a joke about emeralds, but the punchline appreciates payment plans.",
         "Why did the emerald cross the square? Better trade value on the other side.",
         "I had an emerald joke, but a trader bought it before I could finish.",
-        "An emerald walked into the market and immediately became everyone's best friend.",
+        "An emerald walked into the market and immediately became everyone's best <gold><pulse>friend</pulse></gold>.",
         "I would tell you a cheap emerald joke, but those are all out of stock.",
         "The best emerald jokes are rare, green, and somehow overpriced.",
         "I polished this joke myself. That is why it costs more.",
-        "If you do not laugh, I can offer store credit."
+        "If you do not laugh, I can offer store credit.",
+        "I know an emerald joke, but it costs extra if you want the good part. My emerald joke has a discount if you laugh quickly.",
+        "My emerald joke has a discount if you laugh quickly. I know a joke about emeralds, but the punchline appreciates payment plans.",
+        "I know a joke about emeralds, but the punchline appreciates payment plans. Why did the emerald cross the square? Better trade value on the other side.",
+        "Why did the emerald cross the square? Better trade value on the other side. I had an emerald joke, but a trader bought it before I could finish.",
+        "I had an emerald joke, but a trader bought it before I could finish. An emerald walked into the market and immediately became everyone's best friend.",
+        "An emerald walked into the market and immediately became everyone's best friend. I would tell you a cheap emerald joke, but those are all out of stock.",
+        "I would tell you a cheap emerald joke, but those are all out of stock. The best emerald jokes are rare, green, and somehow overpriced.",
+        "The best emerald jokes are rare, green, and somehow overpriced. I polished this joke myself. That is why it costs more.",
+        "I polished this joke myself. That is why it costs more. If you do not laugh, I can offer store credit.",
+        "If you do not laugh, I can offer store credit. I know an emerald joke, but it costs extra if you want the good part."
       ],
       "weight": 18
     },
@@ -76,7 +106,17 @@
         "Even the mud seems eager to let you pass.",
         "You make silence look like the wiser choice.",
         "If trouble had footsteps, I imagine they would sound like yours.",
-        "You carry yourself like a warning sign with legs."
+        "You carry yourself like a warning sign with legs.",
+        "You walk like the path owes you an apology. You move like even the road is tired of you.",
+        "You move like even the road is tired of you. The path did nothing wrong, yet you still walk like it owes you.",
+        "The path did nothing wrong, yet you still walk like it owes you. You have the confidence of someone who has never met a good idea.",
+        "You have the confidence of someone who has never met a good idea. I have seen fences with better direction than you.",
+        "I have seen fences with better direction than you. You bring the mood down like rain through a bad roof.",
+        "You bring the mood down like <aqua><wavy>rain</wavy></aqua> through a bad roof. Even the mud seems eager to let you pass.",
+        "Even the mud seems eager to let you pass. You make silence look like the wiser choice.",
+        "You make silence look like the wiser choice. If trouble had footsteps, I imagine they would sound like yours.",
+        "If trouble had footsteps, I imagine they would sound like yours. You carry yourself like a warning sign with legs.",
+        "You carry yourself like a warning sign with legs. You walk like the path owes you an apology."
       ],
       "weight": 18
     },
@@ -93,7 +133,17 @@
         "For most villagers, {gift_item} is worth a smile.",
         "{gift_item} makes a good peaceable gift.",
         "Bring {gift_item} and most villagers will understand the gesture.",
-        "{gift_item} is welcome more often than not."
+        "{gift_item} is welcome more often than not.",
+        "{gift_item} is usually welcome. Simple, useful gifts travel well. Most villagers would be glad to receive {gift_item}.",
+        "Most villagers would be glad to receive {gift_item}. If you are unsure, {gift_item} is a kind choice.",
+        "If you are unsure, {gift_item} is a kind choice. A gift like {gift_item} says you came with good intentions.",
+        "A gift like {gift_item} says you came with good intentions. Villagers remember practical kindness. {gift_item} counts.",
+        "Villagers remember practical kindness. {gift_item} counts. A village can usually find room for {gift_item}.",
+        "A village can usually find room for {gift_item}. For most villagers, {gift_item} is worth a smile.",
+        "For most villagers, {gift_item} is worth a smile. {gift_item} makes a good peaceable gift.",
+        "{gift_item} makes a good peaceable gift. Bring {gift_item} and most villagers will understand the gesture.",
+        "Bring {gift_item} and most villagers will understand the gesture. {gift_item} is welcome more often than not.",
+        "{gift_item} is welcome more often than not. {gift_item} is usually welcome. Simple, useful gifts travel well."
       ],
       "gift_advice": "global_liked",
       "weight": 186

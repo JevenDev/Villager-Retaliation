@@ -21,7 +21,17 @@
         "For the moment, I am busy with this. I found no ready pairs yet, so I am checking the pen.",
         "I will keep going from here. I found no ready pairs yet, so I am checking the pen.",
         "The work is still moving. I found no ready pairs yet, so I am checking the pen.",
-        "I am working through it. I found no ready pairs yet, so I am checking the pen."
+        "I am working through it. I found no ready pairs yet, so I am checking the pen.",
+        "I found no ready pairs yet, so I am checking the pen. Right now, that is my focus. I found no ready pairs yet, so I am checking the pen.",
+        "Right now, that is my focus. I found no ready pairs yet, so I am checking the pen. That is my current step. I found no ready pairs yet, so I am checking the pen.",
+        "That is my current step. I found no ready pairs yet, so I am checking the pen. I am keeping the job moving. I found no ready pairs yet, so I am checking the pen.",
+        "I am keeping the job moving. I found no ready pairs yet, so I am checking the pen. This is where I am in the work. I found no ready pairs yet, so I am checking the pen.",
+        "This is where I am in the work. I found no ready pairs yet, so I am checking the pen. I am staying with the task. I found no ready pairs yet, so I am checking the pen.",
+        "I am staying with the task. I found no ready pairs yet, so I am checking the pen. For the moment, I am busy with this. I found no ready pairs yet, so I am checking the pen.",
+        "For the moment, I am busy with this. I found no ready pairs yet, so I am checking the pen. I will keep going from here. I found no ready pairs yet, so I am checking the pen.",
+        "I will keep going from here. I found no ready pairs yet, so I am checking the pen. The work is still moving. I found no ready pairs yet, so I am checking the pen.",
+        "The work is still moving. I found no ready pairs yet, so I am checking the pen. I am working through it. I found no ready pairs yet, so I am checking the pen.",
+        "I am working through it. I found no ready pairs yet, so I am checking the pen. I found no ready pairs yet, so I am checking the pen."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.roaming.000"
     },
@@ -37,7 +47,17 @@
         "I am waiting on a fix. There are no ready animal pairs in my work area.",
         "The work is paused until this changes. There are no ready animal pairs in my work area.",
         "This is the problem right now. There are no ready animal pairs in my work area.",
-        "I am stuck here for the moment. There are no ready animal pairs in my work area."
+        "I am stuck here for the moment. There are no ready animal pairs in my work area.",
+        "There are no ready animal pairs in my work area. I am held up for now. There are no ready animal pairs in my work area.",
+        "I am held up for now. There are no ready animal pairs in my work area. This is stopping the job for the moment. There are no ready animal pairs in my work area.",
+        "This is stopping the job for the moment. There are no ready animal pairs in my work area. I cannot move on yet. There are no ready animal pairs in my work area.",
+        "I cannot move on yet. There are no ready animal pairs in my work area. I will continue once this is fixed. There are no ready animal pairs in my work area.",
+        "I will continue once this is fixed. There are no ready animal pairs in my work area. That needs attention before I can keep working. There are no ready animal pairs in my work area.",
+        "That needs attention before I can keep working. There are no ready animal pairs in my work area. I am waiting on a fix. There are no ready animal pairs in my work area.",
+        "I am waiting on a fix. There are no ready animal pairs in my work area. The work is paused until this changes. There are no ready animal pairs in my work area.",
+        "The work is paused until this changes. There are no ready animal pairs in my work area. This is the problem right now. There are no ready animal pairs in my work area.",
+        "This is the problem right now. There are no ready animal pairs in my work area. I am stuck here for the moment. There are no ready animal pairs in my work area.",
+        "I am stuck here for the moment. There are no ready animal pairs in my work area. There are no ready animal pairs in my work area."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.no_targets.001"
     },
@@ -53,7 +73,17 @@
         "For the moment, I am busy with this. My output slots are full, so I am depositing animal handling output.",
         "I will keep going from here. My output slots are full, so I am depositing animal handling output.",
         "The work is still moving. My output slots are full, so I am depositing animal handling output.",
-        "I am working through it. My output slots are full, so I am depositing animal handling output."
+        "I am working through it. My output slots are full, so I am depositing animal handling output.",
+        "My output slots are full, so I am depositing animal handling output. Right now, that is my focus. My output slots are full, so I am depositing animal handling output.",
+        "Right now, that is my focus. My output slots are full, so I am depositing animal handling output. That is my current step. My output slots are full, so I am depositing animal handling output.",
+        "That is my current step. My output slots are full, so I am depositing animal handling output. I am keeping the job moving. My output slots are full, so I am depositing animal handling output.",
+        "I am keeping the job moving. My output slots are full, so I am depositing animal handling output. This is where I am in the work. My output slots are full, so I am depositing animal handling output.",
+        "This is where I am in the work. My output slots are full, so I am depositing animal handling output. I am staying with the task. My output slots are full, so I am depositing animal handling output.",
+        "I am staying with the task. My output slots are full, so I am depositing animal handling output. For the moment, I am busy with this. My output slots are full, so I am depositing animal handling output.",
+        "For the moment, I am busy with this. My output slots are full, so I am depositing animal handling output. I will keep going from here. My output slots are full, so I am depositing animal handling output.",
+        "I will keep going from here. My output slots are full, so I am depositing animal handling output. The work is still moving. My output slots are full, so I am depositing animal handling output.",
+        "The work is still moving. My output slots are full, so I am depositing animal handling output. I am working through it. My output slots are full, so I am depositing animal handling output.",
+        "I am working through it. My output slots are full, so I am depositing animal handling output. My output slots are full, so I am depositing animal handling output."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.output_full_depositing.002"
     },
@@ -69,7 +99,17 @@
         "I am waiting on a fix. I found animal output to collect, but my output slots are full.",
         "The work is paused until this changes. I found animal output to collect, but my output slots are full.",
         "This is the problem right now. I found animal output to collect, but my output slots are full.",
-        "I am stuck here for the moment. I found animal output to collect, but my output slots are full."
+        "I am stuck here for the moment. I found animal output to collect, but my output slots are full.",
+        "I found animal output to collect, but my output slots are full. I am held up for now. I found animal output to collect, but my output slots are full.",
+        "I am held up for now. I found animal output to collect, but my output slots are full. This is stopping the job for the moment. I found animal output to collect, but my output slots are full.",
+        "This is stopping the job for the moment. I found animal output to collect, but my output slots are full. I cannot move on yet. I found animal output to collect, but my output slots are full.",
+        "I cannot move on yet. I found animal output to collect, but my output slots are full. I will continue once this is fixed. I found animal output to collect, but my output slots are full.",
+        "I will continue once this is fixed. I found animal output to collect, but my output slots are full. That needs attention before I can keep working. I found animal output to collect, but my output slots are full.",
+        "That needs attention before I can keep working. I found animal output to collect, but my output slots are full. I am waiting on a fix. I found animal output to collect, but my output slots are full.",
+        "I am waiting on a fix. I found animal output to collect, but my output slots are full. The work is paused until this changes. I found animal output to collect, but my output slots are full.",
+        "The work is paused until this changes. I found animal output to collect, but my output slots are full. This is the problem right now. I found animal output to collect, but my output slots are full.",
+        "This is the problem right now. I found animal output to collect, but my output slots are full. I am stuck here for the moment. I found animal output to collect, but my output slots are full.",
+        "I am stuck here for the moment. I found animal output to collect, but my output slots are full. I found animal output to collect, but my output slots are full."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.output_full_blocked.003"
     },
@@ -85,7 +125,17 @@
         "I am waiting on a fix. I found sheep ready for shearing, but I need shears in my supplies.",
         "The work is paused until this changes. I found sheep ready for shearing, but I need shears in my supplies.",
         "This is the problem right now. I found sheep ready for shearing, but I need shears in my supplies.",
-        "I am stuck here for the moment. I found sheep ready for shearing, but I need shears in my supplies."
+        "I am stuck here for the moment. I found sheep ready for shearing, but I need shears in my supplies.",
+        "I found sheep ready for shearing, but I need shears in my supplies. I am held up for now. I found sheep ready for shearing, but I need shears in my supplies.",
+        "I am held up for now. I found sheep ready for shearing, but I need shears in my supplies. This is stopping the job for the moment. I found sheep ready for shearing, but I need shears in my supplies.",
+        "This is stopping the job for the moment. I found sheep ready for shearing, but I need shears in my supplies. I cannot move on yet. I found sheep ready for shearing, but I need shears in my supplies.",
+        "I cannot move on yet. I found sheep ready for shearing, but I need shears in my supplies. I will continue once this is fixed. I found sheep ready for shearing, but I need shears in my supplies.",
+        "I will continue once this is fixed. I found sheep ready for shearing, but I need shears in my supplies. That needs attention before I can keep working. I found sheep ready for shearing, but I need shears in my supplies.",
+        "That needs attention before I can keep working. I found sheep ready for shearing, but I need shears in my supplies. I am waiting on a fix. I found sheep ready for shearing, but I need shears in my supplies.",
+        "I am waiting on a fix. I found sheep ready for shearing, but I need shears in my supplies. The work is paused until this changes. I found sheep ready for shearing, but I need shears in my supplies.",
+        "The work is paused until this changes. I found sheep ready for shearing, but I need shears in my supplies. This is the problem right now. I found sheep ready for shearing, but I need shears in my supplies.",
+        "This is the problem right now. I found sheep ready for shearing, but I need shears in my supplies. I am stuck here for the moment. I found sheep ready for shearing, but I need shears in my supplies.",
+        "I am stuck here for the moment. I found sheep ready for shearing, but I need shears in my supplies. I found sheep ready for shearing, but I need shears in my supplies."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.missing_shears.004"
     },
@@ -101,7 +151,17 @@
         "I am waiting on a fix. I found an animal ready for milking, but I need an empty bucket in my supplies.",
         "The work is paused until this changes. I found an animal ready for milking, but I need an empty bucket in my supplies.",
         "This is the problem right now. I found an animal ready for milking, but I need an empty bucket in my supplies.",
-        "I am stuck here for the moment. I found an animal ready for milking, but I need an empty bucket in my supplies."
+        "I am stuck here for the moment. I found an animal ready for milking, but I need an empty bucket in my supplies.",
+        "I found an animal ready for milking, but I need an empty bucket in my supplies. I am held up for now. I found an animal ready for milking, but I need an empty bucket in my supplies.",
+        "I am held up for now. I found an animal ready for milking, but I need an empty bucket in my supplies. This is stopping the job for the moment. I found an animal ready for milking, but I need an empty bucket in my supplies.",
+        "This is stopping the job for the moment. I found an animal ready for milking, but I need an empty bucket in my supplies. I cannot move on yet. I found an animal ready for milking, but I need an empty bucket in my supplies.",
+        "I cannot move on yet. I found an animal ready for milking, but I need an empty bucket in my supplies. I will continue once this is fixed. I found an animal ready for milking, but I need an empty bucket in my supplies.",
+        "I will continue once this is fixed. I found an animal ready for milking, but I need an empty bucket in my supplies. That needs attention before I can keep working. I found an animal ready for milking, but I need an empty bucket in my supplies.",
+        "That needs attention before I can keep working. I found an animal ready for milking, but I need an empty bucket in my supplies. I am waiting on a fix. I found an animal ready for milking, but I need an empty bucket in my supplies.",
+        "I am waiting on a fix. I found an animal ready for milking, but I need an empty bucket in my supplies. The work is paused until this changes. I found an animal ready for milking, but I need an empty bucket in my supplies.",
+        "The work is paused until this changes. I found an animal ready for milking, but I need an empty bucket in my supplies. This is the problem right now. I found an animal ready for milking, but I need an empty bucket in my supplies.",
+        "This is the problem right now. I found an animal ready for milking, but I need an empty bucket in my supplies. I am stuck here for the moment. I found an animal ready for milking, but I need an empty bucket in my supplies.",
+        "I am stuck here for the moment. I found an animal ready for milking, but I need an empty bucket in my supplies. I found an animal ready for milking, but I need an empty bucket in my supplies."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.missing_bucket.005"
     },
@@ -117,7 +177,17 @@
         "For the moment, I am busy with this. I am heading to assigned storage for shears.",
         "I will keep going from here. I am heading to assigned storage for shears.",
         "The work is still moving. I am heading to assigned storage for shears.",
-        "I am working through it. I am heading to assigned storage for shears."
+        "I am working through it. I am heading to assigned storage for shears.",
+        "I am heading to assigned storage for shears. Right now, that is my focus. I am heading to assigned storage for shears.",
+        "Right now, that is my focus. I am heading to assigned storage for shears. That is my current step. I am heading to assigned storage for shears.",
+        "That is my current step. I am heading to assigned storage for shears. I am keeping the job moving. I am heading to assigned storage for shears.",
+        "I am keeping the job moving. I am heading to assigned storage for shears. This is where I am in the work. I am heading to assigned storage for shears.",
+        "This is where I am in the work. I am heading to assigned storage for shears. I am staying with the task. I am heading to assigned storage for shears.",
+        "I am staying with the task. I am heading to assigned storage for shears. For the moment, I am busy with this. I am heading to assigned storage for shears.",
+        "For the moment, I am busy with this. I am heading to assigned storage for shears. I will keep going from here. I am heading to assigned storage for shears.",
+        "I will keep going from here. I am heading to assigned storage for shears. The work is still moving. I am heading to assigned storage for shears.",
+        "The work is still moving. I am heading to assigned storage for shears. I am working through it. I am heading to assigned storage for shears.",
+        "I am working through it. I am heading to assigned storage for shears. I am heading to assigned storage for shears."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collecting_shears.006"
     },
@@ -133,7 +203,17 @@
         "For the moment, I am busy with this. I am heading to assigned storage for an empty bucket.",
         "I will keep going from here. I am heading to assigned storage for an empty bucket.",
         "The work is still moving. I am heading to assigned storage for an empty bucket.",
-        "I am working through it. I am heading to assigned storage for an empty bucket."
+        "I am working through it. I am heading to assigned storage for an empty bucket.",
+        "I am heading to assigned storage for an empty bucket. Right now, that is my focus. I am heading to assigned storage for an empty bucket.",
+        "Right now, that is my focus. I am heading to assigned storage for an empty bucket. That is my current step. I am heading to assigned storage for an empty bucket.",
+        "That is my current step. I am heading to assigned storage for an empty bucket. I am keeping the job moving. I am heading to assigned storage for an empty bucket.",
+        "I am keeping the job moving. I am heading to assigned storage for an empty bucket. This is where I am in the work. I am heading to assigned storage for an empty bucket.",
+        "This is where I am in the work. I am heading to assigned storage for an empty bucket. I am staying with the task. I am heading to assigned storage for an empty bucket.",
+        "I am staying with the task. I am heading to assigned storage for an empty bucket. For the moment, I am busy with this. I am heading to assigned storage for an empty bucket.",
+        "For the moment, I am busy with this. I am heading to assigned storage for an empty bucket. I will keep going from here. I am heading to assigned storage for an empty bucket.",
+        "I will keep going from here. I am heading to assigned storage for an empty bucket. The work is still moving. I am heading to assigned storage for an empty bucket.",
+        "The work is still moving. I am heading to assigned storage for an empty bucket. I am working through it. I am heading to assigned storage for an empty bucket.",
+        "I am working through it. I am heading to assigned storage for an empty bucket. I am heading to assigned storage for an empty bucket."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collecting_bucket.007"
     },
@@ -149,7 +229,17 @@
         "That is taken care of. I gathered shears from assigned storage.",
         "The work moved forward. I gathered shears from assigned storage.",
         "I can report this much. I gathered shears from assigned storage.",
-        "That part is done: I gathered shears from assigned storage."
+        "That part is done: I gathered shears from assigned storage.",
+        "I gathered shears from assigned storage. That part is handled. I gathered shears from assigned storage.",
+        "That part is handled. I gathered shears from assigned storage. Here is the update: I gathered shears from assigned storage.",
+        "Here is the update: I gathered shears from assigned storage. That moved things along: I gathered shears from assigned storage.",
+        "That moved things along: I gathered shears from assigned storage. That step is finished. I gathered shears from assigned storage.",
+        "That step is finished. I gathered shears from assigned storage. I have that sorted. I gathered shears from assigned storage.",
+        "I have that sorted. I gathered shears from assigned storage. That is taken care of. I gathered shears from assigned storage.",
+        "That is taken care of. I gathered shears from assigned storage. The work moved forward. I gathered shears from assigned storage.",
+        "The work moved forward. I gathered shears from assigned storage. I can report this much. I gathered shears from assigned storage.",
+        "I can report this much. I gathered shears from assigned storage. That part is done: I gathered shears from assigned storage.",
+        "That part is done: I gathered shears from assigned storage. I gathered shears from assigned storage."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.gathered_shears.008"
     },
@@ -165,7 +255,17 @@
         "That is taken care of. I gathered an empty bucket from assigned storage.",
         "The work moved forward. I gathered an empty bucket from assigned storage.",
         "I can report this much. I gathered an empty bucket from assigned storage.",
-        "That part is done: I gathered an empty bucket from assigned storage."
+        "That part is done: I gathered an empty bucket from assigned storage.",
+        "I gathered an empty bucket from assigned storage. That part is handled. I gathered an empty bucket from assigned storage.",
+        "That part is handled. I gathered an empty bucket from assigned storage. Here is the update: I gathered an empty bucket from assigned storage.",
+        "Here is the update: I gathered an empty bucket from assigned storage. That moved things along: I gathered an empty bucket from assigned storage.",
+        "That moved things along: I gathered an empty bucket from assigned storage. That step is finished. I gathered an empty bucket from assigned storage.",
+        "That step is finished. I gathered an empty bucket from assigned storage. I have that sorted. I gathered an empty bucket from assigned storage.",
+        "I have that sorted. I gathered an empty bucket from assigned storage. That is taken care of. I gathered an empty bucket from assigned storage.",
+        "That is taken care of. I gathered an empty bucket from assigned storage. The work moved forward. I gathered an empty bucket from assigned storage.",
+        "The work moved forward. I gathered an empty bucket from assigned storage. I can report this much. I gathered an empty bucket from assigned storage.",
+        "I can report this much. I gathered an empty bucket from assigned storage. That part is done: I gathered an empty bucket from assigned storage.",
+        "That part is done: I gathered an empty bucket from assigned storage. I gathered an empty bucket from assigned storage."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.gathered_bucket.009"
     },
@@ -181,7 +281,17 @@
         "I am waiting on a fix. I found animal-handling supplies in storage, but I cannot reach them.",
         "The work is paused until this changes. I found animal-handling supplies in storage, but I cannot reach them.",
         "This is the problem right now. I found animal-handling supplies in storage, but I cannot reach them.",
-        "I am stuck here for the moment. I found animal-handling supplies in storage, but I cannot reach them."
+        "I am stuck here for the moment. I found animal-handling supplies in storage, but I cannot reach them.",
+        "I found animal-handling supplies in storage, but I cannot reach them. I am held up for now. I found animal-handling supplies in storage, but I cannot reach them.",
+        "I am held up for now. I found animal-handling supplies in storage, but I cannot reach them. This is stopping the job for the moment. I found animal-handling supplies in storage, but I cannot reach them.",
+        "This is stopping the job for the moment. I found animal-handling supplies in storage, but I cannot reach them. I cannot move on yet. I found animal-handling supplies in storage, but I cannot reach them.",
+        "I cannot move on yet. I found animal-handling supplies in storage, but I cannot reach them. I will continue once this is fixed. I found animal-handling supplies in storage, but I cannot reach them.",
+        "I will continue once this is fixed. I found animal-handling supplies in storage, but I cannot reach them. That needs attention before I can keep working. I found animal-handling supplies in storage, but I cannot reach them.",
+        "That needs attention before I can keep working. I found animal-handling supplies in storage, but I cannot reach them. I am waiting on a fix. I found animal-handling supplies in storage, but I cannot reach them.",
+        "I am waiting on a fix. I found animal-handling supplies in storage, but I cannot reach them. The work is paused until this changes. I found animal-handling supplies in storage, but I cannot reach them.",
+        "The work is paused until this changes. I found animal-handling supplies in storage, but I cannot reach them. This is the problem right now. I found animal-handling supplies in storage, but I cannot reach them.",
+        "This is the problem right now. I found animal-handling supplies in storage, but I cannot reach them. I am stuck here for the moment. I found animal-handling supplies in storage, but I cannot reach them.",
+        "I am stuck here for the moment. I found animal-handling supplies in storage, but I cannot reach them. I found animal-handling supplies in storage, but I cannot reach them."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.product_supply_unreachable.010"
     },
@@ -197,7 +307,17 @@
         "I am waiting on a fix. I found animal-handling supplies, but my supply slots are full.",
         "The work is paused until this changes. I found animal-handling supplies, but my supply slots are full.",
         "This is the problem right now. I found animal-handling supplies, but my supply slots are full.",
-        "I am stuck here for the moment. I found animal-handling supplies, but my supply slots are full."
+        "I am stuck here for the moment. I found animal-handling supplies, but my supply slots are full.",
+        "I found animal-handling supplies, but my supply slots are full. I am held up for now. I found animal-handling supplies, but my supply slots are full.",
+        "I am held up for now. I found animal-handling supplies, but my supply slots are full. This is stopping the job for the moment. I found animal-handling supplies, but my supply slots are full.",
+        "This is stopping the job for the moment. I found animal-handling supplies, but my supply slots are full. I cannot move on yet. I found animal-handling supplies, but my supply slots are full.",
+        "I cannot move on yet. I found animal-handling supplies, but my supply slots are full. I will continue once this is fixed. I found animal-handling supplies, but my supply slots are full.",
+        "I will continue once this is fixed. I found animal-handling supplies, but my supply slots are full. That needs attention before I can keep working. I found animal-handling supplies, but my supply slots are full.",
+        "That needs attention before I can keep working. I found animal-handling supplies, but my supply slots are full. I am waiting on a fix. I found animal-handling supplies, but my supply slots are full.",
+        "I am waiting on a fix. I found animal-handling supplies, but my supply slots are full. The work is paused until this changes. I found animal-handling supplies, but my supply slots are full.",
+        "The work is paused until this changes. I found animal-handling supplies, but my supply slots are full. This is the problem right now. I found animal-handling supplies, but my supply slots are full.",
+        "This is the problem right now. I found animal-handling supplies, but my supply slots are full. I am stuck here for the moment. I found animal-handling supplies, but my supply slots are full.",
+        "I am stuck here for the moment. I found animal-handling supplies, but my supply slots are full. I found animal-handling supplies, but my supply slots are full."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.product_supply_inventory_full.011"
     },
@@ -213,7 +333,17 @@
         "I am waiting on a fix. I found an animal ready for handling, but I cannot reach it safely.",
         "The work is paused until this changes. I found an animal ready for handling, but I cannot reach it safely.",
         "This is the problem right now. I found an animal ready for handling, but I cannot reach it safely.",
-        "I am stuck here for the moment. I found an animal ready for handling, but I cannot reach it safely."
+        "I am stuck here for the moment. I found an animal ready for handling, but I cannot reach it safely.",
+        "I found an animal ready for handling, but I cannot reach it safely. I am held up for now. I found an animal ready for handling, but I cannot reach it safely.",
+        "I am held up for now. I found an animal ready for handling, but I cannot reach it safely. This is stopping the job for the moment. I found an animal ready for handling, but I cannot reach it safely.",
+        "This is stopping the job for the moment. I found an animal ready for handling, but I cannot reach it safely. I cannot move on yet. I found an animal ready for handling, but I cannot reach it safely.",
+        "I cannot move on yet. I found an animal ready for handling, but I cannot reach it safely. I will continue once this is fixed. I found an animal ready for handling, but I cannot reach it safely.",
+        "I will continue once this is fixed. I found an animal ready for handling, but I cannot reach it safely. That needs attention before I can keep working. I found an animal ready for handling, but I cannot reach it safely.",
+        "That needs attention before I can keep working. I found an animal ready for handling, but I cannot reach it safely. I am waiting on a fix. I found an animal ready for handling, but I cannot reach it safely.",
+        "I am waiting on a fix. I found an animal ready for handling, but I cannot reach it safely. The work is paused until this changes. I found an animal ready for handling, but I cannot reach it safely.",
+        "The work is paused until this changes. I found an animal ready for handling, but I cannot reach it safely. This is the problem right now. I found an animal ready for handling, but I cannot reach it safely.",
+        "This is the problem right now. I found an animal ready for handling, but I cannot reach it safely. I am stuck here for the moment. I found an animal ready for handling, but I cannot reach it safely.",
+        "I am stuck here for the moment. I found an animal ready for handling, but I cannot reach it safely. I found an animal ready for handling, but I cannot reach it safely."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.product_unreachable.012"
     },
@@ -229,7 +359,17 @@
         "That's all I have for now: That animal is no longer ready.",
         "Understood. That animal is no longer ready.",
         "Nothing else to add yet. That animal is no longer ready.",
-        "For the moment: That animal is no longer ready."
+        "For the moment: That animal is no longer ready.",
+        "That animal is no longer ready. All right. That animal is no longer ready.",
+        "All right. That animal is no longer ready. Here's where I am with it: That animal is no longer ready.",
+        "Here's where I am with it: That animal is no longer ready. For now, that is the situation. That animal is no longer ready.",
+        "For now, that is the situation. That animal is no longer ready. Just so you know. That animal is no longer ready.",
+        "Just so you know. That animal is no longer ready. Plainly put: That animal is no longer ready.",
+        "Plainly put: That animal is no longer ready. That's all I have for now: That animal is no longer ready.",
+        "That's all I have for now: That animal is no longer ready. Understood. That animal is no longer ready.",
+        "Understood. That animal is no longer ready. Nothing else to add yet. That animal is no longer ready.",
+        "Nothing else to add yet. That animal is no longer ready. For the moment: That animal is no longer ready.",
+        "For the moment: That animal is no longer ready. That animal is no longer ready."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.product_changed.013"
     },
@@ -245,7 +385,17 @@
         "For the moment, I am busy with this. I am moving to a sheep ready for shearing.",
         "I will keep going from here. I am moving to a sheep ready for shearing.",
         "The work is still moving. I am moving to a sheep ready for shearing.",
-        "I am working through it. I am moving to a sheep ready for shearing."
+        "I am working through it. I am moving to a sheep ready for shearing.",
+        "I am moving to a sheep ready for shearing. Right now, that is my focus. I am moving to a sheep ready for shearing.",
+        "Right now, that is my focus. I am moving to a sheep ready for shearing. That is my current step. I am moving to a sheep ready for shearing.",
+        "That is my current step. I am moving to a sheep ready for shearing. I am keeping the job moving. I am moving to a sheep ready for shearing.",
+        "I am keeping the job moving. I am moving to a sheep ready for shearing. This is where I am in the work. I am moving to a sheep ready for shearing.",
+        "This is where I am in the work. I am moving to a sheep ready for shearing. I am staying with the task. I am moving to a sheep ready for shearing.",
+        "I am staying with the task. I am moving to a sheep ready for shearing. For the moment, I am busy with this. I am moving to a sheep ready for shearing.",
+        "For the moment, I am busy with this. I am moving to a sheep ready for shearing. I will keep going from here. I am moving to a sheep ready for shearing.",
+        "I will keep going from here. I am moving to a sheep ready for shearing. The work is still moving. I am moving to a sheep ready for shearing.",
+        "The work is still moving. I am moving to a sheep ready for shearing. I am working through it. I am moving to a sheep ready for shearing.",
+        "I am working through it. I am moving to a sheep ready for shearing. I am moving to a sheep ready for shearing."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_sheep.014"
     },
@@ -261,7 +411,17 @@
         "For the moment, I am busy with this. I am moving to an animal ready for milking.",
         "I will keep going from here. I am moving to an animal ready for milking.",
         "The work is still moving. I am moving to an animal ready for milking.",
-        "I am working through it. I am moving to an animal ready for milking."
+        "I am working through it. I am moving to an animal ready for milking.",
+        "I am moving to an animal ready for milking. Right now, that is my focus. I am moving to an animal ready for milking.",
+        "Right now, that is my focus. I am moving to an animal ready for milking. That is my current step. I am moving to an animal ready for milking.",
+        "That is my current step. I am moving to an animal ready for milking. I am keeping the job moving. I am moving to an animal ready for milking.",
+        "I am keeping the job moving. I am moving to an animal ready for milking. This is where I am in the work. I am moving to an animal ready for milking.",
+        "This is where I am in the work. I am moving to an animal ready for milking. I am staying with the task. I am moving to an animal ready for milking.",
+        "I am staying with the task. I am moving to an animal ready for milking. For the moment, I am busy with this. I am moving to an animal ready for milking.",
+        "For the moment, I am busy with this. I am moving to an animal ready for milking. I will keep going from here. I am moving to an animal ready for milking.",
+        "I will keep going from here. I am moving to an animal ready for milking. The work is still moving. I am moving to an animal ready for milking.",
+        "The work is still moving. I am moving to an animal ready for milking. I am working through it. I am moving to an animal ready for milking.",
+        "I am working through it. I am moving to an animal ready for milking. I am moving to an animal ready for milking."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_milk.015"
     },
@@ -277,7 +437,17 @@
         "That's all I have for now: I am shearing the sheep.",
         "Understood. I am shearing the sheep.",
         "Nothing else to add yet. I am shearing the sheep.",
-        "For the moment: I am shearing the sheep."
+        "For the moment: I am shearing the sheep.",
+        "I am shearing the sheep. All right. I am shearing the sheep.",
+        "All right. I am shearing the sheep. Here's where I am with it: I am shearing the sheep.",
+        "Here's where I am with it: I am shearing the sheep. For now, that is the situation. I am shearing the sheep.",
+        "For now, that is the situation. I am shearing the sheep. Just so you know. I am shearing the sheep.",
+        "Just so you know. I am shearing the sheep. Plainly put: I am shearing the sheep.",
+        "Plainly put: I am shearing the sheep. That's all I have for now: I am shearing the sheep.",
+        "That's all I have for now: I am shearing the sheep. Understood. I am shearing the sheep.",
+        "Understood. I am shearing the sheep. Nothing else to add yet. I am shearing the sheep.",
+        "Nothing else to add yet. I am shearing the sheep. For the moment: I am shearing the sheep.",
+        "For the moment: I am shearing the sheep. I am shearing the sheep."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.shearing.016"
     },
@@ -293,7 +463,17 @@
         "That's all I have for now: I am milking the animal.",
         "Understood. I am milking the animal.",
         "Nothing else to add yet. I am milking the animal.",
-        "For the moment: I am milking the animal."
+        "For the moment: I am milking the animal.",
+        "I am milking the animal. All right. I am milking the animal.",
+        "All right. I am milking the animal. Here's where I am with it: I am milking the animal.",
+        "Here's where I am with it: I am milking the animal. For now, that is the situation. I am milking the animal.",
+        "For now, that is the situation. I am milking the animal. Just so you know. I am milking the animal.",
+        "Just so you know. I am milking the animal. Plainly put: I am milking the animal.",
+        "Plainly put: I am milking the animal. That's all I have for now: I am milking the animal.",
+        "That's all I have for now: I am milking the animal. Understood. I am milking the animal.",
+        "Understood. I am milking the animal. Nothing else to add yet. I am milking the animal.",
+        "Nothing else to add yet. I am milking the animal. For the moment: I am milking the animal.",
+        "For the moment: I am milking the animal. I am milking the animal."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.milking.017"
     },
@@ -308,8 +488,18 @@
         "I have that sorted. I sheared {count} wool from the sheep.",
         "That is taken care of. I sheared {count} wool from the sheep.",
         "The work moved forward. I sheared {count} wool from the sheep.",
-        "I can report this much. I sheared {count} wool from the sheep.",
-        "That part is done: I sheared {count} wool from the sheep."
+        "I can report this much. I sheared {count} <green><wavy>wool</wavy></green> from the sheep.",
+        "That part is done: I sheared {count} wool from the sheep.",
+        "I sheared {count} wool from the sheep. That part is handled. I sheared {count} wool from the sheep.",
+        "That part is handled. I sheared {count} wool from the sheep. Here is the update: I sheared {count} wool from the sheep.",
+        "Here is the update: I sheared {count} wool from the sheep. That moved things along: I sheared {count} wool from the sheep.",
+        "That moved things along: I sheared {count} wool from the sheep. That step is finished. I sheared {count} wool from the sheep.",
+        "That step is finished. I sheared {count} wool from the sheep. I have that sorted. I sheared {count} wool from the sheep.",
+        "I have that sorted. I sheared {count} wool from the sheep. That is taken care of. I sheared {count} wool from the sheep.",
+        "That is taken care of. I sheared {count} wool from the sheep. The work moved forward. I sheared {count} wool from the sheep.",
+        "The work moved forward. I sheared {count} wool from the sheep. I can report this much. I sheared {count} wool from the sheep.",
+        "I can report this much. I sheared {count} wool from the sheep. That part is done: I sheared {count} wool from the sheep.",
+        "That part is done: I sheared {count} wool from the sheep. I sheared {count} wool from the sheep."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.sheared_sheep.018"
     },
@@ -325,7 +515,17 @@
         "That is taken care of. I milked {target}.",
         "The work moved forward. I milked {target}.",
         "I can report this much. I milked {target}.",
-        "That part is done: I milked {target}."
+        "That part is done: I milked {target}.",
+        "I milked {target}. That part is handled. I milked {target}.",
+        "That part is handled. I milked {target}. Here is the update: I milked {target}.",
+        "Here is the update: I milked {target}. That moved things along: I milked {target}.",
+        "That moved things along: I milked {target}. That step is finished. I milked {target}.",
+        "That step is finished. I milked {target}. I have that sorted. I milked {target}.",
+        "I have that sorted. I milked {target}. That is taken care of. I milked {target}.",
+        "That is taken care of. I milked {target}. The work moved forward. I milked {target}.",
+        "The work moved forward. I milked {target}. I can report this much. I milked {target}.",
+        "I can report this much. I milked {target}. That part is done: I milked {target}.",
+        "That part is done: I milked {target}. I milked {target}."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.milked_animal.019"
     },
@@ -341,7 +541,17 @@
         "I am waiting on a fix. I found eggs in the work area, but I cannot reach them safely.",
         "The work is paused until this changes. I found eggs in the work area, but I cannot reach them safely.",
         "This is the problem right now. I found eggs in the work area, but I cannot reach them safely.",
-        "I am stuck here for the moment. I found eggs in the work area, but I cannot reach them safely."
+        "I am stuck here for the moment. I found eggs in the work area, but I cannot reach them safely.",
+        "I found eggs in the work area, but I cannot reach them safely. I am held up for now. I found eggs in the work area, but I cannot reach them safely.",
+        "I am held up for now. I found eggs in the work area, but I cannot reach them safely. This is stopping the job for the moment. I found eggs in the work area, but I cannot reach them safely.",
+        "This is stopping the job for the moment. I found eggs in the work area, but I cannot reach them safely. I cannot move on yet. I found eggs in the work area, but I cannot reach them safely.",
+        "I cannot move on yet. I found eggs in the work area, but I cannot reach them safely. I will continue once this is fixed. I found eggs in the work area, but I cannot reach them safely.",
+        "I will continue once this is fixed. I found eggs in the work area, but I cannot reach them safely. That needs attention before I can keep working. I found eggs in the work area, but I cannot reach them safely.",
+        "That needs attention before I can keep working. I found eggs in the work area, but I cannot reach them safely. I am waiting on a fix. I found eggs in the work area, but I cannot reach them safely.",
+        "I am waiting on a fix. I found eggs in the work area, but I cannot reach them safely. The work is paused until this changes. I found eggs in the work area, but I cannot reach them safely.",
+        "The work is paused until this changes. I found eggs in the work area, but I cannot reach them safely. This is the problem right now. I found eggs in the work area, but I cannot reach them safely.",
+        "This is the problem right now. I found eggs in the work area, but I cannot reach them safely. I am stuck here for the moment. I found eggs in the work area, but I cannot reach them safely.",
+        "I am stuck here for the moment. I found eggs in the work area, but I cannot reach them safely. I found eggs in the work area, but I cannot reach them safely."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.egg_unreachable.020"
     },
@@ -357,7 +567,17 @@
         "For the moment, I am busy with this. I am finding a safe path to the eggs.",
         "I will keep going from here. I am finding a safe path to the eggs.",
         "The work is still moving. I am finding a safe path to the eggs.",
-        "I am working through it. I am finding a safe path to the eggs."
+        "I am working through it. I am finding a safe path to the eggs.",
+        "I am finding a safe path to the eggs. Right now, that is my focus. I am finding a safe path to the eggs.",
+        "Right now, that is my focus. I am finding a safe path to the eggs. That is my current step. I am finding a safe path to the eggs.",
+        "That is my current step. I am finding a safe path to the eggs. I am keeping the job moving. I am finding a safe path to the eggs.",
+        "I am keeping the job moving. I am finding a safe path to the eggs. This is where I am in the work. I am finding a safe path to the eggs.",
+        "This is where I am in the work. I am finding a safe path to the eggs. I am staying with the task. I am finding a safe path to the eggs.",
+        "I am staying with the task. I am finding a safe path to the eggs. For the moment, I am busy with this. I am finding a safe path to the eggs.",
+        "For the moment, I am busy with this. I am finding a safe path to the eggs. I will keep going from here. I am finding a safe path to the eggs.",
+        "I will keep going from here. I am finding a safe path to the eggs. The work is still moving. I am finding a safe path to the eggs.",
+        "The work is still moving. I am finding a safe path to the eggs. I am working through it. I am finding a safe path to the eggs.",
+        "I am working through it. I am finding a safe path to the eggs. I am finding a safe path to the eggs."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.egg_repositioning.021"
     },
@@ -373,7 +593,17 @@
         "For the moment, I am busy with this. I am moving to collect dropped eggs.",
         "I will keep going from here. I am moving to collect dropped eggs.",
         "The work is still moving. I am moving to collect dropped eggs.",
-        "I am working through it. I am moving to collect dropped eggs."
+        "I am working through it. I am moving to collect dropped eggs.",
+        "I am moving to collect dropped eggs. Right now, that is my focus. I am moving to collect dropped eggs.",
+        "Right now, that is my focus. I am moving to collect dropped eggs. That is my current step. I am moving to collect dropped eggs.",
+        "That is my current step. I am moving to collect dropped eggs. I am keeping the job moving. I am moving to collect dropped eggs.",
+        "I am keeping the job moving. I am moving to collect dropped eggs. This is where I am in the work. I am moving to collect dropped eggs.",
+        "This is where I am in the work. I am moving to collect dropped eggs. I am staying with the task. I am moving to collect dropped eggs.",
+        "I am staying with the task. I am moving to collect dropped eggs. For the moment, I am busy with this. I am moving to collect dropped eggs.",
+        "For the moment, I am busy with this. I am moving to collect dropped eggs. I will keep going from here. I am moving to collect dropped eggs.",
+        "I will keep going from here. I am moving to collect dropped eggs. The work is still moving. I am moving to collect dropped eggs.",
+        "The work is still moving. I am moving to collect dropped eggs. I am working through it. I am moving to collect dropped eggs.",
+        "I am working through it. I am moving to collect dropped eggs. I am moving to collect dropped eggs."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_egg.022"
     },
@@ -389,35 +619,121 @@
         "That is taken care of. I collected {count} egg(s).",
         "The work moved forward. I collected {count} egg(s).",
         "I can report this much. I collected {count} egg(s).",
-        "That part is done: I collected {count} egg(s)."
+        "That part is done: I collected {count} egg(s).",
+        "I collected {count} egg(s). That part is handled. I collected {count} egg(s).",
+        "That part is handled. I collected {count} egg(s). Here is the update: I collected {count} egg(s).",
+        "Here is the update: I collected {count} egg(s). That moved things along: I collected {count} egg(s).",
+        "That moved things along: I collected {count} egg(s). That step is finished. I collected {count} egg(s).",
+        "That step is finished. I collected {count} egg(s). I have that sorted. I collected {count} egg(s).",
+        "I have that sorted. I collected {count} egg(s). That is taken care of. I collected {count} egg(s).",
+        "That is taken care of. I collected {count} egg(s). The work moved forward. I collected {count} egg(s).",
+        "The work moved forward. I collected {count} egg(s). I can report this much. I collected {count} egg(s).",
+        "I can report this much. I collected {count} egg(s). That part is done: I collected {count} egg(s).",
+        "That part is done: I collected {count} egg(s). I collected {count} egg(s)."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collected_eggs.023"
     },
     {
       "key": "interaction.work.animal_breeding.animal_drop_unreachable",
       "lines": [
-        "I found animal drops in the work area, but I cannot reach them safely."
+        "I found animal drops in the work area, but I cannot reach them safely.",
+        "Listen. I found animal drops in the work area, but I cannot reach them safely.",
+        "Understand this. I found animal drops in the work area, but I cannot reach them safely.",
+        "Let me be clear. I found animal drops in the work area, but I cannot reach them safely.",
+        "I will say it plainly. I found animal drops in the work area, but I cannot reach them safely.",
+        "Here is the truth. I found animal drops in the work area, but I cannot reach them safely.",
+        "As things stand, i found animal drops in the work area, but I cannot reach them safely.",
+        "From where I stand, i found animal drops in the work area, but I cannot reach them safely.",
+        "For the moment, i found animal drops in the work area, but I cannot reach them safely.",
+        "Right now, i found animal drops in the work area, but I cannot reach them safely.",
+        "I found animal drops in the work area, but I cannot reach them safely. Keep that in mind.",
+        "I found animal drops in the work area, but I cannot reach them safely. Remember that.",
+        "I found animal drops in the work area, but I cannot reach them safely. That much is clear.",
+        "I found animal drops in the work area, but I cannot reach them safely. That is where things stand.",
+        "I found animal drops in the work area, but I cannot reach them safely. I mean it.",
+        "I found animal drops in the work area, but I cannot reach them safely. Do not forget it.",
+        "I found animal drops in the work area, but I cannot reach them safely. That is the whole of it.",
+        "I found animal drops in the work area, but I cannot reach them safely. Nothing about that has changed.",
+        "I found animal drops in the work area, but I cannot reach them safely. I have said what needed saying.",
+        "I found animal drops in the work area, but I cannot reach them safely. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.animal_drop_unreachable.044"
     },
     {
       "key": "interaction.work.animal_breeding.animal_drop_repositioning",
       "lines": [
-        "I am finding a safe path to the animal drops."
+        "I am finding a safe path to the animal drops.",
+        "Listen. I am finding a safe path to the animal drops.",
+        "Understand this. I am finding a safe path to the animal drops.",
+        "Let me be clear. I am finding a safe path to the animal drops.",
+        "I will say it plainly. I am finding a safe path to the animal drops.",
+        "Here is the truth. I am finding a safe path to the animal drops.",
+        "As things stand, i am finding a safe path to the animal drops.",
+        "From where I stand, i am finding a safe path to the animal drops.",
+        "For the moment, i am finding a safe path to the animal drops.",
+        "Right now, i am finding a safe path to the animal drops.",
+        "I am finding a safe path to the animal drops. Keep that in mind.",
+        "I am finding a safe path to the animal drops. Remember that.",
+        "I am finding a safe path to the animal drops. That much is clear.",
+        "I am finding a safe path to the animal drops. That is where things stand.",
+        "I am finding a safe path to the animal drops. I mean it.",
+        "I am finding a safe path to the animal drops. Do not forget it.",
+        "I am finding a safe path to the animal drops. That is the whole of it.",
+        "I am finding a safe path to the animal drops. Nothing about that has changed.",
+        "I am finding a safe path to the animal drops. I have said what needed saying.",
+        "I am finding a safe path to the animal drops. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.animal_drop_repositioning.045"
     },
     {
       "key": "interaction.work.animal_breeding.moving_to_animal_drop",
       "lines": [
-        "I am moving to collect animal drops."
+        "I am moving to collect animal drops.",
+        "Listen. I am moving to collect animal drops.",
+        "Understand this. I am moving to collect animal drops.",
+        "Let me be clear. I am moving to collect animal drops.",
+        "I will say it plainly. I am moving to collect animal drops.",
+        "Here is the truth. I am moving to collect animal drops.",
+        "As things stand, i am moving to collect animal drops.",
+        "From where I stand, i am moving to collect animal drops.",
+        "For the moment, i am moving to collect animal drops.",
+        "Right now, i am moving to collect animal drops.",
+        "I am moving to collect animal drops. Keep that in mind.",
+        "I am moving to collect animal drops. Remember that.",
+        "I am moving to collect animal drops. That much is clear.",
+        "I am moving to collect animal drops. That is where things stand.",
+        "I am moving to collect animal drops. I mean it.",
+        "I am moving to collect animal drops. Do not forget it.",
+        "I am moving to collect animal drops. That is the whole of it.",
+        "I am moving to collect animal drops. Nothing about that has changed.",
+        "I am moving to collect animal drops. I have said what needed saying.",
+        "I am moving to collect animal drops. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_animal_drop.046"
     },
     {
       "key": "interaction.work.animal_breeding.collected_animal_drops",
       "lines": [
-        "I collected {count} animal drop(s)."
+        "I collected {count} animal drop(s).",
+        "Listen. I collected {count} animal drop(s).",
+        "Understand this. I collected {count} animal drop(s).",
+        "Let me be clear. I collected {count} animal drop(s).",
+        "I will say it plainly. I collected {count} animal drop(s).",
+        "Here is the truth. I collected {count} animal drop(s).",
+        "As things stand, i collected {count} animal drop(s).",
+        "From where I stand, i collected {count} animal drop(s).",
+        "For the moment, i collected {count} animal drop(s).",
+        "Right now, i collected {count} animal drop(s).",
+        "I collected {count} animal drop(s). Keep that in mind.",
+        "I collected {count} animal drop(s). Remember that.",
+        "I collected {count} animal drop(s). That much is clear.",
+        "I collected {count} animal drop(s). That is where things stand.",
+        "I collected {count} animal drop(s). I mean it.",
+        "I collected {count} animal drop(s). Do not forget it.",
+        "I collected {count} animal drop(s). That is the whole of it.",
+        "I collected {count} animal drop(s). Nothing about that has changed.",
+        "I collected {count} animal drop(s). I have said what needed saying.",
+        "I collected {count} animal drop(s). Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collected_animal_drops.047"
     },
@@ -433,7 +749,17 @@
         "I am waiting on a fix. I found animals to breed, but I need the right food in my supplies.",
         "The work is paused until this changes. I found animals to breed, but I need the right food in my supplies.",
         "This is the problem right now. I found animals to breed, but I need the right food in my supplies.",
-        "I am stuck here for the moment. I found animals to breed, but I need the right food in my supplies."
+        "I am stuck here for the moment. I found animals to breed, but I need the right food in my supplies.",
+        "I found animals to breed, but I need the right food in my supplies. I am held up for now. I found animals to breed, but I need the right food in my supplies.",
+        "I am held up for now. I found animals to breed, but I need the right food in my supplies. This is stopping the job for the moment. I found animals to breed, but I need the right food in my supplies.",
+        "This is stopping the job for the moment. I found animals to breed, but I need the right food in my supplies. I cannot move on yet. I found animals to breed, but I need the right food in my supplies.",
+        "I cannot move on yet. I found animals to breed, but I need the right food in my supplies. I will continue once this is fixed. I found animals to breed, but I need the right food in my supplies.",
+        "I will continue once this is fixed. I found animals to breed, but I need the right food in my supplies. That needs attention before I can keep working. I found animals to breed, but I need the right food in my supplies.",
+        "That needs attention before I can keep working. I found animals to breed, but I need the right food in my supplies. I am waiting on a fix. I found animals to breed, but I need the right food in my supplies.",
+        "I am waiting on a fix. I found animals to breed, but I need the right food in my supplies. The work is paused until this changes. I found animals to breed, but I need the right food in my supplies.",
+        "The work is paused until this changes. I found animals to breed, but I need the right food in my supplies. This is the problem right now. I found animals to breed, but I need the right food in my supplies.",
+        "This is the problem right now. I found animals to breed, but I need the right food in my supplies. I am stuck here for the moment. I found animals to breed, but I need the right food in my supplies.",
+        "I am stuck here for the moment. I found animals to breed, but I need the right food in my supplies. I found animals to breed, but I need the right food in my supplies."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.missing_food.024"
     },
@@ -449,7 +775,17 @@
         "For the moment, I am busy with this. I am heading to assigned storage for breeding food.",
         "I will keep going from here. I am heading to assigned storage for breeding food.",
         "The work is still moving. I am heading to assigned storage for breeding food.",
-        "I am working through it. I am heading to assigned storage for breeding food."
+        "I am working through it. I am heading to assigned storage for breeding food.",
+        "I am heading to assigned storage for breeding food. Right now, that is my focus. I am heading to assigned storage for breeding food.",
+        "Right now, that is my focus. I am heading to assigned storage for breeding food. That is my current step. I am heading to assigned storage for breeding food.",
+        "That is my current step. I am heading to assigned storage for breeding food. I am keeping the job moving. I am heading to assigned storage for breeding food.",
+        "I am keeping the job moving. I am heading to assigned storage for breeding food. This is where I am in the work. I am heading to assigned storage for breeding food.",
+        "This is where I am in the work. I am heading to assigned storage for breeding food. I am staying with the task. I am heading to assigned storage for breeding food.",
+        "I am staying with the task. I am heading to assigned storage for breeding food. For the moment, I am busy with this. I am heading to assigned storage for breeding food.",
+        "For the moment, I am busy with this. I am heading to assigned storage for breeding food. I will keep going from here. I am heading to assigned storage for breeding food.",
+        "I will keep going from here. I am heading to assigned storage for breeding food. The work is still moving. I am heading to assigned storage for breeding food.",
+        "The work is still moving. I am heading to assigned storage for breeding food. I am working through it. I am heading to assigned storage for breeding food.",
+        "I am working through it. I am heading to assigned storage for breeding food. I am heading to assigned storage for breeding food."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collecting_food.025"
     },
@@ -465,7 +801,17 @@
         "I am waiting on a fix. I found breeding food in storage, but I cannot reach it.",
         "The work is paused until this changes. I found breeding food in storage, but I cannot reach it.",
         "This is the problem right now. I found breeding food in storage, but I cannot reach it.",
-        "I am stuck here for the moment. I found breeding food in storage, but I cannot reach it."
+        "I am stuck here for the moment. I found breeding food in storage, but I cannot reach it.",
+        "I found breeding food in storage, but I cannot reach it. I am held up for now. I found breeding food in storage, but I cannot reach it.",
+        "I am held up for now. I found breeding food in storage, but I cannot reach it. This is stopping the job for the moment. I found breeding food in storage, but I cannot reach it.",
+        "This is stopping the job for the moment. I found breeding food in storage, but I cannot reach it. I cannot move on yet. I found breeding food in storage, but I cannot reach it.",
+        "I cannot move on yet. I found breeding food in storage, but I cannot reach it. I will continue once this is fixed. I found breeding food in storage, but I cannot reach it.",
+        "I will continue once this is fixed. I found breeding food in storage, but I cannot reach it. That needs attention before I can keep working. I found breeding food in storage, but I cannot reach it.",
+        "That needs attention before I can keep working. I found breeding food in storage, but I cannot reach it. I am waiting on a fix. I found breeding food in storage, but I cannot reach it.",
+        "I am waiting on a fix. I found breeding food in storage, but I cannot reach it. The work is paused until this changes. I found breeding food in storage, but I cannot reach it.",
+        "The work is paused until this changes. I found breeding food in storage, but I cannot reach it. This is the problem right now. I found breeding food in storage, but I cannot reach it.",
+        "This is the problem right now. I found breeding food in storage, but I cannot reach it. I am stuck here for the moment. I found breeding food in storage, but I cannot reach it.",
+        "I am stuck here for the moment. I found breeding food in storage, but I cannot reach it. I found breeding food in storage, but I cannot reach it."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.food_unreachable.026"
     },
@@ -481,7 +827,17 @@
         "I am waiting on a fix. I found breeding food, but my supply slots are full.",
         "The work is paused until this changes. I found breeding food, but my supply slots are full.",
         "This is the problem right now. I found breeding food, but my supply slots are full.",
-        "I am stuck here for the moment. I found breeding food, but my supply slots are full."
+        "I am stuck here for the moment. I found breeding food, but my supply slots are full.",
+        "I found breeding food, but my supply slots are full. I am held up for now. I found breeding food, but my supply slots are full.",
+        "I am held up for now. I found breeding food, but my supply slots are full. This is stopping the job for the moment. I found breeding food, but my supply slots are full.",
+        "This is stopping the job for the moment. I found breeding food, but my supply slots are full. I cannot move on yet. I found breeding food, but my supply slots are full.",
+        "I cannot move on yet. I found breeding food, but my supply slots are full. I will continue once this is fixed. I found breeding food, but my supply slots are full.",
+        "I will continue once this is fixed. I found breeding food, but my supply slots are full. That needs attention before I can keep working. I found breeding food, but my supply slots are full.",
+        "That needs attention before I can keep working. I found breeding food, but my supply slots are full. I am waiting on a fix. I found breeding food, but my supply slots are full.",
+        "I am waiting on a fix. I found breeding food, but my supply slots are full. The work is paused until this changes. I found breeding food, but my supply slots are full.",
+        "The work is paused until this changes. I found breeding food, but my supply slots are full. This is the problem right now. I found breeding food, but my supply slots are full.",
+        "This is the problem right now. I found breeding food, but my supply slots are full. I am stuck here for the moment. I found breeding food, but my supply slots are full.",
+        "I am stuck here for the moment. I found breeding food, but my supply slots are full. I found breeding food, but my supply slots are full."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.food_inventory_full.027"
     },
@@ -497,7 +853,17 @@
         "That is taken care of. I gathered breeding food from assigned storage.",
         "The work moved forward. I gathered breeding food from assigned storage.",
         "I can report this much. I gathered breeding food from assigned storage.",
-        "That part is done: I gathered breeding food from assigned storage."
+        "That part is done: I gathered breeding food from assigned storage.",
+        "I gathered breeding food from assigned storage. That part is handled. I gathered breeding food from assigned storage.",
+        "That part is handled. I gathered breeding food from assigned storage. Here is the update: I gathered breeding food from assigned storage.",
+        "Here is the update: I gathered breeding food from assigned storage. That moved things along: I gathered breeding food from assigned storage.",
+        "That moved things along: I gathered breeding food from assigned storage. That step is finished. I gathered breeding food from assigned storage.",
+        "That step is finished. I gathered breeding food from assigned storage. I have that sorted. I gathered breeding food from assigned storage.",
+        "I have that sorted. I gathered breeding food from assigned storage. That is taken care of. I gathered breeding food from assigned storage.",
+        "That is taken care of. I gathered breeding food from assigned storage. The work moved forward. I gathered breeding food from assigned storage.",
+        "The work moved forward. I gathered breeding food from assigned storage. I can report this much. I gathered breeding food from assigned storage.",
+        "I can report this much. I gathered breeding food from assigned storage. That part is done: I gathered breeding food from assigned storage.",
+        "That part is done: I gathered breeding food from assigned storage. I gathered breeding food from assigned storage."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.gathered_food.028"
     },
@@ -513,7 +879,17 @@
         "I am waiting on a fix. I cannot reach that animal pair safely.",
         "The work is paused until this changes. I cannot reach that animal pair safely.",
         "This is the problem right now. I cannot reach that animal pair safely.",
-        "I am stuck here for the moment. I cannot reach that animal pair safely."
+        "I am stuck here for the moment. I cannot reach that animal pair safely.",
+        "I cannot reach that animal pair safely. I am held up for now. I cannot reach that animal pair safely.",
+        "I am held up for now. I cannot reach that animal pair safely. This is stopping the job for the moment. I cannot reach that animal pair safely.",
+        "This is stopping the job for the moment. I cannot reach that animal pair safely. I cannot move on yet. I cannot reach that animal pair safely.",
+        "I cannot move on yet. I cannot reach that animal pair safely. I will continue once this is fixed. I cannot reach that animal pair safely.",
+        "I will continue once this is fixed. I cannot reach that animal pair safely. That needs attention before I can keep working. I cannot reach that animal pair safely.",
+        "That needs attention before I can keep working. I cannot reach that animal pair safely. I am waiting on a fix. I cannot reach that animal pair safely.",
+        "I am waiting on a fix. I cannot reach that animal pair safely. The work is paused until this changes. I cannot reach that animal pair safely.",
+        "The work is paused until this changes. I cannot reach that animal pair safely. This is the problem right now. I cannot reach that animal pair safely.",
+        "This is the problem right now. I cannot reach that animal pair safely. I am stuck here for the moment. I cannot reach that animal pair safely.",
+        "I am stuck here for the moment. I cannot reach that animal pair safely. I cannot reach that animal pair safely."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.pair_unreachable.029"
     },
@@ -529,7 +905,17 @@
         "For the moment, I am busy with this. I am moving to a ready animal pair.",
         "I will keep going from here. I am moving to a ready animal pair.",
         "The work is still moving. I am moving to a ready animal pair.",
-        "I am working through it. I am moving to a ready animal pair."
+        "I am working through it. I am moving to a ready animal pair.",
+        "I am moving to a ready animal pair. Right now, that is my focus. I am moving to a ready animal pair.",
+        "Right now, that is my focus. I am moving to a ready animal pair. That is my current step. I am moving to a ready animal pair.",
+        "That is my current step. I am moving to a ready animal pair. I am keeping the job moving. I am moving to a ready animal pair.",
+        "I am keeping the job moving. I am moving to a ready animal pair. This is where I am in the work. I am moving to a ready animal pair.",
+        "This is where I am in the work. I am moving to a ready animal pair. I am staying with the task. I am moving to a ready animal pair.",
+        "I am staying with the task. I am moving to a ready animal pair. For the moment, I am busy with this. I am moving to a ready animal pair.",
+        "For the moment, I am busy with this. I am moving to a ready animal pair. I will keep going from here. I am moving to a ready animal pair.",
+        "I will keep going from here. I am moving to a ready animal pair. The work is still moving. I am moving to a ready animal pair.",
+        "The work is still moving. I am moving to a ready animal pair. I am working through it. I am moving to a ready animal pair.",
+        "I am working through it. I am moving to a ready animal pair. I am moving to a ready animal pair."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_pair.030"
     },
@@ -545,7 +931,17 @@
         "That's all I have for now: I am feeding the animals.",
         "Understood. I am feeding the animals.",
         "Nothing else to add yet. I am feeding the animals.",
-        "For the moment: I am feeding the animals."
+        "For the moment: I am feeding the animals.",
+        "I am feeding the animals. All right. I am feeding the animals.",
+        "All right. I am feeding the animals. Here's where I am with it: I am feeding the animals.",
+        "Here's where I am with it: I am feeding the animals. For now, that is the situation. I am feeding the animals.",
+        "For now, that is the situation. I am feeding the animals. Just so you know. I am feeding the animals.",
+        "Just so you know. I am feeding the animals. Plainly put: I am feeding the animals.",
+        "Plainly put: I am feeding the animals. That's all I have for now: I am feeding the animals.",
+        "That's all I have for now: I am feeding the animals. Understood. I am feeding the animals.",
+        "Understood. I am feeding the animals. Nothing else to add yet. I am feeding the animals.",
+        "Nothing else to add yet. I am feeding the animals. For the moment: I am feeding the animals.",
+        "For the moment: I am feeding the animals. I am feeding the animals."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.feeding.031"
     },
@@ -561,7 +957,17 @@
         "That's all I have for now: That animal pair is no longer ready.",
         "Understood. That animal pair is no longer ready.",
         "Nothing else to add yet. That animal pair is no longer ready.",
-        "For the moment: That animal pair is no longer ready."
+        "For the moment: That animal pair is no longer ready.",
+        "That animal pair is no longer ready. All right. That animal pair is no longer ready.",
+        "All right. That animal pair is no longer ready. Here's where I am with it: That animal pair is no longer ready.",
+        "Here's where I am with it: That animal pair is no longer ready. For now, that is the situation. That animal pair is no longer ready.",
+        "For now, that is the situation. That animal pair is no longer ready. Just so you know. That animal pair is no longer ready.",
+        "Just so you know. That animal pair is no longer ready. Plainly put: That animal pair is no longer ready.",
+        "Plainly put: That animal pair is no longer ready. That's all I have for now: That animal pair is no longer ready.",
+        "That's all I have for now: That animal pair is no longer ready. Understood. That animal pair is no longer ready.",
+        "Understood. That animal pair is no longer ready. Nothing else to add yet. That animal pair is no longer ready.",
+        "Nothing else to add yet. That animal pair is no longer ready. For the moment: That animal pair is no longer ready.",
+        "For the moment: That animal pair is no longer ready. That animal pair is no longer ready."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.pair_changed.032"
     },
@@ -577,77 +983,277 @@
         "That is taken care of. I fed {target} for breeding.",
         "The work moved forward. I fed {target} for breeding.",
         "I can report this much. I fed {target} for breeding.",
-        "That part is done: I fed {target} for breeding."
+        "That part is done: I fed {target} for breeding.",
+        "I fed {target} for breeding. That part is handled. I fed {target} for breeding.",
+        "That part is handled. I fed {target} for breeding. Here is the update: I fed {target} for breeding.",
+        "Here is the update: I fed {target} for breeding. That moved things along: I fed {target} for breeding.",
+        "That moved things along: I fed {target} for breeding. That step is finished. I fed {target} for breeding.",
+        "That step is finished. I fed {target} for breeding. I have that sorted. I fed {target} for breeding.",
+        "I have that sorted. I fed {target} for breeding. That is taken care of. I fed {target} for breeding.",
+        "That is taken care of. I fed {target} for breeding. The work moved forward. I fed {target} for breeding.",
+        "The work moved forward. I fed {target} for breeding. I can report this much. I fed {target} for breeding.",
+        "I can report this much. I fed {target} for breeding. That part is done: I fed {target} for breeding.",
+        "That part is done: I fed {target} for breeding. I fed {target} for breeding."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.completed.033"
     },
     {
       "key": "interaction.work.animal_breeding.collecting_cull_weapon",
       "lines": [
-        "I found an animal group over the cull cap, so I am collecting a sword or axe."
+        "I found an animal group over the cull cap, so I am collecting a sword or axe.",
+        "Listen. I found an animal group over the cull cap, so I am collecting a sword or axe.",
+        "Understand this. I found an animal group over the cull cap, so I am collecting a sword or axe.",
+        "Let me be clear. I found an animal group over the cull cap, so I am collecting a sword or axe.",
+        "I will say it plainly. I found an animal group over the cull cap, so I am collecting a sword or axe.",
+        "Here is the truth. I found an animal group over the cull cap, so I am collecting a sword or axe.",
+        "As things stand, i found an animal group over the cull cap, so I am collecting a sword or axe.",
+        "From where I stand, i found an animal group over the cull cap, so I am collecting a sword or axe.",
+        "For the moment, i found an animal group over the cull cap, so I am collecting a sword or axe.",
+        "Right now, i found an animal group over the cull cap, so I am collecting a sword or axe.",
+        "I found an animal group over the cull cap, so I am collecting a sword or axe. Keep that in mind.",
+        "I found an animal group over the cull cap, so I am collecting a sword or axe. Remember that.",
+        "I found an animal group over the cull cap, so I am collecting a sword or axe. That much is clear.",
+        "I found an animal group over the cull cap, so I am collecting a sword or axe. That is where things stand.",
+        "I found an animal group over the cull cap, so I am collecting a sword or axe. I mean it.",
+        "I found an animal group over the cull cap, so I am collecting a sword or axe. Do not forget it.",
+        "I found an animal group over the cull cap, so I am collecting a sword or axe. That is the whole of it.",
+        "I found an animal group over the cull cap, so I am collecting a sword or axe. Nothing about that has changed.",
+        "I found an animal group over the cull cap, so I am collecting a sword or axe. I have said what needed saying.",
+        "I found an animal group over the cull cap, so I am collecting a sword or axe. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.collecting_cull_weapon.034"
     },
     {
       "key": "interaction.work.animal_breeding.cull_weapon_unreachable",
       "lines": [
-        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe."
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe.",
+        "Listen. I found an animal group over the cull cap, but I cannot reach the stored sword or axe.",
+        "Understand this. I found an animal group over the cull cap, but I cannot reach the stored sword or axe.",
+        "Let me be clear. I found an animal group over the cull cap, but I cannot reach the stored sword or axe.",
+        "I will say it plainly. I found an animal group over the cull cap, but I cannot reach the stored sword or axe.",
+        "Here is the truth. I found an animal group over the cull cap, but I cannot reach the stored sword or axe.",
+        "As things stand, i found an animal group over the cull cap, but I cannot reach the stored sword or axe.",
+        "From where I stand, i found an animal group over the cull cap, but I cannot reach the stored sword or axe.",
+        "For the moment, i found an animal group over the cull cap, but I cannot reach the stored sword or axe.",
+        "Right now, i found an animal group over the cull cap, but I cannot reach the stored sword or axe.",
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe. Keep that in mind.",
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe. Remember that.",
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe. That much is clear.",
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe. That is where things stand.",
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe. I mean it.",
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe. Do not forget it.",
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe. That is the whole of it.",
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe. Nothing about that has changed.",
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe. I have said what needed saying.",
+        "I found an animal group over the cull cap, but I cannot reach the stored sword or axe. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.cull_weapon_unreachable.035"
     },
     {
       "key": "interaction.work.animal_breeding.cull_weapon_inventory_full",
       "lines": [
-        "I found an animal group over the cull cap, but I cannot carry the sword or axe."
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe.",
+        "Listen. I found an animal group over the cull cap, but I cannot carry the sword or axe.",
+        "Understand this. I found an animal group over the cull cap, but I cannot carry the sword or axe.",
+        "Let me be clear. I found an animal group over the cull cap, but I cannot carry the sword or axe.",
+        "I will say it plainly. I found an animal group over the cull cap, but I cannot carry the sword or axe.",
+        "Here is the truth. I found an animal group over the cull cap, but I cannot carry the sword or axe.",
+        "As things stand, i found an animal group over the cull cap, but I cannot carry the sword or axe.",
+        "From where I stand, i found an animal group over the cull cap, but I cannot carry the sword or axe.",
+        "For the moment, i found an animal group over the cull cap, but I cannot carry the sword or axe.",
+        "Right now, i found an animal group over the cull cap, but I cannot carry the sword or axe.",
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe. Keep that in mind.",
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe. Remember that.",
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe. That much is clear.",
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe. That is where things stand.",
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe. I mean it.",
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe. Do not forget it.",
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe. That is the whole of it.",
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe. Nothing about that has changed.",
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe. I have said what needed saying.",
+        "I found an animal group over the cull cap, but I cannot carry the sword or axe. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.cull_weapon_inventory_full.036"
     },
     {
       "key": "interaction.work.animal_breeding.missing_cull_weapon",
       "lines": [
-        "I found an animal group over the cull cap, but I need a sword or axe in my job gear."
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear.",
+        "Listen. I found an animal group over the cull cap, but I need a sword or axe in my job gear.",
+        "Understand this. I found an animal group over the cull cap, but I need a sword or axe in my job gear.",
+        "Let me be clear. I found an animal group over the cull cap, but I need a sword or axe in my job gear.",
+        "I will say it plainly. I found an animal group over the cull cap, but I need a sword or axe in my job gear.",
+        "Here is the truth. I found an animal group over the cull cap, but I need a sword or axe in my job gear.",
+        "As things stand, i found an animal group over the cull cap, but I need a sword or axe in my job gear.",
+        "From where I stand, i found an animal group over the cull cap, but I need a sword or axe in my job gear.",
+        "For the moment, i found an animal group over the cull cap, but I need a sword or axe in my job gear.",
+        "Right now, i found an animal group over the cull cap, but I need a sword or axe in my job gear.",
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear. Keep that in mind.",
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear. Remember that.",
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear. That much is clear.",
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear. That is where things stand.",
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear. I mean it.",
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear. Do not forget it.",
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear. That is the whole of it.",
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear. Nothing about that has changed.",
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear. I have said what needed saying.",
+        "I found an animal group over the cull cap, but I need a sword or axe in my job gear. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.missing_cull_weapon.037"
     },
     {
       "key": "interaction.work.animal_breeding.cull_target_unreachable",
       "lines": [
-        "I found an animal over the cull cap, but I cannot reach it."
+        "I found an animal over the cull cap, but I cannot reach it.",
+        "Listen. I found an animal over the cull cap, but I cannot reach it.",
+        "Understand this. I found an animal over the cull cap, but I cannot reach it.",
+        "Let me be clear. I found an animal over the cull cap, but I cannot reach it.",
+        "I will say it plainly. I found an animal over the cull cap, but I cannot reach it.",
+        "Here is the truth. I found an animal over the cull cap, but I cannot reach it.",
+        "As things stand, i found an animal over the cull cap, but I cannot reach it.",
+        "From where I stand, i found an animal over the cull cap, but I cannot reach it.",
+        "For the moment, i found an animal over the cull cap, but I cannot reach it.",
+        "Right now, i found an animal over the cull cap, but I cannot reach it.",
+        "I found an animal over the cull cap, but I cannot reach it. Keep that in mind.",
+        "I found an animal over the cull cap, but I cannot reach it. Remember that.",
+        "I found an animal over the cull cap, but I cannot reach it. That much is clear.",
+        "I found an animal over the cull cap, but I cannot reach it. That is where things stand.",
+        "I found an animal over the cull cap, but I cannot reach it. I mean it.",
+        "I found an animal over the cull cap, but I cannot reach it. Do not forget it.",
+        "I found an animal over the cull cap, but I cannot reach it. That is the whole of it.",
+        "I found an animal over the cull cap, but I cannot reach it. Nothing about that has changed.",
+        "I found an animal over the cull cap, but I cannot reach it. I have said what needed saying.",
+        "I found an animal over the cull cap, but I cannot reach it. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.cull_target_unreachable.038"
     },
     {
       "key": "interaction.work.animal_breeding.moving_to_cull_target",
       "lines": [
-        "I am moving to cull excess {target}."
+        "I am moving to cull excess {target}.",
+        "Listen. I am moving to cull excess {target}.",
+        "Understand this. I am moving to cull excess {target}.",
+        "Let me be clear. I am moving to cull excess {target}.",
+        "I will say it plainly. I am moving to cull excess {target}.",
+        "Here is the truth. I am moving to cull excess {target}.",
+        "As things stand, i am moving to cull excess {target}.",
+        "From where I stand, i am moving to cull excess {target}.",
+        "For the moment, i am moving to cull excess {target}.",
+        "Right now, i am moving to cull excess {target}.",
+        "I am moving to cull excess {target}. Keep that in mind.",
+        "I am moving to cull excess {target}. Remember that.",
+        "I am moving to cull excess {target}. That much is clear.",
+        "I am moving to cull excess {target}. That is where things stand.",
+        "I am moving to cull excess {target}. I mean it.",
+        "I am moving to cull excess {target}. Do not forget it.",
+        "I am moving to cull excess {target}. That is the whole of it.",
+        "I am moving to cull excess {target}. Nothing about that has changed.",
+        "I am moving to cull excess {target}. I have said what needed saying.",
+        "I am moving to cull excess {target}. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.moving_to_cull_target.039"
     },
     {
       "key": "interaction.work.animal_breeding.culling",
       "lines": [
-        "I am culling excess {target}."
+        "I am culling excess {target}.",
+        "Listen. I am culling excess {target}.",
+        "Understand this. I am culling excess {target}.",
+        "Let me be clear. I am culling excess {target}.",
+        "I will say it plainly. I am culling excess {target}.",
+        "Here is the truth. I am culling excess {target}.",
+        "As things stand, i am culling excess {target}.",
+        "From where I stand, i am culling excess {target}.",
+        "For the moment, i am culling excess {target}.",
+        "Right now, i am culling excess {target}.",
+        "I am culling excess {target}. Keep that in mind.",
+        "I am culling excess {target}. Remember that.",
+        "I am culling excess {target}. That much is clear.",
+        "I am culling excess {target}. That is where things stand.",
+        "I am culling excess {target}. I mean it.",
+        "I am culling excess {target}. Do not forget it.",
+        "I am culling excess {target}. That is the whole of it.",
+        "I am culling excess {target}. Nothing about that has changed.",
+        "I am culling excess {target}. I have said what needed saying.",
+        "I am culling excess {target}. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.culling.040"
     },
     {
       "key": "interaction.work.animal_breeding.cull_target_changed",
       "lines": [
-        "That animal group is no longer over the cull cap."
+        "That animal group is no longer over the cull cap.",
+        "Listen. That animal group is no longer over the cull cap.",
+        "Understand this. That animal group is no longer over the cull cap.",
+        "Let me be clear. That animal group is no longer over the cull cap.",
+        "I will say it plainly. That animal group is no longer over the cull cap.",
+        "Here is the truth. That animal group is no longer over the cull cap.",
+        "As things stand, that animal group is no longer over the cull cap.",
+        "From where I stand, that animal group is no longer over the cull cap.",
+        "For the moment, that animal group is no longer over the cull cap.",
+        "Right now, that animal group is no longer over the cull cap.",
+        "That animal group is no longer over the cull cap. Keep that in mind.",
+        "That animal group is no longer over the cull cap. Remember that.",
+        "That animal group is no longer over the cull cap. That much is clear.",
+        "That animal group is no longer over the cull cap. That is where things stand.",
+        "That animal group is no longer over the cull cap. I mean it.",
+        "That animal group is no longer over the cull cap. Do not forget it.",
+        "That animal group is no longer over the cull cap. That is the whole of it.",
+        "That animal group is no longer over the cull cap. Nothing about that has changed.",
+        "That animal group is no longer over the cull cap. I have said what needed saying.",
+        "That animal group is no longer over the cull cap. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.cull_target_changed.041"
     },
     {
       "key": "interaction.work.animal_breeding.cull_failed",
       "lines": [
-        "I tried to cull an excess animal, but the hit did not finish it."
+        "I tried to cull an excess animal, but the hit did not finish it.",
+        "Listen. I tried to cull an excess animal, but the hit did not finish it.",
+        "Understand this. I tried to cull an excess animal, but the hit did not finish it.",
+        "Let me be clear. I tried to cull an excess animal, but the hit did not finish it.",
+        "I will say it plainly. I tried to cull an excess animal, but the hit did not finish it.",
+        "Here is the truth. I tried to cull an excess animal, but the hit did not finish it.",
+        "As things stand, i tried to cull an excess animal, but the hit did not finish it.",
+        "From where I stand, i tried to cull an excess animal, but the hit did not finish it.",
+        "For the moment, i tried to cull an excess animal, but the hit did not finish it.",
+        "Right now, i tried to cull an excess animal, but the hit did not finish it.",
+        "I tried to cull an excess animal, but the hit did not finish it. Keep that in mind.",
+        "I tried to cull an excess animal, but the hit did not finish it. Remember that.",
+        "I tried to cull an excess animal, but the hit did not finish it. That much is clear.",
+        "I tried to cull an excess animal, but the hit did not finish it. That is where things stand.",
+        "I tried to cull an excess animal, but the hit did not finish it. I mean it.",
+        "I tried to cull an excess animal, but the hit did not finish it. Do not forget it.",
+        "I tried to cull an excess animal, but the hit did not finish it. That is the whole of it.",
+        "I tried to cull an excess animal, but the hit did not finish it. Nothing about that has changed.",
+        "I tried to cull an excess animal, but the hit did not finish it. I have said what needed saying.",
+        "I tried to cull an excess animal, but the hit did not finish it. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.cull_failed.042"
     },
     {
       "key": "interaction.work.animal_breeding.culled_animal",
       "lines": [
-        "I culled excess {target}. That group is being held to {cap}."
+        "I culled excess {target}. That group is being held to {cap}.",
+        "Listen. I culled excess {target}. That group is being held to {cap}.",
+        "Understand this. I culled excess {target}. That group is being held to {cap}.",
+        "Let me be clear. I culled excess {target}. That group is being held to {cap}.",
+        "I will say it plainly. I culled excess {target}. That group is being held to {cap}.",
+        "Here is the truth. I culled excess {target}. That group is being held to {cap}.",
+        "As things stand, i culled excess {target}. That group is being held to {cap}.",
+        "From where I stand, i culled excess {target}. That group is being held to {cap}.",
+        "For the moment, i culled excess {target}. That group is being held to {cap}.",
+        "Right now, i culled excess {target}. That group is being held to {cap}.",
+        "I culled excess {target}. That group is being held to {cap}. Keep that in mind.",
+        "I culled excess {target}. That group is being held to {cap}. Remember that.",
+        "I culled excess {target}. That group is being held to {cap}. That much is clear.",
+        "I culled excess {target}. That group is being held to {cap}. That is where things stand.",
+        "I culled excess {target}. That group is being held to {cap}. I mean it.",
+        "I culled excess {target}. That group is being held to {cap}. Do not forget it.",
+        "I culled excess {target}. That group is being held to {cap}. That is the whole of it.",
+        "I culled excess {target}. That group is being held to {cap}. Nothing about that has changed.",
+        "I culled excess {target}. That group is being held to {cap}. I have said what needed saying.",
+        "I culled excess {target}. That group is being held to {cap}. Take it seriously."
       ],
       "id": "global.messages.17_work_animal_breeding.messages.interaction.work.animal_breeding.culled_animal.043"
     }

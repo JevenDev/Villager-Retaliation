@@ -64,6 +64,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -740,6 +741,7 @@ window.VR_WIKI_DATA = {
           "slug": "wax_sealed_route"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -855,7 +857,7 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "A route is not real until someone can take it when the sun is gone.",
-          "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful; a visible road is kinder."
+          "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful. A visible road is kinder."
         ],
         "accept": "I will test the night road.",
         "decline": "Not tonight.",
@@ -885,7 +887,7 @@ window.VR_WIKI_DATA = {
                 "label": "The Night Run",
                 "lines": [
                   "A route is not real until someone can take it when the sun is gone.",
-                  "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful; a visible road is kinder."
+                  "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful. A visible road is kinder."
                 ],
                 "responses": [
                   {
@@ -1147,7 +1149,7 @@ window.VR_WIKI_DATA = {
                 "label": "The Night Run",
                 "lines": [
                   "A route is not real until someone can take it when the sun is gone.",
-                  "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful; a visible road is kinder."
+                  "Clear the worst of the night road, then bring lanterns and signs. A brave courier is useful. A visible road is kinder."
                 ],
                 "responses": [
                   {
@@ -1417,6 +1419,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -1440,6 +1443,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Bastion Remnant",
+        "destinations": [
+          "Bastion Remnant"
+        ],
         "proofItem": "",
         "searchRadius": 512,
         "discoveryRadius": 160
@@ -2147,6 +2153,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -2169,6 +2176,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Fortress",
+        "destinations": [
+          "Fortress"
+        ],
         "proofItem": "",
         "searchRadius": 384,
         "discoveryRadius": 128
@@ -2882,6 +2892,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -2905,6 +2916,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Trial Chambers",
+        "destinations": [
+          "Trial Chambers"
+        ],
         "proofItem": "",
         "searchRadius": 320,
         "discoveryRadius": 160
@@ -3624,6 +3638,7 @@ window.VR_WIKI_DATA = {
           "slug": "trial_chamber_recall"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -3647,6 +3662,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Woodland Mansion",
+        "destinations": [
+          "Woodland Mansion"
+        ],
         "proofItem": "",
         "searchRadius": 768,
         "discoveryRadius": 192
@@ -4362,6 +4380,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -5078,6 +5097,7 @@ window.VR_WIKI_DATA = {
           "slug": "below_the_bell"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -5101,7 +5121,7 @@ window.VR_WIKI_DATA = {
       },
       "target": null,
       "objectives": [
-        "Choose Choice: Rail or Timber",
+        "Choose the route with the quest giver",
         "Lay Rails",
         "1 Minecart",
         "Place Braces",
@@ -6077,6 +6097,13 @@ window.VR_WIKI_DATA = {
           "slug": "mark_the_shaft"
         }
       ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:mark_the_shaft",
+          "key": "choice",
+          "value": "rail"
+        }
+      ],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -6180,7 +6207,7 @@ window.VR_WIKI_DATA = {
         "accept": "I can do that.",
         "decline": "Not right now.",
         "started": [
-          "Test the brake before the load. Ore is patient; minecarts are not.",
+          "Test the brake before the load. Ore is patient. Minecarts are not.",
           "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart.",
           "Good. I will keep a place clear for what you bring back."
         ],
@@ -6276,7 +6303,7 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Test the brake before the load. Ore is patient; minecarts are not.",
+                  "Test the brake before the load. Ore is patient. Minecarts are not.",
                   "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart.",
                   "Good. I will keep a place clear for what you bring back."
                 ]
@@ -6562,7 +6589,7 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Test the brake before the load. Ore is patient; minecarts are not.",
+                  "Test the brake before the load. Ore is patient. Minecarts are not.",
                   "Place 8 powered rails, then bring 8 redstone torches and 1 chest minecart.",
                   "Good. I will keep a place clear for what you bring back."
                 ]
@@ -6797,6 +6824,13 @@ window.VR_WIKI_DATA = {
         {
           "id": "villagerretaliation:mark_the_shaft",
           "slug": "mark_the_shaft"
+        }
+      ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:mark_the_shaft",
+          "key": "choice",
+          "value": "timber"
         }
       ],
       "branchGroup": "",
@@ -7517,6 +7551,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -8241,6 +8276,7 @@ window.VR_WIKI_DATA = {
           "slug": "empty_sky"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -8264,12 +8300,15 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "End City",
+        "destinations": [
+          "End City"
+        ],
         "proofItem": "",
         "searchRadius": 640,
         "discoveryRadius": 160
       },
       "objectives": [
-        "Choose Choice: Chorus or City",
+        "Choose the route with the quest giver",
         "Defeat 5 Enderman",
         "32 Chorus Fruit",
         "Visit End City",
@@ -9253,6 +9292,13 @@ window.VR_WIKI_DATA = {
           "slug": "choose_a_star"
         }
       ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:choose_a_star",
+          "key": "choice",
+          "value": "chorus"
+        }
+      ],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -9976,6 +10022,13 @@ window.VR_WIKI_DATA = {
           "slug": "choose_a_star"
         }
       ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:choose_a_star",
+          "key": "choice",
+          "value": "city"
+        }
+      ],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -9999,6 +10052,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "End City",
+        "destinations": [
+          "End City"
+        ],
         "proofItem": "",
         "searchRadius": 768,
         "discoveryRadius": 160
@@ -10699,6 +10755,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -10803,7 +10860,7 @@ window.VR_WIKI_DATA = {
         "accept": "Start the atlas",
         "decline": "Another time",
         "started": [
-          "Good. Start with 24 paper; a thin atlas lies before the first rain."
+          "Good. Start with 24 paper. A thin atlas lies before the first rain."
         ],
         "reminder": [
           "First bring 24 paper. After that, bind the bearing with 1 compass and 3 ink sacs.",
@@ -10932,7 +10989,7 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Good. Start with 24 paper; a thin atlas lies before the first rain."
+                  "Good. Start with 24 paper. A thin atlas lies before the first rain."
                 ]
               },
               {
@@ -11258,7 +11315,7 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Good. Start with 24 paper; a thin atlas lies before the first rain."
+                  "Good. Start with 24 paper. A thin atlas lies before the first rain."
                 ]
               },
               {
@@ -11493,6 +11550,7 @@ window.VR_WIKI_DATA = {
           "slug": "blank_map_promise"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [
         {
@@ -11521,7 +11579,7 @@ window.VR_WIKI_DATA = {
       "objectives": [
         "2 Feather",
         "6 Glass Pane",
-        "Choose Principle: Roads or Wonders"
+        "Choose the atlas principle with the cartographer"
       ],
       "steps": [
         {
@@ -12429,6 +12487,7 @@ window.VR_WIKI_DATA = {
           "slug": "ink_and_bearings"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -12446,6 +12505,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Trail Ruins",
+        "destinations": [
+          "Trail Ruins"
+        ],
         "proofItem": "",
         "searchRadius": 192,
         "discoveryRadius": 96
@@ -13156,6 +13218,7 @@ window.VR_WIKI_DATA = {
           "slug": "first_far_marker"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -13250,7 +13313,7 @@ window.VR_WIKI_DATA = {
         ],
         "reminder": [
           "Help or witness a village defense, then bring me a book so I can write the account into the atlas.",
-          "Bring 1 book. The defense memory is ready; the account still needs a page."
+          "Bring 1 book. The defense memory is ready. The account still needs a page."
         ],
         "completed": [
           "Now the atlas has a road that remembers why it mattered. That will change how it judges every future mark."
@@ -13450,7 +13513,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Bring 1 book. The defense memory is ready; the account still needs a page."
+                  "Bring 1 book. The defense memory is ready. The account still needs a page."
                 ]
               },
               {
@@ -13744,7 +13807,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "Bring 1 book. The defense memory is ready; the account still needs a page."
+                  "Bring 1 book. The defense memory is ready. The account still needs a page."
                 ]
               },
               {
@@ -13872,6 +13935,7 @@ window.VR_WIKI_DATA = {
           "slug": "roads_that_remember"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -13889,7 +13953,7 @@ window.VR_WIKI_DATA = {
       },
       "target": null,
       "objectives": [
-        "Choose Test Route: Safe or Risky",
+        "Choose the atlas test route with the cartographer",
         "4 Lantern",
         "8 Bread",
         "Defeat 3 Pillager",
@@ -14033,7 +14097,7 @@ window.VR_WIKI_DATA = {
                     "id": "safe",
                     "label": "Take the safer road",
                     "lines": [
-                      "Good. A safer road is not a weaker test; it just asks whether the atlas can keep people fed and lit."
+                      "Good. A safer road is not a weaker test. It just asks whether the atlas can keep people fed and lit."
                     ],
                     "targetStageId": "safe_supplies",
                     "destination": "Next: Safe Supplies"
@@ -14401,7 +14465,7 @@ window.VR_WIKI_DATA = {
                     "id": "safe",
                     "label": "Take the safer road",
                     "lines": [
-                      "Good. A safer road is not a weaker test; it just asks whether the atlas can keep people fed and lit."
+                      "Good. A safer road is not a weaker test. It just asks whether the atlas can keep people fed and lit."
                     ],
                     "targetStageId": "safe_supplies",
                     "destination": "Next: Safe Supplies"
@@ -14775,6 +14839,7 @@ window.VR_WIKI_DATA = {
           "slug": "the_atlas_test"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -14792,12 +14857,16 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Monument",
+        "destinations": [
+          "Monument",
+          "Woodland Mansion"
+        ],
         "proofItem": "",
         "searchRadius": 384,
         "discoveryRadius": 160
       },
       "objectives": [
-        "Choose Choice: Coast or Dark Roof",
+        "Choose the final atlas horizon with the cartographer",
         "Visit Monument",
         "4 Prismarine Crystals",
         "4 Prismarine Shard",
@@ -14984,7 +15053,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About the Horizon",
                 "lines": [
-                  "This is the final fork. Coast or dark roof; water-stone or old timber."
+                  "This is the final fork. Coast or dark roof. Water-stone or old timber."
                 ],
                 "responses": [
                   {
@@ -15352,7 +15421,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About the Horizon",
                 "lines": [
-                  "This is the final fork. Coast or dark roof; water-stone or old timber."
+                  "This is the final fork. Coast or dark roof. Water-stone or old timber."
                 ],
                 "responses": [
                   {
@@ -15698,6 +15767,13 @@ window.VR_WIKI_DATA = {
           "slug": "choose_the_horizon"
         }
       ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:choose_the_horizon",
+          "key": "choice",
+          "value": "coast"
+        }
+      ],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -15715,6 +15791,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Monument",
+        "destinations": [
+          "Monument"
+        ],
         "proofItem": "",
         "searchRadius": 384,
         "discoveryRadius": 160
@@ -16365,6 +16444,13 @@ window.VR_WIKI_DATA = {
           "slug": "choose_the_horizon"
         }
       ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:choose_the_horizon",
+          "key": "choice",
+          "value": "dark_roof"
+        }
+      ],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -16382,6 +16468,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Woodland Mansion",
+        "destinations": [
+          "Woodland Mansion"
+        ],
         "proofItem": "",
         "searchRadius": 768,
         "discoveryRadius": 192
@@ -17042,6 +17131,7 @@ window.VR_WIKI_DATA = {
           "slug": "ink_in_the_dark_roof"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -17059,6 +17149,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Fortress",
+        "destinations": [
+          "Fortress"
+        ],
         "proofItem": "",
         "searchRadius": 320,
         "discoveryRadius": 128
@@ -17627,6 +17720,7 @@ window.VR_WIKI_DATA = {
           "slug": "nether_meridian"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -17644,6 +17738,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Stronghold",
+        "destinations": [
+          "Stronghold"
+        ],
         "proofItem": "",
         "searchRadius": 1024,
         "discoveryRadius": 192
@@ -18212,6 +18309,7 @@ window.VR_WIKI_DATA = {
           "slug": "eye_of_the_last_room"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -18229,6 +18327,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "End City",
+        "destinations": [
+          "End City"
+        ],
         "proofItem": "",
         "searchRadius": 1024,
         "discoveryRadius": 192
@@ -18806,6 +18907,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -18915,7 +19017,7 @@ window.VR_WIKI_DATA = {
       "dialogue": {
         "offer": [
           "When someone is hurt, everyone suddenly believes in preparation.",
-          "I would rather prepare before the shouting. Bring clean wool and string first; rough hands can still be careful hands."
+          "I would rather prepare before the shouting. Bring clean wool and string first. Rough hands can still be careful hands."
         ],
         "accept": "I will gather the cloth.",
         "decline": "Not now.",
@@ -18945,7 +19047,7 @@ window.VR_WIKI_DATA = {
                 "label": "Bandages",
                 "lines": [
                   "When someone is hurt, everyone suddenly believes in preparation.",
-                  "I would rather prepare before the shouting. Bring clean wool and string first; rough hands can still be careful hands."
+                  "I would rather prepare before the shouting. Bring clean wool and string first. Rough hands can still be careful hands."
                 ],
                 "responses": [
                   {
@@ -19207,7 +19309,7 @@ window.VR_WIKI_DATA = {
                 "label": "Bandages",
                 "lines": [
                   "When someone is hurt, everyone suddenly believes in preparation.",
-                  "I would rather prepare before the shouting. Bring clean wool and string first; rough hands can still be careful hands."
+                  "I would rather prepare before the shouting. Bring clean wool and string first. Rough hands can still be careful hands."
                 ],
                 "responses": [
                   {
@@ -19482,6 +19584,7 @@ window.VR_WIKI_DATA = {
           "slug": "clean_bandages"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -20157,6 +20260,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -20875,6 +20979,7 @@ window.VR_WIKI_DATA = {
           "slug": "new_furrows"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -20892,7 +20997,7 @@ window.VR_WIKI_DATA = {
       },
       "target": null,
       "objectives": [
-        "Choose Choice: Canal or Compost",
+        "Choose the route with the quest giver",
         "Lay Canal",
         "1 Water Bucket",
         "Work Composter",
@@ -21868,6 +21973,13 @@ window.VR_WIKI_DATA = {
           "slug": "choose_the_soil"
         }
       ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:choose_the_soil",
+          "key": "choice",
+          "value": "canal"
+        }
+      ],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -22583,6 +22695,13 @@ window.VR_WIKI_DATA = {
           "slug": "choose_the_soil"
         }
       ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:choose_the_soil",
+          "key": "choice",
+          "value": "compost"
+        }
+      ],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -23295,6 +23414,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -23971,6 +24091,7 @@ window.VR_WIKI_DATA = {
           "slug": "first_fire"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -24646,6 +24767,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -25180,6 +25302,7 @@ window.VR_WIKI_DATA = {
           "slug": "pearl_lessons"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -25860,6 +25983,7 @@ window.VR_WIKI_DATA = {
           "slug": "nether_candle"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -25970,7 +26094,7 @@ window.VR_WIKI_DATA = {
         "accept": "I will prepare for the gate.",
         "decline": "Not yet.",
         "started": [
-          "Defeat 3 endermen and bring 3 eyes of ender. We are not opening anything today; we are learning how not to panic tomorrow."
+          "Defeat 3 endermen and bring 3 eyes of ender. We are not opening anything today. We are learning how not to panic tomorrow."
         ],
         "reminder": [
           "Defeat 3 endermen and bring 3 eyes of ender for the gate lesson.",
@@ -26056,7 +26180,7 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Defeat 3 endermen and bring 3 eyes of ender. We are not opening anything today; we are learning how not to panic tomorrow."
+                  "Defeat 3 endermen and bring 3 eyes of ender. We are not opening anything today. We are learning how not to panic tomorrow."
                 ]
               },
               {
@@ -26318,7 +26442,7 @@ window.VR_WIKI_DATA = {
                 "key": "started",
                 "label": "Start: Started",
                 "lines": [
-                  "Defeat 3 endermen and bring 3 eyes of ender. We are not opening anything today; we are learning how not to panic tomorrow."
+                  "Defeat 3 endermen and bring 3 eyes of ender. We are not opening anything today. We are learning how not to panic tomorrow."
                 ]
               },
               {
@@ -26532,6 +26656,7 @@ window.VR_WIKI_DATA = {
           "slug": "eye_before_dawn"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -27199,6 +27324,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -27216,6 +27342,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Ancient City",
+        "destinations": [
+          "Ancient City"
+        ],
         "proofItem": "Echo Shard",
         "searchRadius": 256,
         "discoveryRadius": 128
@@ -28185,6 +28314,7 @@ window.VR_WIKI_DATA = {
           "slug": "tales_of_a_lost_civilization"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -28208,6 +28338,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "End City",
+        "destinations": [
+          "End City"
+        ],
         "proofItem": "",
         "searchRadius": 768,
         "discoveryRadius": 192
@@ -28915,6 +29048,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -29639,6 +29773,7 @@ window.VR_WIKI_DATA = {
           "slug": "through_fire"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -29662,12 +29797,16 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Fortress",
+        "destinations": [
+          "Fortress",
+          "Bastion Remnant"
+        ],
         "proofItem": "",
         "searchRadius": 384,
         "discoveryRadius": 128
       },
       "objectives": [
-        "Choose Choice: Fortress or Bastion",
+        "Choose the route with the quest giver",
         "Visit Fortress",
         "Defeat 4 Blaze",
         "2 Blaze Rod",
@@ -29794,14 +29933,14 @@ window.VR_WIKI_DATA = {
       ],
       "dialogue": {
         "offer": [
-          "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+          "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
           "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
         ],
         "accept": "Follow the fortress",
         "decline": "Not yet.",
         "started": [],
         "reminder": [
-          "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+          "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
           "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness.",
           "Reach the fortress mark, defeat four blazes, and bring two rods.",
           "Fortress road. Mark every bridge and never stand where a blaze can see both sides of you.",
@@ -29831,7 +29970,7 @@ window.VR_WIKI_DATA = {
                 "title": "Offer",
                 "label": "Choose a Road",
                 "lines": [
-                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
                   "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
                 ],
                 "responses": [
@@ -29867,7 +30006,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Choose a Road",
                 "lines": [
-                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
                   "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
                 ],
                 "responses": [
@@ -29914,7 +30053,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
                   "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
                 ]
               },
@@ -30238,7 +30377,7 @@ window.VR_WIKI_DATA = {
                 "title": "Offer",
                 "label": "Choose a Road",
                 "lines": [
-                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
                   "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
                 ],
                 "responses": [
@@ -30274,7 +30413,7 @@ window.VR_WIKI_DATA = {
                 "title": "Reminder",
                 "label": "About Choose a Road",
                 "lines": [
-                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
                   "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
                 ],
                 "responses": [
@@ -30321,7 +30460,7 @@ window.VR_WIKI_DATA = {
                 "key": "reminder",
                 "label": "Reminder: Reminder",
                 "lines": [
-                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire; the other is full of owners.",
+                  "The Nether road can follow fortress bridges or bastion walls. One is full of fire. The other is full of owners.",
                   "A fortress offers brewing supplies. A bastion offers gold and better stonework. Neither offers kindness."
                 ]
               },
@@ -30657,6 +30796,13 @@ window.VR_WIKI_DATA = {
         {
           "id": "villagerretaliation:choose_a_road",
           "slug": "choose_a_road"
+        }
+      ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:choose_a_road",
+          "key": "choice",
+          "value": "fortress"
         }
       ],
       "branchGroup": "",
@@ -31382,6 +31528,13 @@ window.VR_WIKI_DATA = {
           "slug": "choose_a_road"
         }
       ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:choose_a_road",
+          "key": "choice",
+          "value": "bastion"
+        }
+      ],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -32100,6 +32253,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -32123,6 +32277,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Shipwreck",
+        "destinations": [
+          "Shipwreck"
+        ],
         "proofItem": "",
         "searchRadius": 384,
         "discoveryRadius": 128
@@ -32830,6 +32987,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -32853,6 +33011,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Trail Ruins",
+        "destinations": [
+          "Trail Ruins"
+        ],
         "proofItem": "",
         "searchRadius": 320,
         "discoveryRadius": 96
@@ -33559,6 +33720,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -34283,6 +34445,7 @@ window.VR_WIKI_DATA = {
           "slug": "small_spark"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -34306,7 +34469,7 @@ window.VR_WIKI_DATA = {
       },
       "target": null,
       "objectives": [
-        "Choose Choice: Sunlight or Whisper",
+        "Choose the route with the quest giver",
         "2 Daylight Detector",
         "4 Redstone Lamp",
         "2 Sculk Sensor",
@@ -35282,6 +35445,13 @@ window.VR_WIKI_DATA = {
           "slug": "power_the_gate"
         }
       ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:power_the_gate",
+          "key": "choice",
+          "value": "sunlight"
+        }
+      ],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -36004,6 +36174,13 @@ window.VR_WIKI_DATA = {
           "slug": "power_the_gate"
         }
       ],
+      "branchRequirements": [
+        {
+          "questId": "villagerretaliation:power_the_gate",
+          "key": "choice",
+          "value": "whisper"
+        }
+      ],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -36027,6 +36204,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Ancient City",
+        "destinations": [
+          "Ancient City"
+        ],
         "proofItem": "",
         "searchRadius": 768,
         "discoveryRadius": 192
@@ -36728,6 +36908,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -37452,6 +37633,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -38178,6 +38360,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -38904,6 +39087,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -39610,6 +39794,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -40322,6 +40507,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -41034,6 +41220,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -41057,6 +41244,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Ancient City",
+        "destinations": [
+          "Ancient City"
+        ],
         "proofItem": "",
         "searchRadius": 768,
         "discoveryRadius": 192
@@ -41757,6 +41947,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -42469,6 +42660,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -42492,6 +42684,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Monument",
+        "destinations": [
+          "Monument"
+        ],
         "proofItem": "",
         "searchRadius": 512,
         "discoveryRadius": 160
@@ -43200,6 +43395,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -43905,6 +44101,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -43928,6 +44125,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "End City",
+        "destinations": [
+          "End City"
+        ],
         "proofItem": "",
         "searchRadius": 640,
         "discoveryRadius": 160
@@ -44636,6 +44836,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -45347,6 +45548,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -46058,6 +46260,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -46769,6 +46972,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -47480,6 +47684,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -47502,6 +47707,9 @@ window.VR_WIKI_DATA = {
       },
       "target": {
         "structure": "Pillager Outpost",
+        "destinations": [
+          "Pillager Outpost"
+        ],
         "proofItem": "",
         "searchRadius": 384,
         "discoveryRadius": 96
@@ -48209,6 +48417,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -48923,6 +49132,7 @@ window.VR_WIKI_DATA = {
           "slug": "watch_arrows"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -49643,6 +49853,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -50353,6 +50564,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -51058,6 +51270,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -51768,6 +51981,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -52472,6 +52686,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -53176,6 +53391,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -53886,6 +54102,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -54596,6 +54813,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -55306,6 +55524,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -56016,6 +56235,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -56723,6 +56943,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -57433,6 +57654,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -58138,6 +58360,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -58842,6 +59065,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -59553,6 +59777,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -60259,6 +60484,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -60969,6 +61195,7 @@ window.VR_WIKI_DATA = {
       "parent": "",
       "parentSlug": "",
       "prerequisites": [],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -61645,6 +61872,7 @@ window.VR_WIKI_DATA = {
           "slug": "honed_handles"
         }
       ],
+      "branchRequirements": [],
       "branchGroup": "",
       "branchChoices": [],
       "requirements": {
@@ -65640,10 +65868,10 @@ window.VR_WIKI_DATA = {
     }
   ],
   "stats": {
-    "dialogueLinesEstimate": 35215,
+    "dialogueLinesEstimate": 82542,
     "dialogueLineBreakdown": {
-      "dialogue": 33576,
-      "forcedDialogue": 315,
+      "dialogue": 80843,
+      "forcedDialogue": 375,
       "dialogueTrees": 0,
       "questModules": 1324
     }

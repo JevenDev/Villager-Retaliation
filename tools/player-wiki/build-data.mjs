@@ -141,18 +141,25 @@ function questObjectives(quest) {
 
 function questTargetInfo(quest) {
   if (quest.target && (quest.target.structure || quest.target.proof_item)) {
+    const structure = quest.target.structure ? titleCase(quest.target.structure) : "";
     return {
-      structure: quest.target.structure ? titleCase(quest.target.structure) : "",
+      structure,
+      destinations: structure ? [structure] : [],
       proofItem: quest.target.proof_item ? itemName(quest.target.proof_item) : "",
       searchRadius: quest.target.search_radius || null,
       discoveryRadius: quest.target.discovery_radius || null
     };
   }
-  const structureObjective = questObjectives(quest)
-    .find((objective) => String(objective.type || "").toLowerCase() === "structure_visit" || objective.structure);
+  const structureObjectives = questObjectives(quest)
+    .filter((objective) => String(objective.type || "").toLowerCase() === "structure_visit" || objective.structure);
+  const structureObjective = structureObjectives[0];
   if (!structureObjective) return null;
+  const destinations = [...new Set(structureObjectives
+    .map((objective) => objective.structure ? titleCase(objective.structure) : "")
+    .filter(Boolean))];
   return {
     structure: structureObjective.structure ? titleCase(structureObjective.structure) : "",
+    destinations,
     proofItem: "",
     searchRadius: structureObjective.search_radius || null,
     discoveryRadius: structureObjective.discovery_radius || null
@@ -192,7 +199,15 @@ function lootEntries(lootTableId) {
 
 function compactDialogueLines(...sources) {
   return sources.flatMap((source) => firstArray(source))
-    .filter((line) => typeof line === "string" && line.trim());
+    .filter((line) => typeof line === "string" && line.trim())
+    .map(playerFacingText);
+}
+
+function playerFacingText(value = "") {
+  return String(value)
+    .replace(/\s*—\s*/g, ", ")
+    .replace(/;\s*([a-z])/g, (_, letter) => `. ${letter.toUpperCase()}`)
+    .replace(/;\s*/g, ". ");
 }
 
 function responseTransitionStage(response = {}) {
@@ -477,6 +492,35 @@ function questConditionRefs(conditions) {
   return [...new Set(refs)];
 }
 
+function questChoiceGates(conditions) {
+  const gates = [];
+  for (const condition of firstArray(conditions)) {
+    if (!condition || typeof condition !== "object") continue;
+    const type = String(condition.type || "").toLowerCase();
+    const questId = condition.quest || condition.quest_id || "";
+    const value = condition.value == null ? "" : String(condition.value);
+    if ((type === "quest_fact" || type === "quest_variable")
+        && questId
+        && value
+        && String(condition.key || "").toLowerCase().includes("choice")) {
+      gates.push({
+        questId,
+        key: String(condition.key || "choice"),
+        value
+      });
+    }
+    gates.push(...questChoiceGates(condition.conditions));
+    gates.push(...questChoiceGates(condition.condition));
+  }
+  const seen = new Set();
+  return gates.filter((gate) => {
+    const key = `${gate.questId}:${gate.key}:${gate.value}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 function questObjectiveText(quest) {
   const proof = quest.target?.proof_item ? [`Proof: ${itemName(quest.target.proof_item)}`] : [];
   const objectives = questObjectives(quest).map((objective) => {
@@ -495,8 +539,13 @@ function questObjectiveText(quest) {
       return `Record memory: ${titleCase(objective.memory || objective.memory_tag || firstArray(objective.memory_tags)[0] || "village event")}`;
     }
     if (type === "choice") {
+      const trackerText = String(objective.tracker?.text || "").trim().replace(/[.!?]$/, "");
+      if (trackerText) return trackerText;
       const values = firstArray(objective.values || objective.choices).map(titleCase).join(" or ");
-      return `Choose ${titleCase(objective.key || objective.id || "route")}${values ? `: ${values}` : ""}`;
+      const choiceName = String(objective.key || "").toLowerCase() === "choice"
+        ? titleCase(objective.id || "route").replace(/^Choose /, "")
+        : titleCase(objective.key || objective.id || "route");
+      return `Choose ${choiceName}${values ? `: ${values}` : ""}`;
     }
     if (type === "fact") {
       return `Confirm ${titleCase(objective.key || objective.tag || objective.id || "quest fact")}`;
@@ -563,6 +612,10 @@ function buildQuests() {
       ...questConditionRefs(offer.conditions),
       ...questConditionRefs(rules.conditions)
     ].filter(Boolean);
+    const branchRequirements = [
+      ...questChoiceGates(offer.conditions),
+      ...questChoiceGates(rules.conditions)
+    ];
     return {
       id: quest.id,
       slug: idTail(quest.id),
@@ -580,6 +633,7 @@ function buildQuests() {
         id,
         slug: idTail(id)
       })),
+      branchRequirements,
       branchGroup: rules.exclusive_group || rules.branch?.exclusive_group || "",
       branchChoices: questBranchChoices(quest),
       requirements: questRequirements(quest),

@@ -27,7 +27,12 @@
         "The defenders gave everything. Today, everything was not enough.",
         "Our party held together from the first horn to the last strike.",
         "No defenders remain between us and victory.",
-        "Catch your breath. We won this raid, and we won it together."
+        "Catch your breath. We won this raid, and we won it together.",
+        "The last defender is down. This raid is ours. We held our ground and broke theirs. That is a victory.",
+        "We held our ground and broke theirs. That is a victory. Hard fighting, clean finish. We saw it through together.",
+        "Hard fighting, clean finish. We saw it through together. Their defense is finished. We can leave with our heads high.",
+        "Their defense is finished. We can leave with our heads high. The village has fallen, and every one of us earned the road out.",
+        "The village has fallen, and every one of us earned the road out. That was no easy fight, but our party proved stronger."
       ],
       "id": "global.messages.21_player_raid_outcomes.messages.interaction.party.player_raid_victory.000"
     },
@@ -48,7 +53,12 @@
         "We could not finish the raid. We can still learn from why.",
         "The village stands, and we are the ones retreating. That is the truth of it.",
         "No excuses. Their defense outlasted our attack.",
-        "We leave empty-handed today. Let the loss make us wiser."
+        "We leave empty-handed today. Let the loss make us wiser.",
+        "The defenders held. There is no victory for us here today. We lost this one. Regroup before the village takes anything else from us.",
+        "We lost this one. Regroup before the village takes anything else from us. Their line did not break, and ours could not stay. The raid is over.",
+        "Their line did not break, and ours could not stay. The raid is over. We leave without victory, but at least we still leave together.",
+        "We leave without victory, but at least we still leave together. That village was ready for us. Next time, we must be readier.",
+        "That village was ready for us. Next time, we must be readier. The raid failed. Save your strength for a fight we can finish."
       ],
       "id": "global.messages.21_player_raid_outcomes.messages.interaction.party.player_raid_loss.001"
     }

@@ -21,7 +21,17 @@
         "No threat in reach right now, but I am ready.",
         "I have the guard post for now.",
         "I am watching the approaches and waiting for trouble to make a mistake.",
-        "All quiet for the moment. I am still on guard."
+        "All quiet for the moment. I am still on guard.",
+        "I am on guard and ready if trouble shows up. I am holding watch here. Nothing gets past me easily.",
+        "I am holding watch here. Nothing gets past me easily. Guard duty is steady. I am keeping my eyes open.",
+        "Guard duty is steady. I am keeping my eyes open. I am staying alert and watching the area.",
+        "I am staying alert and watching the area. The post is covered. I am ready to answer trouble.",
+        "The post is covered. I am ready to answer trouble. I am keeping watch and staying close to my orders.",
+        "I am keeping watch and staying close to my orders. No threat in reach right now, but I am ready.",
+        "No threat in reach right now, but I am ready. I have the guard post for now.",
+        "I have the guard post for now. I am watching the approaches and waiting for trouble to make a mistake.",
+        "I am watching the approaches and waiting for trouble to make a mistake. All quiet for the moment. I am still on guard.",
+        "All quiet for the moment. I am still on guard. I am on guard and ready if trouble shows up."
       ],
       "id": "global.messages.14_work_combat.messages.interaction.work.combat.passive.guard.000"
     },
@@ -37,7 +47,17 @@
         "I am checking the paths, fences, and blind spots.",
         "I have not found trouble yet, so I am staying mobile.",
         "I am keeping watch while I move through the job site.",
-        "The area is calm for now. I am still patrolling."
+        "The area is calm for now. I am still patrolling.",
+        "I am patrolling the work area and watching for trouble. I am making a round through the area.",
+        "I am making a round through the area. No threat yet. I am keeping the patrol moving.",
+        "No threat yet. I am keeping the patrol moving. I am walking the bounds and checking the quiet corners.",
+        "I am walking the bounds and checking the quiet corners. The patrol is under way. I will call out trouble if I find it.",
+        "The patrol is under way. I will call out trouble if I find it. I am roaming the area and keeping my weapon ready.",
+        "I am roaming the area and keeping my weapon ready. I am checking the paths, fences, and blind spots.",
+        "I am checking the paths, fences, and blind spots. I have not found trouble yet, so I am staying mobile.",
+        "I have not found trouble yet, so I am staying mobile. I am keeping watch while I move through the job site.",
+        "I am keeping watch while I move through the job site. The area is calm for now. I am still patrolling.",
+        "The area is calm for now. I am still patrolling. I am patrolling the work area and watching for trouble."
       ],
       "id": "global.messages.14_work_combat.messages.interaction.work.combat.passive.roaming.001"
     },
@@ -53,7 +73,17 @@
         "I am hunting trouble before it reaches the village.",
         "The sweep continues. I am watching every approach.",
         "I am keeping this area clear of unwanted creatures.",
-        "No target yet. I am still sweeping the work area."
+        "No target yet. I am still sweeping the work area.",
+        "I am sweeping the area for non-villager threats. I am checking for creatures that do not belong here.",
+        "I am checking for creatures that do not belong here. Nothing to strike yet. I am still searching the area.",
+        "Nothing to strike yet. I am still searching the area. I am clearing the grounds of anything hostile or wild.",
+        "I am clearing the grounds of anything hostile or wild. I am moving through the area with attack orders ready.",
+        "I am moving through the area with attack orders ready. If a non-villager creature comes into reach, I will engage it.",
+        "If a non-villager creature comes into reach, I will engage it. I am hunting trouble before it reaches the village.",
+        "I am hunting trouble before it reaches the village. The sweep continues. I am watching every approach.",
+        "The sweep continues. I am watching every approach. I am keeping this area clear of unwanted creatures.",
+        "I am keeping this area clear of unwanted creatures. No target yet. I am still sweeping the work area.",
+        "No target yet. I am still sweeping the work area. I am sweeping the area for non-villager threats."
       ],
       "id": "global.messages.14_work_combat.messages.interaction.work.combat.passive.attack_all.002"
     },
@@ -69,7 +99,17 @@
         "Nothing worth taking yet. I am still looking.",
         "I am covering ground and keeping the hunt moving.",
         "I will bring something back if the area gives me a chance.",
-        "The hunting route is clear for now, so I am still roaming."
+        "The hunting route is clear for now, so I am still roaming.",
+        "I am roaming the area and looking for animals to hunt. No quarry yet. I am checking the grounds.",
+        "No quarry yet. I am checking the grounds. I am moving quietly and watching for game.",
+        "I am moving quietly and watching for game. The hunt is still on. I have not found a target yet.",
+        "The hunt is still on. I have not found a target yet. I am searching the area for animals within my orders.",
+        "I am searching the area for animals within my orders. I am keeping to the bounds and watching for tracks.",
+        "I am keeping to the bounds and watching for tracks. Nothing worth taking yet. I am still looking.",
+        "Nothing worth taking yet. I am still looking. I am covering ground and keeping the hunt moving.",
+        "I am covering ground and keeping the hunt moving. I will bring something back if the area gives me a chance.",
+        "I will bring something back if the area gives me a chance. The hunting route is clear for now, so I am still roaming.",
+        "The hunting route is clear for now, so I am still roaming. I am roaming the area and looking for animals to hunt."
       ],
       "id": "global.messages.14_work_combat.messages.interaction.work.combat.passive.hunting.003"
     },
@@ -85,7 +125,17 @@
         "I have eyes on {target} and am moving to stop it.",
         "Guard duty turned active. I am dealing with {target}.",
         "I am protecting the area from {target}.",
-        "{target} is the current threat. I am on it."
+        "{target} is the current threat. I am on it.",
+        "I am defending the area against {target}. {target} is in the area, and I am engaging.",
+        "{target} is in the area, and I am engaging. I found trouble at the guard post: {target}.",
+        "I found trouble at the guard post: {target}. I am holding the line against {target}.",
+        "I am holding the line against {target}. {target} picked the wrong place to wander in.",
+        "{target} picked the wrong place to wander in. I am keeping {target} away from the work area.",
+        "I am keeping {target} away from the work area. I have eyes on {target} and am moving to stop it.",
+        "I have eyes on {target} and am moving to stop it. Guard duty turned active. I am dealing with {target}.",
+        "Guard duty turned active. I am dealing with {target}. I am protecting the area from {target}.",
+        "I am protecting the area from {target}. {target} is the current threat. I am on it.",
+        "{target} is the current threat. I am on it. I am defending the area against {target}."
       ],
       "id": "global.messages.14_work_combat.messages.interaction.work.combat.active.guard.004"
     },
@@ -101,7 +151,17 @@
         "I have a target while roaming: {target}.",
         "I am dealing with {target} on the patrol route.",
         "{target} showed itself. I am taking care of it.",
-        "I found {target}, the patrol can wait a moment."
+        "I found {target}, the patrol can wait a moment.",
+        "I found trouble while patrolling: {target}. {target} crossed my patrol, so I am engaging.",
+        "{target} crossed my patrol, so I am engaging. My patrol found {target}. I am handling it now.",
+        "My patrol found {target}. I am handling it now. I am moving on {target} before it gets comfortable.",
+        "I am moving on {target} before it gets comfortable. {target} is in reach. I am closing in.",
+        "{target} is in reach. I am closing in. Patrol is no longer quiet. I am fighting {target}.",
+        "Patrol is no longer quiet. I am fighting {target}. I have a target while roaming: {target}.",
+        "I have a target while roaming: {target}. I am dealing with {target} on the patrol route.",
+        "I am dealing with {target} on the patrol route. {target} showed itself. I am taking care of it.",
+        "{target} showed itself. I am taking care of it. I found {target}, the patrol can wait a moment.",
+        "I found {target}, the patrol can wait a moment. I found trouble while patrolling: {target}."
       ],
       "id": "global.messages.14_work_combat.messages.interaction.work.combat.active.roaming.005"
     },
@@ -117,7 +177,17 @@
         "Attack orders are active. I am engaging {target}.",
         "I have {target} in my sights.",
         "{target} is the nearest problem, so I am solving it.",
-        "I am keeping pressure on {target}."
+        "I am keeping pressure on {target}.",
+        "I am pressing the attack against {target}. {target} is my target now.",
+        "{target} is my target now. I am closing with {target}.",
+        "I am closing with {target}. I found {target}, and I am not letting it linger.",
+        "I found {target}, and I am not letting it linger. {target} is being dealt with.",
+        "{target} is being dealt with. I am striking at {target} until it backs down or falls.",
+        "I am striking at {target} until it backs down or falls. <red><bold>Attack</bold></red> orders are active. I am engaging {target}.",
+        "Attack orders are active. I am engaging {target}. I have {target} in my sights.",
+        "I have {target} in my sights. {target} is the nearest problem, so I am solving it.",
+        "{target} is the nearest problem, so I am solving it. I am keeping pressure on {target}.",
+        "I am keeping pressure on {target}. I am pressing the attack against {target}."
       ],
       "id": "global.messages.14_work_combat.messages.interaction.work.combat.active.attack_all.006"
     },
@@ -133,7 +203,17 @@
         "I am closing the distance on {target}.",
         "The trail led to {target}. I am on it.",
         "I have my quarry: {target}.",
-        "I am taking care of {target} before it wanders off."
+        "I am taking care of {target} before it wanders off.",
+        "I am hunting down {target}. {target} is the quarry now.",
+        "{target} is the quarry now. I found {target} and am moving in.",
+        "I found {target} and am moving in. The hunt has a target: {target}.",
+        "The hunt has a target: {target}. I am tracking {target} through the area.",
+        "I am tracking {target} through the area. {target} is close enough to pursue.",
+        "{target} is close enough to pursue. I am closing the distance on {target}.",
+        "I am closing the distance on {target}. The trail led to {target}. I am on it.",
+        "The trail led to {target}. I am on it. I have my quarry: {target}.",
+        "I have my quarry: {target}. I am taking care of {target} before it wanders off.",
+        "I am taking care of {target} before it wanders off. I am hunting down {target}."
       ],
       "id": "global.messages.14_work_combat.messages.interaction.work.combat.active.hunting.007"
     }

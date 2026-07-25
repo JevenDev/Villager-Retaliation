@@ -21,7 +21,17 @@
         "For the moment, I am busy with this. I am looking over the fields for crops ready to harvest.",
         "I will keep going from here. I am looking over the fields for crops ready to harvest.",
         "The work is still moving. I am looking over the fields for crops ready to harvest.",
-        "I am working through it. I am looking over the fields for crops ready to harvest."
+        "I am working through it. I am looking over the fields for crops ready to harvest.",
+        "I am looking over the fields for crops ready to harvest. Right now, that is my focus. I am looking over the fields for crops ready to harvest.",
+        "Right now, that is my focus. I am looking over the fields for crops ready to harvest. That is my current step. I am looking over the fields for crops ready to harvest.",
+        "That is my current step. I am looking over the fields for crops ready to harvest. I am keeping the job moving. I am looking over the fields for crops ready to harvest.",
+        "I am keeping the job moving. I am looking over the fields for crops ready to harvest. This is where I am in the work. I am looking over the fields for crops ready to harvest.",
+        "This is where I am in the work. I am looking over the fields for crops ready to harvest. I am staying with the task. I am looking over the fields for crops ready to harvest.",
+        "I am staying with the task. I am looking over the fields for crops ready to harvest. For the moment, I am busy with this. I am looking over the fields for crops ready to harvest.",
+        "For the moment, I am busy with this. I am looking over the fields for crops ready to harvest. I will keep going from here. I am looking over the fields for crops ready to harvest.",
+        "I will keep going from here. I am looking over the fields for crops ready to harvest. The work is still moving. I am looking over the fields for crops ready to harvest.",
+        "The work is still moving. I am looking over the fields for crops ready to harvest. I am working through it. I am looking over the fields for crops ready to harvest.",
+        "I am working through it. I am looking over the fields for crops ready to harvest. I am looking over the fields for crops ready to harvest."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.searching_scan.000"
     },
@@ -37,7 +47,17 @@
         "For the moment, I am busy with this. There are no ripe crops nearby, so I am heading to storage for now.",
         "I will keep going from here. There are no ripe crops nearby, so I am heading to storage for now.",
         "The work is still moving. There are no ripe crops nearby, so I am heading to storage for now.",
-        "I am working through it. There are no ripe crops nearby, so I am heading to storage for now."
+        "I am working through it. There are no ripe crops nearby, so I am heading to storage for now.",
+        "There are no ripe crops nearby, so I am heading to storage for now. Right now, that is my focus. There are no ripe crops nearby, so I am heading to storage for now.",
+        "Right now, that is my focus. There are no ripe crops nearby, so I am heading to storage for now. That is my current step. There are no ripe crops nearby, so I am heading to storage for now.",
+        "That is my current step. There are no ripe crops nearby, so I am heading to storage for now. I am keeping the job moving. There are no ripe crops nearby, so I am heading to storage for now.",
+        "I am keeping the job moving. There are no ripe crops nearby, so I am heading to storage for now. This is where I am in the work. There are no ripe crops nearby, so I am heading to storage for now.",
+        "This is where I am in the work. There are no ripe crops nearby, so I am heading to storage for now. I am staying with the task. There are no ripe crops nearby, so I am heading to storage for now.",
+        "I am staying with the task. There are no ripe crops nearby, so I am heading to storage for now. For the moment, I am busy with this. There are no ripe crops nearby, so I am heading to storage for now.",
+        "For the moment, I am busy with this. There are no ripe crops nearby, so I am heading to storage for now. I will keep going from here. There are no ripe crops nearby, so I am heading to storage for now.",
+        "I will keep going from here. There are no ripe crops nearby, so I am heading to storage for now. The work is still moving. There are no ripe crops nearby, so I am heading to storage for now.",
+        "The work is still moving. There are no ripe crops nearby, so I am heading to storage for now. I am working through it. There are no ripe crops nearby, so I am heading to storage for now.",
+        "I am working through it. There are no ripe crops nearby, so I am heading to storage for now. There are no ripe crops nearby, so I am heading to storage for now."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.no_target_depositing.001"
     },
@@ -53,7 +73,17 @@
         "For the moment, I am busy with this. I found nothing ripe yet, so I am walking the fields.",
         "I will keep going from here. I found nothing ripe yet, so I am walking the fields.",
         "The work is still moving. I found nothing ripe yet, so I am walking the fields.",
-        "I am working through it. I found nothing ripe yet, so I am walking the fields."
+        "I am working through it. I found nothing ripe yet, so I am walking the fields.",
+        "I found nothing ripe yet, so I am walking the fields. Right now, that is my focus. I found nothing ripe yet, so I am walking the fields.",
+        "Right now, that is my focus. I found nothing ripe yet, so I am walking the fields. That is my current step. I found nothing ripe yet, so I am walking the fields.",
+        "That is my current step. I found nothing ripe yet, so I am walking the fields. I am keeping the job moving. I found nothing ripe yet, so I am walking the fields.",
+        "I am keeping the job moving. I found nothing ripe yet, so I am walking the fields. This is where I am in the work. I found nothing ripe yet, so I am walking the fields.",
+        "This is where I am in the work. I found nothing ripe yet, so I am walking the fields. I am staying with the task. I found nothing ripe yet, so I am walking the fields.",
+        "I am staying with the task. I found nothing ripe yet, so I am walking the fields. For the moment, I am busy with this. I found nothing ripe yet, so I am walking the fields.",
+        "For the moment, I am busy with this. I found nothing ripe yet, so I am walking the fields. I will keep going from here. I found nothing ripe yet, so I am walking the fields.",
+        "I will keep going from here. I found nothing ripe yet, so I am walking the fields. The work is still moving. I found nothing ripe yet, so I am walking the fields.",
+        "The work is still moving. I found nothing ripe yet, so I am walking the fields. I am working through it. I found nothing ripe yet, so I am walking the fields.",
+        "I am working through it. I found nothing ripe yet, so I am walking the fields. I found nothing ripe yet, so I am walking the fields."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.roaming.002"
     },
@@ -69,7 +99,17 @@
         "I am waiting on a fix. There are no ripe crops within reach just now.",
         "The work is paused until this changes. There are no ripe crops within reach just now.",
         "This is the problem right now. There are no ripe crops within reach just now.",
-        "I am stuck here for the moment. There are no ripe crops within reach just now."
+        "I am stuck here for the moment. There are no ripe crops within reach just now.",
+        "There are no ripe crops within reach just now. I am held up for now. There are no ripe crops within reach just now.",
+        "I am held up for now. There are no ripe crops within reach just now. This is stopping the job for the moment. There are no ripe crops within reach just now.",
+        "This is stopping the job for the moment. There are no ripe crops within reach just now. I cannot move on yet. There are no ripe crops within reach just now.",
+        "I cannot move on yet. There are no ripe crops within reach just now. I will continue once this is fixed. There are no ripe crops within reach just now.",
+        "I will continue once this is fixed. There are no ripe crops within reach just now. That needs attention before I can keep working. There are no ripe crops within reach just now.",
+        "That needs attention before I can keep working. There are no ripe crops within reach just now. I am waiting on a fix. There are no ripe crops within reach just now.",
+        "I am waiting on a fix. There are no ripe crops within reach just now. The work is paused until this changes. There are no ripe crops within reach just now.",
+        "The work is paused until this changes. There are no ripe crops within reach just now. This is the problem right now. There are no ripe crops within reach just now.",
+        "This is the problem right now. There are no ripe crops within reach just now. I am stuck here for the moment. There are no ripe crops within reach just now.",
+        "I am stuck here for the moment. There are no ripe crops within reach just now. There are no ripe crops within reach just now."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.no_targets.003"
     },
@@ -85,7 +125,17 @@
         "For the moment, I am busy with this. The crops are planted. I am waiting for them to grow.",
         "I will keep going from here. The crops are planted. I am waiting for them to grow.",
         "The work is still moving. The crops are planted. I am waiting for them to grow.",
-        "I am working through it. The crops are planted. I am waiting for them to grow."
+        "I am working through it. The crops are planted. I am waiting for them to grow.",
+        "The crops are planted. I am waiting for them to grow. Right now, that is my focus. The crops are planted. I am waiting for them to grow.",
+        "Right now, that is my focus. The crops are planted. I am waiting for them to grow. That is my current step. The crops are planted. I am waiting for them to grow.",
+        "That is my current step. The crops are planted. I am waiting for them to grow. I am keeping the job moving. The crops are planted. I am waiting for them to grow.",
+        "I am keeping the job moving. The crops are planted. I am waiting for them to grow. This is where I am in the work. The crops are planted. I am waiting for them to grow.",
+        "This is where I am in the work. The crops are planted. I am waiting for them to grow. I am staying with the task. The crops are planted. I am waiting for them to grow.",
+        "I am staying with the task. The crops are planted. I am waiting for them to grow. For the moment, I am busy with this. The crops are planted. I am waiting for them to grow.",
+        "For the moment, I am busy with this. The crops are planted. I am waiting for them to grow. I will keep going from here. The crops are planted. I am waiting for them to grow.",
+        "I will keep going from here. The crops are planted. I am waiting for them to grow. The work is still moving. The crops are planted. I am waiting for them to grow.",
+        "The work is still moving. The crops are planted. I am waiting for them to grow. I am working through it. The crops are planted. I am waiting for them to grow.",
+        "I am working through it. The crops are planted. I am waiting for them to grow. The crops are planted. I am waiting for them to grow."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.waiting_for_growth.004"
     },
@@ -101,7 +151,17 @@
         "I am waiting on a fix. I need a hoe before I can work the fields.",
         "The work is paused until this changes. I need a hoe before I can work the fields.",
         "This is the problem right now. I need a hoe before I can work the fields.",
-        "I am stuck here for the moment. I need a hoe before I can work the fields."
+        "I am stuck here for the moment. I need a hoe before I can work the fields.",
+        "I need a hoe before I can work the fields. I am held up for now. I need a hoe before I can work the fields.",
+        "I am held up for now. I need a hoe before I can work the fields. This is stopping the job for the moment. I need a hoe before I can work the fields.",
+        "This is stopping the job for the moment. I need a hoe before I can work the fields. I cannot move on yet. I need a hoe before I can work the fields.",
+        "I cannot move on yet. I need a hoe before I can work the fields. I will continue once this is fixed. I need a hoe before I can work the fields.",
+        "I will continue once this is fixed. I need a hoe before I can work the fields. That needs attention before I can keep working. I need a hoe before I can work the fields.",
+        "That needs attention before I can keep working. I need a hoe before I can work the fields. I am waiting on a fix. I need a hoe before I can work the fields.",
+        "I am waiting on a fix. I need a hoe before I can work the fields. The work is paused until this changes. I need a hoe before I can work the fields.",
+        "The work is paused until this changes. I need a hoe before I can work the fields. This is the problem right now. I need a hoe before I can work the fields.",
+        "This is the problem right now. I need a hoe before I can work the fields. I am stuck here for the moment. I need a hoe before I can work the fields.",
+        "I am stuck here for the moment. I need a hoe before I can work the fields. I need a hoe before I can work the fields."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.missing_hoe.005"
     },
@@ -117,7 +177,17 @@
         "For the moment, I am busy with this. I am heading to storage for a hoe before I work the fields.",
         "I will keep going from here. I am heading to storage for a hoe before I work the fields.",
         "The work is still moving. I am heading to storage for a hoe before I work the fields.",
-        "I am working through it. I am heading to storage for a hoe before I work the fields."
+        "I am working through it. I am heading to storage for a hoe before I work the fields.",
+        "I am heading to storage for a hoe before I work the fields. Right now, that is my focus. I am heading to storage for a hoe before I work the fields.",
+        "Right now, that is my focus. I am heading to storage for a hoe before I work the fields. That is my current step. I am heading to storage for a hoe before I work the fields.",
+        "That is my current step. I am heading to storage for a hoe before I work the fields. I am keeping the job moving. I am heading to storage for a hoe before I work the fields.",
+        "I am keeping the job moving. I am heading to storage for a hoe before I work the fields. This is where I am in the work. I am heading to storage for a hoe before I work the fields.",
+        "This is where I am in the work. I am heading to storage for a hoe before I work the fields. I am staying with the task. I am heading to storage for a hoe before I work the fields.",
+        "I am staying with the task. I am heading to storage for a hoe before I work the fields. For the moment, I am busy with this. I am heading to storage for a hoe before I work the fields.",
+        "For the moment, I am busy with this. I am heading to storage for a hoe before I work the fields. I will keep going from here. I am heading to storage for a hoe before I work the fields.",
+        "I will keep going from here. I am heading to storage for a hoe before I work the fields. The work is still moving. I am heading to storage for a hoe before I work the fields.",
+        "The work is still moving. I am heading to storage for a hoe before I work the fields. I am working through it. I am heading to storage for a hoe before I work the fields.",
+        "I am working through it. I am heading to storage for a hoe before I work the fields. I am heading to storage for a hoe before I work the fields."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.collecting_hoe.006"
     },
@@ -133,7 +203,17 @@
         "That is taken care of. I found a hoe in storage and am returning to the fields.",
         "The work moved forward. I found a hoe in storage and am returning to the fields.",
         "I can report this much. I found a hoe in storage and am returning to the fields.",
-        "That part is done: I found a hoe in storage and am returning to the fields."
+        "That part is done: I found a hoe in storage and am returning to the fields.",
+        "I found a hoe in storage and am returning to the fields. That part is handled. I found a hoe in storage and am returning to the fields.",
+        "That part is handled. I found a hoe in storage and am returning to the fields. Here is the update: I found a hoe in storage and am returning to the fields.",
+        "Here is the update: I found a hoe in storage and am returning to the fields. That moved things along: I found a hoe in storage and am returning to the fields.",
+        "That moved things along: I found a hoe in storage and am returning to the fields. That step is finished. I found a hoe in storage and am returning to the fields.",
+        "That step is finished. I found a hoe in storage and am returning to the fields. I have that sorted. I found a hoe in storage and am returning to the fields.",
+        "I have that sorted. I found a hoe in storage and am returning to the fields. That is taken care of. I found a hoe in storage and am returning to the fields.",
+        "That is taken care of. I found a hoe in storage and am returning to the fields. The work moved forward. I found a hoe in storage and am returning to the fields.",
+        "The work moved forward. I found a hoe in storage and am returning to the fields. I can report this much. I found a hoe in storage and am returning to the fields.",
+        "I can report this much. I found a hoe in storage and am returning to the fields. That part is done: I found a hoe in storage and am returning to the fields.",
+        "That part is done: I found a hoe in storage and am returning to the fields. I found a hoe in storage and am returning to the fields."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.collected_hoe.007"
     },
@@ -149,7 +229,17 @@
         "I am waiting on a fix. I found a hoe in storage, but I cannot reach it.",
         "The work is paused until this changes. I found a hoe in storage, but I cannot reach it.",
         "This is the problem right now. I found a hoe in storage, but I cannot reach it.",
-        "I am stuck here for the moment. I found a hoe in storage, but I cannot reach it."
+        "I am stuck here for the moment. I found a hoe in storage, but I cannot reach it.",
+        "I found a hoe in storage, but I cannot reach it. I am held up for now. I found a hoe in storage, but I cannot reach it.",
+        "I am held up for now. I found a hoe in storage, but I cannot reach it. This is stopping the job for the moment. I found a hoe in storage, but I cannot reach it.",
+        "This is stopping the job for the moment. I found a hoe in storage, but I cannot reach it. I cannot move on yet. I found a hoe in storage, but I cannot reach it.",
+        "I cannot move on yet. I found a hoe in storage, but I cannot reach it. I will continue once this is fixed. I found a hoe in storage, but I cannot reach it.",
+        "I will continue once this is fixed. I found a hoe in storage, but I cannot reach it. That needs attention before I can keep working. I found a hoe in storage, but I cannot reach it.",
+        "That needs attention before I can keep working. I found a hoe in storage, but I cannot reach it. I am waiting on a fix. I found a hoe in storage, but I cannot reach it.",
+        "I am waiting on a fix. I found a hoe in storage, but I cannot reach it. The work is paused until this changes. I found a hoe in storage, but I cannot reach it.",
+        "The work is paused until this changes. I found a hoe in storage, but I cannot reach it. This is the problem right now. I found a hoe in storage, but I cannot reach it.",
+        "This is the problem right now. I found a hoe in storage, but I cannot reach it. I am stuck here for the moment. I found a hoe in storage, but I cannot reach it.",
+        "I am stuck here for the moment. I found a hoe in storage, but I cannot reach it. I found a hoe in storage, but I cannot reach it."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.hoe_unreachable.008"
     },
@@ -165,7 +255,17 @@
         "I am waiting on a fix. I found a hoe in storage, but my job inventory has no room for it.",
         "The work is paused until this changes. I found a hoe in storage, but my job inventory has no room for it.",
         "This is the problem right now. I found a hoe in storage, but my job inventory has no room for it.",
-        "I am stuck here for the moment. I found a hoe in storage, but my job inventory has no room for it."
+        "I am stuck here for the moment. I found a hoe in storage, but my job inventory has no room for it.",
+        "I found a hoe in storage, but my job inventory has no room for it. I am held up for now. I found a hoe in storage, but my job inventory has no room for it.",
+        "I am held up for now. I found a hoe in storage, but my job inventory has no room for it. This is stopping the job for the moment. I found a hoe in storage, but my job inventory has no room for it.",
+        "This is stopping the job for the moment. I found a hoe in storage, but my job inventory has no room for it. I cannot move on yet. I found a hoe in storage, but my job inventory has no room for it.",
+        "I cannot move on yet. I found a hoe in storage, but my job inventory has no room for it. I will continue once this is fixed. I found a hoe in storage, but my job inventory has no room for it.",
+        "I will continue once this is fixed. I found a hoe in storage, but my job inventory has no room for it. That needs attention before I can keep working. I found a hoe in storage, but my job inventory has no room for it.",
+        "That needs attention before I can keep working. I found a hoe in storage, but my job inventory has no room for it. I am waiting on a fix. I found a hoe in storage, but my job inventory has no room for it.",
+        "I am waiting on a fix. I found a hoe in storage, but my job inventory has no room for it. The work is paused until this changes. I found a hoe in storage, but my job inventory has no room for it.",
+        "The work is paused until this changes. I found a hoe in storage, but my job inventory has no room for it. This is the problem right now. I found a hoe in storage, but my job inventory has no room for it.",
+        "This is the problem right now. I found a hoe in storage, but my job inventory has no room for it. I am stuck here for the moment. I found a hoe in storage, but my job inventory has no room for it.",
+        "I am stuck here for the moment. I found a hoe in storage, but my job inventory has no room for it. I found a hoe in storage, but my job inventory has no room for it."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.hoe_inventory_full.009"
     },
@@ -181,7 +281,17 @@
         "That's all I have for now: That farming target is no longer ready for the harvest I had in mind.",
         "Understood. That farming target is no longer ready for the harvest I had in mind.",
         "Nothing else to add yet. That farming target is no longer ready for the harvest I had in mind.",
-        "For the moment: That farming target is no longer ready for the harvest I had in mind."
+        "For the moment: That farming target is no longer ready for the harvest I had in mind.",
+        "That farming target is no longer ready for the harvest I had in mind. All right. That farming target is no longer ready for the harvest I had in mind.",
+        "All right. That farming target is no longer ready for the harvest I had in mind. Here's where I am with it: That farming target is no longer ready for the harvest I had in mind.",
+        "Here's where I am with it: That farming target is no longer ready for the harvest I had in mind. For now, that is the situation. That farming target is no longer ready for the harvest I had in mind.",
+        "For now, that is the situation. That farming target is no longer ready for the harvest I had in mind. Just so you know. That farming target is no longer ready for the harvest I had in mind.",
+        "Just so you know. That farming target is no longer ready for the harvest I had in mind. Plainly put: That farming target is no longer ready for the harvest I had in mind.",
+        "Plainly put: That farming target is no longer ready for the harvest I had in mind. That's all I have for now: That farming target is no longer ready for the harvest I had in mind.",
+        "That's all I have for now: That farming target is no longer ready for the harvest I had in mind. Understood. That farming target is no longer ready for the harvest I had in mind.",
+        "Understood. That farming target is no longer ready for the harvest I had in mind. Nothing else to add yet. That farming target is no longer ready for the harvest I had in mind.",
+        "Nothing else to add yet. That farming target is no longer ready for the harvest I had in mind. For the moment: That farming target is no longer ready for the harvest I had in mind.",
+        "For the moment: That farming target is no longer ready for the harvest I had in mind. That farming target is no longer ready for the harvest I had in mind."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.target_changed.010"
     },
@@ -197,7 +307,17 @@
         "I am waiting on a fix. That crop is blocked off, so I am looking for another I can reach.",
         "The work is paused until this changes. That crop is blocked off, so I am looking for another I can reach.",
         "This is the problem right now. That crop is blocked off, so I am looking for another I can reach.",
-        "I am stuck here for the moment. That crop is blocked off, so I am looking for another I can reach."
+        "I am stuck here for the moment. That crop is blocked off, so I am looking for another I can reach.",
+        "That crop is blocked off, so I am looking for another I can reach. I am held up for now. That crop is blocked off, so I am looking for another I can reach.",
+        "I am held up for now. That crop is blocked off, so I am looking for another I can reach. This is stopping the job for the moment. That crop is blocked off, so I am looking for another I can reach.",
+        "This is stopping the job for the moment. That crop is blocked off, so I am looking for another I can reach. I cannot move on yet. That crop is blocked off, so I am looking for another I can reach.",
+        "I cannot move on yet. That crop is blocked off, so I am looking for another I can reach. I will continue once this is fixed. That crop is blocked off, so I am looking for another I can reach.",
+        "I will continue once this is fixed. That crop is blocked off, so I am looking for another I can reach. That needs attention before I can keep working. That crop is blocked off, so I am looking for another I can reach.",
+        "That needs attention before I can keep working. That crop is blocked off, so I am looking for another I can reach. I am waiting on a fix. That crop is blocked off, so I am looking for another I can reach.",
+        "I am waiting on a fix. That crop is blocked off, so I am looking for another I can reach. The work is paused until this changes. That crop is blocked off, so I am looking for another I can reach.",
+        "The work is paused until this changes. That crop is blocked off, so I am looking for another I can reach. This is the problem right now. That crop is blocked off, so I am looking for another I can reach.",
+        "This is the problem right now. That crop is blocked off, so I am looking for another I can reach. I am stuck here for the moment. That crop is blocked off, so I am looking for another I can reach.",
+        "I am stuck here for the moment. That crop is blocked off, so I am looking for another I can reach. That crop is blocked off, so I am looking for another I can reach."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.crop_blocked.011"
     },
@@ -213,7 +333,17 @@
         "For the moment, I am busy with this. That crop is awkward from here, so I am changing my position.",
         "I will keep going from here. That crop is awkward from here, so I am changing my position.",
         "The work is still moving. That crop is awkward from here, so I am changing my position.",
-        "I am working through it. That crop is awkward from here, so I am changing my position."
+        "I am working through it. That crop is awkward from here, so I am changing my position.",
+        "That crop is awkward from here, so I am changing my position. Right now, that is my focus. That crop is awkward from here, so I am changing my position.",
+        "Right now, that is my focus. That crop is awkward from here, so I am changing my position. That is my current step. That crop is awkward from here, so I am changing my position.",
+        "That is my current step. That crop is awkward from here, so I am changing my position. I am keeping the job moving. That crop is awkward from here, so I am changing my position.",
+        "I am keeping the job moving. That crop is awkward from here, so I am changing my position. This is where I am in the work. That crop is awkward from here, so I am changing my position.",
+        "This is where I am in the work. That crop is awkward from here, so I am changing my position. I am staying with the task. That crop is awkward from here, so I am changing my position.",
+        "I am staying with the task. That crop is awkward from here, so I am changing my position. For the moment, I am busy with this. That crop is awkward from here, so I am changing my position.",
+        "For the moment, I am busy with this. That crop is awkward from here, so I am changing my position. I will keep going from here. That crop is awkward from here, so I am changing my position.",
+        "I will keep going from here. That crop is awkward from here, so I am changing my position. The work is still moving. That crop is awkward from here, so I am changing my position.",
+        "The work is still moving. That crop is awkward from here, so I am changing my position. I am working through it. That crop is awkward from here, so I am changing my position.",
+        "I am working through it. That crop is awkward from here, so I am changing my position. That crop is awkward from here, so I am changing my position."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.crop_repositioning.012"
     },
@@ -229,7 +359,17 @@
         "For the moment, I am busy with this. I am moving toward the ripe crop now.",
         "I will keep going from here. I am moving toward the ripe crop now.",
         "The work is still moving. I am moving toward the ripe crop now.",
-        "I am working through it. I am moving toward the ripe crop now."
+        "I am working through it. I am moving toward the ripe crop now.",
+        "I am moving toward the ripe crop now. Right now, that is my focus. I am moving toward the ripe crop now.",
+        "Right now, that is my focus. I am moving toward the ripe crop now. That is my current step. I am moving toward the ripe crop now.",
+        "That is my current step. I am moving toward the ripe crop now. I am keeping the job moving. I am moving toward the ripe crop now.",
+        "I am keeping the job moving. I am moving toward the ripe crop now. This is where I am in the work. I am moving toward the ripe crop now.",
+        "This is where I am in the work. I am moving toward the ripe crop now. I am staying with the task. I am moving toward the ripe crop now.",
+        "I am staying with the task. I am moving toward the ripe crop now. For the moment, I am busy with this. I am moving toward the ripe crop now.",
+        "For the moment, I am busy with this. I am moving toward the ripe crop now. I will keep going from here. I am moving toward the ripe crop now.",
+        "I will keep going from here. I am moving toward the ripe crop now. The work is still moving. I am moving toward the ripe crop now.",
+        "The work is still moving. I am moving toward the ripe crop now. I am working through it. I am moving toward the ripe crop now.",
+        "I am working through it. I am moving toward the ripe crop now. I am moving toward the ripe crop now."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.moving_to_crop.013"
     },
@@ -245,7 +385,17 @@
         "I am waiting on a fix. That farming target is blocked off, so I am looking for another I can reach.",
         "The work is paused until this changes. That farming target is blocked off, so I am looking for another I can reach.",
         "This is the problem right now. That farming target is blocked off, so I am looking for another I can reach.",
-        "I am stuck here for the moment. That farming target is blocked off, so I am looking for another I can reach."
+        "I am stuck here for the moment. That farming target is blocked off, so I am looking for another I can reach.",
+        "That farming target is blocked off, so I am looking for another I can reach. I am held up for now. That farming target is blocked off, so I am looking for another I can reach.",
+        "I am held up for now. That farming target is blocked off, so I am looking for another I can reach. This is stopping the job for the moment. That farming target is blocked off, so I am looking for another I can reach.",
+        "This is stopping the job for the moment. That farming target is blocked off, so I am looking for another I can reach. I cannot move on yet. That farming target is blocked off, so I am looking for another I can reach.",
+        "I cannot move on yet. That farming target is blocked off, so I am looking for another I can reach. I will continue once this is fixed. That farming target is blocked off, so I am looking for another I can reach.",
+        "I will continue once this is fixed. That farming target is blocked off, so I am looking for another I can reach. That needs attention before I can keep working. That farming target is blocked off, so I am looking for another I can reach.",
+        "That needs attention before I can keep working. That farming target is blocked off, so I am looking for another I can reach. I am waiting on a fix. That farming target is blocked off, so I am looking for another I can reach.",
+        "I am waiting on a fix. That farming target is blocked off, so I am looking for another I can reach. The work is paused until this changes. That farming target is blocked off, so I am looking for another I can reach.",
+        "The work is paused until this changes. That farming target is blocked off, so I am looking for another I can reach. This is the problem right now. That farming target is blocked off, so I am looking for another I can reach.",
+        "This is the problem right now. That farming target is blocked off, so I am looking for another I can reach. I am stuck here for the moment. That farming target is blocked off, so I am looking for another I can reach.",
+        "I am stuck here for the moment. That farming target is blocked off, so I am looking for another I can reach. That farming target is blocked off, so I am looking for another I can reach."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.output_blocked.014"
     },
@@ -261,7 +411,17 @@
         "For the moment, I am busy with this. That farming target is awkward from here, so I am changing my position.",
         "I will keep going from here. That farming target is awkward from here, so I am changing my position.",
         "The work is still moving. That farming target is awkward from here, so I am changing my position.",
-        "I am working through it. That farming target is awkward from here, so I am changing my position."
+        "I am working through it. That farming target is awkward from here, so I am changing my position.",
+        "That farming target is awkward from here, so I am changing my position. Right now, that is my focus. That farming target is awkward from here, so I am changing my position.",
+        "Right now, that is my focus. That farming target is awkward from here, so I am changing my position. That is my current step. That farming target is awkward from here, so I am changing my position.",
+        "That is my current step. That farming target is awkward from here, so I am changing my position. I am keeping the job moving. That farming target is awkward from here, so I am changing my position.",
+        "I am keeping the job moving. That farming target is awkward from here, so I am changing my position. This is where I am in the work. That farming target is awkward from here, so I am changing my position.",
+        "This is where I am in the work. That farming target is awkward from here, so I am changing my position. I am staying with the task. That farming target is awkward from here, so I am changing my position.",
+        "I am staying with the task. That farming target is awkward from here, so I am changing my position. For the moment, I am busy with this. That farming target is awkward from here, so I am changing my position.",
+        "For the moment, I am busy with this. That farming target is awkward from here, so I am changing my position. I will keep going from here. That farming target is awkward from here, so I am changing my position.",
+        "I will keep going from here. That farming target is awkward from here, so I am changing my position. The work is still moving. That farming target is awkward from here, so I am changing my position.",
+        "The work is still moving. That farming target is awkward from here, so I am changing my position. I am working through it. That farming target is awkward from here, so I am changing my position.",
+        "I am working through it. That farming target is awkward from here, so I am changing my position. That farming target is awkward from here, so I am changing my position."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.output_repositioning.015"
     },
@@ -277,7 +437,17 @@
         "For the moment, I am busy with this. I am moving toward the harvest target now.",
         "I will keep going from here. I am moving toward the harvest target now.",
         "The work is still moving. I am moving toward the harvest target now.",
-        "I am working through it. I am moving toward the harvest target now."
+        "I am working through it. I am moving toward the harvest target now.",
+        "I am moving toward the harvest target now. Right now, that is my focus. I am moving toward the harvest target now.",
+        "Right now, that is my focus. I am moving toward the harvest target now. That is my current step. I am moving toward the harvest target now.",
+        "That is my current step. I am moving toward the harvest target now. I am keeping the job moving. I am moving toward the harvest target now.",
+        "I am keeping the job moving. I am moving toward the harvest target now. This is where I am in the work. I am moving toward the harvest target now.",
+        "This is where I am in the work. I am moving toward the harvest target now. I am staying with the task. I am moving toward the harvest target now.",
+        "I am staying with the task. I am moving toward the harvest target now. For the moment, I am busy with this. I am moving toward the harvest target now.",
+        "For the moment, I am busy with this. I am moving toward the harvest target now. I will keep going from here. I am moving toward the harvest target now.",
+        "I will keep going from here. I am moving toward the harvest target now. The work is still moving. I am moving toward the harvest target now.",
+        "The work is still moving. I am moving toward the harvest target now. I am working through it. I am moving toward the harvest target now.",
+        "I am working through it. I am moving toward the harvest target now. I am moving toward the harvest target now."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.moving_to_output.016"
     },
@@ -293,7 +463,17 @@
         "That's all I have for now: I am harvesting the farming output now.",
         "Understood. I am harvesting the farming output now.",
         "Nothing else to add yet. I am harvesting the farming output now.",
-        "For the moment: I am harvesting the farming output now."
+        "For the moment: I am harvesting the farming output now.",
+        "I am harvesting the farming output now. All right. I am harvesting the farming output now.",
+        "All right. I am harvesting the farming output now. Here's where I am with it: I am harvesting the farming output now.",
+        "Here's where I am with it: I am harvesting the farming output now. For now, that is the situation. I am harvesting the farming output now.",
+        "For now, that is the situation. I am harvesting the farming output now. Just so you know. I am harvesting the farming output now.",
+        "Just so you know. I am harvesting the farming output now. Plainly put: I am harvesting the farming output now.",
+        "Plainly put: I am harvesting the farming output now. That's all I have for now: I am harvesting the farming output now.",
+        "That's all I have for now: I am harvesting the farming output now. Understood. I am harvesting the farming output now.",
+        "Understood. I am harvesting the farming output now. Nothing else to add yet. I am harvesting the farming output now.",
+        "Nothing else to add yet. I am harvesting the farming output now. For the moment: I am harvesting the farming output now.",
+        "For the moment: I am harvesting the farming output now. I am harvesting the farming output now."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.harvesting_output.017"
     },
@@ -309,7 +489,17 @@
         "That is taken care of. I harvested the farming output and gathered it up.",
         "The work moved forward. I harvested the farming output and gathered it up.",
         "I can report this much. I harvested the farming output and gathered it up.",
-        "That part is done: I harvested the farming output and gathered it up."
+        "That part is done: I harvested the farming output and gathered it up.",
+        "I harvested the farming output and gathered it up. That part is handled. I harvested the farming output and gathered it up.",
+        "That part is handled. I harvested the farming output and gathered it up. Here is the update: I harvested the farming output and gathered it up.",
+        "Here is the update: I harvested the farming output and gathered it up. That moved things along: I harvested the farming output and gathered it up.",
+        "That moved things along: I harvested the farming output and gathered it up. That step is finished. I harvested the farming output and gathered it up.",
+        "That step is finished. I harvested the farming output and gathered it up. I have that sorted. I harvested the farming output and gathered it up.",
+        "I have that sorted. I harvested the farming output and gathered it up. That is taken care of. I harvested the farming output and gathered it up.",
+        "That is taken care of. I harvested the farming output and gathered it up. The work moved forward. I harvested the farming output and gathered it up.",
+        "The work moved forward. I harvested the farming output and gathered it up. I can report this much. I harvested the farming output and gathered it up.",
+        "I can report this much. I harvested the farming output and gathered it up. That part is done: I harvested the farming output and gathered it up.",
+        "That part is done: I harvested the farming output and gathered it up. I harvested the farming output and gathered it up."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.completed_output.018"
     },
@@ -325,7 +515,17 @@
         "For the moment, I am busy with this. My hands are full from the harvest, so I am taking it to storage first.",
         "I will keep going from here. My hands are full from the harvest, so I am taking it to storage first.",
         "The work is still moving. My hands are full from the harvest, so I am taking it to storage first.",
-        "I am working through it. My hands are full from the harvest, so I am taking it to storage first."
+        "I am working through it. My hands are full from the harvest, so I am taking it to storage first.",
+        "My hands are full from the harvest, so I am taking it to storage first. Right now, that is my focus. My hands are full from the harvest, so I am taking it to storage first.",
+        "Right now, that is my focus. My hands are full from the harvest, so I am taking it to storage first. That is my current step. My hands are full from the harvest, so I am taking it to storage first.",
+        "That is my current step. My hands are full from the harvest, so I am taking it to storage first. I am keeping the job moving. My hands are full from the harvest, so I am taking it to storage first.",
+        "I am keeping the job moving. My hands are full from the harvest, so I am taking it to storage first. This is where I am in the work. My hands are full from the harvest, so I am taking it to storage first.",
+        "This is where I am in the work. My hands are full from the harvest, so I am taking it to storage first. I am staying with the task. My hands are full from the harvest, so I am taking it to storage first.",
+        "I am staying with the task. My hands are full from the harvest, so I am taking it to storage first. For the moment, I am busy with this. My hands are full from the harvest, so I am taking it to storage first.",
+        "For the moment, I am busy with this. My hands are full from the harvest, so I am taking it to storage first. I will keep going from here. My hands are full from the harvest, so I am taking it to storage first.",
+        "I will keep going from here. My hands are full from the harvest, so I am taking it to storage first. The work is still moving. My hands are full from the harvest, so I am taking it to storage first.",
+        "The work is still moving. My hands are full from the harvest, so I am taking it to storage first. I am working through it. My hands are full from the harvest, so I am taking it to storage first.",
+        "I am working through it. My hands are full from the harvest, so I am taking it to storage first. My hands are full from the harvest, so I am taking it to storage first."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.output_full_depositing.019"
     },
@@ -341,7 +541,17 @@
         "I am waiting on a fix. I cannot carry more harvest, and there is nowhere to put it.",
         "The work is paused until this changes. I cannot carry more harvest, and there is nowhere to put it.",
         "This is the problem right now. I cannot carry more harvest, and there is nowhere to put it.",
-        "I am stuck here for the moment. I cannot carry more harvest, and there is nowhere to put it."
+        "I am stuck here for the moment. I cannot carry more harvest, and there is nowhere to put it.",
+        "I cannot carry more harvest, and there is nowhere to put it. I am held up for now. I cannot carry more harvest, and there is nowhere to put it.",
+        "I am held up for now. I cannot carry more harvest, and there is nowhere to put it. This is stopping the job for the moment. I cannot carry more harvest, and there is nowhere to put it.",
+        "This is stopping the job for the moment. I cannot carry more harvest, and there is nowhere to put it. I cannot move on yet. I cannot carry more harvest, and there is nowhere to put it.",
+        "I cannot move on yet. I cannot carry more harvest, and there is nowhere to put it. I will continue once this is fixed. I cannot carry more harvest, and there is nowhere to put it.",
+        "I will continue once this is fixed. I cannot carry more harvest, and there is nowhere to put it. That needs attention before I can keep working. I cannot carry more harvest, and there is nowhere to put it.",
+        "That needs attention before I can keep working. I cannot carry more harvest, and there is nowhere to put it. I am waiting on a fix. I cannot carry more harvest, and there is nowhere to put it.",
+        "I am waiting on a fix. I cannot carry more harvest, and there is nowhere to put it. The work is paused until this changes. I cannot carry more harvest, and there is nowhere to put it.",
+        "The work is paused until this changes. I cannot carry more harvest, and there is nowhere to put it. This is the problem right now. I cannot carry more harvest, and there is nowhere to put it.",
+        "This is the problem right now. I cannot carry more harvest, and there is nowhere to put it. I am stuck here for the moment. I cannot carry more harvest, and there is nowhere to put it.",
+        "I am stuck here for the moment. I cannot carry more harvest, and there is nowhere to put it. I cannot carry more harvest, and there is nowhere to put it."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.output_full_blocked.020"
     },
@@ -357,7 +567,17 @@
         "I am waiting on a fix. I need the right seed or crop item before I can harvest and replant that.",
         "The work is paused until this changes. I need the right seed or crop item before I can harvest and replant that.",
         "This is the problem right now. I need the right seed or crop item before I can harvest and replant that.",
-        "I am stuck here for the moment. I need the right seed or crop item before I can harvest and replant that."
+        "I am stuck here for the moment. I need the right seed or crop item before I can harvest and replant that.",
+        "I need the right seed or crop item before I can harvest and replant that. I am held up for now. I need the right seed or crop item before I can harvest and replant that.",
+        "I am held up for now. I need the right seed or crop item before I can harvest and replant that. This is stopping the job for the moment. I need the right seed or crop item before I can harvest and replant that.",
+        "This is stopping the job for the moment. I need the right seed or crop item before I can harvest and replant that. I cannot move on yet. I need the right seed or crop item before I can harvest and replant that.",
+        "I cannot move on yet. I need the right seed or crop item before I can harvest and replant that. I will continue once this is fixed. I need the right seed or crop item before I can harvest and replant that.",
+        "I will continue once this is fixed. I need the right seed or crop item before I can harvest and replant that. That needs attention before I can keep working. I need the right seed or crop item before I can harvest and replant that.",
+        "That needs attention before I can keep working. I need the right seed or crop item before I can harvest and replant that. I am waiting on a fix. I need the right seed or crop item before I can harvest and replant that.",
+        "I am waiting on a fix. I need the right seed or crop item before I can harvest and replant that. The work is paused until this changes. I need the right seed or crop item before I can harvest and replant that.",
+        "The work is paused until this changes. I need the right seed or crop item before I can harvest and replant that. This is the problem right now. I need the right seed or crop item before I can harvest and replant that.",
+        "This is the problem right now. I need the right seed or crop item before I can harvest and replant that. I am stuck here for the moment. I need the right seed or crop item before I can harvest and replant that.",
+        "I am stuck here for the moment. I need the right seed or crop item before I can harvest and replant that. I need the right seed or crop item before I can harvest and replant that."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.missing_planting_item.021"
     },
@@ -373,7 +593,17 @@
         "That is taken care of. I harvested the ripe crop and set the field right again.",
         "The work moved forward. I harvested the ripe crop and set the field right again.",
         "I can report this much. I harvested the ripe crop and set the field right again.",
-        "That part is done: I harvested the ripe crop and set the field right again."
+        "That part is done: I harvested the ripe crop and set the field right again.",
+        "I harvested the ripe crop and set the field right again. That part is handled. I harvested the ripe crop and set the field right again.",
+        "That part is handled. I harvested the ripe crop and set the field right again. Here is the update: I harvested the ripe crop and set the field right again.",
+        "Here is the update: I harvested the ripe crop and set the field right again. That moved things along: I harvested the ripe crop and set the field right again.",
+        "That moved things along: I harvested the ripe crop and set the field right again. That step is finished. I harvested the ripe crop and set the field right again.",
+        "That step is finished. I harvested the ripe crop and set the field right again. I have that sorted. I harvested the ripe crop and set the field right again.",
+        "I have that sorted. I harvested the ripe crop and set the field right again. That is taken care of. I harvested the ripe crop and set the field right again.",
+        "That is taken care of. I harvested the ripe crop and set the field right again. The work moved forward. I harvested the ripe crop and set the field right again.",
+        "The work moved forward. I harvested the ripe crop and set the field right again. I can report this much. I harvested the ripe crop and set the field right again.",
+        "I can report this much. I harvested the ripe crop and set the field right again. That part is done: I harvested the ripe crop and set the field right again.",
+        "That part is done: I harvested the ripe crop and set the field right again. I harvested the ripe crop and set the field right again."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.completed_crop.022"
     },
@@ -389,7 +619,17 @@
         "For the moment, I am busy in the fields.",
         "I will keep going from here.",
         "The field work is still moving.",
-        "I am looking after the crops."
+        "I am looking after the crops.",
+        "I am tending the fields now. Right now, I am checking the crops.",
+        "Right now, I am checking the crops. I am working through the rows.",
+        "I am working through the rows. I am keeping the field work moving.",
+        "I am keeping the field work moving. I am watching for ripe crops and empty farmland.",
+        "I am watching for ripe crops and empty farmland. I am staying with the crops.",
+        "I am staying with the crops. For the moment, I am busy in the fields.",
+        "For the moment, I am busy in the fields. I will keep going from here.",
+        "I will keep going from here. The field work is still moving.",
+        "The field work is still moving. I am looking after the crops.",
+        "I am looking after the crops. I am tending the fields now."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.tending_fields.023"
     },
@@ -401,7 +641,21 @@
         "I am getting into place to make more farmland.",
         "I am moving to prepare another field spot.",
         "I am heading for soil I can turn into farmland.",
-        "I will prepare that ground for crops."
+        "I will prepare that ground for crops.",
+        "I am moving over to prepare that soil. Right now, I am heading to a patch I can till.",
+        "Right now, I am heading to a patch I can till. I am getting into place to make more farmland.",
+        "I am getting into place to make more farmland. I am moving to prepare another field spot.",
+        "I am moving to prepare another field spot. I am heading for soil I can turn into farmland.",
+        "I am heading for soil I can turn into farmland. I will prepare that ground for crops.",
+        "I will prepare that ground for crops. I am moving over to prepare that soil.",
+        "I am moving over to prepare that soil. I am getting into place to make more farmland.",
+        "Right now, I am heading to a patch I can till. I am moving to prepare another field spot.",
+        "I am getting into place to make more farmland. I am heading for soil I can turn into farmland.",
+        "I am moving to prepare another field spot. I will prepare that ground for crops.",
+        "I am heading for soil I can turn into farmland. I am moving over to prepare that soil.",
+        "I will prepare that ground for crops. Right now, I am heading to a patch I can till.",
+        "I am moving over to prepare that soil. I am moving to prepare another field spot.",
+        "Right now, I am heading to a patch I can till. I am heading for soil I can turn into farmland."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.moving_to_soil.024"
     },
@@ -413,7 +667,21 @@
         "I prepared that ground for crops.",
         "The soil is turned and ready.",
         "That spot is farmland now.",
-        "I made that patch ready for planting."
+        "I made that patch ready for planting.",
+        "I tilled that soil into farmland. That patch is ready for planting now.",
+        "That patch is ready for planting now. I prepared that ground for crops.",
+        "I prepared that ground for crops. The soil is turned and ready.",
+        "The soil is turned and ready. That spot is farmland now.",
+        "That spot is farmland now. I made that patch ready for planting.",
+        "I made that patch ready for planting. I tilled that soil into farmland.",
+        "I tilled that soil into farmland. I prepared that ground for crops.",
+        "That patch is ready for planting now. The soil is turned and ready.",
+        "I prepared that ground for crops. That spot is farmland now.",
+        "The soil is turned and ready. I made that patch ready for planting.",
+        "That spot is farmland now. I tilled that soil into farmland.",
+        "I made that patch ready for planting. That patch is ready for planting now.",
+        "I tilled that soil into farmland. The soil is turned and ready.",
+        "That patch is ready for planting now. That spot is farmland now."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.tilled_soil.025"
     },
@@ -429,7 +697,17 @@
         "I am waiting on a fix. I need to be a farmer to handle this field.",
         "The work is paused until I can work as a farmer.",
         "This is the problem right now. I am not a farmer.",
-        "I am stuck here for the moment. I need farmer work before I can tend the field."
+        "I am stuck here for the moment. I need farmer work before I can tend the field.",
+        "I need to be a farmer before I can handle the fields properly. I am held up for now. I need farmer work before I can tend these crops.",
+        "I am held up for now. I need farmer work before I can tend these crops. This is stopping the job for the moment. I need to be a farmer first.",
+        "This is stopping the job for the moment. I need to be a farmer first. I cannot move on yet. I am not set up as a farmer.",
+        "I cannot move on yet. I am not set up as a farmer. I will continue once I can work as a farmer.",
+        "I will continue once I can work as a farmer. That needs attention before I can keep working. I need farmer work first.",
+        "That needs attention before I can keep working. I need farmer work first. I am waiting on a fix. I need to be a farmer to handle this field.",
+        "I am waiting on a fix. I need to be a farmer to handle this field. The work is paused until I can work as a farmer.",
+        "The work is paused until I can work as a farmer. This is the problem right now. I am not a farmer.",
+        "This is the problem right now. I am not a farmer. I am stuck here for the moment. I need farmer work before I can tend the field.",
+        "I am stuck here for the moment. I need farmer work before I can tend the field. I need to be a farmer before I can handle the fields properly."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.needs_farmer_profession.024"
     },
@@ -445,7 +723,17 @@
         "I am waiting on a fix. I need a proper farmer's work site.",
         "The work is paused until I have a composter to work from.",
         "This is the problem right now. I need a farmer's work site.",
-        "I am stuck here for the moment. I need a composter nearby."
+        "I am stuck here for the moment. I need a composter nearby.",
+        "I need a composter nearby before I can settle into the field work. I am held up for now. I need a composter for farmer work.",
+        "I am held up for now. I need a composter for farmer work. This is stopping the job for the moment. I need a farmer's work site.",
+        "This is stopping the job for the moment. I need a farmer's work site. I cannot move on yet. I need a composter to work from.",
+        "I cannot move on yet. I need a composter to work from. I will continue once I have a farmer's work site.",
+        "I will continue once I have a farmer's work site. That needs attention before I can keep working. I need a composter nearby.",
+        "That needs attention before I can keep working. I need a composter nearby. I am waiting on a fix. I need a proper farmer's work site.",
+        "I am waiting on a fix. I need a proper farmer's work site. The work is paused until I have a composter to work from.",
+        "The work is paused until I have a composter to work from. This is the problem right now. I need a farmer's work site.",
+        "This is the problem right now. I need a farmer's work site. I am stuck here for the moment. I need a composter nearby.",
+        "I am stuck here for the moment. I need a composter nearby. I need a composter nearby before I can settle into the field work."
       ],
       "id": "global.messages.16_work_farming.messages.interaction.work.farming.needs_farmer_job_site.025"
     }

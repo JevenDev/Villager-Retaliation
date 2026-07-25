@@ -26,7 +26,12 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still keeping watch over the area. The patrol is moving along.",
+        "The patrol is moving along. I am keeping at the patrol.",
+        "I am keeping at the patrol. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the patrol.",
+        "I am making steady progress with the patrol. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.combat.000"
     },
@@ -47,7 +52,12 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still searching the hunting grounds for game. The hunt is moving along.",
+        "The hunt is moving along. I am keeping at the hunt.",
+        "I am keeping at the hunt. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the hunt.",
+        "I am making steady progress with the hunt. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.hunting.019"
     },
@@ -68,7 +78,12 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still working through the stone. The mining work is moving along.",
+        "The mining work is moving along. I am keeping at the mining work.",
+        "I am keeping at the mining work. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the mining work.",
+        "I am making steady progress with the mining work. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.mining.001"
     },
@@ -89,14 +104,19 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still cutting timber and gathering logs. The logging work is moving along.",
+        "The logging work is moving along. I am keeping at the logging work.",
+        "I am keeping at the logging work. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the logging work.",
+        "I am making steady progress with the logging work. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.logging.002"
     },
     {
       "key": "interaction.work_report.farming",
       "lines": [
-        "I am still tending the fields and watching the crops.",
+        "I am still tending the fields and watching the <green><wavy>crops</wavy></green>.",
         "The field work is moving along.",
         "I am keeping at the field work.",
         "I am staying with the task you assigned me.",
@@ -110,7 +130,12 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still tending the fields and watching the crops. The field work is moving along.",
+        "The field work is moving along. I am keeping at the field work.",
+        "I am keeping at the field work. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the field work.",
+        "I am making steady progress with the field work. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.farming.003"
     },
@@ -131,7 +156,12 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still fishing and waiting for a bite. The fishing work is moving along.",
+        "The fishing work is moving along. I am keeping at the fishing work.",
+        "I am keeping at the fishing work. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the fishing work.",
+        "I am making steady progress with the fishing work. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.fishing.004"
     },
@@ -152,7 +182,12 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still tending the brewing stand. The brewing work is moving along.",
+        "The brewing work is moving along. I am keeping at the brewing work.",
+        "I am keeping at the brewing work. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the brewing work.",
+        "I am making steady progress with the brewing work. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.brewing.005"
     },
@@ -173,7 +208,12 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still tending the cooking station. The cooking work is moving along.",
+        "The cooking work is moving along. I am keeping at the cooking work.",
+        "I am keeping at the cooking work. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the cooking work.",
+        "I am making steady progress with the cooking work. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.cook.018"
     },
@@ -194,7 +234,12 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still working on the build. The construction work is moving along.",
+        "The construction work is moving along. I am keeping at the construction work.",
+        "I am keeping at the construction work. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the construction work.",
+        "I am making steady progress with the construction work. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.builder.006"
     },
@@ -215,7 +260,12 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still tending the animals and checking the pens. The animal work is moving along.",
+        "The animal work is moving along. I am keeping at the animal work.",
+        "I am keeping at the animal work. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the animal work.",
+        "I am making steady progress with the animal work. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.animal_handling.007"
     },
@@ -236,7 +286,12 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done."
+        "I am staying focused until this job is done.",
+        "I am still helping out where I can. The little jobs is moving along.",
+        "The little jobs is moving along. I am keeping at the little jobs.",
+        "I am keeping at the little jobs. I am staying with the task you assigned me.",
+        "I am staying with the task you assigned me. I am making steady progress with the little jobs.",
+        "I am making steady progress with the little jobs. There is still more to do, and I am on it."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_report.nitwit.008"
     },
@@ -257,7 +312,12 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another pass on guard duty. That bit of patrol is done for now.",
+        "That bit of patrol is done for now. I made some progress on the patrol.",
+        "I made some progress on the patrol. I took care of another part of the job.",
+        "I took care of another part of the job. The patrol is moving along nicely.",
+        "The patrol is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.combat.009"
     },
@@ -278,7 +338,12 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another sweep through the hunting grounds. That bit of hunt is done for now.",
+        "That bit of hunt is done for now. I made some progress on the hunt.",
+        "I made some progress on the hunt. I took care of another part of the job.",
+        "I took care of another part of the job. The hunt is moving along nicely.",
+        "The hunt is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.hunting.020"
     },
@@ -299,7 +364,12 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another stretch of digging. That bit of mining work is done for now.",
+        "That bit of mining work is done for now. I made some progress on the mining work.",
+        "I made some progress on the mining work. I took care of another part of the job.",
+        "I took care of another part of the job. The mining work is moving along nicely.",
+        "The mining work is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.mining.010"
     },
@@ -320,7 +390,12 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another pass through the timber. That bit of logging work is done for now.",
+        "That bit of logging work is done for now. I made some progress on the logging work.",
+        "I made some progress on the logging work. I took care of another part of the job.",
+        "I took care of another part of the job. The logging work is moving along nicely.",
+        "The logging work is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.logging.011"
     },
@@ -341,14 +416,19 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another pass through the rows. That bit of field work is done for now.",
+        "That bit of field work is done for now. I made some progress on the field work.",
+        "I made some progress on the field work. I took care of another part of the job.",
+        "I took care of another part of the job. The field work is moving along nicely.",
+        "The field work is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.farming.012"
     },
     {
       "key": "interaction.work_final_report.fishing",
       "lines": [
-        "I finished another round at the water.",
+        "I finished another round at the <aqua><wavy>water</wavy></aqua>.",
         "That bit of fishing work is done for now.",
         "I made some progress on the fishing work.",
         "I took care of another part of the job.",
@@ -362,7 +442,12 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another round at the water. That bit of fishing work is done for now.",
+        "That bit of fishing work is done for now. I made some progress on the fishing work.",
+        "I made some progress on the fishing work. I took care of another part of the job.",
+        "I took care of another part of the job. The fishing work is moving along nicely.",
+        "The fishing work is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.fishing.013"
     },
@@ -383,7 +468,12 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another step at the brewing stand. That bit of brewing work is done for now.",
+        "That bit of brewing work is done for now. I made some progress on the brewing work.",
+        "I made some progress on the brewing work. I took care of another part of the job.",
+        "I took care of another part of the job. The brewing work is moving along nicely.",
+        "The brewing work is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.brewing.014"
     },
@@ -404,7 +494,12 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another batch at the furnace. That bit of cooking work is done for now.",
+        "That bit of cooking work is done for now. I made some progress on the cooking work.",
+        "I made some progress on the cooking work. I took care of another part of the job.",
+        "I took care of another part of the job. The cooking work is moving along nicely.",
+        "The cooking work is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.cook.019"
     },
@@ -425,7 +520,12 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another part of the build. That bit of construction work is done for now.",
+        "That bit of construction work is done for now. I made some progress on the construction work.",
+        "I made some progress on the construction work. I took care of another part of the job.",
+        "I took care of another part of the job. The construction work is moving along nicely.",
+        "The construction work is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.builder.015"
     },
@@ -446,7 +546,12 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another round through the pens. That bit of animal work is done for now.",
+        "That bit of animal work is done for now. I made some progress on the animal work.",
+        "I made some progress on the animal work. I took care of another part of the job.",
+        "I took care of another part of the job. The animal work is moving along nicely.",
+        "The animal work is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.animal_handling.016"
     },
@@ -467,7 +572,12 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward."
+        "The job is still moving forward.",
+        "I finished another helpful little task. That bit of little jobs is done for now.",
+        "That bit of little jobs is done for now. I made some progress on the little jobs.",
+        "I made some progress on the little jobs. I took care of another part of the job.",
+        "I took care of another part of the job. The little jobs is moving along nicely.",
+        "The little jobs is moving along nicely. I wrapped up another bit of work."
       ],
       "id": "global.messages.11_work_reports.messages.interaction.work_final_report.nitwit.017"
     }

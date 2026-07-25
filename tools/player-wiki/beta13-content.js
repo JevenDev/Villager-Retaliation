@@ -60,8 +60,8 @@
         { value: plural(DATA.quests.length, "quest"), label: "Built-in walkthroughs", icon: "scroll-text" },
         { value: plural(questlines, "questline"), label: "Connected stories", icon: "map" },
         { value: plural(reputationTiers, "reputation tier"), label: "Relationship levels", icon: "shield" },
-        { value: plural(DATA.advancements.length, "advancement"), label: "Reputation tab entries", icon: "trophy" },
-        { value: plural(skillTradeCount, "skill trade"), label: "Profession progression", icon: "badge-percent" },
+        { value: plural(DATA.advancements.length, "advancement"), label: "Optional milestones", icon: "trophy" },
+        { value: plural(skillTradeCount, "profession trade"), label: "Skill-based offers", icon: "badge-percent" },
         { value: "18 Villager skills", label: "Individual strengths", icon: "brain-circuit" },
         { value: "13 Worker roles", label: "Optional hired work", icon: "briefcase-business" },
         { value: "5 Social attributes", label: "Persistent personalities", icon: "sparkles" }
@@ -168,7 +168,7 @@
       `)}
       ${section("Ending A Contract", `
         ${beta13FeatureCards([
-          { icon: "coins", title: "Early cancellation", text: "Unused prepaid value is refunded at the server's configured rate; the default is 50 percent." },
+          { icon: "coins", title: "Early cancellation", text: "Unused prepaid value is refunded at the server's configured rate. The default is 50 percent." },
           { icon: "package-check", title: "Supplies and output", text: "Removable job items are returned to assigned storage when possible. Villager-owned or protected property stays with the villager." },
           { icon: "clock", title: "Overflow claim", text: "If items cannot be returned cleanly, the former controller has a three-Minecraft-day claim window." },
           { icon: "skull", title: "Death", text: "A villager's death ends the contract and drops the job inventory. A hired contract alone does not grant downed-state protection." }
@@ -177,7 +177,7 @@
       ${section("Things To Know", `
         ${simpleList([
           "Workers wait rather than simulating work while their hirer is offline.",
-          "A contract does not keep arbitrary work chunks loaded; the job, stations, targets, and storage must be available and reachable.",
+          "A contract does not keep arbitrary work chunks loaded. The job, stations, targets, and storage must be available and reachable.",
           "Recurring payment buys one day at a time and requires the assigned Payment Box to remain valid.",
           "A Builder order cannot be changed to another role after construction has started.",
           "Hired and recruited-party states are mutually exclusive."
@@ -187,25 +187,25 @@
   }
 
   const beta13JobRows = [
-    ["Combat", "Weaponsmith, or Guarding + Archery", "Work area or route; usable weapon; ammunition for ranged weapons", "Guard protects against attacks; Roaming searches natural hostiles. It does not independently hunt players, villagers, golems, or tame animals."],
-    ["Hunting", "Fletcher, or Archery + Survival", "Work area or route; bow, crossbow, axe, or sword; ranged ammunition", "Can target selected animals, hostiles, or players and collect drops. Enabling player targets creates a real PvP risk."],
+    ["Combat", "Weaponsmith, or Guarding + Archery", "Work area or route, usable weapon, and ammunition for ranged weapons", "Guard protects against attacks. Roaming searches natural hostiles. It does not independently hunt players, villagers, golems, or tame animals."],
+    ["Hunting", "Fletcher, or Archery + Survival", "Work area or route, bow, crossbow, axe, or sword, plus ranged ammunition", "Can target selected animals, hostiles, or players and collect drops. Enabling player targets creates a real PvP risk."],
     ["Mining", "Toolsmith, or Mining + Masonry", "Work area and pickaxe", "Exposed Ore, Horizontal Excavation, or Vertical Excavation. Excavation can need ladders or floor-patching blocks."],
     ["Logging", "Gathering + Crafting", "Work area and axe", "Fells connected natural trees. Optional replanting, bonemeal, and leaf-clearing behavior depend on supplies and settings."],
-    ["Farming", "Farmer, or Farming + Gathering", "Farmer profession, hoe, seeds, and either an area or claimed farmer job site", "Harvests mature crops, replants, and can plant farmland. Tilling is an explicit-area option; immature crops produce a waiting state."],
+    ["Farming", "Farmer, or Farming + Gathering", "Farmer profession, hoe, seeds, and either an area or claimed farmer job site", "Harvests mature crops, replants, and can plant farmland. Tilling is an explicit-area option. Immature crops produce a waiting state."],
     ["Fishing", "Fisherman, or Fishing + Survival", "Work area, fishing rod, accessible open water", "Performs actual casts and retrieves catches. No usable water or rod blocks the job."],
     ["Brewing", "Cleric, or Medicine + Scholarship", "Work area, brewing stand, bottles, ingredients, and blaze powder", "Runs supported potion orders. It will not overwrite incompatible stand contents or brew arbitrary unsupported combinations."],
     ["Builder", "Mason, or Masonry + Crafting", "One-off blueprint order, valid site, quoted payment, and all required materials", "Builds structures from the provided catalog. It is not a daily role and does not capture arbitrary player schematics."],
     ["Animal Handling", "Shepherd or Leatherworker, or Animal Handling + Farming", "Work area, enabled animal types, breeding food, and output space", "Breeds animals and collects products. An optional population cap may cull excess animals and needs a weapon."],
-    ["Cook", "Butcher, or Cooking + Gathering", "Work area, furnace or smoker; crafting table for supported crafted foods; fuel and ingredients", "Prepares supported food outputs and follows the item filter. It is not general-purpose recipe automation."],
+    ["Cook", "Butcher, or Cooking + Gathering", "Work area, furnace or smoker, crafting table for supported foods, fuel, and ingredients", "Prepares supported food outputs and follows the item filter. It is not general-purpose recipe automation."],
     ["Smelter", "Armorer, or Smithing + Mining", "Work area, furnace or blast furnace, fuel, and raw ore materials", "Processes supported ore and raw-material outputs. It does not run every possible furnace recipe."],
     ["Courier", "Every adult", "Usable route plus assigned Input and Output storage", "Patrols the route, collects cargo, delivers it, and returns. Empty starting storage does not stop later route pickups."],
-    ["Nitwit", "Nitwit only; Diplomacy + Survival shown in Job Stats", "No work area", "Produces occasional novelty work reports rather than practical resources."]
+    ["Nitwit", "Nitwit only. Diplomacy + Survival is shown in Job Stats", "No work area", "Produces occasional novelty work reports rather than practical resources."]
   ];
 
   function beta13RenderJobs() {
     return `
       ${section("Qualification Rules", `
-        <p>Each ordinary role has a primary and support skill. A matching profession qualifies automatically; otherwise the two scores must total at least 61. Role aptitude weights the primary skill at 70 percent and the support skill at 30 percent.</p>
+        <p>Each ordinary role has a primary and support skill. A matching profession qualifies automatically. Otherwise, the two scores must total at least 61. Role aptitude weights the primary skill at 70 percent and the support skill at 30 percent.</p>
         ${beta13FeatureCards([
           { icon: "gauge", title: "Work speed", text: "Aptitude scales skill-controlled work speed from 75 to 125 percent." },
           { icon: "package", title: "Transfer capacity", text: "Aptitude scales supported transfer trips from 50 to 150 percent." },
@@ -223,7 +223,7 @@
           "Choose Courier when you need movement between assigned storage rather than resource production.",
           "Use Combat for local defense and Hunting for configured target seeking and loot collection.",
           "Treat Builder as a paid project with a start and finish, not as a permanent workforce slot.",
-          "A role being selectable does not mean its physical setup is complete; warnings identify missing areas, stations, tools, fuel, materials, or storage."
+          "A selectable role may still need more setup. Warnings identify missing areas, stations, tools, fuel, materials, or storage."
         ])}
       `)}
     `;
@@ -265,7 +265,7 @@
         <p>Work does not bypass unloaded chunks, solid obstacles, world borders, claim or protection rules, or an unreachable storage face.</p>
       `)}
       ${section("Efficiency", `
-        <p>The displayed efficiency starts from the configured base, applies skill work speed, then applies current mood and missing-tool penalties. It is clamped to the server's configured minimum and maximum; defaults are 25 to 175 percent.</p>
+        <p>The displayed efficiency starts from the configured base, applies skill work speed, then applies current mood and missing-tool penalties. It is clamped to the server's configured minimum and maximum. The defaults are 25 to 175 percent.</p>
         ${beta13Table(
           ["Condition", "Default effect on displayed efficiency"],
           [
@@ -358,13 +358,13 @@
             ["Input", "Ingredients, fuel, seeds, breeding food, raw ore, and courier pickup sources."],
             ["Output", "Produced items, catches, drops, gathered products, and courier delivery destinations."],
             ["Tool", "Pickaxes, axes, hoes, rods, weapons, ammunition, ladders, and other job equipment."],
-            ["Payment", "Payment Box only; funds automatic renewal of an ordinary hired contract."]
+            ["Payment", "Payment Box only. Funds automatic renewal of an ordinary hired contract."]
           ]
         )}
         <p>Assignments are dimension-specific. Workers navigate to containers and may remember a full or failed destination before trying another. Assigning a chest does not make it reachable through walls or unloaded terrain.</p>
         ${beta13FactList([
-          ["Use assigned storage for supplies", "On by default; lets the worker pull tools, fuel, ingredients, and role supplies from assigned purposes"],
-          ["Auto-deposit outputs", "On by default; sends completed output to an available assigned destination"],
+          ["Use assigned storage for supplies", "On by default. Lets the worker pull tools, fuel, ingredients, and role supplies from assigned purposes"],
+          ["Auto-deposit outputs", "On by default. Sends completed output to an available assigned destination"],
           ["When either toggle is off", "The worker relies more heavily on carried job inventory and can stop sooner when inputs or space run out"]
         ])}
       `)}
@@ -389,8 +389,8 @@
       ${section("Item Filters", `
         <p>Place an Item Filter in the filter slot and choose one of two modes through the villager interaction.</p>
         ${beta13FeatureCards([
-          { icon: "list-checks", title: "Allowlist", text: "Only listed items are withdrawn; cooks prepare only listed supported foods." },
-          { icon: "list-x", title: "Denylist", text: "Listed items are skipped; cooks choose other supported foods." }
+          { icon: "list-checks", title: "Allowlist", text: "Only listed items are withdrawn. Cooks prepare only listed supported foods." },
+          { icon: "list-x", title: "Denylist", text: "Listed items are skipped. Cooks choose other supported foods." }
         ])}
         <p>A filter narrows what a job handles. It does not add new recipes, potion combinations, targets, or storage behavior.</p>
       `)}
@@ -413,10 +413,10 @@
         ${beta13FeatureCards([
           { icon: "heart-pulse", title: "Regeneration requires food", text: "With the naturalRegeneration gamerule enabled, food allows gradual health recovery. Saturated villagers recover faster than unsaturated villagers." },
           { icon: "utensils", title: "Food is consumed", text: "Healing creates exhaustion, which drains saturation and then food. A hungry injured villager may warn nearby players." },
-          { icon: "swords", title: "Combat changes priorities", text: "Ordinary eating is avoided during active combat; urgent healing items can still be used when survival requires them." },
+          { icon: "swords", title: "Combat changes priorities", text: "Villagers avoid ordinary eating during active combat. They can still use urgent healing items when survival requires them." },
           { icon: "bed", title: "Rest helps", text: "Sleep healing is configurable and can restore health up to its configured cap." }
         ])}
-        <p>Food supports regeneration; it is not itself a separate hired-work efficiency multiplier.</p>
+        <p>Food supports regeneration. It is not a separate hired-work efficiency multiplier.</p>
       `)}
       ${section("Recovery Behavior", `
         <p>An injured villager below roughly half health can disengage and focus on recovery until safer. Active danger, dialogue, work, party orders, and navigation can be interrupted while recovery has priority.</p>
@@ -514,7 +514,7 @@
         ${simpleList([
           "Only structures present in the supported catalog can be ordered.",
           "The blueprint does not capture arbitrary player builds or import general schematics.",
-          "All required blocks must be supplied; the builder does not create free materials.",
+          "All required blocks must be supplied. The builder does not create free materials.",
           "Protected blocks, world borders, obstructing entities, invalid foundations, and unreachable positions can block placement.",
           "The project needs the builder and site to remain loaded and navigable."
         ])}
@@ -530,7 +530,7 @@
           ["Party player limit", "4 players"],
           ["Recruited villager limit", "4 villagers"],
           ["Villager contract", "32 emeralds for one Minecraft day"],
-          ["Renewal", "Manual extension; Payment Boxes do not renew party contracts"],
+          ["Renewal", "Manual extension. Payment Boxes do not renew party contracts"],
           ["Party invitation", "Player invitations expire after 60 seconds"]
         ])}
         <p>Only eligible adult villagers can be recruited. Active party control suppresses the normal trading screen until the controlled state ends.</p>
@@ -585,7 +585,7 @@
           { icon: "badge-check", title: "Authority", text: "The active hirer manages a worker's mount. The party leader manages a recruited villager's mount." },
           { icon: "link", title: "Persistent pairing", text: "A villager keeps one durable mount assignment until it is cleared or either entity is permanently removed." },
           { icon: "users", title: "Seat availability", text: "The mount must have room and cannot contain unrelated passengers when it is assigned." },
-          { icon: "shield-check", title: "Authorized riding", text: "The hirer or a valid party member can take the driver seat; unrelated players cannot bypass the assignment." }
+          { icon: "shield-check", title: "Authorized riding", text: "The hirer or a valid party member can take the driver seat. Unrelated players cannot bypass the assignment." }
         ])}
       `)}
       ${section("Travel Behavior", `
@@ -594,7 +594,7 @@
           "Parties have a shared mount mode plus Ride Mount and Dismount Mount quick commands.",
           "Villagers dismount near precise work, construction, storage, and other actions that need block-level movement.",
           "An assigned villager retries when the mount is temporarily unloaded or occupied and parks an idle mount near its last anchor.",
-          "Close to a destination the mount travels normally; farther away it uses catch-up movement."
+          "Close to a destination, the mount travels normally. Farther away, it uses catch-up movement."
         ])}
       `)}
       ${section("Ride On Compatibility", `
@@ -610,8 +610,8 @@
         ${simpleList([
           "Mount assignment is for controlled adult villagers, not every villager in the world.",
           "A mount must be structurally eligible, available, and have an open supported seat.",
-          "Precise jobs still dismount; the mount speeds travel rather than performing the block interaction.",
-          "An unloaded or occupied mount cannot move until it becomes available; the villager keeps retrying.",
+          "Precise jobs still dismount. The mount speeds travel rather than performing the block interaction.",
+          "An unloaded or occupied mount cannot move until it becomes available. The villager keeps retrying.",
           "Two-villager or player-and-villager seating on supported horse-family mounts requires Ride On 1.0.0-pre-release.3 or newer."
         ])}
       `)}
@@ -630,7 +630,7 @@
         ])}
       `)}
       ${section("Asking About Home", `
-        <p>The interaction screen's Home topic lets you ask where a villager belongs and whether the current village is their home. A player who is Revered or Royalty with that villager can ask them to adopt the current active village; the same request must be confirmed a second time.</p>
+        <p>The interaction screen's Home topic lets you ask where a villager belongs and whether the current village is their home. A player who is Revered or Royalty with that villager can ask them to adopt the current active village. The same request must be confirmed a second time.</p>
         <p>A recruited party villager accepts that order only from a qualifying player in the same party.</p>
       `)}
       ${section("Naming A Village", `
@@ -644,7 +644,7 @@
       ${section("Consequences And Limits", `
         ${simpleList([
           "A villager keeps their established home while traveling unless an allowed reassignment or lifecycle rule changes it.",
-          "Village footprints can merge or change as the tracked village evidence changes; this is not a player-painted claim system.",
+          "Village footprints can merge or change as the tracked village evidence changes. This is not a player-painted claim system.",
           "Outside villagers are neutral Wanderers until they settle or receive a trusted reassignment.",
           "Community combat uses allegiance in addition to personal reputation, party membership, and direct retaliation history.",
           "The optional village-bounds overlay is an administrator display and is not required for ordinary play."
@@ -716,7 +716,7 @@
           { icon: "history", title: "Personal history", text: "Trades, gifts, attacks, healing, quests, dialogue, theft, and village events can affect the relationship that experienced them." },
           { icon: "messages-square", title: "Witnesses and gossip", text: "Nearby villagers can learn about public harm or help, with line of sight and spread controlled separately by server settings." },
           { icon: "cloud-sun", title: "Mood", text: "Mood is a shorter-term emotional state. It can change dialogue and work efficiency without replacing persistent reputation." },
-          { icon: "landmark", title: "Village allegiance", text: "Home-village loyalty determines community defense and friendly protections; it is separate from how much one villager trusts one player." }
+          { icon: "landmark", title: "Village allegiance", text: "Home-village loyalty determines community defense and friendly protections. It is separate from how much one villager trusts one player." }
         ])}
       `)}
       ${section("Consequences", `
@@ -751,21 +751,21 @@
         ${beta13FeatureCards([
           { icon: "message-square-text", title: "Conversation", text: "Greetings, questions, jokes, stories, relationships, family, local events, home, and reputation-aware responses." },
           { icon: "gift", title: "Gifts and trade", text: "Give evaluated gifts, request eligible Special Orders, or open trading when the villager's current state allows it." },
-          { icon: "scroll-text", title: "Quests", text: "Offers, reminders, turn-ins, choices, scene steps, abandonment, and requirements appear only for matching active quest states." },
-          { icon: "briefcase-business", title: "Controlled villager actions", text: "Hiring, job management, inventories, Clipboard setup, construction, recruitment, party settings, mounts, and home choices appear only to authorized players." }
+          { icon: "scroll-text", title: "Quests", text: "Offers, reminders, choices, turn-ins, and story scenes appear when they are relevant to your current quest." },
+          { icon: "briefcase-business", title: "Work and party actions", text: "Hiring, job management, inventories, construction, recruitment, party settings, mounts, and home choices appear when you lead or employ the villager." }
         ])}
       `)}
       ${section("Why An Option May Be Missing", `
         ${simpleList([
           "The villager has the wrong profession or trade level.",
-          "A hidden skill, reputation, prerequisite quest, branch choice, cooldown, or active-state requirement is not met.",
+          "Your reputation, an earlier quest choice, a cooldown, or one of the villager's skills does not yet meet the requirement.",
           "The villager is hired, recruited, sleeping, trading, in combat, recovering, downed, too far away, or controlled by another player.",
-          "The server disabled that interaction category or a datapack did not provide matching content.",
-          "The same positive question was repeated too often and is waiting for its reset or relationship cooldown."
+          "The server has disabled that feature or uses different custom content.",
+          "You recently asked the same question and must wait before asking again."
         ])}
       `)}
       ${section("Quests And Tracking", `
-        <p>Quest offers and progress are resolved by the actual current villager and player state. The Journal opens with <kbd>J</kbd>; the Tracker opens with <kbd>K</kbd>. Tracker text, coordinates, HUD notices, highlighted quest items, and scripted scenes update only for active content that provides them.</p>
+        <p>Press <kbd>J</kbd> to review accepted quests and <kbd>K</kbd> to open the Tracker. Active quests can show objectives, coordinates, HUD notices, highlighted items, and story scenes. What appears depends on the villager, your progress, and earlier choices.</p>
       `)}
       ${section("Memory And Consequences", `
         <p>Dialogue can react to personal reputation, profession, family, social attributes, mood, recent village events, first meetings, time since the last meeting, weather, equipment, nearby danger, stories, and quest history. These systems do not all mean the same thing: reputation is persistent standing, gossip spreads witnessed information, mood is temporary, and village allegiance identifies community membership.</p>
@@ -783,21 +783,21 @@
 
   function beta13RenderQuests() {
     return `
-      ${section("How Offers Are Gated", `
-        <p>The list below describes built-in content, not a promise that every quest appears on every villager. Offers can require a profession, minimum trade level, hidden skill score, reputation tier, prerequisite quest, branch fact, cooldown, location, or other current condition.</p>
+      ${section("Finding A Quest Giver", `
+        <p>Each quest has its own giver requirements. A quest may need a particular profession, trade level, villager skill, reputation level, completed quest, earlier choice, or cooldown. If an offer is missing, compare the villager with the requirements on that quest's page.</p>
         ${beta13FeatureCards([
-          { icon: "user-round-check", title: "Quest giver", text: "Talk to the correct villager while that villager is available and not blocked by combat, control, or recovery." },
-          { icon: "list-checks", title: "Requirements", text: "Read the profession, level, skill, prerequisite, repeatability, cooldown, and turn-in notes on the quest page." },
-          { icon: "map-pin", title: "Tracker", text: "Use J for the Journal and K for the Tracker. Only active quests provide live progress." },
-          { icon: "package-check", title: "Turn-in", text: "Return to the required quest giver with the exact proof and consumable items after every objective is satisfied." }
+          { icon: "user-round-check", title: "Match the giver", text: "Check the required profession, trade level, and skill. A villager in combat, asleep, or recovering may not offer quests." },
+          { icon: "list-checks", title: "Check your progress", text: "Some quests require enough reputation, an earlier quest, a specific story choice, or time for a cooldown to end." },
+          { icon: "map-pin", title: "Track the objectives", text: "Press J for the Journal and K for the Tracker. Live progress appears after you accept the quest." },
+          { icon: "package-check", title: "Return prepared", text: "Finish every objective and bring any requested proof or consumable items back to the required quest giver." }
         ])}
       `)}
-      ${section("Offer And World Limits", `
+      ${section("What Can Change A Quest", `
         ${simpleList([
-          "A walkthrough can exist even when your current villager is ineligible to offer it.",
-          "Quest choices and exclusive branches can make later entries unavailable in that playthrough.",
-          "Some objectives depend on loaded encounters, protected actors, structures, dimensions, or scripted scenes.",
-          "Datapacks can add, replace, or remove quest content, so a server may differ from the built-in list.",
+          "A quest can appear in this guide before you have met a villager who can offer it.",
+          "Story choices can close one route and open another for that playthrough.",
+          "Some objectives require a particular structure, dimension, character, or active encounter.",
+          "Multiplayer servers can add or replace quests, so their available stories may differ from this built-in guide.",
         ])}
       `)}
       ${beta13OriginalQuestRender()}
@@ -813,7 +813,7 @@
           "Pacification is available only when the current reputation tier and server rules allow it.",
           "Placed lava, flint and steel, and fire charges can attribute nearby fire or lava harm to the responsible player during the configured window.",
           "Same-party, allied-party, and same-village protections prevent many friendly combat mistakes.",
-          "Babies remain noncombatants; nitwits generally flee unless they have a usable combat reason and equipment."
+          "Babies remain noncombatants. Nitwits generally flee unless they have a usable combat reason and equipment."
         ])}
       `)}
       ${section("Profession Combat And Equipment", `
@@ -861,19 +861,19 @@
         ])}
       `)}
       ${section("Finding Remaining Defenders", `
-        <p>During an active raid, a banner-helmet raider can reuse a goat horn to reveal nearby tracked defenders. The reveal is for the current raid roster; visitors and villagers born after the snapshot do not become new objective members.</p>
+        <p>During an active raid, a banner-helmet raider can reuse a goat horn to reveal nearby tracked defenders. The reveal is for the current raid roster. Visitors and villagers born after the snapshot do not become new objective members.</p>
       `)}
       ${section("Mercy Stage", `
         <p>After the armed defenders are resolved, surviving snapshotted babies and nitwits enter a mercy stage. Raiders can right-click each survivor to spare them, leave them for a manual kill, or leave the choice unresolved. Spared villagers survive with exactly -1000 reputation toward every raider player.</p>
         <p>Nearby unresolved survivors may plead for their lives. The raid is not cleanly settled until its required remaining outcomes are resolved.</p>
       `)}
       ${section("Winning, Losing, And Cooldown", `
-        <p>Raiders win after the snapshotted defender objective and mercy outcomes are resolved. The village wins when no living, non-spectator raider remains inside the village footprint for the configured abandonment time; the default is 30 seconds.</p>
-        <p>A completed raid leaves the village on the configured cooldown after either outcome; the default is three Minecraft days. Recruited party villagers can react to victory or loss after the result.</p>
+        <p>Raiders win after the snapshotted defender objective and mercy outcomes are resolved. The village wins when no living, non-spectator raider remains inside the village footprint for the configured abandonment time. The default is 30 seconds.</p>
+        <p>A completed raid leaves the village on the configured cooldown after either outcome. The default is three Minecraft days. Recruited party villagers can react to victory or loss after the result.</p>
       `)}
       ${section("Things To Know", `
         ${simpleList([
-          "Only the start snapshot counts; later births and ordinary visitors do not join the objective.",
+          "Only the start snapshot counts. Later births and ordinary visitors do not join the objective.",
           "Iron golems defend but do not count as remaining villagers.",
           "The raid cannot start where another raid or participant conflict already owns the village.",
           "The defender reveal requires the active raider banner-and-horn interaction.",
@@ -951,7 +951,7 @@
     beta13ExistingPage("quests", {
       title: "Quest Walkthroughs",
       group: "Start Here",
-      description: "Built-in quests with real profession, trade-level, skill, reputation, prerequisite, tracker, and turn-in requirements.",
+      description: "Find eligible quest givers, follow objectives and story choices, prepare turn-ins, and understand what each route unlocks.",
       render: beta13RenderQuests
     }),
     beta13NewPage(
@@ -975,7 +975,7 @@
       "Storage, Inventory, And Equipment",
       "Hired Workers",
       "package-open",
-      "Assigned Input, Output, Tool, General, and Payment storage; job inventories, protected items, filters, supplies, and equipment.",
+      "Assigned Input, Output, Tool, General, and Payment storage, plus job inventories, protected items, filters, supplies, and equipment.",
       beta13RenderStorageInventory
     ),
     beta13NewPage(

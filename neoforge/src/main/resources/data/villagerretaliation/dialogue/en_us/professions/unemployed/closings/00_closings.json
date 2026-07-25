@@ -21,7 +21,17 @@
         "There is always something nearby that needs sweeping or mending.",
         "I'll be back once I have done someone a proper little favor.",
         "Helping one person is still helping the village.",
-        "I'll stay busy for now and make the day count."
+        "I'll stay busy for now and make the day count.",
+        "<pulse>Back</pulse> to finding a small task I can finish properly. I should look around and lend a hand where I can.",
+        "I should look around and lend a hand where I can. There are always chores worth doing, even without being asked.",
+        "There are always chores worth doing, even without being asked. I'll go see if anyone needs help before evening.",
+        "I'll go see if anyone needs help before evening. <pulse>Back</pulse> to making today useful however I can.",
+        "<pulse>Back</pulse> to making today useful however I can. I still need to bring a few things in from the yard.",
+        "I still need to bring a few things in from the yard. There is always something nearby that needs sweeping or mending.",
+        "There is always something nearby that needs sweeping or mending. I'll be back once I have done someone a proper little favor.",
+        "I'll be back once I have done someone a proper little favor. Helping one person is still helping the village.",
+        "Helping one person is still helping the village. I'll stay busy for now and make the day count.",
+        "I'll stay busy for now and make the day count. <pulse>Back</pulse> to finding a small task I can finish properly."
       ]
     }
   ]
