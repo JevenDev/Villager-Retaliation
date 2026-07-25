@@ -1638,6 +1638,8 @@ public final class VillagerDialogueResources {
                     "{" + entry.getKey() + "}",
                     entry.getValue() == null ? "" : entry.getValue(),
                     entry.getKey().endsWith("_article")
+                            || entry.getKey().equals("gift_item")
+                            || entry.getKey().equals("item")
             );
         }
         return resolved;
