@@ -9,6 +9,8 @@ import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.util.VillagerProfessionUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -30,12 +32,10 @@ public final class VillagerGiftKnowledgeService {
     public static GiftKnowledgeSnapshot knownGifts(ServerLevel level, ServerPlayer player, VillagerProfession profession) {
         VillagerInteractionSavedData data = VillagerInteractionSavedData.get(level);
         String professionKey = professionKey(profession);
-        if (!data.hasGiftKnowledge(player.getUUID(), GLOBAL_PROFESSION_KEY, professionKey)) {
-            return new GiftKnowledgeSnapshot(List.of(), List.of());
-        }
-
+        boolean hasGiftKnowledge = data.hasGiftKnowledge(player.getUUID(), GLOBAL_PROFESSION_KEY, professionKey);
         Set<String> likedNames = new LinkedHashSet<>();
         Set<String> dislikedNames = new LinkedHashSet<>();
+        Map<String, GiftTooltipReaction> tooltipReactions = new LinkedHashMap<>();
         String locale = VillagerLocale.locale(player);
 
         for (VillagerGiftPreferences.GiftCandidate candidate : VillagerGiftPreferences.giftCandidates(level, profession)) {
@@ -43,8 +43,11 @@ public final class VillagerGiftKnowledgeService {
                 continue;
             }
             String itemId = itemId(candidate.item());
-            boolean liked = candidate.positive();
-            if (knowsGift(data, player, professionKey, itemId, liked)) {
+            VillagerGiftPreferences.GiftReaction reaction = candidate.reaction();
+            Boolean liked = knowledgePolarity(reaction);
+            boolean known = liked != null && knowsGift(data, player, professionKey, itemId, liked);
+            tooltipReactions.putIfAbsent(itemId, new GiftTooltipReaction(itemId, reaction, known));
+            if (hasGiftKnowledge && known) {
                 if (liked) {
                     likedNames.add(itemName(level, locale, candidate.item()));
                 } else {
@@ -53,7 +56,7 @@ public final class VillagerGiftKnowledgeService {
             }
         }
 
-        return new GiftKnowledgeSnapshot(new ArrayList<>(likedNames), new ArrayList<>(dislikedNames));
+        return new GiftKnowledgeSnapshot(new ArrayList<>(likedNames), new ArrayList<>(dislikedNames), new ArrayList<>(tooltipReactions.values()));
     }
 
     public static Optional<GiftKnowledgeDiscovery> discoverFromGiftQuestion(DialogueContext context) {
@@ -233,7 +236,11 @@ public final class VillagerGiftKnowledgeService {
         return VillagerItemText.dialogueName(level.getServer(), locale, new ItemStack(item));
     }
 
-    public record GiftKnowledgeSnapshot(List<String> likedGiftNames, List<String> dislikedGiftNames) {
+    public record GiftKnowledgeSnapshot(
+            List<String> likedGiftNames, List<String> dislikedGiftNames, List<GiftTooltipReaction> tooltipReactions) {
+    }
+
+    public record GiftTooltipReaction(String itemId, VillagerGiftPreferences.GiftReaction reaction, boolean known) {
     }
 
     public record GiftKnowledgeDiscovery(

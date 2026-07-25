@@ -2,8 +2,12 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -62,18 +66,35 @@ final class VillagerInteractionGiftPage {
         if (isPointInsideGiftInfoIcon(localMouseX, localMouseY, 0, 0, transform.controlsBeside())) {
             renderGiftKnowledgeTooltip(context, graphics, localMouseXi, localMouseYi, transform.scale(), transform.left(), transform.top());
         } else if (!hoveredStack.isEmpty()) {
-            VillagerInteractionUiUtil.renderBoundedItemTooltipInCurrentPose(
-                    graphics,
-                    context.font(),
-                    hoveredStack,
-                    localMouseXi,
-                    localMouseYi,
-                    transform.scale(),
-                    transform.left(),
-                    transform.top());
+            renderGiftItemTooltip(context, graphics, hoveredStack, localMouseXi, localMouseYi, transform.scale(), transform.left(), transform.top());
         }
 
         graphics.pose().popPose();
+    }
+
+    private static void renderGiftItemTooltip(Context context, GuiGraphics graphics, ItemStack stack, int mouseX, int mouseY, float scale, int originX, int originY) {
+        List<Component> tooltip = new ArrayList<>(VillagerInteractionUiUtil.itemTooltipLines(stack));
+        if (VillagerRetaliationConfig.SHOW_GIFT_REACTION_TOOLTIP.get()) {
+            context.giftTooltipReaction(stack)
+                    .filter(reaction -> !VillagerRetaliationConfig.GIFT_REACTION_TOOLTIP_REQUIRES_KNOWN_GIFT.get() || reaction.known())
+                    .ifPresent(reaction -> tooltip.add(giftReactionTooltip(reaction)));
+        }
+        VillagerInteractionUiUtil.renderBoundedComponentTooltipInCurrentPose(
+                graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
+    }
+
+    private static Component giftReactionTooltip(GiftTooltipReaction reaction) {
+        ChatFormatting color = switch (reaction.reaction()) {
+            case LOVED -> ChatFormatting.GREEN;
+            case LIKED -> ChatFormatting.DARK_GREEN;
+            case NEUTRAL -> ChatFormatting.GRAY;
+            case DISLIKED -> ChatFormatting.RED;
+            case HATED -> ChatFormatting.DARK_RED;
+        };
+        String reactionKey = GUI_KEY_PREFIX + "gift.reaction." + reaction.reaction().name().toLowerCase(Locale.ROOT);
+        return Component.translatable(
+                GUI_KEY_PREFIX + "gift.reaction",
+                Component.translatable(reactionKey).withStyle(color)).withStyle(color);
     }
 
     static boolean tryClick(
@@ -352,6 +373,9 @@ final class VillagerInteractionGiftPage {
         List<String> knownLikedGiftNames();
 
         List<String> knownDislikedGiftNames();
+
+        Optional<GiftTooltipReaction> giftTooltipReaction(ItemStack stack);
+
     }
 
     private record GiftTransform(int left, int top, float scale, boolean controlsBeside) {

@@ -254,6 +254,7 @@ public final class VillagerInteractionScreenOpener {
                 dialogueOptions,
                 giftKnowledge.likedGiftNames(),
                 giftKnowledge.dislikedGiftNames(),
+                giftKnowledge.tooltipReactions(),
                 allegianceView(dialogueContext, level, villager, partyVillager != null),
                 VillagerSocialGraphService.familySnapshot(level, villager),
                 VillagerSocialGraphService.relationshipSnapshot(level, villager)

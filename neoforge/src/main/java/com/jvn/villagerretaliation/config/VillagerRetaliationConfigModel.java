@@ -271,6 +271,10 @@ public final class VillagerRetaliationConfigModel {
         public boolean enableHighReputationGifts = true;
 
         public boolean enableGiftKeepsakes = true;
+        public boolean showGiftReactionTooltip = true;
+
+        public boolean giftReactionTooltipRequiresKnownGift = true;
+
 
         @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
         public double repeatedGiftReputationMultiplier = 0.10D;
