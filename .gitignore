@@ -36,6 +36,9 @@ logs/
 crash-reports/
 **/src/generated/**/.cache/
 
+### Local developer utilities ###
+/dev_tools/
+
 ### OS ###
 .DS_Store
 /.gradle-home/
