@@ -13,7 +13,17 @@
         "You hooked harm and brought it here. Now bring something decent.",
         "Fine. I'll not throw the words back, but I'll inspect them.",
         "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "That came out sharper than it should have. I am sorry.",
+        "You cast trouble into the water. Fine. Now reel back something better. Bad tides pass. I'll see whether you bring the same storm again.",
+        "Bad tides pass. I'll see whether you bring the same storm again. You tangled the line. Fine. Untangle it slowly and do not cut it again.",
+        "You tangled the line. Fine. Untangle it slowly and do not cut it again. An apology floats. Trust sinks or holds by what follows.",
+        "An apology floats. Trust sinks or holds by what follows. I'll hear you out. I have waited longer for worse catches.",
+        "I'll hear you out. I have waited longer for worse catches. Bad waters calm if the wind changes. Let us see whether yours does.",
+        "Bad waters calm if the wind changes. Let us see whether yours does. You hooked harm and brought it here. Now bring something decent.",
+        "You hooked harm and brought it here. Now bring something decent. Fine. I'll not throw the words back, but I'll inspect them.",
+        "Fine. I'll not throw the words back, but I'll inspect them. I was wrong. I would rather say it plainly than dress it up.",
+        "I was wrong. I would rather say it plainly than dress it up. That came out sharper than it should have. I am sorry.",
+        "That came out sharper than it should have. I am sorry. You cast trouble into the water. Fine. Now reel back something better."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

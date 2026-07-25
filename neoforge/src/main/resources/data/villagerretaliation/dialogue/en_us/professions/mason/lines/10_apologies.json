@@ -13,7 +13,17 @@
         "Damage hidden inside stone still spreads. Keep this in the open.",
         "Trust can stand again if the base is not shaken twice.",
         "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "That came out sharper than it should have. I am sorry.",
+        "Cracks spread if ignored. You noticed this one. Now prove you can patch it. Mortar takes time to set. So does forgiveness.",
+        "Mortar takes time to set. So does forgiveness. You made a crack. You named it. That's the first proper repair.",
+        "You made a crack. You named it. That's the first proper repair. Don't plaster over this and call it fixed.",
+        "Don't plaster over this and call it fixed. Fine. A foundation can be reset, but it takes honest work.",
+        "Fine. A foundation can be reset, but it takes honest work. I hear the apology. Now bring mortar, not dust.",
+        "I hear the apology. Now bring mortar, not dust. Damage hidden inside stone still spreads. Keep this in the open.",
+        "Damage hidden inside stone still spreads. Keep this in the open. Trust can stand again if the base is not shaken twice.",
+        "Trust can stand again if the base is not shaken twice. I was wrong. I would rather say it plainly than dress it up.",
+        "I was wrong. I would rather say it plainly than dress it up. That came out sharper than it should have. I am sorry.",
+        "That came out sharper than it should have. I am sorry. Cracks spread if ignored. You noticed this one. Now prove you can patch it."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

@@ -22,7 +22,17 @@
         "I trust a good needle more than a loud promise. The needle has less to prove.",
         "If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
         "The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
-        "I notice the little things. That is either a skill or what the cauldron has done to me."
+        "I notice the little things. That is either a skill or what the cauldron has done to me.",
+        "Take {gift_item}. Good gear should travel, not gather dust. Here, {gift_item}. It has more use with you than sitting by my cauldron.",
+        "Here, {gift_item}. It has more use with you than sitting by my cauldron. Take {gift_item}. It is not much, but it is given with care.",
+        "Take {gift_item}. It is not much, but it is given with care. Most days, I am at the cauldron, trying to keep stitching and straps from becoming everyone else's problem.",
+        "Most days, I am at the cauldron, trying to keep stitching and straps from becoming everyone else's problem. People think leather is simple until something goes wrong and suddenly it is very important.",
+        "People think leather is simple until something goes wrong and suddenly it is very important. A village runs on small work. Nobody praises it until it stops happening.",
+        "A village runs on small work. Nobody praises it until it stops happening. I trust a good needle more than a loud promise. The needle has less to prove.",
+        "I trust a good needle more than a loud promise. The needle has less to prove. If you want my honest answer, slow down first. Rushed questions usually hide worse ones.",
+        "If you want my honest answer, slow down first. Rushed questions usually hide worse ones. The village looks calm from a distance. Up close, it is mostly chores arguing with weather.",
+        "The village looks calm from a distance. Up close, it is mostly chores arguing with weather. I notice the little things. That is either a skill or what the cauldron has done to me.",
+        "I notice the little things. That is either a skill or what the cauldron has done to me. Take {gift_item}. Good gear should travel, not gather dust."
       ],
       "weight": 48
     },
@@ -39,7 +49,17 @@
         "I learned two things out there: stay close, and ask better questions earlier.",
         "You move like danger is a normal part of the route. I am still adjusting to that.",
         "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "If I followed you again, I would pack more food and fewer assumptions.",
+        "Good. {gift_item} sat well with {tested_villager}, like softened leather. Then the fit was comfortable. {tested_villager} liked {gift_item}.",
+        "Then the fit was comfortable. {tested_villager} liked {gift_item}. Good. {gift_item} suited {tested_villager}. I like advice that holds up.",
+        "Good. {gift_item} suited {tested_villager}. I like advice that holds up. Following you taught me that plans sound much safer before anyone starts walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking. I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip. Next time, warn me before the road becomes a test of character.",
+        "Next time, warn me before the road becomes a test of character. I learned two things out there: stay close, and ask better questions earlier.",
+        "I learned two things out there: stay close, and ask better questions earlier. You move like danger is a normal part of the route. I am still adjusting to that.",
+        "You move like danger is a normal part of the route. I am still adjusting to that. It was not all bad. Some views are worth sore legs and nervous glances.",
+        "It was not all bad. Some views are worth sore legs and nervous glances. If I followed you again, I would pack more food and fewer assumptions.",
+        "If I followed you again, I would pack more food and fewer assumptions. Good. {gift_item} sat well with {tested_villager}, like softened leather."
       ],
       "weight": 44
     },
@@ -56,7 +76,17 @@
         "I learned two things out there: stay close, and ask better questions earlier.",
         "You move like danger is a normal part of the route. I am still adjusting to that.",
         "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "If I followed you again, I would pack more food and fewer assumptions.",
+        "Too stiff for them, then. For {gift_subject}, try {alternative_gift}. {gift_item} rubbed wrong? Bring {alternative_gift}. Better fit, less complaint.",
+        "{gift_item} rubbed wrong? Bring {alternative_gift}. Better fit, less complaint. {gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead.",
+        "{gift_item} missed the mark for {gift_subject}. Try {alternative_gift} instead. Following you taught me that plans sound much safer before anyone starts walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking. I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip. Next time, warn me before the road becomes a test of character.",
+        "Next time, warn me before the road becomes a test of character. I learned two things out there: stay close, and ask better questions earlier.",
+        "I learned two things out there: stay close, and ask better questions earlier. You move like danger is a normal part of the route. I am still adjusting to that.",
+        "You move like danger is a normal part of the route. I am still adjusting to that. It was not all bad. Some views are worth sore legs and nervous glances.",
+        "It was not all bad. Some views are worth sore legs and nervous glances. If I followed you again, I would pack more food and fewer assumptions.",
+        "If I followed you again, I would pack more food and fewer assumptions. Too stiff for them, then. For {gift_subject}, try {alternative_gift}."
       ],
       "weight": 44
     },
@@ -72,7 +102,17 @@
         "You are not as frightening as you think. That may be the problem.",
         "If foolishness made noise, you would drown out the bell.",
         "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
+        "Your confidence is <shake>louder</shake> than your sense.",
+        "That advice chafed. {alternative_gift} should sit easier. Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better. Then we correct the guess: {alternative_gift} next time.",
+        "Then we correct the guess: {alternative_gift} next time. You walk in like trouble forgot to close the door behind it.",
+        "You walk in like trouble forgot to close the door behind it. I have seen broken leather with better instincts than you.",
+        "I have seen broken leather with better instincts than you. Careful. The village has long memories and very little patience today.",
+        "Careful. The village has long memories and very little patience today. You are not as frightening as you think. That may be the problem.",
+        "You are not as frightening as you think. That may be the problem. If foolishness made noise, you would drown out the bell.",
+        "If foolishness made noise, you would drown out the bell. Do not test me just because I am speaking in complete sentences.",
+        "Do not test me just because I am speaking in complete sentences. Your confidence is <shake>louder</shake> than your sense.",
+        "Your confidence is <shake>louder</shake> than your sense. That advice chafed. {alternative_gift} should sit easier."
       ],
       "dispositions": [
         "cautious",
@@ -95,7 +135,17 @@
         "You are not as frightening as you think. That may be the problem.",
         "If foolishness made noise, you would drown out the bell.",
         "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
+        "Your confidence is <shake>louder</shake> than your sense.",
+        "You wore bad advice too long. Trade it for {alternative_gift}. Set {gift_item} aside and try {alternative_gift}. This advice should land better.",
+        "Set {gift_item} aside and try {alternative_gift}. This advice should land better. Then we correct the guess: {alternative_gift} next time.",
+        "Then we correct the guess: {alternative_gift} next time. You walk in like trouble forgot to close the door behind it.",
+        "You walk in like trouble forgot to close the door behind it. I have seen broken leather with better instincts than you.",
+        "I have seen broken leather with better instincts than you. Careful. The village has long memories and very little patience today.",
+        "Careful. The village has long memories and very little patience today. You are not as frightening as you think. That may be the problem.",
+        "You are not as frightening as you think. That may be the problem. If foolishness made noise, you would drown out the bell.",
+        "If foolishness made noise, you would drown out the bell. Do not test me just because I am speaking in complete sentences.",
+        "Do not test me just because I am speaking in complete sentences. Your confidence is <shake>louder</shake> than your sense.",
+        "Your confidence is <shake>louder</shake> than your sense. You wore bad advice too long. Trade it for {alternative_gift}."
       ],
       "dispositions": [
         "rude",

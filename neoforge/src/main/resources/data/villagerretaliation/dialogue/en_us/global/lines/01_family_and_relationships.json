@@ -13,7 +13,17 @@
         "Some people make safety feel like a place. <aqua>{parent}</aqua> does that for me.",
         "When I think of home, I usually hear <aqua>{parent_possessive}</aqua> voice first.",
         "<aqua>{parent}</aqua> has a way of making even a bad day feel survivable.",
-        "I hope I carry <aqua>{parent_possessive}</aqua> care forward better than I say it aloud."
+        "I hope I carry <aqua>{parent_possessive}</aqua> care forward better than I say it aloud.",
+        "<aqua>{parent}</aqua> still checks in on me when the village gets <shake><i>loud</i></shake>. They have a way of making me feel at home anywhere. <aqua>{parent}</aqua> knows when the village gets too <shake><i>loud</i></shake> for me. That kind of care stays with a person.",
+        "<aqua>{parent}</aqua> knows when the village gets too <shake><i>loud</i></shake> for me. That kind of care stays with a person. When there is trouble, <aqua>{parent}</aqua> is who I usually trust first.",
+        "When there is trouble, <aqua>{parent}</aqua> is who I usually trust first. <aqua>{parent}</aqua> can hear worry in my voice before I admit it is there.",
+        "<aqua>{parent}</aqua> can hear worry in my voice before I admit it is there. I learned a lot from <aqua>{parent}</aqua>, though I complained through half of it.",
+        "I learned a lot from <aqua>{parent}</aqua>, though I complained through half of it. <aqua>{parent}</aqua> still reminds me to rest before I notice I am tired.",
+        "<aqua>{parent}</aqua> still reminds me to rest before I notice I am tired. Some people make safety feel like a place. <aqua>{parent}</aqua> does that for me.",
+        "Some people make safety feel like a place. <aqua>{parent}</aqua> does that for me. When I think of home, I usually hear <aqua>{parent_possessive}</aqua> voice first.",
+        "When I think of home, I usually hear <aqua>{parent_possessive}</aqua> voice first. <aqua>{parent}</aqua> has a way of making even a bad day feel survivable.",
+        "<aqua>{parent}</aqua> has a way of making even a bad day feel survivable. I hope I carry <aqua>{parent_possessive}</aqua> care forward better than I say it aloud.",
+        "I hope I carry <aqua>{parent_possessive}</aqua> care forward better than I say it aloud. <aqua>{parent}</aqua> still checks in on me when the village gets <shake><i>loud</i></shake>. They have a way of making me feel at home anywhere."
       ],
       "conditions": [
         {
@@ -43,7 +53,17 @@
         "I try to be steady for <aqua>{child}</aqua>, even on days when I am not steady for myself.",
         "<aqua>{child}</aqua> asks questions that make simple things feel important again.",
         "If I leave anything behind, I hope it makes life gentler for <aqua>{child}</aqua>.",
-        "I worry about <aqua>{child}</aqua>, of course. Love has a habit of looking like worry."
+        "I worry about <aqua>{child}</aqua>, of course. Love has a habit of looking like worry.",
+        "I keep an eye on <aqua>{child}</aqua>. Around here, every child learns quickly which footsteps mean help. <aqua>{child}</aqua> is one reason I watch the paths more <i>closely</i> than I used to.",
+        "<aqua>{child}</aqua> is one reason I watch the paths more <i>closely</i> than I used to. Children learn the village by watching us. I try to give <aqua>{child}</aqua> something good to copy.",
+        "Children learn the village by watching us. I try to give <aqua>{child}</aqua> something good to copy. <aqua>{child}</aqua> makes me think twice before I call a day ordinary.",
+        "<aqua>{child}</aqua> makes me think twice before I call a day ordinary. I want <aqua>{child}</aqua> to know the village as more than warnings and locked doors.",
+        "I want <aqua>{child}</aqua> to know the village as more than warnings and locked doors. When <aqua>{child}</aqua> laughs, the whole square feels less tired.",
+        "When <aqua>{child}</aqua> laughs, the whole square feels less tired. I try to be steady for <aqua>{child}</aqua>, even on days when I am not steady for myself.",
+        "I try to be steady for <aqua>{child}</aqua>, even on days when I am not steady for myself. <aqua>{child}</aqua> asks questions that make simple things feel important again.",
+        "<aqua>{child}</aqua> asks questions that make simple things feel important again. If I leave anything behind, I hope it makes life gentler for <aqua>{child}</aqua>.",
+        "If I leave anything behind, I hope it makes life gentler for <aqua>{child}</aqua>. I worry about <aqua>{child}</aqua>, of course. Love has a habit of looking like worry.",
+        "I worry about <aqua>{child}</aqua>, of course. Love has a habit of looking like worry. I keep an eye on <aqua>{child}</aqua>. Around here, every child learns quickly which footsteps mean help."
       ],
       "conditions": [
         {
@@ -73,7 +93,17 @@
         "I trust <aqua>{sibling}</aqua> with things I pretend not to need help with.",
         "No one remembers my foolish years quite like <aqua>{sibling}</aqua>.",
         "<aqua>{sibling}</aqua> and I have our sharp edges, but they fit together well enough.",
-        "If trouble comes near <aqua>{sibling}</aqua>, it comes near me too."
+        "If trouble comes near <aqua>{sibling}</aqua>, it comes near me too.",
+        "<aqua>{sibling}</aqua> and I do not always agree, but I would still stand between them and trouble. <aqua>{sibling}</aqua> can test my patience and still have my loyalty.",
+        "<aqua>{sibling}</aqua> can test my patience and still have my loyalty. I know every way <aqua>{sibling}</aqua> can annoy me, and every reason I would defend them.",
+        "I know every way <aqua>{sibling}</aqua> can annoy me, and every reason I would defend them. <aqua>{sibling}</aqua> knows too many old stories about me. That is the danger of siblings.",
+        "<aqua>{sibling}</aqua> knows too many old stories about me. That is the danger of siblings. We argue like loose shutters, but <aqua>{sibling}</aqua> is still family.",
+        "We argue like loose shutters, but <aqua>{sibling}</aqua> is still family. <aqua>{sibling}</aqua> can make me angry faster than most and forgive me faster too.",
+        "<aqua>{sibling}</aqua> can make me angry faster than most and forgive me faster too. I trust <aqua>{sibling}</aqua> with things I pretend not to need help with.",
+        "I trust <aqua>{sibling}</aqua> with things I pretend not to need help with. No one remembers my foolish years quite like <aqua>{sibling}</aqua>.",
+        "No one remembers my foolish years quite like <aqua>{sibling}</aqua>. <aqua>{sibling}</aqua> and I have our sharp edges, but they fit together well enough.",
+        "<aqua>{sibling}</aqua> and I have our sharp edges, but they fit together well enough. If trouble comes near <aqua>{sibling}</aqua>, it comes near me too.",
+        "If trouble comes near <aqua>{sibling}</aqua>, it comes near me too. <aqua>{sibling}</aqua> and I do not always agree, but I would still stand between them and trouble."
       ],
       "conditions": [
         {
@@ -103,7 +133,17 @@
         "There is comfort in hearing <aqua>{grandparent}</aqua> say we have survived worse.",
         "<aqua>{grandparent}</aqua> keeps family history like others keep tools: worn, useful, and close at hand.",
         "When <aqua>{grandparent}</aqua> speaks carefully, I try to listen the same way.",
-        "A village feels older and steadier when <aqua>{grandparent}</aqua> is nearby."
+        "A village feels older and steadier when <aqua>{grandparent}</aqua> is nearby.",
+        "<aqua>{grandparent}</aqua> taught the family which paths are safe after dark. Some advice lasts longer than the person who first said it. <aqua>{grandparent}</aqua> remembers roads I only know as stories. I listen when they warn me.",
+        "<aqua>{grandparent}</aqua> remembers roads I only know as stories. I listen when they warn me. <aqua>{grandparent_possessive}</aqua> old advice still keeps my feet out of trouble.",
+        "<aqua>{grandparent_possessive}</aqua> old advice still keeps my feet out of trouble. <aqua>{grandparent}</aqua> can turn a small memory into a whole evening.",
+        "<aqua>{grandparent}</aqua> can turn a small memory into a whole evening. I used to think <aqua>{grandparent}</aqua> worried too much. Now I understand more of it.",
+        "I used to think <aqua>{grandparent}</aqua> worried too much. Now I understand more of it. <aqua>{grandparent}</aqua> knows where the village has been, not just where it stands.",
+        "<aqua>{grandparent}</aqua> knows where the village has been, not just where it stands. There is comfort in hearing <aqua>{grandparent}</aqua> say we have survived worse.",
+        "There is comfort in hearing <aqua>{grandparent}</aqua> say we have survived worse. <aqua>{grandparent}</aqua> keeps family history like others keep tools: worn, useful, and close at hand.",
+        "<aqua>{grandparent}</aqua> keeps family history like others keep tools: worn, useful, and close at hand. When <aqua>{grandparent}</aqua> speaks carefully, I try to listen the same way.",
+        "When <aqua>{grandparent}</aqua> speaks carefully, I try to listen the same way. A village feels older and steadier when <aqua>{grandparent}</aqua> is nearby.",
+        "A village feels older and steadier when <aqua>{grandparent}</aqua> is nearby. <aqua>{grandparent}</aqua> taught the family which paths are safe after dark. Some advice lasts longer than the person who first said it."
       ],
       "conditions": [
         {
@@ -134,7 +174,17 @@
         "A village is not built for us alone. <aqua>{descendant}</aqua> reminds me of that.",
         "I want <aqua>{descendant}</aqua> to know courage, but not have to learn it too early.",
         "If I do my part well, <aqua>{descendant}</aqua> may never know which troubles we kept away.",
-        "The future has a face when I think of <aqua>{descendant}</aqua>."
+        "The future has a face when I think of <aqua>{descendant}</aqua>.",
+        "When I think about <aqua>{descendant}</aqua>, I try to leave the village a little kinder than I found it. <aqua>{descendant}</aqua> makes the future feel like a real place, not just a word.",
+        "<aqua>{descendant}</aqua> makes the future feel like a real place, not just a word. I want <aqua>{descendant}</aqua> to inherit more than locked doors and nervous bells.",
+        "I want <aqua>{descendant}</aqua> to inherit more than locked doors and nervous bells. The choices we make today will become the ground beneath <aqua>{descendant_possessive}</aqua> feet.",
+        "The choices we make today will become the ground beneath <aqua>{descendant_possessive}</aqua> feet. I hope <aqua>{descendant}</aqua> grows up with more songs than warnings.",
+        "I hope <aqua>{descendant}</aqua> grows up with more songs than warnings. Thinking of <aqua>{descendant}</aqua> makes even small repairs feel important.",
+        "Thinking of <aqua>{descendant}</aqua> makes even small repairs feel important. A village is not built for us alone. <aqua>{descendant}</aqua> reminds me of that.",
+        "A village is not built for us alone. <aqua>{descendant}</aqua> reminds me of that. I want <aqua>{descendant}</aqua> to know courage, but not have to learn it too early.",
+        "I want <aqua>{descendant}</aqua> to know courage, but not have to learn it too early. If I do my part well, <aqua>{descendant}</aqua> may never know which troubles we kept away.",
+        "If I do my part well, <aqua>{descendant}</aqua> may never know which troubles we kept away. The future has a face when I think of <aqua>{descendant}</aqua>.",
+        "The future has a face when I think of <aqua>{descendant}</aqua>. When I think about <aqua>{descendant}</aqua>, I try to leave the village a little kinder than I found it."
       ],
       "conditions": [
         {
@@ -164,7 +214,17 @@
         "Kinship can be quiet and still matter. That is how it is with <aqua>{extended_relative}</aqua>.",
         "When trouble spreads through the village, it reaches <aqua>{extended_relative}</aqua> too.",
         "Family does not stop at the nearest door. <aqua>{extended_relative}</aqua> reminds me of that.",
-        "I count <aqua>{extended_relative}</aqua> among my people, even from a little distance."
+        "I count <aqua>{extended_relative}</aqua> among my people, even from a little distance.",
+        "<aqua>{extended_relative}</aqua> is not in my house every night, but family branches still share the same weather. <aqua>{extended_relative}</aqua> may live under another roof, but kinship still knocks when trouble comes.",
+        "<aqua>{extended_relative}</aqua> may live under another roof, but kinship still knocks when trouble comes. Family stretches farther than a doorstep. <aqua>{extended_relative}</aqua> proves that often enough.",
+        "Family stretches farther than a doorstep. <aqua>{extended_relative}</aqua> proves that often enough. I do not see <aqua>{extended_relative}</aqua> every day, but the bond is still there.",
+        "I do not see <aqua>{extended_relative}</aqua> every day, but the bond is still there. Some relatives are like paths between houses. You may not walk them daily, but you know where they lead.",
+        "Some relatives are like paths between houses. You may not walk them daily, but you know where they lead. <aqua>{extended_relative}</aqua> has a place in the family, even if it is not always at my table.",
+        "<aqua>{extended_relative}</aqua> has a place in the family, even if it is not always at my table. Kinship can be quiet and still matter. That is how it is with <aqua>{extended_relative}</aqua>.",
+        "Kinship can be quiet and still matter. That is how it is with <aqua>{extended_relative}</aqua>. When trouble spreads through the village, it reaches <aqua>{extended_relative}</aqua> too.",
+        "When trouble spreads through the village, it reaches <aqua>{extended_relative}</aqua> too. Family does not stop at the nearest door. <aqua>{extended_relative}</aqua> reminds me of that.",
+        "Family does not stop at the nearest door. <aqua>{extended_relative}</aqua> reminds me of that. I count <aqua>{extended_relative}</aqua> among my people, even from a little distance.",
+        "I count <aqua>{extended_relative}</aqua> among my people, even from a little distance. <aqua>{extended_relative}</aqua> is not in my house every night, but family branches still share the same weather."
       ],
       "conditions": [
         {
@@ -189,7 +249,17 @@
         "The village carries <aqua>{deceased_family_possessive}</aqua> name softer than it used to, but it still carries it.",
         "I miss <aqua>{deceased_family}</aqua> most during ordinary moments.",
         "Grief does not leave the house. It just learns where to sit.",
-        "When we remember <aqua>{deceased_family}</aqua>, the silence feels less empty."
+        "When we remember <aqua>{deceased_family}</aqua>, the silence feels less empty.",
+        "We still say <aqua>{deceased_family_possessive}</aqua> name when the village gathers. Remembering is a kind of shelter. <aqua>{deceased_family_possessive}</aqua> memory still has a chair in this village.",
+        "<aqua>{deceased_family_possessive}</aqua> memory still has a chair in this village. We speak of <aqua>{deceased_family}</aqua> carefully. Grief is still part of the household.",
+        "We speak of <aqua>{deceased_family}</aqua> carefully. Grief is still part of the household. There are days I still turn as if <aqua>{deceased_family}</aqua> might answer.",
+        "There are days I still turn as if <aqua>{deceased_family}</aqua> might answer. <aqua>{deceased_family}</aqua> is gone, but not absent. Those are different things.",
+        "<aqua>{deceased_family}</aqua> is gone, but not absent. Those are different things. Some habits remain because <aqua>{deceased_family}</aqua> taught them well.",
+        "Some habits remain because <aqua>{deceased_family}</aqua> taught them well. The village carries <aqua>{deceased_family_possessive}</aqua> name softer than it used to, but it still carries it.",
+        "The village carries <aqua>{deceased_family_possessive}</aqua> name softer than it used to, but it still carries it. I miss <aqua>{deceased_family}</aqua> most during ordinary moments.",
+        "I miss <aqua>{deceased_family}</aqua> most during ordinary moments. Grief does not leave the house. It just learns where to sit.",
+        "Grief does not leave the house. It just learns where to sit. When we remember <aqua>{deceased_family}</aqua>, the silence feels less empty.",
+        "When we remember <aqua>{deceased_family}</aqua>, the silence feels less empty. We still say <aqua>{deceased_family_possessive}</aqua> name when the village gathers. Remembering is a kind of shelter."
       ],
       "conditions": [
         {
@@ -214,7 +284,17 @@
         "I protect <aqua>{relative}</aqua> in small ways too, including with silence.",
         "You may ask, but I do not owe every answer about <aqua>{relative}</aqua>.",
         "Speak carefully. Family is close to the heart and quick to bruise.",
-        "<aqua>{relative}</aqua> is not a story for strangers to pull apart."
+        "<aqua>{relative}</aqua> is not a story for strangers to pull apart.",
+        "<aqua>{relative}</aqua> is family. That is enough to make me careful about who asks. Ask about <aqua>{relative}</aqua> with respect, and maybe I will answer.",
+        "Ask about <aqua>{relative}</aqua> with respect, and maybe I will answer. Family names are not loose coins. <aqua>{relative}</aqua> matters to me.",
+        "Family names are not loose coins. <aqua>{relative}</aqua> matters to me. I do not hand out family matters for idle curiosity.",
+        "I do not hand out family matters for idle curiosity. If <aqua>{relative}</aqua> is your question, then your tone matters.",
+        "If <aqua>{relative}</aqua> is your question, then your tone matters. Family is not gossip. Remember that before you ask again.",
+        "Family is not gossip. Remember that before you ask again. I protect <aqua>{relative}</aqua> in small ways too, including with silence.",
+        "I protect <aqua>{relative}</aqua> in small ways too, including with silence. You may ask, but I do not owe every answer about <aqua>{relative}</aqua>.",
+        "You may ask, but I do not owe every answer about <aqua>{relative}</aqua>. Speak carefully. Family is close to the heart and quick to bruise.",
+        "Speak carefully. Family is close to the heart and quick to bruise. <aqua>{relative}</aqua> is not a story for strangers to pull apart.",
+        "<aqua>{relative}</aqua> is not a story for strangers to pull apart. <aqua>{relative}</aqua> is family. That is enough to make me careful about who asks."
       ],
       "conditions": [
         {
@@ -245,7 +325,17 @@
         "The world feels less sharp when I walk beside <aqua>{partner}</aqua>.",
         "<aqua>{partner}</aqua> makes ordinary evenings feel worth remembering.",
         "I trust <aqua>{partner}</aqua> with the quiet parts of me.",
-        "Home is easier to believe in when <aqua>{partner}</aqua> is part of it."
+        "Home is easier to believe in when <aqua>{partner}</aqua> is part of it.",
+        "<aqua>{partner}</aqua> makes the village feel less like a place I survive and more like a place I choose. With <aqua>{partner}</aqua>, even a hard day has somewhere softer to end.",
+        "With <aqua>{partner}</aqua>, even a hard day has somewhere softer to end. <aqua>{partner}</aqua> makes the village feel less like walls and more like home.",
+        "<aqua>{partner}</aqua> makes the village feel less like walls and more like home. I breathe easier when I know <aqua>{partner}</aqua> is nearby.",
+        "I breathe easier when I know <aqua>{partner}</aqua> is nearby. <aqua>{partner}</aqua> knows how to find me under all the noise of the day.",
+        "<aqua>{partner}</aqua> knows how to find me under all the noise of the day. Some people make a room warmer just by entering it. <aqua>{partner}</aqua> does that for me.",
+        "Some people make a room warmer just by entering it. <aqua>{partner}</aqua> does that for me. The world feels less sharp when I walk beside <aqua>{partner}</aqua>.",
+        "The world feels less sharp when I walk beside <aqua>{partner}</aqua>. <aqua>{partner}</aqua> makes ordinary evenings feel worth remembering.",
+        "<aqua>{partner}</aqua> makes ordinary evenings feel worth remembering. I trust <aqua>{partner}</aqua> with the quiet parts of me.",
+        "I trust <aqua>{partner}</aqua> with the quiet parts of me. Home is easier to believe in when <aqua>{partner}</aqua> is part of it.",
+        "Home is easier to believe in when <aqua>{partner}</aqua> is part of it. <aqua>{partner}</aqua> makes the village feel less like a place I survive and more like a place I choose."
       ],
       "conditions": [
         {
@@ -275,7 +365,17 @@
         "Sometimes I take the longer path because it might pass by <aqua>{crush}</aqua>.",
         "<aqua>{crush}</aqua> probably has no idea how much courage a simple hello takes.",
         "I keep meaning to speak plainly to <aqua>{crush}</aqua>. Plain words become tangled ones.",
-        "It is only a crush, I tell myself, and then <aqua>{crush}</aqua> walks by."
+        "It is only a crush, I tell myself, and then <aqua>{crush}</aqua> walks by.",
+        "I keep finding reasons to pass near <aqua>{crush}</aqua>. Maybe it is foolish. Maybe foolish things keep people kind. I notice when <aqua>{crush}</aqua> crosses the square. I pretend not to, badly.",
+        "I notice when <aqua>{crush}</aqua> crosses the square. I pretend not to, badly. <aqua>{crush}</aqua> makes ordinary errands feel suspiciously important.",
+        "<aqua>{crush}</aqua> makes ordinary errands feel suspiciously important. I have said perfectly normal things to <aqua>{crush}</aqua> and then thought about them all day.",
+        "I have said perfectly normal things to <aqua>{crush}</aqua> and then thought about them all day. When <aqua>{crush}</aqua> smiles, my thoughts trip over their own feet.",
+        "When <aqua>{crush}</aqua> smiles, my thoughts trip over their own feet. I am very calm around <aqua>{crush}</aqua>, except for all the ways I am not.",
+        "I am very calm around <aqua>{crush}</aqua>, except for all the ways I am not. Sometimes I take the longer path because it might pass by <aqua>{crush}</aqua>.",
+        "Sometimes I take the longer path because it might pass by <aqua>{crush}</aqua>. <aqua>{crush}</aqua> probably has no idea how much courage a simple hello takes.",
+        "<aqua>{crush}</aqua> probably has no idea how much courage a simple hello takes. I keep meaning to speak plainly to <aqua>{crush}</aqua>. Plain words become tangled ones.",
+        "I keep meaning to speak plainly to <aqua>{crush}</aqua>. Plain words become tangled ones. It is only a crush, I tell myself, and then <aqua>{crush}</aqua> walks by.",
+        "It is only a crush, I tell myself, and then <aqua>{crush}</aqua> walks by. I keep finding reasons to pass near <aqua>{crush}</aqua>. Maybe it is foolish. Maybe foolish things keep people kind."
       ],
       "conditions": [
         {
@@ -305,7 +405,17 @@
         "I do not know where it leads yet, but I like the steps with <aqua>{dating_partner}</aqua>.",
         "There is a gentle kind of courage in letting someone close. <aqua>{dating_partner}</aqua> reminds me.",
         "<aqua>{dating_partner}</aqua> and I are not rushing. Good things need room to breathe.",
-        "I find myself looking forward to ordinary moments with <aqua>{dating_partner}</aqua>."
+        "I find myself looking forward to ordinary moments with <aqua>{dating_partner}</aqua>.",
+        "<aqua>{dating_partner}</aqua> and I are seeing where the road goes. Slowly is fine when the road matters. <aqua>{dating_partner}</aqua> and I are taking it carefully. Careful things can still be brave.",
+        "<aqua>{dating_partner}</aqua> and I are taking it carefully. Careful things can still be brave. I like walking beside <aqua>{dating_partner}</aqua>. The road feels less noisy that way.",
+        "I like walking beside <aqua>{dating_partner}</aqua>. The road feels less noisy that way. With <aqua>{dating_partner}</aqua>, even small plans feel worth making.",
+        "With <aqua>{dating_partner}</aqua>, even small plans feel worth making. We are still learning each other's weather, <aqua>{dating_partner}</aqua> and I.",
+        "We are still learning each other's weather, <aqua>{dating_partner}</aqua> and I. <aqua>{dating_partner}</aqua> makes me want to be honest a little faster than usual.",
+        "<aqua>{dating_partner}</aqua> makes me want to be honest a little faster than usual. I do not know where it leads yet, but I like the steps with <aqua>{dating_partner}</aqua>.",
+        "I do not know where it leads yet, but I like the steps with <aqua>{dating_partner}</aqua>. There is a gentle kind of courage in letting someone close. <aqua>{dating_partner}</aqua> reminds me.",
+        "There is a gentle kind of courage in letting someone close. <aqua>{dating_partner}</aqua> reminds me. <aqua>{dating_partner}</aqua> and I are not rushing. Good things need room to breathe.",
+        "<aqua>{dating_partner}</aqua> and I are not rushing. Good things need room to breathe. I find myself looking forward to ordinary moments with <aqua>{dating_partner}</aqua>.",
+        "I find myself looking forward to ordinary moments with <aqua>{dating_partner}</aqua>. <aqua>{dating_partner}</aqua> and I are seeing where the road goes. Slowly is fine when the road matters."
       ],
       "conditions": [
         {
@@ -335,7 +445,17 @@
         "<aqua>{fiance}</aqua> and I are choosing each other in front of the whole village soon.",
         "A promise feels heavier when it is real. I am glad mine is with <aqua>{fiance}</aqua>.",
         "We are building a life piece by piece, <aqua>{fiance}</aqua> and I.",
-        "When I think of the years ahead, <aqua>{fiance}</aqua> is already there."
+        "When I think of the years ahead, <aqua>{fiance}</aqua> is already there.",
+        "<aqua>{fiance}</aqua> and I are trying to plan a future sturdy enough to survive this place. <aqua>{fiance}</aqua> and I are planning more than a ceremony. We are planning a life that holds.",
+        "<aqua>{fiance}</aqua> and I are planning more than a ceremony. We are planning a life that holds. When I say <aqua>{fiance_possessive}</aqua> name, the future feels less theoretical.",
+        "When I say <aqua>{fiance_possessive}</aqua> name, the future feels less theoretical. <aqua>{fiance}</aqua> makes tomorrow feel like something I can build toward.",
+        "<aqua>{fiance}</aqua> makes tomorrow feel like something I can build toward. There is a lot to prepare, but with <aqua>{fiance}</aqua>, even the worry feels shared.",
+        "There is a lot to prepare, but with <aqua>{fiance}</aqua>, even the worry feels shared. I thought planning would frighten me more. <aqua>{fiance}</aqua> makes it feel possible.",
+        "I thought planning would frighten me more. <aqua>{fiance}</aqua> makes it feel possible. <aqua>{fiance}</aqua> and I are choosing each other in front of the whole village soon.",
+        "<aqua>{fiance}</aqua> and I are choosing each other in front of the whole village soon. A promise feels heavier when it is real. I am glad mine is with <aqua>{fiance}</aqua>.",
+        "A promise feels heavier when it is real. I am glad mine is with <aqua>{fiance}</aqua>. We are building a life piece by piece, <aqua>{fiance}</aqua> and I.",
+        "We are building a life piece by piece, <aqua>{fiance}</aqua> and I. When I think of the years ahead, <aqua>{fiance}</aqua> is already there.",
+        "When I think of the years ahead, <aqua>{fiance}</aqua> is already there. <aqua>{fiance}</aqua> and I are trying to plan a future sturdy enough to survive this place."
       ],
       "conditions": [
         {
@@ -360,7 +480,17 @@
         "With <aqua>{romantic_spouse}</aqua>, even chores feel like part of something larger.",
         "I trust <aqua>{romantic_spouse}</aqua> with the version of me that has no performance left.",
         "The day settles easier when I know <aqua>{romantic_spouse}</aqua> is waiting.",
-        "Love is not always loud. With <aqua>{romantic_spouse}</aqua>, it is steady."
+        "Love is not always loud. With <aqua>{romantic_spouse}</aqua>, it is steady.",
+        "<aqua>{romantic_spouse}</aqua> knows which silences mean I am tired and which mean I need help. That is a rare comfort. <aqua>{romantic_spouse}</aqua> knows my storms and still keeps a light on.",
+        "<aqua>{romantic_spouse}</aqua> knows my storms and still keeps a light on. Home sounds different when <aqua>{romantic_spouse}</aqua> is there.",
+        "Home sounds different when <aqua>{romantic_spouse}</aqua> is there. <aqua>{romantic_spouse}</aqua> has seen my worst mornings and still asks how I slept.",
+        "<aqua>{romantic_spouse}</aqua> has seen my worst mornings and still asks how I slept. Marriage is a thousand small promises. <aqua>{romantic_spouse}</aqua> keeps the quiet ones.",
+        "Marriage is a thousand small promises. <aqua>{romantic_spouse}</aqua> keeps the quiet ones. I do not have to explain every shadow to <aqua>{romantic_spouse}</aqua>. They know where some of them came from.",
+        "I do not have to explain every shadow to <aqua>{romantic_spouse}</aqua>. They know where some of them came from. With <aqua>{romantic_spouse}</aqua>, even chores feel like part of something larger.",
+        "With <aqua>{romantic_spouse}</aqua>, even chores feel like part of something larger. I trust <aqua>{romantic_spouse}</aqua> with the version of me that has no performance left.",
+        "I trust <aqua>{romantic_spouse}</aqua> with the version of me that has no performance left. The day settles easier when I know <aqua>{romantic_spouse}</aqua> is waiting.",
+        "The day settles easier when I know <aqua>{romantic_spouse}</aqua> is waiting. Love is not always loud. With <aqua>{romantic_spouse}</aqua>, it is steady.",
+        "Love is not always loud. With <aqua>{romantic_spouse}</aqua>, it is steady. <aqua>{romantic_spouse}</aqua> knows which silences mean I am tired and which mean I need help. That is a rare comfort."
       ],
       "conditions": [
         {
@@ -385,7 +515,17 @@
         "Parting hurt, but staying wrong would have hurt more.",
         "I hope <aqua>{ex_partner}</aqua> finds peace, even if it is far from me.",
         "Some people are important without being permanent. <aqua>{ex_partner}</aqua> taught me that.",
-        "I try to speak of <aqua>{ex_partner}</aqua> fairly. Bitterness is heavy to carry."
+        "I try to speak of <aqua>{ex_partner}</aqua> fairly. Bitterness is heavy to carry.",
+        "<aqua>{ex_partner}</aqua> and I had our season. Some roads part before they turn cruel, and that can be mercy. <aqua>{ex_partner}</aqua> and I learned what we could, then stopped before kindness ran out.",
+        "<aqua>{ex_partner}</aqua> and I learned what we could, then stopped before kindness ran out. Some endings with <aqua>{ex_partner}</aqua> still deserve gentleness.",
+        "Some endings with <aqua>{ex_partner}</aqua> still deserve gentleness. I do not regret all of it. I only know it could not stay as it was.",
+        "I do not regret all of it. I only know it could not stay as it was. <aqua>{ex_partner}</aqua> and I are not what we were, but that does not make it meaningless.",
+        "<aqua>{ex_partner}</aqua> and I are not what we were, but that does not make it meaningless. There are memories with <aqua>{ex_partner}</aqua> I can hold without wanting them back.",
+        "There are memories with <aqua>{ex_partner}</aqua> I can hold without wanting them back. Parting hurt, but staying wrong would have hurt more.",
+        "Parting hurt, but staying wrong would have hurt more. I hope <aqua>{ex_partner}</aqua> finds peace, even if it is far from me.",
+        "I hope <aqua>{ex_partner}</aqua> finds peace, even if it is far from me. Some people are important without being permanent. <aqua>{ex_partner}</aqua> taught me that.",
+        "Some people are important without being permanent. <aqua>{ex_partner}</aqua> taught me that. I try to speak of <aqua>{ex_partner}</aqua> fairly. Bitterness is heavy to carry.",
+        "I try to speak of <aqua>{ex_partner}</aqua> fairly. Bitterness is heavy to carry. <aqua>{ex_partner}</aqua> and I had our season. Some roads part before they turn cruel, and that can be mercy."
       ],
       "conditions": [
         {
@@ -416,7 +556,17 @@
         "<aqua>{late_partner}</aqua> left quiet places in my routine that I still step around.",
         "I remember <aqua>{late_partner}</aqua> most when the day is ordinary.",
         "Grief changes shape, but it still knows <aqua>{late_partner_possessive}</aqua> name.",
-        "Some nights I speak to <aqua>{late_partner}</aqua> in my thoughts and let that be enough."
+        "Some nights I speak to <aqua>{late_partner}</aqua> in my thoughts and let that be enough.",
+        "<aqua>{late_partner}</aqua> is gone, but some mornings I still make room for them in my thoughts. <aqua>{late_partner}</aqua> is gone, but love leaves habits behind.",
+        "<aqua>{late_partner}</aqua> is gone, but love leaves habits behind. I still carry <aqua>{late_partner_possessive}</aqua> name carefully.",
+        "I still carry <aqua>{late_partner_possessive}</aqua> name carefully. There are moments when I almost turn to tell <aqua>{late_partner}</aqua> something small.",
+        "There are moments when I almost turn to tell <aqua>{late_partner}</aqua> something small. Missing <aqua>{late_partner}</aqua> has become part of how I move through the day.",
+        "Missing <aqua>{late_partner}</aqua> has become part of how I move through the day. Love does not end neatly just because a life does.",
+        "Love does not end neatly just because a life does. <aqua>{late_partner}</aqua> left quiet places in my routine that I still step around.",
+        "<aqua>{late_partner}</aqua> left quiet places in my routine that I still step around. I remember <aqua>{late_partner}</aqua> most when the day is ordinary.",
+        "I remember <aqua>{late_partner}</aqua> most when the day is ordinary. Grief changes shape, but it still knows <aqua>{late_partner_possessive}</aqua> name.",
+        "Grief changes shape, but it still knows <aqua>{late_partner_possessive}</aqua> name. Some nights I speak to <aqua>{late_partner}</aqua> in my thoughts and let that be enough.",
+        "Some nights I speak to <aqua>{late_partner}</aqua> in my thoughts and let that be enough. <aqua>{late_partner}</aqua> is gone, but some mornings I still make room for them in my thoughts."
       ],
       "conditions": [
         {
@@ -441,7 +591,17 @@
         "Some names are kept close. <aqua>{partner}</aqua> is one of them.",
         "Ask with respect, or leave <aqua>{partner}</aqua> out of your mouth.",
         "There are parts of my life I do not owe to every passerby.",
-        "If I speak of <aqua>{partner}</aqua>, it will be because I choose to."
+        "If I speak of <aqua>{partner}</aqua>, it will be because I choose to.",
+        "<aqua>{partner}</aqua> is not a market rumor. Ask gently, or do not ask. Do not turn <aqua>{partner}</aqua> into gossip. Some things deserve a closed door.",
+        "Do not turn <aqua>{partner}</aqua> into gossip. Some things deserve a closed door. If you ask about <aqua>{partner}</aqua>, ask like the answer belongs to a person.",
+        "If you ask about <aqua>{partner}</aqua>, ask like the answer belongs to a person. My relationship is not something for strangers to pick at.",
+        "My relationship is not something for strangers to pick at. <aqua>{partner}</aqua> matters to me, so my answer will be careful.",
+        "<aqua>{partner}</aqua> matters to me, so my answer will be careful. I will not make <aqua>{partner}</aqua> into village talk for your curiosity.",
+        "I will not make <aqua>{partner}</aqua> into village talk for your curiosity. Some names are kept close. <aqua>{partner}</aqua> is one of them.",
+        "Some names are kept close. <aqua>{partner}</aqua> is one of them. Ask with respect, or leave <aqua>{partner}</aqua> out of your mouth.",
+        "Ask with respect, or leave <aqua>{partner}</aqua> out of your mouth. There are parts of my life I do not owe to every passerby.",
+        "There are parts of my life I do not owe to every passerby. If I speak of <aqua>{partner}</aqua>, it will be because I choose to.",
+        "If I speak of <aqua>{partner}</aqua>, it will be because I choose to. <aqua>{partner}</aqua> is not a market rumor. Ask gently, or do not ask."
       ],
       "conditions": [
         {
@@ -472,7 +632,17 @@
         "<aqua>{parent}</aqua> gives the best hugs after scary noises.",
         "<aqua>{parent}</aqua> says I ask many questions. I think I ask the right amount.",
         "I stay close to <aqua>{parent}</aqua> when the village feels too big.",
-        "<aqua>{parent}</aqua> says I am growing fast. I check every day."
+        "<aqua>{parent}</aqua> says I am growing fast. I check every day.",
+        "<aqua>{parent}</aqua> says I should stay where the bell can hear me. <aqua>{parent}</aqua> says the safest place is where someone can see me.",
+        "<aqua>{parent}</aqua> says the safest place is where someone can see me. <aqua>{parent}</aqua> can find me even when I am pretending very hard to hide.",
+        "<aqua>{parent}</aqua> can find me even when I am pretending very hard to hide. <aqua>{parent}</aqua> always knows when I have mud on my shoes.",
+        "<aqua>{parent}</aqua> always knows when I have mud on my shoes. <aqua>{parent}</aqua> says walking is not the same as running with smaller steps.",
+        "<aqua>{parent}</aqua> says walking is not the same as running with smaller steps. When <aqua>{parent}</aqua> calls my name, I can hear if I am in trouble.",
+        "When <aqua>{parent}</aqua> calls my name, I can hear if I am in trouble. <aqua>{parent}</aqua> gives the best hugs after scary noises.",
+        "<aqua>{parent}</aqua> gives the best hugs after scary noises. <aqua>{parent}</aqua> says I ask many questions. I think I ask the right amount.",
+        "<aqua>{parent}</aqua> says I ask many questions. I think I ask the right amount. I stay close to <aqua>{parent}</aqua> when the village feels too big.",
+        "I stay close to <aqua>{parent}</aqua> when the village feels too big. <aqua>{parent}</aqua> says I am growing fast. I check every day.",
+        "<aqua>{parent}</aqua> says I am growing fast. I check every day. <aqua>{parent}</aqua> says I should stay where the bell can hear me."
       ],
       "conditions": [
         {
@@ -497,7 +667,17 @@
         "Sometimes <aqua>{sibling}</aqua> shares. Sometimes I have to stare first.",
         "<aqua>{sibling}</aqua> can be annoying, but they are my annoying.",
         "I race <aqua>{sibling}</aqua> to the square, unless they start too early.",
-        "<aqua>{sibling}</aqua> knows my best hiding place, which is unfair."
+        "<aqua>{sibling}</aqua> knows my best hiding place, which is unfair.",
+        "<aqua>{sibling}</aqua> thinks they are faster than me. They are not always right. <aqua>{sibling}</aqua> says I am little. I say I am compact.",
+        "<aqua>{sibling}</aqua> says I am little. I say I am compact. <aqua>{sibling}</aqua> runs fast, but I know better shortcuts.",
+        "<aqua>{sibling}</aqua> runs fast, but I know better shortcuts. <aqua>{sibling}</aqua> gets blamed sometimes when it was mostly both of us.",
+        "<aqua>{sibling}</aqua> gets blamed sometimes when it was mostly both of us. I know where <aqua>{sibling}</aqua> hides the good sticks.",
+        "I know where <aqua>{sibling}</aqua> hides the good sticks. <aqua>{sibling}</aqua> says they are in charge when grown-ups are not looking.",
+        "<aqua>{sibling}</aqua> says they are in charge when grown-ups are not looking. Sometimes <aqua>{sibling}</aqua> shares. Sometimes I have to stare first.",
+        "Sometimes <aqua>{sibling}</aqua> shares. Sometimes I have to stare first. <aqua>{sibling}</aqua> can be annoying, but they are my annoying.",
+        "<aqua>{sibling}</aqua> can be annoying, but they are my annoying. I race <aqua>{sibling}</aqua> to the square, unless they start too early.",
+        "I race <aqua>{sibling}</aqua> to the square, unless they start too early. <aqua>{sibling}</aqua> knows my best hiding place, which is unfair.",
+        "<aqua>{sibling}</aqua> knows my best hiding place, which is unfair. <aqua>{sibling}</aqua> thinks they are faster than me. They are not always right."
       ],
       "conditions": [
         {
@@ -522,7 +702,17 @@
         "<aqua>{grandparent}</aqua> says I will understand later. Later sounds very far away.",
         "<aqua>{grandparent}</aqua> can make a small snack feel like a secret gift.",
         "I like sitting near <aqua>{grandparent}</aqua> because they know when to be quiet.",
-        "<aqua>{grandparent}</aqua> has wrinkles that look like tiny roads."
+        "<aqua>{grandparent}</aqua> has wrinkles that look like tiny roads.",
+        "<aqua>{grandparent}</aqua> knows stories that start before my bed was even made. <aqua>{grandparent}</aqua> tells stories with extra corners in them.",
+        "<aqua>{grandparent}</aqua> tells stories with extra corners in them. <aqua>{grandparent}</aqua> remembers when everything was somehow uphill.",
+        "<aqua>{grandparent}</aqua> remembers when everything was somehow uphill. <aqua>{grandparent}</aqua> says I should listen more. I listened to that part.",
+        "<aqua>{grandparent}</aqua> says I should listen more. I listened to that part. <aqua>{grandparent}</aqua> knows songs that sound older than the houses.",
+        "<aqua>{grandparent}</aqua> knows songs that sound older than the houses. When <aqua>{grandparent}</aqua> laughs, everyone else smiles too.",
+        "When <aqua>{grandparent}</aqua> laughs, everyone else smiles too. <aqua>{grandparent}</aqua> says I will understand later. Later sounds very far away.",
+        "<aqua>{grandparent}</aqua> says I will understand later. Later sounds very far away. <aqua>{grandparent}</aqua> can make a small snack feel like a secret gift.",
+        "<aqua>{grandparent}</aqua> can make a small snack feel like a secret gift. I like sitting near <aqua>{grandparent}</aqua> because they know when to be quiet.",
+        "I like sitting near <aqua>{grandparent}</aqua> because they know when to be quiet. <aqua>{grandparent}</aqua> has wrinkles that look like tiny roads.",
+        "<aqua>{grandparent}</aqua> has wrinkles that look like tiny roads. <aqua>{grandparent}</aqua> knows stories that start before my bed was even made."
       ],
       "conditions": [
         {
@@ -547,7 +737,17 @@
         "When <aqua>{cousin}</aqua> visits, the day gets louder in a good way.",
         "<aqua>{cousin}</aqua> says family means sharing. I think snacks should be separate.",
         "I follow <aqua>{cousin}</aqua> sometimes, but only because I want to know what happens.",
-        "<aqua>{cousin}</aqua> and I have plans. Good plans. Probably allowed plans."
+        "<aqua>{cousin}</aqua> and I have plans. Good plans. Probably allowed plans.",
+        "<aqua>{cousin}</aqua> says we are related enough to share chores. I think that sounds suspicious. <aqua>{cousin}</aqua> says chores are easier with two people. I think they mean me.",
+        "<aqua>{cousin}</aqua> says chores are easier with two people. I think they mean me. <aqua>{cousin}</aqua> knows games that suspiciously look like work.",
+        "<aqua>{cousin}</aqua> knows games that suspiciously look like work. <aqua>{cousin}</aqua> always says they know a shortcut. Sometimes it is only more mud.",
+        "<aqua>{cousin}</aqua> always says they know a shortcut. Sometimes it is only more mud. I like playing with <aqua>{cousin}</aqua> because they have bold ideas.",
+        "I like playing with <aqua>{cousin}</aqua> because they have bold ideas. <aqua>{cousin}</aqua> can convince grown-ups we were helping. That is a skill.",
+        "<aqua>{cousin}</aqua> can convince grown-ups we were helping. That is a skill. When <aqua>{cousin}</aqua> visits, the day gets louder in a good way.",
+        "When <aqua>{cousin}</aqua> visits, the day gets louder in a good way. <aqua>{cousin}</aqua> says family means sharing. I think snacks should be separate.",
+        "<aqua>{cousin}</aqua> says family means sharing. I think snacks should be separate. I follow <aqua>{cousin}</aqua> sometimes, but only because I want to know what happens.",
+        "I follow <aqua>{cousin}</aqua> sometimes, but only because I want to know what happens. <aqua>{cousin}</aqua> and I have plans. Good plans. Probably allowed plans.",
+        "<aqua>{cousin}</aqua> and I have plans. Good plans. Probably allowed plans. <aqua>{cousin}</aqua> says we are related enough to share chores. I think that sounds suspicious."
       ],
       "conditions": [
         {

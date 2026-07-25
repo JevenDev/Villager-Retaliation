@@ -21,7 +21,17 @@
         "You are asking me to come along? Pay {cost} emeralds for the first day, and we can extend the arrangement from there.",
         "For {cost} emeralds, I will join your party for one day. Further days can be arranged before they begin.",
         "I am willing to join you. The first day is {cost} emeralds, and additional time may be prepaid.",
-        "Then let us settle the terms: {cost} emeralds for my first day in your party, with more days available in advance."
+        "Then let us settle the terms: {cost} emeralds for my first day in your party, with more days available in advance.",
+        "You want me to join your party? My rate is {cost} emeralds for the first day, and you can purchase additional days in advance. You would have me travel with your party? The first day costs {cost} emeralds, with more days paid ahead if you wish.",
+        "You would have me travel with your party? The first day costs {cost} emeralds, with more days paid ahead if you wish. If I join you, I ask {cost} emeralds for the first day. We can arrange additional days in advance.",
+        "If I join you, I ask {cost} emeralds for the first day. We can arrange additional days in advance. So, you want me in your party? It will be {cost} emeralds for our first day together, then the same for each day added.",
+        "So, you want me in your party? It will be {cost} emeralds for our first day together, then the same for each day added. I can join your party for {cost} emeralds to begin. Any extra days must be purchased ahead of time.",
+        "I can join your party for {cost} emeralds to begin. Any extra days must be purchased ahead of time. My place in your party will cost {cost} emeralds for the first day. You may secure more days in advance.",
+        "My place in your party will cost {cost} emeralds for the first day. You may secure more days in advance. You are asking me to come along? Pay {cost} emeralds for the first day, and we can extend the arrangement from there.",
+        "You are asking me to come along? Pay {cost} emeralds for the first day, and we can extend the arrangement from there. For {cost} emeralds, I will join your party for one day. Further days can be arranged before they begin.",
+        "For {cost} emeralds, I will join your party for one day. Further days can be arranged before they begin. I am willing to join you. The first day is {cost} emeralds, and additional time may be prepaid.",
+        "I am willing to join you. The first day is {cost} emeralds, and additional time may be prepaid. Then let us settle the terms: {cost} emeralds for my first day in your party, with more days available in advance.",
+        "Then let us settle the terms: {cost} emeralds for my first day in your party, with more days available in advance. You want me to join your party? My rate is {cost} emeralds for the first day, and you can purchase additional days in advance."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.recruit_confirmation.000"
     },
@@ -37,7 +47,17 @@
         "No trouble. The matter is settled for now.",
         "Very well. Let us forget the arrangement for the moment.",
         "Understood. We will not go through with it.",
-        "Then that is that. Perhaps another day."
+        "Then that is that. Perhaps another day.",
+        "All right. Maybe another time. Very well. We will leave things as they are.",
+        "Very well. We will leave things as they are. Understood. Nothing changes between us.",
+        "Understood. Nothing changes between us. Then we have no agreement. No harm done.",
+        "Then we have no agreement. No harm done. As you wish. We can speak of it again later.",
+        "As you wish. We can speak of it again later. All right. I will carry on as before.",
+        "All right. I will carry on as before. No trouble. The matter is settled for now.",
+        "No trouble. The matter is settled for now. Very well. Let us forget the arrangement for the moment.",
+        "Very well. Let us forget the arrangement for the moment. Understood. We will not go through with it.",
+        "Understood. We will not go through with it. Then that is that. Perhaps another day.",
+        "Then that is that. Perhaps another day. All right. Maybe another time."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.action_cancelled.001"
     },
@@ -53,7 +73,17 @@
         "It is settled. From this moment, I travel as a member of your party.",
         "You have my word. I have joined your party, and I will do my part.",
         "Our first day begins now. I am glad to join your party for what lies ahead.",
-        "Then let us be off together. I am officially a member of your party."
+        "Then let us be off together. I am officially a member of your party.",
+        "That settles it, I've joined your party. I look forward to what comes ahead. Then it is agreed. I am part of your party now, and ready for the road ahead.",
+        "Then it is agreed. I am part of your party now, and ready for the road ahead. Our agreement is made. I will travel with your party and see where the journey leads.",
+        "Our agreement is made. I will travel with your party and see where the journey leads. Very well. I have joined your party. Let us make our time together worthwhile.",
+        "Very well. I have joined your party. Let us make our time together worthwhile. The emeralds are counted and the terms are settled. I am with your party now.",
+        "The emeralds are counted and the terms are settled. I am with your party now. Then I am one of your company. I am ready to follow wherever we are headed.",
+        "Then I am one of your company. I am ready to follow wherever we are headed. It is settled. From this moment, I travel as a member of your party.",
+        "It is settled. From this moment, I travel as a member of your party. You have my word. I have joined your party, and I will do my part.",
+        "You have my word. I have joined your party, and I will do my part. Our first day begins now. I am glad to join your party for what lies ahead.",
+        "Our first day begins now. I am glad to join your party for what lies ahead. Then let us be off together. I am officially a member of your party.",
+        "Then let us be off together. I am officially a member of your party. That settles it, I've joined your party. I look forward to what comes ahead."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.recruited.002"
     },
@@ -69,7 +99,17 @@
         "The extra {time_remaining} day(s) are secured. Your payment of {emerald_cost} emeralds is accepted.",
         "That adds {time_remaining} day(s) to my time with the party. The price comes to {emerald_cost} emeralds.",
         "For these {emerald_cost} emeralds, I will continue with your party for {time_remaining} more day(s).",
-        "It is settled: {time_remaining} additional day(s) together, paid with {emerald_cost} emeralds."
+        "It is settled: {time_remaining} additional day(s) together, paid with {emerald_cost} emeralds.",
+        "Then our arrangement continues for {time_remaining} more day(s). I've received the {emerald_cost} emeralds. The {emerald_cost} emeralds are counted. I will remain with your party for another {time_remaining} day(s).",
+        "The {emerald_cost} emeralds are counted. I will remain with your party for another {time_remaining} day(s). Very well. For {emerald_cost} emeralds, our agreement now lasts {time_remaining} more day(s).",
+        "Very well. For {emerald_cost} emeralds, our agreement now lasts {time_remaining} more day(s). Our contract is extended by {time_remaining} day(s). The payment of {emerald_cost} emeralds settles it.",
+        "Our contract is extended by {time_remaining} day(s). The payment of {emerald_cost} emeralds settles it. Then I stay on for {time_remaining} additional day(s). I have received all {emerald_cost} emeralds.",
+        "Then I stay on for {time_remaining} additional day(s). I have received all {emerald_cost} emeralds. We have an agreement for {time_remaining} more day(s), at a cost of {emerald_cost} emeralds.",
+        "We have an agreement for {time_remaining} more day(s), at a cost of {emerald_cost} emeralds. The extra {time_remaining} day(s) are secured. Your payment of {emerald_cost} emeralds is accepted.",
+        "The extra {time_remaining} day(s) are secured. Your payment of {emerald_cost} emeralds is accepted. That adds {time_remaining} day(s) to my time with the party. The price comes to {emerald_cost} emeralds.",
+        "That adds {time_remaining} day(s) to my time with the party. The price comes to {emerald_cost} emeralds. For these {emerald_cost} emeralds, I will continue with your party for {time_remaining} more day(s).",
+        "For these {emerald_cost} emeralds, I will continue with your party for {time_remaining} more day(s). It is settled: {time_remaining} additional day(s) together, paid with {emerald_cost} emeralds.",
+        "It is settled: {time_remaining} additional day(s) together, paid with {emerald_cost} emeralds. Then our arrangement continues for {time_remaining} more day(s). I've received the {emerald_cost} emeralds."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.contract_extended.003"
     },
@@ -85,7 +125,17 @@
         "You have the lead. I will follow along.",
         "As you wish. I will leave this place and follow you.",
         "I am ready. Let us travel together.",
-        "Consider it done. I will remain at your side."
+        "Consider it done. I will remain at your side.",
+        "Understood. I'll follow your lead. Very well. I will stay close behind you.",
+        "Very well. I will stay close behind you. Lead the way. I am right behind you.",
+        "Lead the way. I am right behind you. All right. Wherever you go, I will follow.",
+        "All right. Wherever you go, I will follow. I understand. I will keep pace with you.",
+        "I understand. I will keep pace with you. Then we move together. Show me the way.",
+        "Then we move together. Show me the way. You have the lead. I will follow along.",
+        "You have the lead. I will follow along. As you wish. I will leave this place and follow you.",
+        "As you wish. I will leave this place and follow you. I am ready. Let us travel together.",
+        "I am ready. Let us travel together. Consider it done. I will remain at your side.",
+        "Consider it done. I will remain at your side. Understood. I'll follow your lead."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.following.004"
     },
@@ -101,7 +151,17 @@
         "As you wish. I will remain exactly here.",
         "I understand. I will keep watch from this spot.",
         "Go on without me for now. I will stay here.",
-        "This place will do. I will wait until you call for me again."
+        "This place will do. I will wait until you call for me again.",
+        "I'll remain here until you return. Understood. I will hold this position.",
+        "Understood. I will hold this position. Very well. You will find me waiting here.",
+        "Very well. You will find me waiting here. I will stay put. Come back when you need me.",
+        "I will stay put. Come back when you need me. All right. I will not wander from this place.",
+        "All right. I will not wander from this place. Then this is where I wait. I will be here when you return.",
+        "Then this is where I wait. I will be here when you return. As you wish. I will remain exactly here.",
+        "As you wish. I will remain exactly here. I understand. I will keep watch from this spot.",
+        "I understand. I will keep watch from this spot. Go on without me for now. I will stay here.",
+        "Go on without me for now. I will stay here. This place will do. I will wait until you call for me again.",
+        "This place will do. I will wait until you call for me again. I'll remain here until you return."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.staying.005"
     },
@@ -117,7 +177,17 @@
         "The contract holds for {time_remaining} day(s) yet. Renewing it costs {cost} emeralds per day.",
         "We have {time_remaining} day(s) before this agreement ends. Each extra day requires {cost} emeralds.",
         "My place in the party is paid for another {time_remaining} day(s). Extensions remain {cost} emeralds daily.",
-        "By my count, {time_remaining} paid day(s) remain. The price for another day is {cost} emeralds."
+        "By my count, {time_remaining} paid day(s) remain. The price for another day is {cost} emeralds.",
+        "We have {time_remaining} paid day(s) left. Extending our arrangement costs {cost} emeralds per day. Our agreement has {time_remaining} day(s) remaining. Each additional day will cost {cost} emeralds.",
+        "Our agreement has {time_remaining} day(s) remaining. Each additional day will cost {cost} emeralds. You still have my service for {time_remaining} day(s). More time is {cost} emeralds for each day.",
+        "You still have my service for {time_remaining} day(s). More time is {cost} emeralds for each day. There are {time_remaining} paid day(s) left on our contract. The extension rate is {cost} emeralds a day.",
+        "There are {time_remaining} paid day(s) left on our contract. The extension rate is {cost} emeralds a day. I remain with your party for another {time_remaining} day(s). Further days cost {cost} emeralds each.",
+        "I remain with your party for another {time_remaining} day(s). Further days cost {cost} emeralds each. Our time together runs for {time_remaining} more day(s). You may add days at {cost} emeralds apiece.",
+        "Our time together runs for {time_remaining} more day(s). You may add days at {cost} <green><bold>emeralds</bold></green> apiece. The contract holds for {time_remaining} day(s) yet. Renewing it costs {cost} emeralds per day.",
+        "The contract holds for {time_remaining} day(s) yet. Renewing it costs {cost} emeralds per day. We have {time_remaining} day(s) before this agreement ends. Each extra day requires {cost} emeralds.",
+        "We have {time_remaining} day(s) before this agreement ends. Each extra day requires {cost} emeralds. My place in the party is paid for another {time_remaining} day(s). Extensions remain {cost} emeralds daily.",
+        "My place in the party is paid for another {time_remaining} day(s). Extensions remain {cost} emeralds daily. By my count, {time_remaining} paid day(s) remain. The price for another day is {cost} emeralds.",
+        "By my count, {time_remaining} paid day(s) remain. The price for another day is {cost} emeralds. We have {time_remaining} paid day(s) left. Extending our arrangement costs {cost} emeralds per day."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.contract_remaining.006"
     },
@@ -133,7 +203,17 @@
         "Do you mean to dismiss me? Any paid days we have left will be forfeited.",
         "If I leave the party now, the unused part of our contract cannot be repaid. Are you sure?",
         "You are asking to end our arrangement early. The remaining prepaid time will be lost. Is that final?",
-        "Are these truly your wishes? I will leave, but no emeralds are returned for the days left."
+        "Are these truly your wishes? I will leave, but no emeralds are returned for the days left.",
+        "Are you sure you want me to leave the party? Our remaining prepaid time will not be refunded. You wish to dismiss me from the party? Any time already paid for will be lost.",
+        "You wish to dismiss me from the party? Any time already paid for will be lost. Would you truly end my place in the party now? I cannot return payment for the days remaining.",
+        "Would you truly end my place in the party now? I cannot return payment for the days remaining. Are you certain our arrangement should end here? The unused prepaid days will not be refunded.",
+        "Are you certain our arrangement should end here? The unused prepaid days will not be refunded. You want me to leave before our time is finished? Understand that the remaining payment stays spent.",
+        "You want me to leave before our time is finished? Understand that the remaining payment stays spent. Shall I leave the party now? There will be no refund for the time still on our agreement.",
+        "Shall I leave the party now? There will be no refund for the time still on our agreement. Do you mean to dismiss me? Any paid days we have left will be forfeited.",
+        "Do you mean to dismiss me? Any paid days we have left will be forfeited. If I leave the party now, the unused part of our contract cannot be repaid. Are you sure?",
+        "If I leave the party now, the unused part of our contract cannot be repaid. Are you sure? You are asking to end our arrangement early. The remaining prepaid time will be lost. Is that final?",
+        "You are asking to end our arrangement early. The remaining prepaid time will be lost. Is that final? Are these truly your wishes? I will leave, but no <green><bold>emeralds</bold></green> are returned for the days left.",
+        "Are these truly your wishes? I will leave, but no emeralds are returned for the days left. Are you sure you want me to leave the party? Our remaining prepaid time will not be refunded."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.dismiss_confirmation.007"
     },
@@ -149,7 +229,17 @@
         "As you wish. I release myself from the party and return to my own affairs.",
         "Very well. The agreement is ended, and we part ways here.",
         "I understand. You will travel without me from this point onward.",
-        "Then this is goodbye. Thank you for the road we shared."
+        "Then this is goodbye. Thank you for the road we shared.",
+        "Very well. I'll leave the party. Safe travels. Then our arrangement ends here. May the road treat you kindly.",
+        "Then our arrangement ends here. May the road treat you kindly. Understood. I am no longer part of your party.",
+        "Understood. I am no longer part of your party. All right. I will go my own way from here.",
+        "All right. I will go my own way from here. Then I take my leave. I hope the rest of your journey goes well.",
+        "Then I take my leave. I hope the rest of your journey goes well. Our time together is finished. Farewell for now.",
+        "Our time together is finished. Farewell for now. As you wish. I release myself from the party and return to my own affairs.",
+        "As you wish. I release myself from the party and return to my own affairs. Very well. The agreement is ended, and we part ways here.",
+        "Very well. The agreement is ended, and we part ways here. I understand. You will travel without me from this point onward.",
+        "I understand. You will travel without me from this point onward. Then this is goodbye. Thank you for the road we shared.",
+        "Then this is goodbye. Thank you for the road we shared. Very well. I'll leave the party. Safe travels."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.dismissed.008"
     },
@@ -165,7 +255,17 @@
         "Our arrangement requires direction. Shall I follow, or shall I remain here?",
         "I need to know my place in the party. Order me to follow you or stay at this spot.",
         "Do not leave me without an assignment. I can follow you, or I can wait here.",
-        "While I serve in the party, choose where I belong: at your side or stationed here."
+        "While I serve in the party, choose where I belong: at your side or stationed here.",
+        "While I'm in your party, tell me either to follow you or to stay here. I need a clear order while our contract stands: follow you, or remain here.",
+        "I need a clear order while our contract stands: follow you, or remain here. You recruited me into the party. I must either travel with you or wait at a chosen place.",
+        "You recruited me into the party. I must either travel with you or wait at a chosen place. I cannot simply wander while I am under this agreement. Tell me to follow or stay.",
+        "I cannot simply wander while I am under this agreement. Tell me to follow or stay. Give me one of two orders: come with you, or hold this position.",
+        "Give me one of two orders: come with you, or hold this position. As a member of your party, I should be following your lead or waiting where you left me.",
+        "As a member of your party, I should be following your lead or waiting where you left me. Our arrangement requires direction. Shall I follow, or shall I remain here?",
+        "Our arrangement requires direction. Shall I follow, or shall I remain here? I need to know my place in the party. Order me to follow you or stay at this spot.",
+        "I need to know my place in the party. Order me to follow you or stay at this spot. Do not leave me without an assignment. I can follow you, or I can wait here.",
+        "Do not leave me without an assignment. I can follow you, or I can wait here. While I serve in the party, choose where I belong: at your side or stationed here.",
+        "While I serve in the party, choose where I belong: at your side or stationed here. While I'm in your party, tell me either to follow you or to stay here."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.must_follow_or_stay.009"
     },
@@ -181,7 +281,17 @@
         "My contract gives that authority only to the leader who brought me in.",
         "You may be part of the company, but only its leader can manage my arrangement.",
         "That decision is not yours to make. I answer to the party leader.",
-        "Ask the leader who recruited me. Their word governs my place here."
+        "Ask the leader who recruited me. Their word governs my place here.",
+        "Only the leader who recruited me can change our arrangement. My orders come from the party leader. You cannot alter this contract.",
+        "My orders come from the party leader. You cannot alter this contract. You are not the one who hired me into this party. I must answer to its leader.",
+        "You are not the one who hired me into this party. I must answer to its leader. Only my recruiter may give that command.",
+        "Only my recruiter may give that command. This agreement belongs to the party leader. Speak with them if you want it changed.",
+        "This agreement belongs to the party leader. Speak with them if you want it changed. I cannot accept that from you. The one who recruited me must decide.",
+        "I cannot accept that from you. The one who recruited me must decide. My contract gives that authority only to the leader who brought me in.",
+        "My contract gives that authority only to the leader who brought me in. You may be part of the company, but only its leader can manage my arrangement.",
+        "You may be part of the company, but only its leader can manage my arrangement. That decision is not yours to make. I answer to the party leader.",
+        "That decision is not yours to make. I answer to the party leader. Ask the leader who recruited me. Their word governs my place here.",
+        "Ask the leader who recruited me. Their word governs my place here. Only the leader who recruited me can change our arrangement."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.error.leader_only.010"
     },
@@ -197,7 +307,17 @@
         "The party is full already. You must make room before recruiting me.",
         "You have enough villagers traveling with you. I cannot be added as another.",
         "There are already too many recruited villagers in your party for me to join.",
-        "Your party has reached its limit. I will have to remain outside it."
+        "Your party has reached its limit. I will have to remain outside it.",
+        "Your party already has all the villagers it can take. There is no room for another villager in your party.",
+        "There is no room for another villager in your party. Your company is already at its villager limit. I cannot join it.",
+        "Your company is already at its villager limit. I cannot join it. You have recruited as many villagers as your party can hold.",
+        "You have recruited as many villagers as your party can hold. I would only overcrowd your party. Its villager ranks are full.",
+        "I would only overcrowd your party. Its villager ranks are full. Your roster has no place left for me.",
+        "Your roster has no place left for me. The party is full already. You must make room before recruiting me.",
+        "The party is full already. You must make room before recruiting me. You have enough villagers traveling with you. I cannot be added as another.",
+        "You have enough villagers traveling with you. I cannot be added as another. There are already too many recruited villagers in your party for me to join.",
+        "There are already too many recruited villagers in your party for me to join. Your party has reached its limit. I will have to remain outside it.",
+        "Your party has reached its limit. I will have to remain outside it. Your party already has all the villagers it can take."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.error.villager_limit.011"
     },
@@ -213,7 +333,17 @@
         "My loyalty is currently pledged to a party.",
         "You are too late to recruit me. I already belong to a party.",
         "I am not free to join another company while this party contract stands.",
-        "My current party has already secured my service."
+        "My current party has already secured my service.",
+        "I'm already committed to a party. I already travel as part of another party.",
+        "I already travel as part of another party. My place has already been promised to a party.",
+        "My place has already been promised to a party. I cannot join twice. I am already in a party.",
+        "I cannot join twice. I am already in a party. Another party already counts me among its members.",
+        "Another party already counts me among its members. I have an active party agreement already.",
+        "I have an active party agreement already. My loyalty is currently pledged to a party.",
+        "My loyalty is currently pledged to a party. You are too late to recruit me. I already belong to a party.",
+        "You are too late to recruit me. I already belong to a party. I am not free to join another company while this party contract stands.",
+        "I am not free to join another company while this party contract stands. My current party has already secured my service.",
+        "My current party has already secured my service. I'm already committed to a party."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.error.already_in_party.012"
     },
@@ -229,7 +359,17 @@
         "My present contract prevents me from joining a party.",
         "I cannot serve two agreements at once. I am already hired.",
         "My time is spoken for by an existing work contract.",
-        "You cannot recruit me while I am still employed under another arrangement."
+        "You cannot recruit me while I am still employed under another arrangement.",
+        "I'm already bound by another work contract. Someone has hired me already. I cannot take a place in your party.",
+        "Someone has hired me already. I cannot take a place in your party. My labor is promised under an existing contract.",
+        "My labor is promised under an existing contract. I am not free to join you while my current work agreement remains active.",
+        "I am not free to join you while my current work agreement remains active. Another employer already has claim to my time.",
+        "Another employer already has claim to my time. I have work to finish for someone else before I can consider your party.",
+        "I have work to finish for someone else before I can consider your party. My present contract prevents me from joining a party.",
+        "My present contract prevents me from joining a party. I cannot serve two agreements at once. I am already hired.",
+        "I cannot serve two agreements at once. I am already hired. My time is spoken for by an existing work contract.",
+        "My time is spoken for by an existing work contract. You cannot recruit me while I am still employed under another arrangement.",
+        "You cannot recruit me while I am still employed under another arrangement. I'm already bound by another work contract."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.error.already_hired.013"
     },
@@ -245,7 +385,17 @@
         "There are not enough emeralds here. Our agreement begins at 32.",
         "Bring me 32 emeralds, and then we can settle my place in the party.",
         "The payment does not meet my rate. I ask 32 emeralds for the first day.",
-        "I cannot accept less than the agreed 32 emeralds to begin."
+        "I cannot accept less than the agreed 32 emeralds to begin.",
+        "You don't have the 32 emeralds needed for our first day together. My first day costs 32 emeralds, and you do not have enough.",
+        "My first day costs 32 emeralds, and you do not have enough. We cannot begin this arrangement without the full payment of 32 emeralds.",
+        "We cannot begin this arrangement without the full payment of 32 emeralds. You are short of the 32 emeralds required to recruit me.",
+        "You are short of the 32 emeralds required to recruit me. Count your emeralds again. I need 32 before I can join your party.",
+        "Count your emeralds again. I need 32 before I can join your party. I am willing to join, but the first day's price is 32 emeralds in full.",
+        "I am willing to join, but the first day's price is 32 emeralds in full. There are not enough emeralds here. Our agreement begins at 32.",
+        "There are not enough emeralds here. Our agreement begins at 32. Bring me 32 emeralds, and then we can settle my place in the party.",
+        "Bring me 32 emeralds, and then we can settle my place in the party. The payment does not meet my rate. I ask 32 emeralds for the first day.",
+        "The payment does not meet my rate. I ask 32 emeralds for the first day. I cannot accept less than the agreed 32 emeralds to begin.",
+        "I cannot accept less than the agreed 32 emeralds to begin. You don't have the 32 emeralds needed for our first day together."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.error.insufficient_emeralds.014"
     },
@@ -261,7 +411,17 @@
         "The contract you are asking about is no longer in force.",
         "Our party arrangement has reached its end.",
         "That contract is behind us now. It is not active anymore.",
-        "There is nothing left on our agreement. It has expired."
+        "There is nothing left on our agreement. It has expired.",
+        "Our party contract is no longer active. That agreement has already ended.",
+        "That agreement has already ended. There is no active party contract between us to manage.",
+        "There is no active party contract between us to manage. Our arranged time has run out. The contract no longer stands.",
+        "Our arranged time has run out. The contract no longer stands. You cannot change an agreement that has already expired.",
+        "You cannot change an agreement that has already expired. My service under that party contract is finished.",
+        "My service under that party contract is finished. The contract you are asking about is no longer in force.",
+        "The contract you are asking about is no longer in force. Our party arrangement has reached its end.",
+        "Our party arrangement has reached its end. That contract is behind us now. It is not active anymore.",
+        "That contract is behind us now. It is not active anymore. There is nothing left on our agreement. It has expired.",
+        "There is nothing left on our agreement. It has expired. Our party contract is no longer active."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.error.contract_inactive.015"
     },
@@ -277,7 +437,17 @@
         "I will not promise time beyond the maximum already allowed.",
         "That extension is too long for the contract to accept.",
         "We must use some of the time already paid before adding any more.",
-        "The agreement cannot be lengthened further at present."
+        "The agreement cannot be lengthened further at present.",
+        "I can't extend our arrangement any further right now. Our contract already reaches as far ahead as I will agree to.",
+        "Our contract already reaches as far ahead as I will agree to. That would carry the arrangement beyond its allowed limit.",
+        "That would carry the arrangement beyond its allowed limit. I cannot add that much more time to our agreement.",
+        "I cannot add that much more time to our agreement. The contract has reached the furthest point to which it can be extended.",
+        "The contract has reached the furthest point to which it can be extended. No more days can be added right now. We are already at the limit.",
+        "No more days can be added right now. We are already at the limit. I will not promise time beyond the maximum already allowed.",
+        "I will not promise time beyond the maximum already allowed. That extension is too long for the contract to accept.",
+        "That extension is too long for the contract to accept. We must use some of the time already paid before adding any more.",
+        "We must use some of the time already paid before adding any more. The agreement cannot be lengthened further at present.",
+        "The agreement cannot be lengthened further at present. I can't extend our arrangement any further right now."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.error.contract_maximum.016"
     },
@@ -293,7 +463,17 @@
         "Your offer cannot be accepted under these conditions.",
         "I am unable to travel with your party at present.",
         "Whatever the road ahead holds, I cannot share it with your party right now.",
-        "Ask again when circumstances have changed. I cannot join you today."
+        "Ask again when circumstances have changed. I cannot join you today.",
+        "I can't join your party under the present circumstances. I am not available to be recruited right now.",
+        "I am not available to be recruited right now. Something prevents me from accepting your offer at the moment.",
+        "Something prevents me from accepting your offer at the moment. No, I cannot take a place in your party as things stand.",
+        "No, I cannot take a place in your party as things stand. This is not a time when I can join you.",
+        "This is not a time when I can join you. I must refuse the arrangement for now.",
+        "I must refuse the arrangement for now. Your offer cannot be accepted under these conditions.",
+        "Your offer cannot be accepted under these conditions. I am unable to travel with your party at present.",
+        "I am unable to travel with your party at present. Whatever the road ahead holds, I cannot share it with your party right now.",
+        "Whatever the road ahead holds, I cannot share it with your party right now. Ask again when circumstances have changed. I cannot join you today.",
+        "Ask again when circumstances have changed. I cannot join you today. I can't join your party under the present circumstances."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.error.unavailable.017"
     },
@@ -309,7 +489,17 @@
         "I cannot let you into my job inventory. Speak with the leader.",
         "Those work items are under the leader's authority.",
         "Only the person responsible for my contract may access those supplies.",
-        "I must keep my job inventory closed to everyone except my recruiter."
+        "I must keep my job inventory closed to everyone except my recruiter.",
+        "Only the leader who recruited me can access my job inventory. My work supplies are managed by the party leader, not by you.",
+        "My work supplies are managed by the party leader, not by you. You do not have permission to inspect my job inventory.",
+        "You do not have permission to inspect my job inventory. I can only open those supplies for the one who recruited me.",
+        "I can only open those supplies for the one who recruited me. That inventory belongs to my work agreement with the party leader.",
+        "That inventory belongs to my work agreement with the party leader. My recruiter alone may manage the tools and goods kept for my job.",
+        "My recruiter alone may manage the tools and goods kept for my job. I cannot let you into my job inventory. Speak with the leader.",
+        "I cannot let you into my job inventory. Speak with the leader. Those work items are under the leader's authority.",
+        "Those work items are under the leader's authority. Only the person responsible for my contract may access those supplies.",
+        "Only the person responsible for my contract may access those supplies. I must keep my job inventory closed to everyone except my recruiter.",
+        "I must keep my job inventory closed to everyone except my recruiter. Only the leader who recruited me can access my job inventory."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.error.job_inventory_denied.018"
     },
@@ -325,7 +515,17 @@
         "The party has my time and attention. Trading must wait.",
         "I am traveling under contract, not working as a merchant right now.",
         "Until my place in the party ends, I cannot offer any trades.",
-        "You will have to find another merchant. My party contract prevents me from trading."
+        "You will have to find another merchant. My party contract prevents me from trading.",
+        "I cannot trade while I am serving in a party. My party duties come first. I am not available to trade.",
+        "My party duties come first. I am not available to trade. I have set my trading work aside for as long as this party contract lasts.",
+        "I have set my trading work aside for as long as this party contract lasts. No trades for now. I am committed to traveling with my party.",
+        "No trades for now. I am committed to traveling with my party. I cannot manage a market stall while serving under a party agreement.",
+        "I cannot manage a market stall while serving under a party agreement. My goods are not for trade while I remain part of a party.",
+        "My goods are not for trade while I remain part of a party. The party has my time and attention. Trading must wait.",
+        "The party has my time and attention. Trading must wait. I am traveling under contract, not working as a merchant right now.",
+        "I am traveling under contract, not working as a merchant right now. Until my place in the party ends, I cannot offer any trades.",
+        "Until my place in the party ends, I cannot offer any trades. You will have to find another merchant. My party contract prevents me from trading.",
+        "You will have to find another merchant. My party contract prevents me from trading. I cannot trade while I am serving in a party."
       ],
       "id": "global.messages.10_party_contracts.messages.interaction.party.trade_unavailable.019"
     }

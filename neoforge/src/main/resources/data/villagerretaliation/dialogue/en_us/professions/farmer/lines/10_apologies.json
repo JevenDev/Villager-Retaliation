@@ -13,7 +13,17 @@
         "Words are rain. Useful, but not enough by themselves.",
         "I have seen hard ground soften. Maybe you can too.",
         "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "That came out sharper than it should have. I am sorry.",
+        "An apology is a seed. It still needs watering, and I'll be watching the crop. Break a fence and you mend it before night. Trust works much the same.",
+        "Break a fence and you mend it before night. Trust works much the same. You stepped on trust like young shoots. It can grow back if you stop trampling it.",
+        "You stepped on trust like young shoots. It can grow back if you stop trampling it. Fine. Plant better behavior where that harm was.",
+        "Fine. Plant better behavior where that harm was. I'll not pull up the apology before it sprouts. Don't let it wither.",
+        "I'll not pull up the apology before it sprouts. Don't let it wither. A fence mended poorly breaks again. Mend this properly.",
+        "A fence mended poorly breaks again. Mend this properly. Words are rain. Useful, but not enough by themselves.",
+        "Words are <aqua><wavy>rain</wavy></aqua>. Useful, but not enough by themselves. I have seen hard ground soften. Maybe you can too.",
+        "I have seen hard ground soften. Maybe you can too. I was wrong. I would rather say it plainly than dress it up.",
+        "I was wrong. I would rather say it plainly than dress it up. That came out sharper than it should have. I am sorry.",
+        "That came out sharper than it should have. I am sorry. An apology is a seed. It still needs watering, and I'll be watching the crop."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

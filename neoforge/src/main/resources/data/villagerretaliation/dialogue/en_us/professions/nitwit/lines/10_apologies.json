@@ -13,7 +13,17 @@
         "Words received. Suspicion still lightly worn.",
         "Fine. I am putting the apology somewhere safe in my head.",
         "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry."
+        "That came out sharper than it should have. I am sorry.",
+        "That sounded sorry. I am still standing over here for a bit. I accept the apology, but I am keeping one pocket full of suspicion.",
+        "I accept the apology, but I am keeping one pocket full of suspicion. That sounded like the right kind of sorry. I think.",
+        "That sounded like the right kind of sorry. I think. I accept, but I am standing behind this idea of distance for now.",
+        "I accept, but I am standing behind this idea of distance for now. Okay. Try doing the good version of that next time.",
+        "Okay. Try doing the good version of that next time. I'll forgive a bit now and maybe another bit after lunch.",
+        "I'll forgive a bit now and maybe another bit after lunch. Words received. Suspicion still lightly worn.",
+        "Words received. Suspicion still lightly worn. Fine. I am putting the apology somewhere safe in my head.",
+        "Fine. I am putting the apology somewhere safe in my head. I was wrong. I would rather say it plainly than dress it up.",
+        "I was wrong. I would rather say it plainly than dress it up. That came out sharper than it should have. I am sorry.",
+        "That came out sharper than it should have. I am sorry. That sounded sorry. I am still standing over here for a bit."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

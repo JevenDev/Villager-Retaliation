@@ -13,7 +13,17 @@
         "You helped me back. I may not say it gracefully, but I know what that means.",
         "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
         "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
-        "Do not make a ceremony of it. Just know I remember."
+        "Do not make a ceremony of it. Just know I remember.",
+        "I remember the page turning back from a <shake>very bad ending</shake>. Your face is one of the first words I could <pulse>read again</pulse>.",
+        "Your face is one of the first words I could <pulse>read again</pulse>. You helped pull me back when even my name felt far away.",
+        "You helped pull me back when even my name felt far away. I remember cold, hunger, and then your face cutting through the fog.",
+        "I remember cold, hunger, and then your face cutting through the fog. Being cured is not like waking from sleep. It is more like being returned piece by piece.",
+        "Being cured is not like waking from sleep. It is more like being returned piece by piece. Some part of me still listens for that old <shake>groan</shake>. I hate that part.",
+        "Some part of me still listens for that old <shake>groan</shake>. I hate that part. You helped me back. I may not say it gracefully, but I know what that means.",
+        "You helped me back. I may not say it gracefully, but I know what that means. The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
+        "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again. I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
+        "I owe you more than a discount and less than my whole life. I am still deciding where that lands. Do not make a ceremony of it. Just know I remember.",
+        "Do not make a ceremony of it. Just know I remember. I remember the page turning back from a <shake>very bad ending</shake>."
       ],
       "dispositions": [
         "friendly",
@@ -34,7 +44,17 @@
         "You helped me back. I may not say it gracefully, but I know what that means.",
         "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
         "I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
-        "Do not make a ceremony of it. Just know I remember."
+        "Do not make a ceremony of it. Just know I remember.",
+        "The chapter is damaged, but your name survived in the <italic>margin</italic>. I remember fragments: weakness, gold, a bitter draught, and you waiting.",
+        "I remember fragments: weakness, gold, a bitter draught, and you waiting. The memory is rough around the edges, but your face stayed in it.",
+        "The memory is rough around the edges, but your face stayed in it. I remember cold, hunger, and then your face cutting through the fog.",
+        "I remember cold, hunger, and then your face cutting through the fog. Being cured is not like waking from sleep. It is more like being returned piece by piece.",
+        "Being cured is not like waking from sleep. It is more like being returned piece by piece. Some part of me still listens for that old <shake>groan</shake>. I hate that part.",
+        "Some part of me still listens for that old <shake>groan</shake>. I hate that part. You helped me back. I may not say it gracefully, but I know what that means.",
+        "You helped me back. I may not say it gracefully, but I know what that means. The village feels different now. Brighter, maybe. Or maybe I can finally notice it again.",
+        "The village feels different now. Brighter, maybe. Or maybe I can finally notice it again. I owe you more than a discount and less than my whole life. I am still deciding where that lands.",
+        "I owe you more than a discount and less than my whole life. I am still deciding where that lands. Do not make a ceremony of it. Just know I remember.",
+        "Do not make a ceremony of it. Just know I remember. The chapter is damaged, but your name survived in the <italic>margin</italic>."
       ],
       "dispositions": [
         "neutral",
@@ -55,7 +75,17 @@
         "You are not as frightening as you think. That may be the problem.",
         "If foolishness made noise, you would drown out the bell.",
         "Do not test me just because I am speaking in complete sentences.",
-        "Your confidence is <shake>louder</shake> than your sense."
+        "Your confidence is <shake>louder</shake> than your sense.",
+        "I remember you. Some books should be opened <pulse>slowly</pulse> after a curse. I know you helped. I also remember why my hands still shake.",
+        "I know you helped. I also remember why my hands still shake. The cure left echoes behind. Stand where I can breathe around them.",
+        "The cure left echoes behind. Stand where I can breathe around them. You walk in like trouble forgot to close the door behind it.",
+        "You walk in like trouble forgot to close the door behind it. I have seen broken record-keeping with better instincts than you.",
+        "I have seen broken record-keeping with better instincts than you. Careful. The village has long memories and very little patience today.",
+        "Careful. The village has long memories and very little patience today. You are not as frightening as you think. That may be the problem.",
+        "You are not as frightening as you think. That may be the problem. If foolishness made noise, you would drown out the bell.",
+        "If foolishness made noise, you would drown out the bell. Do not test me just because I am speaking in complete sentences.",
+        "Do not test me just because I am speaking in complete sentences. Your confidence is <shake>louder</shake> than your sense.",
+        "Your confidence is <shake>louder</shake> than your sense. I remember you. Some books should be opened <pulse>slowly</pulse> after a curse."
       ],
       "dispositions": [
         "rude",

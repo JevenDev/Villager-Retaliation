@@ -6,7 +6,7 @@ const PAGES = [
     title: "Overview",
     group: "Start Here",
     icon: "home",
-    description: "What Villager Retaliation changes and how to approach villages without getting chased into a ravine.",
+    description: "Explore reputation, quests, village life, and more than 35,000 villager dialogue entries.",
     render: renderHome
   },
   {
@@ -97,6 +97,7 @@ const els = {
   toc: document.querySelector("#page-toc"),
   crumb: document.querySelector("#page-crumb"),
   search: document.querySelector("#wiki-search"),
+  searchQueryLabel: document.querySelector("#wiki-search-query"),
   palette: document.querySelector("#search-palette"),
   paletteSearch: document.querySelector("#palette-search"),
   paletteResults: document.querySelector("#palette-results"),
@@ -336,7 +337,7 @@ function questRewardPreview(quest) {
     const suffix = loot.length > 1 ? ` +${loot.length - 1} more` : "";
     parts.push(`${label}${suffix}`);
   }
-  return parts.length ? `Rewards: ${parts.join(" • ")}` : "Rewards: No listed rewards";
+  return parts.length ? `Rewards: ${parts.join(" • ")}` : "No additional rewards";
 }
 
 function resultIcon(type) {
@@ -602,7 +603,7 @@ function questCard(quest) {
   const objectives = Array.isArray(quest.objectives) ? quest.objectives : [];
   const requirements = quest.requirements || {};
   const rewards = quest.rewards || {};
-  const goal = quest.target?.structure || objectives[0] || quest.description || "No objective summary listed";
+  const goal = quest.target?.destinations?.join(" or ") || quest.target?.structure || objectives[0] || quest.description || "See the walkthrough for objectives";
   const minLevel = requirements.minLevel || "Any";
   const reputationReward = rewards.reputation ?? "0";
   const experienceReward = rewards.experience ?? "0";
@@ -632,21 +633,21 @@ function renderQuests() {
         ${icon("message-square-text")}
         <div class="card-copy">
           <strong>Get the offer</strong>
-          <span>Talk to a matching villager when the profession, level, and skill gates line up.</span>
+          <span>Find a villager who meets the profession, trade-level, and skill requirements.</span>
         </div>
       </div>
       <div class="quest-guide-card feature-card">
         ${icon("map-pin")}
         <div class="card-copy">
           <strong>Follow the tracker</strong>
-          <span>Location quests point you toward target coordinates and update as you make progress.</span>
+          <span>Use the Journal and Tracker to follow objectives, coordinates, and current progress.</span>
         </div>
       </div>
       <div class="quest-guide-card feature-card">
         ${icon("package-check")}
         <div class="card-copy">
           <strong>Return cleanly</strong>
-          <span>Bring the proof and any extra items back to the quest giver for rewards.</span>
+          <span>Complete every objective, then return to the required quest giver with any requested items.</span>
         </div>
       </div>
     </section>
@@ -669,17 +670,138 @@ function questRelationInfo(quest) {
   };
 }
 
+function questPathModel(quests) {
+  const byId = new Map(quests.map((item) => [item.id, item]));
+  const children = new Map(quests.map((item) => [item.id, []]));
+  for (const item of quests) {
+    if (item.parent && byId.has(item.parent)) children.get(item.parent).push(item);
+  }
+  for (const entries of children.values()) {
+    entries.sort((a, b) => (a.questlineOrder ?? 0) - (b.questlineOrder ?? 0) || a.title.localeCompare(b.title));
+  }
+  const roots = quests
+    .filter((item) => !item.parent || !byId.has(item.parent))
+    .sort((a, b) => (a.questlineOrder ?? 0) - (b.questlineOrder ?? 0) || a.title.localeCompare(b.title));
+  const choicePoints = quests.filter((item) => item.branchChoices?.length || (children.get(item.id)?.length || 0) > 1);
+  return { byId, children, roots, choicePoints };
+}
+
+function questBranchLabel(quest, parent) {
+  if (!parent) return "";
+  const gate = (quest.branchRequirements || []).find((requirement) => requirement.questId === parent.id)
+    || (quest.branchRequirements || [])[0];
+  if (!gate) return "";
+  const authoredChoice = (parent.branchChoices || []).find((choice) => choice.id === gate.value);
+  return authoredChoice?.label || titleCase(gate.value);
+}
+
+function renderQuestPathNode(item, model, currentId, options = {}) {
+  const children = model.children.get(item.id) || [];
+  const isCurrent = item.id === currentId;
+  const parent = item.parent ? model.byId.get(item.parent) : null;
+  const gateLabel = questBranchLabel(item, parent);
+  const hasDecision = Boolean(item.branchChoices?.length);
+  const gatedChildren = children.filter((child) => questBranchLabel(child, item));
+  const decisionChangesRoute = gatedChildren.length > 0;
+  const prerequisiteLabel = parent
+    ? `After ${parent.title}`
+    : (item.prerequisites || []).length
+      ? `Requires ${(item.prerequisites || []).map((entry) => model.byId.get(entry.id)?.title || titleCase(entry.id)).join(" or ")}`
+      : "Questline start";
+  const routeLabel = gateLabel || options.routeLabel || "";
+
+  return `
+    <div class="quest-path-step${isCurrent ? " is-current" : ""}${hasDecision ? " has-decision" : ""}">
+      <article class="quest-path-card">
+        <div class="quest-path-marker">${icon(isCurrent ? "map-pin" : hasDecision ? "git-branch" : "scroll-text")}</div>
+        <div class="quest-path-card-copy">
+          <div class="quest-path-eyebrow">
+            ${routeLabel ? `<span class="quest-route-badge">${icon("corner-down-right")}${escapeHtml(routeLabel)}</span>` : ""}
+            <span>${escapeHtml(prerequisiteLabel)}</span>
+          </div>
+          <a href="${questUrl(item.slug)}" ${isCurrent ? `aria-current="page"` : ""}>${escapeHtml(item.title)}</a>
+          <p>${escapeHtml(item.description || "Continue this questline.")}</p>
+          ${hasDecision ? `
+            <div class="quest-decision">
+              ${icon("split")}
+              <div>
+                <strong>${decisionChangesRoute ? "Your choice changes what unlocks next" : "This quest records a decision"}</strong>
+                <span>${escapeHtml(item.branchChoices.map((choice) => choice.label).join(" or "))}</span>
+              </div>
+            </div>
+          ` : ""}
+        </div>
+        ${isCurrent ? `<span class="current-quest-badge">You are here</span>` : ""}
+      </article>
+      ${children.length === 1 ? `
+        <div class="quest-path-continuation">
+          ${renderQuestPathNode(children[0], model, currentId)}
+        </div>
+      ` : ""}
+      ${children.length > 1 ? `
+        <div class="quest-path-fork">
+          <div class="quest-fork-label">
+            ${icon("git-fork")}
+            <div>
+              <strong>${gatedChildren.length ? "Paths split here" : "Multiple quests unlock"}</strong>
+              <span>${gatedChildren.length
+                ? "Choice-labeled routes require that decision. Other routes only require the previous quest."
+                : "These quests share the same prerequisite and can become available from this point."}</span>
+            </div>
+          </div>
+          <div class="quest-path-branches">
+            ${children.map((child, index) => {
+              const choiceLabel = questBranchLabel(child, item);
+              const routeLabel = choiceLabel || "Also unlocks";
+              return `
+                <div class="quest-path-branch">
+                  <div class="quest-branch-heading">
+                    <span>${choiceLabel ? `Choice ${index + 1}` : "Next quest"}</span>
+                    <strong>${escapeHtml(choiceLabel || child.title)}</strong>
+                  </div>
+                  ${renderQuestPathNode(child, model, currentId, { routeLabel })}
+                </div>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      ` : ""}
+    </div>
+  `;
+}
+
+function questPathMap(quests, currentId = "") {
+  const model = questPathModel(quests);
+  return `
+    <div class="quest-path-map">
+      <div class="quest-path-help">
+        <div>
+          ${icon("route")}
+          <p><strong>Follow the lines from top to bottom.</strong> Gold cards mark decisions. Teal labels explain exactly how each route unlocks.</p>
+        </div>
+        <div class="quest-path-legend" aria-label="Quest path legend">
+          <span><i class="legend-swatch is-current"></i>Current</span>
+          <span><i class="legend-swatch is-decision"></i>Decision</span>
+          <span><i class="legend-swatch is-route"></i>Choice route</span>
+        </div>
+      </div>
+      <div class="quest-path-tree${model.roots.length > 1 ? " has-multiple-roots" : ""}">
+        ${model.roots.map((root) => renderQuestPathNode(root, model, currentId)).join("")}
+      </div>
+      ${model.choicePoints.length ? `<p class="quest-path-footnote">${plural(model.choicePoints.length, "decision point")} in this questline. A choice may make other paths unavailable in this playthrough.</p>` : ""}
+    </div>
+  `;
+}
+
 function questlinePanel(quest) {
   const relation = questRelationInfo(quest);
   const related = relation.related;
   if (related.length <= 1) return "";
-
-  const byId = new Map(DATA.quests.map((item) => [item.id, item]));
-  const branchGroups = new Set(related.map((item) => item.branchGroup).filter(Boolean));
+  const model = questPathModel(related);
   const summary = [
     plural(related.length, "quest"),
-    branchGroups.size ? plural(branchGroups.size, "branch group") : ""
-  ].filter(Boolean).join(" • ");
+    model.choicePoints.length ? plural(model.choicePoints.length, "decision") : "linear story"
+  ].join(" · ");
 
   return section(relation.label, `
     <div class="questline-panel">
@@ -690,43 +812,18 @@ function questlinePanel(quest) {
           <span>${escapeHtml(summary)}</span>
         </div>
       </div>
-      <ol class="questline-list">
-        ${related.map((item, index) => {
-          const prerequisites = (item.prerequisites || [])
-            .map((prerequisite) => byId.get(prerequisite.id))
-            .filter(Boolean);
-          const requirementText = prerequisites.length
-            ? `Requires ${prerequisites.map((prerequisite) => prerequisite.title).join(prerequisites.length > 1 ? " or " : "")}`
-            : relation.isQuestline && index === 0 ? "Starts this questline" : "Group entry quest";
-          const meta = [
-            item.id === quest.id ? "Current quest" : "",
-            requirementText,
-            item.branchGroup ? "Branch path" : "",
-            item.branchChoices?.length ? `Choices: ${item.branchChoices.map((choice) => choice.label).join(", ")}` : ""
-          ].filter(Boolean);
-          return `
-            <li class="${item.id === quest.id ? "is-current" : ""}">
-              <span class="questline-index">${index + 1}</span>
-              <div class="questline-copy">
-                <a href="${questUrl(item.slug)}" ${item.id === quest.id ? `aria-current="page"` : ""}>${escapeHtml(item.title)}</a>
-                <span>${escapeHtml(meta.join(" • "))}</span>
-              </div>
-            </li>
-          `;
-        }).join("")}
-      </ol>
+      ${questPathMap(related, quest.id)}
     </div>
   `);
 }
 
 function renderQuestlineDetail(summary) {
   const quests = summary.quests || [];
-  const byId = new Map(DATA.quests.map((item) => [item.id, item]));
-  const branchGroups = new Set(quests.map((quest) => quest.branchGroup).filter(Boolean));
+  const model = questPathModel(quests);
   return `
     ${statGrid([
       { value: plural(quests.length, "quest"), label: "Connected quests", icon: "scroll-text" },
-      { value: branchGroups.size ? plural(branchGroups.size, "branch group") : "Linear path", label: "Progression shape", icon: "git-branch" }
+      { value: model.choicePoints.length ? plural(model.choicePoints.length, "decision point") : "Linear path", label: "Progression shape", icon: "git-branch" }
     ])}
     ${section("Questline", `
       <div class="questline-panel">
@@ -737,30 +834,7 @@ function renderQuestlineDetail(summary) {
             <span>${escapeHtml(plural(quests.length, "quest"))}</span>
           </div>
         </div>
-        <ol class="questline-list">
-          ${quests.map((quest, index) => {
-            const prerequisites = (quest.prerequisites || [])
-              .map((prerequisite) => byId.get(prerequisite.id))
-              .filter(Boolean);
-            const requirementText = prerequisites.length
-              ? `Requires ${prerequisites.map((prerequisite) => prerequisite.title).join(prerequisites.length > 1 ? " or " : "")}`
-              : index === 0 ? "Starts this questline" : "No prerequisite quest";
-            const meta = [
-              requirementText,
-              quest.branchGroup ? "Branch path" : "",
-              quest.branchChoices?.length ? `Choices: ${quest.branchChoices.map((choice) => choice.label).join(", ")}` : ""
-            ].filter(Boolean);
-            return `
-              <li>
-                <span class="questline-index">${index + 1}</span>
-                <div class="questline-copy">
-                  <a href="${questUrl(quest.slug)}">${escapeHtml(quest.title)}</a>
-                  <span>${escapeHtml(meta.join(" • "))}</span>
-                </div>
-              </li>
-            `;
-          }).join("")}
-        </ol>
+        ${questPathMap(quests)}
       </div>
     `)}
     ${section("Quests", `
@@ -791,12 +865,19 @@ function renderQuestDetail(quest) {
       <span>${escapeHtml(detail)}</span>
     </div>
   `;
-  }).join("") : `<div class="loot-card">${icon("package-x")}<strong>No loot table entries found.</strong><span>This quest only lists fixed rewards.</span></div>`;
+  }).join("") : `<div class="loot-card">${icon("package-check")}<strong>Fixed rewards only</strong><span>This quest does not add a random item reward.</span></div>`;
   const skillText = quest.requirements.skills.length
-    ? quest.requirements.skills.map((skill) => `${escapeHtml(skill.skill)} ${skill.min != null ? `at least ${escapeHtml(skill.min)}` : ""}`).join(", ")
-    : "No hidden skill gate listed";
-  const locationLabel = target?.structure || "No structure target";
-  const rulesText = quest.rules.length ? quest.rules.join(", ") : "No special rules";
+    ? quest.requirements.skills.map((skill) => `${escapeHtml(skill.skill)} ${skill.min != null ? `${escapeHtml(skill.min)} or higher` : ""}`).join(", ")
+    : "No skill minimum";
+  const locationLabel = target?.destinations?.join(" or ") || target?.structure || quest.objectives[0] || "Complete the listed objectives";
+  const rulesText = quest.rules.length ? quest.rules.join(", ") : "No extra restrictions";
+  const professionText = formatList(quest.requirements.professions, "Any profession");
+  const levelText = quest.requirements.minLevel && quest.requirements.minLevel !== "Any"
+    ? `${quest.requirements.minLevel.toLowerCase()} or higher`
+    : "any trade level";
+  const objectiveSummary = quest.objectives.length > 1
+    ? `${quest.objectives[0]} + ${quest.objectives.length - 1} more`
+    : quest.objectives[0] || "Follow the quest tracker";
 
   return `
     <div class="back-row"><a href="${pageUrl("quests")}">${icon("arrow-left")}Back to all quests</a></div>
@@ -806,7 +887,7 @@ function renderQuestDetail(quest) {
         <div>
           ${icon("users")}
           <strong>Quest giver</strong>
-          <span>${escapeHtml(formatList(quest.requirements.professions))}</span>
+          <span>${escapeHtml(professionText)}</span>
         </div>
         <div>
           ${icon(target ? "map-pin" : "package-check")}
@@ -815,29 +896,29 @@ function renderQuestDetail(quest) {
         </div>
         <div>
           ${icon("package-check")}
-          <strong>Turn in</strong>
-          <span>${escapeHtml(quest.objectives.join(", "))}</span>
+          <strong>Objectives</strong>
+          <span>${escapeHtml(objectiveSummary)}</span>
         </div>
       </div>
-      <p class="quest-summary-copy">Start with a valid ${escapeHtml(quest.requirements.minLevel.toLowerCase())} villager, follow the tracker to the target, collect the proof, then return to the quest giver for reputation, XP, and a loot roll.</p>
+      <p class="quest-summary-copy">Find a quest giver who meets the profession and trade-level requirements above. Complete the tracked objectives, then return to that villager to finish the quest and collect its rewards.</p>
     </section>
 
     ${statGrid([
       { value: quest.questlineLabel || quest.groupLabel, label: relation.label, icon: questIcon(quest) },
-      { value: quest.requirements.minLevel, label: "Minimum villager level", icon: "badge-check" },
-      { value: `${quest.rewards.reputation} rep`, label: "Direct reputation reward", icon: "heart-handshake" },
-      { value: `${quest.rewards.experience} XP`, label: "Experience reward", icon: "sparkles" }
+      { value: quest.requirements.minLevel, label: "Required trade level", icon: "badge-check" },
+      { value: `${quest.rewards.reputation} reputation`, label: "Relationship reward", icon: "heart-handshake" },
+      { value: `${quest.rewards.experience} XP`, label: "Player experience", icon: "sparkles" }
     ])}
 
     ${questlinePanel(quest)}
 
-    ${section("Before You Start", `
+    ${section("Requirements", `
       <div class="info-grid info-grid-before">
-        <div class="info-card">${icon("briefcase-business")}<strong>Profession</strong><span>${escapeHtml(formatList(quest.requirements.professions))}</span></div>
-        <div class="info-card">${icon("badge-check")}<strong>Trade level</strong><span>${escapeHtml(quest.requirements.minLevel)} or higher</span></div>
-        <div class="info-card">${icon("activity")}<strong>Villager skills</strong><span>${skillText}</span></div>
+        <div class="info-card">${icon("briefcase-business")}<strong>Quest giver profession</strong><span>${escapeHtml(professionText)}</span></div>
+        <div class="info-card">${icon("badge-check")}<strong>Trade level</strong><span>${escapeHtml(levelText)}</span></div>
+        <div class="info-card">${icon("activity")}<strong>Skill requirement</strong><span>${skillText}</span></div>
       </div>
-      <div class="info-card info-card-wide">${icon("scroll-text")}<strong>Quest rules</strong><span>${escapeHtml(rulesText)}</span></div>
+      <div class="info-card info-card-wide">${icon("scroll-text")}<strong>Availability</strong><span>${escapeHtml(rulesText)}</span></div>
     `)}
 
     ${section("Quest Flow", `
@@ -861,28 +942,28 @@ function renderQuestDetail(quest) {
       <div class="turnin-layout">
         <div class="turnin-card">
           ${icon("clipboard-check")}
-          <strong>Checklist</strong>
+          <strong>Complete before returning</strong>
           ${pillList(quest.objectives)}
         </div>
         <div class="turnin-card">
           ${icon("heart-handshake")}
-          <strong>Reputation</strong>
-          <span>${escapeHtml(quest.rewards.reputation)} direct reputation and ${escapeHtml(quest.rewards.gossipReputation)} gossip reputation.</span>
+          <strong>Relationship reward</strong>
+          <span>${escapeHtml(quest.rewards.reputation)} personal reputation and ${escapeHtml(quest.rewards.gossipReputation)} shared gossip reputation.</span>
         </div>
       </div>
       <div class="loot-grid">${rewardLoot}</div>
     `)}
 
-    ${target ? section("Target Details", `
+    ${target ? section("Finding The Target", `
       <dl class="fact-list">
-        <div><dt>Target</dt><dd>${escapeHtml(target.structure || "No structure target")}</dd></div>
-        <div><dt>Proof item</dt><dd>${escapeHtml(target.proofItem || "None")}</dd></div>
-        <div><dt>Search radius</dt><dd>${target.searchRadius ? `${escapeHtml(target.searchRadius)} blocks` : "Not used"}</dd></div>
-        <div><dt>Discovery radius</dt><dd>${target.discoveryRadius ? `${escapeHtml(target.discoveryRadius)} blocks` : "Not used"}</dd></div>
+        <div><dt>Destination</dt><dd>${escapeHtml(target.destinations?.join(" or ") || target.structure || "Follow the tracker")}</dd></div>
+        <div><dt>Bring back</dt><dd>${escapeHtml(target.proofItem || "No proof item required")}</dd></div>
+        <div><dt>Search area</dt><dd>${target.searchRadius ? `${escapeHtml(target.searchRadius)} blocks from the marked area` : "The tracker gives the destination directly"}</dd></div>
+        <div><dt>Objective range</dt><dd>${target.discoveryRadius ? `Move within ${escapeHtml(target.discoveryRadius)} blocks` : "Reach the marked destination"}</dd></div>
       </dl>
     `) : ""}
 
-    ${section("Dialogue Reference", renderQuestDialogueReference(quest))}
+    ${section("Quest Dialogue", renderQuestDialogueReference(quest))}
   `;
 }
 
@@ -893,13 +974,13 @@ function renderQuestDialogueReference(quest) {
   if (commonStages.length || branches.length) {
     return `
       <details class="reference-panel">
-        <summary>${icon("message-square-text")}Show quest dialogue</summary>
+        <summary>${icon("message-square-text")}Read quest dialogue</summary>
         <div class="dialogue-reference-body">
           ${commonStages.length ? `
             <div class="dialogue-route">
               <div class="dialogue-route-title">
-                <strong>Shared path</strong>
-                <span>Shown before branch-specific dialogue.</span>
+                <strong>Before the choice</strong>
+                <span>Dialogue you may see before choosing a route.</span>
               </div>
               ${renderDialogueStageList(commonStages)}
             </div>
@@ -911,7 +992,7 @@ function renderQuestDialogueReference(quest) {
   }
   return `
     <details class="reference-panel">
-      <summary>${icon("message-square-text")}Show quest dialogue</summary>
+      <summary>${icon("message-square-text")}Read quest dialogue</summary>
       <div class="quote-stack">
         ${quoteBlock("Offer", dialogue.offer)}
         ${quoteBlock("Started", dialogue.started)}
@@ -932,18 +1013,16 @@ function renderDialogueBranchGroup(branch) {
     <div class="dialogue-branch-group">
       <div class="dialogue-route-title">
         <strong>Choice at ${escapeHtml(branch.label || titleCase(branch.stageId))}</strong>
-        <span>${escapeHtml(branch.stageId || "branch")}</span>
       </div>
       <div class="dialogue-choice-grid">
         ${(branch.choices || []).map((choice) => `
           <div class="dialogue-choice">
             <div class="dialogue-choice-head">
               <strong>${escapeHtml(choice.label || titleCase(choice.id))}</strong>
-              ${choice.id ? `<span>${escapeHtml(choice.id)}</span>` : ""}
             </div>
             ${choice.lines?.length ? `<div class="dialogue-lines">${choice.lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>` : ""}
-            ${choice.destination ? `<p class="dialogue-destination">${escapeHtml(choice.destination)}</p>` : ""}
-            ${choice.stages?.length ? renderDialogueStageList(choice.stages) : `<p class="dialogue-empty">No separate branch dialogue is listed for this option.</p>`}
+            ${choice.destination ? `<p class="dialogue-destination">Continues to ${escapeHtml(titleCase(choice.destination))}</p>` : ""}
+            ${choice.stages?.length ? renderDialogueStageList(choice.stages) : `<p class="dialogue-empty">This choice has no additional dialogue.</p>`}
           </div>
         `).join("")}
       </div>
@@ -960,7 +1039,6 @@ function renderDialogueStage(stage) {
     <div class="dialogue-stage">
       <div class="dialogue-stage-head">
         <strong>${escapeHtml(stage.label || titleCase(stage.stageId))}</strong>
-        ${stage.stageId ? `<span>${escapeHtml(stage.stageId)}</span>` : ""}
       </div>
       ${stage.trackerText ? `<p class="dialogue-tracker">${escapeHtml(stage.trackerText)}</p>` : ""}
       ${(stage.slots || []).map(renderDialogueSlot).join("")}
@@ -1135,17 +1213,17 @@ function renderGifts() {
       <details class="profession-gift-panel">
         <summary>
           <span class="profession-gift-name">${escapeHtml(group.profession)}</span>
-          <span class="profession-gift-meta">${preferredItems.length} preferred, ${dislikedItems.length} disliked</span>
+          <span class="profession-gift-meta">${preferredItems.length} favorites, ${dislikedItems.length} disliked</span>
           ${icon("chevron-down", "profession-gift-chevron")}
         </summary>
         <div class="profession-gift-body">
           <div class="profession-gift-group profession-gift-group-preferred">
             <strong>Preferred gifts</strong>
-            ${preferredItems.length ? pillList(preferredItems) : '<p class="profession-gift-empty">None listed.</p>'}
+            ${preferredItems.length ? pillList(preferredItems) : '<p class="profession-gift-empty">No profession-specific favorites.</p>'}
           </div>
           <div class="profession-gift-group profession-gift-group-disliked">
             <strong>Disliked gifts</strong>
-            ${dislikedItems.length ? pillList(dislikedItems) : '<p class="profession-gift-empty">None listed.</p>'}
+            ${dislikedItems.length ? pillList(dislikedItems) : '<p class="profession-gift-empty">No profession-specific dislikes.</p>'}
           </div>
         </div>
       </details>
@@ -1156,21 +1234,21 @@ function renderGifts() {
     <details class="profession-gift-panel profession-gift-panel-global">
       <summary>
         <span class="profession-gift-name">Global gifts</span>
-        <span class="profession-gift-meta">${globalPreferredItems.length} preferred, ${globalDislikedItems.length} disliked</span>
+        <span class="profession-gift-meta">${globalPreferredItems.length} broadly liked, ${globalDislikedItems.length} disliked</span>
         ${icon("chevron-down", "profession-gift-chevron")}
       </summary>
       <div class="profession-gift-body">
         <div class="profession-gift-group profession-gift-group-preferred">
           <strong>Preferred gifts</strong>
-          ${globalPreferredItems.length ? pillList(globalPreferredItems) : '<p class="profession-gift-empty">None listed.</p>'}
+          ${globalPreferredItems.length ? pillList(globalPreferredItems) : '<p class="profession-gift-empty">No broadly liked gifts.</p>'}
         </div>
         <div class="profession-gift-group profession-gift-group-disliked">
           <strong>Disliked gifts</strong>
-          ${globalDislikedItems.length ? pillList(globalDislikedItems) : '<p class="profession-gift-empty">None listed.</p>'}
+          ${globalDislikedItems.length ? pillList(globalDislikedItems) : '<p class="profession-gift-empty">No broadly disliked gifts.</p>'}
         </div>
         <div class="profession-gift-group profession-gift-group-neutral">
           <strong>Neutral</strong>
-          ${globalNeutralItems.length ? pillList(globalNeutralItems) : pillList(["Anything not listed"])}
+          ${globalNeutralItems.length ? pillList(globalNeutralItems) : pillList(["Other accepted items"])}
         </div>
       </div>
     </details>
@@ -1190,7 +1268,7 @@ function renderGifts() {
       <details class="profession-gift-panel reward-panel">
         <summary>
           <span class="profession-gift-name">${escapeHtml(profession)}</span>
-          <span class="profession-gift-meta">${rewards.length} reward ${rewards.length === 1 ? "entry" : "entries"}</span>
+          <span class="profession-gift-meta">${plural(rewards.length, "possible reward")}</span>
           ${icon("chevron-down", "profession-gift-chevron")}
         </summary>
         <div class="profession-gift-body reward-panel-body">
@@ -1205,12 +1283,12 @@ function renderGifts() {
     `).join("");
 
   return `
-    ${section("Gift Basics", `
-      <p>Villagers evaluate gifts by global rules first and then profession rules. Reactions include Loved, Liked, Neutral, Disliked, and Hated. A gifted stack must fit in the villager inventory or it is refused.</p>
-      <p>Positive gift reputation is personal to each player-villager relationship. By default, another stack of the same item on the same Minecraft day earns 10% reputation, and positive gift reputation is capped at 120 per relationship per day. Negative gift reactions keep their full penalty.</p>
+    ${section("Choosing A Gift", `
+      <p>Villagers have shared tastes as well as profession-specific preferences. The same item can therefore mean more to one profession than another. The villager must also have enough inventory space to accept the full stack.</p>
+      <p>Positive gift reputation belongs to your relationship with that villager. Repeating the same gift on the same Minecraft day normally gives only 10% of its reputation, and positive gift reputation is capped at 120 per relationship each day. Disliked gifts keep their full penalty.</p>
       ${statGrid([
-        { value: DATA.gifts.totals?.preferences || 0, label: "Preference rules", icon: "sparkles" },
-        { value: DATA.gifts.totals?.rewards || 0, label: "High-reputation reward rules", icon: "gift" }
+        { value: DATA.gifts.totals?.preferences || 0, label: "Gift preferences", icon: "sparkles" },
+        { value: DATA.gifts.totals?.rewards || 0, label: "High-trust rewards", icon: "gift" }
       ])}
     `)}
     ${section("Profession Gift Preferences", `
@@ -1229,8 +1307,8 @@ function renderGifts() {
 
 function renderSkillTrades() {
   return `
-    ${section("How Skill Trades Appear", `
-      <p>Skill trades are generated from a villager's profession, hidden skill scores, trade level, reputation gates, and config flags. High-reputation Special Orders can target unlocked definitions directly.</p>
+    ${section("Unlocking Skill Trades", `
+      <p>A villager's profession, trade level, individual skills, and relationship with you determine which advanced trades can appear. When your reputation is high enough, Special Orders let you request an eligible trade directly.</p>
     `)}
     ${DATA.skillTrades.map((group) => section(group.profession, `
       <div class="table-wrap"><table class="skill-trade-table"><colgroup><col class="rank-col"><col class="level-col"><col class="cost-col"><col class="result-col"><col class="chance-col"><col class="order-col"></colgroup><thead><tr><th>Rank</th><th>Level</th><th>Cost</th><th>Result</th><th>Chance</th><th>Special Order</th></tr></thead><tbody>
@@ -1243,10 +1321,10 @@ function renderSkillTrades() {
 function renderContainers() {
   return `
     ${section("Village Property", `
-      <p>Villagers can confront players for opening, breaking, or stealing from watched containers, including generated village chests. Reputation and nearby witnesses shape how harsh the response feels.</p>
+      <p>Villagers may confront you for opening, breaking, or stealing from protected village containers. Your reputation and any nearby witnesses affect how seriously they respond.</p>
     `)}
     ${section("Breaking Chests Is Worse", `
-      <p>Breaking generated containers unpacks and counts the dropped loot before reputation loss is applied, so smashing a fuller village store is worse than opening an empty one.</p>
+      <p>Breaking a protected container counts the items released from it before applying the reputation loss. Destroying a stocked village chest is therefore worse than disturbing an empty one.</p>
     `)}
   `;
 }
@@ -1395,8 +1473,8 @@ function renderAdvancements(options = {}) {
     .join("");
 
   return `
-    ${section("Reputation Tab", `
-      <p>The mod includes a full reputation advancement tab. Entries below are grouped by related progression paths, so connected milestones stay together.</p>
+    ${section("Reputation Milestones", `
+      <p>The Reputation advancement tab tracks trust, story, conflict, and hidden challenges. Related milestones are grouped below so you can see what each one follows.</p>
     `)}
     ${groupedSections}
   `;
@@ -1454,7 +1532,7 @@ function renderSearch() {
           <strong>${escapeHtml(result.title)}</strong>
           <p>${escapeHtml(result.description)}</p>
         </a>
-      `).join("")}</div>` : `<p>Type in the search box to find quests, advancements, rewards, systems, and walkthrough details.</p>`}
+      `).join("")}</div>` : `<p>${query ? "No matches found. Try a quest name, villager profession, reward, or feature." : "Search for a quest, villager profession, reward, control, or feature."}</p>`}
     `)}
   `, {
     icon: "search",
@@ -1506,22 +1584,22 @@ function followPaletteResult(result) {
   location.hash = result.getAttribute("href");
 }
 
-els.search.addEventListener("input", () => {
-  searchQuery = els.search.value;
-  if (searchQuery.trim()) location.hash = "#/search";
-  else render();
-});
+function openSearchFromSidebar() {
+  if (els.palette.classList.contains("is-open")) return;
+  openPalette(paletteQuery);
+}
 
+els.search.addEventListener("click", openSearchFromSidebar);
 els.search.addEventListener("keydown", (event) => {
-  if (event.key !== "Enter") return;
-  const first = document.querySelector(".search-result");
-  if (first) first.click();
+  if (event.key !== "ArrowDown") return;
+  event.preventDefault();
+  openSearchFromSidebar();
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.altKey && event.key.toLowerCase() === "q") {
     event.preventDefault();
-    openPalette(els.search.value);
+    openPalette(paletteQuery);
     return;
   }
 
@@ -1533,6 +1611,7 @@ document.addEventListener("keydown", (event) => {
 
 els.paletteSearch.addEventListener("input", () => {
   paletteQuery = els.paletteSearch.value;
+  els.searchQueryLabel.textContent = paletteQuery || "Search Wiki";
   renderPaletteResults();
 });
 

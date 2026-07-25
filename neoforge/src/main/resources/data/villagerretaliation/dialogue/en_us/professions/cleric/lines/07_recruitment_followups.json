@@ -13,7 +13,17 @@
         "I learned two things out there: stay close, and ask better questions earlier.",
         "You move like danger is a normal part of the route. I am still adjusting to that.",
         "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "If I followed you again, I would pack more food and fewer assumptions.",
+        "I returned with breath steady and prayers unused. That's a blessing I'll not waste. Home again, whole enough to thank you properly. That matters.",
+        "Home again, whole enough to thank you properly. That matters. We came back with the village still ahead of us. I'll count that as good work.",
+        "We came back with the village still ahead of us. I'll count that as good work. Following you taught me that plans sound much safer before anyone starts walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking. I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip. Next time, warn me before the road becomes a test of character.",
+        "Next time, warn me before the road becomes a test of character. I learned two things out there: stay close, and ask better questions earlier.",
+        "I learned two things out there: stay close, and ask better questions earlier. You move like danger is a normal part of the route. I am still adjusting to that.",
+        "You move like danger is a normal part of the route. I am still adjusting to that. It was not all bad. Some views are worth sore legs and nervous glances.",
+        "It was not all bad. Some views are worth sore legs and nervous glances. If I followed you again, I would pack more food and fewer assumptions.",
+        "If I followed you again, I would pack more food and fewer assumptions. I returned with breath steady and prayers unused. That's a blessing I'll not waste."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -35,7 +45,17 @@
         "I learned two things out there: stay close, and ask better questions earlier.",
         "You move like danger is a normal part of the route. I am still adjusting to that.",
         "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "If I followed you again, I would pack more food and fewer assumptions.",
+        "I can tend the hurt, but I would rather not collect it on the way home. I made it home, but the road took more from me than it should have.",
+        "I made it home, but the road took more from me than it should have. Next time, let us return with fewer marks and better choices.",
+        "Next time, let us return with fewer marks and better choices. Following you taught me that plans sound much safer before anyone starts walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking. I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip. Next time, warn me before the road becomes a test of character.",
+        "Next time, warn me before the road becomes a test of character. I learned two things out there: stay close, and ask better questions earlier.",
+        "I learned two things out there: stay close, and ask better questions earlier. You move like danger is a normal part of the route. I am still adjusting to that.",
+        "You move like danger is a normal part of the route. I am still adjusting to that. It was not all bad. Some views are worth sore legs and nervous glances.",
+        "It was not all bad. Some views are worth sore legs and nervous glances. If I followed you again, I would pack more food and fewer assumptions.",
+        "If I followed you again, I would pack more food and fewer assumptions. I can tend the hurt, but I would rather not collect it on the way home."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -57,7 +77,17 @@
         "I learned two things out there: stay close, and ask better questions earlier.",
         "You move like danger is a normal part of the route. I am still adjusting to that.",
         "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "If I followed you again, I would pack more food and fewer assumptions.",
+        "A wound from an enemy is simple. A wound from a guide asks harder questions. Following you was trust. What happened after was something else.",
+        "Following you was trust. What happened after was something else. A guide who strikes from close by leaves the longest mark.",
+        "A guide who strikes from close by leaves the longest mark. Following you taught me that plans sound much safer before anyone starts walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking. I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip. Next time, warn me before the road becomes a test of character.",
+        "Next time, warn me before the road becomes a test of character. I learned two things out there: stay close, and ask better questions earlier.",
+        "I learned two things out there: stay close, and ask better questions earlier. You move like danger is a normal part of the route. I am still adjusting to that.",
+        "You move like danger is a normal part of the route. I am still adjusting to that. It was not all bad. Some views are worth sore legs and nervous glances.",
+        "It was not all bad. Some views are worth sore legs and nervous glances. If I followed you again, I would pack more food and fewer assumptions.",
+        "If I followed you again, I would pack more food and fewer assumptions. A wound from an enemy is simple. A wound from a guide asks harder questions."
       ],
       "option": "recruitment_followup",
       "recruitment_followup_scenarios": [
@@ -79,7 +109,17 @@
         "I learned two things out there: stay close, and ask better questions earlier.",
         "You move like danger is a normal part of the route. I am still adjusting to that.",
         "It was not all bad. Some views are worth sore legs and nervous glances.",
-        "If I followed you again, I would pack more food and fewer assumptions."
+        "If I followed you again, I would pack more food and fewer assumptions.",
+        "The boat floated. My nerves, less so. Still, I am home. The boat did its part. I am still deciding whether the rest of the plan did.",
+        "The boat did its part. I am still deciding whether the rest of the plan did. Water carried us home, which is more than I expected from that journey.",
+        "Water carried us home, which is more than I expected from that journey. Following you taught me that plans sound much safer before anyone starts walking.",
+        "Following you taught me that plans sound much safer before anyone starts walking. I kept up, mostly. My feet have a harsher opinion of the trip.",
+        "I kept up, mostly. My feet have a harsher opinion of the trip. Next time, warn me before the road becomes a test of character.",
+        "Next time, warn me before the road becomes a test of character. I learned two things out there: stay close, and ask better questions earlier.",
+        "I learned two things out there: stay close, and ask better questions earlier. You move like danger is a normal part of the route. I am still adjusting to that.",
+        "You move like danger is a normal part of the route. I am still adjusting to that. It was not all bad. Some views are worth sore legs and nervous glances.",
+        "It was not all bad. Some views are worth sore legs and nervous glances. If I followed you again, I would pack more food and fewer assumptions.",
+        "If I followed you again, I would pack more food and fewer assumptions. The boat floated. My nerves, less so. Still, I am home."
       ],
       "conditions": [
         {

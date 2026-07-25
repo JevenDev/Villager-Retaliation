@@ -14,44 +14,130 @@
       "id": "ominous_banner_resident_revered",
       "requires_ominous_banner": true,
       "village_allegiance": "known",
-      "reputation_levels": ["revered", "royalty"],
+      "reputation_levels": [
+        "revered",
+        "royalty"
+      ],
       "lines": [
         "You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
         "Our trust in you does not make that raider mark harmless. Do not carry it through my home.",
-        "You should know what that banner promises to a village. Why would you put it above your own face?"
+        "You should know what that banner promises to a village. Why would you put it above your own face?",
+        "You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake> Our trust in you does not make that raider mark harmless. Do not carry it through my home.",
+        "Our trust in you does not make that raider mark harmless. Do not carry it through my home. You should know what that banner promises to a village. Why would you put it above your own face?",
+        "You should know what that banner promises to a village. Why would you put it above your own face? You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake> You should know what that banner promises to a village. Why would you put it above your own face?",
+        "Our trust in you does not make that raider mark harmless. Do not carry it through my home. You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "You should know what that banner promises to a village. Why would you put it above your own face? Our trust in you does not make that raider mark harmless. Do not carry it through my home.",
+        "Listen. You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "Understand this. You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "Let me be clear. You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "I will say it plainly. You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "Here is the truth. You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "As things stand, you have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "From where I stand, you have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "For the moment, you have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "Right now, you have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake>",
+        "You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake> Keep that in mind.",
+        "You have stood for this village, yet you wear the mark of those who would destroy it. <shake>Take it off.</shake> Remember that."
       ]
     },
     {
       "id": "ominous_banner_wanderer_revered",
       "requires_ominous_banner": true,
-      "village_allegiances": ["unknown", "unaffiliated"],
-      "reputation_levels": ["revered", "royalty"],
+      "village_allegiances": [
+        "unknown",
+        "unaffiliated"
+      ],
+      "reputation_levels": [
+        "revered",
+        "royalty"
+      ],
       "lines": [
         "I have no village to claim, but I know that mark. Your good name does not cleanse it.",
         "I respect what you have done. I cannot respect the banner you chose to wear.",
-        "Even a wanderer knows what follows that pattern. Take it off before anyone mistakes your meaning."
+        "Even a wanderer knows what follows that pattern. Take it off before anyone mistakes your meaning.",
+        "I have no village to claim, but I know that mark. Your good name does not cleanse it. I respect what you have done. I cannot respect the banner you chose to wear.",
+        "I respect what you have done. I cannot respect the banner you chose to wear. Even a wanderer knows what follows that pattern. Take it off before anyone mistakes your meaning.",
+        "Even a wanderer knows what follows that pattern. Take it off before anyone mistakes your meaning. I have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "I have no village to claim, but I know that mark. Your good name does not cleanse it. Even a wanderer knows what follows that pattern. Take it off before anyone mistakes your meaning.",
+        "I respect what you have done. I cannot respect the banner you chose to wear. I have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "Even a wanderer knows what follows that pattern. Take it off before anyone mistakes your meaning. I respect what you have done. I cannot respect the banner you chose to wear.",
+        "Listen. I have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "Understand this. I have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "Let me be clear. I have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "I will say it plainly. I have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "Here is the truth. I have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "As things stand, i have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "From where I stand, i have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "For the moment, i have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "Right now, i have no village to claim, but I know that mark. Your good name does not cleanse it.",
+        "I have no village to claim, but I know that mark. Your good name does not cleanse it. Keep that in mind.",
+        "I have no village to claim, but I know that mark. Your good name does not cleanse it. Remember that."
       ]
     },
     {
       "id": "ominous_banner_resident_trusted",
       "requires_ominous_banner": true,
       "village_allegiance": "known",
-      "reputation_levels": ["trusted", "respected"],
+      "reputation_levels": [
+        "trusted",
+        "respected"
+      ],
       "lines": [
         "We trusted you. Do not walk our streets wearing the mark of a village's enemies.",
         "I know the person beneath that banner. That is why seeing you wear it feels like a warning.",
-        "You have friends here. Think about what that symbol says to every one of them."
+        "You have friends here. Think about what that symbol says to every one of them.",
+        "We trusted you. Do not walk our streets wearing the mark of a village's enemies. I know the person beneath that banner. That is why seeing you wear it feels like a warning.",
+        "I know the person beneath that banner. That is why seeing you wear it feels like a warning. You have friends here. Think about what that symbol says to every one of them.",
+        "You have friends here. Think about what that symbol says to every one of them. We trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "We trusted you. Do not walk our streets wearing the mark of a village's enemies. You have friends here. Think about what that symbol says to every one of them.",
+        "I know the person beneath that banner. That is why seeing you wear it feels like a warning. We trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "You have friends here. Think about what that symbol says to every one of them. I know the person beneath that banner. That is why seeing you wear it feels like a warning.",
+        "Listen. We trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "Understand this. We trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "Let me be clear. We trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "I will say it plainly. We trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "Here is the truth. We trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "As things stand, we trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "From where I stand, we trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "For the moment, we trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "Right now, we trusted you. Do not walk our streets wearing the mark of a village's enemies.",
+        "We trusted you. Do not walk our streets wearing the mark of a village's enemies. Keep that in mind.",
+        "We trusted you. Do not walk our streets wearing the mark of a village's enemies. Remember that."
       ]
     },
     {
       "id": "ominous_banner_wanderer_trusted",
       "requires_ominous_banner": true,
-      "village_allegiances": ["unknown", "unaffiliated"],
-      "reputation_levels": ["trusted", "respected"],
+      "village_allegiances": [
+        "unknown",
+        "unaffiliated"
+      ],
+      "reputation_levels": [
+        "trusted",
+        "respected"
+      ],
       "lines": [
         "I thought better of you. A raider's mark is not a trophy to wear among villagers.",
         "I may belong nowhere, but I still know what that banner threatens. Why are you wearing it?",
-        "You earned my trust. Do not ask that trust to survive beneath that symbol."
+        "You earned my trust. Do not ask that trust to survive beneath that symbol.",
+        "I thought better of you. A raider's mark is not a trophy to wear among villagers. I may belong nowhere, but I still know what that banner threatens. Why are you wearing it?",
+        "I may belong nowhere, but I still know what that banner threatens. Why are you wearing it? You earned my trust. Do not ask that trust to survive beneath that symbol.",
+        "You earned my trust. Do not ask that trust to survive beneath that symbol. I thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "I thought better of you. A raider's mark is not a trophy to wear among villagers. You earned my trust. Do not ask that trust to survive beneath that symbol.",
+        "I may belong nowhere, but I still know what that banner threatens. Why are you wearing it? I thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "You earned my trust. Do not ask that trust to survive beneath that symbol. I may belong nowhere, but I still know what that banner threatens. Why are you wearing it?",
+        "Listen. I thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "Understand this. I thought better of you. A <red><bold>raider</bold></red>'s mark is not a trophy to wear among villagers.",
+        "Let me be clear. I thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "I will say it plainly. I thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "Here is the truth. I thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "As things stand, i thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "From where I stand, i thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "For the moment, i thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "Right now, i thought better of you. A raider's mark is not a trophy to wear among villagers.",
+        "I thought better of you. A raider's mark is not a trophy to wear among villagers. Keep that in mind.",
+        "I thought better of you. A raider's mark is not a trophy to wear among villagers. Remember that."
       ]
     },
     {
@@ -62,18 +148,55 @@
       "lines": [
         "That banner belongs over a raiding patrol, not in our streets. State your purpose.",
         "You entered my village wearing the mark of those who attack villages. Explain yourself.",
-        "Take that symbol away from our bell. Until then, every word from you sounds like a threat."
+        "Take that symbol away from our bell. Until then, every word from you sounds like a threat.",
+        "That banner belongs over a raiding patrol, not in our streets. State your purpose. You entered my village wearing the mark of those who attack villages. Explain yourself.",
+        "You entered my village wearing the mark of those who attack villages. Explain yourself. Take that symbol away from our bell. Until then, every word from you sounds like a threat.",
+        "Take that symbol away from our bell. Until then, every word from you sounds like a threat. That banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "That banner belongs over a raiding patrol, not in our streets. State your purpose. Take that symbol away from our bell. Until then, every word from you sounds like a threat.",
+        "You entered my village wearing the mark of those who attack villages. Explain yourself. That banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "Take that symbol away from our bell. Until then, every word from you sounds like a threat. You entered my village wearing the mark of those who attack villages. Explain yourself.",
+        "Listen. That banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "Understand this. That banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "Let me be clear. That banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "I will say it plainly. That banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "Here is the truth. That banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "As things stand, that banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "From where I stand, that banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "For the moment, that banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "Right now, that banner belongs over a raiding patrol, not in our streets. State your purpose.",
+        "That banner belongs over a raiding patrol, not in our streets. State your purpose. Keep that in mind.",
+        "That banner belongs over a raiding patrol, not in our streets. State your purpose. Remember that."
       ]
     },
     {
       "id": "ominous_banner_wanderer_neutral",
       "requires_ominous_banner": true,
-      "village_allegiances": ["unknown", "unaffiliated"],
+      "village_allegiances": [
+        "unknown",
+        "unaffiliated"
+      ],
       "reputation_level": "neutral",
       "lines": [
         "I do not know you, but I know the banner above your face. Keep your distance.",
         "No village claims me, and even I would not wear a raider's mark among villagers.",
-        "That pattern has emptied homes before. Tell me why you chose to display it."
+        "That pattern has emptied homes before. Tell me why you chose to display it.",
+        "I do not know you, but I know the banner above your face. Keep your distance. No village claims me, and even I would not wear a raider's mark among villagers.",
+        "No village claims me, and even I would not wear a raider's mark among villagers. That pattern has emptied homes before. Tell me why you chose to display it.",
+        "That pattern has emptied homes before. Tell me why you chose to display it. I do not know you, but I know the banner above your face. Keep your distance.",
+        "I do not know you, but I know the banner above your face. Keep your distance. That pattern has emptied homes before. Tell me why you chose to display it.",
+        "No village claims me, and even I would not wear a raider's mark among villagers. I do not know you, but I know the banner above your face. Keep your distance.",
+        "That pattern has emptied homes before. Tell me why you chose to display it. No village claims me, and even I would not wear a raider's mark among villagers.",
+        "Listen. I do not know you, but I know the banner above your face. Keep your distance.",
+        "Understand this. I do not know you, but I know the banner above your face. Keep your distance.",
+        "Let me be clear. I do not know you, but I know the banner above your face. Keep your distance.",
+        "I will say it plainly. I do not know you, but I know the banner above your face. Keep your distance.",
+        "Here is the truth. I do not know you, but I know the banner above your face. Keep your distance.",
+        "As things stand, i do not know you, but I know the banner above your face. Keep your distance.",
+        "From where I stand, i do not know you, but I know the banner above your face. Keep your distance.",
+        "For the moment, i do not know you, but I know the banner above your face. Keep your distance.",
+        "Right now, i do not know you, but I know the banner above your face. Keep your distance.",
+        "I do not know you, but I know the banner above your face. Keep your distance. Keep that in mind.",
+        "I do not know you, but I know the banner above your face. Keep your distance. Remember that."
       ]
     },
     {
@@ -84,40 +207,120 @@
       "lines": [
         "I already doubted your intentions. That banner makes them look much clearer.",
         "So that is the side you want my village to see. Do not come any closer.",
-        "Suspicion was caution before you wore that mark through our streets. Now it is common sense."
+        "Suspicion was caution before you wore that mark through our streets. Now it is common sense.",
+        "I already doubted your intentions. That banner makes them look much clearer. So that is the side you want my village to see. Do not come any closer.",
+        "So that is the side you want my village to see. Do not come any closer. Suspicion was caution before you wore that mark through our streets. Now it is common sense.",
+        "Suspicion was caution before you wore that mark through our streets. Now it is common sense. I already doubted your intentions. That banner makes them look much clearer.",
+        "I already doubted your intentions. That banner makes them look much clearer. Suspicion was caution before you wore that mark through our streets. Now it is common sense.",
+        "So that is the side you want my village to see. Do not come any closer. I already doubted your intentions. That banner makes them look much clearer.",
+        "Suspicion was caution before you wore that mark through our streets. Now it is common sense. So that is the side you want my village to see. Do not come any closer.",
+        "Listen. I already doubted your intentions. That banner makes them look much clearer.",
+        "Understand this. I already doubted your intentions. That banner makes them look much clearer.",
+        "Let me be clear. I already doubted your intentions. That banner makes them look much clearer.",
+        "I will say it plainly. I already doubted your intentions. That banner makes them look much clearer.",
+        "Here is the truth. I already doubted your intentions. That banner makes them look much clearer.",
+        "As things stand, i already doubted your intentions. That banner makes them look much clearer.",
+        "From where I stand, i already doubted your intentions. That banner makes them look much clearer.",
+        "For the moment, i already doubted your intentions. That banner makes them look much clearer.",
+        "Right now, i already doubted your intentions. That banner makes them look much clearer.",
+        "I already doubted your intentions. That banner makes them look much clearer. Keep that in mind.",
+        "I already doubted your intentions. That banner makes them look much clearer. Remember that."
       ]
     },
     {
       "id": "ominous_banner_wanderer_suspicious",
       "requires_ominous_banner": true,
-      "village_allegiances": ["unknown", "unaffiliated"],
+      "village_allegiances": [
+        "unknown",
+        "unaffiliated"
+      ],
       "reputation_level": "suspicious",
       "lines": [
         "I had reasons not to trust you. You put the strongest one on your head.",
         "A wanderer learns which signs mean danger. Yours is impossible to miss.",
-        "You wear a raider's threat openly and still expect conversation? Speak from there."
+        "You wear a raider's threat openly and still expect conversation? Speak from there.",
+        "I had reasons not to trust you. You put the strongest one on your head. A wanderer learns which signs mean danger. Yours is impossible to miss.",
+        "A wanderer learns which signs mean danger. Yours is impossible to miss. You wear a raider's threat openly and still expect conversation? Speak from there.",
+        "You wear a raider's threat openly and still expect conversation? Speak from there. I had reasons not to trust you. You put the strongest one on your head.",
+        "I had reasons not to trust you. You put the strongest one on your head. You wear a raider's threat openly and still expect conversation? Speak from there.",
+        "A wanderer learns which signs mean danger. Yours is impossible to miss. I had reasons not to trust you. You put the strongest one on your head.",
+        "You wear a raider's threat openly and still expect conversation? Speak from there. A wanderer learns which signs mean danger. Yours is impossible to miss.",
+        "Listen. I had reasons not to trust you. You put the strongest one on your head.",
+        "Understand this. I had reasons not to trust you. You put the strongest one on your head.",
+        "Let me be clear. I had reasons not to trust you. You put the strongest one on your head.",
+        "I will say it plainly. I had reasons not to trust you. You put the strongest one on your head.",
+        "Here is the truth. I had reasons not to trust you. You put the strongest one on your head.",
+        "As things stand, i had reasons not to trust you. You put the strongest one on your head.",
+        "From where I stand, i had reasons not to trust you. You put the strongest one on your head.",
+        "For the moment, i had reasons not to trust you. You put the strongest one on your head.",
+        "Right now, i had reasons not to trust you. You put the strongest one on your head.",
+        "I had reasons not to trust you. You put the strongest one on your head. Keep that in mind.",
+        "I had reasons not to trust you. You put the strongest one on your head. Remember that."
       ]
     },
     {
       "id": "ominous_banner_resident_hostile",
       "requires_ominous_banner": true,
       "village_allegiance": "known",
-      "reputation_levels": ["hostile", "despised"],
+      "reputation_levels": [
+        "hostile",
+        "despised"
+      ],
       "lines": [
         "That mark confirms what this village already knows about you. Leave.",
         "You wear our enemies' banner as if you want the whole village to understand your intent.",
-        "I needed no more reason to oppose you. You brought one anyway, stitched in black and gray."
+        "I needed no more reason to oppose you. You brought one anyway, stitched in black and gray.",
+        "That mark confirms what this village already knows about you. Leave. You wear our enemies' banner as if you want the whole village to understand your intent.",
+        "You wear our enemies' banner as if you want the whole village to understand your intent. I needed no more reason to oppose you. You brought one anyway, stitched in black and gray.",
+        "I needed no more reason to oppose you. You brought one anyway, stitched in black and gray. That mark confirms what this village already knows about you. Leave.",
+        "That mark confirms what this village already knows about you. Leave. I needed no more reason to oppose you. You brought one anyway, stitched in black and gray.",
+        "You wear our enemies' banner as if you want the whole village to understand your intent. That mark confirms what this village already knows about you. Leave.",
+        "I needed no more reason to oppose you. You brought one anyway, stitched in black and gray. You wear our enemies' banner as if you want the whole village to understand your intent.",
+        "Listen. That mark confirms what this village already knows about you. Leave.",
+        "Understand this. That mark confirms what this village already knows about you. Leave.",
+        "Let me be clear. That mark confirms what this village already knows about you. Leave.",
+        "I will say it plainly. That mark confirms what this village already knows about you. Leave.",
+        "Here is the truth. That mark confirms what this village already knows about you. Leave.",
+        "As things stand, that mark confirms what this village already knows about you. Leave.",
+        "From where I stand, that mark confirms what this village already knows about you. Leave.",
+        "For the moment, that mark confirms what this village already knows about you. Leave.",
+        "Right now, that mark confirms what this village already knows about you. Leave.",
+        "That mark confirms what this village already knows about you. Leave. Keep that in mind.",
+        "That mark confirms what this village already knows about you. Leave. Remember that."
       ]
     },
     {
       "id": "ominous_banner_wanderer_hostile",
       "requires_ominous_banner": true,
-      "village_allegiances": ["unknown", "unaffiliated"],
-      "reputation_levels": ["hostile", "despised"],
+      "village_allegiances": [
+        "unknown",
+        "unaffiliated"
+      ],
+      "reputation_levels": [
+        "hostile",
+        "despised"
+      ],
       "lines": [
         "I trusted you before I saw the banner even less than I do now.",
         "A raider's mark suits the reputation you have made for yourself.",
-        "Keep that symbol and your excuses away from me."
+        "Keep that symbol and your excuses away from me.",
+        "I trusted you before I saw the banner even less than I do now. A <red><bold>raider</bold></red>'s mark suits the reputation you have made for yourself.",
+        "A raider's mark suits the reputation you have made for yourself. Keep that symbol and your excuses away from me.",
+        "Keep that symbol and your excuses away from me. I trusted you before I saw the banner even less than I do now.",
+        "I trusted you before I saw the banner even less than I do now. Keep that symbol and your excuses away from me.",
+        "A raider's mark suits the reputation you have made for yourself. I trusted you before I saw the banner even less than I do now.",
+        "Keep that symbol and your excuses away from me. A raider's mark suits the reputation you have made for yourself.",
+        "Listen. I trusted you before I saw the banner even less than I do now.",
+        "Understand this. I trusted you before I saw the banner even less than I do now.",
+        "Let me be clear. I trusted you before I saw the banner even less than I do now.",
+        "I will say it plainly. I trusted you before I saw the banner even less than I do now.",
+        "Here is the truth. I trusted you before I saw the banner even less than I do now.",
+        "As things stand, i trusted you before I saw the banner even less than I do now.",
+        "From where I stand, i trusted you before I saw the banner even less than I do now.",
+        "For the moment, i trusted you before I saw the banner even less than I do now.",
+        "Right now, i trusted you before I saw the banner even less than I do now.",
+        "I trusted you before I saw the banner even less than I do now. Keep that in mind.",
+        "I trusted you before I saw the banner even less than I do now. Remember that."
       ]
     },
     {
@@ -128,18 +331,55 @@
       "lines": [
         "<shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
         "Everyone here already fears you. Wearing that mark makes it feel like a promise.",
-        "Please take it off. I cannot see it above your face and believe this conversation is safe."
+        "Please take it off. I cannot see it above your face and believe this conversation is safe.",
+        "<shake>That banner...</shake> You know what it means to my village. Please, do not come closer. Everyone here already fears you. Wearing that mark makes it feel like a promise.",
+        "Everyone here already fears you. Wearing that mark makes it feel like a promise. Please take it off. I cannot see it above your face and believe this conversation is safe.",
+        "Please take it off. I cannot see it above your face and believe this conversation is safe. <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "<shake>That banner...</shake> You know what it means to my village. Please, do not come closer. Please take it off. I cannot see it above your face and believe this conversation is safe.",
+        "Everyone here already fears you. Wearing that mark makes it feel like a promise. <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "Please take it off. I cannot see it above your face and believe this conversation is safe. Everyone here already fears you. Wearing that mark makes it feel like a promise.",
+        "Listen. <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "Understand this. <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "Let me be clear. <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "I will say it plainly. <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "Here is the truth. <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "As things stand, <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "From where I stand, <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "For the moment, <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "Right now, <shake>That banner...</shake> You know what it means to my village. Please, do not come closer.",
+        "<shake>That banner...</shake> You know what it means to my village. Please, do not come closer. Keep that in mind.",
+        "<shake>That banner...</shake> You know what it means to my village. Please, do not come closer. Remember that."
       ]
     },
     {
       "id": "ominous_banner_wanderer_feared",
       "requires_ominous_banner": true,
-      "village_allegiances": ["unknown", "unaffiliated"],
+      "village_allegiances": [
+        "unknown",
+        "unaffiliated"
+      ],
       "reputation_level": "feared",
       "lines": [
         "<shake>I know that mark.</shake> I know you. Please stay back.",
         "I have survived by leaving when I see signs like yours. Say what you want quickly.",
-        "The banner makes your reputation visible from far away. I wish I had seen it sooner."
+        "The banner makes your reputation visible from far away. I wish I had seen it sooner.",
+        "<shake>I know that mark.</shake> I know you. Please stay back. I have survived by leaving when I see signs like yours. Say what you want quickly.",
+        "I have survived by leaving when I see signs like yours. Say what you want quickly. The banner makes your reputation visible from far away. I wish I had seen it sooner.",
+        "The banner makes your reputation visible from far away. I wish I had seen it sooner. <shake>I know that mark.</shake> I know you. Please stay back.",
+        "<shake>I know that mark.</shake> I know you. Please stay back. The banner makes your reputation visible from far away. I wish I had seen it sooner.",
+        "I have survived by leaving when I see signs like yours. Say what you want quickly. <shake>I know that mark.</shake> I know you. Please stay back.",
+        "The banner makes your reputation visible from far away. I wish I had seen it sooner. I have survived by leaving when I see signs like yours. Say what you want quickly.",
+        "Listen. <shake>I know that mark.</shake> I know you. Please stay back.",
+        "Understand this. <shake>I know that mark.</shake> I know you. Please stay back.",
+        "Let me be clear. <shake>I know that mark.</shake> I know you. Please stay back.",
+        "I will say it plainly. <shake>I know that mark.</shake> I know you. Please stay back.",
+        "Here is the truth. <shake>I know that mark.</shake> I know you. Please stay back.",
+        "As things stand, <shake>I know that mark.</shake> I know you. Please stay back.",
+        "From where I stand, <shake>I know that mark.</shake> I know you. Please stay back.",
+        "For the moment, <shake>I know that mark.</shake> I know you. Please stay back.",
+        "Right now, <shake>I know that mark.</shake> I know you. Please stay back.",
+        "<shake>I know that mark.</shake> I know you. Please stay back. Keep that in mind.",
+        "<shake>I know that mark.</shake> I know you. Please stay back. Remember that."
       ]
     }
   ]

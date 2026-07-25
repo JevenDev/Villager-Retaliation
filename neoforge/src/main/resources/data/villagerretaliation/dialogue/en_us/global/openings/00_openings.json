@@ -28,7 +28,17 @@
         "The village notices new arrivals. What brings you to us?",
         "You do not look familiar. Are you here for trade, shelter, or trouble?",
         "Welcome, if you mean well. What do you need?",
-        "New faces make people curious. Yours has done that already."
+        "New faces make people curious. Yours has done that already.",
+        "You must be new here. What brings you to our <pulse>village</pulse>? I do not know your face yet. What brings you here?",
+        "I do not know your face yet. What brings you here? New footsteps in the village. What do you need?",
+        "New footsteps in the village. What do you need? I have not seen you around these paths before.",
+        "I have not seen you around these paths before. You are new to this village, aren't you? Looking for someone?",
+        "You are new to this village, aren't you? Looking for someone? Fresh face at the square. Are you passing through?",
+        "Fresh face at the square. Are you passing through? The village notices new arrivals. What brings you to us?",
+        "The village notices new arrivals. What brings you to us? You do not look familiar. Are you here for trade, shelter, or trouble?",
+        "You do not look familiar. Are you here for trade, shelter, or trouble? Welcome, if you mean well. What do you need?",
+        "Welcome, if you mean well. What do you need? New faces make people curious. Yours has done that already.",
+        "New faces make people curious. Yours has done that already. You must be new here. What brings you to our <pulse>village</pulse>?"
       ],
       "show_for_babies": false
     },
@@ -51,7 +61,17 @@
         "I remember most faces. Yours is not one of them yet.",
         "You have my attention. Let us see what kind of first impression this is.",
         "I do not know you yet, but I can listen.",
-        "New voice, new face. What brings you to my door?"
+        "New voice, new face. What brings you to my door?",
+        "I have not seen you before. What brings you here? I do not know your face yet. What brings you here?",
+        "I do not know your face yet. What brings you here? New <pulse>footsteps</pulse> in the village. What do you need?",
+        "New <pulse>footsteps</pulse> in the village. What do you need? I do not think we have spoken before.",
+        "I do not think we have spoken before. You are new to me. What can I do for you?",
+        "You are new to me. What can I do for you? First time talking, is it? Then speak plainly.",
+        "First time talking, is it? Then speak plainly. I remember most faces. Yours is not one of them yet.",
+        "I remember most faces. Yours is not one of them yet. You have my attention. Let us see what kind of first impression this is.",
+        "You have my attention. Let us see what kind of first impression this is. I do not know you yet, but I can listen.",
+        "I do not know you yet, but I can listen. New voice, new face. What brings you to my door?",
+        "New voice, new face. What brings you to my door? I have not seen you before. What brings you here?"
       ],
       "show_for_babies": false
     },
@@ -74,7 +94,17 @@
         "Did the road bring you here on purpose?",
         "Are you here to meet people? I am people.",
         "You look like someone the grown-ups have not explained yet.",
-        "<jump>Hi!</jump> Are you new to our village?"
+        "<jump>Hi!</jump> Are you new to our village?",
+        "<jump>You must be new here.</jump> Are you visiting? I do not know your face yet. Are you new?",
+        "I do not know your face yet. Are you new? New footsteps in the village! Did you come from far away?",
+        "New footsteps in the village! Did you come from far away? I have not seen you before. I would remember, probably.",
+        "I have not seen you before. I would remember, probably. Are you visiting our village, or did you get lost?",
+        "Are you visiting our village, or did you get lost? You are new! I can tell because I stared first.",
+        "You are new! I can tell because I stared first. Did the road bring you here on purpose?",
+        "Did the road bring you here on purpose? Are you here to meet people? I am people.",
+        "Are you here to meet people? I am people. You look like someone the grown-ups have not explained yet.",
+        "You look like someone the grown-ups have not explained yet. <jump>Hi!</jump> Are you new to our village?",
+        "<jump>Hi!</jump> Are you new to our village? <jump>You must be new here.</jump> Are you visiting?"
       ],
       "show_for_adults": false
     },
@@ -97,7 +127,17 @@
         "Hello! Are you a visitor?",
         "Did you come here from somewhere exciting?",
         "You have a new face. Not a bad one, just new.",
-        "<jump>Hi!</jump> I am saying hello first this time."
+        "<jump>Hi!</jump> I am saying hello first this time.",
+        "I have not seen you before. Are you <jump>new</jump>? I do not know your face yet. What are you doing here?",
+        "I do not know your face yet. What are you doing here? New footsteps! Are you here to talk?",
+        "New footsteps! Are you here to talk? I think this is the first time I talked to you.",
+        "I think this is the first time I talked to you. You are new to me. Do you know games?",
+        "You are new to me. Do you know games? I would remember you if we talked before. I think.",
+        "I would remember you if we talked before. I think. Hello! Are you a visitor?",
+        "Hello! Are you a visitor? Did you come here from somewhere exciting?",
+        "Did you come here from somewhere exciting? You have a new face. Not a bad one, just new.",
+        "You have a new face. Not a bad one, just new. <jump>Hi!</jump> I am saying hello first this time.",
+        "<jump>Hi!</jump> I am saying hello first this time. I have not seen you before. Are you <jump>new</jump>?"
       ],
       "show_for_adults": false
     },
@@ -117,7 +157,17 @@
         "Welcome back. What is on your mind?",
         "You are a welcome sight today. Need something?",
         "Come closer, then. What can I help with?",
-        "Good to see you walking these paths again."
+        "Good to see you walking these paths again.",
+        "Good to <pulse>see you</pulse>. What can I do for you? Good to see you. What do you need?",
+        "Good to see you. What do you need? Hello again. How can I help?",
+        "Hello again. How can I help? There you are. What brings you by?",
+        "There you are. What brings you by? Always easier to greet a familiar face.",
+        "Always easier to greet a familiar face. Good timing. I can spare a moment.",
+        "Good timing. I can spare a moment. Welcome back. What is on your mind?",
+        "Welcome back. What is on your mind? You are a welcome sight today. Need something?",
+        "You are a welcome sight today. Need something? Come closer, then. What can I help with?",
+        "Come closer, then. What can I help with? Good to see you walking these paths again.",
+        "Good to see you walking these paths again. Good to <pulse>see you</pulse>. What can I do for you?"
       ],
       "show_for_babies": false
     },
@@ -137,7 +187,17 @@
         "If you need something, say it plainly.",
         "I am listening, for now.",
         "You came over with purpose. What is it?",
-        "All right. What brings you to me?"
+        "All right. What brings you to me?",
+        "Hello. What brings you here? Hello. What do you need?",
+        "Hello. What do you need? You have my attention for a moment.",
+        "You have my attention for a moment. Speak, then. I can listen.",
+        "Speak, then. I can listen. What is it?",
+        "What is it? I have a little time. Use it well.",
+        "I have a little time. Use it well. If you need something, say it plainly.",
+        "If you need something, say it plainly. I am listening, for now.",
+        "I am listening, for now. You came over with purpose. What is it?",
+        "You came over with purpose. What is it? All right. What brings you to me?",
+        "All right. What brings you to me? Hello. What brings you here?"
       ],
       "show_for_babies": false
     },
@@ -157,7 +217,17 @@
         "I will hear you out, but only briefly.",
         "This had better be important.",
         "Say it from there. That is close enough.",
-        "I am listening, but do not mistake that for welcome."
+        "I am listening, but do not mistake that for welcome.",
+        "You should make this quick. Say what you need and keep it brief.",
+        "Say what you need and keep it brief. Speak <shake>quickly</shake>. I am listening for now.",
+        "Speak <shake>quickly</shake>. I am listening for now. I am not in the mood for a long talk with you.",
+        "I am not in the mood for a long talk with you. You have a moment. Do not waste it.",
+        "You have a moment. Do not waste it. Keep your hands where I can see them and say what you came to say.",
+        "Keep your hands where I can see them and say what you came to say. I will hear you out, but only briefly.",
+        "I will hear you out, but only briefly. This had better be important.",
+        "This had better be important. Say it from there. That is close enough.",
+        "Say it from there. That is close enough. I am listening, but do not mistake that for welcome.",
+        "I am listening, but do not mistake that for welcome. You should make this quick."
       ],
       "show_for_babies": false
     },
@@ -176,7 +246,17 @@
         "I do not want trouble. Please keep your distance.",
         "I will answer if I can. Just do not hurt me.",
         "Everyone knows what you can do. Please, speak and leave peacefully.",
-        "I am afraid for my life right now. What do you want?"
+        "I am afraid for my life right now. What do you want?",
+        "<shake>Please do not hurt me.</shake> What do you want? You can speak from there. Please, do not come any closer.",
+        "You can speak from there. Please, do not come any closer. I will listen. Just keep your hands where I can see them.",
+        "I will listen. Just keep your hands where I can see them. Please make this quick. I need to get somewhere safe.",
+        "Please make this quick. I need to get somewhere safe. <shake>I am listening.</shake> Please give me no reason to run.",
+        "<shake>I am listening.</shake> Please give me no reason to run. What do you need? Say it calmly, and then let me go.",
+        "What do you need? Say it calmly, and then let me go. I do not want trouble. Please keep your distance.",
+        "I do not want trouble. Please keep your distance. I will answer if I can. Just do not hurt me.",
+        "I will answer if I can. Just do not hurt me. Everyone knows what you can do. Please, speak and leave peacefully.",
+        "Everyone knows what you can do. Please, speak and leave peacefully. I am afraid for my life right now. What do you want?",
+        "I am afraid for my life right now. What do you want? <shake>Please do not hurt me.</shake> What do you want?"
       ],
       "show_for_babies": false
     },
@@ -196,7 +276,17 @@
         "Are you here because I am interesting?",
         "Hello! I can talk for a little bit.",
         "Hi! Did you bring a story?",
-        "<jump>Hi!</jump> I was just about to be very busy."
+        "<jump>Hi!</jump> I was just about to be very busy.",
+        "<jump>Hi!</jump> Did you come to visit? Hi! Are you here to say hello?",
+        "Hi! Are you here to say hello? Hello! Did you come to visit me?",
+        "Hello! Did you come to visit me? Hi again! I was not doing anything suspicious.",
+        "Hi again! I was not doing anything suspicious. <jump>Hello!</jump> Do you want to talk?",
+        "<jump>Hello!</jump> Do you want to talk? Hi! I saw you coming and remembered to wave.",
+        "Hi! I saw you coming and remembered to wave. Are you here because I am interesting?",
+        "Are you here because I am interesting? Hello! I can talk for a little bit.",
+        "Hello! I can talk for a little bit. Hi! Did you bring a story?",
+        "Hi! Did you bring a story? <jump>Hi!</jump> I was just about to be very busy.",
+        "<jump>Hi!</jump> I was just about to be very busy. <jump>Hi!</jump> Did you come to visit?"
       ],
       "show_for_adults": false
     },
@@ -217,7 +307,17 @@
         "I am listening from this spot.",
         "Are you going to be nice this time?",
         "I can answer if it is not scary.",
-        "<wavy>Um...</wavy> what do you need?"
+        "<wavy>Um...</wavy> what do you need?",
+        "<wavy>Um.</wavy> Are you here to talk? Um. I can listen if you are nice.",
+        "Um. I can listen if you are nice. Are we talking safely?",
+        "Are we talking safely? I can talk, but I am staying right here.",
+        "I can talk, but I am staying right here. Hello. I think.",
+        "Hello. I think. You can say something, but not too loud.",
+        "You can say something, but not too loud. I am listening from this spot.",
+        "I am listening from this spot. Are you going to be nice this time?",
+        "Are you going to be nice this time? I can answer if it is not scary.",
+        "I can answer if it is not scary. <wavy>Um...</wavy> what do you need?",
+        "<wavy>Um...</wavy> what do you need? <wavy>Um.</wavy> Are you here to talk?"
       ],
       "show_for_adults": false
     },
@@ -237,7 +337,17 @@
         "Say it quickly, please.",
         "I am listening, but my feet want to leave.",
         "I will answer if you do not sound scary.",
-        "<shake>Okay...</shake> but I am going inside after this."
+        "<shake>Okay...</shake> but I am going inside after this.",
+        "I can listen, but then I am going back inside. I can talk for a little bit, but I am staying near the door.",
+        "I can talk for a little bit, but I am staying near the door. You can say something, but I am keeping <shake>space</shake>.",
+        "You can say something, but I am keeping <shake>space</shake>. I am staying where the grown-ups can see me.",
+        "I am staying where the grown-ups can see me. You can talk from there.",
+        "You can talk from there. I do not want to come closer.",
+        "I do not want to come closer. Say it quickly, please.",
+        "Say it quickly, please. I am listening, but my feet want to leave.",
+        "I am listening, but my feet want to leave. I will answer if you do not sound scary.",
+        "I will answer if you do not sound scary. <shake>Okay...</shake> but I am going inside after this.",
+        "<shake>Okay...</shake> but I am going inside after this. I can listen, but then I am going back inside."
       ],
       "show_for_adults": false
     }
