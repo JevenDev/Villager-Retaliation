@@ -455,7 +455,7 @@ public final class HiredStorageClipboardItem extends Item {
 
     private static Component purposeLabelComponent(String purpose) {
         String normalized = AssignedStorageService.normalizePurpose(purpose);
-        return Component.translatable("villagerretaliation.clipboard.purpose." + normalized);
+        return Component.translatable("villagerretaliation.clipboard.purpose_title." + normalized);
     }
 
     public static WorkAreaDraft selectedWorkArea(ItemStack stack) {
