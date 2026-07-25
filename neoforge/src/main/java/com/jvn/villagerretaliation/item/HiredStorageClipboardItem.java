@@ -943,7 +943,9 @@ public final class HiredStorageClipboardItem extends Item {
         }
 
         if (HiredVillagerWorkService.setWorkArea(player, level, villager, draft.first(), draft.second())) {
-            clearClipboardState(player, stack);
+            clearWorkAreaSelection(stack);
+            syncClipboardStack(player);
+            sendWorkAreaOutline(player, level, villager);
         }
     }
 
@@ -1081,21 +1083,6 @@ public final class HiredStorageClipboardItem extends Item {
 
     public static void clearSelection(ServerPlayer player, ItemStack stack) {
         clearSelection(stack);
-        syncClipboardStack(player);
-        clearClipboardOutlines(player);
-    }
-
-    private static void clearClipboardState(ServerPlayer player, ItemStack stack) {
-        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
-        if (!customData.isEmpty()) {
-            CompoundTag tag = customData.copyTag();
-            tag.remove(TAG);
-            if (tag.isEmpty()) {
-                stack.remove(DataComponents.CUSTOM_DATA);
-            } else {
-                stack.set(DataComponents.CUSTOM_DATA, CustomData.of(tag));
-            }
-        }
         syncClipboardStack(player);
         clearClipboardOutlines(player);
     }
@@ -1274,6 +1261,10 @@ public final class HiredStorageClipboardItem extends Item {
                 case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> true;
                 default -> false;
             };
+        }
+
+        public boolean opensClipboardAssignmentMenu() {
+            return isStorageAssignmentMode() || this == ASSIGN_PAYMENT;
         }
 
         public String assignmentPurpose() {

@@ -101,6 +101,9 @@ public final class VillagerInteractionScreenOpener {
     public static void openClipboard(ServerPlayer player, Villager villager, boolean forceCameraTowardsVillager) {
         ServerLevel level = player.serverLevel();
         DialogueContext context = VillagerInteractionService.createDialogueContext(level, player, villager);
+        String openingText = VillagerDialogueResources
+                .message(context, "interaction.clipboard.assignment.opening")
+                .orElse("");
         OpenVillagerInteractionPayload payload = createPayload(
                 level,
                 player,
@@ -115,6 +118,7 @@ public final class VillagerInteractionScreenOpener {
         VillagerInteractionTracker.rememberConversationOpened(level, villager, player);
         trySendToPlayer(player, payload);
         VillagerAmbientIndicatorService.onConversationOpened(level, villager, player);
+        VillagerInteractionService.sendPersonalRoutineVillagerChat(player, villager, openingText);
     }
 
     public static void refreshNormal(ServerPlayer player, Villager villager) {
@@ -157,6 +161,8 @@ public final class VillagerInteractionScreenOpener {
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions) {
         DialogueContext dialogueContext = VillagerInteractionService.createDialogueContext(level, player, villager);
+        VillagerAssignmentSnapshot assignment =
+                HiredVillagerContractService.synchronizeAssignment(level, villager);
         VillagerProfile profile = VillagerProfileManager.getOrCreateProfile(level, villager);
         VillagerGiftKnowledgeService.GiftKnowledgeSnapshot giftKnowledge =
                 VillagerGiftKnowledgeService.knownGifts(level, player, villager.getVillagerData().getProfession());
@@ -205,7 +211,7 @@ public final class VillagerInteractionScreenOpener {
                 primaryMood,
                 VillagerRecruitmentService.isFollowing(villager, player),
                 VillagerRecruitmentService.isStayingHere(villager, player),
-                VillagerAssignmentService.snapshot(villager).revision(),
+                assignment.revision(),
                 VillagerInteractionTracker.isRoutineChatMuted(level, villager, player),
                 forcedConversation,
                 clipboardMenu,

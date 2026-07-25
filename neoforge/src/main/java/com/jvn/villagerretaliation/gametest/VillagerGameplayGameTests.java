@@ -14,6 +14,7 @@ import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerIndex;
+import com.jvn.villagerretaliation.interaction.HiredRoute;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
@@ -26,6 +27,7 @@ import com.jvn.villagerretaliation.interaction.VillagerAssignmentService;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentStore;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentState;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
+import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
@@ -548,6 +550,62 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void staleAssignmentDoesNotCreatePhantomHire(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrStaleAssignmentHirer");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        VillagerAssignmentStore.hire(
+                villager,
+                UUID.randomUUID(),
+                HiredVillagerRole.COURIER,
+                level.getGameTime(),
+                villager.blockPosition());
+
+        helper.assertFalse(
+                HiredVillagerContractService.isHired(level, villager),
+                "assignment-only fixture must not count as an active contract");
+        helper.assertTrue(
+                HiredVillagerContractService.startHireContract(
+                        level, villager, hirer, 1, 8, HiredVillagerRole.COURIER),
+                "a stale assignment must be repaired before creating the real contract");
+        helper.assertTrue(
+                HiredVillagerContractService.isHiredBy(level, villager, hirer),
+                "the repaired hire must create an authoritative contract");
+        helper.assertTrue(
+                VillagerAssignmentStore.snapshot(villager).ownedBy(hirer.getUUID()),
+                "the canonical assignment must agree with the contract hirer");
+        helper.assertTrue(
+                VillagerRecruitmentService.startFollowing(level, villager, hirer),
+                "the repaired hirer must be able to issue Follow Me");
+        helper.assertTrue(
+                HiredVillagerWorkService.canManageWork(level, villager, hirer),
+                "the repaired hirer must pass route authorization");
+
+        BlockPos chest = helper.absolutePos(new BlockPos(3, 2, 1));
+        level.setBlockAndUpdate(chest, Blocks.CHEST.defaultBlockState());
+        helper.assertTrue(
+                VillagerInteractionService.canManageAssignedStorage(level, villager, hirer),
+                "the repaired hirer must pass storage authorization");
+        AssignedStorageService.AssignSummary storage = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.INPUT_PURPOSE);
+        helper.assertValueEqual(storage.assigned(), 1, "the repaired hirer should assign a courier input container");
+
+        HiredRoute route = new HiredRoute(List.of(
+                villager.blockPosition(),
+                villager.blockPosition().offset(4, 0, 0)), false);
+        helper.assertTrue(
+                HiredVillagerWorkService.setRoute(hirer, level, villager, route),
+                "the repaired hirer should assign a courier route");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void clipboardPreviewPacketRequiresHeldClipboard(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         HiredDebugPreviewService.clearRuntimeState();
@@ -675,6 +733,11 @@ public final class VillagerGameplayGameTests {
         helper.assertTrue(
                 VillagerRecruitmentService.isFollowing(villager, followerOwner),
                 "hired work ticks should yield to and preserve the contract owner's follow command");
+        helper.assertFalse(villager.isSleeping(), "the fixture should be awake during its scheduled rest activity");
+        helper.assertValueEqual(
+                com.jvn.villagerretaliation.interaction.VillagerAiArbitration.currentPriority(level, villager),
+                com.jvn.villagerretaliation.interaction.VillagerAiArbitration.Priority.FOLLOW_OR_RETURN_MOVEMENT,
+                "an awake villager must follow during the scheduled rest activity");
         followerOwner.moveTo(villager.getX() + 6.0D, villager.getY(), villager.getZ(), 0.0F, 0.0F);
         VillagerRecruitmentService.onVillagerTickPost(villager);
         helper.assertFalse(
@@ -858,6 +921,61 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void containerAssignmentModesUseClipboardDialogueRouting(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrClipboardDialogue");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        helper.assertTrue(
+                HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8),
+                "hire should succeed");
+
+        ItemStack clipboard = clipboard();
+        hirer.setItemInHand(InteractionHand.MAIN_HAND, clipboard);
+        BlockPos chest = helper.absolutePos(new BlockPos(3, 2, 1));
+        level.setBlockAndUpdate(chest, Blocks.CHEST.defaultBlockState());
+        HiredStorageClipboardItem.handleRightClickBlock(level, hirer, clipboard, chest);
+        helper.assertFalse(
+                HiredStorageClipboardItem.selectedContainers(clipboard).isEmpty(),
+                "clipboard should contain the selected chest");
+
+        helper.assertFalse(
+                VillagerInteractionService.shouldHandleInteraction(villager, hirer, InteractionHand.MAIN_HAND),
+                "the generic dialogue route must not claim a clipboard interaction");
+        helper.assertTrue(
+                VillagerInteractionService.shouldHandleClipboardInteraction(
+                        villager,
+                        hirer,
+                        InteractionHand.MAIN_HAND),
+                "the selected clipboard should route to the clipboard assignment dialogue");
+
+        helper.assertTrue(
+                HiredStorageClipboardItem.mode(clipboard).opensClipboardAssignmentMenu(),
+                "global storage mode should open the clipboard assignment menu");
+
+        HiredStorageClipboardItem.clearSelection(clipboard);
+        HiredStorageClipboardItem.cycleMode(clipboard, 1);
+        helper.assertValueEqual(
+                HiredStorageClipboardItem.mode(clipboard),
+                HiredStorageClipboardItem.ClipboardMode.ASSIGN_PAYMENT,
+                "clipboard payment mode");
+        BlockPos paymentBox = helper.absolutePos(new BlockPos(4, 2, 1));
+        level.setBlockAndUpdate(
+                paymentBox,
+                com.jvn.villagerretaliation.block.VillagerRetaliationBlocks.PAYMENT_BOX.get().defaultBlockState());
+        HiredStorageClipboardItem.handleRightClickBlock(level, hirer, clipboard, paymentBox);
+        helper.assertFalse(
+                HiredStorageClipboardItem.selectedContainers(clipboard).isEmpty(),
+                "clipboard should contain the selected payment box");
+        helper.assertTrue(
+                HiredStorageClipboardItem.mode(clipboard).opensClipboardAssignmentMenu(),
+                "payment mode should open the same clipboard assignment menu instead of assigning directly");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void clipboardWorkforceActionAppliesHeldDraft(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         HiredVillagerIndex.clearRuntimeState();
@@ -895,8 +1013,8 @@ public final class VillagerGameplayGameTests {
         helper.assertTrue(HiredStorageClipboardItem.selectedWorkArea(clipboard).first() == null, "applied draft should clear held clipboard draft");
         helper.assertValueEqual(
                 HiredStorageClipboardItem.mode(clipboard),
-                HiredStorageClipboardItem.ClipboardMode.ASSIGN_STORAGE,
-                "applying a draft should reset the held clipboard mode");
+                HiredStorageClipboardItem.ClipboardMode.SET_WORK_AREA,
+                "applying a draft should preserve the clipboard mode");
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         villager.discard();

@@ -408,9 +408,10 @@ public final class HiredVillagerContractService {
         if (level == null || villager == null || villager.isBaby() || player == null) {
             return false;
         }
-        expireHireContractIfNeeded(level, villager);
+        VillagerAssignmentSnapshot assignment = synchronizeAssignment(level, villager);
         if (currentContractHirer(villager).isPresent()
-                || VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.HIRED) {
+                || hasActiveOrPendingContract(villager)
+                || assignment.state() == VillagerAssignmentState.HIRED) {
             return false;
         }
         int safeDays = clampedContractDays(days);
@@ -454,9 +455,10 @@ public final class HiredVillagerContractService {
         if (level == null || villager == null || villager.isBaby() || player == null) {
             return;
         }
-        expireHireContractIfNeeded(level, villager);
+        VillagerAssignmentSnapshot assignment = synchronizeAssignment(level, villager);
         if (currentContractHirer(villager).isPresent()
-                || VillagerAssignmentStore.snapshot(villager).state() == VillagerAssignmentState.HIRED) {
+                || hasActiveOrPendingContract(villager)
+                || assignment.state() == VillagerAssignmentState.HIRED) {
             return;
         }
         VillagerRecruitmentService.stopFollowing(villager);
@@ -558,6 +560,41 @@ public final class HiredVillagerContractService {
                         expireContract(level, villager, tag, "Work stopped. Contract expired.");
                     }
                 });
+    }
+
+    /**
+     * Reconciles the canonical command assignment with the authoritative hire
+     * contract. This also releases assignment-only state left behind by an older
+     * build so a new contract cannot be reported as successful without actually
+     * being created.
+     */
+    public static VillagerAssignmentSnapshot synchronizeAssignment(ServerLevel level, Villager villager) {
+        if (level == null || villager == null) {
+            return VillagerAssignmentSnapshot.unassigned(0L);
+        }
+        expireHireContractIfNeeded(level, villager);
+        Optional<UUID> contractHirer = currentContractHirer(villager);
+        VillagerAssignmentSnapshot assignment = VillagerAssignmentStore.snapshot(villager);
+        if (contractHirer.isEmpty()) {
+            if (!hasActiveOrPendingContract(villager)
+                    && assignment.state() == VillagerAssignmentState.HIRED) {
+                return VillagerAssignmentStore.unassign(villager);
+            }
+            return assignment;
+        }
+        UUID owner = contractHirer.get();
+        if (!assignment.ownedBy(owner)) {
+            if (assignment.state() == VillagerAssignmentState.HIRED) {
+                VillagerAssignmentStore.unassign(villager);
+            }
+            return VillagerAssignmentStore.hire(
+                    villager,
+                    owner,
+                    activeRoleWithoutMaintenance(level, villager),
+                    level.getGameTime(),
+                    villager.blockPosition());
+        }
+        return assignment;
     }
 
     public static HiredVillagerRole activeRole(ServerLevel level, Villager villager) {
