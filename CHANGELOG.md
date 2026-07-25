@@ -1,5 +1,12 @@
 # Changelog
 
+- Fixed normal conversation openings that could stitch two separate greetings together.
+- Fixed awake hired villagers refusing to follow during the vanilla rest schedule; follow navigation now clears stale Brain pathing state and retries the owner's coordinates before falling back to entity pathing.
+- Reverted the clipboard-wide state reset introduced in `af9892fd`; applying a work-area draft now clears only that draft and preserves the selected clipboard mode and other clipboard state.
+- Fixed the entity-specific interaction guard intercepting clipboard, construction-blueprint, and item-filter interactions before their dedicated villager handlers could open.
+- Routed payment-box assignment through the same villager clipboard menu as every storage assignment mode, added 20 unique opening lines before a choice is made, and replaced doubled assignment-result text with single unique villager responses.
+- Fixed stale assignment-only villager data making a failed hire appear successful, leaving the apparent hirer unable to issue follow commands or assign storage and courier routes.
+
 - Rebalanced couriers to collect a separate skill-scaled allowance from every assigned input container: one guaranteed stack plus up to one bonus stack, capped at two stacks per container.
 
 - Refined courier routes so assigned input and output containers tether to their nearest route node within 16 blocks, use node-to-container-and-back detours, collect from later inputs consistently, and retrace route nodes on the return trip.

@@ -533,7 +533,7 @@ public final class VillagerRetaliationEvents {
         if (event.getTarget() instanceof Villager villager
                 && player instanceof ServerPlayer
                 && VillagerRetaliationItems.isClipboard(interactionStack)
-                && !HiredStorageClipboardItem.mode(interactionStack).isStorageAssignmentMode()) {
+                && !HiredStorageClipboardItem.mode(interactionStack).opensClipboardAssignmentMenu()) {
             InteractionResult result = interactionStack.interactLivingEntity(player, villager, event.getHand());
             if (result.consumesAction()) {
                 event.setCanceled(true);
@@ -706,8 +706,7 @@ public final class VillagerRetaliationEvents {
             event.setCancellationResult(VillagerInteractionService.handleVillagerRightClick(villager, serverPlayer));
             event.setCanceled(true);
             return;
-        }
-        if (event.getTarget() instanceof Villager villager
+        }        if (event.getTarget() instanceof Villager villager
                 && event.getEntity() instanceof Player player
                 && !(player instanceof ServerPlayer)
                 && VillagerInteractionService.shouldSuppressClientVanillaInteraction(

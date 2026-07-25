@@ -906,18 +906,7 @@ public final class VillagerInteractionService {
     }
 
     private static VillagerAssignmentSnapshot ensureAssignmentSnapshot(ServerLevel level, Villager villager) {
-        VillagerAssignmentSnapshot snapshot = VillagerAssignmentService.snapshot(villager);
-        if (snapshot.state() == VillagerAssignmentState.UNASSIGNED) {
-            HiredVillagerContractService.currentContractHirer(villager).ifPresent(owner ->
-                    VillagerAssignmentService.hire(
-                            villager,
-                            owner,
-                            HiredVillagerContractService.activeRole(level, villager),
-                            level.getGameTime(),
-                            villager.blockPosition()));
-            snapshot = VillagerAssignmentService.snapshot(villager);
-        }
-        return snapshot;
+        return HiredVillagerContractService.synchronizeAssignment(level, villager);
     }
 
     private static boolean recruitmentTransitionSatisfied(
@@ -928,7 +917,10 @@ public final class VillagerInteractionService {
             VillagerAssignmentSnapshot assignment,
             boolean wasFollowingPlayer,
             boolean wasStayingHere) {
-        if (action.name().startsWith("HIRE_")) return assignment.ownedBy(player.getUUID());
+        if (action.name().startsWith("HIRE_")) {
+            return assignment.ownedBy(player.getUUID())
+                    && HiredVillagerContractService.isHiredBy(player.serverLevel(), villager, player);
+        }
         return switch (action) {
             case FOLLOW -> VillagerRecruitmentService.isFollowing(villager, player);
             case STAY_HERE -> VillagerRecruitmentService.isStayingHere(villager, player);
@@ -2879,6 +2871,9 @@ public final class VillagerInteractionService {
     private static boolean shouldBypassInteractionScreen(ItemStack stack) {
         return stack.is(Items.VILLAGER_SPAWN_EGG)
                 || stack.is(Items.NAME_TAG)
+                || VillagerRetaliationItems.isClipboard(stack)
+                || ConstructionBlueprintItem.isBlueprint(stack)
+                || VillagerRetaliationItems.isItemFilter(stack)
                 || VillagerRetaliationDebugItems.isDebugVillagerTool(stack.getItem());
     }
 

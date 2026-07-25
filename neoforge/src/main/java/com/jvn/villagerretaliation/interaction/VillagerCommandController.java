@@ -5,6 +5,7 @@ import com.jvn.villagerretaliation.mount.VillagerMountSpeedPolicy;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -173,7 +174,11 @@ public final class VillagerCommandController {
             Path path = horse.getNavigation().createPath(target, 0);
             moved = path != null && horse.getNavigation().moveTo(path, VillagerMountSpeedPolicy.toward(villager, target, speed));
         } else {
-            moved = villager.getNavigation().moveTo(target, speed);
+            VillagerRetaliationVillagerBrainUtil.clearPathingMemories(villager);
+            moved = villager.getNavigation().moveTo(target.getX(), target.getY(), target.getZ(), speed);
+            if (!moved) {
+                moved = villager.getNavigation().moveTo(target, speed);
+            }
         }
         long delay = PATH_RECALCULATION_MIN_TICKS + villager.getRandom().nextInt(PATH_RECALCULATION_RANDOM_TICKS);
         PATH_STATES.put(villager.getUUID(), new PathState(target.getUUID(), target.getX(), target.getY(), target.getZ(), gameTime + delay));
