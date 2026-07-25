@@ -73,12 +73,17 @@ Fully settled terminal scenes remain detailed for seven in-game days, then compa
 Protected villagers do not enter the normal death path after ordinary lethal damage. Final post-mitigation damage is clamped in `LivingDamageEvent.Pre`, the villager remains at one health, and a persistent downed record stores the entry time, earliest recovery time, protection-source diagnostics, data version, and the exact AI/pickup flags that must be restored. Party contracts, quest provider bindings, scene bindings, inventories, and hired work state are not removed.
 
 Protection is active when any of these sources applies:
+- `combat.allVillagersUseDownedState` is enabled;
+- the villager is in a vanilla or player raid and `combat.raidVillagersUseDownedState` is enabled;
+- the villager has an active hired contract and `combat.hiredVillagersUseDownedState` is enabled;
 
 - the villager has an active party contract and `combat.partyVillagersUseDownedState` is enabled;
 - an active quest run from that exact provider UUID uses `death_protection: "while_active"`;
 - that provider successfully started a quest using `death_protection: "after_start"`;
 - an active scene binds the exact villager to an actor with `lethal_damage_policy: "downed"`;
 - the entity has the permanent scoreboard tag `villagerretaliation_essential`.
+
+After a protection source qualifies the villager, the player, mob/entity, and environmental damage toggles independently decide whether that lethal source may down them. Disabled source categories can finish an already-downed villager with a lethal hit. Operator kill, void, and invulnerability-bypassing sources always bypass protection.
 
 While downed, AI, navigation, attacks, work, follow behavior, pickup, trading, gifts, breeding, and dialogue are suspended. Repeated attacks still run ordinary hit consequences once but cannot reduce health. Nearby mobs targeting the villager are cleared on entry and once per second. The client receives transition packets and start-tracking replay, then renders one of three stable whole-body poses: sitting, lying on one side, or resting on hands and knees. Each variation also resizes the villager's hitbox and moves its name-tag attachment to match the downed silhouette.
 

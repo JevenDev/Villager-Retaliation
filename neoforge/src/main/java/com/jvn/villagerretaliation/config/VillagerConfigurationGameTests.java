@@ -71,4 +71,34 @@ public final class VillagerConfigurationGameTests {
                 "missing Craftsman property was reported as present");
         helper.succeed();
     }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void downedCustomizationHasCompatibleDefaultsAndIndependentBindings(GameTestHelper helper) {
+        VillagerRetaliationConfigModel.Combat defaults = new VillagerRetaliationConfigModel.Combat();
+        helper.assertFalse(defaults.allVillagersUseDownedState,
+                "Universal downed protection must remain opt-in");
+        helper.assertFalse(defaults.raidVillagersUseDownedState,
+                "Raid downed protection must remain opt-in");
+        helper.assertFalse(defaults.hiredVillagersUseDownedState,
+                "Hired-worker downed protection must remain opt-in");
+        helper.assertTrue(defaults.partyVillagersUseDownedState,
+                "Party protection must preserve the existing default");
+        helper.assertTrue(defaults.playerDamageDownsEligibleVillagers
+                        && defaults.mobDamageDownsEligibleVillagers
+                        && defaults.environmentalDamageDownsEligibleVillagers,
+                "All ordinary damage categories must preserve existing protection by default");
+        helper.assertTrue(
+                VillagerRetaliationConfig.ALL_VILLAGERS_USE_DOWNED_STATE.option()
+                        != VillagerRetaliationConfig.RAID_VILLAGERS_USE_DOWNED_STATE.option(),
+                "Universal and raid contexts need independent config bindings");
+        helper.assertTrue(
+                VillagerRetaliationConfig.HIRED_VILLAGERS_USE_DOWNED_STATE.option()
+                        != VillagerRetaliationConfig.PARTY_VILLAGERS_USE_DOWNED_STATE.option(),
+                "Hired and party contexts need independent config bindings");
+        helper.assertTrue(
+                VillagerRetaliationConfig.PLAYER_DAMAGE_DOWNS_ELIGIBLE_VILLAGERS.option()
+                        != VillagerRetaliationConfig.ENVIRONMENTAL_DAMAGE_DOWNS_ELIGIBLE_VILLAGERS.option(),
+                "Player and environmental damage need independent config bindings");
+        helper.succeed();
+    }
 }

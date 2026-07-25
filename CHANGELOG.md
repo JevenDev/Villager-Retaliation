@@ -1,4 +1,5 @@
 # Changelog
+- Added composable villager downed-state settings for universal, raid, hired, and party eligibility, plus independent player, mob/entity, and environmental lethal-damage filters.
 
 - Added villager hunger to the overhead reputation debug view and made the vanilla Hunger status effect drain villager hunger through a default-on balance option.
 - Fixed normal conversation openings that could stitch two separate greetings together.

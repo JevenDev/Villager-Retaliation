@@ -339,6 +339,29 @@ public final class VillagerGameplayGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void downedDamageSourcesUseIndependentCategories(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer player = fakePlayer(level, "VrDownedDamageKind");
+        Zombie zombie = spawnZombie(helper, new BlockPos(3, 2, 2));
+
+        helper.assertValueEqual(
+                VillagerDeathProtectionResolver.damageKind(level.damageSources().playerAttack(player)),
+                VillagerDeathProtectionResolver.DamageKind.PLAYER,
+                "player attacks should use the player damage setting");
+        helper.assertValueEqual(
+                VillagerDeathProtectionResolver.damageKind(level.damageSources().mobAttack(zombie)),
+                VillagerDeathProtectionResolver.DamageKind.MOB,
+                "mob attacks should use the mob damage setting");
+        helper.assertValueEqual(
+                VillagerDeathProtectionResolver.damageKind(level.damageSources().fall()),
+                VillagerDeathProtectionResolver.DamageKind.ENVIRONMENTAL,
+                "falls should use the environmental damage setting");
+
+        zombie.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void essentialVillagerDownsOnceAndRejectsRepeatedDamage(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         villager.addTag(VillagerDeathProtectionResolver.ESSENTIAL_ENTITY_TAG);
