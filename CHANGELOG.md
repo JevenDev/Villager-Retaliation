@@ -1,5 +1,6 @@
 # Changelog
 
+- Added villager hunger to the overhead reputation debug view and made the vanilla Hunger status effect drain villager hunger through a default-on balance option.
 - Fixed normal conversation openings that could stitch two separate greetings together.
 - Fixed awake hired villagers refusing to follow during the vanilla rest schedule; follow navigation now clears stale Brain pathing state and retries the owner's coordinates before falling back to entity pathing.
 - Reverted the clipboard-wide state reset introduced in `af9892fd`; applying a work-area draft now clears only that draft and preserves the selected clipboard mode and other clipboard state.

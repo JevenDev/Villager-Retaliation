@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.villager;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationPotionUtil;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
@@ -18,6 +19,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.projectile.ThrownPotion;
 import net.minecraft.world.food.FoodProperties;
@@ -108,6 +111,7 @@ public final class VillagerRecoveryService {
         }
 
         RecoveryState recovery = state(villager);
+        recovery = applyHungerEffect(villager, recovery);
         recovery = consumeExhaustion(recovery);
         recovery = tickNaturalRegeneration(level, villager, recovery);
         save(villager, recovery);
@@ -337,6 +341,19 @@ public final class VillagerRecoveryService {
             else if (food > 0) food--;
         }
         return new RecoveryState(food, saturation, exhaustion, state.healTimer());
+    }
+
+    private static RecoveryState applyHungerEffect(Villager villager, RecoveryState state) {
+        if (!VillagerRetaliationConfig.HUNGER_EFFECT_AFFECTS_VILLAGERS.get()) {
+            return state;
+        }
+        MobEffectInstance hunger = villager.getEffect(MobEffects.HUNGER);
+        if (hunger == null) {
+            return state;
+        }
+        float exhaustion = 0.005F * (hunger.getAmplifier() + 1);
+        return new RecoveryState(
+                state.food(), state.saturation(), state.exhaustion() + exhaustion, state.healTimer());
     }
 
     private static RecoveryState tickNaturalRegeneration(

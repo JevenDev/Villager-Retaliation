@@ -318,6 +318,8 @@ public final class VillagerRetaliationConfigModel {
 
         public boolean requirePlayerKillForProfessionLoot = true;
 
+        public boolean hungerEffectAffectsVillagers = true;
+
         @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
         public double villagerEmeraldDropChance = 0.35;
 
@@ -691,6 +693,8 @@ public final class VillagerRetaliationConfigModel {
         public boolean reputationDebugOverlayShowHealth = false;
 
         public boolean reputationDebugOverlayShowArmor = false;
+
+        public boolean reputationDebugOverlayShowHunger = false;
 
         public boolean reputationDebugOverlayRequireAdvancedTooltips = false;
 
