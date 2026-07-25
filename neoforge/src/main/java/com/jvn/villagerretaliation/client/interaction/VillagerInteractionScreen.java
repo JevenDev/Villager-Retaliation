@@ -58,6 +58,7 @@ import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
 import com.jvn.villagerretaliation.network.VillagerRoutineChatTogglePayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.mood.VillagerMood;
@@ -78,6 +79,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Random;
+import net.minecraft.core.registries.BuiltInRegistries;
 import java.util.Set;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.ChatFormatting;
@@ -320,6 +322,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final List<DialogueOptionDefinition> dialogueOptions = new ArrayList<>();
     private final List<String> knownLikedGiftNames = new ArrayList<>();
     private final List<String> knownDislikedGiftNames = new ArrayList<>();
+    private final List<GiftTooltipReaction> giftTooltipReactions = new ArrayList<>();
     private final VillagerFamilyTreeSnapshot familyTree;
     private final VillagerRelationshipSnapshot relationships;
     private final VillageAllegianceView allegiance;
@@ -454,6 +457,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
+            List<GiftTooltipReaction> giftTooltipReactions,
             VillageAllegianceView allegiance,
             VillagerFamilyTreeSnapshot familyTree,
             VillagerRelationshipSnapshot relationships) {
@@ -528,6 +532,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
+        this.giftTooltipReactions.addAll(giftTooltipReactions);
         this.familyTree = familyTree == null ? VillagerFamilyTreeSnapshot.EMPTY : familyTree;
         this.relationships = relationships == null ? VillagerRelationshipSnapshot.EMPTY : relationships;
         this.allegiance = allegiance == null ? VillageAllegianceView.EMPTY : allegiance;
@@ -579,7 +584,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean forceCameraTowardsVillager,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
-            List<String> knownDislikedGiftNames) {
+            List<String> knownDislikedGiftNames,
+            List<GiftTooltipReaction> giftTooltipReactions) {
         this.reputation = reputation;
         this.reputationLevel = reputationLevel;
         this.mood = mood;
@@ -592,6 +598,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
         this.knownDislikedGiftNames.clear();
         this.knownDislikedGiftNames.addAll(knownDislikedGiftNames);
+        this.giftTooltipReactions.clear();
+        this.giftTooltipReactions.addAll(giftTooltipReactions);
         this.awaitingForcedDialogueResponse = false;
         if (this.page == DialoguePage.TALK || this.page == DialoguePage.ADVENTURES) {
             rebuildOptionsKeepingListPosition();
@@ -4853,6 +4861,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private String walletAmountText() {
+        if (this.walletEmeralds > this.maxWalletEmeralds) {
+            return this.walletEmeralds + " " + this.walletCurrencyPluralName;
+        }
         return this.walletEmeralds + " / " + this.maxWalletEmeralds;
     }
 
@@ -4861,6 +4872,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private String walletTooltipBody() {
+        if (this.walletEmeralds > this.maxWalletEmeralds) {
+            return translate("info.wallet.tooltip.body.over_cap", this.maxWalletEmeralds, this.walletCurrencyPluralName);
+        }
         return translate("info.wallet.tooltip.body", this.walletCurrencyPluralName);
     }
 
@@ -5592,6 +5606,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public List<String> knownDislikedGiftNames() {
             return VillagerInteractionScreen.this.knownDislikedGiftNames;
+        }
+
+        @Override
+        public Optional<GiftTooltipReaction> giftTooltipReaction(ItemStack stack) {
+            String itemId = BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
+            return VillagerInteractionScreen.this.giftTooltipReactions.stream()
+                    .filter(reaction -> reaction.itemId().equals(itemId)).findFirst();
         }
     }
 

@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
+import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
+import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences.GiftReaction;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueEntryMetadata;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import java.util.ArrayList;
@@ -75,5 +77,27 @@ final class DialogueOptionPayloadCodec {
             values.add(buffer.readUtf(STRING_VALUE_LENGTH));
         }
         return List.copyOf(values);
+    }
+    static void writeGiftTooltipReactions(RegistryFriendlyByteBuf buffer, List<GiftTooltipReaction> reactions) {
+        List<GiftTooltipReaction> safeReactions = reactions == null ? List.of() : reactions;
+        buffer.writeVarInt(Math.min(safeReactions.size(), MAX_STRING_LIST_VALUES));
+        for (int index = 0; index < Math.min(safeReactions.size(), MAX_STRING_LIST_VALUES); index++) {
+            GiftTooltipReaction reaction = safeReactions.get(index);
+            buffer.writeUtf(reaction.itemId(), STRING_VALUE_LENGTH);
+            buffer.writeEnum(reaction.reaction());
+            buffer.writeBoolean(reaction.known());
+        }
+    }
+
+    static List<GiftTooltipReaction> readGiftTooltipReactions(RegistryFriendlyByteBuf buffer) {
+        int size = VillagerPayloads.readCollectionSize(buffer, MAX_STRING_LIST_VALUES, "gift tooltip reactions");
+        List<GiftTooltipReaction> reactions = new ArrayList<>(size);
+        for (int index = 0; index < size; index++) {
+            String itemId = buffer.readUtf(STRING_VALUE_LENGTH);
+            GiftReaction reaction = buffer.readEnum(GiftReaction.class);
+            boolean known = buffer.readBoolean();
+            reactions.add(new GiftTooltipReaction(itemId, reaction, known));
+        }
+        return List.copyOf(reactions);
     }
 }

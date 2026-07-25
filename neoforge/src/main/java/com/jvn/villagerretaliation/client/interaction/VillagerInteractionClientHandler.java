@@ -167,6 +167,7 @@ public final class VillagerInteractionClientHandler {
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
                 payload.knownDislikedGiftNames(),
+                payload.giftTooltipReactions(),
                 payload.allegiance(),
                 payload.familyTree(),
                 payload.relationships()
@@ -205,7 +206,8 @@ public final class VillagerInteractionClientHandler {
                 payload.forceCameraTowardsVillager(),
                 payload.dialogueOptions(),
                 payload.knownLikedGiftNames(),
-                payload.knownDislikedGiftNames()
+                payload.knownDislikedGiftNames(),
+                payload.giftTooltipReactions()
             );
         }
     }

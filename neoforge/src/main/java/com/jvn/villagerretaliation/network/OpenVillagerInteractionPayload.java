@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.network;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
+import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import com.jvn.villagerretaliation.social.VillagerFamilyTreeSnapshot;
@@ -78,6 +79,7 @@ public record OpenVillagerInteractionPayload(
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
         List<String> knownDislikedGiftNames,
+        List<GiftTooltipReaction> giftTooltipReactions,
         VillageAllegianceView allegiance,
         VillagerFamilyTreeSnapshot familyTree,
         VillagerRelationshipSnapshot relationships)
@@ -160,6 +162,7 @@ public record OpenVillagerInteractionPayload(
         DialogueOptionPayloadCodec.writeDialogueOptions(buffer, payload.dialogueOptions());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.knownLikedGiftNames());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.knownDislikedGiftNames());
+        DialogueOptionPayloadCodec.writeGiftTooltipReactions(buffer, payload.giftTooltipReactions());
         VillageAllegianceView.encode(buffer, payload.allegiance());
         writeFamilyTree(buffer, payload.familyTree());
         writeRelationships(buffer, payload.relationships());
@@ -228,6 +231,7 @@ public record OpenVillagerInteractionPayload(
                 DialogueOptionPayloadCodec.readDialogueOptions(buffer),
                 DialogueOptionPayloadCodec.readStringList(buffer),
                 DialogueOptionPayloadCodec.readStringList(buffer),
+                DialogueOptionPayloadCodec.readGiftTooltipReactions(buffer),
                 VillageAllegianceView.decode(buffer),
                 readFamilyTree(buffer),
                 readRelationships(buffer)

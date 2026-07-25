@@ -127,18 +127,14 @@ final class VillagerInteractionUiUtil {
         if (stack.isEmpty()) {
             return;
         }
+        renderBoundedComponentTooltipInCurrentPose(graphics, font, itemTooltipLines(stack), mouseX, mouseY, scale, originX, originY);
+    }
+
+    static List<Component> itemTooltipLines(ItemStack stack) {
         Minecraft minecraft = Minecraft.getInstance();
         TooltipFlag tooltipFlag = minecraft.options.advancedItemTooltips ? TooltipFlag.ADVANCED : TooltipFlag.NORMAL;
         Item.TooltipContext tooltipContext = minecraft.level == null ? Item.TooltipContext.EMPTY : Item.TooltipContext.of(minecraft.level);
-        renderBoundedComponentTooltipInCurrentPose(
-                graphics,
-                font,
-                stack.getTooltipLines(tooltipContext, minecraft.player, tooltipFlag),
-                mouseX,
-                mouseY,
-                scale,
-                originX,
-                originY);
+        return stack.getTooltipLines(tooltipContext, minecraft.player, tooltipFlag);
     }
 
     private static ClientTooltipPositioner boundedTooltipPositioner(GuiGraphics graphics, float scale, float originX, float originY) {

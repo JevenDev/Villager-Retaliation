@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.network;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueDisposition;
+import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.mood.VillagerMood;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
@@ -18,7 +19,8 @@ public record VillagerDialogueResponsePayload(
         boolean forceCameraTowardsVillager,
         List<DialogueOptionDefinition> dialogueOptions,
         List<String> knownLikedGiftNames,
-        List<String> knownDislikedGiftNames)
+        List<String> knownDislikedGiftNames,
+        List<GiftTooltipReaction> giftTooltipReactions)
         implements CustomPacketPayload {
     public static final Type<VillagerDialogueResponsePayload> TYPE = VillagerPayloads.type("villager_dialogue_response");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerDialogueResponsePayload> STREAM_CODEC =
@@ -34,6 +36,7 @@ public record VillagerDialogueResponsePayload(
         DialogueOptionPayloadCodec.writeDialogueOptions(buffer, payload.dialogueOptions());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.knownLikedGiftNames());
         DialogueOptionPayloadCodec.writeStringList(buffer, payload.knownDislikedGiftNames());
+        DialogueOptionPayloadCodec.writeGiftTooltipReactions(buffer, payload.giftTooltipReactions());
     }
 
     private static VillagerDialogueResponsePayload decode(RegistryFriendlyByteBuf buffer) {
@@ -46,7 +49,8 @@ public record VillagerDialogueResponsePayload(
                 buffer.readBoolean(),
                 DialogueOptionPayloadCodec.readDialogueOptions(buffer),
                 DialogueOptionPayloadCodec.readStringList(buffer),
-                DialogueOptionPayloadCodec.readStringList(buffer)
+                DialogueOptionPayloadCodec.readStringList(buffer),
+                DialogueOptionPayloadCodec.readGiftTooltipReactions(buffer)
         );
     }
 
