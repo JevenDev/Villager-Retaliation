@@ -71,20 +71,26 @@ public final class VillagerGiftRequestHandler {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_empty_slot");
             return;
         }
-        if (!VillagerInventoryAccess.canAddItems(villager, List.of(selectedStack.copy()))) {
+
+        ServerLevel level = target.level();
+        String locale = VillagerLocale.locale(player);
+        VillagerProfession profession = villager.getVillagerData().getProfession();
+        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, selectedStack);
+        boolean rejected = giftPreference.reaction() == VillagerGiftPreferences.GiftReaction.HATED;
+        if (!rejected && !VillagerInventoryAccess.canAddItems(villager, List.of(selectedStack.copy()))) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_inventory_full");
             return;
         }
 
-        ServerLevel level = target.level();
-        String locale = VillagerLocale.locale(player);
         Optional<VillagerTakenItemTracker.TakenItemOwner> takenItemOwner =
                 VillagerTakenItemTracker.owner(selectedStack);
-        ItemStack giftedStack = player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
+        ItemStack giftedStack = rejected
+                ? selectedStack.copy()
+                : player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
         VillagerTakenItemTracker.clear(giftedStack);
-        player.getInventory().setChanged();
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, giftedStack);
+        if (!rejected) {
+            player.getInventory().setChanged();
+        }
         int reputationValue = adjustedGiftReputation(level, villager, giftPreference);
         reputationValue = VillagerInteractionSavedData.get(level).limitPositiveGiftReputation(
                 villager.getUUID(),
@@ -111,8 +117,10 @@ public final class VillagerGiftRequestHandler {
             );
         }
         VillagerReputationManager.addGiftReputation(level, villager, player, reputationValue);
-        VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference);
-        rememberGearGift(level, villager, player, giftedStack);
+        if (!rejected) {
+            VillagerGiftKeepsakes.storeGift(level, villager, player, giftedStack, giftPreference);
+            rememberGearGift(level, villager, player, giftedStack);
+        }
         VillageEventMemory.rememberGift(
                 level,
                 villager.blockPosition(),
