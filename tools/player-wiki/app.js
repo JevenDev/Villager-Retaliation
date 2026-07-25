@@ -78,7 +78,7 @@ const PAGES = [
     title: "Advancements",
     group: "Reference",
     icon: "trophy",
-    description: "The reputation advancement tab, visible and hidden challenges.",
+    description: "The reputation advancement tab's trust, story, and conflict milestones.",
     render: renderAdvancements
   },
   {
@@ -251,6 +251,8 @@ function focusAdvancementRow(advancementId) {
   if (!advancementId) return;
   const row = document.getElementById(advancementRowId(advancementId));
   if (!row) return;
+  const disclosure = row.closest("details");
+  if (disclosure) disclosure.open = true;
   row.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
@@ -446,7 +448,7 @@ function render() {
       const advancement = findAdvancement(route.id);
       renderDocument("Advancements", advancement
         ? `Focused on ${advancement.title}.`
-        : "The reputation advancement tab, visible and hidden challenges.", renderAdvancements({
+        : "The reputation advancement tab's trust, story, and conflict milestones.", renderAdvancements({
         focusedAdvancementId: advancement?.id || ""
       }), {
         icon: "trophy",
@@ -1360,10 +1362,11 @@ function advancementRows() {
   const byId = new Map(advancements.map((advancement) => [advancement.id, advancement]));
   return advancements.map((advancement) => {
     const parentId = normalizedAdvancementParent(advancement.parent);
+    const parent = byId.get(parentId);
     return {
       ...advancement,
       parentId,
-      parentTitle: byId.get(parentId)?.title || "",
+      parentTitle: parent?.hidden ? "Hidden advancement" : (parent?.title || ""),
       depth: advancementDepth(advancement.id, byId)
     };
   });
@@ -1408,13 +1411,7 @@ function groupedAdvancements() {
       "hero_not_menace",
       "an_unwise_decision"
     ],
-    hidden: [
-      "accidentally_of_course",
-      "bait_and_betrayal",
-      "no_rest_for_the_wicked",
-      "peace_offering",
-      "cover_them_in_debris"
-    ]
+    hidden: []
   };
 
   const labels = {
@@ -1422,7 +1419,7 @@ function groupedAdvancements() {
     trust: "Reputation Growth",
     story: "Story Progression",
     retaliation: "Conflict And Consequences",
-    hidden: "Hidden And Mischief Paths",
+    hidden: "Hidden Advancements",
     other: "Other Advancements"
   };
 
@@ -1440,7 +1437,7 @@ function groupedAdvancements() {
   };
 
   rows.forEach((row) => {
-    const group = idToGroup.get(row.id) || "other";
+    const group = row.hidden ? "hidden" : (idToGroup.get(row.id) || "other");
     groups[group].push(row);
   });
 
@@ -1465,16 +1462,28 @@ function renderAdvancements(options = {}) {
   const focusedAdvancementId = options.focusedAdvancementId || "";
   const groups = groupedAdvancements();
   const groupedSections = groups
-    .map((group) => section(group.title, `
+    .map((group) => {
+      const table = `
         <div class="table-wrap"><table class="advancement-flow-table"><colgroup><col class="adv-col-title"><col class="adv-col-parent"><col class="adv-col-type"><col class="adv-col-description"><col class="adv-col-hidden"></colgroup><thead><tr><th>Advancement</th><th>Unlocks After</th><th>Type</th><th>Description</th><th>Hidden</th></tr></thead><tbody>
           ${group.rows.map((advancement) => `<tr id="${escapeHtml(advancementRowId(advancement.id))}" class="${advancement.id === focusedAdvancementId ? "advancement-row-target" : ""}"><td>${escapeHtml(advancement.title)}</td><td>${escapeHtml(advancement.parentTitle || "Root")}</td><td>${escapeHtml(advancement.frame)}</td><td>${escapeHtml(advancement.description)}</td><td>${advancement.hidden ? "Yes" : "No"}</td></tr>`).join("")}
         </tbody></table></div>
-      `))
+      `;
+      if (group.key === "hidden") {
+        const isFocused = group.rows.some((advancement) => advancement.id === focusedAdvancementId);
+        return section(group.title, `
+          <details class="reference-panel advancement-spoiler-panel"${isFocused ? " open" : ""}>
+            <summary>Show hidden advancement spoilers</summary>
+            <div class="advancement-spoiler-content">${table}</div>
+          </details>
+        `);
+      }
+      return section(group.title, table);
+    })
     .join("");
 
   return `
     ${section("Reputation Milestones", `
-      <p>The Reputation advancement tab tracks trust, story, conflict, and hidden challenges. Related milestones are grouped below so you can see what each one follows.</p>
+      <p>The Reputation advancement tab tracks trust, story, and conflict milestones. Related visible milestones are grouped below so you can see what each one follows.</p>
     `)}
     ${groupedSections}
   `;
@@ -1510,7 +1519,7 @@ function searchIndex() {
     haystack: `${quest.title} ${quest.description} ${quest.questlineLabel} ${quest.groupLabel} ${(quest.tags || []).join(" ")} ${quest.objectives.join(" ")} ${quest.requirements.professions.join(" ")} ${quest.requirements.skills.map((skill) => skill.skill).join(" ")}`.toLowerCase()
   }));
   const advancements = Array.isArray(DATA.advancements) ? DATA.advancements : [];
-  const advancementResults = advancements.map((advancement) => ({
+  const advancementResults = advancements.filter((advancement) => !advancement.hidden).map((advancement) => ({
     type: "Advancement",
     title: advancement.title,
     description: `${advancement.frame}${advancement.hidden ? " hidden" : ""} - ${advancement.description || "Reputation tab advancement."}`,

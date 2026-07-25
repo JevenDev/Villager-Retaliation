@@ -448,23 +448,79 @@
 
   function beta13RenderSkills() {
     return `
+      ${section("Reading A Villager", `
+        <p>Open an adult villager's interaction screen and use the page switcher to cycle through Skills, Profile, and Job Stats. Hover a Profile point or Job Stats role for a quick readout, then select the role for its full capability details.</p>
+        ${beta13FactList([
+          ["Skills", "Learned capability that affects trades, quest gates, job qualification, and hired-work performance"],
+          ["Profile", "Persistent personality attributes that describe how a villager tends to think and react"],
+          ["Job Stats", "The hiring view for role readiness, skill pairings, aptitude, speed, and transfer capacity"]
+        ])}
+      `)}
+      ${section("Profile", `
+        <p>Each villager has five persistent Social Attributes from 1 to 100. They appear as a five-point profile chart: the farther a point reaches, the stronger that trait is. The values describe personality rather than a job level or a player-controlled build.</p>
+        ${beta13Table(
+          ["Attribute", "What it describes", "Examples of behavior it can shape"],
+          [
+            ["Knowledge", "Understanding, memory, and social awareness", "Suspicion, dialogue, and social awareness"],
+            ["Guts", "Courage under pressure and appetite for risk", "Fear, anger, protective behavior, and standing ground"],
+            ["Proficiency", "Practical capability, precision, and tool handling", "Stress, pride, combat recovery, and ranged accuracy"],
+            ["Kindness", "Patience, generosity, and care for others", "Gratitude, contentment, grief, and social reactions"],
+            ["Charm", "Warmth, persuasion, and social grace", "Dialogue and grateful social moments"]
+          ]
+        )}
+        ${beta13FactList([
+          ["Poor", "1 to 19"],
+          ["Modest", "20 to 39"],
+          ["Average", "40 to 59"],
+          ["Strong", "60 to 79"],
+          ["Exceptional", "80 to 100"]
+        ])}
+        <p>Profile effects are configurable. When Social Attribute behavior or one of its sub-options is disabled, the profile can still be viewed but does not apply that behavioral effect.</p>
+      `)}
       ${section("Skills", `
-        <p>Every villager has persistent skill scores from 1 to 100. Profession influences the starting profile, but the values remain individual.</p>
+        <p>Every villager has persistent skill scores from 1 to 100. Profession influences the starting profile, but the values remain individual and can grow through configured trade and hired-work systems.</p>
         ${pillList([
           "Farming", "Fishing", "Smithing", "Crafting", "Trading", "Medicine", "Archery", "Guarding", "Cooking",
           "Animal Handling", "Cartography", "Scholarship", "Gathering", "Masonry", "Mining", "Leatherworking", "Diplomacy", "Survival"
         ])}
-      `)}
-      ${section("Job Stats", `
-        <p>The villager information view cycles through Skills, Profile, and Job Stats. Job Stats is the practical hiring view: it shows whether each role is ready, why a profession bypass applies, the two contributing skills, weighted aptitude, work speed, transfer capacity, and remaining qualification progress.</p>
         ${beta13FactList([
-          ["Ordinary qualification", "Primary skill + support skill totals at least 61"],
-          ["Aptitude weighting", "70 percent primary skill, 30 percent support skill"],
-          ["Skill work-speed range", "75 to 125 percent"],
-          ["Transfer-capacity range", "50 to 150 percent"],
-          ["Matching profession", "Automatically qualifies for the matching role"]
+          ["Novice", "1 to 19"],
+          ["Apprentice", "20 to 39"],
+          ["Skilled", "40 to 59"],
+          ["Expert", "60 to 79"],
+          ["Master", "80 to 100"]
         ])}
       `)}
+      ${section("Job Stats", `
+        <p>Job Stats is the practical hiring view. Each role shows a ready or locked status and a bar for its two relevant skills. The bar is the unweighted skill total toward 61; a matching profession can make a role ready before that total is reached.</p>
+        ${beta13FactList([
+          ["Ordinary qualification", "Primary skill + support skill must total at least 61; exactly 60 remains locked"],
+          ["Profession qualification", "A matching vanilla profession automatically qualifies for its canonical role"],
+          ["Universal and restricted roles", "Courier is ready for every adult; Nitwit work is available only to nitwits"],
+          ["Aptitude", "Rounded 70 percent primary skill + 30 percent support skill"],
+          ["Skill work speed", "75 to 125 percent from aptitude; it changes task cadence, not furnace, smoker, blast-furnace, or brewing timers"],
+          ["Transfer capacity", "50 to 150 percent from aptitude for supported collection trips; Couriers carry 64 to 128 items per assigned input container"]
+        ])}
+      `)}
+      ${section("Role Skill Pairs", beta13Table(
+        ["Role", "Primary skill", "Support skill"],
+        [
+          ["Combat", "Guarding", "Archery"],
+          ["Hunting", "Archery", "Survival"],
+          ["Mining", "Mining", "Masonry"],
+          ["Logging", "Gathering", "Crafting"],
+          ["Farming", "Farming", "Gathering"],
+          ["Fishing", "Fishing", "Survival"],
+          ["Brewing", "Medicine", "Scholarship"],
+          ["Craftsman", "Crafting", "Gathering"],
+          ["Builder", "Masonry", "Crafting"],
+          ["Animal Handling", "Animal Handling", "Farming"],
+          ["Cook", "Cooking", "Gathering"],
+          ["Smelter", "Smithing", "Mining"],
+          ["Courier", "Gathering", "Survival"],
+          ["Nitwit", "Diplomacy", "Survival"]
+        ]
+      ))}
       ${section("Growth", `
         ${simpleList([
           "Successful hired actions can train the role's primary and support skills at a 70/30 split when hired-work growth is enabled.",
@@ -473,11 +529,6 @@
           "Skill affects job throughput and skill-generated trades, and some quests use hidden skill minimums.",
           "Station processing timers remain unchanged even when the worker's transfer and action cadence improve."
         ])}
-      `)}
-      ${section("Social Attributes", `
-        <p>Knowledge, Guts, Proficiency, Kindness, and Charm are persistent 1-to-100 personality attributes. When their individual config switches are enabled, they can shape mood, dialogue, reputation changes, gossip, retaliation, and other social reactions.</p>
-        ${pillList(["Knowledge", "Guts", "Proficiency", "Kindness", "Charm"])}
-        <p>Attributes are not extra player-controlled job levels. They describe how a villager tends to react, while skills describe learned capability.</p>
       `)}
     `;
   }
