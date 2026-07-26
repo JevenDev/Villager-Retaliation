@@ -589,6 +589,9 @@ public final class PartyVillagerContractService {
             Villager villager,
             PartyRecord party,
             PartyVillagerRecord record) {
+        if (record.moveToReturnCommanderId() != null && !record.moveToHolding()) {
+            return;
+        }
         if (record.commandMode() == PartyCommandMode.STAY) {
             ResourceLocation dimension = record.stayDimension();
             if (dimension != null && dimension.equals(level.dimension().location())) {

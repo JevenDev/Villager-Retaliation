@@ -1,4 +1,5 @@
 # Changelog
+- Fixed mounted party villagers having their Move To horse route canceled as a stay order; they now hold at the destination and automatically regroup when the commander returns within three blocks.
 - Fixed unscoped profession greetings and farewells bleeding into reputation-specific opening and closing pools.
 - Fixed hired-work checkbox options being rejected by the recruitment trust gate instead of reporting the updated setting naturally.
 - Fixed currency gift names such as Emerald appearing lowercase in the known-gifts tooltip.
