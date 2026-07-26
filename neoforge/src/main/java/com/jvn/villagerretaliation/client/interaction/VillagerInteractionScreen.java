@@ -1941,6 +1941,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addClipboardMenuOptions() {
         addOption("clipboard.assign_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.ASSIGN));
+        addOption("clipboard.assign_storage_keep_selection",
+                () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.ASSIGN_KEEP_SELECTION));
         addOption("clipboard.show_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.SHOW));
         addOption("clipboard.remove_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.REMOVE));
         addOption("root.goodbye", this::leaveConversation);
@@ -5047,15 +5049,21 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int interactionOptionStackWidth() {
         int desiredWidth = INTERACTION_OPTION_WIDTH;
         for (int index = 0; index < this.options.size(); index++) {
-            for (String line : VillagerInteractionOptionList.pixelOptionLabelLines(this.optionListContext, index)) {
+            for (String line : VillagerInteractionOptionList.pixelOptionLabelLines(
+                    interactionOptionLabel(index),
+                    INTERACTION_OPTION_MAX_LINE_CHARACTERS)) {
                 int iconWidth = this.options.get(index).locked()
                         ? INTERACTION_LOCKED_ICON_WIDTH + INTERACTION_LOCKED_ICON_TEXT_GAP
+                        : 0;
+                int checkboxWidth = this.options.get(index).checkbox()
+                        ? INTERACTION_OPTION_CHECKBOX_SIZE + INTERACTION_OPTION_CHECKBOX_TEXT_GAP
                         : 0;
                 desiredWidth = Math.max(
                         desiredWidth,
                         this.font.width(line)
                                 + INTERACTION_OPTION_TEXT_INSET
                                 + iconWidth
+                                + checkboxWidth
                                 + INTERACTION_OPTION_TEXT_RIGHT_PADDING);
             }
         }

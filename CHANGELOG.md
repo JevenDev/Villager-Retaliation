@@ -1,4 +1,6 @@
 # Changelog
+- Added cooperative villager traffic handling: villagers approaching the same narrow passage or route now use stable right-of-way, briefly queue when blocked, and sidestep when nearby terrain provides a safe passing space.
+- Fixed checkbox and icon option labels being clipped instead of wrapping, and added an "Assign and Keep Selection" clipboard action for reusing selected containers across villagers.
 - Fixed party follow reconciliation repeatedly restarting an active follow command and interfering with combat navigation, which could cause extreme movement-speed spikes after retaliation began.
 - Added each party villager's gender above their profession in the inventory name-hover tooltip.
 - Fixed mounted party villagers having their Move To horse route canceled as a stay order; they now hold at the destination and automatically regroup when the commander returns within three blocks.

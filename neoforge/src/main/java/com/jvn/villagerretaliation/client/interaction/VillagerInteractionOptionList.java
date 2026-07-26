@@ -623,7 +623,29 @@ final class VillagerInteractionOptionList {
     }
 
     static List<String> pixelOptionLabelLines(Context context, int index) {
-        return wrapPlainTextByCharacters(context.pixelOptionLabel(index), context.pixelOptionMaxLineCharacters());
+        List<String> characterWrapped = pixelOptionLabelLines(
+                context.pixelOptionLabel(index),
+                context.pixelOptionMaxLineCharacters());
+        int leadingWidth = 0;
+        if (context.pixelOptionHasCheckbox(index)) {
+            leadingWidth += context.pixelOptionCheckboxWidth() + context.pixelOptionCheckboxTextGap();
+        }
+        if (context.pixelOptionIconTexture(index) != null) {
+            leadingWidth += context.pixelOptionIconWidth(index) + context.pixelOptionIconTextGap(index);
+        }
+        int availableWidth = Math.max(1, context.optionWidth()
+                - context.optionTextInset()
+                - leadingWidth
+                - context.pixelOptionTextRightPadding());
+        List<String> widthWrapped = new java.util.ArrayList<>();
+        for (String line : characterWrapped) {
+            widthWrapped.addAll(wrapPlainText(context.font(), line, availableWidth, Integer.MAX_VALUE));
+        }
+        return widthWrapped.isEmpty() ? List.of("") : List.copyOf(widthWrapped);
+    }
+
+    static List<String> pixelOptionLabelLines(String label, int maxCharacters) {
+        return wrapPlainTextByCharacters(label, maxCharacters);
     }
 
     private static List<String> wrapPlainTextByCharacters(String text, int maxCharacters) {

@@ -30,6 +30,7 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
@@ -44,6 +45,51 @@ public final class VillagerBehaviorSuppressionGameTests {
     }
 
     private VillagerBehaviorSuppressionGameTests() {
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerTrafficUsesStableRightOfWayAndSafePassing(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Villager trailing = spawnVillager(helper, new BlockPos(1, 2, 1));
+        Villager leading = spawnVillager(helper, new BlockPos(2, 2, 1));
+        Vec3 east = new Vec3(1.0D, 0.0D, 0.0D);
+        Vec3 west = new Vec3(-1.0D, 0.0D, 0.0D);
+
+        helper.assertTrue(
+                VillagerTrafficService.shouldYieldTo(trailing, leading, east, east),
+                "the trailing villager should yield on a shared route");
+        helper.assertFalse(
+                VillagerTrafficService.shouldYieldTo(leading, trailing, east, east),
+                "the leading villager should retain right-of-way on a shared route");
+
+        boolean trailingYieldsHeadOn = VillagerTrafficService.shouldYieldTo(trailing, leading, east, west);
+        boolean leadingYieldsHeadOn = VillagerTrafficService.shouldYieldTo(leading, trailing, west, east);
+        helper.assertTrue(
+                trailingYieldsHeadOn != leadingYieldsHeadOn,
+                "exactly one head-on villager should receive stable right-of-way");
+
+        BlockPos openSouthFloor = helper.absolutePos(new BlockPos(1, 1, 2));
+        BlockPos openNorthFloor = helper.absolutePos(new BlockPos(1, 1, 0));
+        level.setBlockAndUpdate(openSouthFloor, Blocks.STONE.defaultBlockState());
+        level.setBlockAndUpdate(openNorthFloor, Blocks.STONE.defaultBlockState());
+        helper.assertTrue(
+                VillagerTrafficService.safeSidestep(level, trailing, east) != null,
+                "open terrain should provide a safe passing maneuver");
+
+        for (BlockPos relative : List.of(
+                new BlockPos(1, 2, 2),
+                new BlockPos(1, 3, 2),
+                new BlockPos(1, 2, 0),
+                new BlockPos(1, 3, 0))) {
+            level.setBlockAndUpdate(helper.absolutePos(relative), Blocks.STONE.defaultBlockState());
+        }
+        helper.assertTrue(
+                VillagerTrafficService.safeSidestep(level, trailing, east) == null,
+                "a one-block-wide passage should make the villager queue instead of clipping sideways");
+
+        trailing.discard();
+        leading.discard();
+        helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)

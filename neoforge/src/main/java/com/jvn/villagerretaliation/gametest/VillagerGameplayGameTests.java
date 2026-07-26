@@ -964,6 +964,22 @@ public final class VillagerGameplayGameTests {
                 HiredStorageClipboardItem.selectedContainers(clipboard).isEmpty(),
                 "clipboard should contain the selected chest");
 
+        var selectedStorage = HiredStorageClipboardItem.selectedStoragePositions(
+                clipboard,
+                HiredStorageClipboardItem.mode(clipboard).assignmentPurpose());
+        helper.assertTrue(
+                HiredStorageClipboardItem.assignSelectedStorage(
+                        hirer,
+                        level,
+                        villager,
+                        clipboard,
+                        selectedStorage,
+                        true).isPresent(),
+                "keep-selection assignment should produce a result");
+        helper.assertFalse(
+                HiredStorageClipboardItem.selectedContainers(clipboard).isEmpty(),
+                "keep-selection assignment should preserve the selected chest");
+
         helper.assertFalse(
                 VillagerInteractionService.shouldHandleInteraction(villager, hirer, InteractionHand.MAIN_HAND),
                 "the generic dialogue route must not claim a clipboard interaction");
