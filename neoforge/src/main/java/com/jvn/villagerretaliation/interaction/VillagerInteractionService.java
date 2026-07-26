@@ -1409,7 +1409,8 @@ public final class VillagerInteractionService {
 
         focusVillagerOnPlayer(villager, player);
         switch (action) {
-            case ASSIGN -> assignClipboardStorage(player, level, villager, clipboard);
+            case ASSIGN -> assignClipboardStorage(player, level, villager, clipboard, false);
+            case ASSIGN_KEEP_SELECTION -> assignClipboardStorage(player, level, villager, clipboard, true);
             case SHOW -> showAssignedStorage(player, level, villager);
             case REMOVE -> removeAssignedStorage(player, level, villager);
             case CLEAR_SELECTION -> {
@@ -2162,7 +2163,12 @@ public final class VillagerInteractionService {
         );
     }
 
-    private static void assignClipboardStorage(ServerPlayer player, ServerLevel level, Villager villager, ItemStack clipboard) {
+    private static void assignClipboardStorage(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            ItemStack clipboard,
+            boolean keepSelection) {
         if (!canManageAssignedStorage(level, villager, player)) {
             sendVillagerNotice(player, villager, "interaction.storage.assign_requires_access");
             return;
@@ -2179,7 +2185,8 @@ public final class VillagerInteractionService {
                 level,
                 villager,
                 clipboard,
-                selected);
+                selected,
+                keepSelection);
         message.ifPresent(summary -> sendVillagerNotice(player, villager, summary.key(), summary.replacements()));
     }
 

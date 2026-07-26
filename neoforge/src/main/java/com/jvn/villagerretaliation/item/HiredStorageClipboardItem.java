@@ -365,6 +365,16 @@ public final class HiredStorageClipboardItem extends Item {
             Villager villager,
             ItemStack stack,
             List<SelectedStoragePosition> selected) {
+        return assignSelectedStorage(player, level, villager, stack, selected, false);
+    }
+
+    public static Optional<AssignmentSummaryMessage> assignSelectedStorage(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            ItemStack stack,
+            List<SelectedStoragePosition> selected,
+            boolean keepSelection) {
         if (selected.stream().anyMatch(SelectedStoragePosition::paymentPurpose)
                 && !HiredVillagerContractService.isHiredBy(level, villager, player)) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.payment_storage.requires_hire");
@@ -396,7 +406,7 @@ public final class HiredStorageClipboardItem extends Item {
             }
         }
 
-        if (assigned > 0) {
+        if (assigned > 0 && !keepSelection) {
             clearSelection(stack);
             syncClipboardStack(player);
         }

@@ -1061,6 +1061,7 @@
   "villagerretaliation.gui.clipboard_workforce.worker_target": "Target: %s",
   "villagerretaliation.gui.clipboard_workforce.working": "Working: %s",
   "villagerretaliation.gui.clipboard.assign_storage": "Assign Clipboard Storage",
+  "villagerretaliation.gui.clipboard.assign_storage_keep_selection": "Assign and Keep Selection",
   "villagerretaliation.gui.clipboard.clear_selection": "Clear Clipboard Selection",
   "villagerretaliation.gui.clipboard.remove_storage": "Remove Assigned Storage",
   "villagerretaliation.gui.clipboard.show_storage": "Show Clipboard Storage",

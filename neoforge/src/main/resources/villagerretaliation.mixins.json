@@ -17,6 +17,7 @@
     "GoToPotentialJobSiteMixin",
     "HarvestFarmlandMixin",
     "HorseVillagerPassengerPositionMixin",
+    "PathNavigationTrafficMixin",
     "PanicGoalMixin",
     "ReactToBellMixin",
     "ServerPlayerDuelDropMixin",
