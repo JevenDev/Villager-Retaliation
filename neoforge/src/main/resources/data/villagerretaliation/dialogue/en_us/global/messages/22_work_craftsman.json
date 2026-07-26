@@ -390,12 +390,7 @@
         "I am staying with {status} until it is sorted.",
         "I am working through {status} one step at a time.",
         "The job has me on {status} for now.",
-        "I am keeping an eye on {status}.",
-        "I am working on {status} right now. My current task is {status}.",
-        "My current task is {status}. I am focused on {status} at the moment.",
-        "I am focused on {status} at the moment. Right now I am handling {status}.",
-        "Right now I am handling {status}. The work is currently {status}.",
-        "The work is currently {status}. I am keeping the job moving with {status}."
+        "I am keeping an eye on {status}."
       ],
       "id": "global.messages.22_work_craftsman.work_report"
     },
@@ -416,12 +411,7 @@
         "I made another pass at the crafting table.",
         "This part of the job is finished.",
         "I have done another bit of the work.",
-        "The crafting task is still moving along.",
-        "I finished another crafting step. That part of the crafting is done.",
-        "That part of the crafting is done. I made some progress at the table.",
-        "I made some progress at the table. I wrapped up another recipe.",
-        "I wrapped up another recipe. The latest crafting task is handled.",
-        "The latest crafting task is handled. I finished what I could for now."
+        "The crafting task is still moving along."
       ],
       "id": "global.messages.22_work_craftsman.final_report"
     }

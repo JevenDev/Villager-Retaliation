@@ -494,12 +494,7 @@
         "I am keeping the work moving where I can.",
         "I am still on the job you gave me.",
         "I am taking the work one step at a time.",
-        "I am staying focused until this job is done.",
-        "I am still moving loads along the assigned route. The delivery work is moving along.",
-        "The delivery work is moving along. I am keeping at the delivery work.",
-        "I am keeping at the delivery work. I am staying with the task you assigned me.",
-        "I am staying with the task you assigned me. I am making steady progress with the delivery work.",
-        "I am making steady progress with the delivery work. There is still more to do, and I am on it."
+        "I am staying focused until this job is done."
       ],
       "id": "global.messages.22_work_courier.messages.work_report.018"
     },
@@ -520,12 +515,7 @@
         "I have made a little more progress.",
         "This part is done, and I am staying with it.",
         "I finished what I could for now.",
-        "The job is still moving forward.",
-        "I finished another delivery. That bit of delivery work is done for now.",
-        "That bit of delivery work is done for now. I made some progress on the delivery work.",
-        "I made some progress on the delivery work. I took care of another part of the job.",
-        "I took care of another part of the job. The delivery work is moving along nicely.",
-        "The delivery work is moving along nicely. I wrapped up another bit of work."
+        "The job is still moving forward."
       ],
       "id": "global.messages.22_work_courier.messages.work_final_report.019"
     }

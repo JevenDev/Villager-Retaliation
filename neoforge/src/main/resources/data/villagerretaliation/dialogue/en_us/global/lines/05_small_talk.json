@@ -13,17 +13,7 @@
         "Words can hurt too, you know.",
         "I do not want to talk if you are going to be sharp.",
         "That sounded like something a bully would say.",
-        "Please use better words next time.",
-        "That was not nice. That made my stomach feel <shake>small</shake>.",
-        "That made my stomach feel <shake>small</shake>. I do not like when people talk like that.",
-        "I do not like when people talk like that. You should not say things just to make someone feel bad.",
-        "You should not say things just to make someone feel bad. I am not laughing. That was mean.",
-        "I am not laughing. That was mean. I think I am going to stand near someone kinder.",
-        "I think I am going to stand near someone kinder. Words can hurt too, you know.",
-        "Words can hurt too, you know. I do not want to talk if you are going to be sharp.",
-        "I do not want to talk if you are going to be sharp. That sounded like something a bully would say.",
-        "That sounded like something a bully would say. Please use better words next time.",
-        "Please use better words next time. That was not nice."
+        "Please use better words next time."
       ],
       "option": "baby_insult",
       "show_for_adults": false,
@@ -42,17 +32,7 @@
         "That made me want to hide.",
         "I do not like the way you are looking at me.",
         "Please do not talk to me like that again.",
-        "<shake>I want to go now.</shake>",
-        "You are being scary. Please stop. I do not like scary voices.",
-        "Please stop. I do not like scary voices. I am going to stand over there now.",
-        "I am going to stand over there now. I do not want to be close when you talk like that.",
-        "I do not want to be close when you talk like that. Your words feel too loud, even when you are not shouting.",
-        "Your words feel too loud, even when you are not shouting. I am going to find someone older.",
-        "I am going to find someone older. That made me want to hide.",
-        "That made me want to hide. I do not like the way you are looking at me.",
-        "I do not like the way you are looking at me. Please do not talk to me like that again.",
-        "Please do not talk to me like that again. <shake>I want to go now.</shake>",
-        "<shake>I want to go now.</shake> You are being scary."
+        "<shake>I want to go now.</shake>"
       ],
       "dispositions": [
         "hostile",
@@ -75,17 +55,7 @@
         "A village is mostly chores, greetings, repairs, and knowing who needs help before they ask.",
         "Nothing here stays private for long, but not everything becomes gossip. Some things become care.",
         "The bell is not only for danger. It reminds us that we are responsible for each other.",
-        "A quiet day in the village is not empty. It is full of things going right.",
-        "The paths tell you plenty if you watch who hurries and who lingers. The square tells you who is busy, who is worried, and who is pretending not to be either.",
-        "The square tells you who is busy, who is worried, and who is pretending not to be either. Most village work is simple until everyone depends on it being done right.",
-        "Most village work is simple until everyone depends on it being done right. Trust is built from small things. Villages are very good at counting small things.",
-        "Trust is built from small things. Villages are very good at counting small things. Why do we shut doors early? Because night makes ordinary mistakes harder to fix.",
-        "Why do we shut doors early? Because night makes ordinary mistakes harder to fix. What do villagers remember? More than visitors hope, less than rumors claim.",
-        "What do villagers remember? More than visitors hope, less than rumors claim. A village is mostly chores, greetings, repairs, and knowing who needs help before they ask.",
-        "A village is mostly chores, greetings, repairs, and knowing who needs help before they ask. Nothing here stays private for long, but not everything becomes gossip. Some things become care.",
-        "Nothing here stays private for long, but not everything becomes gossip. Some things become care. The bell is not only for danger. It reminds us that we are responsible for each other.",
-        "The bell is not only for danger. It reminds us that we are responsible for each other. A quiet day in the village is not empty. It is full of things going right.",
-        "A quiet day in the village is not empty. It is full of things going right. The paths tell you plenty if you watch who hurries and who lingers."
+        "A quiet day in the village is not empty. It is full of things going right."
       ],
       "weight": 134
     },
@@ -103,15 +73,6 @@
         "The bell once rang during breakfast, and half the village arrived with bread still in hand.",
         "One winter, the firewood pile fell over so loudly that three people apologized to it.",
         "There was a morning when the square went silent all at once. Turns out everyone was watching the same fox steal berries.",
-        "Once the bell rang for a shadow at the edge of the square. Everyone still claims they were not scared. One season, half the village learned roofing because the rain would not stop teaching.",
-        "One season, half the village learned roofing because the rain would not stop teaching. The well once went dry for a morning, and suddenly every bucket had a reputation.",
-        "The well once went dry for a morning, and suddenly every bucket had a reputation. A trader once swore the road moved while they were sleeping. We blamed the map, then the trader, then the road.",
-        "A trader once swore the road moved while they were sleeping. We blamed the map, then the trader, then the road. There was a week when every door in the village creaked. By the end, everyone knew who came home late.",
-        "There was a week when every door in the village creaked. By the end, everyone knew who came home late. Once, a chicken got into the meeting house and left with more respect than most speakers.",
-        "Once, a chicken got into the meeting house and left with more respect than most speakers. A child tied ribbons to the fence so travelers could find us. The wind took credit for the idea.",
-        "A child tied ribbons to the fence so travelers could find us. The wind took credit for the idea. The bell once rang during breakfast, and half the village arrived with bread still in hand.",
-        "The bell once rang during breakfast, and half the village arrived with bread still in hand. One winter, the firewood pile fell over so loudly that three people apologized to it.",
-        "One winter, the firewood pile fell over so loudly that three people apologized to it. There was a morning when the square went silent all at once. Turns out everyone was watching the same fox steal berries.",
         "There was a morning when the square went silent all at once. Turns out everyone was watching the same fox steal berries. Once the bell rang for a shadow at the edge of the square. Everyone still claims they were not <dark_gray><wavy>scared</wavy></dark_gray>."
       ],
       "weight": 60

@@ -1917,8 +1917,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private boolean canCommandStayHere() {
-        return this.reputationLevel != null
-                && this.reputationLevel.trustRank() >= VillagerReputationLevel.TRUSTED.trustRank();
+        return this.hiredByPlayer;
     }
 
     private void addClipboardMenuOptions() {

@@ -13,17 +13,7 @@
         "Whatever reason you had, it had better become a lesson quickly.",
         "Trust cracks faster than bone, and it mends slower too.",
         "The village is watching you more closely now.",
-        "Do better from here, or do not expect warm doors.",
-        "You hurt one of ours. The village will not mistake that for an accident. People talk after harm is done. Doors do too, <italic>in their own way</italic>.",
-        "People talk after harm is done. Doors do too, <italic>in their own way</italic>. If you want this to become old news, start acting like it.",
-        "If you want this to become old news, start acting like it. A bruise on one villager is felt by more than one household.",
-        "A bruise on one villager is felt by more than one household. We remember hands that help, and we remember hands that strike.",
-        "We remember hands that help, and we remember hands that strike. You cannot raise a weapon here and expect the village to stay quiet about it.",
-        "You cannot raise a weapon here and expect the village to stay quiet about it. Whatever reason you had, it had better become a lesson quickly.",
-        "Whatever reason you had, it had better become a lesson quickly. Trust cracks faster than bone, and it mends slower too.",
-        "Trust cracks faster than bone, and it mends slower too. The village is watching you more closely now.",
-        "The village is watching you more closely now. Do better from here, or do not expect warm doors.",
-        "Do better from here, or do not expect warm doors. You hurt one of ours. The village will not mistake that for an accident."
+        "Do better from here, or do not expect warm doors."
       ],
       "event_tags": [
         "player_attacked_villager"
@@ -46,17 +36,7 @@
         "You made someone feel seen today. That is no small thing.",
         "A thoughtful gift can soften a whole room.",
         "That one will be remembered with a smile.",
-        "You did well. The village notices gestures like that.",
-        "That gift was not random. People can tell when kindness pays attention. You gave something that suited them. Around here, that matters.",
-        "You gave something that suited them. Around here, that matters. A good gift says, <italic>I noticed</italic>. That is why it lands so well.",
-        "A good gift says, <italic>I noticed</italic>. That is why it lands so well. You chose with care, and care has a way of being noticed.",
-        "You chose with care, and care has a way of being noticed. That was the kind of gift people talk about kindly afterward.",
-        "That was the kind of gift people talk about kindly afterward. It is one thing to give. It is another to give the right thing.",
-        "It is one thing to give. It is another to give the right thing. You made someone feel seen today. That is no small thing.",
-        "You made someone feel seen today. That is no small thing. A thoughtful gift can soften a whole room.",
-        "A thoughtful gift can soften a whole room. That one will be remembered with a smile.",
-        "That one will be remembered with a smile. You did well. The village notices gestures like that.",
-        "You did well. The village notices gestures like that. That gift was not random. People can tell when kindness pays attention."
+        "You did well. The village notices gestures like that."
       ],
       "event_tags": [
         "player_gave_loved_gift"
@@ -79,17 +59,7 @@
         "Small kindnesses have a way of finding their way around the village.",
         "That was a fine gesture. Simple, but welcome.",
         "You brought something useful, and usefulness is appreciated here.",
-        "People remember when someone gives without making a fuss.",
-        "That was a kind gift. The village has room for gestures like that. A useful present travels farther than the hand that gives it.",
-        "A useful present travels farther than the hand that gives it. You chose well enough to be remembered kindly.",
-        "You chose well enough to be remembered kindly. That was thoughtful enough to brighten the day.",
-        "That was thoughtful enough to brighten the day. A good gift does not need to be grand. It just needs to be considered.",
-        "A good gift does not need to be grand. It just needs to be considered. You gave something welcome, and that counts.",
-        "You gave something welcome, and that counts. Small kindnesses have a way of finding their way around the village.",
-        "Small kindnesses have a way of finding their way around the village. That was a fine gesture. Simple, but welcome.",
-        "That was a fine gesture. Simple, but welcome. You brought something useful, and usefulness is appreciated here.",
-        "You brought something useful, and usefulness is appreciated here. People remember when someone gives without making a fuss.",
-        "People remember when someone gives without making a fuss. That was a kind gift. The village has room for gestures like that."
+        "People remember when someone gives without making a fuss."
       ],
       "event_tags": [
         "player_gave_liked_gift"
@@ -112,17 +82,7 @@
         "No harm done, perhaps, but no favor earned either.",
         "That one landed poorly. Best not to press the matter.",
         "You tried, I think. Just try with better aim next time.",
-        "Sometimes the kindest gift is the one you hold back until you know better.",
-        "That gift missed its mark. It happens, but it is better to notice before repeating it. The thought may count, but the choice still made a face.",
-        "The thought may count, but the choice still made a face. Next time, <pulse>ask first</pulse>. Pride makes poor wrapping paper.",
-        "Next time, <pulse>ask first</pulse>. Pride makes poor wrapping paper. Not every gift feels like kindness to the one receiving it.",
-        "Not every gift feels like kindness to the one receiving it. That was not the best choice. I would remember that for next time.",
-        "That was not the best choice. I would remember that for next time. A gift can be awkward when it says more about the giver than the receiver.",
-        "A gift can be awkward when it says more about the giver than the receiver. No harm done, perhaps, but no favor earned either.",
-        "No harm done, perhaps, but no favor earned either. That one landed poorly. Best not to press the matter.",
-        "That one landed poorly. Best not to press the matter. You tried, I think. Just try with better aim next time.",
-        "You tried, I think. Just try with better aim next time. Sometimes the kindest gift is the one you hold back until you know better.",
-        "Sometimes the kindest gift is the one you hold back until you know better. That gift missed its mark. It happens, but it is better to notice before repeating it."
+        "Sometimes the kindest gift is the one you hold back until you know better."
       ],
       "event_tags": [
         "player_gave_disliked_gift"
@@ -145,17 +105,7 @@
         "That was not taken kindly, and I cannot blame them.",
         "You should be careful. A hated gift can sour more than one mood.",
         "That was a mistake worth not repeating.",
-        "The village has long memories for insults dressed as favors.",
-        "That was the sort of gift people remember for the wrong reason. A bad gift can feel like an insult with ribbon around it.",
-        "A bad gift can feel like an insult with ribbon around it. You found a nerve and pressed it. <shake>Do not make that a habit.</shake>",
-        "You found a nerve and pressed it. <shake>Do not make that a habit.</shake> That did not feel careless. It felt pointed.",
-        "That did not feel careless. It felt pointed. Some gifts close doors instead of opening them.",
-        "Some gifts close doors instead of opening them. If you meant well, you chose badly. If you did not, we noticed.",
-        "If you meant well, you chose badly. If you did not, we noticed. That was not taken kindly, and I cannot blame them.",
-        "That was not taken kindly, and I cannot blame them. You should be careful. A hated gift can sour more than one mood.",
-        "You should be careful. A hated gift can sour more than one mood. That was a mistake worth not repeating.",
-        "That was a mistake worth not repeating. The village has long memories for insults dressed as favors.",
-        "The village has long memories for insults dressed as favors. That was the sort of gift people remember for the wrong reason."
+        "The village has long memories for insults dressed as favors."
       ],
       "event_tags": [
         "player_gave_hated_gift"
@@ -178,17 +128,7 @@
         "If you came with steady hands, they are welcome.",
         "We are counting people, checking doors, and trying to breathe again.",
         "The danger passed, but it left its shadow behind.",
-        "Stay alert. Peace feels thin after a day like that.",
-        "Hello. Keep your voice easy. The village has had enough sharp sounds. Good to see someone walking calmly. We have had our fill of running.",
-        "Good to see someone walking calmly. We have had our fill of running. If you are here to help, start by closing gates behind you.",
-        "If you are here to help, start by closing gates behind you. Careful where you step. Everyone is still a little quick to turn their head.",
-        "Careful where you step. Everyone is still a little quick to turn their head. The village is standing, but it has not settled yet.",
-        "The village is standing, but it has not settled yet. Speak softly today. Even the walls feel tired.",
-        "Speak softly today. Even the walls feel tired. If you came with steady hands, they are welcome.",
-        "If you came with steady hands, they are welcome. We are counting people, checking doors, and trying to breathe again.",
-        "We are counting people, checking doors, and trying to breathe again. The danger passed, but it left its shadow behind.",
-        "The danger passed, but it left its shadow behind. Stay alert. Peace feels thin after a day like that.",
-        "Stay alert. Peace feels thin after a day like that. Hello. Keep your voice easy. The village has had enough sharp sounds."
+        "Stay alert. Peace feels thin after a day like that."
       ],
       "event_tags": [
         "raid",
@@ -212,17 +152,7 @@
         "When everyone runs, it is hard to know where safe is.",
         "I stayed where I was told, even when I wanted to peek.",
         "The grown-ups said it is over, but they still look worried.",
-        "I hope the bell sounds normal next time.",
-        "Everyone got loud, then quiet, then loud again. I stayed near the safest grown-up. I do not like when the bell sounds <shake>scared</shake>.",
-        "I do not like when the bell sounds <shake>scared</shake>. The adults keep checking doors. I keep checking the adults.",
-        "The adults keep checking doors. I keep checking the adults. I held very still so nobody had to look for me.",
-        "I held very still so nobody had to look for me. The village felt too big and too small at the same time.",
-        "The village felt too big and too small at the same time. I did not cry much. Only a little. Maybe more than a little.",
-        "I did not cry much. Only a little. Maybe more than a little. When everyone runs, it is hard to know where safe is.",
-        "When everyone runs, it is hard to know where safe is. I stayed where I was told, even when I wanted to peek.",
-        "I stayed where I was told, even when I wanted to peek. The grown-ups said it is over, but they still look worried.",
-        "The grown-ups said it is over, but they still look worried. I hope the bell sounds normal next time.",
-        "I hope the bell sounds normal next time. Everyone got loud, then quiet, then loud again. I stayed near the safest grown-up."
+        "I hope the bell sounds normal next time."
       ],
       "event_tags": [
         "raid",
@@ -246,17 +176,7 @@
         "The baby sleeps a lot, but somehow everyone is still tired.",
         "I wanted to show the baby my favorite spot, but they cannot walk yet.",
         "The grown-ups said I have to be gentle. I was already being gentle.",
-        "I think the baby likes me. It looked in my direction once.",
-        "There is a smaller kid now. I feel very big all of a sudden. The baby makes tiny noises, and everyone acts like it is important music.",
-        "The baby makes tiny noises, and everyone acts like it is important music. I am helping by being quiet near the baby. It is harder than it sounds.",
-        "I am helping by being quiet near the baby. It is harder than it sounds. The baby is very small. I think I was never that small.",
-        "The baby is very small. I think I was never that small. Everyone keeps smiling at the baby. I smiled too, just in case.",
-        "Everyone keeps smiling at the baby. I smiled too, just in case. I am not the littlest anymore. That feels strange.",
-        "I am not the littlest anymore. That feels strange. The baby sleeps a lot, but somehow everyone is still tired.",
-        "The baby sleeps a lot, but somehow everyone is still tired. I wanted to show the baby my favorite spot, but they cannot walk yet.",
-        "I wanted to show the baby my favorite spot, but they cannot walk yet. The grown-ups said I have to be gentle. I was already being gentle.",
-        "The grown-ups said I have to be gentle. I was already being gentle. I think the baby likes me. It looked in my direction once.",
-        "I think the baby likes me. It looked in my direction once. There is a smaller kid now. I feel very big all of a sudden."
+        "I think the baby likes me. It looked in my direction once."
       ],
       "event_tags": [
         "baby_born"
@@ -277,17 +197,7 @@
         "Say what you like. Your actions have been louder.",
         "You have a strange talent for making silence preferable.",
         "That tongue of yours does not mend what your hands have broken.",
-        "We expected little, and somehow you still found room beneath it.",
-        "You are spending your reputation faster than emeralds. <pulse>Careful.</pulse> The village already knows what this version of you sounds like.",
-        "<pulse>Careful.</pulse> The village already knows what this version of you sounds like. That would hurt more from someone we trusted.",
-        "That would hurt more from someone we trusted. You keep proving people right about you.",
-        "You keep proving people right about you. An insult from you is not much of a surprise anymore.",
-        "An insult from you is not much of a surprise anymore. If you were hoping to lower our opinion, you arrived late.",
-        "If you were hoping to lower our opinion, you arrived late. Say what you like. Your actions have been louder.",
-        "Say what you like. Your actions have been louder. You have a strange talent for making silence preferable.",
-        "You have a strange talent for making silence preferable. That tongue of yours does not mend what your hands have broken.",
-        "That tongue of yours does not mend what your hands have broken. We expected little, and somehow you still found room beneath it.",
-        "We expected little, and somehow you still found room beneath it. You are spending your reputation faster than emeralds."
+        "We expected little, and somehow you still found room beneath it."
       ],
       "reputation_levels": [
         "hostile",
@@ -310,17 +220,7 @@
         "I want to know what failed, what held, and what needs changing.",
         "If we write this down properly, it becomes more than a bad night.",
         "Every disaster teaches something, though I wish it used a gentler voice.",
-        "We cannot undo what happened, but we can refuse to be surprised the same way twice.",
-        "The danger was not random. It came from a direction, at a time, and that means we can <pulse>prepare</pulse> better next time. I am trying to sort what happened into causes instead of panic. Causes can be answered.",
-        "I am trying to sort what happened into causes instead of panic. Causes can be answered. If we remember the pattern, the next alarm can be shorter.",
-        "If we remember the pattern, the next alarm can be shorter. Fear is useful only after we turn it into a plan.",
-        "Fear is useful only after we turn it into a plan. There were signs before it happened. Next time, we should know which ones mattered.",
-        "There were signs before it happened. Next time, we should know which ones mattered. The village needs more than courage. It needs memory.",
-        "The village needs more than courage. It needs memory. I want to know what failed, what held, and what needs changing.",
-        "I want to know what failed, what held, and what needs changing. If we write this down properly, it becomes more than a bad night.",
-        "If we write this down properly, it becomes more than a bad night. Every disaster teaches something, though I wish it used a gentler voice.",
-        "Every disaster teaches something, though I wish it used a gentler voice. We cannot undo what happened, but we can refuse to be surprised the same way twice.",
-        "We cannot undo what happened, but we can refuse to be surprised the same way twice. The danger was not random. It came from a direction, at a time, and that means we can <pulse>prepare</pulse> better next time."
+        "We cannot undo what happened, but we can refuse to be surprised the same way twice."
       ],
       "event_tags": [
         "raid",
@@ -346,16 +246,8 @@
         "The quiet feels thin today. I am listening through it.",
         "Stay close to the paths and do not ignore the bell.",
         "We are not helpless just because we were frightened.",
-        "I am watching the roads today. Talk if you need to, but keep one eye open. If trouble comes back, I would rather meet it standing.",
-        "If trouble comes back, I would rather meet it standing. The village is still here. That means we still have something worth guarding.",
-        "The village is still here. That means we still have something worth guarding. I do not plan to be caught unready twice.",
         "I do not plan to be caught unready twice. There is fear in the village, yes. There is also backbone.",
-        "There is fear in the village, yes. There is also backbone. If something comes through that gate, it will find us awake.",
-        "If something comes through that gate, it will find us awake. I have no interest in hiding while others stand in front.",
-        "I have no interest in hiding while others stand in front. The quiet feels thin today. I am listening through it.",
-        "The quiet feels thin today. I am listening through it. Stay close to the paths and do not ignore the bell.",
-        "Stay close to the paths and do not ignore the bell. We are not helpless just because we were frightened.",
-        "We are not helpless just because we were frightened. I am watching the roads today. Talk if you need to, but keep one eye open."
+        "There is fear in the village, yes. There is also backbone. If something comes through that gate, it will find us awake."
       ],
       "min_mood_intensity": 25,
       "mood": "protective",
@@ -376,17 +268,7 @@
         "You made the day easier, and not just in the obvious way.",
         "I hope you know that what you did mattered here.",
         "It is easier to breathe around people who choose gentleness.",
-        "The village remembers kindness, especially when it arrives at the right moment.",
-        "Kindness lands <pulse>loudly</pulse> when the world has been noisy. I noticed yours. Some help is practical. Some help reminds people they matter. Yours managed both.",
-        "Some help is practical. Some help reminds people they matter. Yours managed both. I am still carrying that kindness with me. Light things can do heavy work.",
-        "I am still carrying that kindness with me. Light things can do heavy work. You helped without making anyone feel small for needing it.",
-        "You helped without making anyone feel small for needing it. There are people who give to be seen. You gave like you saw us.",
-        "There are people who give to be seen. You gave like you saw us. A kind act can steady a person longer than you think.",
-        "A kind act can steady a person longer than you think. You made the day easier, and not just in the obvious way.",
-        "You made the day easier, and not just in the obvious way. I hope you know that what you did mattered here.",
-        "I hope you know that what you did mattered here. It is easier to breathe around people who choose gentleness.",
-        "It is easier to breathe around people who choose gentleness. The village remembers kindness, especially when it arrives at the right moment.",
-        "The village remembers kindness, especially when it arrives at the right moment. Kindness lands <pulse>loudly</pulse> when the world has been noisy. I noticed yours."
+        "The village remembers kindness, especially when it arrives at the right moment."
       ],
       "min_mood_intensity": 25,
       "mood": "grateful",
@@ -407,17 +289,7 @@
         "I almost laughed at the courage of it.",
         "That one needs sharpening, but the handle is good.",
         "You missed the mark, but somehow made the miss entertaining.",
-        "Try that again after it has had time to become funnier.",
-        "That one nearly survived the landing. <jump>Try again</jump>, and I may give it a proper funeral. A brave attempt. Comedy is just archery with more witnesses.",
-        "A brave attempt. Comedy is just archery with more witnesses. You aimed for laughter and hit the fence. Still, I admire the confidence.",
-        "You aimed for laughter and hit the fence. Still, I admire the confidence. I have heard worse. I have also heard better, but let us stay kind.",
-        "I have heard worse. I have also heard better, but let us stay kind. That joke took a strange road, but it did arrive somewhere.",
-        "That joke took a strange road, but it did arrive somewhere. You tell it like you expect it to work, and that helps more than it should.",
-        "You tell it like you expect it to work, and that helps more than it should. I almost laughed at the courage of it.",
-        "I almost laughed at the courage of it. That one needs sharpening, but the handle is good.",
-        "That one needs sharpening, but the handle is good. You missed the mark, but somehow made the miss entertaining.",
-        "You missed the mark, but somehow made the miss entertaining. Try that again after it has had time to become funnier.",
-        "Try that again after it has had time to become funnier. That one nearly survived the landing. <jump>Try again</jump>, and I may give it a proper funeral."
+        "Try that again after it has had time to become funnier."
       ],
       "dispositions": [
         "respectful",
@@ -441,17 +313,7 @@
         "I did not feel brave at first. I felt ready, and that was enough.",
         "Good tools help, but trained hands make them answer.",
         "I know now that I can work through fear instead of under it.",
-        "The danger came close, but I held my place.",
-        "I came through with <pulse>steady hands</pulse>. Fear is easier to carry when your tools answer properly. I was scared, yes, but I knew what to do with my hands. That matters.",
-        "I was scared, yes, but I knew what to do with my hands. That matters. A clean grip, a clear path, and enough nerve to use both. I will remember that.",
-        "A clean grip, a clear path, and enough nerve to use both. I will remember that. When it counted, my hands did not betray me.",
-        "When it counted, my hands did not betray me. I kept my footing, kept my head, and did what needed doing.",
-        "I kept my footing, kept my head, and did what needed doing. There is pride in surviving without becoming useless to the people beside you.",
-        "There is pride in surviving without becoming useless to the people beside you. I did not feel brave at first. I felt ready, and that was enough.",
-        "I did not feel brave at first. I felt ready, and that was enough. Good tools help, but trained hands make them answer.",
-        "Good tools help, but trained hands make them answer. I know now that I can work through fear instead of under it.",
-        "I know now that I can work through fear instead of under it. The danger came close, but I held my place.",
-        "The danger came close, but I held my place. I came through with <pulse>steady hands</pulse>. Fear is easier to carry when your tools answer properly."
+        "The danger came close, but I held my place."
       ],
       "min_mood_intensity": 25,
       "mood": "proud",

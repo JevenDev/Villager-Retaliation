@@ -13,17 +13,7 @@
         "Fine. Let us see whether your next steps match your words.",
         "Some mistakes become warnings on maps. Try not to become one.",
         "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry.",
-        "I can mark the apology. Whether the route changes is up to you. Some paths can be corrected after a bad turn. Don't make me redraw this one twice.",
-        "Some paths can be corrected after a bad turn. Don't make me redraw this one twice. You are asking to redraw a line you crossed. That can be done carefully.",
-        "You are asking to redraw a line you crossed. That can be done carefully. A bad route is not shameful if you correct it before others follow.",
-        "A bad route is not shameful if you correct it before others follow. I'll mark this apology, but not as the destination.",
-        "I'll mark this apology, but not as the destination. Don't make a habit of needing a way back from harm.",
-        "Don't make a habit of needing a way back from harm. Fine. Let us see whether your next steps match your words.",
-        "Fine. Let us see whether your next steps match your words. Some mistakes become warnings on maps. Try not to become one.",
-        "Some mistakes become warnings on maps. Try not to become one. I was wrong. I would rather say it plainly than dress it up.",
-        "I was wrong. I would rather say it plainly than dress it up. That came out sharper than it should have. I am sorry.",
-        "That came out sharper than it should have. I am sorry. I can mark the apology. Whether the route changes is up to you."
+        "That came out sharper than it should have. I am sorry."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

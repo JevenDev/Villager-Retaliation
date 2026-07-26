@@ -13,17 +13,7 @@
         "Most people here would call {gift_item} a bad offering.",
         "Better to arrive empty-handed than with {gift_item}.",
         "Do not wrap {gift_item} and call it kindness.",
-        "{gift_item} is the kind of gift people remember for the wrong reason.",
-        "{gift_item} makes a poor gift. Most villagers would rather not handle it. {gift_item} sends the wrong message.",
-        "{gift_item} sends the wrong message. If you are trying to be kind, avoid {gift_item}.",
-        "If you are trying to be kind, avoid {gift_item}. {gift_item} is more warning than present.",
-        "{gift_item} is more warning than present. Handing someone {gift_item} is a quick way to sour the room.",
-        "Handing someone {gift_item} is a quick way to sour the room. {gift_item} belongs somewhere else, not in someone's hands as a gift.",
-        "{gift_item} belongs somewhere else, not in someone's hands as a gift. Most people here would call {gift_item} a bad offering.",
-        "Most people here would call {gift_item} a bad offering. Better to arrive empty-handed than with {gift_item}.",
-        "Better to arrive empty-handed than with {gift_item}. Do not wrap {gift_item} and call it kindness.",
-        "Do not wrap {gift_item} and call it kindness. {gift_item} is the kind of gift people remember for the wrong reason.",
-        "{gift_item} is the kind of gift people remember for the wrong reason. {gift_item} makes a poor gift. Most villagers would rather not handle it."
+        "{gift_item} is the kind of gift people remember for the wrong reason."
       ],
       "gift_advice": "global_disliked",
       "weight": 186
@@ -41,17 +31,7 @@
         "{gift_item} is the kind of thing {gift_subject} remembers kindly.",
         "A careful gift for {gift_subject}? {gift_item}.",
         "{gift_subject} tends to respect a gift like {gift_item}.",
-        "{gift_item} feels personal to {gift_subject}.",
-        "If you are choosing for {gift_subject}, {gift_item} is a thoughtful pick. For {gift_subject}, {gift_item} shows you paid attention.",
-        "For {gift_subject}, {gift_item} shows you paid attention. {gift_subject} can make good use of {gift_item}.",
-        "{gift_subject} can make good use of {gift_item}. {gift_item} suits {gift_subject} better than most gifts.",
-        "{gift_item} suits {gift_subject} better than most gifts. You can tell someone knows the trade when they bring {gift_item}.",
-        "You can tell someone knows the trade when they bring {gift_item}. That work gives {gift_item} real value.",
-        "That work gives {gift_item} real value. {gift_item} is the kind of thing {gift_subject} remembers kindly.",
-        "{gift_item} is the kind of thing {gift_subject} remembers kindly. A careful gift for {gift_subject}? {gift_item}.",
-        "A careful gift for {gift_subject}? {gift_item}. {gift_subject} tends to respect a gift like {gift_item}.",
-        "{gift_subject} tends to respect a gift like {gift_item}. {gift_item} feels personal to {gift_subject}.",
-        "{gift_item} feels personal to {gift_subject}. If you are choosing for {gift_subject}, {gift_item} is a thoughtful pick."
+        "{gift_item} feels personal to {gift_subject}."
       ],
       "gift_advice": "profession_liked",
       "weight": 186
@@ -69,17 +49,7 @@
         "{gift_subject} may take {gift_item} the wrong way.",
         "For that profession, {gift_item} is more nuisance than gift.",
         "You can insult the trade without meaning to. {gift_item} may do it.",
-        "{gift_item} is the kind of thing {gift_subject} remembers sourly.",
-        "If you are choosing for {gift_subject}, I would avoid {gift_item}. For {gift_subject}, {gift_item} feels careless.",
-        "For {gift_subject}, {gift_item} feels careless. Do not bring {gift_item} to {gift_subject} and expect gratitude.",
-        "Do not bring {gift_item} to {gift_subject} and expect gratitude. {gift_subject} has little use for {gift_item}.",
-        "{gift_subject} has little use for {gift_item}. {gift_item} is a poor match for {gift_subject}.",
-        "{gift_item} is a poor match for {gift_subject}. If I were gifting {gift_subject}, I would leave {gift_item} at home.",
-        "If I were gifting {gift_subject}, I would leave {gift_item} at home. {gift_subject} may take {gift_item} the wrong way.",
-        "{gift_subject} may take {gift_item} the wrong way. For that profession, {gift_item} is more nuisance than gift.",
-        "For that profession, {gift_item} is more nuisance than gift. You can insult the trade without meaning to. {gift_item} may do it.",
-        "You can insult the trade without meaning to. {gift_item} may do it. {gift_item} is the kind of thing {gift_subject} remembers sourly.",
-        "{gift_item} is the kind of thing {gift_subject} remembers sourly. If you are choosing for {gift_subject}, I would avoid {gift_item}."
+        "{gift_item} is the kind of thing {gift_subject} remembers sourly."
       ],
       "gift_advice": "profession_disliked",
       "weight": 186
@@ -98,16 +68,7 @@
         "I do not have another gift tip ready for you.",
         "You have already heard the useful parts from me.",
         "My gift advice is empty for now. Best not to scrape the bowl.",
-        "I think you already know what I can tell you about gifts. You've picked my memory clean on gifts, I'm <dark_gray><wavy>afraid</wavy></dark_gray>.",
-        "You've picked my memory clean on gifts, I'm afraid. No fresh advice. Try another villager if you want more gift gossip.",
-        "No fresh advice. Try another villager if you want more gift gossip. I would rather not pretend I know more than I do.",
-        "I would rather not pretend I know more than I do. No new gift advice from me today. Ask someone else and you may hear more.",
-        "No new gift advice from me today. Ask someone else and you may hear more. That is the end of my gift wisdom for the moment.",
-        "That is the end of my gift wisdom for the moment. Nothing new comes to mind. Gifts are personal, even when villagers gossip.",
-        "Nothing new comes to mind. Gifts are personal, even when villagers gossip. I do not have another gift tip ready for you.",
-        "I do not have another gift tip ready for you. You have already heard the useful parts from me.",
-        "You have already heard the useful parts from me. My gift advice is empty for now. Best not to scrape the bowl.",
-        "My gift advice is empty for now. Best not to scrape the bowl. I think you already know what I can tell you about gifts."
+        "I think you already know what I can tell you about gifts. You've picked my memory clean on gifts, I'm <dark_gray><wavy>afraid</wavy></dark_gray>."
       ],
       "gift_advice": "already_known",
       "weight": 150
@@ -125,17 +86,7 @@
         "You helped bring my name back to me. That is not a small kindness.",
         "When the fog lifted, I knew someone had stayed close enough to help.",
         "I remember fear, then warmth, then your face. That order matters to me.",
-        "Whatever I lost in that dark, I know you helped me find the way out.",
-        "I remember pieces. Your face came back before my voice did. Thank you for waiting on the other side. I remember enough to know you pulled me out of something dark.",
-        "I remember enough to know you pulled me out of something dark. I remember waking back into myself, and you were part of that morning.",
-        "I remember waking back into myself, and you were part of that morning. The cure felt like surfacing after too long underwater. You were there when I could breathe again.",
-        "The cure felt like surfacing after too long underwater. You were there when I could breathe again. Some memories are broken, but your help is one of the pieces that stayed.",
-        "Some memories are broken, but your help is one of the pieces that stayed. I do not remember everything clearly, but I remember enough to be grateful.",
-        "I do not remember everything clearly, but I remember enough to be grateful. You helped bring my name back to me. That is not a small kindness.",
-        "You helped bring my name back to me. That is not a small kindness. When the fog lifted, I knew someone had stayed close enough to help.",
-        "When the fog lifted, I knew someone had stayed close enough to help. I remember fear, then warmth, then your face. That order matters to me.",
-        "I remember fear, then warmth, then your face. That order matters to me. Whatever I lost in that dark, I know you helped me find the way out.",
-        "Whatever I lost in that dark, I know you helped me find the way out. I remember pieces. Your face came back before my voice did. Thank you for waiting on the other side."
+        "Whatever I lost in that dark, I know you helped me find the way out."
       ],
       "dispositions": [
         "friendly",
@@ -157,16 +108,8 @@
         "My thoughts still circle the dark places before they reach your kindness.",
         "I am <gold><pulse>grateful</pulse></gold>, I think. I just wish my memory would say it plainly.",
         "You feel familiar in a way that still makes me careful.",
-        "I know you, I think. The memory has teeth marks around the edges. Your voice sounds familiar, but everything before the cure is fog and hunger.",
-        "Your voice sounds familiar, but everything before the cure is fog and hunger. I know your face, but the memory still limps when it reaches you.",
-        "I know your face, but the memory still limps when it reaches you. There are pieces of you in my memory, but they do not sit together neatly yet.",
-        "There are pieces of you in my memory, but they do not sit together neatly yet. I believe you helped me. I am still trying to remember that without shaking.",
-        "I believe you helped me. I am still trying to remember that without shaking. The cure brought me back, but not all at once.",
-        "The cure brought me back, but not all at once. I recognize you in flashes. That is more comfort than it sounds.",
-        "I recognize you in flashes. That is more comfort than it sounds. My thoughts still circle the dark places before they reach your kindness.",
         "My thoughts still circle the dark places before they reach your kindness. I am grateful, I think. I just wish my memory would say it plainly.",
-        "I am grateful, I think. I just wish my memory would say it plainly. You feel familiar in a way that still makes me careful.",
-        "You feel familiar in a way that still makes me careful. I know you, I think. The memory has teeth marks around the edges."
+        "I am grateful, I think. I just wish my memory would say it plainly. You feel familiar in a way that still makes me careful."
       ],
       "dispositions": [
         "neutral",
@@ -188,16 +131,7 @@
         "Being saved does not erase what came before.",
         "Your face is tied to a hard morning. I am still learning what to do with that.",
         "I can be grateful without being ready to stand close.",
-        "I remember you. That does not make the remembering easy. I know you helped. I also know remembering still hurts.",
-        "I know you helped. I also know remembering still hurts. The gratitude is real. So is the <dark_gray><wavy>fear</wavy></dark_gray> around it.",
-        "The gratitude is real. So is the fear around it. You were part of my return, but the road back was not gentle.",
-        "You were part of my return, but the road back was not gentle. I am thankful, and I am unsettled. Both are true.",
-        "I am thankful, and I am unsettled. Both are true. Do not ask me to make the memory clean just because the cure worked.",
-        "Do not ask me to make the memory clean just because the cure worked. I know I owe you something. I also know my hands still shake when I think of it.",
-        "I know I owe you something. I also know my hands still shake when I think of it. Being saved does not erase what came before.",
-        "Being saved does not erase what came before. Your face is tied to a hard morning. I am still learning what to do with that.",
-        "Your face is tied to a hard morning. I am still learning what to do with that. I can be grateful without being ready to stand close.",
-        "I can be grateful without being ready to stand close. I remember you. That does not make the remembering easy."
+        "I know you helped. I also know remembering still hurts. The gratitude is real. So is the <dark_gray><wavy>fear</wavy></dark_gray> around it."
       ],
       "dispositions": [
         "rude",
@@ -219,17 +153,7 @@
         "The village feels a little more whole with <aqua>{cured_villager}</aqua> returned.",
         "You did more than cure an illness. You returned someone to their people.",
         "<aqua>{cured_villager}</aqua> is home again. That matters here.",
-        "When people speak kindly of you lately, <aqua>{cured_villager}</aqua> is often why.",
-        "Word reached us about <aqua>{cured_villager}</aqua>. You brought one of ours back. People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed. <aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. It is good to see <aqua>{cured_villager}</aqua> walking these paths again.",
-        "It is good to see <aqua>{cured_villager}</aqua> walking these paths again. You gave <aqua>{cured_villager}</aqua> a way back, and the village will remember that.",
-        "You gave <aqua>{cured_villager}</aqua> a way back, and the village will remember that. Not everyone would have stayed long enough to help <aqua>{cured_villager}</aqua>.",
-        "Not everyone would have stayed long enough to help <aqua>{cured_villager}</aqua>. The village feels a little more whole with <aqua>{cured_villager}</aqua> returned.",
-        "The village feels a little more whole with <aqua>{cured_villager}</aqua> returned. You did more than cure an illness. You returned someone to their people.",
-        "You did more than cure an illness. You returned someone to their people. <aqua>{cured_villager}</aqua> is home again. That matters here.",
-        "<aqua>{cured_villager}</aqua> is home again. That matters here. When people speak kindly of you lately, <aqua>{cured_villager}</aqua> is often why.",
-        "When people speak kindly of you lately, <aqua>{cured_villager}</aqua> is often why. Word reached us about <aqua>{cured_villager}</aqua>. You brought one of ours back."
+        "When people speak kindly of you lately, <aqua>{cured_villager}</aqua> is often why."
       ],
       "dispositions": [
         "friendly",
@@ -254,17 +178,7 @@
         "People noticed your patience with <aqua>{cured_villager}</aqua>.",
         "A cure like that echoes through more than one household.",
         "<aqua>{cured_villager}</aqua> walks easier now, and some of that is because of you.",
-        "The village keeps count of harm, yes, but it keeps count of healing too.",
-        "<aqua>{cured_villager_possessive}</aqua> cure matters here. People remember who stayed to help. People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed. <aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. You helped return <aqua>{cured_villager}</aqua> to the village, and that is no small thing.",
-        "You helped return <aqua>{cured_villager}</aqua> to the village, and that is no small thing. There is relief in seeing <aqua>{cured_villager}</aqua> among us again.",
-        "There is relief in seeing <aqua>{cured_villager}</aqua> among us again. The cure gave <aqua>{cured_villager}</aqua> back more than health. It gave them home.",
-        "The cure gave <aqua>{cured_villager}</aqua> back more than health. It gave them home. People noticed your patience with <aqua>{cured_villager}</aqua>.",
-        "People noticed your patience with <aqua>{cured_villager}</aqua>. A cure like that echoes through more than one household.",
-        "A cure like that echoes through more than one household. <aqua>{cured_villager}</aqua> walks easier now, and some of that is because of you.",
-        "<aqua>{cured_villager}</aqua> walks easier now, and some of that is because of you. The village keeps count of harm, yes, but it keeps count of healing too.",
-        "The village keeps count of harm, yes, but it keeps count of healing too. <aqua>{cured_villager_possessive}</aqua> cure matters here. People remember who stayed to help."
+        "The village keeps count of harm, yes, but it keeps count of healing too."
       ],
       "dispositions": [
         "friendly",
@@ -289,17 +203,7 @@
         "You did right by <aqua>{cured_villager}</aqua>, from what I hear.",
         "Seeing <aqua>{cured_villager}</aqua> well again has eased more than one worry.",
         "The village has room to remember good deeds too.",
-        "You brought <aqua>{cured_villager}</aqua> back from a hard place. That counts.",
-        "I heard you cured <aqua>{cured_villager}</aqua>. That is not a small thing. People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed. <aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. <aqua>{cured_villager}</aqua> is back among us. People have noticed.",
-        "<aqua>{cured_villager}</aqua> is back among us. People have noticed. Whatever else is said, helping <aqua>{cured_villager}</aqua> mattered.",
-        "Whatever else is said, helping <aqua>{cured_villager}</aqua> mattered. A cure like that is hard for a village to ignore.",
-        "A cure like that is hard for a village to ignore. You did right by <aqua>{cured_villager}</aqua>, from what I hear.",
-        "You did right by <aqua>{cured_villager}</aqua>, from what I hear. Seeing <aqua>{cured_villager}</aqua> well again has eased more than one worry.",
-        "Seeing <aqua>{cured_villager}</aqua> well again has eased more than one worry. The village has room to remember good deeds too.",
-        "The village has room to remember good deeds too. You brought <aqua>{cured_villager}</aqua> back from a hard place. That counts.",
-        "You brought <aqua>{cured_villager}</aqua> back from a hard place. That counts. I heard you cured <aqua>{cured_villager}</aqua>. That is not a small thing."
+        "You brought <aqua>{cured_villager}</aqua> back from a hard place. That counts."
       ],
       "dispositions": [
         "neutral"
@@ -323,17 +227,7 @@
         "A village remembers the one who brings someone home.",
         "<aqua>{cured_villager}</aqua> has a second chance. You helped make that happen.",
         "People speak of that cure with care. It mattered.",
-        "You gave the village one less empty place to look at.",
-        "<aqua>{cured_villager}</aqua> is walking these paths again because of you. The village noticed. People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed. <aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. There are fewer worried looks now that <aqua>{cured_villager}</aqua> is back.",
-        "There are fewer worried looks now that <aqua>{cured_villager}</aqua> is back. You helped restore more than one person's peace with that cure.",
-        "You helped restore more than one person's peace with that cure. I do not know every detail, but I know <aqua>{cured_villager}</aqua> returned.",
-        "I do not know every detail, but I know <aqua>{cured_villager}</aqua> returned. A village remembers the one who brings someone home.",
-        "A village remembers the one who brings someone home. <aqua>{cured_villager}</aqua> has a second chance. You helped make that happen.",
-        "<aqua>{cured_villager}</aqua> has a second chance. You helped make that happen. People speak of that cure with care. It mattered.",
-        "People speak of that cure with care. It mattered. You gave the village one less empty place to look at.",
-        "You gave the village one less empty place to look at. <aqua>{cured_villager}</aqua> is walking these paths again because of you. The village noticed."
+        "You gave the village one less empty place to look at."
       ],
       "dispositions": [
         "neutral"
@@ -357,17 +251,7 @@
         "You did a good thing for <aqua>{cured_villager}</aqua>. I can say that much.",
         "I am cautious, not blind. Bringing <aqua>{cured_villager}</aqua> back mattered.",
         "The village is still measuring you, but that cure weighs in your favor.",
-        "I will not call you trusted, but I will call that deed worthy.",
-        "I heard what you did for <aqua>{cured_villager}</aqua>. I am still wary, but I will not pretend that meant nothing. People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed. <aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. I have my doubts about you, but helping <aqua>{cured_villager}</aqua> counts for something.",
-        "I have my doubts about you, but helping <aqua>{cured_villager}</aqua> counts for something. <aqua>{cured_villager}</aqua> is back, and even I can respect the hand that helped.",
-        "<aqua>{cured_villager}</aqua> is back, and even I can respect the hand that helped. Do not expect all doors to open at once, but that cure was noticed.",
-        "Do not expect all doors to open at once, but that cure was noticed. You did a good thing for <aqua>{cured_villager}</aqua>. I can say that much.",
-        "You did a good thing for <aqua>{cured_villager}</aqua>. I can say that much. I am cautious, not blind. Bringing <aqua>{cured_villager}</aqua> back mattered.",
-        "I am cautious, not blind. Bringing <aqua>{cured_villager}</aqua> back mattered. The village is still measuring you, but that cure weighs in your favor.",
-        "The village is still measuring you, but that cure weighs in your favor. I will not call you trusted, but I will call that deed worthy.",
-        "I will not call you trusted, but I will call that deed worthy. I heard what you did for <aqua>{cured_villager}</aqua>. I am still wary, but I will not pretend that meant nothing."
+        "I will not call you trusted, but I will call that deed worthy."
       ],
       "dispositions": [
         "cautious",

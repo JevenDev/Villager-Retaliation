@@ -13,17 +13,7 @@
         "A good deed does not wipe the slate clean, but it does leave a mark.",
         "You helped <aqua>{cured_villager}</aqua> return to us. I can respect that much.",
         "I am not ready to trust you fully, but that cure weighs in your favor.",
-        "Whatever else I think of you, <aqua>{cured_villager}</aqua> is here because you helped.",
-        "Helping <aqua>{cured_villager}</aqua> speaks well of you. It does not erase everything else. People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed. <aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. I am still careful around you, but I will not pretend that cure meant nothing.",
-        "I am still careful around you, but I will not pretend that cure meant nothing. <aqua>{cured_villager}</aqua> is back because someone stayed. That someone was you.",
-        "<aqua>{cured_villager}</aqua> is back because someone stayed. That someone was you. The village noticed what you did for <aqua>{cured_villager}</aqua>, even the wary ones.",
-        "The village noticed what you did for <aqua>{cured_villager}</aqua>, even the wary ones. A good deed does not wipe the slate clean, but it does leave a mark.",
-        "A good deed does not wipe the slate clean, but it does leave a mark. You helped <aqua>{cured_villager}</aqua> return to us. I can respect that much.",
-        "You helped <aqua>{cured_villager}</aqua> return to us. I can respect that much. I am not ready to trust you fully, but that cure weighs in your favor.",
-        "I am not ready to trust you fully, but that cure weighs in your favor. Whatever else I think of you, <aqua>{cured_villager}</aqua> is here because you helped.",
-        "Whatever else I think of you, <aqua>{cured_villager}</aqua> is here because you helped. Helping <aqua>{cured_villager}</aqua> speaks well of you. It does not erase everything else."
+        "Whatever else I think of you, <aqua>{cured_villager}</aqua> is here because you helped."
       ],
       "dispositions": [
         "cautious",
@@ -48,17 +38,7 @@
         "I know the village owes you some gratitude. I just need room to feel it carefully.",
         "Saving <aqua>{cured_villager}</aqua> matters. So does why I still step back.",
         "I can admit the cure was kind and still keep my distance.",
-        "You brought one of ours back. I wish that made this easier to understand.",
-        "You saved <aqua>{cured_villager}</aqua>. I know. I just do not know what to do with both that and the rest. People are saying <aqua>{cured_villager}</aqua> came home because you stayed.",
-        "People are saying <aqua>{cured_villager}</aqua> came home because you stayed. <aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name.",
-        "<aqua>{cured_villager_possessive}</aqua> cure changed the way people say your name. I am glad <aqua>{cured_villager}</aqua> is back. I am still not sure I feel safe.",
-        "I am glad <aqua>{cured_villager}</aqua> is back. I am still not sure I feel safe. You did something good. That does not make my fear disappear all at once.",
-        "You did something good. That does not make my fear disappear all at once. <aqua>{cured_villager}</aqua> was helped by you, and I am trying to hold that beside everything else.",
-        "<aqua>{cured_villager}</aqua> was helped by you, and I am trying to hold that beside everything else. I know the village owes you some gratitude. I just need room to feel it carefully.",
-        "I know the village owes you some gratitude. I just need room to feel it carefully. Saving <aqua>{cured_villager}</aqua> matters. So does why I still step back.",
-        "Saving <aqua>{cured_villager}</aqua> matters. So does why I still step back. I can admit the cure was kind and still keep my distance.",
-        "I can admit the cure was kind and still keep my distance. You brought one of ours back. I wish that made this easier to understand.",
-        "You brought one of ours back. I wish that made this easier to understand. You saved <aqua>{cured_villager}</aqua>. I know. I just do not know what to do with both that and the rest."
+        "You brought one of ours back. I wish that made this easier to understand."
       ],
       "dispositions": [
         "hostile",
@@ -83,17 +63,7 @@
         "Are you good at fixing people when they get all wrong?",
         "The grown-ups talk softer when they say <aqua>{cured_villager_possessive}</aqua> name now.",
         "Did <aqua>{cured_villager}</aqua> remember everything after?",
-        "I am glad <aqua>{cured_villager}</aqua> came back. That was scary.",
-        "Are you the doctor who saved <aqua>{cured_villager}</aqua>? Did you really help <aqua>{cured_villager}</aqua> come back?",
-        "Did you really help <aqua>{cured_villager}</aqua> come back? <aqua>{cured_villager}</aqua> is better because of you, right?",
-        "<aqua>{cured_villager}</aqua> is better because of you, right? The grown-ups said you helped <aqua>{cured_villager}</aqua>. Is that true?",
-        "The grown-ups said you helped <aqua>{cured_villager}</aqua>. Is that true? Did you use a potion? Was it a very strong one?",
-        "Did you use a potion? Was it a very strong one? I saw <aqua>{cured_villager}</aqua> walking again. That was you?",
-        "I saw <aqua>{cured_villager}</aqua> walking again. That was you? Are you good at fixing people when they get all wrong?",
-        "Are you good at fixing people when they get all wrong? The grown-ups talk softer when they say <aqua>{cured_villager_possessive}</aqua> name now.",
-        "The grown-ups talk softer when they say <aqua>{cured_villager_possessive}</aqua> name now. Did <aqua>{cured_villager}</aqua> remember everything after?",
-        "Did <aqua>{cured_villager}</aqua> remember everything after? I am glad <aqua>{cured_villager}</aqua> came back. That was scary.",
-        "I am glad <aqua>{cured_villager}</aqua> came back. That was scary. Are you the doctor who saved <aqua>{cured_villager}</aqua>?"
+        "I am glad <aqua>{cured_villager}</aqua> came back. That was scary."
       ],
       "player_event_tags": [
         "player_cured_villager"
@@ -115,17 +85,7 @@
         "Do you know how to make bad sickness go away every time?",
         "The grown-ups looked happy and tired after <aqua>{cured_villager}</aqua> got better.",
         "I hope <aqua>{cured_villager}</aqua> never gets like that again.",
-        "If you saved <aqua>{cured_villager}</aqua>, does that make you a hero or a doctor?",
-        "The grown-ups said you are the wizard that saved <aqua>{cured_villager}</aqua>. Are you really? Did you really help <aqua>{cured_villager}</aqua> come back?",
-        "Did you really help <aqua>{cured_villager}</aqua> come back? <aqua>{cured_villager}</aqua> is better because of you, right?",
-        "<aqua>{cured_villager}</aqua> is better because of you, right? Was <aqua>{cured_villager}</aqua> scared before the cure worked?",
-        "Was <aqua>{cured_villager}</aqua> scared before the cure worked? Did the potion taste bad? Grown-up medicine usually does.",
-        "Did the potion taste bad? Grown-up medicine usually does. I thought cures were only in stories. Then <aqua>{cured_villager}</aqua> came back.",
-        "I thought cures were only in stories. Then <aqua>{cured_villager}</aqua> came back. Do you know how to make bad sickness go away every time?",
-        "Do you know how to make bad sickness go away every time? The grown-ups looked happy and tired after <aqua>{cured_villager}</aqua> got better.",
-        "The grown-ups looked happy and tired after <aqua>{cured_villager}</aqua> got better. I hope <aqua>{cured_villager}</aqua> never gets like that again.",
-        "I hope <aqua>{cured_villager}</aqua> never gets like that again. If you saved <aqua>{cured_villager}</aqua>, does that make you a hero or a doctor?",
-        "If you saved <aqua>{cured_villager}</aqua>, does that make you a hero or a doctor? The grown-ups said you are the wizard that saved <aqua>{cured_villager}</aqua>. Are you really?"
+        "If you saved <aqua>{cured_villager}</aqua>, does that make you a hero or a doctor?"
       ],
       "player_event_tags": [
         "player_cured_villager"
@@ -147,17 +107,7 @@
         "No one slept well through that, no matter what they claim.",
         "The sky had a temper, but the village kept its footing.",
         "We will be finding loose shingles and nervous hearts all morning.",
-        "The thunder has passed, but people are still speaking a little softer.",
-        "The thunder <shake>shook everyone</shake>, but the village is still standing. We are rattled, not broken. Count heads before counting damage.",
-        "We are rattled, not broken. Count heads before counting damage. The little ones <jump>jumped</jump> at every crack, but most doors held.",
-        "The little ones <jump>jumped</jump> at every crack, but most doors held. Lightning makes honest fear out of everyone. Thank you for asking.",
-        "Lightning makes honest fear out of everyone. Thank you for asking. We are checking roofs, bells, and nerves after that thunder.",
-        "We are checking roofs, bells, and nerves after that thunder. A storm like that makes every roof sound thinner than it is.",
-        "A storm like that makes every roof sound thinner than it is. No one slept well through that, no matter what they claim.",
-        "No one slept well through that, no matter what they claim. The sky had a temper, but the village kept its footing.",
-        "The sky had a temper, but the village kept its footing. We will be finding loose shingles and nervous hearts all morning.",
-        "We will be finding loose shingles and nervous hearts all morning. The thunder has passed, but people are still speaking a little softer.",
-        "The thunder has passed, but people are still speaking a little softer. The thunder <shake>shook everyone</shake>, but the village is still standing."
+        "The thunder has passed, but people are still speaking a little softer."
       ],
       "event_tags": [
         "thunderstorm"
@@ -178,17 +128,7 @@
         "The windows flashed like the sky was blinking too hard.",
         "I asked if the clouds were angry. Nobody gave a good answer.",
         "I stayed close to the wall because it felt stronger than me.",
-        "Next time the sky gets loud, I am hiding sooner.",
-        "The sky was <shake>so loud</shake>. I stayed near the bed and did not like it. I think everyone is okay, but the thunder made my knees feel funny.",
-        "I think everyone is okay, but the thunder made my knees feel funny. The grown-ups said stay inside. I stayed very inside.",
-        "The grown-ups said stay inside. I stayed very inside. I counted the booms and lost count because I hid.",
-        "I counted the booms and lost count because I hid. Nobody should let the sky shout that much.",
-        "Nobody should let the sky shout that much. I put my hands over my ears, but the thunder still found me.",
-        "I put my hands over my ears, but the thunder still found me. The windows flashed like the sky was blinking too hard.",
-        "The windows flashed like the sky was blinking too hard. I asked if the clouds were angry. Nobody gave a good answer.",
-        "I asked if the clouds were angry. Nobody gave a good answer. I stayed close to the wall because it felt stronger than me.",
-        "I stayed close to the wall because it felt stronger than me. Next time the sky gets loud, I am hiding sooner.",
-        "Next time the sky gets loud, I am hiding sooner. The sky was <shake>so loud</shake>. I stayed near the bed and did not like it."
+        "Next time the sky gets loud, I am hiding sooner."
       ],
       "event_tags": [
         "thunderstorm"
@@ -210,17 +150,7 @@
         "We saved what we could and mourned what we could not.",
         "People are moving carefully today, like the smoke might still be listening.",
         "A bucket feels heavier when every second matters.",
-        "We will rebuild what burned, but first we need to breathe clean air again.",
-        "The <wavy>smoke</wavy> has thinned, but everyone is still counting what was lost. We put out what we could. Keep water close until the smell fades.",
-        "We put out what we could. Keep water close until the smell fades. Fire leaves more than ash. People will be <jump>jumpy</jump> for a while.",
-        "Fire leaves more than ash. People will be <jump>jumpy</jump> for a while. No one wants to say they were scared first, so I will: we were <shake>scared</shake>.",
-        "No one wants to say they were scared first, so I will: we were <shake>scared</shake>. Everyone is checking walls, beds, and each other after the flames.",
-        "Everyone is checking walls, beds, and each other after the flames. The fire is gone, but the village still smells like warning.",
-        "The fire is gone, but the village still smells like warning. We saved what we could and mourned what we could not.",
-        "We saved what we could and mourned what we could not. People are moving carefully today, like the smoke might still be listening.",
-        "People are moving carefully today, like the smoke might still be listening. A bucket feels heavier when every second matters.",
-        "A bucket feels heavier when every second matters. We will rebuild what burned, but first we need to breathe clean air again.",
-        "We will rebuild what burned, but first we need to breathe clean air again. The <wavy>smoke</wavy> has thinned, but everyone is still counting what was lost."
+        "We will rebuild what burned, but first we need to breathe clean air again."
       ],
       "event_tags": [
         "village_fire"
@@ -241,17 +171,7 @@
         "I saw buckets moving faster than people usually move buckets.",
         "The fire sounded hungry. I did not like that.",
         "A grown-up told me I was brave for staying put. I was mostly scared.",
-        "I hope the houses stop smelling like burned things soon.",
-        "There was smoke and grown-ups yelling. I stayed low like they said. I do not like fire when it runs around loose.",
-        "I do not like fire when it runs around loose. Someone carried water very fast. I tried to help by not being in the way.",
-        "Someone carried water very fast. I tried to help by not being in the way. The air tasted bad, but I think everyone found a safe place.",
-        "The air tasted bad, but I think everyone found a safe place. I am okay. My blanket smells smoky though.",
-        "I am okay. My blanket smells smoky though. The smoke made my eyes sting, so I closed them until someone found me.",
-        "The smoke made my eyes sting, so I closed them until someone found me. I saw buckets moving faster than people usually move buckets.",
-        "I saw buckets moving faster than people usually move buckets. The fire sounded hungry. I did not like that.",
-        "The fire sounded hungry. I did not like that. A grown-up told me I was brave for staying put. I was mostly scared.",
-        "A grown-up told me I was brave for staying put. I was mostly scared. I hope the houses stop smelling like burned things soon.",
-        "I hope the houses stop smelling like burned things soon. There was smoke and grown-ups yelling. I stayed low like they said."
+        "I hope the houses stop smelling like burned things soon."
       ],
       "event_tags": [
         "village_fire"
@@ -273,17 +193,7 @@
         "We are checking every door twice and every face three times.",
         "Some people fought. Some hid. Both were trying to survive.",
         "The village held together, though it creaked in every place.",
-        "It will take time before a quiet horn in the distance sounds harmless again.",
-        "The raid is over for now. Some of us are still <pulse>listening for horns</pulse>. Everyone alive is accounted for, but calm takes longer to return.",
-        "Everyone alive is accounted for, but calm takes longer to return. We barred the doors, held our breath, and made it to the other side.",
-        "We barred the doors, held our breath, and made it to the other side. Ask again after the <shake>shaking</shake> stops. For now, yes, most are safe.",
-        "Ask again after the <shake>shaking</shake> stops. For now, yes, most are safe. The bell did its work. So did the brave ones. The rest of us remember.",
-        "The bell did its work. So did the brave ones. The rest of us remember. The raiders are gone, but the sound of them has not left yet.",
-        "The raiders are gone, but the sound of them has not left yet. We are checking every door twice and every face three times.",
-        "We are checking every door twice and every face three times. Some people fought. Some hid. Both were trying to survive.",
-        "Some people fought. Some hid. Both were trying to survive. The village held together, though it creaked in every place.",
-        "The village held together, though it creaked in every place. It will take time before a quiet horn in the distance sounds harmless again.",
-        "It will take time before a quiet horn in the distance sounds harmless again. The raid is over for now. Some of us are still <pulse>listening for horns</pulse>."
+        "It will take time before a quiet horn in the distance sounds harmless again."
       ],
       "event_tags": [
         "raid",
@@ -305,17 +215,7 @@
         "Someone said be brave, so I held my knees and did that.",
         "The horns sounded mean. Bells are loud, but horns are worse.",
         "I wanted to look, but my fear said no.",
-        "When the grown-ups smiled again, I knew it was safer.",
-        "The bell was loud and everyone ran. I ran too. I hid where I was told. I think that means I helped.",
-        "I hid where I was told. I think that means I helped. The bad people are gone, right? Please say they are gone.",
-        "The bad people are gone, right? Please say they are gone. I heard shouting outside and did not peek. Not even once.",
-        "I heard shouting outside and did not peek. Not even once. My heart is still <jump>running</jump> even though my feet stopped.",
-        "My heart is still <jump>running</jump> even though my feet stopped. I stayed behind the door and tried to breathe quietly.",
-        "I stayed behind the door and tried to breathe quietly. Someone said be brave, so I held my knees and did that.",
-        "Someone said be brave, so I held my knees and did that. The horns sounded mean. Bells are loud, but horns are worse.",
-        "The horns sounded mean. Bells are loud, but horns are worse. I wanted to look, but my fear said no.",
-        "I wanted to look, but my fear said no. When the grown-ups smiled again, I knew it was safer.",
-        "When the grown-ups smiled again, I knew it was safer. The bell was loud and everyone ran. I ran too."
+        "When the grown-ups smiled again, I knew it was safer."
       ],
       "event_tags": [
         "raid",
@@ -338,17 +238,7 @@
         "We made it to morning, and some days that is victory enough.",
         "People are sweeping thresholds like that will keep the fear out.",
         "The lamps burned low, but no one wanted to put them out.",
-        "Dawn helped, but it did not undo what the night brought.",
-        "The night brought trouble, but dawn found us still here. We are checking doors and wounds. Night makes every sound <pulse>suspicious</pulse> now.",
-        "We are checking doors and wounds. Night makes every sound <pulse>suspicious</pulse> now. Some slept through it. Some will not sleep well for a while.",
-        "Some slept through it. Some will not sleep well for a while. The attack passed, but people are keeping lamps lit anyway.",
-        "The attack passed, but people are keeping lamps lit anyway. Everyone is quieter after a bad night. Quiet can mean alive, at least.",
-        "Everyone is quieter after a bad night. Quiet can mean alive, at least. The dark felt too close last night. It still does, a little.",
-        "The dark felt too close last night. It still does, a little. We made it to morning, and some days that is victory enough.",
-        "We made it to morning, and some days that is victory enough. People are sweeping thresholds like that will keep the fear out.",
-        "People are sweeping thresholds like that will keep the fear out. The lamps burned low, but no one wanted to put them out.",
-        "The lamps burned low, but no one wanted to put them out. Dawn helped, but it did not undo what the night brought.",
-        "Dawn helped, but it did not undo what the night brought. The night brought trouble, but dawn found us still here."
+        "Dawn helped, but it did not undo what the night brought."
       ],
       "event_tags": [
         "night_attack"
@@ -369,17 +259,7 @@
         "The window looked too dark, so I stopped looking at it.",
         "I heard footsteps outside and hugged my blanket harder.",
         "Morning came back, but I am still mad that night did that.",
-        "Tonight I want two lamps, maybe three.",
-        "I heard monsters and pulled the blanket over my head. Night was too noisy. I want morning to stay longer.",
-        "Night was too noisy. I want morning to stay longer. Someone told me not to open the door, so I did not.",
-        "Someone told me not to open the door, so I did not. I am okay, but I want the lamps left on.",
-        "I am okay, but I want the lamps left on. The dark made <shake>bad sounds</shake>. The grown-ups made braver sounds.",
-        "The dark made <shake>bad sounds</shake>. The grown-ups made braver sounds. I stayed very still so the monsters would not know my name.",
-        "I stayed very still so the monsters would not know my name. The window looked too dark, so I stopped looking at it.",
-        "The window looked too dark, so I stopped looking at it. I heard footsteps outside and hugged my blanket harder.",
-        "I heard footsteps outside and hugged my blanket harder. Morning came back, but I am still mad that night did that.",
-        "Morning came back, but I am still mad that night did that. Tonight I want two lamps, maybe three.",
-        "Tonight I want two lamps, maybe three. I heard monsters and pulled the blanket over my head."
+        "Tonight I want two lamps, maybe three."
       ],
       "event_tags": [
         "night_attack"

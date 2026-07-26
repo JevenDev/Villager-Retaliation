@@ -13,17 +13,7 @@
         "Fine. Say it once, then prove it every time after.",
         "I know when something has gone bad. This does not have to.",
         "I was wrong. I would rather say it plainly than dress it up.",
-        "That came out sharper than it should have. I am sorry.",
-        "That was bluntly said. Good. Blunt is better than pretending nothing happened. I clean up messes for a living. This one is yours to clean properly.",
-        "I clean up messes for a living. This one is yours to clean properly. I prefer clean cuts to messy words. That was clean enough to hear.",
-        "I prefer clean cuts to messy words. That was clean enough to hear. You made a mess. Start by not making another one.",
-        "You made a mess. Start by not making another one. An apology does not put things back on the hook, but it is a beginning.",
-        "An apology does not put things back on the hook, but it is a beginning. I'll take the words. I'll judge the hands.",
-        "I'll take the words. I'll judge the hands. Fine. Say it once, then prove it every time after.",
-        "Fine. Say it once, then prove it every time after. I know when something has gone bad. This does not have to.",
-        "I know when something has gone bad. This does not have to. I was wrong. I would rather say it plainly than dress it up.",
-        "I was wrong. I would rather say it plainly than dress it up. That came out sharper than it should have. I am sorry.",
-        "That came out sharper than it should have. I am sorry. That was bluntly said. Good. Blunt is better than pretending nothing happened."
+        "That came out sharper than it should have. I am sorry."
       ],
       "option": "apologize_for_harm",
       "show_for_babies": false,

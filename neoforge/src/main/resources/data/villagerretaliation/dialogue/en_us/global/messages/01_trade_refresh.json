@@ -21,17 +21,7 @@
         "I will check my stock and skill against the {trade_item} trade.",
         "Come back tomorrow. By then, I should know whether {trade_item} can change.",
         "I can review that offer. Let me sleep on the numbers first.",
-        "All right. The {trade_item} trade is worth a <pulse>second look</pulse>.",
-        "I will look into replacing my {trade_item} trade. Come back tomorrow to see what I have to offer. I can reconsider the {trade_item} trade. Give me until tomorrow and I may have something different.",
-        "I can reconsider the {trade_item} trade. Give me until tomorrow and I may have something different. The {trade_item} trade could use another look. Come back tomorrow and we will see what I can offer.",
-        "The {trade_item} trade could use another look. Come back tomorrow and we will see what I can offer. I will put the {trade_item} trade back on my ledger and see what makes sense.",
-        "I will put the {trade_item} trade back on my ledger and see what makes sense. Give me until tomorrow. I may be able to offer something better than {trade_item}.",
-        "Give me until tomorrow. I may be able to offer something better than {trade_item}. I can take another look at {trade_item}. Good trades need a little time.",
-        "I can take another look at {trade_item}. Good trades need a little time. I will check my stock and skill against the {trade_item} trade.",
-        "I will check my stock and skill against the {trade_item} trade. Come back tomorrow. By then, I should know whether {trade_item} can change.",
-        "Come back tomorrow. By then, I should know whether {trade_item} can change. I can review that offer. Let me sleep on the numbers first.",
-        "I can review that offer. Let me sleep on the numbers first. All right. The {trade_item} trade is worth a <pulse>second look</pulse>.",
-        "All right. The {trade_item} trade is worth a <pulse>second look</pulse>. I will look into replacing my {trade_item} trade. Come back tomorrow to see what I have to offer."
+        "All right. The {trade_item} trade is worth a <pulse>second look</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.accept.000"
     },
@@ -47,17 +37,7 @@
         "I am working on it. Tomorrow will tell us more.",
         "I have already marked that trade for review.",
         "One review at a time. That one is already waiting on tomorrow.",
-        "The trade is already <pulse>pending</pulse>. Check back tomorrow.",
-        "I am already looking into that trade. Come back tomorrow. That trade is already under review. Give me until tomorrow.",
-        "That trade is already under review. Give me until tomorrow. I have not forgotten. Check with me tomorrow.",
-        "I have not forgotten. Check with me tomorrow. It is already on my ledger. Let me finish the review.",
-        "It is already on my ledger. Let me finish the review. I am still weighing that trade. Come back after I have had time.",
-        "I am still weighing that trade. Come back after I have had time. That request is already moving. Do not rush the counter.",
-        "That request is already moving. Do not rush the counter. I am working on it. Tomorrow will tell us more.",
-        "I am working on it. Tomorrow will tell us more. I have already marked that trade for review.",
-        "I have already marked that trade for review. One review at a time. That one is already waiting on tomorrow.",
-        "One review at a time. That one is already waiting on tomorrow. The trade is already <pulse>pending</pulse>. Check back tomorrow.",
-        "The trade is already <pulse>pending</pulse>. Check back tomorrow. I am already looking into that trade. Come back tomorrow."
+        "The trade is already <pulse>pending</pulse>. Check back tomorrow."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.already_pending.001"
     },
@@ -73,17 +53,7 @@
         "I need more experience before I can replace that properly.",
         "That trade needs a better option than I can source today.",
         "Not yet. I do not have the right replacement in reach.",
-        "Give me time to grow my craft before asking for that kind of change.",
-        "I do not know a better trade for that yet. My skills are not ready to replace that trade with anything better.",
-        "My skills are not ready to replace that trade with anything better. Ask again when I have learned enough to offer something worthwhile.",
-        "Ask again when I have learned enough to offer something worthwhile. I cannot promise a better trade until I can actually support one.",
-        "I cannot promise a better trade until I can actually support one. That offer is beyond my current stock and skill.",
-        "That offer is beyond my current stock and skill. I would rather refuse than give you a worse deal dressed as improvement.",
-        "I would rather refuse than give you a worse deal dressed as improvement. I need more experience before I can replace that properly.",
-        "I need more experience before I can replace that properly. That trade needs a better option than I can source today.",
-        "That trade needs a better option than I can source today. Not yet. I do not have the right replacement in reach.",
-        "Not yet. I do not have the right replacement in reach. Give me time to grow my craft before asking for that kind of change.",
-        "Give me time to grow my craft before asking for that kind of change. I do not know a better trade for that yet."
+        "Give me time to grow my craft before asking for that kind of change."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.not_ready.002"
     },
@@ -99,17 +69,7 @@
         "No refresh is possible on that offer right now.",
         "The slot is not ready to be changed.",
         "I cannot adjust that trade while it is in this state.",
-        "That offer is <pulse>locked</pulse> for now.",
-        "I cannot change that trade right now. That trade cannot be refreshed right now.",
-        "That trade cannot be refreshed right now. Now is not the time to change that offer.",
-        "Now is not the time to change that offer. That offer is not open for changes at the moment.",
-        "That offer is not open for changes at the moment. I cannot move that trade from here.",
-        "I cannot move that trade from here. That trade is fixed for now.",
-        "That trade is fixed for now. No refresh is possible on that offer right now.",
-        "No refresh is possible on that offer right now. The slot is not ready to be changed.",
-        "The slot is not ready to be changed. I cannot adjust that trade while it is in this state.",
-        "I cannot adjust that trade while it is in this state. That offer is <pulse>locked</pulse> for now.",
-        "That offer is <pulse>locked</pulse> for now. I cannot change that trade right now."
+        "That offer is <pulse>locked</pulse> for now."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.unavailable.003"
     },
@@ -125,17 +85,7 @@
         "For most people, I would simply review it. For you, I can offer more choice.",
         "The {trade_item} trade can be refreshed, or we can arrange a careful order.",
         "Do you want a new offer tomorrow, or a Special Order with your name on it?",
-        "Your reputation gives you options. Choose the <pulse>refresh</pulse>, or choose the order.",
-        "I can reconsider the {trade_item} trade, or I can take a Special Order if you know what you want. For you, I can either surprise you tomorrow or arrange something specific with more time.",
-        "For you, I can either surprise you tomorrow or arrange something specific with more time. That {trade_item} trade can change. Do you want my judgment, or a Special Order?",
-        "That {trade_item} trade can change. Do you want my judgment, or a Special Order? I can refresh the trade my way, or you can name a Special Order.",
-        "I can refresh the trade my way, or you can name a Special Order. You have enough standing here to ask for something specific, if you prefer.",
-        "You have enough standing here to ask for something specific, if you prefer. I can choose a replacement, or you can put a request on the ledger.",
-        "I can choose a replacement, or you can put a request on the ledger. For most people, I would simply review it. For you, I can offer more choice.",
-        "For most people, I would simply review it. For you, I can offer more choice. The {trade_item} trade can be refreshed, or we can arrange a careful order.",
-        "The {trade_item} trade can be refreshed, or we can arrange a careful order. Do you want a new offer tomorrow, or a Special Order with your name on it?",
-        "Do you want a new offer tomorrow, or a Special Order with your name on it? Your reputation gives you options. Choose the <pulse>refresh</pulse>, or choose the order.",
-        "Your reputation gives you options. Choose the <pulse>refresh</pulse>, or choose the order. I can reconsider the {trade_item} trade, or I can take a Special Order if you know what you want."
+        "Your reputation gives you options. Choose the <pulse>refresh</pulse>, or choose the order."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.revered_prompt.004"
     },
@@ -151,17 +101,7 @@
         "I kept my word. {restocked_summary} is stocked now.",
         "The counter is ready for you. I have {restocked_summary}.",
         "Come take a look when you can. {restocked_summary} is prepared.",
-        "{restocked_summary} is <pulse>ready</pulse>. I set it aside with your name in mind.",
-        "Hey, I restocked {restocked_summary} for you. I have {restocked_summary} <pulse>ready</pulse> for you now.",
-        "I have {restocked_summary} <pulse>ready</pulse> for you now. I stocked {restocked_summary} and left them waiting on my side of the counter.",
-        "I stocked {restocked_summary} and left them waiting on my side of the counter. I finished restocking {restocked_summary}. Take a look.",
-        "I finished restocking {restocked_summary}. Take a look. I have your requested stock ready. I restocked {restocked_summary}.",
-        "I have your requested stock ready. I restocked {restocked_summary}. Your request is ready. {restocked_summary} is waiting.",
-        "Your request is ready. {restocked_summary} is waiting. I kept my word. {restocked_summary} is stocked now.",
-        "I kept my word. {restocked_summary} is stocked now. The counter is ready for you. I have {restocked_summary}.",
-        "The counter is ready for you. I have {restocked_summary}. Come take a look when you can. {restocked_summary} is prepared.",
-        "Come take a look when you can. {restocked_summary} is prepared. {restocked_summary} is <pulse>ready</pulse>. I set it aside with your name in mind.",
-        "{restocked_summary} is <pulse>ready</pulse>. I set it aside with your name in mind. Hey, I restocked {restocked_summary} for you."
+        "{restocked_summary} is <pulse>ready</pulse>. I set it aside with your name in mind."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready.005"
     },
@@ -177,17 +117,7 @@
         "Pardon me, <aqua>{interrupted_villager}</aqua>. <purple>{player}</purple>, your order is ready.",
         "Before this slips my mind, <purple>{player}</purple>, {restocked_summary} is waiting for you.",
         "Sorry, one counter matter: <purple>{player}</purple>, I finished {restocked_summary}.",
-        "I will be quick. <purple>{player}</purple>, your requested stock is <pulse>ready</pulse>.",
-        "Sorry to butt in, <aqua>{interrupted_villager}</aqua>, but <purple>{player}</purple>, I finished that request you wanted. Oh, nice. I actually have a new trade ready for you too.",
-        "Oh, nice. I actually have a new trade ready for you too. Before you go, <purple>{player}</purple>, I also have {restocked_summary} ready for you.",
-        "Before you go, <purple>{player}</purple>, I also have {restocked_summary} ready for you. Quick thing, <purple>{player}</purple>. I finished restocking {restocked_summary} too.",
-        "Quick thing, <purple>{player}</purple>. I finished restocking {restocked_summary} too. I do not mean to interrupt, <aqua>{interrupted_villager}</aqua>, but <purple>{player}</purple>, your request is ready at my counter.",
-        "I do not mean to interrupt, <aqua>{interrupted_villager}</aqua>, but <purple>{player}</purple>, your request is ready at my counter. Since we are talking orders, <purple>{player}</purple>, I have {restocked_summary} ready as well.",
-        "Since we are talking orders, <purple>{player}</purple>, I have {restocked_summary} ready as well. Pardon me, <aqua>{interrupted_villager}</aqua>. <purple>{player}</purple>, your order is ready.",
-        "Pardon me, <aqua>{interrupted_villager}</aqua>. <purple>{player}</purple>, your order is ready. Before this slips my mind, <purple>{player}</purple>, {restocked_summary} is waiting for you.",
-        "Before this slips my mind, <purple>{player}</purple>, {restocked_summary} is waiting for you. Sorry, one counter matter: <purple>{player}</purple>, I finished {restocked_summary}.",
-        "Sorry, one counter matter: <purple>{player}</purple>, I finished {restocked_summary}. I will be quick. <purple>{player}</purple>, your requested stock is <pulse>ready</pulse>.",
-        "I will be quick. <purple>{player}</purple>, your requested stock is <pulse>ready</pulse>. Sorry to butt in, <aqua>{interrupted_villager}</aqua>, but <purple>{player}</purple>, I finished that request you wanted."
+        "I will be quick. <purple>{player}</purple>, your requested stock is <pulse>ready</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_interjection.006"
     },
@@ -203,17 +133,7 @@
         "I will make this brief. <purple>{player}</purple>, your stock is ready too.",
         "Since we are already interrupting politely, I have {restocked_summary} ready.",
         "Another counter has news. <purple>{player}</purple>, {restocked_summary} is finished.",
-        "Sorry for the extra voice, but your order is <pulse>ready</pulse> too.",
-        "Sorry, one more counter calling: <purple>{player}</purple>, I have {restocked_summary} ready too. Let me squeeze in before everyone scatters: <purple>{player}</purple>, your request is ready at my counter.",
-        "Let me squeeze in before everyone scatters: <purple>{player}</purple>, your request is ready at my counter. Since everyone is already gathered, <purple>{player}</purple>, {restocked_summary} is ready.",
-        "Since everyone is already gathered, <purple>{player}</purple>, {restocked_summary} is ready. I hate to add to the noise, but I finished {restocked_summary} for you.",
-        "I hate to add to the noise, but I finished {restocked_summary} for you. Before the crowd disperses, <purple>{player}</purple>, I have {restocked_summary} ready as well.",
-        "Before the crowd disperses, <purple>{player}</purple>, I have {restocked_summary} ready as well. One more order to mention, <purple>{player}</purple>: {restocked_summary} is waiting.",
-        "One more order to mention, <purple>{player}</purple>: {restocked_summary} is waiting. I will make this brief. <purple>{player}</purple>, your stock is ready too.",
-        "I will make this brief. <purple>{player}</purple>, your stock is ready too. Since we are already interrupting politely, I have {restocked_summary} ready.",
-        "Since we are already interrupting politely, I have {restocked_summary} ready. Another counter has news. <purple>{player}</purple>, {restocked_summary} is finished.",
-        "Another counter has news. <purple>{player}</purple>, {restocked_summary} is finished. Sorry for the extra voice, but your order is <pulse>ready</pulse> too.",
-        "Sorry for the extra voice, but your order is <pulse>ready</pulse> too. Sorry, one more counter calling: <purple>{player}</purple>, I have {restocked_summary} ready too."
+        "Sorry for the extra voice, but your order is <pulse>ready</pulse> too."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_interjection.second.007"
     },
@@ -229,17 +149,7 @@
         "I promise this is quick. Your {restocked_summary} is ready.",
         "Before the line gets any longer, I have {restocked_summary} waiting.",
         "Final interruption from me: {restocked_summary} is ready at my counter.",
-        "One last thing. {restocked_summary} is <pulse>ready</pulse> when you are.",
-        "And before you get pulled away, <purple>{player}</purple>, I also finished {restocked_summary}. One more thing from my counter: {restocked_summary} is ready.",
-        "One more thing from my counter: {restocked_summary} is ready. I waited my turn. <purple>{player}</purple>, your requested stock is ready too.",
-        "I waited my turn. <purple>{player}</purple>, your requested stock is ready too. I will keep this short. I have {restocked_summary} waiting.",
-        "I will keep this short. I have {restocked_summary} waiting. One last counter report: {restocked_summary} is ready.",
-        "One last counter report: {restocked_summary} is ready. Last order note, <purple>{player}</purple>: {restocked_summary} is finished.",
-        "Last order note, <purple>{player}</purple>: {restocked_summary} is finished. I promise this is quick. Your {restocked_summary} is ready.",
-        "I promise this is quick. Your {restocked_summary} is ready. Before the line gets any longer, I have {restocked_summary} waiting.",
-        "Before the line gets any longer, I have {restocked_summary} waiting. Final interruption from me: {restocked_summary} is ready at my counter.",
-        "Final interruption from me: {restocked_summary} is ready at my counter. One last thing. {restocked_summary} is <pulse>ready</pulse> when you are.",
-        "One last thing. {restocked_summary} is <pulse>ready</pulse> when you are. And before you get pulled away, <purple>{player}</purple>, I also finished {restocked_summary}."
+        "One last thing. {restocked_summary} is <pulse>ready</pulse> when you are."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_interjection.third.008"
     },
@@ -255,17 +165,7 @@
         "I can see this is not the moment, but your order is finished.",
         "I would rather not stand in the middle of this, so quickly: {restocked_summary} is ready.",
         "<shake>Bad timing</shake>, I know. Your stock is waiting at my counter.",
-        "When everyone is done staring, {restocked_summary} is <pulse>ready</pulse>.",
-        "<shake>Whoa...</shake> bad time? I just wanted to let you know those trades you asked for are ready. This seems like a bad moment, but <purple>{player}</purple>, I finished that request you wanted.",
-        "This seems like a bad moment, but <purple>{player}</purple>, I finished that request you wanted. I do not want to step into whatever this is, but I have {restocked_summary} ready for you.",
-        "I do not want to step into whatever this is, but I have {restocked_summary} ready for you. Awkward timing. Your requested stock is ready at my counter.",
-        "Awkward timing. Your requested stock is ready at my counter. I will be quick: {restocked_summary} is ready when this is settled.",
-        "I will be quick: {restocked_summary} is ready when this is settled. This feels tense, but I should still tell you: {restocked_summary} is ready.",
-        "This feels tense, but I should still tell you: {restocked_summary} is ready. I can see this is not the moment, but your order is finished.",
-        "I can see this is not the moment, but your order is finished. I would rather not stand in the middle of this, so quickly: {restocked_summary} is ready.",
-        "I would rather not stand in the middle of this, so quickly: {restocked_summary} is ready. <shake>Bad timing</shake>, I know. Your stock is waiting at my counter.",
-        "<shake>Bad timing</shake>, I know. Your stock is waiting at my counter. When everyone is done staring, {restocked_summary} is <pulse>ready</pulse>.",
-        "When everyone is done staring, {restocked_summary} is <pulse>ready</pulse>. <shake>Whoa...</shake> bad time? I just wanted to let you know those trades you asked for are ready."
+        "When everyone is done staring, {restocked_summary} is <pulse>ready</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_theft_interjection.009"
     },
@@ -281,17 +181,7 @@
         "I would wait, but I may lose my nerve. {restocked_summary} is ready.",
         "Everyone is already watching, so there it is: {restocked_summary} is finished.",
         "This is not my favorite moment to speak, but the stock is ready.",
-        "<shake>Awkward</shake> or not, {restocked_summary} is waiting.",
-        "I know this is getting stranger, but {restocked_summary} is ready. Bad timing twice over. <purple>{player}</purple>, I have {restocked_summary} ready too.",
-        "Bad timing twice over. <purple>{player}</purple>, I have {restocked_summary} ready too. I will make this quick while everyone is staring: {restocked_summary} is ready.",
-        "I will make this quick while everyone is staring: {restocked_summary} is ready. <aqua>{previous_villager}</aqua>, I know. Still, <purple>{player}</purple>, your request is finished.",
-        "<aqua>{previous_villager}</aqua>, I know. Still, <purple>{player}</purple>, your request is finished. I can feel the room getting colder, so I will be brief: {restocked_summary} is ready.",
-        "I can feel the room getting colder, so I will be brief: {restocked_summary} is ready. Not to make this more awkward, but your order is ready too.",
-        "Not to make this more awkward, but your order is ready too. I would wait, but I may lose my nerve. {restocked_summary} is ready.",
-        "I would wait, but I may lose my nerve. {restocked_summary} is ready. Everyone is already watching, so there it is: {restocked_summary} is finished.",
-        "Everyone is already watching, so there it is: {restocked_summary} is finished. This is not my favorite moment to speak, but the stock is ready.",
-        "This is not my favorite moment to speak, but the stock is ready. <shake>Awkward</shake> or not, {restocked_summary} is waiting.",
-        "<shake>Awkward</shake> or not, {restocked_summary} is waiting. I know this is getting stranger, but {restocked_summary} is ready."
+        "<shake>Awkward</shake> or not, {restocked_summary} is waiting."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_theft_interjection.second.010"
     },
@@ -307,17 +197,7 @@
         "This conversation has sharp edges, so I will keep mine short: {restocked_summary} is ready.",
         "One final uncomfortable notice: your stock is finished.",
         "I will step back after this. {restocked_summary} is ready.",
-        "<shake>Last interruption</shake>, I swear. {restocked_summary} is ready.",
-        "This is a terrible moment to speak up, but {restocked_summary} is ready. I waited because this looked serious. Your stock is ready too.",
-        "I waited because this looked serious. Your stock is ready too. Last thing from me: {restocked_summary} is ready when this settles.",
-        "Last thing from me: {restocked_summary} is ready when this settles. No pressure, except all of this pressure. I have {restocked_summary} ready.",
-        "No pressure, except all of this pressure. I have {restocked_summary} ready. I promise I am not trying to make this worse. {restocked_summary} is done.",
-        "I promise I am not trying to make this worse. {restocked_summary} is done. When this quiets down, your order is ready at my counter.",
-        "When this quiets down, your order is ready at my counter. This conversation has sharp edges, so I will keep mine short: {restocked_summary} is ready.",
-        "This conversation has sharp edges, so I will keep mine short: {restocked_summary} is ready. One final uncomfortable notice: your stock is finished.",
-        "One final uncomfortable notice: your stock is finished. I will step back after this. {restocked_summary} is ready.",
-        "I will step back after this. {restocked_summary} is ready. <shake>Last interruption</shake>, I swear. {restocked_summary} is ready.",
-        "<shake>Last interruption</shake>, I swear. {restocked_summary} is ready. This is a terrible moment to speak up, but {restocked_summary} is ready."
+        "<shake>Last interruption</shake>, I swear. {restocked_summary} is ready."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.ready_theft_interjection.third.011"
     },
@@ -333,17 +213,7 @@
         "These are the requests my craft can support today.",
         "This is what I can source, prepare, and stand behind.",
         "Special Orders take planning, so choose the one you truly want.",
-        "Here is the <pulse>realistic</pulse> list. No fantasy stock, no false promises.",
-        "These are the Special Orders I can realistically arrange right now. Here is what my skills and suppliers can support.",
-        "Here is what my skills and suppliers can support. Choose carefully. Specific stock takes longer to prepare.",
-        "Choose carefully. Specific stock takes longer to prepare. These are the orders I can actually promise without lying to you.",
-        "These are the orders I can actually promise without lying to you. My catalog is limited, but these choices are solid.",
-        "My catalog is limited, but these choices are solid. Pick from this list. Anything else is outside my reach for now.",
-        "Pick from this list. Anything else is outside my reach for now. These are the requests my craft can support today.",
-        "These are the requests my craft can support today. This is what I can source, prepare, and stand behind.",
-        "This is what I can source, prepare, and stand behind. Special Orders take planning, so choose the one you truly want.",
-        "Special Orders take planning, so choose the one you truly want. Here is the <pulse>realistic</pulse> list. No fantasy stock, no false promises.",
-        "Here is the <pulse>realistic</pulse> list. No fantasy stock, no false promises. These are the Special Orders I can realistically arrange right now."
+        "Here is the <pulse>realistic</pulse> list. No fantasy stock, no false promises."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_select.012"
     },
@@ -359,17 +229,7 @@
         "That order is within reach. {trade_item} will take {wait_days} {wait_day_word}.",
         "I can arrange it, but specific stock takes patience: {wait_days} {wait_day_word}.",
         "If you confirm {trade_item}, expect {wait_days} {wait_day_word} before it is ready.",
-        "{trade_item} is possible. The ledger asks for <pulse>{wait_days} {wait_day_word}</pulse>.",
-        "A Special Order for {trade_item} will take {wait_days} {wait_day_word}. I need {cooldown_days} {cooldown_day_word} before another order from you. I can arrange {trade_item}. It will take {wait_days} {wait_day_word}, and I will need {cooldown_days} {cooldown_day_word} before taking another order from you.",
-        "I can arrange {trade_item}. It will take {wait_days} {wait_day_word}, and I will need {cooldown_days} {cooldown_day_word} before taking another order from you. {trade_item} is possible. Give me {wait_days} {wait_day_word}, then wait {cooldown_days} {cooldown_day_word} before asking me for another order.",
-        "{trade_item} is possible. Give me {wait_days} {wait_day_word}, then wait {cooldown_days} {cooldown_day_word} before asking me for another order. I can put {trade_item} on the ledger. It needs {wait_days} {wait_day_word}, then I need {cooldown_days} {cooldown_day_word} to recover.",
-        "I can put {trade_item} on the ledger. It needs {wait_days} {wait_day_word}, then I need {cooldown_days} {cooldown_day_word} to recover. For {trade_item}, the wait is {wait_days} {wait_day_word}. After that, give me {cooldown_days} {cooldown_day_word} before another request.",
-        "For {trade_item}, the wait is {wait_days} {wait_day_word}. After that, give me {cooldown_days} {cooldown_day_word} before another request. {trade_item} can be done, but not instantly. I need {wait_days} {wait_day_word}.",
-        "{trade_item} can be done, but not instantly. I need {wait_days} {wait_day_word}. That order is within reach. {trade_item} will take {wait_days} {wait_day_word}.",
-        "That order is within reach. {trade_item} will take {wait_days} {wait_day_word}. I can arrange it, but specific stock takes patience: {wait_days} {wait_day_word}.",
-        "I can arrange it, but specific stock takes patience: {wait_days} {wait_day_word}. If you confirm {trade_item}, expect {wait_days} {wait_day_word} before it is ready.",
-        "If you confirm {trade_item}, expect {wait_days} {wait_day_word} before it is ready. {trade_item} is possible. The ledger asks for <pulse>{wait_days} {wait_day_word}</pulse>.",
-        "{trade_item} is possible. The ledger asks for <pulse>{wait_days} {wait_day_word}</pulse>. A Special Order for {trade_item} will take {wait_days} {wait_day_word}. I need {cooldown_days} {cooldown_day_word} before another order from you."
+        "{trade_item} is possible. The ledger asks for <pulse>{wait_days} {wait_day_word}</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_confirm.013"
     },
@@ -385,17 +245,7 @@
         "Your {trade_item} order is officially waiting on time and work.",
         "{trade_item} is queued. I will handle it properly, not quickly.",
         "I have accepted the order. Give me <pulse>{wait_days} {wait_day_word}</pulse>.",
-        "That Special Order is set. Come back when the ledger has had time to breathe.",
-        "Your Special Order for {trade_item} is set. Come back after {wait_days} {wait_day_word}, then give me {cooldown_days} {cooldown_day_word} before another order. I have marked the Special Order for {trade_item}. It will be ready after {wait_days} {wait_day_word}, and I need {cooldown_days} {cooldown_day_word} before another request.",
-        "I have marked the Special Order for {trade_item}. It will be ready after {wait_days} {wait_day_word}, and I need {cooldown_days} {cooldown_day_word} before another request. {trade_item} is ordered. Give me {wait_days} {wait_day_word} to prepare it properly, then {cooldown_days} {cooldown_day_word} before the next request.",
-        "{trade_item} is ordered. Give me {wait_days} {wait_day_word} to prepare it properly, then {cooldown_days} {cooldown_day_word} before the next request. The ledger has {trade_item} under your name now.",
-        "The ledger has {trade_item} under your name now. Done. {trade_item} is on the order list.",
-        "Done. {trade_item} is on the order list. I will prepare {trade_item}. Check back after {wait_days} {wait_day_word}.",
-        "I will prepare {trade_item}. Check back after {wait_days} {wait_day_word}. Your {trade_item} order is officially waiting on time and work.",
-        "Your {trade_item} order is officially waiting on time and work. {trade_item} is queued. I will handle it properly, not quickly.",
-        "{trade_item} is queued. I will handle it properly, not quickly. I have accepted the order. Give me <pulse>{wait_days} {wait_day_word}</pulse>.",
-        "I have accepted the order. Give me <pulse>{wait_days} {wait_day_word}</pulse>. That Special Order is set. Come back when the ledger has had time to breathe.",
-        "That Special Order is set. Come back when the ledger has had time to breathe. Your Special Order for {trade_item} is set. Come back after {wait_days} {wait_day_word}, then give me {cooldown_days} {cooldown_day_word} before another order."
+        "That Special Order is set. Come back when the ledger has had time to breathe."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_queued.014"
     },
@@ -411,17 +261,7 @@
         "I will start with {trade_item}. One order is easy enough to track.",
         "Your first Special Order is <pulse>set</pulse>.",
         "The ledger has room, and {trade_item} now has a place on it.",
-        "Good. First order accepted: {trade_item}.",
-        "Your first Special Order is on the ledger: {trade_item}. Give me {wait_days} {wait_day_word}, then {cooldown_days} {cooldown_day_word} before another order. I have room for that. {trade_item} will be ready after {wait_days} {wait_day_word}, and I need {cooldown_days} {cooldown_day_word} before another request.",
-        "I have room for that. {trade_item} will be ready after {wait_days} {wait_day_word}, and I need {cooldown_days} {cooldown_day_word} before another request. {trade_item} is marked as your first active order. I will prepare it in {wait_days} {wait_day_word}, then need {cooldown_days} {cooldown_day_word} before another.",
-        "{trade_item} is marked as your first active order. I will prepare it in {wait_days} {wait_day_word}, then need {cooldown_days} {cooldown_day_word} before another. First order noted. {trade_item} is on the ledger.",
-        "First order noted. {trade_item} is on the ledger. That is your first active request. I can manage it.",
-        "That is your first active request. I can manage it. {trade_item} has the first slot. Give me {wait_days} {wait_day_word}.",
-        "{trade_item} has the first slot. Give me {wait_days} {wait_day_word}. I will start with {trade_item}. One order is easy enough to track.",
-        "I will start with {trade_item}. One order is easy enough to track. Your first Special Order is <pulse>set</pulse>.",
-        "Your first Special Order is <pulse>set</pulse>. The ledger has room, and {trade_item} now has a place on it.",
-        "The ledger has room, and {trade_item} now has a place on it. Good. First order accepted: {trade_item}.",
-        "Good. First order accepted: {trade_item}. Your first Special Order is on the ledger: {trade_item}. Give me {wait_days} {wait_day_word}, then {cooldown_days} {cooldown_day_word} before another order."
+        "Good. First order accepted: {trade_item}."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_queued_first.015"
     },
@@ -437,17 +277,7 @@
         "{trade_item} is queued behind the first order.",
         "Second Special Order accepted. Give me {wait_days} {wait_day_word}.",
         "I have room for this, but we are approaching the limit.",
-        "Two orders are now <pulse>active</pulse>. {trade_item} is one of them.",
-        "That makes two active Special Orders. I will add {trade_item} to the list for {wait_days} {wait_day_word} from now. I can manage a second request. {trade_item} will take {wait_days} {wait_day_word}, then {cooldown_days} {cooldown_day_word} before another order.",
-        "I can manage a second request. {trade_item} will take {wait_days} {wait_day_word}, then {cooldown_days} {cooldown_day_word} before another order. {trade_item} is now your second open order. I still have one more slot after this, and a {cooldown_days} {cooldown_day_word} cooldown before another request.",
-        "{trade_item} is now your second open order. I still have one more slot after this, and a {cooldown_days} {cooldown_day_word} cooldown before another request. Second order noted. The ledger is getting busier.",
-        "Second order noted. The ledger is getting busier. I can still handle this. {trade_item} goes into the second slot.",
-        "I can still handle this. {trade_item} goes into the second slot. That is two requests active now. Do not make me regret my neat handwriting.",
-        "That is two requests active now. Do not make me regret my neat handwriting. {trade_item} is queued behind the first order.",
-        "{trade_item} is queued behind the first order. Second Special Order accepted. Give me {wait_days} {wait_day_word}.",
-        "Second Special Order accepted. Give me {wait_days} {wait_day_word}. I have room for this, but we are approaching the limit.",
-        "I have room for this, but we are approaching the limit. Two orders are now <pulse>active</pulse>. {trade_item} is one of them.",
-        "Two orders are now <pulse>active</pulse>. {trade_item} is one of them. That makes two active Special Orders. I will add {trade_item} to the list for {wait_days} {wait_day_word} from now."
+        "Two orders are now <pulse>active</pulse>. {trade_item} is one of them."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_queued_second.016"
     },
@@ -463,17 +293,7 @@
         "Your third order is set. After this, patience becomes required.",
         "{trade_item} is queued. The order book is officially at its limit.",
         "That fills the last open slot. I will need room before anything else.",
-        "Third Special Order <pulse>accepted</pulse>. The queue is full now.",
-        "{trade_item} is accepted, but that fills your third Special Order slot. It will take {wait_days} {wait_day_word}. I will take this third request for {trade_item}. Let me finish one before you add more, then wait {cooldown_days} {cooldown_day_word}.",
-        "I will take this third request for {trade_item}. Let me finish one before you add more, then wait {cooldown_days} {cooldown_day_word}. Three orders is my limit. {trade_item} is on the ledger, and the queue is full until something is ready.",
-        "Three orders is my limit. {trade_item} is on the ledger, and the queue is full until something is ready. That is the third slot filled. No more until one clears.",
-        "That is the third slot filled. No more until one clears. {trade_item} is accepted, but the ledger is now full.",
-        "{trade_item} is accepted, but the ledger is now full. I can take this, but only just. Three active orders is my cap.",
-        "I can take this, but only just. Three active orders is my cap. Your third order is set. After this, patience becomes required.",
-        "Your third order is set. After this, patience becomes required. {trade_item} is queued. The order book is officially at its limit.",
-        "{trade_item} is queued. The order book is officially at its limit. That fills the last open slot. I will need room before anything else.",
-        "That fills the last open slot. I will need room before anything else. Third Special Order <pulse>accepted</pulse>. The queue is full now.",
-        "Third Special Order <pulse>accepted</pulse>. The queue is full now. {trade_item} is accepted, but that fills your third Special Order slot. It will take {wait_days} {wait_day_word}."
+        "Third Special Order <pulse>accepted</pulse>. The queue is full now."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_queued_third.017"
     },
@@ -489,17 +309,7 @@
         "My catalog does not support that request right now.",
         "I do not have the skill, stock, or supplier for that yet.",
         "Ask again another time. Today, that order is not possible.",
-        "That Special Order is <shake>out of reach</shake> for now.",
-        "I cannot arrange that Special Order right now. That specific order is beyond what I can offer today.",
-        "That specific order is beyond what I can offer today. I do not have a realistic way to prepare that order yet.",
-        "I do not have a realistic way to prepare that order yet. That item is outside my current reach.",
-        "That item is outside my current reach. I cannot promise stock I cannot source.",
-        "I cannot promise stock I cannot source. That order would be dishonest for me to accept.",
-        "That order would be dishonest for me to accept. My catalog does not support that request right now.",
-        "My catalog does not support that request right now. I do not have the skill, stock, or supplier for that yet.",
-        "I do not have the skill, stock, or supplier for that yet. Ask again another time. Today, that order is not possible.",
-        "Ask again another time. Today, that order is not possible. That Special Order is <shake>out of reach</shake> for now.",
-        "That Special Order is <shake>out of reach</shake> for now. I cannot arrange that Special Order right now."
+        "That Special Order is <shake>out of reach</shake> for now."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_unavailable.018"
     },
@@ -515,17 +325,7 @@
         "Wait until the current order clears.",
         "I have not forgotten that one. It is already being prepared.",
         "One order per trade at a time. It keeps the mess manageable.",
-        "That trade is already <pulse>pending</pulse>.",
-        "I am already preparing a Special Order for that trade. That slot is already marked on my ledger.",
-        "That slot is already marked on my ledger. Let me finish the current order for that trade first.",
-        "Let me finish the current order for that trade first. I cannot stack another request on that same trade yet.",
-        "I cannot stack another request on that same trade yet. That order is already in motion.",
-        "That order is already in motion. The ledger has that trade occupied for now.",
-        "The ledger has that trade occupied for now. Wait until the current order clears.",
-        "Wait until the current order clears. I have not forgotten that one. It is already being prepared.",
-        "I have not forgotten that one. It is already being prepared. One order per trade at a time. It keeps the mess manageable.",
-        "One order per trade at a time. It keeps the mess manageable. That trade is already <pulse>pending</pulse>.",
-        "That trade is already <pulse>pending</pulse>. I am already preparing a Special Order for that trade."
+        "That trade is already <pulse>pending</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_pending.019"
     },
@@ -541,17 +341,7 @@
         "I can manage many things, but not more than {max_orders} active {max_order_word}.",
         "You have filled every slot I can spare.",
         "Come back once one request is finished, and I can talk again.",
-        "Your Special Order queue is <pulse>full</pulse>.",
-        "I already have {active_orders} active {active_order_word} for you. {max_orders} {max_order_word} {max_order_count_word} all I can manage at once. Your ledger is full at {active_orders} {active_order_word}. Let me finish one before adding another.",
-        "Your ledger is full at {active_orders} {active_order_word}. Let me finish one before adding another. No more than {max_orders} Special {max_order_word} at a time. Come back when one is ready.",
-        "No more than {max_orders} Special {max_order_word} at a time. Come back when one is ready. I cannot open another request until one of your {active_order_word} is complete.",
-        "I cannot open another request until one of your {active_order_word} is complete. {max_orders} active {max_order_word} is my cap. Let one resolve first.",
-        "{max_orders} active {max_order_word} is my cap. Let one resolve first. The order book is full. Even good ledgers have edges.",
-        "The order book is full. Even good ledgers have edges. I can manage many things, but not more than {max_orders} active {max_order_word}.",
-        "I can manage many things, but not more than {max_orders} active {max_order_word}. You have filled every slot I can spare.",
-        "You have filled every slot I can spare. Come back once one request is finished, and I can talk again.",
-        "Come back once one request is finished, and I can talk again. Your Special Order queue is <pulse>full</pulse>.",
-        "Your Special Order queue is <pulse>full</pulse>. I already have {active_orders} active {active_order_word} for you. {max_orders} {max_order_word} {max_order_count_word} all I can manage at once."
+        "Your Special Order queue is <pulse>full</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_limit_reached.020"
     },
@@ -567,17 +357,7 @@
         "Too many active requests become bad work. I will not risk that.",
         "Finish one request, then bring me the next.",
         "Your active requests are already at my cap.",
-        "The request list is <pulse>full</pulse> for now.",
-        "I already have {active_orders} active {active_order_word} for you. {max_orders} {max_order_word} {max_order_count_word} all I can manage at once. Your request ledger is full at {active_orders} {active_order_word}. Let me finish one before adding another.",
-        "Your request ledger is full at {active_orders} {active_order_word}. Let me finish one before adding another. No more than {max_orders} active {max_order_word} at a time. Come back when one is ready.",
-        "No more than {max_orders} active {max_order_word} at a time. Come back when one is ready. I cannot add another request until one of these clears.",
-        "I cannot add another request until one of these clears. The ledger is full. I need room before I can promise more.",
-        "The ledger is full. I need room before I can promise more. I have reached the limit of what I can track for you.",
-        "I have reached the limit of what I can track for you. Too many active requests become bad work. I will not risk that.",
-        "Too many active requests become bad work. I will not risk that. Finish one request, then bring me the next.",
-        "Finish one request, then bring me the next. Your active requests are already at my cap.",
-        "Your active requests are already at my cap. The request list is <pulse>full</pulse> for now.",
-        "The request list is <pulse>full</pulse> for now. I already have {active_orders} active {active_order_word} for you. {max_orders} {max_order_word} {max_order_count_word} all I can manage at once."
+        "The request list is <pulse>full</pulse> for now."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.request_limit_reached.021"
     },
@@ -593,17 +373,7 @@
         "I am still recovering from the last request.",
         "Come back after {cooldown_days} {cooldown_day_word}, and we can talk stock.",
         "That kind of order cannot be rushed twice in a row.",
-        "The cooldown is still <pulse>{cooldown_days} {cooldown_day_word}</pulse>.",
-        "I need {cooldown_days} more {cooldown_day_word} before taking another Special Order from you. Ask me again after {cooldown_days} {cooldown_day_word}. Specific stock takes recovery time.",
-        "Ask me again after {cooldown_days} {cooldown_day_word}. Specific stock takes recovery time. Not yet. I need {cooldown_days} {cooldown_day_word} before another Special Order from you.",
-        "Not yet. I need {cooldown_days} {cooldown_day_word} before another Special Order from you. The ledger needs time to settle before your next Special Order.",
-        "The ledger needs time to settle before your next Special Order. I can help again after {cooldown_days} {cooldown_day_word}.",
-        "I can help again after {cooldown_days} {cooldown_day_word}. Specific orders take planning. Give me {cooldown_days} {cooldown_day_word}.",
-        "Specific orders take planning. Give me {cooldown_days} {cooldown_day_word}. I am still recovering from the last request.",
-        "I am still recovering from the last request. Come back after {cooldown_days} {cooldown_day_word}, and we can talk stock.",
-        "Come back after {cooldown_days} {cooldown_day_word}, and we can talk stock. That kind of order cannot be rushed twice in a row.",
-        "That kind of order cannot be rushed twice in a row. The cooldown is still <pulse>{cooldown_days} {cooldown_day_word}</pulse>.",
-        "The cooldown is still <pulse>{cooldown_days} {cooldown_day_word}</pulse>. I need {cooldown_days} more {cooldown_day_word} before taking another Special Order from you."
+        "The cooldown is still <pulse>{cooldown_days} {cooldown_day_word}</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_cooldown.022"
     },
@@ -619,17 +389,7 @@
         "I can arrange it, but not without {extra_cost}.",
         "That Special Order requires more than the usual trade.",
         "{extra_cost} is missing. Without it, I cannot accept the order.",
-        "Pay {extra_cost}, and the order can <pulse>begin</pulse>.",
-        "I need {extra_cost} before I can accept that Special Order. Bring {extra_cost}, and I can put that order on the ledger.",
-        "Bring {extra_cost}, and I can put that order on the ledger. That order has an extra cost: {extra_cost}.",
-        "That order has an extra cost: {extra_cost}. I cannot start that request without {extra_cost}.",
-        "I cannot start that request without {extra_cost}. The ledger needs payment first: {extra_cost}.",
-        "The ledger needs payment first: {extra_cost}. Bring the extra cost, and I can make this official.",
-        "Bring the extra cost, and I can make this official. I can arrange it, but not without {extra_cost}.",
-        "I can arrange it, but not without {extra_cost}. That Special Order requires more than the usual trade.",
-        "That Special Order requires more than the usual trade. {extra_cost} is missing. Without it, I cannot accept the order.",
-        "{extra_cost} is missing. Without it, I cannot accept the order. Pay {extra_cost}, and the order can <pulse>begin</pulse>.",
-        "Pay {extra_cost}, and the order can <pulse>begin</pulse>. I need {extra_cost} before I can accept that Special Order."
+        "Pay {extra_cost}, and the order can <pulse>begin</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_payment_missing.023"
     },
@@ -645,17 +405,7 @@
         "There is more than one line here. Pick one.",
         "Which order should I read back to you?",
         "I can give you the status. Just choose the request.",
-        "The ledger is <pulse>open</pulse>. Which order are we checking?",
-        "Which Special Order do you want to check? I have your orders here. Which one?",
-        "I have your orders here. Which one? The ledger is open. Point to the order you mean.",
-        "The ledger is open. Point to the order you mean. Choose the order you want an update on.",
-        "Choose the order you want an update on. I can check the ledger. Which request matters right now?",
-        "I can check the ledger. Which request matters right now? Tell me which Special Order you mean.",
-        "Tell me which Special Order you mean. There is more than one line here. Pick one.",
-        "There is more than one line here. Pick one. Which order should I read back to you?",
-        "Which order should I read back to you? I can give you the status. Just choose the request.",
-        "I can give you the status. Just choose the request. The ledger is <pulse>open</pulse>. Which order are we checking?",
-        "The ledger is <pulse>open</pulse>. Which order are we checking? Which Special Order do you want to check?"
+        "The ledger is <pulse>open</pulse>. Which order are we checking?"
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_status_select.024"
     },
@@ -671,17 +421,7 @@
         "For that {trade_item} request, expect {time_remaining} before I can stock it.",
         "{trade_item} is still being prepared. Check back in {time_remaining}.",
         "The ledger says {trade_item} needs {time_remaining} more.",
-        "{trade_item} is not ready yet, but it is <pulse>on track</pulse>.",
-        "{trade_item} should be stocked in {time_remaining}. For {trade_item}, I need {time_remaining} before it is ready.",
-        "For {trade_item}, I need {time_remaining} before it is ready. That order is still moving. {trade_item} has {time_remaining} left.",
-        "That order is still moving. {trade_item} has {time_remaining} left. {trade_item} is marked for slot {offer_slot}. Give it {time_remaining}.",
-        "{trade_item} is marked for slot {offer_slot}. Give it {time_remaining}. I have not forgotten {trade_item}. It needs {time_remaining}.",
-        "I have not forgotten {trade_item}. It needs {time_remaining}. The {trade_item} order is on schedule: {time_remaining}.",
-        "The {trade_item} order is on schedule: {time_remaining}. For that {trade_item} request, expect {time_remaining} before I can stock it.",
-        "For that {trade_item} request, expect {time_remaining} before I can stock it. {trade_item} is still being prepared. Check back in {time_remaining}.",
-        "{trade_item} is still being prepared. Check back in {time_remaining}. The ledger says {trade_item} needs {time_remaining} more.",
-        "The ledger says {trade_item} needs {time_remaining} more. {trade_item} is not ready yet, but it is <pulse>on track</pulse>.",
-        "{trade_item} is not ready yet, but it is <pulse>on track</pulse>. {trade_item} should be stocked in {time_remaining}."
+        "{trade_item} is not ready yet, but it is <pulse>on track</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_status.025"
     },
@@ -697,17 +437,7 @@
         "No Special Order is moving for you at the moment.",
         "I cannot check what has not been ordered.",
         "Bring me a request first, then I can track it.",
-        "The order ledger is <wavy>empty</wavy> under your name.",
-        "I do not have any active Special Orders for you right now. There is nothing open for you on my order ledger.",
-        "There is nothing open for you on my order ledger. No Special Orders are waiting under your name.",
-        "No Special Orders are waiting under your name. Your ledger is empty right now.",
-        "Your ledger is empty right now. I have no active order to check for you.",
-        "I have no active order to check for you. There is nothing pending at my counter for you.",
-        "There is nothing pending at my counter for you. No Special Order is moving for you at the moment.",
-        "No Special Order is moving for you at the moment. I cannot check what has not been ordered.",
-        "I cannot check what has not been ordered. Bring me a request first, then I can track it.",
-        "Bring me a request first, then I can track it. The order ledger is <wavy>empty</wavy> under your name.",
-        "The order ledger is <wavy>empty</wavy> under your name. I do not have any active Special Orders for you right now."
+        "The order ledger is <wavy>empty</wavy> under your name."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.special_order_status_empty.026"
     },
@@ -723,17 +453,7 @@
         "My stock does not have a suitable replacement yet.",
         "That slot needs a valid option before I can touch it.",
         "I need more skill or better stock before that trade can change.",
-        "Right now, that replacement is <shake>not ready</shake>.",
-        "I need to know a valid replacement for that trade first. My current stock cannot support one. That trade has no better replacement I can source at my current skill.",
-        "That trade has no better replacement I can source at my current skill. I need a real replacement option for that slot. Right now, I do not have one.",
-        "I need a real replacement option for that slot. Right now, I do not have one. Before I change that trade, I need something better to put in its place.",
-        "Before I change that trade, I need something better to put in its place. A refresh needs a proper replacement, not a guess.",
-        "A refresh needs a proper replacement, not a guess. I cannot improve that trade until I know what improvement looks like.",
-        "I cannot improve that trade until I know what improvement looks like. My stock does not have a suitable replacement yet.",
-        "My stock does not have a suitable replacement yet. That slot needs a valid option before I can touch it.",
-        "That slot needs a valid option before I can touch it. I need more skill or better stock before that trade can change.",
-        "I need more skill or better stock before that trade can change. Right now, that replacement is <shake>not ready</shake>.",
-        "Right now, that replacement is <shake>not ready</shake>. I need to know a valid replacement for that trade first. My current stock cannot support one."
+        "Right now, that replacement is <shake>not ready</shake>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.not_ready.027"
     },
@@ -749,17 +469,7 @@
         "That trade is outside my reach right now.",
         "I need a real offer on the counter before I can change it.",
         "This cannot be refreshed from where it stands.",
-        "That trade is <pulse>unavailable</pulse> for changes.",
-        "I need an actual trade slot I can change. That one is not available for refresh. That offer cannot be changed from here. I need a valid, stocked trade slot.",
-        "That offer cannot be changed from here. I need a valid, stocked trade slot. I need the trade to be open and refreshable first. This one is not.",
-        "I need the trade to be open and refreshable first. This one is not. That slot is not in a state I can adjust.",
-        "That slot is not in a state I can adjust. I cannot refresh what is not properly available.",
-        "I cannot refresh what is not properly available. The offer needs to be active before I can replace it.",
-        "The offer needs to be active before I can replace it. That trade is outside my reach right now.",
-        "That trade is outside my reach right now. I need a real offer on the counter before I can change it.",
-        "I need a real offer on the counter before I can change it. This cannot be refreshed from where it stands.",
-        "This cannot be refreshed from where it stands. That trade is <pulse>unavailable</pulse> for changes.",
-        "That trade is <pulse>unavailable</pulse> for changes. I need an actual trade slot I can change. That one is not available for refresh."
+        "That trade is <pulse>unavailable</pulse> for changes."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.unavailable.028"
     },
@@ -775,17 +485,7 @@
         "A Special Order still has to be realistic.",
         "I need a sourceable order, not a wish on paper.",
         "That request does not match my current catalog.",
-        "That Special Order is <shake>not possible</shake> for me yet.",
-        "I need a Special Order that matches what I can source for this profession and skill. That order is outside my current catalog. I cannot promise stock I cannot source.",
-        "That order is outside my current catalog. I cannot promise stock I cannot source. I need that item to be one of the Special Orders I can actually arrange.",
-        "I need that item to be one of the Special Orders I can actually arrange. The request has to fit my trade and my reach.",
-        "The request has to fit my trade and my reach. I cannot take a Special Order that my suppliers cannot support.",
-        "I cannot take a Special Order that my suppliers cannot support. That item is not part of what I can prepare right now.",
-        "That item is not part of what I can prepare right now. A Special Order still has to be realistic.",
-        "A Special Order still has to be realistic. I need a sourceable order, not a wish on paper.",
-        "I need a sourceable order, not a wish on paper. That request does not match my current catalog.",
-        "That request does not match my current catalog. That Special Order is <shake>not possible</shake> for me yet.",
-        "That Special Order is <shake>not possible</shake> for me yet. I need a Special Order that matches what I can source for this profession and skill."
+        "That Special Order is <shake>not possible</shake> for me yet."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_unavailable.029"
     },
@@ -801,17 +501,7 @@
         "The ledger already has that trade marked.",
         "Let me clear the current line before adding another.",
         "That slot cannot hold two promises at once.",
-        "The trade is already <pulse>pending</pulse>.",
-        "I need to finish the current order for that trade before taking another one. That trade is already on my ledger. Let me complete it first.",
-        "That trade is already on my ledger. Let me complete it first. I cannot double-book the same trade. I need the current order cleared first.",
-        "I cannot double-book the same trade. I need the current order cleared first. One pending order is already occupying that slot.",
-        "One pending order is already occupying that slot. That trade is busy until the current request is done.",
-        "That trade is busy until the current request is done. I need the old order finished before a new one can begin.",
-        "I need the old order finished before a new one can begin. The ledger already has that trade marked.",
-        "The ledger already has that trade marked. Let me clear the current line before adding another.",
-        "Let me clear the current line before adding another. That slot cannot hold two promises at once.",
-        "That slot cannot hold two promises at once. The trade is already <pulse>pending</pulse>.",
-        "The trade is already <pulse>pending</pulse>. I need to finish the current order for that trade before taking another one."
+        "The trade is already <pulse>pending</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_pending.030"
     },
@@ -827,17 +517,7 @@
         "I need one request to resolve before I can take another.",
         "The limit is not personal. It is how I keep orders from becoming mistakes.",
         "Too many active orders means worse work. I will not do that.",
-        "Your Special Order slots are <pulse>full</pulse>.",
-        "I need a free order slot. You already have {active_orders} active {active_order_word}, and {max_orders} {max_order_word} is my limit. Your ledger is full. I need one of your {active_orders} active {active_order_word} to finish first.",
-        "Your ledger is full. I need one of your {active_orders} active {active_order_word} to finish first. I cannot take more than {max_orders} Special {max_order_word} at once. Let one clear, then ask again.",
-        "I cannot take more than {max_orders} Special {max_order_word} at once. Let one clear, then ask again. My order ledger has no open slot right now. Wait for one of your active requests to complete.",
-        "My order ledger has no open slot right now. Wait for one of your active requests to complete. I can queue this after one of your current {active_order_word} is done.",
-        "I can queue this after one of your current {active_order_word} is done. There is no room in the ledger for another Special Order.",
-        "There is no room in the ledger for another Special Order. I need one request to resolve before I can take another.",
-        "I need one request to resolve before I can take another. The limit is not personal. It is how I keep orders from becoming mistakes.",
-        "The limit is not personal. It is how I keep orders from becoming mistakes. Too many active orders means worse work. I will not do that.",
-        "Too many active orders means worse work. I will not do that. Your Special Order slots are <pulse>full</pulse>.",
-        "Your Special Order slots are <pulse>full</pulse>. I need a free order slot. You already have {active_orders} active {active_order_word}, and {max_orders} {max_order_word} is my limit."
+        "Your Special Order slots are <pulse>full</pulse>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_limit_reached.031"
     },
@@ -853,17 +533,7 @@
         "I can only track so many promises at once.",
         "Let me finish something before you add more to the pile.",
         "No open request slot, no new request.",
-        "Your request list is <pulse>full</pulse> right now.",
-        "I need a free request slot. You already have {active_orders} active {active_order_word}, and {max_orders} {max_order_word} is my limit. Your request ledger is full. I need one of your {active_orders} active {active_order_word} to finish first.",
-        "Your request ledger is full. I need one of your {active_orders} active {active_order_word} to finish first. I cannot manage more than {max_orders} active {max_order_word} for you at once.",
-        "I cannot manage more than {max_orders} active {max_order_word} for you at once. I need room in the request ledger before I can add another.",
-        "I need room in the request ledger before I can add another. One of your current requests has to clear first.",
-        "One of your current requests has to clear first. The queue is full. I cannot fit this in yet.",
-        "The queue is full. I cannot fit this in yet. I can only track so many promises at once.",
-        "I can only track so many promises at once. Let me finish something before you add more to the pile.",
-        "Let me finish something before you add more to the pile. No open request slot, no new request.",
-        "No open request slot, no new request. Your request list is <pulse>full</pulse> right now.",
-        "Your request list is <pulse>full</pulse> right now. I need a free request slot. You already have {active_orders} active {active_order_word}, and {max_orders} {max_order_word} is my limit."
+        "Your request list is <pulse>full</pulse> right now."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.request_limit_reached.032"
     },
@@ -879,17 +549,7 @@
         "I cannot take another Special Order until that time passes.",
         "The cooldown is still standing between us and the next order.",
         "Specific stock needs breathing room between requests.",
-        "Wait <pulse>{cooldown_days} {cooldown_day_word}</pulse>, then ask again.",
-        "I need {cooldown_days} more {cooldown_day_word} before I can take another Special Order from you. The only blocker is recovery time. Ask me again after {cooldown_days} {cooldown_day_word}.",
-        "The only blocker is recovery time. Ask me again after {cooldown_days} {cooldown_day_word}. I can talk orders again after {cooldown_days} {cooldown_day_word}.",
-        "I can talk orders again after {cooldown_days} {cooldown_day_word}. I need the ledger to cool down before another Special Order.",
-        "I need the ledger to cool down before another Special Order. The work takes time to recover from. Give me {cooldown_days} {cooldown_day_word}.",
-        "The work takes time to recover from. Give me {cooldown_days} {cooldown_day_word}. Come back after {cooldown_days} {cooldown_day_word}, and this may be possible.",
-        "Come back after {cooldown_days} {cooldown_day_word}, and this may be possible. I cannot take another Special Order until that time passes.",
-        "I cannot take another Special Order until that time passes. The cooldown is still standing between us and the next order.",
-        "The cooldown is still standing between us and the next order. Specific stock needs breathing room between requests.",
-        "Specific stock needs breathing room between requests. Wait <pulse>{cooldown_days} {cooldown_day_word}</pulse>, then ask again.",
-        "Wait <pulse>{cooldown_days} {cooldown_day_word}</pulse>, then ask again. I need {cooldown_days} more {cooldown_day_word} before I can take another Special Order from you."
+        "Wait <pulse>{cooldown_days} {cooldown_day_word}</pulse>, then ask again."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_cooldown.033"
     },
@@ -905,17 +565,7 @@
         "Bring the extra payment and we can move forward.",
         "I can do the work, but not without the extra cost.",
         "That order needs {extra_cost} before it can begin.",
-        "{extra_cost} is the <pulse>missing</pulse> part.",
-        "I need the extra cost first: {extra_cost}. Bring {extra_cost}, and I can accept that order.",
-        "Bring {extra_cost}, and I can accept that order. The order is possible, but I need {extra_cost} before I put it on the ledger.",
-        "The order is possible, but I need {extra_cost} before I put it on the ledger. Payment first, then I can make the order official.",
-        "Payment first, then I can make the order official. I cannot mark it down until {extra_cost} is covered.",
-        "I cannot mark it down until {extra_cost} is covered. The missing piece is the cost: {extra_cost}.",
-        "The missing piece is the cost: {extra_cost}. Bring the extra payment and we can move forward.",
-        "Bring the extra payment and we can move forward. I can do the work, but not without the extra cost.",
-        "I can do the work, but not without the extra cost. That order needs {extra_cost} before it can begin.",
-        "That order needs {extra_cost} before it can begin. {extra_cost} is the <pulse>missing</pulse> part.",
-        "{extra_cost} is the <pulse>missing</pulse> part. I need the extra cost first: {extra_cost}."
+        "{extra_cost} is the <pulse>missing</pulse> part."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_payment_missing.034"
     },
@@ -931,17 +581,7 @@
         "Open an order first, then I can tell you how it is moving.",
         "I cannot give a status on empty space.",
         "No request is waiting under your name.",
-        "Your Special Order ledger is <wavy>empty</wavy>.",
-        "I need an active Special Order to check. You do not have one with me right now. There is no order status to explain because your ledger is empty.",
-        "There is no order status to explain because your ledger is empty. I can check an order once you have one open.",
-        "I can check an order once you have one open. No active order means no status to report.",
-        "No active order means no status to report. Your ledger has no Special Order on it right now.",
-        "Your ledger has no Special Order on it right now. There is nothing for me to track yet.",
-        "There is nothing for me to track yet. Open an order first, then I can tell you how it is moving.",
-        "Open an order first, then I can tell you how it is moving. I cannot give a status on empty space.",
-        "I cannot give a status on empty space. No request is waiting under your name.",
-        "No request is waiting under your name. Your Special Order ledger is <wavy>empty</wavy>.",
-        "Your Special Order ledger is <wavy>empty</wavy>. I need an active Special Order to check. You do not have one with me right now."
+        "Your Special Order ledger is <wavy>empty</wavy>."
       ],
       "id": "global.messages.01_trade_refresh.messages.trade_refresh.requirements.special_order_status_empty.035"
     }

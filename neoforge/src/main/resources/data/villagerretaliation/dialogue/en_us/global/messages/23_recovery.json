@@ -21,17 +21,7 @@
         "I'm starving and still wounded.",
         "There isn't a bite of food left.",
         "I need recovery supplies, quickly.",
-        "I'm too hungry to mend these wounds.",
-        "I'm hurt and completely out of food. I can't recover without something to eat.",
-        "I can't recover without something to eat. No food left-and I really need it.",
-        "No food left-and I really need it. I've got nothing left to heal with.",
-        "I've got nothing left to heal with. I need food or a healing potion.",
-        "I need food or a healing potion. My supplies are empty. I can't recover.",
-        "My supplies are empty. I can't recover. I'm starving and still wounded.",
-        "I'm starving and still wounded. There isn't a bite of food left.",
-        "There isn't a bite of food left. I need recovery supplies, quickly.",
-        "I need recovery supplies, quickly. I'm too hungry to mend these wounds.",
-        "I'm too hungry to mend these wounds. I'm hurt and completely out of food."
+        "I'm too hungry to mend these wounds."
       ],
       "id": "global.messages.23_recovery.messages.recovery.shortage.000"
     }

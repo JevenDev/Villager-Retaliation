@@ -21,17 +21,7 @@
         "I will stand for them. Just do not make a mess of the {container}.",
         "Let it be. I trust {player} to take only what is needed.",
         "They have helped us before. Give them room, but keep it honest.",
-        "I will <pulse>vouch</pulse> for {player}. Treat the {container} with care.",
-        "I can vouch for {player}. Keep the {container} tidy and take only what you truly need. {player} has earned some trust here. I will allow it this time.",
-        "{player} has earned some trust here. I will allow it this time. Let them look. They have helped this village enough to deserve care before suspicion.",
-        "Let them look. They have helped this village enough to deserve care before suspicion. I know {player}. They have done enough good here for me to speak up.",
-        "I know {player}. They have done enough good here for me to speak up. This time, let them check the {container}. Carefully.",
-        "This time, let them check the {container}. Carefully. {player} has earned more trust than most who pass through here.",
-        "{player} has earned more trust than most who pass through here. I will stand for them. Just do not make a mess of the {container}.",
-        "I will stand for them. Just do not make a mess of the {container}. Let it be. I trust {player} to take only what is needed.",
-        "Let it be. I trust {player} to take only what is needed. They have helped us before. Give them room, but keep it honest.",
-        "They have helped us before. Give them room, but keep it honest. I will <pulse>vouch</pulse> for {player}. Treat the {container} with care.",
-        "I will <pulse>vouch</pulse> for {player}. Treat the {container} with care. I can vouch for {player}. Keep the {container} tidy and take only what you truly need."
+        "I will <pulse>vouch</pulse> for {player}. Treat the {container} with care."
       ],
       "id": "global.messages.02_container_interjections.messages.container_opened.vouch.allow.000"
     },
@@ -47,17 +37,7 @@
         "I am not calling you a thief. I am telling you to ask first.",
         "Not today. Some boundaries stay firm, even for familiar hands.",
         "Step back from the {container}. We can talk before anyone reaches further.",
-        "I trust you enough to say this plainly: <pulse>close it</pulse>.",
-        "Not this time, {player}. Close the {container} and ask before reaching. I trust you more than most, but not with this {container} today.",
-        "I trust you more than most, but not with this {container} today. No. Even friends ask before opening village stores.",
-        "No. Even friends ask before opening village stores. Trust does not mean every lid opens without permission.",
-        "Trust does not mean every lid opens without permission. You have standing here, but the {container} still belongs to the village.",
-        "You have standing here, but the {container} still belongs to the village. Close it for now. This is not yours to sort through.",
-        "Close it for now. This is not yours to sort through. I am not calling you a thief. I am telling you to ask first.",
-        "I am not calling you a thief. I am telling you to ask first. Not today. Some boundaries stay firm, even for familiar hands.",
-        "Not today. Some boundaries stay firm, even for familiar hands. Step back from the {container}. We can talk before anyone reaches further.",
-        "Step back from the {container}. We can talk before anyone reaches further. I trust you enough to say this plainly: <pulse>close it</pulse>.",
-        "I trust you enough to say this plainly: <pulse>close it</pulse>. Not this time, {player}. Close the {container} and ask before reaching."
+        "I trust you enough to say this plainly: <pulse>close it</pulse>."
       ],
       "id": "global.messages.02_container_interjections.messages.container_opened.vouch.deny.001"
     },
@@ -73,17 +53,7 @@
         "If {player} has need of it, then we should listen before we object.",
         "This is not theft. This is trust given where trust was earned.",
         "Step aside. The village does not question its liege over every latch.",
-        "Our liege has the village's <pulse>trust</pulse>. Let the {container} open.",
-        "Do not disrespect our ruler. If {player} needs the {container}, let them take from it. Stand down. {player} has carried this village farther than any chest ever could.",
-        "Stand down. {player} has carried this village farther than any chest ever could. If our liege opens the {container}, the village has already given its trust.",
-        "If our liege opens the {container}, the village has already given its trust. Let them look. Royal hands have earned more than suspicion at a village chest.",
-        "Let them look. Royal hands have earned more than suspicion at a village chest. {player} has earned the village's faith. Do not meet that with petty doubt.",
-        "{player} has earned the village's faith. Do not meet that with petty doubt. The {container} serves the village, and so has {player}. Let them pass.",
-        "The {container} serves the village, and so has {player}. Let them pass. If {player} has need of it, then we should listen before we object.",
-        "If {player} has need of it, then we should listen before we object. This is not theft. This is trust given where trust was earned.",
-        "This is not theft. This is trust given where trust was earned. Step aside. The village does not question its liege over every latch.",
-        "Step aside. The village does not question its liege over every latch. Our liege has the village's <pulse>trust</pulse>. Let the {container} open.",
-        "Our liege has the village's <pulse>trust</pulse>. Let the {container} open. Do not disrespect our ruler. If {player} needs the {container}, let them take from it."
+        "Our liege has the village's <pulse>trust</pulse>. Let the {container} open."
       ],
       "id": "global.messages.02_container_interjections.messages.container_opened.vouch.royalty.002"
     },
@@ -99,17 +69,7 @@
         "I will accept {previous_villager}'s word. Do not test it.",
         "Then go carefully. Their trust is not yours to waste.",
         "If they are willing to stand for you, I will step back.",
-        "{previous_villager}'s word is enough for now. Keep the {container} <pulse>tidy</pulse>.",
-        "If {previous_villager} vouches for you, then I will stand down. Keep the {container} tidy. All right, {player}. {previous_villager} has spoken for you. Do not make them regret it.",
-        "All right, {player}. {previous_villager} has spoken for you. Do not make them regret it. Fine. I trust {previous_villager}'s word here. Treat the {container} with care.",
-        "Fine. I trust {previous_villager}'s word here. Treat the {container} with care. Then take only what you need, {player}. {previous_villager}'s trust carries weight.",
-        "Then take only what you need, {player}. {previous_villager}'s trust carries weight. If {previous_villager} trusts you with this, I will not argue it further.",
-        "If {previous_villager} trusts you with this, I will not argue it further. All right. The {container} stays open, but your hands stay honest.",
-        "All right. The {container} stays open, but your hands stay honest. I will accept {previous_villager}'s word. Do not test it.",
-        "I will accept {previous_villager}'s word. Do not test it. Then go carefully. Their trust is not yours to waste.",
-        "Then go carefully. Their trust is not yours to waste. If they are willing to stand for you, I will step back.",
-        "If they are willing to stand for you, I will step back. {previous_villager}'s word is enough for now. Keep the {container} <pulse>tidy</pulse>.",
-        "{previous_villager}'s word is enough for now. Keep the {container} <pulse>tidy</pulse>. If {previous_villager} vouches for you, then I will stand down. Keep the {container} tidy."
+        "{previous_villager}'s word is enough for now. Keep the {container} <pulse>tidy</pulse>."
       ],
       "id": "global.messages.02_container_interjections.messages.container_opened.vouch.original_response.003"
     },
@@ -125,17 +85,7 @@
         "I will not question what the village has already entrusted to you.",
         "Take what is needed. The village stands behind you.",
         "I understand. I will step back from the {container}.",
-        "As you wish. The village's <pulse>trust</pulse> is with you.",
-        "As you say. The {container} is open to our liege. I will not stand in your way, {player}. Take what the village can offer.",
-        "I will not stand in your way, {player}. Take what the village can offer. Forgive me, my liege. I will step aside.",
-        "Forgive me, my liege. I will step aside. Then the village yields the {container}. Use it as you need.",
-        "Then the village yields the {container}. Use it as you need. Of course. I spoke too quickly.",
-        "Of course. I spoke too quickly. The {container} is yours to inspect, my liege.",
-        "The {container} is yours to inspect, my liege. I will not question what the village has already entrusted to you.",
-        "I will not question what the village has already entrusted to you. Take what is needed. The village stands behind you.",
-        "Take what is needed. The village stands behind you. I understand. I will step back from the {container}.",
-        "I understand. I will step back from the {container}. As you wish. The village's <pulse>trust</pulse> is with you.",
-        "As you wish. The village's <pulse>trust</pulse> is with you. As you say. The {container} is open to our liege."
+        "As you wish. The village's <pulse>trust</pulse> is with you."
       ],
       "id": "global.messages.02_container_interjections.messages.container_opened.vouch.original_response.royalty.004"
     },
@@ -151,17 +101,7 @@
         "You were caught {container_theft_again_phrase}, and this time I saw {stolen_count} {stolen_count_word} leave {stolen_container}.",
         "More than one pair of eyes saw what happened at that {stolen_container}.",
         "You can argue with one witness. It gets harder with two.",
-        "<shake>Do not lie</shake> about what half the village saw.",
-        "Yes, <aqua>{previous_villager}</aqua> is right. I saw you take {stolen_item_reference} too. I saw {stolen_item_pronoun} too, <purple>{player}</purple>. {stolen_count} {stolen_count_word} came from {stolen_container}.",
-        "I saw {stolen_item_pronoun} too, <purple>{player}</purple>. {stolen_count} {stolen_count_word} came from {stolen_container}. <aqua>{previous_villager}</aqua> is not the only one who noticed. Put {stolen_stack} <pulse>back</pulse>.",
-        "<aqua>{previous_villager}</aqua> is not the only one who noticed. Put {stolen_stack} <pulse>back</pulse>. I was there too. Do not pretend {stolen_items} walked out on their own.",
-        "I was there too. Do not pretend {stolen_items} walked out on their own. Back them up? Gladly. I saw you take {stolen_stack}.",
-        "Back them up? Gladly. I saw you take {stolen_stack}. I have seen this {witnessed_container_thefts} {container_theft_time_word} now. Put {stolen_item_pronoun} back.",
-        "I have seen this {witnessed_container_thefts} {container_theft_time_word} now. Put {stolen_item_pronoun} back. You were caught {container_theft_again_phrase}, and this time I saw {stolen_count} {stolen_count_word} leave {stolen_container}.",
-        "You were caught {container_theft_again_phrase}, and this time I saw {stolen_count} {stolen_count_word} leave {stolen_container}. More than one pair of eyes saw what happened at that {stolen_container}.",
-        "More than one pair of eyes saw what happened at that {stolen_container}. You can argue with one witness. It gets harder with two.",
-        "You can argue with one witness. It gets harder with two. <shake>Do not lie</shake> about what half the village saw.",
-        "<shake>Do not lie</shake> about what half the village saw. Yes, <aqua>{previous_villager}</aqua> is right. I saw you take {stolen_item_reference} too."
+        "<shake>Do not lie</shake> about what half the village saw."
       ],
       "id": "global.messages.02_container_interjections.messages.container_theft.backup_interjection.005"
     },
@@ -177,17 +117,7 @@
         "Do not make <aqua>{previous_villager}</aqua> stand alone on this. I saw it too.",
         "The village is watching, <purple>{player}</purple>. Put it back.",
         "This is not confusion. This is one witness backing another.",
-        "Return {stolen_stack} before this gets <shake>worse</shake>.",
-        "<aqua>{previous_villager}</aqua> is not exaggerating. I saw {stolen_stack} leave {stolen_container} too. I saw it too: {stolen_item_reference} came out of {stolen_container} in your hands.",
-        "I saw it too: {stolen_item_reference} came out of {stolen_container} in your hands. I was close enough to see it. <pulse>Return</pulse> {stolen_stack}, <purple>{player}</purple>.",
-        "I was close enough to see it. <pulse>Return</pulse> {stolen_stack}, <purple>{player}</purple>. One voice is easy to argue with. Two of us saw what happened.",
-        "One voice is easy to argue with. Two of us saw what happened. That {stolen_container} did not empty itself.",
-        "That {stolen_container} did not empty itself. You had {stolen_stack} in your hands. I know what I saw.",
-        "You had {stolen_stack} in your hands. I know what I saw. Do not make <aqua>{previous_villager}</aqua> stand alone on this. I saw it too.",
-        "Do not make <aqua>{previous_villager}</aqua> stand alone on this. I saw it too. The village is watching, <purple>{player}</purple>. Put it back.",
-        "The village is watching, <purple>{player}</purple>. Put it back. This is not confusion. This is one witness backing another.",
-        "This is not confusion. This is one witness backing another. Return {stolen_stack} before this gets <shake>worse</shake>.",
-        "Return {stolen_stack} before this gets <shake>worse</shake>. <aqua>{previous_villager}</aqua> is not exaggerating. I saw {stolen_stack} leave {stolen_container} too."
+        "Return {stolen_stack} before this gets <shake>worse</shake>."
       ],
       "id": "global.messages.02_container_interjections.messages.container_theft.backup_interjection.second.006"
     },
@@ -203,17 +133,7 @@
         "The {stolen_container} opened, and {stolen_stack} left with you.",
         "This is not a misunderstanding, not with this many eyes on it.",
         "Put {stolen_item_pronoun} back before the whole square knows.",
-        "<shake>Enough.</shake> Return what you took.",
-        "I saw it too, <purple>{player}</purple>. Put {stolen_item_pronoun} back. More than one of us saw the same <shake>theft</shake>. Return {stolen_stack}.",
-        "More than one of us saw the same <shake>theft</shake>. Return {stolen_stack}. I was watching as well. I saw {stolen_items} leave {stolen_container}.",
-        "I was watching as well. I saw {stolen_items} leave {stolen_container}. Nobody here is guessing. {stolen_count} {stolen_count_word} came out with you.",
-        "Nobody here is guessing. {stolen_count} {stolen_count_word} came out with you. That makes another witness, and I am not staying quiet.",
-        "That makes another witness, and I am not staying quiet. You can stop pretending now. We saw enough.",
-        "You can stop pretending now. We saw enough. The {stolen_container} opened, and {stolen_stack} left with you.",
-        "The {stolen_container} opened, and {stolen_stack} left with you. This is not a misunderstanding, not with this many eyes on it.",
-        "This is not a misunderstanding, not with this many eyes on it. Put {stolen_item_pronoun} back before the whole square knows.",
-        "Put {stolen_item_pronoun} back before the whole square knows. <shake>Enough.</shake> Return what you took.",
-        "<shake>Enough.</shake> Return what you took. I saw it too, <purple>{player}</purple>. Put {stolen_item_pronoun} back."
+        "<shake>Enough.</shake> Return what you took."
       ],
       "id": "global.messages.02_container_interjections.messages.container_theft.backup_interjection.third.007"
     },
@@ -229,17 +149,7 @@
         "If you need something, ask. Do not simply reach.",
         "The {container} is not yours to search without permission.",
         "Back away from the {container}. This does not need to become a theft report.",
-        "Close it now, before suspicion starts <pulse>settling in</pulse>.",
-        "<aqua>{previous_villager}</aqua> is right. That {container} is village property, <purple>{player}</purple>. I saw the lid open too. <pulse>Step back</pulse> from {container} and ask first.",
-        "I saw the lid open too. <pulse>Step back</pulse> from {container} and ask first. That is not just <aqua>{previous_villager}</aqua>'s concern. The {container} belongs to the village.",
-        "That is not just <aqua>{previous_villager}</aqua>'s concern. The {container} belongs to the village. I am saying the same thing: close {container} and speak before touching village stores.",
-        "I am saying the same thing: close {container} and speak before touching village stores. You have more than one witness, <purple>{player}</purple>. Step away from {container}.",
-        "You have more than one witness, <purple>{player}</purple>. Step away from {container}. Village stores are not open just because a lid can move.",
-        "Village stores are not open just because a lid can move. If you need something, ask. Do not simply reach.",
-        "If you need something, ask. Do not simply reach. The {container} is not yours to search without permission.",
-        "The {container} is not yours to search without permission. Back away from the {container}. This does not need to become a theft report.",
-        "Back away from the {container}. This does not need to become a theft report. Close it now, before suspicion starts <pulse>settling in</pulse>.",
-        "Close it now, before suspicion starts <pulse>settling in</pulse>. <aqua>{previous_villager}</aqua> is right. That {container} is village property, <purple>{player}</purple>."
+        "Close it now, before suspicion starts <pulse>settling in</pulse>."
       ],
       "id": "global.messages.02_container_interjections.messages.container_opened.backup_interjection.008"
     },
@@ -255,17 +165,7 @@
         "You are not being singled out. You are being seen.",
         "The village keeps stores for everyone, not for quiet hands.",
         "Do not make this harder than it needs to be.",
-        "Step away from {container}, <purple>{player}</purple>. <shake>Now.</shake>",
-        "<aqua>{previous_villager}</aqua> saw it, and so did I. <pulse>Close</pulse> {container}. I saw it too. Village stores are not open shelves.",
-        "I saw it too. Village stores are not open shelves. I was watching too, <purple>{player}</purple>. Step back from {container} and ask.",
-        "I was watching too, <purple>{player}</purple>. Step back from {container} and ask. It is not just one complaint. That {container} belongs to the village.",
-        "It is not just one complaint. That {container} belongs to the village. Two witnesses should be enough to make this simple.",
-        "Two witnesses should be enough to make this simple. Close the {container}. Ask first if you need something.",
-        "Close the {container}. Ask first if you need something. You are not being singled out. You are being seen.",
-        "You are not being singled out. You are being seen. The village keeps stores for everyone, not for quiet hands.",
-        "The village keeps stores for everyone, not for quiet hands. Do not make this harder than it needs to be.",
-        "Do not make this harder than it needs to be. Step away from {container}, <purple>{player}</purple>. <shake>Now.</shake>",
-        "Step away from {container}, <purple>{player}</purple>. <shake>Now.</shake> <aqua>{previous_villager}</aqua> saw it, and so did I. <pulse>Close</pulse> {container}."
+        "Step away from {container}, <purple>{player}</purple>. <shake>Now.</shake>"
       ],
       "id": "global.messages.02_container_interjections.messages.container_opened.backup_interjection.second.009"
     },
@@ -281,17 +181,7 @@
         "You have heard the boundary. Respect it.",
         "The village is not guessing anymore. Step back.",
         "If you need supplies, ask like the rest of us.",
-        "That {container} stays closed unless the village says otherwise.",
-        "Same boundary from me, close {container} and ask first. More than one of us is <pulse>watching</pulse> now, <purple>{player}</purple>. Step away from {container}.",
-        "More than one of us is <pulse>watching</pulse> now, <purple>{player}</purple>. Step away from {container}. I saw enough. That {container} still is not yours to search.",
-        "I saw enough. That {container} still is not yours to search. No one is piling on for sport. Village stores need permission.",
-        "No one is piling on for sport. Village stores need permission. The answer is still no, even with more voices saying it.",
-        "The answer is still no, even with more voices saying it. Close it before this becomes a worse conversation.",
-        "Close it before this becomes a worse conversation. You have heard the boundary. Respect it.",
-        "You have heard the boundary. Respect it. The village is not guessing anymore. Step back.",
-        "The village is not guessing anymore. Step back. If you need supplies, ask like the rest of us.",
-        "If you need supplies, ask like the rest of us. That {container} stays closed unless the village says otherwise.",
-        "That {container} stays closed unless the village says otherwise. Same boundary from me, close {container} and ask first."
+        "That {container} stays closed unless the village says otherwise."
       ],
       "id": "global.messages.02_container_interjections.messages.container_opened.backup_interjection.third.010"
     }

@@ -21,17 +21,7 @@
         "The village is listening now. Make your choice with that in mind.",
         "You can still handle this cleanly, but not by standing there silent.",
         "Repair starts with what you do next, not what you wish had happened.",
-        "Choose plainly. This moment is already <pulse>heavy</pulse> enough.",
-        "Restitution is not a word. It is what you do next. Then settle it plainly. Pay, bargain honestly, walk away worse, or make a threat you cannot take back.",
-        "Then settle it plainly. Pay, bargain honestly, walk away worse, or make a threat you cannot take back. If you want this repaired, choose how you mean to repair it.",
-        "If you want this repaired, choose how you mean to repair it. You caused the harm. Now decide what kind of person you are afterward.",
-        "You caused the harm. Now decide what kind of person you are afterward. This does not mend itself. Choose your answer carefully.",
-        "This does not mend itself. Choose your answer carefully. Payment, a fair bargain, refusal, or threat. Each one says something about you.",
-        "Payment, a fair bargain, refusal, or threat. Each one says something about you. The village is listening now. Make your choice with that in mind.",
-        "The village is listening now. Make your choice with that in mind. You can still handle this cleanly, but not by standing there silent.",
-        "You can still handle this cleanly, but not by standing there silent. Repair starts with what you do next, not what you wish had happened.",
-        "Repair starts with what you do next, not what you wish had happened. Choose plainly. This moment is already <pulse>heavy</pulse> enough.",
-        "Choose plainly. This moment is already <pulse>heavy</pulse> enough. Restitution is not a word. It is what you do next."
+        "Choose plainly. This moment is already <pulse>heavy</pulse> enough."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.prompt.000"
     },
@@ -47,17 +37,7 @@
         "That is the lowest I can accept without making the harm feel cheap.",
         "Pay {payment_count} {payment_items}. Less than before, but not nothing.",
         "I will soften the price, not the lesson.",
-        "{payment_count} {payment_items}. That is the <pulse>reduced</pulse> amount, and it is final.",
-        "Fine. Not free, but less. Pay {payment_count} {payment_items} and this can end cleanly. I will lower it this once: {payment_count} {payment_items}. Do not make me regret the mercy.",
-        "I will lower it this once: {payment_count} {payment_items}. Do not make me regret the mercy. That is as far as I bend. {payment_count} {payment_items}, and the matter rests.",
-        "That is as far as I bend. {payment_count} {payment_items}, and the matter rests. I will meet you partway. {payment_count} {payment_items}, and we end this here.",
-        "I will meet you partway. {payment_count} {payment_items}, and we end this here. Fine. I will take {payment_count} {payment_items}. That is mercy, not forgetfulness.",
-        "Fine. I will take {payment_count} {payment_items}. That is mercy, not forgetfulness. You made your case. {payment_count} {payment_items}, and this can settle.",
-        "You made your case. {payment_count} {payment_items}, and this can settle. That is the lowest I can accept without making the harm feel cheap.",
-        "That is the lowest I can accept without making the harm feel cheap. Pay {payment_count} {payment_items}. Less than before, but not nothing.",
-        "Pay {payment_count} {payment_items}. Less than before, but not nothing. I will soften the price, not the lesson.",
-        "I will soften the price, not the lesson. {payment_count} {payment_items}. That is the <pulse>reduced</pulse> amount, and it is final.",
-        "{payment_count} {payment_items}. That is the <pulse>reduced</pulse> amount, and it is final. Fine. Not free, but less. Pay {payment_count} {payment_items} and this can end cleanly."
+        "{payment_count} {payment_items}. That is the <pulse>reduced</pulse> amount, and it is final."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.haggle.accept.001"
     },
@@ -73,17 +53,7 @@
         "No. A fair repair does not shrink because it is inconvenient.",
         "The amount is already plain. Do not make me repeat it colder.",
         "You do not bargain down trust after breaking it.",
-        "<shake>No.</shake> The payment stays as it is.",
-        "No. The amount stands. Do not spend trust you have not earned. No bargain. Pay what was asked or choose another answer.",
-        "No bargain. Pay what was asked or choose another answer. You opened the problem. You do not get to name its whole price.",
-        "You opened the problem. You do not get to name its whole price. No. This is not a market stall, and I am not haggling over harm.",
-        "No. This is not a market stall, and I am not haggling over harm. The cost stands. You can pay it, refuse it, or make this worse.",
-        "The cost stands. You can pay it, refuse it, or make this worse. I will not lower the price just because regret arrived late.",
-        "I will not lower the price just because regret arrived late. No. A fair repair does not shrink because it is inconvenient.",
-        "No. A fair repair does not shrink because it is inconvenient. The amount is already plain. Do not make me repeat it colder.",
-        "The amount is already plain. Do not make me repeat it colder. You do not bargain down trust after breaking it.",
-        "You do not bargain down trust after breaking it. <shake>No.</shake> The payment stays as it is.",
-        "<shake>No.</shake> The payment stays as it is. No. The amount stands. Do not spend trust you have not earned."
+        "<shake>No.</shake> The payment stays as it is."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.haggle.deny.002"
     },
@@ -163,17 +133,7 @@
         "Fine. This matter rests, but the memory stays useful.",
         "You paid what was owed. Now do better with what remains.",
         "That is enough for restitution.",
-        "Payment accepted. Let this end <pulse>cleanly</pulse>.",
-        "That settles this for now. Payment accepted. Next time, permission comes first.",
-        "Payment accepted. Next time, permission comes first. That covers the damage. It does not erase the lesson.",
-        "That covers the damage. It does not erase the lesson. Good. Let this be the end of the mistake, not the start of another.",
-        "Good. Let this be the end of the mistake, not the start of another. The payment is accepted. The village will remember that you chose repair.",
-        "The payment is accepted. The village will remember that you chose repair. That makes the account even enough to close.",
-        "That makes the account even enough to close. Fine. This matter rests, but the memory stays useful.",
-        "Fine. This matter rests, but the memory stays useful. You paid what was owed. Now do better with what remains.",
-        "You paid what was owed. Now do better with what remains. That is enough for restitution.",
-        "That is enough for restitution. Payment accepted. Let this end <pulse>cleanly</pulse>.",
-        "Payment accepted. Let this end <pulse>cleanly</pulse>. That settles this for now."
+        "Payment accepted. Let this end <pulse>cleanly</pulse>."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.pay.success.007"
     },
@@ -189,17 +149,7 @@
         "You are short. This cannot settle yet.",
         "The payment is missing, so the problem remains.",
         "No. That is not the {payment_count} {payment_items} owed.",
-        "You do not have enough. The choice is still <pulse>open</pulse>.",
-        "You do not have {payment_count} {payment_items}. Then choose another answer. That is not enough to pay what you offered. Try another answer.",
-        "That is not enough to pay what you offered. Try another answer. Empty hands cannot settle this payment. Choose again.",
-        "Empty hands cannot settle this payment. Choose again. You cannot pay with what you do not have.",
-        "You cannot pay with what you do not have. That offer does not cover the debt.",
-        "That offer does not cover the debt. If you mean to pay, bring enough to do it properly.",
-        "If you mean to pay, bring enough to do it properly. You are short. This cannot settle yet.",
-        "You are short. This cannot settle yet. The payment is missing, so the problem remains.",
-        "The payment is missing, so the problem remains. No. That is not the {payment_count} {payment_items} owed.",
-        "No. That is not the {payment_count} {payment_items} owed. You do not have enough. The choice is still <pulse>open</pulse>.",
-        "You do not have enough. The choice is still <pulse>open</pulse>. You do not have {payment_count} {payment_items}. Then choose another answer."
+        "You do not have enough. The choice is still <pulse>open</pulse>."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.pay.failure.008"
     },
@@ -215,17 +165,7 @@
         "Do not act surprised when this follows you.",
         "The village offered a way to settle it. You refused.",
         "Then the debt stays where everyone can see it.",
-        "<shake>So be it.</shake> The village will remember.",
-        "Then you choose the harder memory. Refusal is an answer. The village will remember it.",
-        "Refusal is an answer. The village will remember it. So be it. You leave this worse than you found it.",
-        "So be it. You leave this worse than you found it. Then there is nothing clean about this ending.",
-        "Then there is nothing clean about this ending. You had a chance to repair this. You chose not to.",
-        "You had a chance to repair this. You chose not to. Fine. Refusal has its own cost.",
-        "Fine. Refusal has its own cost. Do not act surprised when this follows you.",
-        "Do not act surprised when this follows you. The village offered a way to settle it. You refused.",
-        "The village offered a way to settle it. You refused. Then the debt stays where everyone can see it.",
-        "Then the debt stays where everyone can see it. <shake>So be it.</shake> The village will remember.",
-        "<shake>So be it.</shake> The village will remember. Then you choose the harder memory."
+        "<shake>So be it.</shake> The village will remember."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.refuse.response.009"
     },
@@ -241,17 +181,7 @@
         "Then every door here has reason to close.",
         "You could have settled this. You chose fear instead.",
         "The village knows what your apology is worth now.",
-        "<shake>Careful.</shake> You just made this much worse.",
-        "Then we are past words. A threat answers the question clearly enough.",
-        "A threat answers the question clearly enough. You chose force. The village heard you.",
-        "You chose force. The village heard you. That is the answer of someone with nothing better left.",
-        "That is the answer of someone with nothing better left. So this is what you bring instead of repair.",
-        "So this is what you bring instead of repair. A threat does not make the debt smaller. It makes you smaller.",
-        "A threat does not make the debt smaller. It makes you smaller. Then every door here has reason to close.",
-        "Then every door here has reason to close. You could have settled this. You chose fear instead.",
-        "You could have settled this. You chose fear instead. The village knows what your apology is worth now.",
-        "The village knows what your apology is worth now. <shake>Careful.</shake> You just made this much worse.",
-        "<shake>Careful.</shake> You just made this much worse. Then we are past words."
+        "<shake>Careful.</shake> You just made this much worse."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.threaten.response.010"
     },
@@ -267,17 +197,7 @@
         "The bargain is settled. Let the lesson stay with you.",
         "That payment is enough to end this cleanly.",
         "Good. You met the bargain. Now meet the expectation.",
-        "Reduced payment accepted. Keep your hands <pulse>honest</pulse> next time.",
-        "That is enough. Next time, ask before reaching. Reduced or not, the payment is accepted. Do better next time.",
-        "Reduced or not, the payment is accepted. Do better next time. That settles the bargain. Do not make us bargain over trust again.",
-        "That settles the bargain. Do not make us bargain over trust again. Fine. The reduced payment closes this matter.",
-        "Fine. The reduced payment closes this matter. That will do. Mercy was part of the price, so do not waste it.",
-        "That will do. Mercy was part of the price, so do not waste it. Accepted. Remember that this was lowered, not forgotten.",
-        "Accepted. Remember that this was lowered, not forgotten. The bargain is settled. Let the lesson stay with you.",
-        "The bargain is settled. Let the lesson stay with you. That payment is enough to end this cleanly.",
-        "That payment is enough to end this cleanly. Good. You met the bargain. Now meet the expectation.",
-        "Good. You met the bargain. Now meet the expectation. Reduced payment accepted. Keep your hands <pulse>honest</pulse> next time.",
-        "Reduced payment accepted. Keep your hands <pulse>honest</pulse> next time. That is enough. Next time, ask before reaching."
+        "Reduced payment accepted. Keep your hands <pulse>honest</pulse> next time."
       ],
       "id": "global.messages.07_forced_restitution.messages.forced.restitution.reduced_pay.success.011"
     }

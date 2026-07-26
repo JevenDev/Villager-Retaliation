@@ -21,17 +21,7 @@
         "The {stolen_stack} was not yours, and pretending otherwise will not help you here.",
         "I keep my things closer now. You can guess why.",
         "A stolen {stolen_item} leaves more behind than an empty space.",
-        "Speak if you need to, but understand why I am still <shake>careful</shake>.",
-        "I still <pulse>remember</pulse> you trying to take my {stolen_stack}. That {stolen_item} from the {stolen_container}? I have not forgotten.",
-        "That {stolen_item} from the {stolen_container}? I have not forgotten. You put your hands on village stores once. I am <pulse>watching</pulse> them now.",
-        "You put your hands on village stores once. I am <pulse>watching</pulse> them now. Trust is counted in small things. Last time, it was counted in {stolen_stack}.",
-        "Trust is counted in small things. Last time, it was counted in {stolen_stack}. I remember the {stolen_container}, the missing {stolen_item}, and your face beside both.",
-        "I remember the {stolen_container}, the missing {stolen_item}, and your face beside both. If you came to make right with the {stolen_item}, start by keeping your hands visible.",
-        "If you came to make right with the {stolen_item}, start by keeping your hands visible. The {stolen_stack} was not yours, and pretending otherwise will not help you here.",
-        "The {stolen_stack} was not yours, and pretending otherwise will not help you here. I keep my things closer now. You can guess why.",
-        "I keep my things closer now. You can guess why. A stolen {stolen_item} leaves more behind than an empty space.",
-        "A stolen {stolen_item} leaves more behind than an empty space. Speak if you need to, but understand why I am still <shake>careful</shake>.",
-        "Speak if you need to, but understand why I am still <shake>careful</shake>. I still <pulse>remember</pulse> you trying to take my {stolen_stack}."
+        "Speak if you need to, but understand why I am still <shake>careful</shake>."
       ],
       "weight": 155,
       "id": "global.messages.05_container_theft_memory.messages.container_theft_memory.direct.000"
@@ -48,17 +38,7 @@
         "A theft from one villager has a way of reaching every counter in the village.",
         "You may think {stolen_stack} was a small thing. Villages do not measure trust that way.",
         "The story of that {stolen_item} arrived before you did.",
-        "I will speak with you, but I will also keep one eye on my <pulse>stores</pulse>.",
-        "<aqua>{theft_witness}</aqua> told me about you stealing {stolen_stack}. Not wise. Word travels faster than full pockets. <aqua>{theft_witness}</aqua> <pulse>saw</pulse> the {stolen_item}.",
-        "Word travels faster than full pockets. <aqua>{theft_witness}</aqua> <pulse>saw</pulse> the {stolen_item}. Around here, a missing {stolen_item} becomes everybody's story.",
-        "Around here, a missing {stolen_item} becomes everybody's story. <aqua>{theft_witness_possessive}</aqua> <shake>warning</shake> reached more doors than you opened.",
-        "<aqua>{theft_witness_possessive}</aqua> <shake>warning</shake> reached more doors than you opened. People here share bread, tools, and warnings. After that {stolen_stack}, you became the warning.",
-        "People here share bread, tools, and warnings. After that {stolen_stack}, you became the warning. I was not there, but <aqua>{theft_witness}</aqua> was. That is enough for me to watch the {stolen_container}.",
-        "I was not there, but <aqua>{theft_witness}</aqua> was. That is enough for me to watch the {stolen_container}. A theft from one villager has a way of reaching every counter in the village.",
-        "A theft from one villager has a way of reaching every counter in the village. You may think {stolen_stack} was a small thing. Villages do not measure trust that way.",
-        "You may think {stolen_stack} was a small thing. Villages do not measure trust that way. The story of that {stolen_item} arrived before you did.",
-        "The story of that {stolen_item} arrived before you did. I will speak with you, but I will also keep one eye on my <pulse>stores</pulse>.",
-        "I will speak with you, but I will also keep one eye on my <pulse>stores</pulse>. <aqua>{theft_witness}</aqua> told me about you stealing {stolen_stack}. Not wise."
+        "I will speak with you, but I will also keep one eye on my <pulse>stores</pulse>."
       ],
       "weight": 154,
       "id": "global.messages.05_container_theft_memory.messages.container_theft_memory.village.001"
