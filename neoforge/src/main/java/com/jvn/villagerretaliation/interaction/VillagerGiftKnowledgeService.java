@@ -49,9 +49,9 @@ public final class VillagerGiftKnowledgeService {
             tooltipReactions.putIfAbsent(itemId, new GiftTooltipReaction(itemId, reaction, known));
             if (hasGiftKnowledge && known) {
                 if (liked) {
-                    likedNames.add(itemName(level, locale, candidate.item()));
+                    likedNames.add(displayItemName(candidate.item()));
                 } else {
-                    dislikedNames.add(itemName(level, locale, candidate.item()));
+                    dislikedNames.add(displayItemName(candidate.item()));
                 }
             }
         }
@@ -234,6 +234,10 @@ public final class VillagerGiftKnowledgeService {
 
     private static String itemName(ServerLevel level, String locale, Item item) {
         return VillagerItemText.dialogueName(level.getServer(), locale, new ItemStack(item));
+    }
+
+    static String displayItemName(Item item) {
+        return new ItemStack(item).getHoverName().getString();
     }
 
     public record GiftKnowledgeSnapshot(

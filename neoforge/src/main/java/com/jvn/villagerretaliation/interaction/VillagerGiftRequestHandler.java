@@ -31,6 +31,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
 
@@ -84,11 +85,14 @@ public final class VillagerGiftRequestHandler {
 
         Optional<VillagerTakenItemTracker.TakenItemOwner> takenItemOwner =
                 VillagerTakenItemTracker.owner(selectedStack);
-        ItemStack giftedStack = rejected
-                ? selectedStack.copy()
-                : player.getInventory().removeItem(inventorySlot, selectedStack.getCount());
+        ItemStack giftedStack = takeOfferedStack(
+                player.getInventory(),
+                inventorySlot,
+                giftPreference.reaction());
         VillagerTakenItemTracker.clear(giftedStack);
-        if (!rejected) {
+        if (rejected) {
+            player.inventoryMenu.broadcastFullState();
+        } else {
             player.getInventory().setChanged();
         }
         int reputationValue = adjustedGiftReputation(level, villager, giftPreference);
@@ -146,6 +150,17 @@ public final class VillagerGiftRequestHandler {
         String responseText = giftResponseText(giftContext, giftPreference, giftedStack, takenItemOwner, villager);
         VillagerInteractionService.sendDialogueReputation(player, villager, level);
         VillagerInteractionService.sendPersonalVillagerChat(player, villager, responseText);
+    }
+
+    static ItemStack takeOfferedStack(
+            Inventory inventory,
+            int inventorySlot,
+            VillagerGiftPreferences.GiftReaction reaction) {
+        ItemStack selectedStack = inventory.getItem(inventorySlot);
+        if (reaction == VillagerGiftPreferences.GiftReaction.HATED) {
+            return selectedStack.copy();
+        }
+        return inventory.removeItem(inventorySlot, selectedStack.getCount());
     }
 
     private static void reduceDialogueAnnoyanceFromGift(ServerLevel level, Villager villager, ServerPlayer player, int reputationValue) {

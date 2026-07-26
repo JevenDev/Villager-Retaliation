@@ -66,6 +66,7 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -1208,6 +1209,32 @@ public final class VillagerGameplayGameTests {
             VillagerRecoveryService.onVillagerUnloaded(unaffected);
             affected.discard();
             unaffected.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void emptyHungerStarvesVillagersLikePlayers(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        Difficulty previousDifficulty = level.getDifficulty();
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        try {
+            level.getServer().setDifficulty(Difficulty.NORMAL, true);
+            setRecoveryState(villager, 0, 0.0F);
+            float initialHealth = villager.getHealth();
+
+            for (int tick = 0; tick < 80; tick++) {
+                VillagerRecoveryService.onVillagerTickPost(villager);
+            }
+
+            helper.assertValueEqual(
+                    villager.getHealth(),
+                    initialHealth - 1.0F,
+                    "a villager at zero hunger should take player-equivalent starvation damage");
+        } finally {
+            level.getServer().setDifficulty(previousDifficulty, true);
+            VillagerRecoveryService.onVillagerUnloaded(villager);
+            villager.discard();
         }
         helper.succeed();
     }
