@@ -765,6 +765,9 @@ public final class PartyInventoryOverlay {
     private static void renderVillagerIdentityTooltip(
             GuiGraphics graphics, int villagerIndex, int mouseX, int mouseY) {
         var villager = PartyRosterClient.roster().villagers().get(villagerIndex);
+        Component gender = villager.genderName().isBlank()
+                ? Component.translatable("villagerretaliation.gui.gender.unknown")
+                : Component.translatable("villagerretaliation.gui.gender." + villager.genderName());
         Component profession = villager.professionKey().isBlank()
                 ? Component.translatable("villagerretaliation.gui.profession.unemployed")
                 : Component.translatable(villager.professionKey());
@@ -772,6 +775,7 @@ public final class PartyInventoryOverlay {
                 Minecraft.getInstance().font,
                 List.of(
                         villagerName(villager).copy().withStyle(ChatFormatting.GOLD),
+                        gender.copy().withStyle(ChatFormatting.GRAY),
                         profession.copy().withStyle(ChatFormatting.GRAY)),
                 Optional.empty(),
                 mouseX,

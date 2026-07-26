@@ -102,6 +102,7 @@ public final class PartySyncService {
                     loaded == null ? -1 : loaded.getId(),
                     record.cachedName(),
                     record.cachedProfession(),
+                    record.cachedGender(),
                     record.commandMode(),
                     loaded != null && loaded.isAlive() && !record.villagerId().equals(unavailableVillagerId),
                     record.remainingDays(now),

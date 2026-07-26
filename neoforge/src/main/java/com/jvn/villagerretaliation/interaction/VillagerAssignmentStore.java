@@ -288,6 +288,20 @@ public final class VillagerAssignmentStore {
         return Math.min(min, villager.getHealth()) + 0.5F < legacy.getFloat(FOLLOW_START_HEALTH_KEY);
     }
 
+    public static boolean hasFollowJourney(Villager villager) {
+        if (villager == null) {
+            return false;
+        }
+        if (existingJourneyTag(villager) != null) {
+            return true;
+        }
+        CompoundTag legacy = villager.getPersistentData();
+        return legacy.contains(FOLLOW_START_HEALTH_KEY)
+                || legacy.contains(FOLLOW_START_X_KEY)
+                && legacy.contains(FOLLOW_START_Y_KEY)
+                && legacy.contains(FOLLOW_START_Z_KEY);
+    }
+
     public static JourneySnapshot journey(Villager villager) {
         CompoundTag data = existingJourneyTag(villager);
         if (data != null) {
