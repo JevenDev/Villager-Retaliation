@@ -2,88 +2,68 @@ package com.jvn.villagerretaliation.config;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import io.wispforest.owo.config.annotation.Config;
+import io.wispforest.owo.config.annotation.Expanded;
 import io.wispforest.owo.config.annotation.Modmenu;
 import io.wispforest.owo.config.annotation.Nest;
 import io.wispforest.owo.config.annotation.RangeConstraint;
 import io.wispforest.owo.config.annotation.SectionHeader;
-import com.jvn.villagerretaliation.config.ContainerForcedDialogueTrigger;
-import com.jvn.villagerretaliation.config.ContainerWatchMode;
-import com.jvn.villagerretaliation.config.DialogueTextSpeed;
-import com.jvn.villagerretaliation.config.InteractionChatPosition;
-import com.jvn.villagerretaliation.config.ReputationChangeDisplayMode;
-import com.jvn.villagerretaliation.config.ReputationChangeHudPosition;
-import com.jvn.villagerretaliation.config.ReputationChangeNotificationStyle;
-import com.jvn.villagerretaliation.config.VillagerChatBroadcastMode;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 
 @Modmenu(modId = VillagerRetaliation.MOD_ID)
 @Config(name = VillagerRetaliation.MOD_ID, wrapperName = "VillagerRetaliationOwoConfig")
 public final class VillagerRetaliationConfigModel {
     @Nest
-    @SectionHeader("general")
+    @Expanded
+    @SectionHeader("essentials")
     public General general = new General();
 
     @Nest
-    @SectionHeader("dialogue")
-    public Dialogue dialogue = new Dialogue();
-
-    @Nest
-    @SectionHeader("notifications")
     public Notifications notifications = new Notifications();
 
     @Nest
-    @SectionHeader("gifts")
+    public Quest quest = new Quest();
+
+    @Nest
+    @SectionHeader("conversationAndRelationships")
+    public Dialogue dialogue = new Dialogue();
+
+    @Nest
     public Gifts gifts = new Gifts();
 
     @Nest
-    @SectionHeader("social")
     public Social social = new Social();
 
     @Nest
-    @SectionHeader("balance")
-    public Balance balance = new Balance();
-
-    @Nest
-    @SectionHeader("retaliation")
-    public Retaliation retaliation = new Retaliation();
-
-    @Nest
-    @SectionHeader("reputation")
     public Reputation reputation = new Reputation();
 
     @Nest
-    @SectionHeader("playerRaids")
-    public PlayerRaids playerRaids = new PlayerRaids();
+    @SectionHeader("combatAndEvents")
+    public Retaliation retaliation = new Retaliation();
 
     @Nest
-    @SectionHeader("trade")
-    public Trade trade = new Trade();
-
-    @Nest
-    @SectionHeader("debugOverlay")
-    public DebugOverlay debugOverlay = new DebugOverlay();
-
-    @Nest
-    @SectionHeader("combat")
     public Combat combat = new Combat();
 
     @Nest
-    @SectionHeader("duels")
     public Duels duels = new Duels();
 
     @Nest
-    @SectionHeader("wanderer")
+    public PlayerRaids playerRaids = new PlayerRaids();
+
+    @Nest
+    @SectionHeader("workAndEconomy")
+    public Trade trade = new Trade();
+
+    @Nest
+    public Balance balance = new Balance();
+
+    @Nest
     public Wanderer wanderer = new Wanderer();
 
     @Nest
-    @SectionHeader("quest")
-    public Quest quest = new Quest();
+    @SectionHeader("advanced")
+    public DebugOverlay debugOverlay = new DebugOverlay();
 
     public static final class General {
-        public boolean enableVillagerDrops = true;
-
-        public boolean enableWanderingTraderDrops = true;
-
         public boolean enableVillagerRetaliation = true;
 
         public boolean enableVillagerReputation = true;
@@ -109,6 +89,10 @@ public final class VillagerRetaliationConfigModel {
         public boolean villagerReputationHoverTooltipRequiresEmerald = true;
 
         public boolean showTradeGuiReputationIcon = true;
+
+        public boolean enableVillagerDrops = true;
+
+        public boolean enableWanderingTraderDrops = true;
 
         public boolean enableVillagerDeathMessages = true;
     }
@@ -274,7 +258,6 @@ public final class VillagerRetaliationConfigModel {
         public boolean showGiftReactionTooltip = true;
 
         public boolean giftReactionTooltipRequiresKnownGift = true;
-
 
         @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
         public double repeatedGiftReputationMultiplier = 0.10D;
@@ -810,7 +793,6 @@ public final class VillagerRetaliationConfigModel {
 
         @RangeConstraint(min = 0.0D, max = 1.0D, decimalPlaces = 2)
         public double armorerShieldChanceHard = 0.35D;
-
 
         public boolean clericsUsePotions = true;
 
