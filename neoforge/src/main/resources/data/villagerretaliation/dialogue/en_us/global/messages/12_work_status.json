@@ -21,17 +21,7 @@
         "Nothing is calling for my attention right now.",
         "For now, the work is caught up.",
         "I have nothing pressing to report.",
-        "Nothing new needs doing yet.",
-        "Nothing needs doing just now. Nothing for me to handle at the moment.",
-        "Nothing for me to handle at the moment. I do not see anything that needs my hands right now.",
-        "I do not see anything that needs my hands right now. All quiet for the moment.",
-        "All quiet for the moment. There is no work waiting on me just now.",
-        "There is no work waiting on me just now. I am standing by until something needs doing.",
-        "I am standing by until something needs doing. Nothing is calling for my attention right now.",
-        "Nothing is calling for my attention right now. For now, the work is caught up.",
-        "For now, the work is caught up. I have nothing pressing to report.",
-        "I have nothing pressing to report. Nothing new needs doing yet.",
-        "Nothing new needs doing yet. Nothing needs doing just now."
+        "Nothing new needs doing yet."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.none.000"
     },
@@ -47,17 +37,7 @@
         "The job is paused for a moment, then I will continue.",
         "I am waiting for the next opening.",
         "I will get back to it in a moment.",
-        "I am standing by until there is work to do.",
-        "I am waiting for the next chance to work. I am between tasks for a moment.",
-        "I am between tasks for a moment. Give me a moment, I will check the work again soon.",
-        "Give me a moment, I will check the work again soon. I am waiting for the work to move along.",
-        "I am waiting for the work to move along. Nothing to act on this instant. I will try again shortly.",
-        "Nothing to act on this instant. I will try again shortly. I am taking a breath before the next task.",
-        "I am taking a breath before the next task. The job is paused for a moment, then I will continue.",
-        "The job is paused for a moment, then I will continue. I am waiting for the next opening.",
-        "I am waiting for the next opening. I will get back to it in a moment.",
-        "I will get back to it in a moment. I am standing by until there is work to do.",
-        "I am standing by until there is work to do. I am waiting for the next chance to work."
+        "I am standing by until there is work to do."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.waiting_tick.001"
     },
@@ -73,17 +53,7 @@
         "Once my hirer is back, I can continue.",
         "I am standing by for the one who gave me this job.",
         "This job belongs to my hirer, so I am waiting.",
-        "I will resume when the one who hired me is here again.",
-        "I am waiting for the one who hired me to return. I need my hirer nearby before I can keep this going.",
-        "I need my hirer nearby before I can keep this going. I am holding here until my hirer comes back.",
-        "I am holding here until my hirer comes back. The work waits on the person who hired me.",
-        "The work waits on the person who hired me. I cannot do much until my hirer returns.",
-        "I cannot do much until my hirer returns. I am watching for my hirer before I move on.",
-        "I am watching for my hirer before I move on. Once my hirer is back, I can continue.",
-        "Once my hirer is back, I can continue. I am standing by for the one who gave me this job.",
-        "I am standing by for the one who gave me this job. This job belongs to my hirer, so I am waiting.",
-        "This job belongs to my hirer, so I am waiting. I will resume when the one who hired me is here again.",
-        "I will resume when the one who hired me is here again. I am waiting for the one who hired me to return."
+        "I will resume when the one who hired me is here again."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.waiting_for_hirer.002"
     },
@@ -99,17 +69,7 @@
         "That work is not ready for me yet.",
         "I need clearer duties before I can take that role on.",
         "That role is still missing the steps I would follow.",
-        "For now, I do not have a way to do that work.",
-        "I do not have a proper work routine for that role yet. I do not know how to handle that kind of work yet.",
-        "I do not know how to handle that kind of work yet. That role still needs a real routine before I can do it.",
-        "That role still needs a real routine before I can do it. I am not ready to work that role properly.",
-        "I am not ready to work that role properly. No one has taught me how to do that job yet.",
-        "No one has taught me how to do that job yet. I cannot make useful progress with that role right now.",
-        "I cannot make useful progress with that role right now. That work is not ready for me yet.",
-        "That work is not ready for me yet. I need clearer duties before I can take that role on.",
-        "I need clearer duties before I can take that role on. That role is still missing the steps I would follow.",
-        "That role is still missing the steps I would follow. For now, I do not have a way to do that work.",
-        "For now, I do not have a way to do that work. I do not have a proper work routine for that role yet."
+        "For now, I do not have a way to do that work."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.no_routine.003"
     },
@@ -125,17 +85,7 @@
         "I am holding the job right where it is.",
         "Say the word when you want me working again.",
         "I have stopped for now, as ordered.",
-        "I am standing down until you change your mind.",
-        "You have told me to hold for now. I am waiting because you told me to pause.",
-        "I am waiting because you told me to pause. I will stay put until you ask me to resume.",
-        "I will stay put until you ask me to resume. The work is on hold by your order.",
-        "The work is on hold by your order. I am taking the pause you asked for.",
-        "I am taking the pause you asked for. I will not continue until you give the word.",
-        "I will not continue until you give the word. I am holding the job right where it is.",
-        "I am holding the job right where it is. Say the word when you want me working again.",
-        "Say the word when you want me working again. I have stopped for now, as ordered.",
-        "I have stopped for now, as ordered. I am standing down until you change your mind.",
-        "I am standing down until you change your mind. You have told me to hold for now."
+        "I am standing down until you change your mind."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.paused.004"
     },
@@ -151,17 +101,7 @@
         "I will pick the job back up.",
         "Good. I am working again.",
         "I will get my hands moving.",
-        "I am back on the task.",
-        "I am back to work. All right, I will get moving again.",
-        "All right, I will get moving again. I will return to the job now.",
-        "I will return to the job now. Back to it, then.",
-        "Back to it, then. I am ready to continue.",
-        "I am ready to continue. The pause is over. I will work again.",
-        "The pause is over. I will work again. I will pick the job back up.",
-        "I will pick the job back up. Good. I am working again.",
-        "Good. I am working again. I will get my hands moving.",
-        "I will get my hands moving. I am back on the task.",
-        "I am back on the task. I am back to work."
+        "I am back on the task."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.enabled.005"
     },
@@ -172,22 +112,7 @@
         "Our dispute must be settled before I return to this job.",
         "I am refusing this work until you make things right.",
         "The contract can wait. I do not trust you enough to continue.",
-        "I will resume only after relations between us improve.",
-        "I will not work for you while matters stand like this. Our dispute must be settled before I return to this job.",
-        "Our dispute must be settled before I return to this job. I am refusing this work until you make things right.",
-        "I am refusing this work until you make things right. The contract can wait. I do not trust you enough to continue.",
-        "The contract can wait. I do not trust you enough to continue. I will resume only after relations between us improve.",
-        "I will resume only after relations between us improve. I will not work for you while matters stand like this.",
-        "I will not work for you while matters stand like this. I am refusing this work until you make things right.",
-        "Our dispute must be settled before I return to this job. The contract can wait. I do not trust you enough to continue.",
-        "I am refusing this work until you make things right. I will resume only after relations between us improve.",
-        "The contract can wait. I do not trust you enough to continue. I will not work for you while matters stand like this.",
-        "I will resume only after relations between us improve. Our dispute must be settled before I return to this job.",
-        "I will not work for you while matters stand like this. The contract can wait. I do not trust you enough to continue.",
-        "Our dispute must be settled before I return to this job. I will resume only after relations between us improve.",
-        "I am refusing this work until you make things right. I will not work for you while matters stand like this.",
-        "The contract can wait. I do not trust you enough to continue. Our dispute must be settled before I return to this job.",
-        "I will resume only after relations between us improve. I am refusing this work until you make things right."
+        "I will resume only after relations between us improve."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.refusing_despised_hirer"
     },
@@ -203,17 +128,7 @@
         "I will try again shortly.",
         "I need a little time before the next bit of work.",
         "I am not done, just taking a moment.",
-        "I will get back to it after a short pause.",
-        "I am catching my breath before the next task. Give me a moment before I try again.",
-        "Give me a moment before I try again. I need a short pause before the next step.",
-        "I need a short pause before the next step. I am taking a breath, then I will continue.",
-        "I am taking a breath, then I will continue. The next task can wait one moment.",
-        "The next task can wait one moment. I am steadying myself before I move on.",
-        "I am steadying myself before I move on. I will try again shortly.",
-        "I will try again shortly. I need a little time before the next bit of work.",
-        "I need a little time before the next bit of work. I am not done, just taking a moment.",
-        "I am not done, just taking a moment. I will get back to it after a short pause.",
-        "I will get back to it after a short pause. I am catching my breath before the next task."
+        "I will get back to it after a short pause."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.cooldown.006"
     },
@@ -229,17 +144,7 @@
         "I am holding the hired work while I obey your order.",
         "The job is waiting because you gave me something else to do.",
         "I will not split my attention, I am following your command first.",
-        "Once this order is settled, I can return to the hired work.",
-        "I am following your command, so I have paused my hired work. Your order has me busy, so the hired work is waiting.",
-        "Your order has me busy, so the hired work is waiting. I am doing what you told me, the job can wait a moment.",
-        "I am doing what you told me, the job can wait a moment. The work is paused while I follow your command.",
-        "The work is paused while I follow your command. I will return to the job after this order is handled.",
-        "I will return to the job after this order is handled. Your command takes priority for now.",
-        "Your command takes priority for now. I am holding the hired work while I obey your order.",
-        "I am holding the hired work while I obey your order. The job is waiting because you gave me something else to do.",
-        "The job is waiting because you gave me something else to do. I will not split my attention, I am following your command first.",
-        "I will not split my attention, I am following your command first. Once this order is settled, I can return to the hired work.",
-        "Once this order is settled, I can return to the hired work. I am following your command, so I have paused my hired work."
+        "Once this order is settled, I can return to the hired work."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.paused_for_command.007"
     },
@@ -255,17 +160,7 @@
         "I will pick this back up after I sleep.",
         "It is time to rest. I am looking for my bed.",
         "I am done for the night and going to sleep.",
-        "Morning will come soon enough. I need my bed now.",
-        "I am tired, so I am heading to bed. Night has come. I am going to rest.",
-        "Night has come. I am going to rest. I am leaving the work for morning and finding my bed.",
-        "I am leaving the work for morning and finding my bed. I need sleep before I can keep working.",
-        "I need sleep before I can keep working. The job can wait until morning. I am going to bed.",
-        "The job can wait until morning. I am going to bed. I am tired enough for the day and heading home.",
-        "I am tired enough for the day and heading home. I will pick this back up after I sleep.",
-        "I will pick this back up after I sleep. It is time to rest. I am looking for my bed.",
-        "It is time to rest. I am looking for my bed. I am done for the night and going to sleep.",
-        "I am done for the night and going to sleep. Morning will come soon enough. I need my bed now.",
-        "Morning will come soon enough. I need my bed now. I am tired, so I am heading to bed."
+        "Morning will come soon enough. I need my bed now."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.tired.rest"
     },
@@ -281,17 +176,7 @@
         "I have stopped for the night and gone to sleep.",
         "I am asleep. I will continue once morning comes.",
         "I am getting the rest I need before more work.",
-        "The night is for sleep. I will resume at morning.",
-        "I am sleeping. The work waits until morning. I am asleep for the night.",
-        "I am asleep for the night. I am resting now and will work again after morning comes.",
-        "I am resting now and will work again after morning comes. I am in bed. The job can wait.",
-        "I am in bed. The job can wait. I am sleeping so I can return to work in the morning.",
-        "I am sleeping so I can return to work in the morning. I am resting until daylight.",
-        "I am resting until daylight. I have stopped for the night and gone to sleep.",
-        "I have stopped for the night and gone to sleep. I am asleep. I will continue once morning comes.",
-        "I am asleep. I will continue once morning comes. I am getting the rest I need before more work.",
-        "I am getting the rest I need before more work. The night is for sleep. I will resume at morning.",
-        "The night is for sleep. I will resume at morning. I am sleeping. The work waits until morning."
+        "The night is for sleep. I will resume at morning."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.sleeping.rest"
     },
@@ -307,17 +192,7 @@
         "I am waiting on a fix. No work area assigned.",
         "The work is paused until this changes. No work area assigned.",
         "This is the problem right now. No work area assigned.",
-        "I am stuck here for the moment. No work area assigned.",
-        "No work area assigned. I am held up for now. No work area assigned.",
-        "I am held up for now. No work area assigned. This is stopping the job for the moment. No work area assigned.",
-        "This is stopping the job for the moment. No work area assigned. I cannot move on yet. No work area assigned.",
-        "I cannot move on yet. No work area assigned. I will continue once this is fixed. No work area assigned.",
-        "I will continue once this is fixed. No work area assigned. That needs attention before I can keep working. No work area assigned.",
-        "That needs attention before I can keep working. No work area assigned. I am waiting on a fix. No work area assigned.",
-        "I am waiting on a fix. No work area assigned. The work is paused until this changes. No work area assigned.",
-        "The work is paused until this changes. No work area assigned. This is the problem right now. No work area assigned.",
-        "This is the problem right now. No work area assigned. I am stuck here for the moment. No work area assigned.",
-        "I am stuck here for the moment. No work area assigned. No work area assigned."
+        "I am stuck here for the moment. No work area assigned."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.no_work_area.008"
     },
@@ -333,17 +208,7 @@
         "I am waiting on a fix. I have nowhere left to deposit these collected items.",
         "The work is paused until this changes. I have nowhere left to deposit these collected items.",
         "This is the problem right now. I have nowhere left to deposit these collected items.",
-        "I am stuck here for the moment. I have nowhere left to deposit these collected items.",
-        "I have nowhere left to deposit these collected items. I am held up for now. I have nowhere left to deposit these collected items.",
-        "I am held up for now. I have nowhere left to deposit these collected items. This is stopping the job for the moment. I have nowhere left to deposit these collected items.",
-        "This is stopping the job for the moment. I have nowhere left to deposit these collected items. I cannot move on yet. I have nowhere left to deposit these collected items.",
-        "I cannot move on yet. I have nowhere left to deposit these collected items. I will continue once this is fixed. I have nowhere left to deposit these collected items.",
-        "I will continue once this is fixed. I have nowhere left to deposit these collected items. That needs attention before I can keep working. I have nowhere left to deposit these collected items.",
-        "That needs attention before I can keep working. I have nowhere left to deposit these collected items. I am waiting on a fix. I have nowhere left to deposit these collected items.",
-        "I am waiting on a fix. I have nowhere left to deposit these collected items. The work is paused until this changes. I have nowhere left to deposit these collected items.",
-        "The work is paused until this changes. I have nowhere left to deposit these collected items. This is the problem right now. I have nowhere left to deposit these collected items.",
-        "This is the problem right now. I have nowhere left to deposit these collected items. I am stuck here for the moment. I have nowhere left to deposit these collected items.",
-        "I am stuck here for the moment. I have nowhere left to deposit these collected items. I have nowhere left to deposit these collected items."
+        "I am stuck here for the moment. I have nowhere left to deposit these collected items."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.storage_full.009"
     },
@@ -359,17 +224,7 @@
         "I am waiting on a fix. I deposited what I could, but storage is full now.",
         "The work is paused until this changes. I deposited what I could, but storage is full now.",
         "This is the problem right now. I deposited what I could, but storage is full now.",
-        "I am stuck here for the moment. I deposited what I could, but storage is full now.",
-        "I deposited what I could, but storage is full now. I am held up for now. I deposited what I could, but storage is full now.",
-        "I am held up for now. I deposited what I could, but storage is full now. This is stopping the job for the moment. I deposited what I could, but storage is full now.",
-        "This is stopping the job for the moment. I deposited what I could, but storage is full now. I cannot move on yet. I deposited what I could, but storage is full now.",
-        "I cannot move on yet. I deposited what I could, but storage is full now. I will continue once this is fixed. I deposited what I could, but storage is full now.",
-        "I will continue once this is fixed. I deposited what I could, but storage is full now. That needs attention before I can keep working. I deposited what I could, but storage is full now.",
-        "That needs attention before I can keep working. I deposited what I could, but storage is full now. I am waiting on a fix. I deposited what I could, but storage is full now.",
-        "I am waiting on a fix. I deposited what I could, but storage is full now. The work is paused until this changes. I deposited what I could, but storage is full now.",
-        "The work is paused until this changes. I deposited what I could, but storage is full now. This is the problem right now. I deposited what I could, but storage is full now.",
-        "This is the problem right now. I deposited what I could, but storage is full now. I am stuck here for the moment. I deposited what I could, but storage is full now.",
-        "I am stuck here for the moment. I deposited what I could, but storage is full now. I deposited what I could, but storage is full now."
+        "I am stuck here for the moment. I deposited what I could, but storage is full now."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.storage_full_after_deposit.010"
     },
@@ -385,17 +240,7 @@
         "For the moment, I am busy with this. I am staying near storage and waiting for room to deposit collected items.",
         "I will keep going from here. I am staying near storage and waiting for room to deposit collected items.",
         "The work is still moving. I am staying near storage and waiting for room to deposit collected items.",
-        "I am working through it. I am staying near storage and waiting for room to deposit collected items.",
-        "I am staying near storage and waiting for room to deposit collected items. Right now, that is my focus. I am staying near storage and waiting for room to deposit collected items.",
-        "Right now, that is my focus. I am staying near storage and waiting for room to deposit collected items. That is my current step. I am staying near storage and waiting for room to deposit collected items.",
-        "That is my current step. I am staying near storage and waiting for room to deposit collected items. I am keeping the job moving. I am staying near storage and waiting for room to deposit collected items.",
-        "I am keeping the job moving. I am staying near storage and waiting for room to deposit collected items. This is where I am in the work. I am staying near storage and waiting for room to deposit collected items.",
-        "This is where I am in the work. I am staying near storage and waiting for room to deposit collected items. I am staying with the task. I am staying near storage and waiting for room to deposit collected items.",
-        "I am staying with the task. I am staying near storage and waiting for room to deposit collected items. For the moment, I am busy with this. I am staying near storage and waiting for room to deposit collected items.",
-        "For the moment, I am busy with this. I am staying near storage and waiting for room to deposit collected items. I will keep going from here. I am staying near storage and waiting for room to deposit collected items.",
-        "I will keep going from here. I am staying near storage and waiting for room to deposit collected items. The work is still moving. I am staying near storage and waiting for room to deposit collected items.",
-        "The work is still moving. I am staying near storage and waiting for room to deposit collected items. I am working through it. I am staying near storage and waiting for room to deposit collected items.",
-        "I am working through it. I am staying near storage and waiting for room to deposit collected items. I am staying near storage and waiting for room to deposit collected items."
+        "I am working through it. I am staying near storage and waiting for room to deposit collected items."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.storage_full_waiting.011"
     },
@@ -411,17 +256,7 @@
         "For the moment, I am busy with this. I am collecting the right tool from assigned storage.",
         "I will keep going from here. I am collecting the right tool from assigned storage.",
         "The work is still moving. I am collecting the right tool from assigned storage.",
-        "I am working through it. I am collecting the right tool from assigned storage.",
-        "I am collecting the right tool from assigned storage. Right now, that is my focus. I am collecting the right tool from assigned storage.",
-        "Right now, that is my focus. I am collecting the right tool from assigned storage. That is my current step. I am collecting the right tool from assigned storage.",
-        "That is my current step. I am collecting the right tool from assigned storage. I am keeping the job moving. I am collecting the right tool from assigned storage.",
-        "I am keeping the job moving. I am collecting the right tool from assigned storage. This is where I am in the work. I am collecting the right tool from assigned storage.",
-        "This is where I am in the work. I am collecting the right tool from assigned storage. I am staying with the task. I am collecting the right tool from assigned storage.",
-        "I am staying with the task. I am collecting the right tool from assigned storage. For the moment, I am busy with this. I am collecting the right tool from assigned storage.",
-        "For the moment, I am busy with this. I am collecting the right tool from assigned storage. I will keep going from here. I am collecting the right tool from assigned storage.",
-        "I will keep going from here. I am collecting the right tool from assigned storage. The work is still moving. I am collecting the right tool from assigned storage.",
-        "The work is still moving. I am collecting the right tool from assigned storage. I am working through it. I am collecting the right tool from assigned storage.",
-        "I am working through it. I am collecting the right tool from assigned storage. I am collecting the right tool from assigned storage."
+        "I am working through it. I am collecting the right tool from assigned storage."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.collecting_tool.012"
     },
@@ -437,17 +272,7 @@
         "I am waiting on a fix. I found the {tool} in assigned storage, but I cannot reach that container.",
         "The work is paused until this changes. I found the {tool} in assigned storage, but I cannot reach that container.",
         "This is the problem right now. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "I am stuck here for the moment. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "I found the {tool} in assigned storage, but I cannot reach that container. I am held up for now. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "I am held up for now. I found the {tool} in assigned storage, but I cannot reach that container. This is stopping the job for the moment. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "This is stopping the job for the moment. I found the {tool} in assigned storage, but I cannot reach that container. I cannot move on yet. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "I cannot move on yet. I found the {tool} in assigned storage, but I cannot reach that container. I will continue once this is fixed. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "I will continue once this is fixed. I found the {tool} in assigned storage, but I cannot reach that container. That needs attention before I can keep working. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "That needs attention before I can keep working. I found the {tool} in assigned storage, but I cannot reach that container. I am waiting on a fix. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "I am waiting on a fix. I found the {tool} in assigned storage, but I cannot reach that container. The work is paused until this changes. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "The work is paused until this changes. I found the {tool} in assigned storage, but I cannot reach that container. This is the problem right now. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "This is the problem right now. I found the {tool} in assigned storage, but I cannot reach that container. I am stuck here for the moment. I found the {tool} in assigned storage, but I cannot reach that container.",
-        "I am stuck here for the moment. I found the {tool} in assigned storage, but I cannot reach that container. I found the {tool} in assigned storage, but I cannot reach that container."
+        "I am stuck here for the moment. I found the {tool} in assigned storage, but I cannot reach that container."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.tool_storage_unreachable.013"
     },
@@ -463,17 +288,7 @@
         "I am waiting on a fix. I found the {tool}, but I cannot fit it in my work gear.",
         "The work is paused until this changes. I found the {tool}, but I cannot fit it in my work gear.",
         "This is the problem right now. I found the {tool}, but I cannot fit it in my work gear.",
-        "I am stuck here for the moment. I found the {tool}, but I cannot fit it in my work gear.",
-        "I found the {tool}, but I cannot fit it in my work gear. I am held up for now. I found the {tool}, but I cannot fit it in my work gear.",
-        "I am held up for now. I found the {tool}, but I cannot fit it in my work gear. This is stopping the job for the moment. I found the {tool}, but I cannot fit it in my work gear.",
-        "This is stopping the job for the moment. I found the {tool}, but I cannot fit it in my work gear. I cannot move on yet. I found the {tool}, but I cannot fit it in my work gear.",
-        "I cannot move on yet. I found the {tool}, but I cannot fit it in my work gear. I will continue once this is fixed. I found the {tool}, but I cannot fit it in my work gear.",
-        "I will continue once this is fixed. I found the {tool}, but I cannot fit it in my work gear. That needs attention before I can keep working. I found the {tool}, but I cannot fit it in my work gear.",
-        "That needs attention before I can keep working. I found the {tool}, but I cannot fit it in my work gear. I am waiting on a fix. I found the {tool}, but I cannot fit it in my work gear.",
-        "I am waiting on a fix. I found the {tool}, but I cannot fit it in my work gear. The work is paused until this changes. I found the {tool}, but I cannot fit it in my work gear.",
-        "The work is paused until this changes. I found the {tool}, but I cannot fit it in my work gear. This is the problem right now. I found the {tool}, but I cannot fit it in my work gear.",
-        "This is the problem right now. I found the {tool}, but I cannot fit it in my work gear. I am stuck here for the moment. I found the {tool}, but I cannot fit it in my work gear.",
-        "I am stuck here for the moment. I found the {tool}, but I cannot fit it in my work gear. I found the {tool}, but I cannot fit it in my work gear."
+        "I am stuck here for the moment. I found the {tool}, but I cannot fit it in my work gear."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.tool_inventory_full.014"
     },
@@ -485,21 +300,7 @@
         "That is my current step. I am collecting arrows from assigned storage.",
         "I am keeping the job moving. I am collecting arrows from assigned storage.",
         "This is where I am in the work. I am collecting arrows from assigned storage.",
-        "I am staying with the task. I am collecting arrows from assigned storage.",
-        "I am collecting arrows from assigned storage. Right now, that is my focus. I am collecting arrows from assigned storage.",
-        "Right now, that is my focus. I am collecting arrows from assigned storage. That is my current step. I am collecting arrows from assigned storage.",
-        "That is my current step. I am collecting arrows from assigned storage. I am keeping the job moving. I am collecting arrows from assigned storage.",
-        "I am keeping the job moving. I am collecting arrows from assigned storage. This is where I am in the work. I am collecting arrows from assigned storage.",
-        "This is where I am in the work. I am collecting arrows from assigned storage. I am staying with the task. I am collecting arrows from assigned storage.",
-        "I am staying with the task. I am collecting arrows from assigned storage. I am collecting arrows from assigned storage.",
-        "I am collecting arrows from assigned storage. That is my current step. I am collecting arrows from assigned storage.",
-        "Right now, that is my focus. I am collecting arrows from assigned storage. I am keeping the job moving. I am collecting arrows from assigned storage.",
-        "That is my current step. I am collecting arrows from assigned storage. This is where I am in the work. I am collecting arrows from assigned storage.",
-        "I am keeping the job moving. I am collecting arrows from assigned storage. I am staying with the task. I am collecting arrows from assigned storage.",
-        "This is where I am in the work. I am collecting arrows from assigned storage. I am collecting arrows from assigned storage.",
-        "I am staying with the task. I am collecting arrows from assigned storage. Right now, that is my focus. I am collecting arrows from assigned storage.",
-        "I am collecting arrows from assigned storage. I am keeping the job moving. I am collecting arrows from assigned storage.",
-        "Right now, that is my focus. I am collecting arrows from assigned storage. This is where I am in the work. I am collecting arrows from assigned storage."
+        "I am staying with the task. I am collecting arrows from assigned storage."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.collecting_arrows.101"
     },
@@ -511,21 +312,7 @@
         "I gathered arrows and am returning to the assigned area.",
         "I have what I need for ranged work now.",
         "The arrows are ready. I am going back to my post.",
-        "I restocked arrows and am returning to work.",
-        "I have arrows and am returning to the work area. Arrows are stocked. I am heading back to work.",
-        "Arrows are stocked. I am heading back to work. I gathered arrows and am returning to the assigned area.",
-        "I gathered arrows and am returning to the assigned area. I have what I need for ranged work now.",
-        "I have what I need for ranged work now. The arrows are ready. I am going back to my post.",
-        "The arrows are ready. I am going back to my post. I restocked arrows and am returning to work.",
-        "I restocked arrows and am returning to work. I have arrows and am returning to the work area.",
-        "I have arrows and am returning to the work area. I gathered arrows and am returning to the assigned area.",
-        "Arrows are stocked. I am heading back to work. I have what I need for ranged work now.",
-        "I gathered arrows and am returning to the assigned area. The arrows are ready. I am going back to my post.",
-        "I have what I need for ranged work now. I restocked arrows and am returning to work.",
-        "The arrows are ready. I am going back to my post. I have arrows and am returning to the work area.",
-        "I restocked arrows and am returning to work. Arrows are stocked. I am heading back to work.",
-        "I have arrows and am returning to the work area. I have what I need for ranged work now.",
-        "Arrows are stocked. I am heading back to work. The arrows are ready. I am going back to my post."
+        "I restocked arrows and am returning to work."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.gathered_arrows.102"
     },
@@ -537,21 +324,7 @@
         "I cannot use this ranged weapon without arrows.",
         "Give me arrows in job supplies or assigned storage.",
         "The job is waiting on arrows.",
-        "I have the ranged weapon, but I need arrows for it.",
-        "I need arrows before I can use a bow or crossbow for hired work. My ranged weapon needs arrows first.",
-        "My ranged weapon needs arrows first. I cannot use this ranged weapon without arrows.",
-        "I cannot use this ranged weapon without arrows. Give me arrows in job supplies or assigned storage.",
-        "Give me arrows in job supplies or assigned storage. The job is waiting on arrows.",
-        "The job is waiting on arrows. I have the ranged weapon, but I need arrows for it.",
-        "I have the ranged weapon, but I need arrows for it. I need arrows before I can use a bow or crossbow for hired work.",
-        "I need arrows before I can use a bow or crossbow for hired work. I cannot use this ranged weapon without arrows.",
-        "My ranged weapon needs arrows first. Give me arrows in job supplies or assigned storage.",
-        "I cannot use this ranged weapon without arrows. The job is waiting on arrows.",
-        "Give me arrows in job supplies or assigned storage. I have the ranged weapon, but I need arrows for it.",
-        "The job is waiting on arrows. I need arrows before I can use a bow or crossbow for hired work.",
-        "I have the ranged weapon, but I need arrows for it. My ranged weapon needs arrows first.",
-        "I need arrows before I can use a bow or crossbow for hired work. Give me arrows in job supplies or assigned storage.",
-        "My ranged weapon needs arrows first. The job is waiting on arrows."
+        "I have the ranged weapon, but I need arrows for it."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.missing_arrows.103"
     },
@@ -563,21 +336,7 @@
         "I can see where the arrows are assigned, but I cannot get there.",
         "I need a reachable path to the arrow storage.",
         "The job is paused because I cannot reach the arrows.",
-        "I found arrows, but the storage path is blocked.",
-        "I found arrows in assigned storage, but I cannot reach that container. The arrows are stored somewhere I cannot path to.",
-        "The arrows are stored somewhere I cannot path to. I can see where the arrows are assigned, but I cannot get there.",
-        "I can see where the arrows are assigned, but I cannot get there. I need a reachable path to the arrow storage.",
-        "I need a reachable path to the arrow storage. The job is paused because I cannot reach the arrows.",
-        "The job is paused because I cannot reach the arrows. I found arrows, but the storage path is blocked.",
-        "I found arrows, but the storage path is blocked. I found arrows in assigned storage, but I cannot reach that container.",
-        "I found arrows in assigned storage, but I cannot reach that container. I can see where the arrows are assigned, but I cannot get there.",
-        "The arrows are stored somewhere I cannot path to. I need a reachable path to the arrow storage.",
-        "I can see where the arrows are assigned, but I cannot get there. The job is paused because I cannot reach the arrows.",
-        "I need a reachable path to the arrow storage. I found arrows, but the storage path is blocked.",
-        "The job is paused because I cannot reach the arrows. I found arrows in assigned storage, but I cannot reach that container.",
-        "I found arrows, but the storage path is blocked. The arrows are stored somewhere I cannot path to.",
-        "I found arrows in assigned storage, but I cannot reach that container. I need a reachable path to the arrow storage.",
-        "The arrows are stored somewhere I cannot path to. The job is paused because I cannot reach the arrows."
+        "I found arrows, but the storage path is blocked."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.arrow_storage_unreachable.104"
     },
@@ -589,21 +348,7 @@
         "I need space in job supplies before I can carry arrows.",
         "The job is paused because I cannot store arrows.",
         "I reached the arrows, but my supplies are full.",
-        "I cannot pick up arrows until there is room in the job inventory.",
-        "I found arrows, but I cannot fit them in my job supplies. The arrow storage is reachable, but my work gear has no room.",
-        "The arrow storage is reachable, but my work gear has no room. I need space in job supplies before I can carry arrows.",
-        "I need space in job supplies before I can carry arrows. The job is paused because I cannot store arrows.",
-        "The job is paused because I cannot store arrows. I reached the arrows, but my supplies are full.",
-        "I reached the arrows, but my supplies are full. I cannot pick up arrows until there is room in the job inventory.",
-        "I cannot pick up arrows until there is room in the job inventory. I found arrows, but I cannot fit them in my job supplies.",
-        "I found arrows, but I cannot fit them in my job supplies. I need space in job supplies before I can carry arrows.",
-        "The arrow storage is reachable, but my work gear has no room. The job is paused because I cannot store arrows.",
-        "I need space in job supplies before I can carry arrows. I reached the arrows, but my supplies are full.",
-        "The job is paused because I cannot store arrows. I cannot pick up arrows until there is room in the job inventory.",
-        "I reached the arrows, but my supplies are full. I found arrows, but I cannot fit them in my job supplies.",
-        "I cannot pick up arrows until there is room in the job inventory. The arrow storage is reachable, but my work gear has no room.",
-        "I found arrows, but I cannot fit them in my job supplies. The job is paused because I cannot store arrows.",
-        "The arrow storage is reachable, but my work gear has no room. I reached the arrows, but my supplies are full."
+        "I cannot pick up arrows until there is room in the job inventory."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.arrow_inventory_full.105"
     },
@@ -619,17 +364,7 @@
         "That's all I have for now: I lost the path back into the work area, so I am finding a better way down.",
         "Understood. I lost the path back into the work area, so I am finding a better way down.",
         "Nothing else to add yet. I lost the path back into the work area, so I am finding a better way down.",
-        "For the moment: I lost the path back into the work area, so I am finding a better way down.",
-        "I lost the path back into the work area, so I am finding a better way down. All right. I lost the path back into the work area, so I am finding a better way down.",
-        "All right. I lost the path back into the work area, so I am finding a better way down. Here's where I am with it: I lost the path back into the work area, so I am finding a better way down.",
-        "Here's where I am with it: I lost the path back into the work area, so I am finding a better way down. For now, that is the situation. I lost the path back into the work area, so I am finding a better way down.",
-        "For now, that is the situation. I lost the path back into the work area, so I am finding a better way down. Just so you know. I lost the path back into the work area, so I am finding a better way down.",
-        "Just so you know. I lost the path back into the work area, so I am finding a better way down. Plainly put: I lost the path back into the work area, so I am finding a better way down.",
-        "Plainly put: I lost the path back into the work area, so I am finding a better way down. That's all I have for now: I lost the path back into the work area, so I am finding a better way down.",
-        "That's all I have for now: I lost the path back into the work area, so I am finding a better way down. Understood. I lost the path back into the work area, so I am finding a better way down.",
-        "Understood. I lost the path back into the work area, so I am finding a better way down. Nothing else to add yet. I lost the path back into the work area, so I am finding a better way down.",
-        "Nothing else to add yet. I lost the path back into the work area, so I am finding a better way down. For the moment: I lost the path back into the work area, so I am finding a better way down.",
-        "For the moment: I lost the path back into the work area, so I am finding a better way down. I lost the path back into the work area, so I am finding a better way down."
+        "For the moment: I lost the path back into the work area, so I am finding a better way down."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.return_path_lost.016"
     },
@@ -645,17 +380,7 @@
         "For the moment, I am busy with this. I have drifted beyond the work bounds, so I am heading back.",
         "I will keep going from here. I have drifted beyond the work bounds, so I am heading back.",
         "The work is still moving. I have drifted beyond the work bounds, so I am heading back.",
-        "I am working through it. I have drifted beyond the work bounds, so I am heading back.",
-        "I have drifted beyond the work bounds, so I am heading back. Right now, that is my focus. I have drifted beyond the work bounds, so I am heading back.",
-        "Right now, that is my focus. I have drifted beyond the work bounds, so I am heading back. That is my current step. I have drifted beyond the work bounds, so I am heading back.",
-        "That is my current step. I have drifted beyond the work bounds, so I am heading back. I am keeping the job moving. I have drifted beyond the work bounds, so I am heading back.",
-        "I am keeping the job moving. I have drifted beyond the work bounds, so I am heading back. This is where I am in the work. I have drifted beyond the work bounds, so I am heading back.",
-        "This is where I am in the work. I have drifted beyond the work bounds, so I am heading back. I am staying with the task. I have drifted beyond the work bounds, so I am heading back.",
-        "I am staying with the task. I have drifted beyond the work bounds, so I am heading back. For the moment, I am busy with this. I have drifted beyond the work bounds, so I am heading back.",
-        "For the moment, I am busy with this. I have drifted beyond the work bounds, so I am heading back. I will keep going from here. I have drifted beyond the work bounds, so I am heading back.",
-        "I will keep going from here. I have drifted beyond the work bounds, so I am heading back. The work is still moving. I have drifted beyond the work bounds, so I am heading back.",
-        "The work is still moving. I have drifted beyond the work bounds, so I am heading back. I am working through it. I have drifted beyond the work bounds, so I am heading back.",
-        "I am working through it. I have drifted beyond the work bounds, so I am heading back. I have drifted beyond the work bounds, so I am heading back."
+        "I am working through it. I have drifted beyond the work bounds, so I am heading back."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.returning_bounds.017"
     },
@@ -671,17 +396,7 @@
         "That's all I have for now: I am outside the work bounds and waiting a moment before trying the path back again.",
         "Understood. I am outside the work bounds and waiting a moment before trying the path back again.",
         "Nothing else to add yet. I am outside the work bounds and waiting a moment before trying the path back again.",
-        "For the moment: I am outside the work bounds and waiting a moment before trying the path back again.",
-        "I am outside the work bounds and waiting a moment before trying the path back again. All right. I am outside the work bounds and waiting a moment before trying the path back again.",
-        "All right. I am outside the work bounds and waiting a moment before trying the path back again. Here's where I am with it: I am outside the work bounds and waiting a moment before trying the path back again.",
-        "Here's where I am with it: I am outside the work bounds and waiting a moment before trying the path back again. For now, that is the situation. I am outside the work bounds and waiting a moment before trying the path back again.",
-        "For now, that is the situation. I am outside the work bounds and waiting a moment before trying the path back again. Just so you know. I am outside the work bounds and waiting a moment before trying the path back again.",
-        "Just so you know. I am outside the work bounds and waiting a moment before trying the path back again. Plainly put: I am outside the work bounds and waiting a moment before trying the path back again.",
-        "Plainly put: I am outside the work bounds and waiting a moment before trying the path back again. That's all I have for now: I am outside the work bounds and waiting a moment before trying the path back again.",
-        "That's all I have for now: I am outside the work bounds and waiting a moment before trying the path back again. Understood. I am outside the work bounds and waiting a moment before trying the path back again.",
-        "Understood. I am outside the work bounds and waiting a moment before trying the path back again. Nothing else to add yet. I am outside the work bounds and waiting a moment before trying the path back again.",
-        "Nothing else to add yet. I am outside the work bounds and waiting a moment before trying the path back again. For the moment: I am outside the work bounds and waiting a moment before trying the path back again.",
-        "For the moment: I am outside the work bounds and waiting a moment before trying the path back again. I am outside the work bounds and waiting a moment before trying the path back again."
+        "For the moment: I am outside the work bounds and waiting a moment before trying the path back again."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.return_retry_wait.018"
     },
@@ -697,17 +412,7 @@
         "For the moment, I am busy with this. I am returning to the excavation ladder.",
         "I will keep going from here. I am returning to the excavation ladder.",
         "The work is still moving. I am returning to the excavation ladder.",
-        "I am working through it. I am returning to the excavation ladder.",
-        "I am returning to the excavation ladder. Right now, that is my focus. I am returning to the excavation ladder.",
-        "Right now, that is my focus. I am returning to the excavation ladder. That is my current step. I am returning to the excavation ladder.",
-        "That is my current step. I am returning to the excavation ladder. I am keeping the job moving. I am returning to the excavation ladder.",
-        "I am keeping the job moving. I am returning to the excavation ladder. This is where I am in the work. I am returning to the excavation ladder.",
-        "This is where I am in the work. I am returning to the excavation ladder. I am staying with the task. I am returning to the excavation ladder.",
-        "I am staying with the task. I am returning to the excavation ladder. For the moment, I am busy with this. I am returning to the excavation ladder.",
-        "For the moment, I am busy with this. I am returning to the excavation ladder. I will keep going from here. I am returning to the excavation ladder.",
-        "I will keep going from here. I am returning to the excavation ladder. The work is still moving. I am returning to the excavation ladder.",
-        "The work is still moving. I am returning to the excavation ladder. I am working through it. I am returning to the excavation ladder.",
-        "I am working through it. I am returning to the excavation ladder. I am returning to the excavation ladder."
+        "I am working through it. I am returning to the excavation ladder."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.returning_excavation_ladder.019"
     },
@@ -723,17 +428,7 @@
         "For the moment, I am busy with this. I am moving to the excavation ladder.",
         "I will keep going from here. I am moving to the excavation ladder.",
         "The work is still moving. I am moving to the excavation ladder.",
-        "I am working through it. I am moving to the excavation ladder.",
-        "I am moving to the excavation ladder. Right now, that is my focus. I am moving to the excavation ladder.",
-        "Right now, that is my focus. I am moving to the excavation ladder. That is my current step. I am moving to the excavation ladder.",
-        "That is my current step. I am moving to the excavation ladder. I am keeping the job moving. I am moving to the excavation ladder.",
-        "I am keeping the job moving. I am moving to the excavation ladder. This is where I am in the work. I am moving to the excavation ladder.",
-        "This is where I am in the work. I am moving to the excavation ladder. I am staying with the task. I am moving to the excavation ladder.",
-        "I am staying with the task. I am moving to the excavation ladder. For the moment, I am busy with this. I am moving to the excavation ladder.",
-        "For the moment, I am busy with this. I am moving to the excavation ladder. I will keep going from here. I am moving to the excavation ladder.",
-        "I will keep going from here. I am moving to the excavation ladder. The work is still moving. I am moving to the excavation ladder.",
-        "The work is still moving. I am moving to the excavation ladder. I am working through it. I am moving to the excavation ladder.",
-        "I am working through it. I am moving to the excavation ladder. I am moving to the excavation ladder."
+        "I am working through it. I am moving to the excavation ladder."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.moving_excavation_ladder.020"
     },
@@ -749,17 +444,7 @@
         "I am waiting on a fix. I need a clear path to the excavation ladder.",
         "The work is paused until this changes. I need a clear path to the excavation ladder.",
         "This is the problem right now. I need a clear path to the excavation ladder.",
-        "I am stuck here for the moment. I need a clear path to the excavation ladder.",
-        "I need a clear path to the excavation ladder. I am held up for now. I need a clear path to the excavation ladder.",
-        "I am held up for now. I need a clear path to the excavation ladder. This is stopping the job for the moment. I need a clear path to the excavation ladder.",
-        "This is stopping the job for the moment. I need a clear path to the excavation ladder. I cannot move on yet. I need a clear path to the excavation ladder.",
-        "I cannot move on yet. I need a clear path to the excavation ladder. I will continue once this is fixed. I need a clear path to the excavation ladder.",
-        "I will continue once this is fixed. I need a clear path to the excavation ladder. That needs attention before I can keep working. I need a clear path to the excavation ladder.",
-        "That needs attention before I can keep working. I need a clear path to the excavation ladder. I am waiting on a fix. I need a clear path to the excavation ladder.",
-        "I am waiting on a fix. I need a clear path to the excavation ladder. The work is paused until this changes. I need a clear path to the excavation ladder.",
-        "The work is paused until this changes. I need a clear path to the excavation ladder. This is the problem right now. I need a clear path to the excavation ladder.",
-        "This is the problem right now. I need a clear path to the excavation ladder. I am stuck here for the moment. I need a clear path to the excavation ladder.",
-        "I am stuck here for the moment. I need a clear path to the excavation ladder. I need a clear path to the excavation ladder."
+        "I am stuck here for the moment. I need a clear path to the excavation ladder."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.need_excavation_ladder_path.021"
     },
@@ -775,17 +460,7 @@
         "For the moment, I am busy with this. I am using the ladder to get back into the work area.",
         "I will keep going from here. I am using the ladder to get back into the work area.",
         "The work is still moving. I am using the ladder to get back into the work area.",
-        "I am working through it. I am using the ladder to get back into the work area.",
-        "I am using the ladder to get back into the work area. Right now, that is my focus. I am using the ladder to get back into the work area.",
-        "Right now, that is my focus. I am using the ladder to get back into the work area. That is my current step. I am using the ladder to get back into the work area.",
-        "That is my current step. I am using the ladder to get back into the work area. I am keeping the job moving. I am using the ladder to get back into the work area.",
-        "I am keeping the job moving. I am using the ladder to get back into the work area. This is where I am in the work. I am using the ladder to get back into the work area.",
-        "This is where I am in the work. I am using the ladder to get back into the work area. I am staying with the task. I am using the ladder to get back into the work area.",
-        "I am staying with the task. I am using the ladder to get back into the work area. For the moment, I am busy with this. I am using the ladder to get back into the work area.",
-        "For the moment, I am busy with this. I am using the ladder to get back into the work area. I will keep going from here. I am using the ladder to get back into the work area.",
-        "I will keep going from here. I am using the ladder to get back into the work area. The work is still moving. I am using the ladder to get back into the work area.",
-        "The work is still moving. I am using the ladder to get back into the work area. I am working through it. I am using the ladder to get back into the work area.",
-        "I am working through it. I am using the ladder to get back into the work area. I am using the ladder to get back into the work area."
+        "I am working through it. I am using the ladder to get back into the work area."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.returning_by_ladder.022"
     },
@@ -801,17 +476,7 @@
         "For the moment, I am busy with this. I am climbing out to safer ground before returning to the work area.",
         "I will keep going from here. I am climbing out to safer ground before returning to the work area.",
         "The work is still moving. I am climbing out to safer ground before returning to the work area.",
-        "I am working through it. I am climbing out to safer ground before returning to the work area.",
-        "I am climbing out to safer ground before returning to the work area. Right now, that is my focus. I am climbing out to safer ground before returning to the work area.",
-        "Right now, that is my focus. I am climbing out to safer ground before returning to the work area. That is my current step. I am climbing out to safer ground before returning to the work area.",
-        "That is my current step. I am climbing out to safer ground before returning to the work area. I am keeping the job moving. I am climbing out to safer ground before returning to the work area.",
-        "I am keeping the job moving. I am climbing out to safer ground before returning to the work area. This is where I am in the work. I am climbing out to safer ground before returning to the work area.",
-        "This is where I am in the work. I am climbing out to safer ground before returning to the work area. I am staying with the task. I am climbing out to safer ground before returning to the work area.",
-        "I am staying with the task. I am climbing out to safer ground before returning to the work area. For the moment, I am busy with this. I am climbing out to safer ground before returning to the work area.",
-        "For the moment, I am busy with this. I am climbing out to safer ground before returning to the work area. I will keep going from here. I am climbing out to safer ground before returning to the work area.",
-        "I will keep going from here. I am climbing out to safer ground before returning to the work area. The work is still moving. I am climbing out to safer ground before returning to the work area.",
-        "The work is still moving. I am climbing out to safer ground before returning to the work area. I am working through it. I am climbing out to safer ground before returning to the work area.",
-        "I am working through it. I am climbing out to safer ground before returning to the work area. I am climbing out to safer ground before returning to the work area."
+        "I am working through it. I am climbing out to safer ground before returning to the work area."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.returning_to_safe_ground.023"
     },
@@ -827,17 +492,7 @@
         "For the moment, I am busy with this. I am too far from the work bounds, so I am making my way back.",
         "I will keep going from here. I am too far from the work bounds, so I am making my way back.",
         "The work is still moving. I am too far from the work bounds, so I am making my way back.",
-        "I am working through it. I am too far from the work bounds, so I am making my way back.",
-        "I am too far from the work bounds, so I am making my way back. Right now, that is my focus. I am too far from the work bounds, so I am making my way back.",
-        "Right now, that is my focus. I am too far from the work bounds, so I am making my way back. That is my current step. I am too far from the work bounds, so I am making my way back.",
-        "That is my current step. I am too far from the work bounds, so I am making my way back. I am keeping the job moving. I am too far from the work bounds, so I am making my way back.",
-        "I am keeping the job moving. I am too far from the work bounds, so I am making my way back. This is where I am in the work. I am too far from the work bounds, so I am making my way back.",
-        "This is where I am in the work. I am too far from the work bounds, so I am making my way back. I am staying with the task. I am too far from the work bounds, so I am making my way back.",
-        "I am staying with the task. I am too far from the work bounds, so I am making my way back. For the moment, I am busy with this. I am too far from the work bounds, so I am making my way back.",
-        "For the moment, I am busy with this. I am too far from the work bounds, so I am making my way back. I will keep going from here. I am too far from the work bounds, so I am making my way back.",
-        "I will keep going from here. I am too far from the work bounds, so I am making my way back. The work is still moving. I am too far from the work bounds, so I am making my way back.",
-        "The work is still moving. I am too far from the work bounds, so I am making my way back. I am working through it. I am too far from the work bounds, so I am making my way back.",
-        "I am working through it. I am too far from the work bounds, so I am making my way back. I am too far from the work bounds, so I am making my way back."
+        "I am working through it. I am too far from the work bounds, so I am making my way back."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.returning_from_far_bounds.024"
     },
@@ -853,17 +508,7 @@
         "I am waiting on a fix. I am outside the work bounds, and I have not found a good way back yet.",
         "The work is paused until this changes. I am outside the work bounds, and I have not found a good way back yet.",
         "This is the problem right now. I am outside the work bounds, and I have not found a good way back yet.",
-        "I am stuck here for the moment. I am outside the work bounds, and I have not found a good way back yet.",
-        "I am outside the work bounds, and I have not found a good way back yet. I am held up for now. I am outside the work bounds, and I have not found a good way back yet.",
-        "I am held up for now. I am outside the work bounds, and I have not found a good way back yet. This is stopping the job for the moment. I am outside the work bounds, and I have not found a good way back yet.",
-        "This is stopping the job for the moment. I am outside the work bounds, and I have not found a good way back yet. I cannot move on yet. I am outside the work bounds, and I have not found a good way back yet.",
-        "I cannot move on yet. I am outside the work bounds, and I have not found a good way back yet. I will continue once this is fixed. I am outside the work bounds, and I have not found a good way back yet.",
-        "I will continue once this is fixed. I am outside the work bounds, and I have not found a good way back yet. That needs attention before I can keep working. I am outside the work bounds, and I have not found a good way back yet.",
-        "That needs attention before I can keep working. I am outside the work bounds, and I have not found a good way back yet. I am waiting on a fix. I am outside the work bounds, and I have not found a good way back yet.",
-        "I am waiting on a fix. I am outside the work bounds, and I have not found a good way back yet. The work is paused until this changes. I am outside the work bounds, and I have not found a good way back yet.",
-        "The work is paused until this changes. I am outside the work bounds, and I have not found a good way back yet. This is the problem right now. I am outside the work bounds, and I have not found a good way back yet.",
-        "This is the problem right now. I am outside the work bounds, and I have not found a good way back yet. I am stuck here for the moment. I am outside the work bounds, and I have not found a good way back yet.",
-        "I am stuck here for the moment. I am outside the work bounds, and I have not found a good way back yet. I am outside the work bounds, and I have not found a good way back yet."
+        "I am stuck here for the moment. I am outside the work bounds, and I have not found a good way back yet."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.return_path_missing.025"
     },
@@ -879,17 +524,7 @@
         "That's all I have for now: I know I must return to the work bounds, but I could not get moving yet.",
         "Understood. I know I must return to the work bounds, but I could not get moving yet.",
         "Nothing else to add yet. I know I must return to the work bounds, but I could not get moving yet.",
-        "For the moment: I know I must return to the work bounds, but I could not get moving yet.",
-        "I know I must return to the work bounds, but I could not get moving yet. All right. I know I must return to the work bounds, but I could not get moving yet.",
-        "All right. I know I must return to the work bounds, but I could not get moving yet. Here's where I am with it: I know I must return to the work bounds, but I could not get moving yet.",
-        "Here's where I am with it: I know I must return to the work bounds, but I could not get moving yet. For now, that is the situation. I know I must return to the work bounds, but I could not get moving yet.",
-        "For now, that is the situation. I know I must return to the work bounds, but I could not get moving yet. Just so you know. I know I must return to the work bounds, but I could not get moving yet.",
-        "Just so you know. I know I must return to the work bounds, but I could not get moving yet. Plainly put: I know I must return to the work bounds, but I could not get moving yet.",
-        "Plainly put: I know I must return to the work bounds, but I could not get moving yet. That's all I have for now: I know I must return to the work bounds, but I could not get moving yet.",
-        "That's all I have for now: I know I must return to the work bounds, but I could not get moving yet. Understood. I know I must return to the work bounds, but I could not get moving yet.",
-        "Understood. I know I must return to the work bounds, but I could not get moving yet. Nothing else to add yet. I know I must return to the work bounds, but I could not get moving yet.",
-        "Nothing else to add yet. I know I must return to the work bounds, but I could not get moving yet. For the moment: I know I must return to the work bounds, but I could not get moving yet.",
-        "For the moment: I know I must return to the work bounds, but I could not get moving yet. I know I must return to the work bounds, but I could not get moving yet."
+        "For the moment: I know I must return to the work bounds, but I could not get moving yet."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.return_could_not_move.026"
     },
@@ -905,17 +540,7 @@
         "That's all I have for now: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
         "Understood. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
         "Nothing else to add yet. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "For the moment: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}. All right. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "All right. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}. Here's where I am with it: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "Here's where I am with it: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}. For now, that is the situation. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "For now, that is the situation. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}. Just so you know. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "Just so you know. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}. Plainly put: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "Plainly put: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}. That's all I have for now: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "That's all I have for now: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}. Understood. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "Understood. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}. Nothing else to add yet. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "Nothing else to add yet. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}. For the moment: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}.",
-        "For the moment: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}. My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}."
+        "For the moment: My job site horizontal range is now {radius} blocks. I cannot manage beyond {max}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.horizontal_radius.027"
     },
@@ -931,17 +556,7 @@
         "That's all I have for now: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
         "Understood. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
         "Nothing else to add yet. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "For the moment: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "My job site vertical range is now {radius} blocks. I cannot manage beyond {max}. All right. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "All right. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}. Here's where I am with it: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "Here's where I am with it: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}. For now, that is the situation. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "For now, that is the situation. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}. Just so you know. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "Just so you know. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}. Plainly put: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "Plainly put: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}. That's all I have for now: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "That's all I have for now: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}. Understood. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "Understood. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}. Nothing else to add yet. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "Nothing else to add yet. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}. For the moment: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}.",
-        "For the moment: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}. My job site vertical range is now {radius} blocks. I cannot manage beyond {max}."
+        "For the moment: My job site vertical range is now {radius} blocks. I cannot manage beyond {max}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.vertical_radius.028"
     },
@@ -957,17 +572,7 @@
         "That's all I have for now: My job site bounds are now {dimensions} ({bounds}).",
         "Understood. My job site bounds are now {dimensions} ({bounds}).",
         "Nothing else to add yet. My job site bounds are now {dimensions} ({bounds}).",
-        "For the moment: My job site bounds are now {dimensions} ({bounds}).",
-        "My job site bounds are now {dimensions} ({bounds}). All right. My job site bounds are now {dimensions} ({bounds}).",
-        "All right. My job site bounds are now {dimensions} ({bounds}). Here's where I am with it: My job site bounds are now {dimensions} ({bounds}).",
-        "Here's where I am with it: My job site bounds are now {dimensions} ({bounds}). For now, that is the situation. My job site bounds are now {dimensions} ({bounds}).",
-        "For now, that is the situation. My job site bounds are now {dimensions} ({bounds}). Just so you know. My job site bounds are now {dimensions} ({bounds}).",
-        "Just so you know. My job site bounds are now {dimensions} ({bounds}). Plainly put: My job site bounds are now {dimensions} ({bounds}).",
-        "Plainly put: My job site bounds are now {dimensions} ({bounds}). That's all I have for now: My job site bounds are now {dimensions} ({bounds}).",
-        "That's all I have for now: My job site bounds are now {dimensions} ({bounds}). Understood. My job site bounds are now {dimensions} ({bounds}).",
-        "Understood. My job site bounds are now {dimensions} ({bounds}). Nothing else to add yet. My job site bounds are now {dimensions} ({bounds}).",
-        "Nothing else to add yet. My job site bounds are now {dimensions} ({bounds}). For the moment: My job site bounds are now {dimensions} ({bounds}).",
-        "For the moment: My job site bounds are now {dimensions} ({bounds}). My job site bounds are now {dimensions} ({bounds})."
+        "For the moment: My job site bounds are now {dimensions} ({bounds})."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.bounds.029"
     },
@@ -983,17 +588,7 @@
         "That is taken care of. I may draw supplies from the assigned storage now.",
         "The work moved forward. I may draw supplies from the assigned storage now.",
         "I can report this much. I may draw supplies from the assigned storage now.",
-        "That part is done: I may draw supplies from the assigned storage now.",
-        "I may draw supplies from the assigned storage now. That part is handled. I may draw supplies from the assigned storage now.",
-        "That part is handled. I may draw supplies from the assigned storage now. Here is the update: I may draw supplies from the assigned storage now.",
-        "Here is the update: I may draw supplies from the assigned storage now. That moved things along: I may draw supplies from the assigned storage now.",
-        "That moved things along: I may draw supplies from the assigned storage now. That step is finished. I may draw supplies from the assigned storage now.",
-        "That step is finished. I may draw supplies from the assigned storage now. I have that sorted. I may draw supplies from the assigned storage now.",
-        "I have that sorted. I may draw supplies from the assigned storage now. That is taken care of. I may draw supplies from the assigned storage now.",
-        "That is taken care of. I may draw supplies from the assigned storage now. The work moved forward. I may draw supplies from the assigned storage now.",
-        "The work moved forward. I may draw supplies from the assigned storage now. I can report this much. I may draw supplies from the assigned storage now.",
-        "I can report this much. I may draw supplies from the assigned storage now. That part is done: I may draw supplies from the assigned storage now.",
-        "That part is done: I may draw supplies from the assigned storage now. I may draw supplies from the assigned storage now."
+        "That part is done: I may draw supplies from the assigned storage now."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.assigned_supplies_enabled.030"
     },
@@ -1009,17 +604,7 @@
         "That is taken care of. I will stick to what I carry and what is in my work gear.",
         "The work moved forward. I will stick to what I carry and what is in my work gear.",
         "I can report this much. I will stick to what I carry and what is in my work gear.",
-        "That part is done: I will stick to what I carry and what is in my work gear.",
-        "I will stick to what I carry and what is in my work gear. That part is handled. I will stick to what I carry and what is in my work gear.",
-        "That part is handled. I will stick to what I carry and what is in my work gear. Here is the update: I will stick to what I carry and what is in my work gear.",
-        "Here is the update: I will stick to what I carry and what is in my work gear. That moved things along: I will stick to what I carry and what is in my work gear.",
-        "That moved things along: I will stick to what I carry and what is in my work gear. That step is finished. I will stick to what I carry and what is in my work gear.",
-        "That step is finished. I will stick to what I carry and what is in my work gear. I have that sorted. I will stick to what I carry and what is in my work gear.",
-        "I have that sorted. I will stick to what I carry and what is in my work gear. That is taken care of. I will stick to what I carry and what is in my work gear.",
-        "That is taken care of. I will stick to what I carry and what is in my work gear. The work moved forward. I will stick to what I carry and what is in my work gear.",
-        "The work moved forward. I will stick to what I carry and what is in my work gear. I can report this much. I will stick to what I carry and what is in my work gear.",
-        "I can report this much. I will stick to what I carry and what is in my work gear. That part is done: I will stick to what I carry and what is in my work gear.",
-        "That part is done: I will stick to what I carry and what is in my work gear. I will stick to what I carry and what is in my work gear."
+        "That part is done: I will stick to what I carry and what is in my work gear."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.assigned_supplies_disabled.031"
     },
@@ -1035,17 +620,7 @@
         "That is taken care of. I will put away my finished goods on my own.",
         "The work moved forward. I will put away my finished goods on my own.",
         "I can report this much. I will put away my finished goods on my own.",
-        "That part is done: I will put away my finished goods on my own.",
-        "I will put away my finished goods on my own. That part is handled. I will put away my finished goods on my own.",
-        "That part is handled. I will put away my finished goods on my own. Here is the update: I will put away my finished goods on my own.",
-        "Here is the update: I will put away my finished goods on my own. That moved things along: I will put away my finished goods on my own.",
-        "That moved things along: I will put away my finished goods on my own. That step is finished. I will put away my finished goods on my own.",
-        "That step is finished. I will put away my finished goods on my own. I have that sorted. I will put away my finished goods on my own.",
-        "I have that sorted. I will put away my finished goods on my own. That is taken care of. I will put away my finished goods on my own.",
-        "That is taken care of. I will put away my finished goods on my own. The work moved forward. I will put away my finished goods on my own.",
-        "The work moved forward. I will put away my finished goods on my own. I can report this much. I will put away my finished goods on my own.",
-        "I can report this much. I will put away my finished goods on my own. That part is done: I will put away my finished goods on my own.",
-        "That part is done: I will put away my finished goods on my own. I will put away my finished goods on my own."
+        "That part is done: I will put away my finished goods on my own."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.auto_deposit_enabled.032"
     },
@@ -1061,17 +636,7 @@
         "That is taken care of. I will keep what I gather until told otherwise.",
         "The work moved forward. I will keep what I gather until told otherwise.",
         "I can report this much. I will keep what I gather until told otherwise.",
-        "That part is done: I will keep what I gather until told otherwise.",
-        "I will keep what I gather until told otherwise. That part is handled. I will keep what I gather until told otherwise.",
-        "That part is handled. I will keep what I gather until told otherwise. Here is the update: I will keep what I gather until told otherwise.",
-        "Here is the update: I will keep what I gather until told otherwise. That moved things along: I will keep what I gather until told otherwise.",
-        "That moved things along: I will keep what I gather until told otherwise. That step is finished. I will keep what I gather until told otherwise.",
-        "That step is finished. I will keep what I gather until told otherwise. I have that sorted. I will keep what I gather until told otherwise.",
-        "I have that sorted. I will keep what I gather until told otherwise. That is taken care of. I will keep what I gather until told otherwise.",
-        "That is taken care of. I will keep what I gather until told otherwise. The work moved forward. I will keep what I gather until told otherwise.",
-        "The work moved forward. I will keep what I gather until told otherwise. I can report this much. I will keep what I gather until told otherwise.",
-        "I can report this much. I will keep what I gather until told otherwise. That part is done: I will keep what I gather until told otherwise.",
-        "That part is done: I will keep what I gather until told otherwise. I will keep what I gather until told otherwise."
+        "That part is done: I will keep what I gather until told otherwise."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.auto_deposit_disabled.033"
     },
@@ -1087,17 +652,7 @@
         "That's all I have for now: My combat orders are now {mode}.",
         "Understood. My combat orders are now {mode}.",
         "Nothing else to add yet. My combat orders are now {mode}.",
-        "For the moment: My combat orders are now {mode}.",
-        "My combat orders are now {mode}. All right. My combat orders are now {mode}.",
-        "All right. My combat orders are now {mode}. Here's where I am with it: My combat orders are now {mode}.",
-        "Here's where I am with it: My combat orders are now {mode}. For now, that is the situation. My combat orders are now {mode}.",
-        "For now, that is the situation. My combat orders are now {mode}. Just so you know. My combat orders are now {mode}.",
-        "Just so you know. My combat orders are now {mode}. Plainly put: My combat orders are now {mode}.",
-        "Plainly put: My combat orders are now {mode}. That's all I have for now: My combat orders are now {mode}.",
-        "That's all I have for now: My combat orders are now {mode}. Understood. My combat orders are now {mode}.",
-        "Understood. My combat orders are now {mode}. Nothing else to add yet. My combat orders are now {mode}.",
-        "Nothing else to add yet. My combat orders are now {mode}. For the moment: My combat orders are now {mode}.",
-        "For the moment: My combat orders are now {mode}. My combat orders are now {mode}."
+        "For the moment: My combat orders are now {mode}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.combat_orders.034"
     },
@@ -1113,17 +668,7 @@
         "That's all I have for now: My mining orders are now {mode}.",
         "Understood. My mining orders are now {mode}.",
         "Nothing else to add yet. My mining orders are now {mode}.",
-        "For the moment: My mining orders are now {mode}.",
-        "My mining orders are now {mode}. All right. My mining orders are now {mode}.",
-        "All right. My mining orders are now {mode}. Here's where I am with it: My mining orders are now {mode}.",
-        "Here's where I am with it: My mining orders are now {mode}. For now, that is the situation. My mining orders are now {mode}.",
-        "For now, that is the situation. My mining orders are now {mode}. Just so you know. My mining orders are now {mode}.",
-        "Just so you know. My mining orders are now {mode}. Plainly put: My mining orders are now {mode}.",
-        "Plainly put: My mining orders are now {mode}. That's all I have for now: My mining orders are now {mode}.",
-        "That's all I have for now: My mining orders are now {mode}. Understood. My mining orders are now {mode}.",
-        "Understood. My mining orders are now {mode}. Nothing else to add yet. My mining orders are now {mode}.",
-        "Nothing else to add yet. My mining orders are now {mode}. For the moment: My mining orders are now {mode}.",
-        "For the moment: My mining orders are now {mode}. My mining orders are now {mode}."
+        "For the moment: My mining orders are now {mode}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.mining_orders.035"
     },
@@ -1139,17 +684,7 @@
         "That is settled. My hunting orders are now {mode}.",
         "Nothing else to add yet. My hunting orders are now {mode}.",
         "Plainly put: My hunting orders are now {mode}.",
-        "For now, I will follow {mode} hunting orders.",
-        "My hunting orders are now {mode}. All right. My hunting orders are now {mode}.",
-        "All right. My hunting orders are now {mode}. Here is the update: My hunting orders are now {mode}.",
-        "Here is the update: My hunting orders are now {mode}. Understood. My hunting orders are now {mode}.",
-        "Understood. My hunting orders are now {mode}. For the moment, I will hunt: {mode}.",
-        "For the moment, I will hunt: {mode}. I will range the assigned grounds under {mode} orders.",
-        "I will range the assigned grounds under {mode} orders. That is settled. My hunting orders are now {mode}.",
-        "That is settled. My hunting orders are now {mode}. Nothing else to add yet. My hunting orders are now {mode}.",
-        "Nothing else to add yet. My hunting orders are now {mode}. Plainly put: My hunting orders are now {mode}.",
-        "Plainly put: My hunting orders are now {mode}. For now, I will follow {mode} hunting orders.",
-        "For now, I will follow {mode} hunting orders. My hunting orders are now {mode}."
+        "For now, I will follow {mode} hunting orders."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.hunting_orders.100"
     },
@@ -1161,21 +696,7 @@
         "I have set {target} to {state}. Current hunting orders: {mode}.",
         "Understood. {target} is now {state}.",
         "For the hunt, {target} is now {state}.",
-        "That target setting is now {state}: {target}.",
-        "{target} is now {state}. Current hunting orders: {mode}. All right. {target} is now {state}. Current hunting orders: {mode}.",
-        "All right. {target} is now {state}. Current hunting orders: {mode}. I have set {target} to {state}. Current hunting orders: {mode}.",
-        "I have set {target} to {state}. Current hunting orders: {mode}. Understood. {target} is now {state}.",
-        "Understood. {target} is now {state}. For the hunt, {target} is now {state}.",
-        "For the hunt, {target} is now {state}. That target setting is now {state}: {target}.",
-        "That target setting is now {state}: {target}. {target} is now {state}. Current hunting orders: {mode}.",
-        "{target} is now {state}. Current hunting orders: {mode}. I have set {target} to {state}. Current hunting orders: {mode}.",
-        "All right. {target} is now {state}. Current hunting orders: {mode}. Understood. {target} is now {state}.",
-        "I have set {target} to {state}. Current hunting orders: {mode}. For the hunt, {target} is now {state}.",
-        "Understood. {target} is now {state}. That target setting is now {state}: {target}.",
-        "For the hunt, {target} is now {state}. {target} is now {state}. Current hunting orders: {mode}.",
-        "That target setting is now {state}: {target}. All right. {target} is now {state}. Current hunting orders: {mode}.",
-        "{target} is now {state}. Current hunting orders: {mode}. Understood. {target} is now {state}.",
-        "All right. {target} is now {state}. Current hunting orders: {mode}. For the hunt, {target} is now {state}."
+        "That target setting is now {state}: {target}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.hunting_target.101"
     },
@@ -1191,17 +712,7 @@
         "That's all I have for now: I will now favor {filter} when I look for timber.",
         "Understood. I will now favor {filter} when I look for timber.",
         "Nothing else to add yet. I will now favor {filter} when I look for timber.",
-        "For the moment: I will now favor {filter} when I look for timber.",
-        "I will now favor {filter} when I look for timber. All right. I will now favor {filter} when I look for timber.",
-        "All right. I will now favor {filter} when I look for timber. Here's where I am with it: I will now favor {filter} when I look for timber.",
-        "Here's where I am with it: I will now favor {filter} when I look for timber. For now, that is the situation. I will now favor {filter} when I look for timber.",
-        "For now, that is the situation. I will now favor {filter} when I look for timber. Just so you know. I will now favor {filter} when I look for timber.",
-        "Just so you know. I will now favor {filter} when I look for timber. Plainly put: I will now favor {filter} when I look for timber.",
-        "Plainly put: I will now favor {filter} when I look for timber. That's all I have for now: I will now favor {filter} when I look for timber.",
-        "That's all I have for now: I will now favor {filter} when I look for timber. Understood. I will now favor {filter} when I look for timber.",
-        "Understood. I will now favor {filter} when I look for timber. Nothing else to add yet. I will now favor {filter} when I look for timber.",
-        "Nothing else to add yet. I will now favor {filter} when I look for timber. For the moment: I will now favor {filter} when I look for timber.",
-        "For the moment: I will now favor {filter} when I look for timber. I will now favor {filter} when I look for timber."
+        "For the moment: I will now favor {filter} when I look for timber."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.logging_filter.036"
     },
@@ -1217,17 +728,7 @@
         "That's all I have for now: {option} is now {state}.",
         "Understood. {option} is now {state}.",
         "Nothing else to add yet. {option} is now {state}.",
-        "For the moment: {option} is now {state}.",
-        "{option} is now {state}. All right. {option} is now {state}.",
-        "All right. {option} is now {state}. Here's where I am with it: {option} is now {state}.",
-        "Here's where I am with it: {option} is now {state}. For now, that is the situation. {option} is now {state}.",
-        "For now, that is the situation. {option} is now {state}. Just so you know. {option} is now {state}.",
-        "Just so you know. {option} is now {state}. Plainly put: {option} is now {state}.",
-        "Plainly put: {option} is now {state}. That's all I have for now: {option} is now {state}.",
-        "That's all I have for now: {option} is now {state}. Understood. {option} is now {state}.",
-        "Understood. {option} is now {state}. Nothing else to add yet. {option} is now {state}.",
-        "Nothing else to add yet. {option} is now {state}. For the moment: {option} is now {state}.",
-        "For the moment: {option} is now {state}. {option} is now {state}."
+        "For the moment: {option} is now {state}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.logging_option.037"
     },
@@ -1243,17 +744,7 @@
         "That is the plan. I will stay with the field work.",
         "Understood. I will tend the crops from here.",
         "I will keep the fields looked after.",
-        "For the moment, I will focus on the crops.",
-        "I will work the fields and plant what I can. All right. I will work the fields and plant what I can.",
-        "All right. I will work the fields and plant what I can. I will keep an eye on the rows and gather what is ready.",
-        "I will keep an eye on the rows and gather what is ready. For now, I will tend the crops and fill in any empty farmland I can.",
-        "For now, I will tend the crops and fill in any empty farmland I can. Just so you know, I will keep to the fields.",
-        "Just so you know, I will keep to the fields. I will harvest the ripe crops and replant where I have seeds.",
-        "I will harvest the ripe crops and replant where I have seeds. That is the plan. I will stay with the field work.",
-        "That is the plan. I will stay with the field work. Understood. I will tend the crops from here.",
-        "Understood. I will tend the crops from here. I will keep the fields looked after.",
-        "I will keep the fields looked after. For the moment, I will focus on the crops.",
-        "For the moment, I will focus on the crops. I will work the fields and plant what I can."
+        "For the moment, I will focus on the crops."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.farming_fields.038"
     },
@@ -1266,20 +757,7 @@
         "That farming option is {state}: {option}.",
         "Understood. {option} is now {state}.",
         "I will keep {option} {state}.",
-        "For the fields, {option} is now {state}.",
-        "{option} is now {state}. All right. {option} is now {state}.",
-        "All right. {option} is now {state}. I have set {option} to {state}.",
-        "I have set {option} to {state}. That farming option is {state}: {option}.",
-        "That farming option is {state}: {option}. Understood. {option} is now {state}.",
-        "Understood. {option} is now {state}. I will keep {option} {state}.",
-        "I will keep {option} {state}. For the fields, {option} is now {state}.",
-        "For the fields, {option} is now {state}. {option} is now {state}.",
-        "{option} is now {state}. I have set {option} to {state}.",
-        "All right. {option} is now {state}. That farming option is {state}: {option}.",
-        "I have set {option} to {state}. Understood. {option} is now {state}.",
-        "That farming option is {state}: {option}. I will keep {option} {state}.",
-        "Understood. {option} is now {state}. For the fields, {option} is now {state}.",
-        "I will keep {option} {state}. {option} is now {state}."
+        "For the fields, {option} is now {state}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.farming_option.038"
     },
@@ -1295,17 +773,7 @@
         "That's all I have for now: I have changed what I am watching for with the animals.",
         "Understood. I have changed what I am watching for with the animals.",
         "Nothing else to add yet. I have changed what I am watching for with the animals.",
-        "For the moment: I have changed what I am watching for with the animals.",
-        "I have changed what I am watching for with the animals. All right. I have changed what I am watching for with the animals.",
-        "All right. I have changed what I am watching for with the animals. Here's where I am with it: I have changed what I am watching for with the animals.",
-        "Here's where I am with it: I have changed what I am watching for with the animals. For now, that is the situation. I have changed what I am watching for with the animals.",
-        "For now, that is the situation. I have changed what I am watching for with the animals. Just so you know. I have changed what I am watching for with the animals.",
-        "Just so you know. I have changed what I am watching for with the animals. Plainly put: I have changed what I am watching for with the animals.",
-        "Plainly put: I have changed what I am watching for with the animals. That's all I have for now: I have changed what I am watching for with the animals.",
-        "That's all I have for now: I have changed what I am watching for with the animals. Understood. I have changed what I am watching for with the animals.",
-        "Understood. I have changed what I am watching for with the animals. Nothing else to add yet. I have changed what I am watching for with the animals.",
-        "Nothing else to add yet. I have changed what I am watching for with the animals. For the moment: I have changed what I am watching for with the animals.",
-        "For the moment: I have changed what I am watching for with the animals. I have changed what I am watching for with the animals."
+        "For the moment: I have changed what I am watching for with the animals."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.animal_focus.039"
     },
@@ -1321,17 +789,7 @@
         "That's all I have for now: I will now breed {target} when the right food is available.",
         "Understood. I will now breed {target} when the right food is available.",
         "Nothing else to add yet. I will now breed {target} when the right food is available.",
-        "For the moment: I will now breed {target} when the right food is available.",
-        "I will now breed {target} when the right food is available. All right. I will now breed {target} when the right food is available.",
-        "All right. I will now breed {target} when the right food is available. Here's where I am with it: I will now breed {target} when the right food is available.",
-        "Here's where I am with it: I will now breed {target} when the right food is available. For now, that is the situation. I will now breed {target} when the right food is available.",
-        "For now, that is the situation. I will now breed {target} when the right food is available. Just so you know. I will now breed {target} when the right food is available.",
-        "Just so you know. I will now breed {target} when the right food is available. Plainly put: I will now breed {target} when the right food is available.",
-        "Plainly put: I will now breed {target} when the right food is available. That's all I have for now: I will now breed {target} when the right food is available.",
-        "That's all I have for now: I will now breed {target} when the right food is available. Understood. I will now breed {target} when the right food is available.",
-        "Understood. I will now breed {target} when the right food is available. Nothing else to add yet. I will now breed {target} when the right food is available.",
-        "Nothing else to add yet. I will now breed {target} when the right food is available. For the moment: I will now breed {target} when the right food is available.",
-        "For the moment: I will now breed {target} when the right food is available. I will now breed {target} when the right food is available."
+        "For the moment: I will now breed {target} when the right food is available."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.animal_breeding_target.040"
     },
@@ -1342,22 +800,7 @@
         "All right. I will handle {target}. culling is set to {cap}.",
         "Here's where I am with it: I will handle {target}. culling is set to {cap}.",
         "For now, that is the situation. I will handle {target}. culling is set to {cap}.",
-        "Understood. I will handle {target}. culling is set to {cap}.",
-        "I will handle {target}. culling is set to {cap}. All right. I will handle {target}. culling is set to {cap}.",
-        "All right. I will handle {target}. culling is set to {cap}. Here's where I am with it: I will handle {target}. culling is set to {cap}.",
-        "Here's where I am with it: I will handle {target}. culling is set to {cap}. For now, that is the situation. I will handle {target}. culling is set to {cap}.",
-        "For now, that is the situation. I will handle {target}. culling is set to {cap}. Understood. I will handle {target}. culling is set to {cap}.",
-        "Understood. I will handle {target}. culling is set to {cap}. I will handle {target}. culling is set to {cap}.",
-        "I will handle {target}. culling is set to {cap}. Here's where I am with it: I will handle {target}. culling is set to {cap}.",
-        "All right. I will handle {target}. culling is set to {cap}. For now, that is the situation. I will handle {target}. culling is set to {cap}.",
-        "Here's where I am with it: I will handle {target}. culling is set to {cap}. Understood. I will handle {target}. culling is set to {cap}.",
-        "For now, that is the situation. I will handle {target}. culling is set to {cap}. I will handle {target}. culling is set to {cap}.",
-        "Understood. I will handle {target}. culling is set to {cap}. All right. I will handle {target}. culling is set to {cap}.",
-        "I will handle {target}. culling is set to {cap}. For now, that is the situation. I will handle {target}. culling is set to {cap}.",
-        "All right. I will handle {target}. culling is set to {cap}. Understood. I will handle {target}. culling is set to {cap}.",
-        "Here's where I am with it: I will handle {target}. culling is set to {cap}. I will handle {target}. culling is set to {cap}.",
-        "For now, that is the situation. I will handle {target}. culling is set to {cap}. All right. I will handle {target}. culling is set to {cap}.",
-        "Understood. I will handle {target}. culling is set to {cap}. Here's where I am with it: I will handle {target}. culling is set to {cap}."
+        "Understood. I will handle {target}. culling is set to {cap}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.animal_handling_config.040a"
     },
@@ -1373,17 +816,7 @@
         "That's all I have for now: I have rearranged my very particular style of helping.",
         "Understood. I have rearranged my very particular style of helping.",
         "Nothing else to add yet. I have rearranged my very particular style of helping.",
-        "For the moment: I have rearranged my very particular style of helping.",
-        "I have rearranged my very particular style of helping. All right. I have rearranged my very particular style of helping.",
-        "All right. I have rearranged my very particular style of helping. Here's where I am with it: I have rearranged my very particular style of helping.",
-        "Here's where I am with it: I have rearranged my very particular style of helping. For now, that is the situation. I have rearranged my very particular style of helping.",
-        "For now, that is the situation. I have rearranged my very particular style of helping. Just so you know. I have rearranged my very particular style of helping.",
-        "Just so you know. I have rearranged my very particular style of helping. Plainly put: I have rearranged my very particular style of helping.",
-        "Plainly put: I have rearranged my very particular style of helping. That's all I have for now: I have rearranged my very particular style of helping.",
-        "That's all I have for now: I have rearranged my very particular style of helping. Understood. I have rearranged my very particular style of helping.",
-        "Understood. I have rearranged my very particular style of helping. Nothing else to add yet. I have rearranged my very particular style of helping.",
-        "Nothing else to add yet. I have rearranged my very particular style of helping. For the moment: I have rearranged my very particular style of helping.",
-        "For the moment: I have rearranged my very particular style of helping. I have rearranged my very particular style of helping."
+        "For the moment: I have rearranged my very particular style of helping."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.nitwit_focus.041"
     },
@@ -1399,17 +832,7 @@
         "I am waiting on a fix. There is no extra setup for {role} just yet.",
         "The work is paused until this changes. There is no extra setup for {role} just yet.",
         "This is the problem right now. There is no extra setup for {role} just yet.",
-        "I am stuck here for the moment. There is no extra setup for {role} just yet.",
-        "There is no extra setup for {role} just yet. I am held up for now. There is no extra setup for {role} just yet.",
-        "I am held up for now. There is no extra setup for {role} just yet. This is stopping the job for the moment. There is no extra setup for {role} just yet.",
-        "This is stopping the job for the moment. There is no extra setup for {role} just yet. I cannot move on yet. There is no extra setup for {role} just yet.",
-        "I cannot move on yet. There is no extra setup for {role} just yet. I will continue once this is fixed. There is no extra setup for {role} just yet.",
-        "I will continue once this is fixed. There is no extra setup for {role} just yet. That needs attention before I can keep working. There is no extra setup for {role} just yet.",
-        "That needs attention before I can keep working. There is no extra setup for {role} just yet. I am waiting on a fix. There is no extra setup for {role} just yet.",
-        "I am waiting on a fix. There is no extra setup for {role} just yet. The work is paused until this changes. There is no extra setup for {role} just yet.",
-        "The work is paused until this changes. There is no extra setup for {role} just yet. This is the problem right now. There is no extra setup for {role} just yet.",
-        "This is the problem right now. There is no extra setup for {role} just yet. I am stuck here for the moment. There is no extra setup for {role} just yet.",
-        "I am stuck here for the moment. There is no extra setup for {role} just yet. There is no extra setup for {role} just yet."
+        "I am stuck here for the moment. There is no extra setup for {role} just yet."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.no_extra_setup.042"
     },
@@ -1425,17 +848,7 @@
         "The work area is set to {dimensions} blocks.",
         "That should give me enough room: {dimensions} blocks.",
         "I have noted the new bounds: {dimensions} blocks.",
-        "Fine. My work area is now {dimensions} blocks.",
-        "All right. I can work within {dimensions} blocks. I will keep to that marked area: {dimensions} blocks.",
-        "I will keep to that marked area: {dimensions} blocks. That gives me a work area of {dimensions} blocks.",
-        "That gives me a work area of {dimensions} blocks. Understood. I will treat {dimensions} blocks as my bounds.",
-        "Understood. I will treat {dimensions} blocks as my bounds. I have the area marked now: {dimensions} blocks.",
-        "I have the area marked now: {dimensions} blocks. I will stay inside that space while I work: {dimensions} blocks.",
-        "I will stay inside that space while I work: {dimensions} blocks. The work area is set to {dimensions} blocks.",
-        "The work area is set to {dimensions} blocks. That should give me enough room: {dimensions} blocks.",
-        "That should give me enough room: {dimensions} blocks. I have noted the new bounds: {dimensions} blocks.",
-        "I have noted the new bounds: {dimensions} blocks. Fine. My work area is now {dimensions} blocks.",
-        "Fine. My work area is now {dimensions} blocks. All right. I can work within {dimensions} blocks."
+        "Fine. My work area is now {dimensions} blocks."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.custom_box.043"
     },
@@ -1451,17 +864,7 @@
         "I marked a smaller area I can actually keep up with: {dimensions} blocks.",
         "I cannot promise more than {dimensions} blocks right now.",
         "For now, my limit is {dimensions} blocks.",
-        "I set the job to {dimensions} blocks so I can do it properly.",
-        "That area was too much for me, so I narrowed it to {dimensions} blocks. I cannot cover the whole space yet. I can manage {dimensions} blocks.",
-        "I cannot cover the whole space yet. I can manage {dimensions} blocks. I trimmed the work area to what I can handle: {dimensions} blocks.",
-        "I trimmed the work area to what I can handle: {dimensions} blocks. That was beyond my reach, so I set the bounds to {dimensions} blocks.",
-        "That was beyond my reach, so I set the bounds to {dimensions} blocks. I will work the part I can manage: {dimensions} blocks.",
-        "I will work the part I can manage: {dimensions} blocks. The full area is too large for my current skill. I can take {dimensions} blocks.",
-        "The full area is too large for my current skill. I can take {dimensions} blocks. I marked a smaller area I can actually keep up with: {dimensions} blocks.",
-        "I marked a smaller area I can actually keep up with: {dimensions} blocks. I cannot promise more than {dimensions} blocks right now.",
-        "I cannot promise more than {dimensions} blocks right now. For now, my limit is {dimensions} blocks.",
-        "For now, my limit is {dimensions} blocks. I set the job to {dimensions} blocks so I can do it properly.",
-        "I set the job to {dimensions} blocks so I can do it properly. That area was too much for me, so I narrowed it to {dimensions} blocks."
+        "I set the job to {dimensions} blocks so I can do it properly."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.custom_box_capped.044"
     },
@@ -1477,17 +880,7 @@
         "That's all I have for now: My job site is reset to my position: {range}.",
         "Understood. My job site is reset to my position: {range}.",
         "Nothing else to add yet. My job site is reset to my position: {range}.",
-        "For the moment: My job site is reset to my position: {range}.",
-        "My job site is reset to my position: {range}. All right. My job site is reset to my position: {range}.",
-        "All right. My job site is reset to my position: {range}. Here's where I am with it: My job site is reset to my position: {range}.",
-        "Here's where I am with it: My job site is reset to my position: {range}. For now, that is the situation. My job site is reset to my position: {range}.",
-        "For now, that is the situation. My job site is reset to my position: {range}. Just so you know. My job site is reset to my position: {range}.",
-        "Just so you know. My job site is reset to my position: {range}. Plainly put: My job site is reset to my position: {range}.",
-        "Plainly put: My job site is reset to my position: {range}. That's all I have for now: My job site is reset to my position: {range}.",
-        "That's all I have for now: My job site is reset to my position: {range}. Understood. My job site is reset to my position: {range}.",
-        "Understood. My job site is reset to my position: {range}. Nothing else to add yet. My job site is reset to my position: {range}.",
-        "Nothing else to add yet. My job site is reset to my position: {range}. For the moment: My job site is reset to my position: {range}.",
-        "For the moment: My job site is reset to my position: {range}. My job site is reset to my position: {range}."
+        "For the moment: My job site is reset to my position: {range}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.center_reset_to_villager.045"
     },
@@ -1503,17 +896,7 @@
         "That's all I have for now: My job site center is now here: {range}.",
         "Understood. My job site center is now here: {range}.",
         "Nothing else to add yet. My job site center is now here: {range}.",
-        "For the moment: My job site center is now here: {range}.",
-        "My job site center is now here: {range}. All right. My job site center is now here: {range}.",
-        "All right. My job site center is now here: {range}. Here's where I am with it: My job site center is now here: {range}.",
-        "Here's where I am with it: My job site center is now here: {range}. For now, that is the situation. My job site center is now here: {range}.",
-        "For now, that is the situation. My job site center is now here: {range}. Just so you know. My job site center is now here: {range}.",
-        "Just so you know. My job site center is now here: {range}. Plainly put: My job site center is now here: {range}.",
-        "Plainly put: My job site center is now here: {range}. That's all I have for now: My job site center is now here: {range}.",
-        "That's all I have for now: My job site center is now here: {range}. Understood. My job site center is now here: {range}.",
-        "Understood. My job site center is now here: {range}. Nothing else to add yet. My job site center is now here: {range}.",
-        "Nothing else to add yet. My job site center is now here: {range}. For the moment: My job site center is now here: {range}.",
-        "For the moment: My job site center is now here: {range}. My job site center is now here: {range}."
+        "For the moment: My job site center is now here: {range}."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.status.center_set_here.046"
     },
@@ -1529,17 +912,7 @@
         "No work site set",
         "No assigned area to report",
         "No work range assigned",
-        "No marked place for this job",
-        "No work area assigned No job site assigned",
-        "No job site assigned No work bounds set",
-        "No work bounds set No assigned work area yet",
-        "No assigned work area yet No place marked for work",
-        "No place marked for work No job area selected",
-        "No job area selected No work site set",
-        "No work site set No assigned area to report",
-        "No assigned area to report No work range assigned",
-        "No work range assigned No marked place for this job",
-        "No marked place for this job No work area assigned"
+        "No marked place for this job"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.area.none.047"
     },
@@ -1555,17 +928,7 @@
         "no marked target yet",
         "no fixed point to report",
         "no current target",
-        "nothing pinned down yet",
-        "no fixed spot just now no exact target right now",
-        "no exact target right now nothing specific at the moment",
-        "nothing specific at the moment no chosen spot yet",
-        "no chosen spot yet no set target for now",
-        "no set target for now nowhere particular right now",
-        "nowhere particular right now no marked target yet",
-        "no marked target yet no fixed point to report",
-        "no fixed point to report no current target",
-        "no current target nothing pinned down yet",
-        "nothing pinned down yet no fixed spot just now"
+        "nothing pinned down yet"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.target.none.048"
     },
@@ -1581,17 +944,7 @@
         "taking a pause under your orders",
         "waiting on your command to start again",
         "stopped for the moment",
-        "holding the work where it is",
-        "resting until you ask me to resume holding here until you restart the work",
-        "holding here until you restart the work waiting for your word to continue",
-        "waiting for your word to continue paused until you tell me otherwise",
-        "paused until you tell me otherwise standing down for now",
-        "standing down for now keeping still until you resume the job",
-        "keeping still until you resume the job taking a pause under your orders",
-        "taking a pause under your orders waiting on your command to start again",
-        "waiting on your command to start again stopped for the moment",
-        "stopped for the moment holding the work where it is",
-        "holding the work where it is resting until you ask me to resume"
+        "holding the work where it is"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.paused.049"
     },
@@ -1607,17 +960,7 @@
         "ready for the next task",
         "holding until there is more to do",
         "waiting on the job to move again",
-        "between tasks right now",
-        "waiting for the next bit of work waiting for something useful to do",
-        "waiting for something useful to do standing by for the next task",
-        "standing by for the next task watching for the next opening",
-        "watching for the next opening waiting for work to present itself",
-        "waiting for work to present itself idle for the moment",
-        "idle for the moment ready for the next task",
-        "ready for the next task holding until there is more to do",
-        "holding until there is more to do waiting on the job to move again",
-        "waiting on the job to move again between tasks right now",
-        "between tasks right now waiting for the next bit of work"
+        "between tasks right now"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.waiting.050"
     },
@@ -1633,17 +976,7 @@
         "scanning the area for work",
         "deciding where to work next",
         "checking the bounds for a task",
-        "finding the next thing worth doing",
-        "looking over the area for the next task checking the job site for a good target",
-        "checking the job site for a good target choosing what needs doing next",
-        "choosing what needs doing next surveying the work area",
-        "surveying the work area looking for the next useful spot",
-        "looking for the next useful spot sorting out my next target",
-        "sorting out my next target scanning the area for work",
-        "scanning the area for work deciding where to work next",
-        "deciding where to work next checking the bounds for a task",
-        "checking the bounds for a task finding the next thing worth doing",
-        "finding the next thing worth doing looking over the area for the next task"
+        "finding the next thing worth doing"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.selecting_target.051"
     },
@@ -1659,17 +992,7 @@
         "getting into position near {target}",
         "heading for the marked spot at {target}",
         "moving through the job site toward {target}",
-        "trying to reach {target}",
-        "heading toward {target} making my way to {target}",
-        "making my way to {target} moving over to {target}",
-        "moving over to {target} closing the distance to {target}",
-        "closing the distance to {target} on my way to {target}",
-        "on my way to {target} walking toward {target}",
-        "walking toward {target} getting into position near {target}",
-        "getting into position near {target} heading for the marked spot at {target}",
-        "heading for the marked spot at {target} moving through the job site toward {target}",
-        "moving through the job site toward {target} trying to reach {target}",
-        "trying to reach {target} heading toward {target}"
+        "trying to reach {target}"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.moving_to_target.052"
     },
@@ -1685,17 +1008,7 @@
         "making sure I can work at {target}",
         "checking the approach to {target}",
         "confirming the work at {target}",
-        "testing whether {target} is still clear",
-        "checking the spot at {target} making sure {target} is still usable",
-        "making sure {target} is still usable looking over {target} before I work",
-        "looking over {target} before I work checking whether {target} still fits the job",
-        "checking whether {target} still fits the job verifying the target at {target}",
-        "verifying the target at {target} giving {target} a closer look",
-        "giving {target} a closer look making sure I can work at {target}",
-        "making sure I can work at {target} checking the approach to {target}",
-        "checking the approach to {target} confirming the work at {target}",
-        "confirming the work at {target} testing whether {target} is still clear",
-        "testing whether {target} is still clear checking the spot at {target}"
+        "testing whether {target} is still clear"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.validating_target.053"
     },
@@ -1711,17 +1024,7 @@
         "focused on {target}",
         "taking care of {target}",
         "making progress at {target}",
-        "settled into the work at {target}",
-        "working at {target} busy at {target}",
-        "busy at {target} doing the job at {target}",
-        "doing the job at {target} putting in work at {target}",
-        "putting in work at {target} handling the task at {target}",
-        "handling the task at {target} working through the target at {target}",
-        "working through the target at {target} focused on {target}",
-        "focused on {target} taking care of {target}",
-        "taking care of {target} making progress at {target}",
-        "making progress at {target} settled into the work at {target}",
-        "settled into the work at {target} working at {target}"
+        "settled into the work at {target}"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.working.054"
     },
@@ -1737,17 +1040,7 @@
         "picking up the drops at {target}",
         "getting the finished output from {target}",
         "gathering the useful bits from {target}",
-        "clearing the output at {target}",
-        "gathering what I finished at {target} collecting the output at {target}",
-        "collecting the output at {target} picking up the finished goods at {target}",
-        "picking up the finished goods at {target} gathering the results from {target}",
-        "gathering the results from {target} rounding up what came from {target}",
-        "rounding up what came from {target} collecting what the work produced at {target}",
-        "collecting what the work produced at {target} picking up the drops at {target}",
-        "picking up the drops at {target} getting the finished output from {target}",
-        "getting the finished output from {target} gathering the useful bits from {target}",
-        "gathering the useful bits from {target} clearing the output at {target}",
-        "clearing the output at {target} gathering what I finished at {target}"
+        "clearing the output at {target}"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.collecting_output.055"
     },
@@ -1763,17 +1056,7 @@
         "scanning near {target}",
         "trying to chain the next task from {target}",
         "looking for nearby follow-up work",
-        "checking the area around {target}",
-        "looking for the next useful spot near {target} checking near {target} for the next task",
-        "checking near {target} for the next task following the work outward from {target}",
-        "following the work outward from {target} searching around {target} for more to do",
-        "searching around {target} for more to do looking for another target close to {target}",
-        "looking for another target close to {target} checking whether {target} leads to more work",
-        "checking whether {target} leads to more work scanning near {target}",
-        "scanning near {target} trying to chain the next task from {target}",
-        "trying to chain the next task from {target} looking for nearby follow-up work",
-        "looking for nearby follow-up work checking the area around {target}",
-        "checking the area around {target} looking for the next useful spot near {target}"
+        "checking the area around {target}"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.finding_chain_target.056"
     },
@@ -1789,17 +1072,7 @@
         "making for storage at {target}",
         "hauling the goods to {target}",
         "going to put things away at {target}",
-        "taking this load back to {target}",
-        "carrying goods toward {target} heading to storage at {target}",
-        "heading to storage at {target} taking the output to {target}",
-        "taking the output to {target} moving supplies toward {target}",
-        "moving supplies toward {target} bringing finished goods to {target}",
-        "bringing finished goods to {target} walking the load over to {target}",
-        "walking the load over to {target} making for storage at {target}",
-        "making for storage at {target} hauling the goods to {target}",
-        "hauling the goods to {target} going to put things away at {target}",
-        "going to put things away at {target} taking this load back to {target}",
-        "taking this load back to {target} carrying goods toward {target}"
+        "taking this load back to {target}"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.moving_to_storage.057"
     },
@@ -1815,17 +1088,7 @@
         "moving back into the marked area",
         "getting myself back on site",
         "heading back to the work zone",
-        "making my way back to the assigned bounds",
-        "making my way back into the work area returning to the job site",
-        "returning to the job site heading back inside the work bounds",
-        "heading back inside the work bounds getting back to the assigned area",
-        "getting back to the assigned area finding my way back to work",
-        "finding my way back to work returning to where the job belongs",
-        "returning to where the job belongs moving back into the marked area",
-        "moving back into the marked area getting myself back on site",
-        "getting myself back on site heading back to the work zone",
-        "heading back to the work zone making my way back to the assigned bounds",
-        "making my way back to the assigned bounds making my way back into the work area"
+        "making my way back to the assigned bounds"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.returning_to_work_area.058"
     },
@@ -1841,17 +1104,7 @@
         "storing what I gathered at {target}",
         "putting this load away at {target}",
         "clearing my inventory at {target}",
-        "making room by depositing at {target}",
-        "putting supplies away at {target} depositing the output at {target}",
-        "depositing the output at {target} stowing goods at {target}",
-        "stowing goods at {target} putting the finished items into {target}",
-        "putting the finished items into {target} emptying my pack at {target}",
-        "emptying my pack at {target} dropping off supplies at {target}",
-        "dropping off supplies at {target} storing what I gathered at {target}",
-        "storing what I gathered at {target} putting this load away at {target}",
-        "putting this load away at {target} clearing my inventory at {target}",
-        "clearing my inventory at {target} making room by depositing at {target}",
-        "making room by depositing at {target} putting supplies away at {target}"
+        "making room by depositing at {target}"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.depositing.059"
     },
@@ -1867,17 +1120,7 @@
         "waiting for the build supplies to be stocked",
         "staying by storage until I can carry more materials",
         "waiting on the materials before I build",
-        "holding the job until the needed blocks arrive",
-        "waiting by assigned storage for construction materials waiting near storage for the blocks I need",
-        "waiting near storage for the blocks I need standing by until more materials arrive",
-        "standing by until more materials arrive waiting for construction supplies",
-        "waiting for construction supplies watching storage for the missing build materials",
-        "watching storage for the missing build materials holding near storage until the materials are there",
-        "holding near storage until the materials are there waiting for the build supplies to be stocked",
-        "waiting for the build supplies to be stocked staying by storage until I can carry more materials",
-        "staying by storage until I can carry more materials waiting on the materials before I build",
-        "waiting on the materials before I build holding the job until the needed blocks arrive",
-        "holding the job until the needed blocks arrive waiting by assigned storage for construction materials"
+        "holding the job until the needed blocks arrive"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.waiting_for_materials.060"
     },
@@ -1893,17 +1136,7 @@
         "waiting for someone to clear room at {target}",
         "unable to deposit because {target} is full",
         "holding this load near {target}",
-        "paused at {target} until storage opens up",
-        "waiting near full storage at {target} stopped by full storage at {target}",
-        "stopped by full storage at {target} waiting for room in storage at {target}",
-        "waiting for room in storage at {target} holding near {target} until there is space",
-        "holding near {target} until there is space paused because {target} is full",
-        "paused because {target} is full standing by full storage at {target}",
-        "standing by full storage at {target} waiting for someone to clear room at {target}",
-        "waiting for someone to clear room at {target} unable to deposit because {target} is full",
-        "unable to deposit because {target} is full holding this load near {target}",
-        "holding this load near {target} paused at {target} until storage opens up",
-        "paused at {target} until storage opens up waiting near full storage at {target}"
+        "paused at {target} until storage opens up"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.paused_storage_full.061"
     },
@@ -1919,17 +1152,7 @@
         "waiting for an assigned area",
         "waiting for a place to work",
         "ready once you set the job site",
-        "waiting for the work area to be assigned",
-        "waiting for you to assign a job site waiting on a marked work area",
-        "waiting on a marked work area standing by until the job site is set",
-        "standing by until the job site is set waiting for work bounds",
-        "waiting for work bounds waiting for you to mark where I should work",
-        "waiting for you to mark where I should work holding until I know the work area",
-        "holding until I know the work area waiting for an assigned area",
-        "waiting for an assigned area waiting for a place to work",
-        "waiting for a place to work ready once you set the job site",
-        "ready once you set the job site waiting for the work area to be assigned",
-        "waiting for the work area to be assigned waiting for you to assign a job site"
+        "waiting for the work area to be assigned"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.no_work_area.062"
     },
@@ -1945,17 +1168,7 @@
         "waiting for room in my inventory",
         "paused because I cannot carry more",
         "stuck with full hands for now",
-        "waiting until I have space again",
-        "stopped because my inventory is full paused with no room left to carry more",
-        "paused with no room left to carry more waiting because my packs are full",
-        "waiting because my packs are full unable to keep working with a full inventory",
-        "unable to keep working with a full inventory holding until I can make space",
-        "holding until I can make space stopped while my work gear is full",
-        "stopped while my work gear is full waiting for room in my inventory",
-        "waiting for room in my inventory paused because I cannot carry more",
-        "paused because I cannot carry more stuck with full hands for now",
-        "stuck with full hands for now waiting until I have space again",
-        "waiting until I have space again stopped because my inventory is full"
+        "waiting until I have space again"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.paused_full_inventory.063"
     },
@@ -1971,17 +1184,7 @@
         "unable to continue without storage",
         "paused because I cannot put things away",
         "holding the work until storage is sorted",
-        "waiting for a container I can use",
-        "waiting because there is nowhere proper to store things paused until storage is assigned or cleared",
-        "paused until storage is assigned or cleared waiting for somewhere to put the output",
-        "waiting for somewhere to put the output holding because I have no usable storage",
-        "holding because I have no usable storage stopped until there is a place to deposit goods",
-        "stopped until there is a place to deposit goods waiting on proper storage",
-        "waiting on proper storage unable to continue without storage",
-        "unable to continue without storage paused because I cannot put things away",
-        "paused because I cannot put things away holding the work until storage is sorted",
-        "holding the work until storage is sorted waiting for a container I can use",
-        "waiting for a container I can use waiting because there is nowhere proper to store things"
+        "waiting for a container I can use"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.paused_no_storage.064"
     },
@@ -1997,17 +1200,7 @@
         "holding off before I make another attempt",
         "letting the path settle before I retry",
         "waiting a short while before continuing",
-        "taking a moment before the next try",
-        "waiting a moment before I try that again taking a breath before another attempt",
-        "taking a breath before another attempt waiting briefly before I retry",
-        "waiting briefly before I retry giving that a moment before trying again",
-        "giving that a moment before trying again pausing after the failed attempt",
-        "pausing after the failed attempt waiting for a better moment to try again",
-        "waiting for a better moment to try again holding off before I make another attempt",
-        "holding off before I make another attempt letting the path settle before I retry",
-        "letting the path settle before I retry waiting a short while before continuing",
-        "waiting a short while before continuing taking a moment before the next try",
-        "taking a moment before the next try waiting a moment before I try that again"
+        "taking a moment before the next try"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.failed_cooldown.065"
     },
@@ -2023,17 +1216,7 @@
         "waiting for proper equipment",
         "unable to work this target without the correct tool",
         "paused while I sort out my tool",
-        "waiting until the right tool is available",
-        "waiting because I do not have the right tool paused until I have the proper tool",
-        "paused until I have the proper tool unable to continue without the right tool",
-        "unable to continue without the right tool waiting on the tool this job needs",
-        "waiting on the tool this job needs holding because my tool is missing or wrong",
-        "holding because my tool is missing or wrong stopped until I can get the right tool",
-        "stopped until I can get the right tool waiting for proper equipment",
-        "waiting for proper equipment unable to work this target without the correct tool",
-        "unable to work this target without the correct tool paused while I sort out my tool",
-        "paused while I sort out my tool waiting until the right tool is available",
-        "waiting until the right tool is available waiting because I do not have the right tool"
+        "waiting until the right tool is available"
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.activity.paused_missing_tool.066"
     },
@@ -2049,17 +1232,7 @@
         "Bring my hirer here, and I will listen.",
         "That instruction belongs to the one who hired me.",
         "My contract does not let you direct this work.",
-        "No. My hirer decides how this job is managed.",
-        "Only the one who hired me can manage my work. My work orders have to come from my hirer.",
-        "My work orders have to come from my hirer. You are not the one who hired me for this job.",
-        "You are not the one who hired me for this job. I need my hirer before I change the work.",
-        "I need my hirer before I change the work. The person paying me has to give that order.",
-        "The person paying me has to give that order. I cannot take work changes from someone else.",
-        "I cannot take work changes from someone else. Bring my hirer here, and I will listen.",
-        "Bring my hirer here, and I will listen. That instruction belongs to the one who hired me.",
-        "That instruction belongs to the one who hired me. My contract does not let you direct this work.",
-        "My contract does not let you direct this work. No. My hirer decides how this job is managed.",
-        "No. My hirer decides how this job is managed. Only the one who hired me can manage my work."
+        "No. My hirer decides how this job is managed."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.manage.requires_hirer.067"
     },
@@ -2075,17 +1248,7 @@
         "Those instructions wait until I am actually doing {role} work.",
         "I cannot set that up before you make me {role}.",
         "Choose {role} for me first.",
-        "First the {role} role, then the details.",
-        "Assign me to {role} first, then we can set that up. I need to be working as {role} before those orders make sense.",
-        "I need to be working as {role} before those orders make sense. Give me the {role} role first, and then I can follow those instructions.",
-        "Give me the {role} role first, and then I can follow those instructions. That setup belongs with {role} work.",
-        "That setup belongs with {role} work. I am not assigned to {role} yet.",
-        "I am not assigned to {role} yet. Set my work to {role}, then tell me how you want it done.",
-        "Set my work to {role}, then tell me how you want it done. Those instructions wait until I am actually doing {role} work.",
-        "Those instructions wait until I am actually doing {role} work. I cannot set that up before you make me {role}.",
-        "I cannot set that up before you make me {role}. Choose {role} for me first.",
-        "Choose {role} for me first. First the {role} role, then the details.",
-        "First the {role} role, then the details. Assign me to {role} first, then we can set that up."
+        "First the {role} role, then the details."
       ],
       "id": "global.messages.12_work_status.messages.interaction.work.configure.requires_role.068"
     }

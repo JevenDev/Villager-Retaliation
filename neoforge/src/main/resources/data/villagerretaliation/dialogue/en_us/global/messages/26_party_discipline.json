@@ -27,12 +27,7 @@
         "{villager} says they will not accept another strike.",
         "{villager} tells you to mind your actions.",
         "{villager} asks for the courtesy of restraint.",
-        "{villager} warns you to choose kindness over violence.",
-        "{villager} warns you not to strike them again. {villager} asks you to keep your hands to yourself.",
-        "{villager} asks you to keep your hands to yourself. {villager} tells you to stop that at once.",
-        "{villager} tells you to stop that at once. {villager} says another blow will not be forgiven.",
-        "{villager} says another blow will not be forgiven. {villager} warns that your temper is testing their patience.",
-        "{villager} warns that your temper is testing their patience. {villager} asks you to step back and calm down."
+        "{villager} warns you to choose kindness over violence."
       ]
     },
     {
@@ -53,12 +48,7 @@
         "{villager} says there will be no further warnings.",
         "{villager} warns that their restraint is nearly gone.",
         "{villager} tells you they will not be hurt again.",
-        "{villager} says this is the last kindness they can offer.",
-        "{villager} gives you a final warning. {villager} says this is your last warning.",
-        "{villager} says this is your last warning. {villager} says one more strike will have consequences.",
-        "{villager} says one more strike will have consequences. {villager} warns that their patience is spent.",
-        "{villager} warns that their patience is spent. {villager} tells you not to test them again.",
-        "{villager} tells you not to test them again. {villager} says they will defend themselves next time."
+        "{villager} says this is the last kindness they can offer."
       ]
     },
     {

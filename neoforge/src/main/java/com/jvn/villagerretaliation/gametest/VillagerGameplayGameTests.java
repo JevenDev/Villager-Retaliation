@@ -769,10 +769,10 @@ public final class VillagerGameplayGameTests {
                 villager.getNavigation().isDone(),
                 "a hired villager ordered to follow should begin navigating toward their hirer");
 
-        VillagerReputationManager.setReputation(level, villager, followerOwner.getUUID(), 100);
+        VillagerReputationManager.setReputation(level, villager, followerOwner.getUUID(), -100);
         helper.assertTrue(
                 VillagerRecruitmentService.stayHere(level, villager, followerOwner),
-                "the hirer should be able to change follow to stay");
+                "the hirer should be able to change follow to stay regardless of reputation");
         helper.assertValueEqual(
                 VillagerAssignmentService.snapshot(villager).command(),
                 VillagerAssignmentCommand.STAY,

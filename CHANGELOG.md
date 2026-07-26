@@ -1,4 +1,6 @@
 # Changelog
+- Removed accidental two-line dialogue combinations introduced during the dialogue expansion while preserving the individual authored lines.
+- Fixed the Stay Here interaction remaining locked for a villager's active hirer when their reputation was below Trusted.
 - Added composable villager downed-state settings for universal, raid, hired, and party eligibility, plus independent player, mob/entity, and environmental lethal-damage filters.
 
 - Added villager hunger to the overhead reputation debug view and made the vanilla Hunger status effect drain villager hunger through a default-on balance option.

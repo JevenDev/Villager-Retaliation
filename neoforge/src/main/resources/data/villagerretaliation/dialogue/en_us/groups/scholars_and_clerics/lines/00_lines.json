@@ -13,17 +13,7 @@
         "There was a point where I thought I was only hunger. You proved otherwise.",
         "Some memories are broken, but gratitude survived them.",
         "You brought me back gently from something that had no gentleness in it.",
-        "I was nearly erased. You helped write me back into the village.",
-        "I remember pieces. Your face is one of the pieces that does not hurt. There was hunger, then noise, then a hand pulling me back toward my <pulse>name</pulse>.",
-        "There was hunger, then noise, then a hand pulling me back toward my <pulse>name</pulse>. I was far from myself. You left a trail I could follow home.",
-        "I was far from myself. You left a trail I could follow home. I remember being lost inside my own body, and then I remember you.",
-        "I remember being lost inside my own body, and then I remember you. The cure felt like waking from a nightmare that still knew my name.",
-        "The cure felt like waking from a nightmare that still knew my name. I do not remember everything clearly, but I remember who helped me return.",
-        "I do not remember everything clearly, but I remember who helped me return. There was a point where I thought I was only hunger. You proved otherwise.",
-        "There was a point where I thought I was only hunger. You proved otherwise. Some memories are broken, but gratitude survived them.",
-        "Some memories are broken, but gratitude survived them. You brought me back gently from something that had no gentleness in it.",
-        "You brought me back gently from something that had no gentleness in it. I was nearly erased. You helped write me back into the village.",
-        "I was nearly erased. You helped write me back into the village. I remember pieces. Your face is one of the pieces that does not hurt."
+        "I was nearly erased. You helped write me back into the village."
       ],
       "professions": [
         "cleric",
@@ -46,17 +36,7 @@
         "The map has not changed, but the meaning of this place has.",
         "A new name, a new bed, a new reason for everyone to speak a little softer.",
         "I added them to the records before the ink had fully dried on the news.",
-        "One more voice will grow into this village. That is no small thing.",
-        "I wrote the birth down. A village should know when its future arrives. A new <pulse>name</pulse> belongs on our records and our maps, even if their feet cannot reach the road yet.",
-        "A new <pulse>name</pulse> belongs on our records and our maps, even if their feet cannot reach the road yet. The village grew by one heartbeat. That changes every calculation.",
-        "The village grew by one heartbeat. That changes every calculation. Another little life has joined us. The records feel warmer for it.",
-        "Another little life has joined us. The records feel warmer for it. I marked the day carefully. Some dates deserve a gentler hand.",
-        "I marked the day carefully. Some dates deserve a gentler hand. A child was born, and suddenly the village feels a little more worth protecting.",
-        "A child was born, and suddenly the village feels a little more worth protecting. The map has not changed, but the meaning of this place has.",
-        "The map has not changed, but the meaning of this place has. A new name, a new bed, a new reason for everyone to speak a little softer.",
-        "A new name, a new bed, a new reason for everyone to speak a little softer. I added them to the records before the ink had fully dried on the news.",
-        "I added them to the records before the ink had fully dried on the news. One more voice will grow into this village. That is no small thing.",
-        "One more voice will grow into this village. That is no small thing. I wrote the birth down. A village should know when its future arrives."
+        "One more voice will grow into this village. That is no small thing."
       ],
       "event_tags": [
         "baby_born"
@@ -80,17 +60,7 @@
         "You pulled them back from a darkness most of us only fear from a distance.",
         "There are many ways to protect a village. Today, you chose one of the rarest.",
         "I will write this down carefully. Some deeds should not be left to rumor.",
-        "Someone who was almost gone is standing among us again because of you.",
-        "You brought someone back from the hunger. The village will speak of that softly. Curing is not just medicine. It is refusing to let a name be <italic>erased</italic>.",
-        "Curing is not just medicine. It is refusing to let a name be <italic>erased</italic>. I saw hope do practical work today.",
-        "I saw hope do practical work today. You gave someone back their voice, their work, and their place among us.",
-        "You gave someone back their voice, their work, and their place among us. That was not a small kindness. It was a rescue with a heartbeat at the end.",
-        "That was not a small kindness. It was a rescue with a heartbeat at the end. The village remembers wounds, but it remembers healing even longer.",
-        "The village remembers wounds, but it remembers healing even longer. You pulled them back from a darkness most of us only fear from a distance.",
-        "You pulled them back from a darkness most of us only fear from a distance. There are many ways to protect a village. Today, you chose one of the rarest.",
-        "There are many ways to protect a village. Today, you chose one of the rarest. I will write this down carefully. Some deeds should not be left to rumor.",
-        "I will write this down carefully. Some deeds should not be left to rumor. Someone who was almost gone is standing among us again because of you.",
-        "Someone who was almost gone is standing among us again because of you. You brought someone back from the hunger. The village will speak of that softly."
+        "Someone who was almost gone is standing among us again because of you."
       ],
       "event_tags": [
         "player_cured_villager"
@@ -118,17 +88,7 @@
         "Retaliation is not pride. It is what happens when safety runs out of room.",
         "We would rather trade, farm, read, and pray. But we would also rather survive.",
         "A village can forgive many things. It cannot live by forgiveness alone.",
-        "Today, peace stepped aside because no one left it another path.",
-        "A peaceful place can still reach its limit. The village remembers <shake>harm</shake> before it remembers courage.",
-        "The village remembers <shake>harm</shake> before it remembers courage. Nobody likes when anger becomes necessary. Necessary things rarely ask to be liked.",
-        "Nobody likes when anger becomes necessary. Necessary things rarely ask to be liked. There is a point where patience stops being wisdom and starts being surrender.",
-        "There is a point where patience stops being wisdom and starts being surrender. The village did not choose violence lightly. That is what makes it heavy.",
-        "The village did not choose violence lightly. That is what makes it heavy. When people are pushed far enough, even quiet hands learn what to hold.",
-        "When people are pushed far enough, even quiet hands learn what to hold. Retaliation is not pride. It is what happens when safety runs out of room.",
-        "Retaliation is not pride. It is what happens when safety runs out of room. We would rather trade, farm, read, and pray. But we would also rather survive.",
-        "We would rather trade, farm, read, and pray. But we would also rather survive. A village can forgive many things. It cannot live by forgiveness alone.",
-        "A village can forgive many things. It cannot live by forgiveness alone. Today, peace stepped aside because no one left it another path.",
-        "Today, peace stepped aside because no one left it another path. A peaceful place can still reach its limit."
+        "Today, peace stepped aside because no one left it another path."
       ],
       "event_tags": [
         "villager_retaliation_started"
@@ -154,17 +114,7 @@
         "Trust does not vanish all at once, and it does not return that way either.",
         "People have started speaking of you differently. Listen to the difference.",
         "Every action becomes part of the story people tell when you are not in the room.",
-        "The village has a long memory. Make sure it has a reason to be kind.",
-        "Reputation is not a number to us. It is how quickly the room relaxes when you enter. The village has adjusted its memory of you. Try to deserve the better version.",
-        "The village has adjusted its memory of you. Try to deserve the better version. People think trust changes loudly. Usually it moves one <pulse>quiet inch</pulse> at a time.",
-        "People think trust changes loudly. Usually it moves one <pulse>quiet inch</pulse> at a time. What people think of you here is shifting. That can be a warning or a gift.",
-        "What people think of you here is shifting. That can be a warning or a gift. A reputation is written by many hands, but yours keeps choosing the ink.",
-        "A reputation is written by many hands, but yours keeps choosing the ink. The village is watching more carefully now. Whether that is good depends on you.",
-        "The village is watching more carefully now. Whether that is good depends on you. Trust does not vanish all at once, and it does not return that way either.",
-        "Trust does not vanish all at once, and it does not return that way either. People have started speaking of you differently. Listen to the difference.",
-        "People have started speaking of you differently. Listen to the difference. Every action becomes part of the story people tell when you are not in the room.",
-        "Every action becomes part of the story people tell when you are not in the room. The village has a long memory. Make sure it has a reason to be kind.",
-        "The village has a long memory. Make sure it has a reason to be kind. Reputation is not a number to us. It is how quickly the room relaxes when you enter."
+        "The village has a long memory. Make sure it has a reason to be kind."
       ],
       "event_tags": [
         "reputation_changed"
@@ -189,17 +139,7 @@
         "I will not call it bad. I will call it historically interesting.",
         "There may have been wisdom in that joke, but it escaped before I could cite it.",
         "A bold attempt. Not a successful one, but bold.",
-        "I would shelve that under fiction, far from the good material.",
-        "I will record that under humor, with a cautious footnote. The setup had a road. The ending wandered into a swamp.",
-        "The setup had a road. The ending wandered into a swamp. I laughed internally. <italic>Very</italic> internally.",
-        "I laughed internally. <italic>Very</italic> internally. That joke requires further study, preferably by someone else.",
-        "That joke requires further study, preferably by someone else. I see the structure. I question the conclusion.",
-        "I see the structure. I question the conclusion. The map of that joke had no clear destination.",
-        "The map of that joke had no clear destination. I will not call it bad. I will call it historically interesting.",
-        "I will not call it bad. I will call it historically interesting. There may have been wisdom in that joke, but it escaped before I could cite it.",
-        "There may have been wisdom in that joke, but it escaped before I could cite it. A bold attempt. Not a successful one, but bold.",
-        "A bold attempt. Not a successful one, but bold. I would shelve that under fiction, far from the good material.",
-        "I would shelve that under fiction, far from the good material. I will record that under humor, with a cautious footnote."
+        "I would shelve that under fiction, far from the good material."
       ],
       "professions": [
         "librarian",
