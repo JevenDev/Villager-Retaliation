@@ -20,6 +20,8 @@ Open the tab through :advancement-group[villagerretaliation:reputation/root]. Us
 - :advancement[villagerretaliation:reputation/regular_customer]
 - :advancement[villagerretaliation:reputation/peace_offering]
 - :advancement[villagerretaliation:reputation/story_keeper]
+- :advancement[villagerretaliation:reputation/sound_the_horn]
+- :advancement[villagerretaliation:reputation/the_village_falls]
 - :advancement[villagerretaliation:reputation/local_legend]
 - :advancement[villagerretaliation:reputation/village_enemy]
 

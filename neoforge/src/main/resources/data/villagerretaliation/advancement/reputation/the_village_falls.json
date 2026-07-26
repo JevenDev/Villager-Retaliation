@@ -1,0 +1,23 @@
+{
+  "parent": "villagerretaliation:reputation/sound_the_horn",
+  "display": {
+    "icon": {
+      "id": "minecraft:iron_sword"
+    },
+    "title": {
+      "translate": "advancements.villagerretaliation.reputation.the_village_falls.title"
+    },
+    "description": {
+      "translate": "advancements.villagerretaliation.reputation.the_village_falls.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "unlocked": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -95,6 +95,8 @@ public final class VillagerReputationAdvancements {
     private static final ResourceLocation LEGEND_TRADER = advancementId("reputation/legend_trader");
     private static final ResourceLocation STEADY_GAZE = advancementId("reputation/steady_gaze");
     private static final ResourceLocation THE_MARK_YOU_CHOSE = advancementId("reputation/the_mark_you_chose");
+    private static final ResourceLocation SOUND_THE_HORN = advancementId("reputation/sound_the_horn");
+    private static final ResourceLocation THE_VILLAGE_FALLS = advancementId("reputation/the_village_falls");
 
     private VillagerReputationAdvancements() {
     }
@@ -136,6 +138,14 @@ public final class VillagerReputationAdvancements {
 
     public static void onVillagerMouseStared(ServerPlayer player) {
         award(player, STEADY_GAZE);
+    }
+
+    public static void onPlayerRaidDeclared(ServerPlayer player) {
+        award(player, SOUND_THE_HORN);
+    }
+
+    public static void onPlayerRaidWon(ServerPlayer player) {
+        award(player, THE_VILLAGE_FALLS);
     }
 
     public static void onSharedStory(ServerPlayer player, int sharedStoryCount) {
