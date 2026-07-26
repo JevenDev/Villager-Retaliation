@@ -291,6 +291,9 @@ public final class VillagerRecruitmentService {
 
     public static void onVillagerTickPost(Villager villager) {
         if (villager == null) return;
+        if (com.jvn.villagerretaliation.party.PartyQuickCommandService.isMoveToTraveling(villager)) {
+            return;
+        }
         VillagerCommandController.TickResult result = VillagerCommandController.onVillagerTickPost(villager);
         if (result == VillagerCommandController.TickResult.LEFT_BEHIND
                 && villager.level() instanceof ServerLevel commandLevel) {

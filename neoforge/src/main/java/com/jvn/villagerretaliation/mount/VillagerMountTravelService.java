@@ -87,7 +87,9 @@ public final class VillagerMountTravelService {
         if (adapter.isDriver(mount, villager)) {
             data.setParkingAnchor(villager.getUUID(), null, null);
             adapter.clearRestriction(mount);
-            if (decision.staying()) {
+            if (decision.staying()
+                    && !com.jvn.villagerretaliation.party.PartyQuickCommandService
+                            .isMoveToTraveling(villager)) {
                 adapter.stopNavigation(mount);
             } else {
                 maintainMountedNavigationSpeed(villager);

@@ -38,6 +38,8 @@ public final class PartyVillagerRecord {
     private static final String TAG_QUICK_COMMANDS_ENABLED = "QuickCommandsEnabled";
     private static final String TAG_WEAPON_PREFERENCE = "WeaponPreference";
     private static final String TAG_REGROUPING = "Regrouping";
+    private static final String TAG_MOVE_TO_RETURN_COMMANDER = "MoveToReturnCommander";
+    private static final String TAG_MOVE_TO_HOLDING = "MoveToHolding";
 
     private final UUID villagerId;
     private final UUID recruiterId;
@@ -62,6 +64,8 @@ public final class PartyVillagerRecord {
     private boolean quickCommandsEnabled = true;
     private PartyWeaponPreference weaponPreference = PartyWeaponPreference.AUTO;
     private boolean regrouping;
+    private UUID moveToReturnCommanderId;
+    private boolean moveToHolding;
 
     PartyVillagerRecord(
             UUID villagerId,
@@ -176,6 +180,14 @@ public final class PartyVillagerRecord {
         return this.regrouping;
     }
 
+    public UUID moveToReturnCommanderId() {
+        return this.moveToReturnCommanderId;
+    }
+
+    public boolean moveToHolding() {
+        return this.moveToHolding;
+    }
+
     void setCombatMode(PartyCombatMode mode) {
         PartyCombatMode resolved = mode == null ? this.partyCombatMode : mode;
         this.combatModeOverride = resolved == this.partyCombatMode ? null : resolved;
@@ -231,6 +243,8 @@ public final class PartyVillagerRecord {
         this.stayDimension = null;
         this.stayPosition = null;
         this.regrouping = false;
+        this.moveToReturnCommanderId = null;
+        this.moveToHolding = false;
     }
 
     void setStaying(ResourceLocation dimension, BlockPos position) {
@@ -238,6 +252,22 @@ public final class PartyVillagerRecord {
         this.stayDimension = dimension;
         this.stayPosition = position == null ? null : position.immutable();
         this.regrouping = false;
+        this.moveToReturnCommanderId = null;
+        this.moveToHolding = false;
+    }
+
+    void setMoveToReturnCommander(UUID commanderId) {
+        this.moveToReturnCommanderId = commanderId;
+        this.moveToHolding = false;
+    }
+
+    void setMoveToHolding(boolean holding) {
+        this.moveToHolding = holding && this.moveToReturnCommanderId != null;
+    }
+
+    void clearMoveToReturnCommander() {
+        this.moveToReturnCommanderId = null;
+        this.moveToHolding = false;
     }
 
     void extend(long newEndGameTime, int additionalDays, int additionalEmeralds) {
@@ -299,6 +329,10 @@ public final class PartyVillagerRecord {
         tag.putBoolean(TAG_QUICK_COMMANDS_ENABLED, this.quickCommandsEnabled);
         tag.putString(TAG_WEAPON_PREFERENCE, this.weaponPreference.name());
         tag.putBoolean(TAG_REGROUPING, this.regrouping);
+        if (this.moveToReturnCommanderId != null) {
+            tag.putUUID(TAG_MOVE_TO_RETURN_COMMANDER, this.moveToReturnCommanderId);
+            tag.putBoolean(TAG_MOVE_TO_HOLDING, this.moveToHolding);
+        }
         return tag;
     }
 
@@ -350,6 +384,10 @@ public final class PartyVillagerRecord {
                 || tag.getBoolean(TAG_QUICK_COMMANDS_ENABLED));
         record.setWeaponPreference(PartyWeaponPreference.byName(tag.getString(TAG_WEAPON_PREFERENCE)));
         record.setRegrouping(tag.getBoolean(TAG_REGROUPING));
+        if (tag.hasUUID(TAG_MOVE_TO_RETURN_COMMANDER)) {
+            record.setMoveToReturnCommander(tag.getUUID(TAG_MOVE_TO_RETURN_COMMANDER));
+            record.setMoveToHolding(tag.getBoolean(TAG_MOVE_TO_HOLDING));
+        }
         return record;
     }
 

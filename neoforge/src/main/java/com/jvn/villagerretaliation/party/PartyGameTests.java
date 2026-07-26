@@ -27,6 +27,7 @@ import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
 import com.jvn.villagerretaliation.mount.VillagerMountAssignment;
 import com.jvn.villagerretaliation.mount.VillagerMountAssignmentSavedData;
 import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
+import com.jvn.villagerretaliation.mount.VillagerMountTravelService;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
@@ -139,6 +140,10 @@ public final class PartyGameTests {
         helper.assertValueEqual(record.weaponPreference(), PartyWeaponPreference.AUTO,
                 "legacy/default weapon preference should be AUTO");
         record.setWeaponPreference(PartyWeaponPreference.RANGED);
+        UUID moveCommanderId = UUID.randomUUID();
+        record.setStaying(Level.OVERWORLD.location(), new BlockPos(8, 64, 3));
+        record.setMoveToReturnCommander(moveCommanderId);
+        record.setMoveToHolding(true);
         record.setRegrouping(true);
 
         PartyVillagerRecord loaded = PartyVillagerRecord.load(record.save());
@@ -146,6 +151,10 @@ public final class PartyGameTests {
                 "weapon preference should survive party record serialization");
         helper.assertTrue(loaded.regrouping(),
                 "regroup acquisition suppression should survive unload/reload");
+        helper.assertValueEqual(loaded.moveToReturnCommanderId(), moveCommanderId,
+                "move-to return monitoring should survive unload/reload");
+        helper.assertTrue(loaded.moveToHolding(),
+                "move-to destination hold state should survive unload/reload");
 
         CompoundTag legacy = record.save();
         legacy.remove("WeaponPreference");
@@ -582,6 +591,59 @@ public final class PartyGameTests {
                 "The live follow route must be placed on the horse navigator instead of the villager's on-foot navigator");
         PartyService.deleteParty(level, recruited.partyId());
         helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "mount_live_follow")
+    public static void mountedMoveToKeepsHorseRouteActive(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("mounted_move_to_leader"));
+        for (int x = 1; x <= 14; x++) {
+            helper.setBlock(new BlockPos(x, 0, 2), Blocks.STONE);
+        }
+        Villager villager = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+        AbstractHorse horse = helper.spawn(EntityType.HORSE, 2, 1, 2);
+        horse.setTamed(true);
+        horse.setOnGround(true);
+        movePlayer(helper, leader, new BlockPos(1, 1, 2));
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartySavedData.get(level).addVillager(
+                party, villagerRecord(villager.getUUID(), leader.getUUID(), 0, now));
+        party.setMountMode(true);
+        helper.assertValueEqual(
+                VillagerMountAssignmentService.assign(leader, villager, horse),
+                VillagerMountAssignmentService.AssignmentResult.SUCCESS,
+                "The mounted move-to fixture must assign its horse");
+        helper.assertTrue(villager.startRiding(horse, true),
+                "The mounted move-to fixture must put the villager in the controlling seat");
+        BlockPos target = helper.absolutePos(new BlockPos(11, 1, 2));
+        double startingX = horse.getX();
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.MOVE_TO,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        target));
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertTrue(PartyQuickCommandService.hasActiveMoveToOrder(villager)
+                        && !horse.getNavigation().isDone(),
+                "Move To must start a route on the mounted villager's delegated horse navigator");
+        VillagerMountTravelService.onVillagerTickPost(villager);
+        helper.assertFalse(horse.getNavigation().isDone(),
+                "The mount coordinator must not cancel an active Move To route as a stay order");
+
+        helper.startSequence()
+                .thenExecuteAfter(40, () -> {
+                    helper.assertTrue(horse.getX() - startingX > 2.0D,
+                            "The mounted villager must carry the horse along the Move To route; delta="
+                                    + (horse.getX() - startingX)
+                                    + ", target=" + horse.getNavigation().getTargetPos());
+                    VillagerMountAssignmentSavedData.get(level).removeForVillager(villager.getUUID());
+                    PartyService.deleteParty(level, party.id());
+                    PartyQuickCommandService.clearRuntimeState();
+                })
+                .thenSucceed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE, batch = "mount_live_combat")
@@ -1477,6 +1539,51 @@ public final class PartyGameTests {
                 "move-to should start the shared node-route path");
         helper.assertTrue(VillagerTaskNavigationUtil.isHiredWalkTarget(villager),
                 "move-to should use the same guarded walk-target pipeline as node jobs");
+        PartyService.deleteParty(level, party.id());
+        PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void moveToHoldsUntilCommanderReturnsThenRegroups(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        for (int x = 0; x <= 14; x++) {
+            for (int z = 0; z <= 4; z++) {
+                helper.setBlock(new BlockPos(x, 1, z), Blocks.STONE);
+            }
+        }
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_move_return"));
+        movePlayer(helper, leader, new BlockPos(1, 2, 2));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        BlockPos target = helper.absolutePos(new BlockPos(10, 2, 2));
+        long now = level.getGameTime();
+        PartyRecord party = PartySavedData.get(level).createParty(leader.getUUID(), now);
+        PartyVillagerRecord record = villagerRecord(villager.getUUID(), leader.getUUID(), 0, now);
+        PartySavedData.get(level).addVillager(party, record);
+
+        PartyQuickCommandService.handle(
+                leader,
+                new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
+                        PartyQuickCommand.MOVE_TO,
+                        com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload.NO_ENTITY,
+                        target));
+        villager.moveTo(target.getX() + 0.5D, target.getY(), target.getZ() + 0.5D, 0.0F, 0.0F);
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertValueEqual(record.commandMode(), PartyCommandMode.STAY,
+                "Move To should hold the villager at its destination while the commander is away");
+        helper.assertTrue(record.moveToHolding()
+                        && PartyQuickCommandService.hasActiveMoveToOrder(villager),
+                "The held destination must remain monitored for the commander's return");
+
+        villager.moveTo(target.getX() - 6.5D, target.getY(), target.getZ() + 0.5D, 0.0F, 0.0F);
+        leader.moveTo(target.getX() + 3.5D, target.getY(), target.getZ() + 0.5D, 0.0F, 0.0F);
+        PartyQuickCommandService.onVillagerTickPost(villager);
+        helper.assertValueEqual(record.commandMode(), PartyCommandMode.FOLLOW,
+                "Entering the three-block target radius should automatically restore follow mode");
+        helper.assertTrue(record.regrouping() && PartyQuickCommandService.overridesRecruitmentMovement(villager),
+                "The villager should actively regroup after the commander returns to the target");
+
         PartyService.deleteParty(level, party.id());
         PartyQuickCommandService.clearRuntimeState();
         villager.discard();
