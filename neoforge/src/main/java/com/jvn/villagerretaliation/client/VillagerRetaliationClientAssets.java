@@ -70,6 +70,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/interaction_button");
     public static final ResourceLocation INTERACTION_CONTAINER_OPTION_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container_option");
+    public static final ResourceLocation INTERACTION_CONTAINER_OPTION_CHECKBOX_TEXTURE =
+            texture("gui/villager_interaction_screen/interaction_container_option_checkbox");
     public static final ResourceLocation INTERACTION_CONTAINER_NAMEPLATE_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container_nameplate");
     public static final ResourceLocation INTERACTION_CONTAINER_SKILLS_CONTAINER_TEXTURE =

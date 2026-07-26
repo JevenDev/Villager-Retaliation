@@ -240,6 +240,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_LOCKED_ICON_WIDTH = 6;
     private static final int INTERACTION_LOCKED_ICON_HEIGHT = 7;
     private static final int INTERACTION_LOCKED_ICON_TEXT_GAP = 3;
+    private static final int INTERACTION_OPTION_CHECKBOX_SIZE = 9;
+    private static final int INTERACTION_OPTION_CHECKBOX_TEXT_GAP = 3;
     private static final int INTERACTION_ICON_SIZE = 16;
     private static final int INTERACTION_TOOLTIP_MAX_WIDTH = 220;
     private static final ResourceLocation DIALOGUE_BLIP_SOUND_ID = VillagerRetaliation.id("dialogue");
@@ -1160,8 +1162,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         for (DuelLoadout loadout : DuelLoadout.values()) {
             boolean allowed = loadout != DuelLoadout.BRING_YOUR_OWN || this.duelStatus.bringYourOwnAllowed();
-            this.options.add(DialogueOption.enabled(
-                    checkmarkRowLabel(duelLoadoutOptionLabel(loadout), this.duelLoadout == loadout),
+            this.options.add(DialogueOption.checkbox(
+                    duelLoadoutOptionLabel(loadout),
+                    this.duelLoadout == loadout,
                     allowed
                             ? () -> {
                                 this.duelLoadout = loadout;
@@ -1188,10 +1191,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 continue;
             }
             boolean affordable = stake <= maximumStake;
-            this.options.add(DialogueOption.enabled(
-                    checkmarkRowLabel(
-                            duelStakeOptionLabel(stake, DUEL_STAKES[optionIndex] == Integer.MAX_VALUE),
-                            selectedDuelStake() == stake),
+            this.options.add(DialogueOption.checkbox(
+                    duelStakeOptionLabel(stake, DUEL_STAKES[optionIndex] == Integer.MAX_VALUE),
+                    selectedDuelStake() == stake,
                     affordable
                             ? () -> {
                                 this.duelStakeIndex = optionIndex;
@@ -1623,14 +1625,20 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addLoggingOption(HiredLoggingOptions.BONEMEAL_SAPLINGS, "recruit.logging_bonemeal_saplings", this.loggingBonemealSaplings);
         addLoggingOption(HiredLoggingOptions.PLANT_SAPLINGS, "recruit.logging_plant_saplings", this.loggingPlantSaplings);
         addLoggingOption(HiredLoggingOptions.PICK_UP_DECAY_DROPS, "recruit.logging_pick_up_decay_drops", this.loggingPickUpDecayDrops);
-        this.options.add(DialogueOption.enabled(checkmarkRowLabel(translate("recruit.logging_any"), this.selectedLoggingFilters.isEmpty()), () -> requestLoggingFilter("any")));
+        this.options.add(DialogueOption.checkbox(
+                translate("recruit.logging_any"),
+                this.selectedLoggingFilters.isEmpty(),
+                () -> requestLoggingFilter("any")));
         List<ResourceLocation> filters = HiredLoggingFilters.options();
         if (filters.isEmpty()) {
             this.options.add(DialogueOption.enabled(translate("recruit.logging_no_filters"), NO_ACTION));
         }
         for (ResourceLocation filter : filters) {
             String id = filter.toString();
-            this.options.add(DialogueOption.enabled(checkmarkRowLabel(HiredLoggingFilters.label(filter), this.selectedLoggingFilters.contains(id)), () -> requestLoggingFilter(id)));
+            this.options.add(DialogueOption.checkbox(
+                    HiredLoggingFilters.label(filter),
+                    this.selectedLoggingFilters.contains(id),
+                    () -> requestLoggingFilter(id)));
         }
         addOption("recruit.nevermind", this::openWorkPage);
     }
@@ -1657,25 +1665,33 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addAnimalBreedingTargetOptions() {
-        this.options.add(DialogueOption.enabled(checkmarkRowLabel(translate("recruit.animal_breeding_all"), this.selectedAnimalBreedingTargets.isEmpty()), () -> requestAnimalBreedingTarget("all")));
+        this.options.add(DialogueOption.checkbox(
+                translate("recruit.animal_breeding_all"),
+                this.selectedAnimalBreedingTargets.isEmpty(),
+                () -> requestAnimalBreedingTarget("all")));
         List<ResourceLocation> targets = HiredAnimalBreedingTargets.options();
         if (targets.isEmpty()) {
             this.options.add(DialogueOption.enabled(translate("recruit.animal_breeding_no_targets"), NO_ACTION));
         }
         for (ResourceLocation target : targets) {
             String id = target.toString();
-            this.options.add(DialogueOption.enabled(checkmarkRowLabel(HiredAnimalBreedingTargets.label(target), this.selectedAnimalBreedingTargets.contains(id)), () -> requestAnimalBreedingTarget(id)));
+            this.options.add(DialogueOption.checkbox(
+                    HiredAnimalBreedingTargets.label(target),
+                    this.selectedAnimalBreedingTargets.contains(id),
+                    () -> requestAnimalBreedingTarget(id)));
         }
         addOption("recruit.nevermind", this::openAnimalHandlingOptionsPage);
     }
 
     private void addAnimalCullCapOptions() {
-        this.options.add(DialogueOption.enabled(
-                checkmarkRowLabel(translate("recruit.animal_cull_disabled"), this.animalCullCap == HiredAnimalCullSettings.DISABLED_CAP),
+        this.options.add(DialogueOption.checkbox(
+                translate("recruit.animal_cull_disabled"),
+                this.animalCullCap == HiredAnimalCullSettings.DISABLED_CAP,
                 () -> requestAnimalCullCap(HiredAnimalCullSettings.DISABLED_CAP)));
         for (int cap : HiredAnimalCullSettings.capOptions()) {
-            this.options.add(DialogueOption.enabled(
-                    checkmarkRowLabel(translate("recruit.animal_cull_cap_option", cap), this.animalCullCap == cap),
+            this.options.add(DialogueOption.checkbox(
+                    translate("recruit.animal_cull_cap_option", cap),
+                    this.animalCullCap == cap,
                     () -> requestAnimalCullCap(cap)));
         }
         addOption("recruit.nevermind", this::openAnimalHandlingOptionsPage);
@@ -1794,20 +1810,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private void addLoggingOption(String optionId, String translationKey, boolean enabled) {
-        this.options.add(DialogueOption.enabled(
-                checkmarkRowLabel(translate(translationKey), enabled),
+        this.options.add(DialogueOption.checkbox(
+                translate(translationKey),
+                enabled,
                 () -> requestLoggingOption(optionId)));
     }
 
     private void addFarmingOption(String optionId, String translationKey, boolean enabled) {
-        this.options.add(DialogueOption.enabled(
-                checkmarkRowLabel(translate(translationKey), enabled),
+        this.options.add(DialogueOption.checkbox(
+                translate(translationKey),
+                enabled,
                 () -> requestFarmingOption(optionId)));
     }
 
     private void addHuntingTargetOption(String targetId, String translationKey, boolean enabled) {
-        this.options.add(DialogueOption.enabled(
-                checkmarkRowLabel(translate(translationKey), enabled),
+        this.options.add(DialogueOption.checkbox(
+                translate(translationKey),
+                enabled,
                 () -> requestHuntingTarget(targetId)));
     }
 
@@ -2862,9 +2881,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         PacketDistributor.sendToServer(payload);
     }
 
-    private static String checkmarkRowLabel(String label, boolean selected) {
-        return (selected ? "\u2713 " : "  ") + label;
-    }
 
     private void openPage(DialoguePage page) {
         DialoguePage previousPage = this.page;
@@ -5488,13 +5504,21 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         RIGHT
     }
 
-    private record DialogueOption(String label, Runnable action, boolean locked) {
+    private record DialogueOption(String label, Runnable action, boolean locked, boolean checkbox, boolean checked) {
         static DialogueOption enabled(String label, Runnable action) {
             return enabled(label, action, false);
         }
 
         static DialogueOption enabled(String label, Runnable action, boolean locked) {
-            return new DialogueOption(label, action, locked);
+            return new DialogueOption(label, action, locked, false, false);
+        }
+
+        static DialogueOption checkbox(String label, boolean checked, Runnable action) {
+            return checkbox(label, checked, action, false);
+        }
+
+        static DialogueOption checkbox(String label, boolean checked, Runnable action, boolean locked) {
+            return new DialogueOption(label, action, locked, true, checked);
         }
     }
 
@@ -5814,6 +5838,41 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return VillagerInteractionScreen.this.options.get(index).locked()
                     ? INTERACTION_LOCKED_ICON_TEXT_GAP
                     : 0;
+        }
+
+        @Override
+        public boolean pixelOptionHasCheckbox(int index) {
+            return VillagerInteractionScreen.this.options.get(index).checkbox();
+        }
+
+        @Override
+        public boolean pixelOptionChecked(int index) {
+            return VillagerInteractionScreen.this.options.get(index).checked();
+        }
+
+        @Override
+        public ResourceLocation pixelOptionCheckboxTexture() {
+            return VillagerRetaliationClientAssets.INTERACTION_CONTAINER_OPTION_CHECKBOX_TEXTURE;
+        }
+
+        @Override
+        public ResourceLocation pixelOptionCheckmarkTexture() {
+            return VillagerRetaliationClientAssets.QUEST_JOURNAL_ICON_COMPLETED_TEXTURE;
+        }
+
+        @Override
+        public int pixelOptionCheckboxWidth() {
+            return INTERACTION_OPTION_CHECKBOX_SIZE;
+        }
+
+        @Override
+        public int pixelOptionCheckboxHeight() {
+            return INTERACTION_OPTION_CHECKBOX_SIZE;
+        }
+
+        @Override
+        public int pixelOptionCheckboxTextGap() {
+            return INTERACTION_OPTION_CHECKBOX_TEXT_GAP;
         }
 
         @Override

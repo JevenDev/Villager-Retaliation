@@ -77,7 +77,7 @@ public final class VillagerGiftRequestHandler {
         String locale = VillagerLocale.locale(player);
         VillagerProfession profession = villager.getVillagerData().getProfession();
         VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, selectedStack);
-        boolean rejected = giftPreference.reaction() == VillagerGiftPreferences.GiftReaction.HATED;
+        boolean rejected = rejectsGift(giftPreference.reaction());
         if (!rejected && !VillagerInventoryAccess.canAddItems(villager, List.of(selectedStack.copy()))) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_inventory_full");
             return;
@@ -157,10 +157,15 @@ public final class VillagerGiftRequestHandler {
             int inventorySlot,
             VillagerGiftPreferences.GiftReaction reaction) {
         ItemStack selectedStack = inventory.getItem(inventorySlot);
-        if (reaction == VillagerGiftPreferences.GiftReaction.HATED) {
+        if (rejectsGift(reaction)) {
             return selectedStack.copy();
         }
         return inventory.removeItem(inventorySlot, selectedStack.getCount());
+    }
+
+    private static boolean rejectsGift(VillagerGiftPreferences.GiftReaction reaction) {
+        return reaction == VillagerGiftPreferences.GiftReaction.DISLIKED
+                || reaction == VillagerGiftPreferences.GiftReaction.HATED;
     }
 
     private static void reduceDialogueAnnoyanceFromGift(ServerLevel level, Villager villager, ServerPlayer player, int reputationValue) {

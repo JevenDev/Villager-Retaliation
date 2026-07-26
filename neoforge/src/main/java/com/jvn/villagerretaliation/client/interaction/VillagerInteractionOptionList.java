@@ -246,15 +246,21 @@ final class VillagerInteractionOptionList {
         try {
             blitPixelOptionButton(graphics, texture, left, drawTop, context.optionWidth(), rowHeight);
 
+            boolean hasCheckbox = context.pixelOptionHasCheckbox(index);
+            int checkboxTextOffset = hasCheckbox
+                    ? context.pixelOptionCheckboxWidth() + context.pixelOptionCheckboxTextGap()
+                    : 0;
             boolean hasIcon = context.pixelOptionIconTexture(index) != null;
             int iconTextOffset = hasIcon
                     ? context.pixelOptionIconWidth(index) + context.pixelOptionIconTextGap(index)
                     : 0;
-            int textLeft = left + context.optionTextInset() + iconTextOffset;
-            int textWidth = Math.max(1, context.optionWidth() - context.optionTextInset() - iconTextOffset - context.pixelOptionTextRightPadding());
+            int textLeft = left + context.optionTextInset() + checkboxTextOffset + iconTextOffset;
+            int textWidth = Math.max(1, context.optionWidth() - context.optionTextInset()
+                    - checkboxTextOffset - iconTextOffset - context.pixelOptionTextRightPadding());
             List<String> lines = pixelOptionLabelLines(context, index);
             int textColor = context.pixelOptionTextColor(keyboardFocused, isHovered || active);
-            renderPixelOptionIcon(context, graphics, index, left, drawTop, rowHeight);
+            renderPixelOptionCheckbox(context, graphics, index, left, drawTop, rowHeight);
+            renderPixelOptionIcon(context, graphics, index, left, drawTop, rowHeight, checkboxTextOffset);
             for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
                 int lineTop = drawTop + context.pixelOptionTextTop() + lineIndex * context.pixelOptionLineStep();
                 drawPixelOutlinedString(
@@ -287,7 +293,52 @@ final class VillagerInteractionOptionList {
         graphics.fillGradient(RenderType.guiOverlay(), highlightLeft, highlightTop, highlightRight, highlightBottom, color, color, 0);
     }
 
-    private static void renderPixelOptionIcon(Context context, GuiGraphics graphics, int index, int left, int top, int rowHeight) {
+    private static void renderPixelOptionCheckbox(
+            Context context,
+            GuiGraphics graphics,
+            int index,
+            int left,
+            int top,
+            int rowHeight) {
+        if (!context.pixelOptionHasCheckbox(index)) {
+            return;
+        }
+        int checkboxWidth = context.pixelOptionCheckboxWidth();
+        int checkboxHeight = context.pixelOptionCheckboxHeight();
+        int checkboxLeft = left + context.optionTextInset();
+        int checkboxTop = top + Math.max(0, (rowHeight - checkboxHeight) / 2);
+        graphics.blit(
+                context.pixelOptionCheckboxTexture(),
+                checkboxLeft,
+                checkboxTop,
+                0,
+                0,
+                checkboxWidth,
+                checkboxHeight,
+                checkboxWidth,
+                checkboxHeight);
+        if (context.pixelOptionChecked(index)) {
+            graphics.blit(
+                    context.pixelOptionCheckmarkTexture(),
+                    checkboxLeft,
+                    checkboxTop,
+                    0,
+                    0,
+                    checkboxWidth,
+                    checkboxHeight,
+                    checkboxWidth,
+                    checkboxHeight);
+        }
+    }
+
+    private static void renderPixelOptionIcon(
+            Context context,
+            GuiGraphics graphics,
+            int index,
+            int left,
+            int top,
+            int rowHeight,
+            int leadingOffset) {
         ResourceLocation texture = context.pixelOptionIconTexture(index);
         if (texture == null) {
             return;
@@ -297,7 +348,7 @@ final class VillagerInteractionOptionList {
         if (iconWidth <= 0 || iconHeight <= 0) {
             return;
         }
-        int iconLeft = left + context.optionTextInset();
+        int iconLeft = left + context.optionTextInset() + leadingOffset;
         int iconTop = top + Math.max(0, (rowHeight - iconHeight) / 2);
         graphics.blit(texture, iconLeft, iconTop, 0, 0, iconWidth, iconHeight, iconWidth, iconHeight);
     }
@@ -720,6 +771,34 @@ final class VillagerInteractionOptionList {
         }
 
         default int pixelOptionIconTextGap(int index) {
+            return 0;
+        }
+
+        default boolean pixelOptionHasCheckbox(int index) {
+            return false;
+        }
+
+        default boolean pixelOptionChecked(int index) {
+            return false;
+        }
+
+        default ResourceLocation pixelOptionCheckboxTexture() {
+            return null;
+        }
+
+        default ResourceLocation pixelOptionCheckmarkTexture() {
+            return null;
+        }
+
+        default int pixelOptionCheckboxWidth() {
+            return 0;
+        }
+
+        default int pixelOptionCheckboxHeight() {
+            return 0;
+        }
+
+        default int pixelOptionCheckboxTextGap() {
             return 0;
         }
 
