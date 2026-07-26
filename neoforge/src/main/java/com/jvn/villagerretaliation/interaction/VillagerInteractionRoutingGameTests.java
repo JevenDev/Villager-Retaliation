@@ -50,7 +50,7 @@ public final class VillagerInteractionRoutingGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
-    public static void hatedGiftOfferPreservesThePlayersStack(GameTestHelper helper) {
+    public static void negativeGiftOffersPreserveThePlayersStack(GameTestHelper helper) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();
         player.getInventory().setItem(0, new ItemStack(Items.TNT, 16));
 
@@ -65,15 +65,26 @@ public final class VillagerInteractionRoutingGameTests {
                         && player.getInventory().getItem(0).getCount() == 16,
                 "a hated gift must remain in the player's inventory");
 
-        ItemStack acceptedOffer = VillagerGiftRequestHandler.takeOfferedStack(
+        ItemStack dislikedOffer = VillagerGiftRequestHandler.takeOfferedStack(
                 player.getInventory(),
                 0,
                 VillagerGiftPreferences.GiftReaction.DISLIKED);
 
+        helper.assertTrue(dislikedOffer.is(Items.TNT) && dislikedOffer.getCount() == 16,
+                "the disliked offer should retain the stack details for reaction processing");
+        helper.assertTrue(player.getInventory().getItem(0).is(Items.TNT)
+                        && player.getInventory().getItem(0).getCount() == 16,
+                "a disliked gift must remain in the player's inventory");
+
+        ItemStack acceptedOffer = VillagerGiftRequestHandler.takeOfferedStack(
+                player.getInventory(),
+                0,
+                VillagerGiftPreferences.GiftReaction.NEUTRAL);
+
         helper.assertTrue(acceptedOffer.is(Items.TNT) && acceptedOffer.getCount() == 16,
                 "an accepted offer should transfer the selected stack");
         helper.assertTrue(player.getInventory().getItem(0).isEmpty(),
-                "non-hated gifts should retain the existing transfer behavior");
+                "neutral and positive gifts should retain the existing transfer behavior");
         helper.succeed();
     }
 

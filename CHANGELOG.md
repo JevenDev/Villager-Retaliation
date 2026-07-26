@@ -1,6 +1,6 @@
 # Changelog
 - Fixed currency gift names such as Emerald appearing lowercase in the known-gifts tooltip.
-- Fixed hated gifts being accepted or consumed instead of being rejected while still applying their negative reputation.
+- Fixed disliked and hated gifts being accepted or consumed instead of being rejected while still applying their negative reputation.
 - Fixed empty villager hunger being harmless; villagers now take player-equivalent starvation damage based on world difficulty.
 - Removed accidental two-line dialogue combinations introduced during the dialogue expansion while preserving the individual authored lines.
 - Fixed the Stay Here interaction remaining locked for a villager's active hirer when their reputation was below Trusted.
