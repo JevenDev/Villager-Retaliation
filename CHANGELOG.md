@@ -1,4 +1,6 @@
 # Changelog
+- Fixed unscoped profession greetings and farewells bleeding into reputation-specific opening and closing pools.
+- Fixed hired-work checkbox options being rejected by the recruitment trust gate instead of reporting the updated setting naturally.
 - Fixed currency gift names such as Emerald appearing lowercase in the known-gifts tooltip.
 - Fixed disliked and hated gifts being accepted or consumed instead of being rejected while still applying their negative reputation.
 - Fixed empty villager hunger being harmless; villagers now take player-equivalent starvation damage based on world difficulty.

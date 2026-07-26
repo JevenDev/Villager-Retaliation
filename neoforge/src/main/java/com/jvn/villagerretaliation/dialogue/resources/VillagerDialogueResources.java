@@ -229,6 +229,12 @@ public final class VillagerDialogueResources {
         if (!firstInteractionCandidates.isEmpty()) {
             candidates = firstInteractionCandidates;
         }
+        List<ConversationLine> dispositionSpecificCandidates = candidates.stream()
+                .filter(ConversationLine::dispositionSpecific)
+                .toList();
+        if (!dispositionSpecificCandidates.isEmpty()) {
+            candidates = dispositionSpecificCandidates;
+        }
         return candidates.stream()
                 .map(line -> line.selectText(context))
                 .toList();
@@ -243,6 +249,12 @@ public final class VillagerDialogueResources {
                 .toList();
         if (!itemSpecificCandidates.isEmpty()) {
             candidates = itemSpecificCandidates;
+        }
+        List<ConversationLine> dispositionSpecificCandidates = candidates.stream()
+                .filter(ConversationLine::dispositionSpecific)
+                .toList();
+        if (!dispositionSpecificCandidates.isEmpty()) {
+            candidates = dispositionSpecificCandidates;
         }
         return candidates.stream().map(line -> line.selectText(context)).toList();
     }
@@ -1767,6 +1779,10 @@ public final class VillagerDialogueResources {
 
         private boolean playerItemSpecific() {
             return this.requiresOminousBanner || !this.playerItemCondition.isEmpty();
+        }
+
+        private boolean dispositionSpecific() {
+            return !this.dispositions.isEmpty();
         }
     }
 

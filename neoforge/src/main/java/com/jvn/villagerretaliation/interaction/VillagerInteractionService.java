@@ -2050,10 +2050,6 @@ public final class VillagerInteractionService {
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
         ServerLevel level = contextTarget.level();
-        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
-            return;
-        }
         focusVillagerOnPlayer(villager, player);
         HiredVillagerWorkService.toggleLoggingFilter(player, level, villager, filterId);
     }
@@ -2066,10 +2062,6 @@ public final class VillagerInteractionService {
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
         ServerLevel level = contextTarget.level();
-        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
-            return;
-        }
         focusVillagerOnPlayer(villager, player);
         HiredVillagerWorkService.toggleLoggingOption(player, level, villager, optionId);
     }
@@ -2082,10 +2074,6 @@ public final class VillagerInteractionService {
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
         ServerLevel level = contextTarget.level();
-        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
-            return;
-        }
         focusVillagerOnPlayer(villager, player);
         HiredVillagerWorkService.toggleFarmingOption(player, level, villager, optionId);
     }
@@ -2098,10 +2086,6 @@ public final class VillagerInteractionService {
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
         ServerLevel level = contextTarget.level();
-        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
-            return;
-        }
         focusVillagerOnPlayer(villager, player);
         HiredVillagerWorkService.toggleHuntingTarget(player, level, villager, targetId);
     }
@@ -2114,10 +2098,6 @@ public final class VillagerInteractionService {
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
         ServerLevel level = contextTarget.level();
-        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
-            return;
-        }
         focusVillagerOnPlayer(villager, player);
         HiredVillagerWorkService.toggleAnimalBreedingTarget(player, level, villager, targetId);
     }
@@ -2130,10 +2110,6 @@ public final class VillagerInteractionService {
         InteractionTargetContext contextTarget = target.get();
         Villager villager = contextTarget.villager();
         ServerLevel level = contextTarget.level();
-        if (!VillagerRecruitmentService.canRecruit(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.not_trusted_enough");
-            return;
-        }
         focusVillagerOnPlayer(villager, player);
         HiredVillagerWorkService.setAnimalCullCap(player, level, villager, cap);
     }
