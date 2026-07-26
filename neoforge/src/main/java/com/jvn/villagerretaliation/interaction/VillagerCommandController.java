@@ -41,6 +41,11 @@ public final class VillagerCommandController {
 
     public static void beginFollow(ServerLevel level, Villager villager, UUID owner) {
         if (level == null || villager == null || owner == null) return;
+        if (VillagerAssignmentStore.isFollowing(villager)
+                && VillagerAssignmentStore.commandOwner(villager).filter(owner::equals).isPresent()
+                && VillagerAssignmentStore.hasFollowJourney(villager)) {
+            return;
+        }
         HiredVillagerWorkService.pauseForRecruitmentCommand(level, villager);
         BlockPos start = villager.blockPosition();
         String biome = level.getBiome(start).unwrapKey()
@@ -199,6 +204,9 @@ public final class VillagerCommandController {
     private static void yieldNavigation(Villager villager) {
         PATH_STATES.remove(villager.getUUID());
         BlockPos ownedTarget = OWNED_NAVIGATION_TARGETS.remove(villager.getUUID());
+        if (villager.getTarget() != null && villager.getTarget().isAlive()) {
+            return;
+        }
         if (ownedTarget != null && ownedTarget.equals(villager.getNavigation().getTargetPos())) {
             villager.getNavigation().stop();
         }

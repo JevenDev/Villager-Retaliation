@@ -93,6 +93,7 @@ public final class PartyVillagerContractService {
                 level.dimension().location(),
                 villager.blockPosition()
         );
+        record.setCachedGender(VillagerPresetNameRegistry.resolveGender(villager).serializedName());
         if (currentParty != null) {
             record.setCombatMode(currentParty.combatMode());
             record.setAttackMode(currentParty.attackMode());
@@ -333,6 +334,7 @@ public final class PartyVillagerContractService {
                 VillagerContractTime.endAfterDays(now, days), days, cost,
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 professionTranslationKey(villager), level.dimension().location(), villager.blockPosition());
+        record.setCachedGender(VillagerPresetNameRegistry.resolveGender(villager).serializedName());
         record.setCombatMode(party.combatMode());
         record.setAttackMode(party.attackMode());
         PartySavedData.get(level).addVillager(party, record);
@@ -396,6 +398,7 @@ public final class PartyVillagerContractService {
         if (record.updateDisplay(
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 professionTranslationKey(villager),
+                VillagerPresetNameRegistry.resolveGender(villager).serializedName(),
                 level.dimension().location(),
                 villager.blockPosition())) {
             PartyService.markChanged(level);
@@ -707,6 +710,7 @@ public final class PartyVillagerContractService {
         return record.updateDisplay(
                 VillagerPresetNameRegistry.resolveDisplayName(villager).getString(),
                 professionTranslationKey(villager),
+                VillagerPresetNameRegistry.resolveGender(villager).serializedName(),
                 villager.level().dimension().location(),
                 villager.blockPosition());
     }

@@ -23,6 +23,7 @@ public final class PartyVillagerRecord {
     private static final String TAG_EMERALDS_PAID = "EmeraldsPaid";
     private static final String TAG_NAME = "Name";
     private static final String TAG_PROFESSION = "Profession";
+    private static final String TAG_GENDER = "Gender";
     private static final String TAG_LAST_DIMENSION = "LastDimension";
     private static final String TAG_LAST_X = "LastX";
     private static final String TAG_LAST_Y = "LastY";
@@ -54,6 +55,7 @@ public final class PartyVillagerRecord {
     private int emeraldsPaid;
     private String cachedName;
     private String cachedProfession;
+    private String cachedGender = "";
     private ResourceLocation lastKnownDimension;
     private BlockPos lastKnownPosition;
     private PartyCombatMode combatModeOverride;
@@ -146,6 +148,14 @@ public final class PartyVillagerRecord {
 
     public String cachedProfession() {
         return this.cachedProfession;
+    }
+
+    public String cachedGender() {
+        return this.cachedGender;
+    }
+
+    void setCachedGender(String gender) {
+        this.cachedGender = safeText(gender, 32);
     }
 
     public ResourceLocation lastKnownDimension() {
@@ -276,16 +286,24 @@ public final class PartyVillagerRecord {
         this.emeraldsPaid += Math.max(0, additionalEmeralds);
     }
 
-    boolean updateDisplay(String name, String profession, ResourceLocation dimension, BlockPos position) {
+    boolean updateDisplay(
+            String name,
+            String profession,
+            String gender,
+            ResourceLocation dimension,
+            BlockPos position) {
         String safeName = safeText(name, 128);
         String safeProfession = safeText(profession, 128);
+        String safeGender = safeText(gender, 32);
         BlockPos immutablePosition = position == null ? null : position.immutable();
         boolean changed = !this.cachedName.equals(safeName)
                 || !this.cachedProfession.equals(safeProfession)
+                || !this.cachedGender.equals(safeGender)
                 || !Objects.equals(this.lastKnownDimension, dimension)
                 || !Objects.equals(this.lastKnownPosition, immutablePosition);
         this.cachedName = safeName;
         this.cachedProfession = safeProfession;
+        this.cachedGender = safeGender;
         this.lastKnownDimension = dimension;
         this.lastKnownPosition = immutablePosition;
         return changed;
@@ -310,6 +328,7 @@ public final class PartyVillagerRecord {
         tag.putInt(TAG_EMERALDS_PAID, this.emeraldsPaid);
         tag.putString(TAG_NAME, this.cachedName);
         tag.putString(TAG_PROFESSION, this.cachedProfession);
+        tag.putString(TAG_GENDER, this.cachedGender);
         if (this.lastKnownDimension != null) {
             tag.putString(TAG_LAST_DIMENSION, this.lastKnownDimension.toString());
         }
@@ -384,6 +403,7 @@ public final class PartyVillagerRecord {
                 || tag.getBoolean(TAG_QUICK_COMMANDS_ENABLED));
         record.setWeaponPreference(PartyWeaponPreference.byName(tag.getString(TAG_WEAPON_PREFERENCE)));
         record.setRegrouping(tag.getBoolean(TAG_REGROUPING));
+        record.cachedGender = safeText(tag.getString(TAG_GENDER), 32);
         if (tag.hasUUID(TAG_MOVE_TO_RETURN_COMMANDER)) {
             record.setMoveToReturnCommander(tag.getUUID(TAG_MOVE_TO_RETURN_COMMANDER));
             record.setMoveToHolding(tag.getBoolean(TAG_MOVE_TO_HOLDING));

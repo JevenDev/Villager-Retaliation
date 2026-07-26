@@ -34,6 +34,7 @@ public record PartyRosterSyncPayload(
     private static final int MAX_VILLAGERS = 4;
     private static final int MAX_NAME_LENGTH = 128;
     private static final int MAX_PROFESSION_LENGTH = 128;
+    private static final int MAX_GENDER_LENGTH = 32;
     public static final Type<PartyRosterSyncPayload> TYPE = VillagerPayloads.type("party_roster_sync");
     public static final StreamCodec<RegistryFriendlyByteBuf, PartyRosterSyncPayload> STREAM_CODEC =
             VillagerPayloads.codec(PartyRosterSyncPayload::encode, PartyRosterSyncPayload::decode);
@@ -81,6 +82,7 @@ public record PartyRosterSyncPayload(
             buffer.writeVarInt(villager.entityId());
             buffer.writeUtf(villager.name(), MAX_NAME_LENGTH);
             buffer.writeUtf(villager.professionKey(), MAX_PROFESSION_LENGTH);
+            buffer.writeUtf(villager.genderName(), MAX_GENDER_LENGTH);
             buffer.writeEnum(villager.commandMode());
             buffer.writeBoolean(villager.available());
             buffer.writeVarInt(villager.remainingDays());
@@ -127,6 +129,7 @@ public record PartyRosterSyncPayload(
                     buffer.readVarInt(),
                     buffer.readUtf(MAX_NAME_LENGTH),
                     buffer.readUtf(MAX_PROFESSION_LENGTH),
+                    buffer.readUtf(MAX_GENDER_LENGTH),
                     buffer.readEnum(PartyCommandMode.class),
                     buffer.readBoolean(),
                     buffer.readVarInt(),
@@ -157,6 +160,7 @@ public record PartyRosterSyncPayload(
             int entityId,
             String name,
             String professionKey,
+            String genderName,
             PartyCommandMode commandMode,
             boolean available,
             int remainingDays,

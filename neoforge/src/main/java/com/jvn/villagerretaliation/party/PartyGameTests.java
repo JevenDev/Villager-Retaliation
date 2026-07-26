@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
+import com.jvn.villagerretaliation.interaction.VillagerAssignmentStore;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
@@ -145,6 +146,7 @@ public final class PartyGameTests {
         record.setMoveToReturnCommander(moveCommanderId);
         record.setMoveToHolding(true);
         record.setRegrouping(true);
+        record.setCachedGender("female");
 
         PartyVillagerRecord loaded = PartyVillagerRecord.load(record.save());
         helper.assertValueEqual(loaded.weaponPreference(), PartyWeaponPreference.RANGED,
@@ -155,6 +157,8 @@ public final class PartyGameTests {
                 "move-to return monitoring should survive unload/reload");
         helper.assertTrue(loaded.moveToHolding(),
                 "move-to destination hold state should survive unload/reload");
+        helper.assertValueEqual(loaded.cachedGender(), "female",
+                "cached villager gender should survive party record serialization");
 
         CompoundTag legacy = record.save();
         legacy.remove("WeaponPreference");
@@ -593,6 +597,29 @@ public final class PartyGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void partyFollowReconciliationPreservesActiveFollowState(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = helper.makeMockServerPlayerInLevel();
+        Villager villager = helper.spawn(EntityType.VILLAGER, 2, 1, 2);
+        leader.moveTo(villager.getX() + 1.0D, villager.getY(), villager.getZ(), -90.0F, 0.0F);
+        leader.getInventory().add(new ItemStack(Items.EMERALD, PartyVillagerContractService.DAILY_EMERALD_COST));
+        PartyVillagerContractService.ContractResult recruited =
+                PartyVillagerContractService.recruit(leader, villager);
+        helper.assertTrue(recruited.success(), "The party-follow fixture must recruit its villager");
+        helper.assertTrue(VillagerRecruitmentService.isFollowing(villager, leader),
+                "A newly recruited party villager must use the ordinary follow command state");
+
+        VillagerAssignmentStore.updateJourney(villager, true, false);
+        helper.assertTrue(VillagerAssignmentStore.journey(villager).usedBoat(),
+                "The fixture must establish follow journey state before durable reconciliation");
+        VillagerRecruitmentService.applyPartyFollowing(level, villager, leader);
+        helper.assertTrue(VillagerAssignmentStore.journey(villager).usedBoat(),
+                "Reapplying an unchanged party-follow command must not reset its active state");
+
+        PartyService.deleteParty(level, recruited.partyId());
+        helper.succeed();
+    }
     @GameTest(template = EMPTY_TEMPLATE, batch = "mount_live_follow")
     public static void mountedMoveToKeepsHorseRouteActive(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
