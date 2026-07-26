@@ -5,6 +5,9 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
@@ -43,6 +46,43 @@ public final class VillagerInteractionRoutingGameTests {
         helper.assertFalse(
                 VillagerItemFilterInteractionHandler.handlesOption(null),
                 "item-filter handler claimed a missing option id");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void hatedGiftOfferPreservesThePlayersStack(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.getInventory().setItem(0, new ItemStack(Items.TNT, 16));
+
+        ItemStack rejectedOffer = VillagerGiftRequestHandler.takeOfferedStack(
+                player.getInventory(),
+                0,
+                VillagerGiftPreferences.GiftReaction.HATED);
+
+        helper.assertTrue(rejectedOffer.is(Items.TNT) && rejectedOffer.getCount() == 16,
+                "the rejected offer should retain the stack details for reaction processing");
+        helper.assertTrue(player.getInventory().getItem(0).is(Items.TNT)
+                        && player.getInventory().getItem(0).getCount() == 16,
+                "a hated gift must remain in the player's inventory");
+
+        ItemStack acceptedOffer = VillagerGiftRequestHandler.takeOfferedStack(
+                player.getInventory(),
+                0,
+                VillagerGiftPreferences.GiftReaction.DISLIKED);
+
+        helper.assertTrue(acceptedOffer.is(Items.TNT) && acceptedOffer.getCount() == 16,
+                "an accepted offer should transfer the selected stack");
+        helper.assertTrue(player.getInventory().getItem(0).isEmpty(),
+                "non-hated gifts should retain the existing transfer behavior");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void giftKnowledgeTooltipUsesItemDisplayCapitalization(GameTestHelper helper) {
+        helper.assertValueEqual(
+                VillagerGiftKnowledgeService.displayItemName(Items.EMERALD),
+                "Emerald",
+                "gift knowledge should use the item display name instead of lowercase currency dialogue text");
         helper.succeed();
     }
 }

@@ -18,6 +18,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -360,9 +361,21 @@ public final class VillagerRecoveryService {
             ServerLevel level,
             Villager villager,
             RecoveryState state) {
+        if (state.food() <= 0) {
+            int timer = state.healTimer() + 1;
+            if (timer >= 80) {
+                Difficulty difficulty = level.getDifficulty();
+                if (villager.getHealth() > 10.0F
+                        || difficulty == Difficulty.HARD
+                        || villager.getHealth() > 1.0F && difficulty == Difficulty.NORMAL) {
+                    villager.hurt(level.damageSources().starve(), 1.0F);
+                }
+                timer = 0;
+            }
+            return state.withHealTimer(timer);
+        }
         if (!level.getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION)
-                || villager.getHealth() >= villager.getMaxHealth()
-                || state.food() <= 0) {
+                || villager.getHealth() >= villager.getMaxHealth()) {
             return state.withHealTimer(0);
         }
         int timer = state.healTimer() + 1;
