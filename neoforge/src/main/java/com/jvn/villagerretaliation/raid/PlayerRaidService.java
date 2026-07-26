@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
+import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import java.util.ArrayList;
@@ -225,6 +226,7 @@ public final class PlayerRaidService {
         initiator.sendSystemMessage(Component.translatable(
                 "villagerretaliation.player_raid.declared",
                 village.displayName(), defenders.size() + mercyCandidates.size()));
+        VillagerReputationAdvancements.onPlayerRaidDeclared(initiator);
         if (!PlayerRaidDialogueService.begin(initiator, raid)) {
             beginPreparation(level.getServer(), raid.id());
         }
@@ -581,6 +583,12 @@ public final class PlayerRaidService {
                 : "villagerretaliation.player_raid.defended", raid.villageName());
         server.getPlayerList().broadcastSystemMessage(message, false);
         if (raidersWon) {
+            for (UUID raiderId : raid.raiderPlayers()) {
+                ServerPlayer player = server.getPlayerList().getPlayer(raiderId);
+                if (player != null) {
+                    VillagerReputationAdvancements.onPlayerRaidWon(player);
+                }
+            }
             playRaiderVictorySound(server, raid);
         }
         PlayerRaidDialogueService.announceOutcome(server, raid, raidersWon);
