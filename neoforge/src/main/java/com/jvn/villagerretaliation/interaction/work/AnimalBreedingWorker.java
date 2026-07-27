@@ -24,7 +24,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.Cow;
@@ -494,6 +493,39 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             Villager villager,
             HiredWorkContext context,
             AnimalProductTarget target) {
+        if (target.kind() == AnimalProductKind.SHEAR) {
+            ToolStorageResult shearsResult = equipBestToolOrCollectFromStorage(
+                    level,
+                    villager,
+                    context,
+                    stack -> stack.is(Items.SHEARS),
+                    stack -> stack.isDamageableItem()
+                            ? stack.getMaxDamage() - stack.getDamageValue()
+                            : 0.0D,
+                    0.45D);
+            if (shearsResult.status() == ToolStorageStatus.MOVING) {
+                return WorkResult.progressed(target.collectingSupplyMessageKey());
+            }
+            if (shearsResult.status() == ToolStorageStatus.UNREACHABLE) {
+                HiredWorkerBrain.setFailure(context, "animal_product_storage_path_failed", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, shearsResult.storagePos());
+                return WorkResult.idle("interaction.work.animal_breeding.product_supply_unreachable");
+            }
+            if (shearsResult.status() == ToolStorageStatus.INVENTORY_FULL) {
+                HiredWorkerBrain.setFailure(context, "animal_product_supply_inventory_full", level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.PAUSED_FULL_INVENTORY, shearsResult.storagePos());
+                return WorkResult.idle("interaction.work.animal_breeding.product_supply_inventory_full");
+            }
+            if (shearsResult.tool().isEmpty()) {
+                HiredWorkerBrain.setFailure(context, target.missingSupplyFailure(), level.getGameTime() + 100L);
+                setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target.animal().blockPosition());
+                return WorkResult.idle(target.missingSupplyMessageKey());
+            }
+            if (shearsResult.status() == ToolStorageStatus.COLLECTED) {
+                return WorkResult.progressed(target.gatheredSupplyMessageKey());
+            }
+            return null;
+        }
         if (HiredSupplyCrafting.countCarried(context, target.supplyPredicate()) > 0) {
             HiredStorageNavigationGoal.clearStorageTarget(context);
             HiredWorkerBrain.clearFailure(context);
@@ -556,8 +588,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             setTaskState(context, HiredWorkerTaskState.FAILED_COOLDOWN, sheep == null ? villager.blockPosition() : sheep.blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.product_changed");
         }
-        int shearsSlot = firstSupplySlot(context, stack -> stack.is(Items.SHEARS));
-        if (shearsSlot < 0) {
+        ItemStack shears = context.inventory().findTool(stack -> stack.is(Items.SHEARS));
+        if (shears.isEmpty()) {
             HiredWorkerBrain.setFailure(context, "missing_shears", level.getGameTime() + 100L);
             setTaskState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, sheep.blockPosition());
             return WorkResult.idle("interaction.work.animal_breeding.missing_shears");
@@ -585,8 +617,8 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         }
         sheep.setSheared(true);
         level.playSound(null, sheep, SoundEvents.SHEEP_SHEAR, SoundSource.NEUTRAL, 1.0F, 1.0F);
-        damageSupplyItem(context, shearsSlot, villager);
-        useWorkItem(level, villager, new ItemStack(Items.SHEARS));
+        damageTool(context, villager, shears);
+        useWorkItem(level, villager, shears);
         setTaskState(context, HiredWorkerTaskState.IDLE, sheep.blockPosition());
         return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.sheared_sheep",
@@ -649,14 +681,15 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
 
     private AnimalProductTarget findAnimalProductTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
         Set<ResourceLocation> selectedTargets = HiredAnimalBreedingTargets.selectedTargetIds(context.state());
+        boolean shearSheep = HiredAnimalHandlingOptions.shearSheep(context.state());
         AABB bounds = workAreaBounds(context);
         List<Animal> animals = new ArrayList<>(level.getEntitiesOfClass(
                 Animal.class,
                 bounds,
-                animal -> isEligibleProductAnimal(level, context, villager, animal, selectedTargets)));
+                animal -> isEligibleProductAnimal(level, context, villager, animal, selectedTargets, shearSheep)));
         animals.sort(Comparator.comparingDouble(villager::distanceToSqr));
         for (Animal animal : animals) {
-            if (animal instanceof Sheep sheep && sheep.readyForShearing()) {
+            if (shearSheep && animal instanceof Sheep sheep && sheep.readyForShearing()) {
                 return AnimalProductTarget.shearing(sheep);
             }
             if (isMilkable(animal)) {
@@ -680,14 +713,15 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             HiredWorkContext context,
             Villager villager,
             Animal animal,
-            Set<ResourceLocation> selectedTargets) {
+            Set<ResourceLocation> selectedTargets,
+            boolean shearSheep) {
         return animal.isAlive()
                 && !animal.isBaby()
                 && context.isInsideWorkArea(animal.blockPosition())
                 && context.isLoaded(level, animal.blockPosition())
                 && !HiredPathMemory.isAvoided(level, villager, animal.blockPosition())
                 && HiredAnimalBreedingTargets.matches(animal, selectedTargets)
-                && (animal instanceof Sheep sheep && sheep.readyForShearing() || isMilkable(animal));
+                && (shearSheep && animal instanceof Sheep sheep && sheep.readyForShearing() || isMilkable(animal));
     }
 
     private static void rememberHandledAnimals(HiredWorkContext context, long gameTime, Animal first, Animal second) {
@@ -931,29 +965,6 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
 
     private static net.minecraft.sounds.SoundEvent milkingSound(Animal animal) {
         return animal instanceof Goat ? SoundEvents.GOAT_MILK : SoundEvents.COW_MILK;
-    }
-
-    private static int firstSupplySlot(HiredWorkContext context, Predicate<ItemStack> predicate) {
-        for (int slot : context.inventory().supplySlots()) {
-            ItemStack stack = context.inventory().getItem(slot);
-            if (!stack.isEmpty() && predicate.test(stack)) {
-                return slot;
-            }
-        }
-        return -1;
-    }
-
-    private static void damageSupplyItem(HiredWorkContext context, int slot, Villager villager) {
-        ItemStack stack = context.inventory().getItem(slot);
-        if (stack.isEmpty()) {
-            return;
-        }
-        stack.hurtAndBreak(1, villager, EquipmentSlot.MAINHAND);
-        if (stack.isEmpty()) {
-            context.inventory().setItem(slot, ItemStack.EMPTY);
-        } else {
-            context.inventory().setChanged();
-        }
     }
 
     private static Item woolItem(DyeColor color) {

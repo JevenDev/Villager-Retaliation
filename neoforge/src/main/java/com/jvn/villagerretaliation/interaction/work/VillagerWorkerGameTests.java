@@ -73,6 +73,7 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.animal.Pig;
+import net.minecraft.world.entity.animal.Sheep;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.projectile.AbstractArrow;
@@ -564,6 +565,54 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerShearsSheepWithAssignedTool(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalShearing");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Sheep sheep = spawnAnimal(helper, EntityType.SHEEP, new BlockPos(4, 2, 3));
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        ItemStack shears = new ItemStack(Items.SHEARS);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, shears);
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 20, sheep::isSheared);
+
+        helper.assertTrue(sheep.isSheared(), "animal handler should shear an adult sheep with assigned shears");
+        helper.assertValueEqual(shears.getDamageValue(), 1, "shearing should damage the assigned tool once");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerDoesNotShearWhenOptionIsDisabled(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalNoShearing");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Sheep sheep = spawnAnimal(helper, EntityType.SHEEP, new BlockPos(4, 2, 3));
+
+        CompoundTag state = new CompoundTag();
+        HiredAnimalHandlingOptions.toggle(state, HiredAnimalHandlingOptions.SHEAR_SHEEP);
+        HiredWorkContext context = context(helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.SHEARS));
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+
+        for (int tick = 0; tick < 20; tick++) {
+            worker.maintain(level, villager, context);
+            worker.tick(level, villager, hirer, context);
+            level.tickNonPassenger(villager);
+        }
+
+        helper.assertFalse(sheep.isSheared(), "animal handler should leave sheep alone when shearing is disabled");
+        villager.discard();
+        helper.succeed();
+    }
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void animalHandlerCullCapUsesPerTypePoolsAndWeapon(GameTestHelper helper) {
         buildFloor(helper, 0, 7, 0, 7, 1);

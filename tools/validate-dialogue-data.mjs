@@ -566,6 +566,7 @@ const knownPlaceholders = new Set([
   "aunt_uncle_possessive",
   "bounds",
   "cap",
+  "shearing",
   "child",
   "child_possessive",
   "container",

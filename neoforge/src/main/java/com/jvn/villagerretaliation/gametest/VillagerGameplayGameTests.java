@@ -93,6 +93,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.MerchantOffer;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
@@ -291,6 +292,29 @@ public final class VillagerGameplayGameTests {
         orb.tick();
         helper.assertValueEqual(armor.getDamageValue(), 10, "five XP should repair ten armor durability");
         helper.assertTrue(orb.isRemoved(), "the villager should consume the experience orb after repairing armor");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerKillDropsExperienceForMendingEquipment(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().getRule(GameRules.RULE_DOMOBLOOT).set(true, level.getServer());
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemStack sword = new ItemStack(Items.IRON_SWORD);
+        var enchantments = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        sword.enchant(enchantments.getOrThrow(Enchantments.MENDING), 1);
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, EquipmentSlot.MAINHAND, sword);
+        Zombie zombie = spawnZombie(helper, new BlockPos(3, 2, 1));
+
+        zombie.hurt(level.damageSources().mobAttack(villager), 1000.0F);
+
+        List<ExperienceOrb> experience = level.getEntitiesOfClass(
+                ExperienceOrb.class,
+                zombie.getBoundingBox().inflate(2.0D));
+        helper.assertTrue(!experience.isEmpty(),
+                "an XP-bearing mob killed by a villager with Mending equipment should drop experience");
+        helper.assertTrue(experience.stream().mapToInt(orb -> orb.value).sum() > 0,
+                "villager-kill experience should retain the mob's positive vanilla reward");
         helper.succeed();
     }
 

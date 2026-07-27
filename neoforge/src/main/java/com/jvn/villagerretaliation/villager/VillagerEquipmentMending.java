@@ -21,6 +21,15 @@ public final class VillagerEquipmentMending {
         return getRandomDamagedMendingItem(villager).isPresent();
     }
 
+    public static boolean hasMendingEquipment(Villager villager) {
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            if (hasRepairWithXpEffect(villager.getItemBySlot(slot), slot, villager)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean repairWithXp(Villager villager, int value) {
         if (!(villager.level() instanceof ServerLevel serverLevel) || value <= 0) {
             return false;

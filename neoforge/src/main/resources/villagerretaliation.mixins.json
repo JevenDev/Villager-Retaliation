@@ -17,6 +17,7 @@
     "GoToPotentialJobSiteMixin",
     "HarvestFarmlandMixin",
     "HorseVillagerPassengerPositionMixin",
+    "LivingEntityVillagerExperienceMixin",
     "PathNavigationTrafficMixin",
     "PanicGoalMixin",
     "ReactToBellMixin",
