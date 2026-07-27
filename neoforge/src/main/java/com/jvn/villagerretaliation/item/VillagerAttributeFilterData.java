@@ -92,6 +92,10 @@ public final class VillagerAttributeFilterData {
         return read(filter).attribute() == null;
     }
 
+    public static void copyConfiguration(ItemStack source, ItemStack target) {
+        write(target, read(source));
+    }
+
     public static boolean matches(Level level, ItemStack filter, ItemStack candidate) {
         if (!VillagerRetaliationItems.isAttributeFilter(filter)
                 || candidate == null

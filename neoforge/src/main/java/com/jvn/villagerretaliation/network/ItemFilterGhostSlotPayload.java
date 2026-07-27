@@ -5,7 +5,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.item.ItemStack;
 
-/** Synchronizes an item picked from EMI into one of an open filter's ghost slots. */
+/** Synchronizes an externally selected item into one of an open filter's ghost slots. */
 public record ItemFilterGhostSlotPayload(int slot, ItemStack entry) implements CustomPacketPayload {
     public static final Type<ItemFilterGhostSlotPayload> TYPE = VillagerPayloads.type("item_filter_ghost_slot");
     public static final StreamCodec<RegistryFriendlyByteBuf, ItemFilterGhostSlotPayload> STREAM_CODEC =
