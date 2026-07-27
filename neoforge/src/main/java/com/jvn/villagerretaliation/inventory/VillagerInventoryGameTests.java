@@ -7,6 +7,8 @@ import com.jvn.villagerretaliation.item.VillagerItemFilterItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingInventoryBridge;
+import com.jvn.villagerretaliation.recipe.VillagerAttributeFilterCopyRecipe;
+import com.jvn.villagerretaliation.recipe.VillagerFilterResetRecipe;
 import com.jvn.villagerretaliation.recipe.VillagerItemFilterCopyRecipe;
 import com.jvn.villagerretaliation.party.PartyVillagerDropCollection;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
@@ -21,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
@@ -38,6 +41,7 @@ import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.GiveGiftToHero;
 import net.minecraft.world.entity.ai.behavior.ShowTradesToPlayer;
@@ -54,7 +58,9 @@ import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
@@ -211,6 +217,187 @@ public final class VillagerInventoryGameTests {
         ItemStack tooDeep = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
         helper.assertFalse(VillagerItemFilterData.setEntry(tooDeep, 0, nested),
                 "nesting beyond the supported depth should be rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void itemFilterAmountsCapPersistAndGateDuplicates(GameTestHelper helper) {
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        helper.assertTrue(VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.EMERALD)),
+                "the first concrete identity should be accepted as unlimited");
+        helper.assertValueEqual(VillagerItemFilterData.amount(filter, 0), 0,
+                "new concrete entries should default to unlimited");
+        helper.assertFalse(VillagerItemFilterData.setEntry(filter, 1, new ItemStack(Items.EMERALD)),
+                "an unlimited identity should reject a duplicate");
+
+        helper.assertTrue(VillagerItemFilterData.setAmount(filter, 0, 1000),
+                "a concrete identity should accept the maximum stock amount");
+        helper.assertValueEqual(VillagerItemFilterData.formatAmount(
+                        VillagerItemFilterData.amount(filter, 0)), "1K",
+                "the maximum should use the compact 1K label");
+        helper.assertTrue(VillagerItemFilterData.setEntry(filter, 1, new ItemStack(Items.EMERALD)),
+                "a positive amount should unlock a duplicate identity");
+        helper.assertValueEqual(VillagerItemFilterData.amount(filter, 1), 1,
+                "a newly added duplicate should start at one");
+        helper.assertValueEqual(VillagerItemFilterData.minimumAmount(filter, 0), 1,
+                "every member of a duplicate identity group should have a minimum of one");
+        helper.assertValueEqual(VillagerItemFilterData.amountLimit(
+                        filter, new ItemStack(Items.EMERALD)), 1001,
+                "duplicate entry amounts should combine into one stock limit");
+
+        VillagerItemFilterData.AmountAdjustment lowerBound =
+                VillagerItemFilterData.adjustAmount(filter, 1, -10);
+        helper.assertTrue(lowerBound.valid() && lowerBound.hitLimit() && !lowerBound.changed(),
+                "scrolling a duplicate below one should report its lower bound without changing it");
+        helper.assertValueEqual(VillagerItemFilterData.amount(filter, 1), 1,
+                "a duplicate identity must remain at one or more");
+
+        ItemStack copied = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.copyConfiguration(filter, copied);
+        helper.assertValueEqual(VillagerItemFilterData.amount(copied, 0), 1000,
+                "copying a filter should preserve its configured amounts");
+        helper.assertValueEqual(VillagerItemFilterData.amount(copied, 1), 1,
+                "copying a filter should preserve duplicate entry amounts");
+
+        helper.assertTrue(VillagerItemFilterData.setEntry(filter, 0, ItemStack.EMPTY),
+                "removing one duplicate should be accepted");
+        helper.assertValueEqual(VillagerItemFilterData.minimumAmount(filter, 1), 0,
+                "the final identity entry should be allowed to return to unlimited");
+        helper.assertTrue(VillagerItemFilterData.adjustAmount(filter, 1, -1).changed(),
+                "scrolling the final entry down from one should restore unlimited");
+        helper.assertValueEqual(VillagerItemFilterData.amount(filter, 1), 0,
+                "zero should persist as the unlimited sentinel");
+
+        ItemStack nested = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(nested, 0, new ItemStack(Items.DIRT));
+        helper.assertTrue(VillagerItemFilterData.setEntry(filter, 2, nested),
+                "nested filters should remain valid entries");
+        helper.assertFalse(VillagerItemFilterData.setAmount(filter, 2, 5),
+                "nested filters must not acquire stock amounts");
+
+        VillagerItemFilterData.setMode(copied, VillagerItemFilterData.Mode.DENYLIST);
+        helper.assertValueEqual(VillagerItemFilterData.amountLimit(
+                        copied, new ItemStack(Items.EMERALD)), 0,
+                "denylist mode should disable stock-limit enforcement");
+
+        ServerPlayer player = fakePlayer(helper.getLevel(), "VrAmountMenuReplacement");
+        ItemStack openedFilter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(openedFilter, 0, new ItemStack(Items.EMERALD));
+        player.getInventory().setItem(player.getInventory().selected, openedFilter);
+        VillagerItemFilterMenu menu = new VillagerItemFilterMenu(
+                97, player.getInventory(), openedFilter);
+        ItemStack synchronizedReplacement = openedFilter.copy();
+        player.getInventory().setItem(player.getInventory().selected, synchronizedReplacement);
+        helper.assertTrue(menu.isEditingHeldFilter(),
+                "replacing the synchronized held stack must not invalidate the open filter menu");
+        helper.assertTrue(menu.adjustEntryAmount(0, 1).changed(),
+                "amount scrolling should update the synchronized replacement stack");
+        helper.assertValueEqual(VillagerItemFilterData.amount(synchronizedReplacement, 0), 1,
+                "the amount change should target the live held filter instead of its stale opening object");
+        helper.assertTrue(menu.adjustEntryAmount(0, 100).changed(),
+                "the menu should accept the combined control and shift scroll increment");
+        helper.assertValueEqual(VillagerItemFilterData.amount(synchronizedReplacement, 0), 101,
+                "the combined control and shift increment should add one hundred");
+        menu.removed(player);
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void framedItemFilterCapsAssignedOutputDeposits(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrFramedAmountOutput");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        BlockPos outputRel = new BlockPos(5, 2, 2);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        Container chest = container(level, output);
+        chest.setItem(0, new ItemStack(Items.EMERALD, 30));
+
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.EMERALD));
+        VillagerItemFilterData.setAmount(filter, 0, 32);
+        ItemFrame filterFrame = new ItemFrame(level, output.relative(Direction.SOUTH), Direction.SOUTH);
+        filterFrame.setItem(filter);
+        helper.assertTrue(level.addFreshEntity(filterFrame), "amount filter item frame should spawn");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "amount-filtered output assignment");
+
+        ItemStack remainder = AssignedStorageService.depositStack(villager, new ItemStack(Items.EMERALD, 10));
+        helper.assertValueEqual(remainder.getCount(), 8,
+                "assigned output should insert only the two items remaining under its stock limit");
+        helper.assertValueEqual(countItem(chest, Items.EMERALD), 32,
+                "existing contents should count toward the framed filter amount");
+        helper.assertFalse(AssignedStorageService.courierOutputStorageAccepts(
+                        level, villager, output, new ItemStack(Items.EMERALD)),
+                "a capped output should stop accepting matching courier cargo");
+        helper.assertValueEqual(AssignedStorageService.depositStack(
+                        villager, new ItemStack(Items.DIRT, 4)).getCount(), 4,
+                "the amount filter should still reject identities outside its expression");
+
+        ItemFrame unlimitedFrame = new ItemFrame(level, output.relative(Direction.NORTH), Direction.NORTH);
+        unlimitedFrame.setItem(new ItemStack(Items.EMERALD));
+        helper.assertTrue(level.addFreshEntity(unlimitedFrame), "unlimited item frame should spawn");
+        helper.assertTrue(AssignedStorageService.depositStack(
+                        villager, new ItemStack(Items.EMERALD, 3)).isEmpty(),
+                "a matching unlimited frame should override a capped alternative");
+        helper.assertValueEqual(countItem(chest, Items.EMERALD), 35,
+                "the unlimited alternative should permit normal insertion");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        unlimitedFrame.discard();
+        filterFrame.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void framedItemFilterCountsBothHalvesOfDoubleChest(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrFramedAmountDoubleChest");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        BlockPos leftRel = new BlockPos(5, 2, 2);
+        BlockPos rightRel = leftRel.east();
+        BlockPos left = helper.absolutePos(leftRel);
+        BlockPos right = helper.absolutePos(rightRel);
+        setBlock(helper, leftRel, Blocks.CHEST.defaultBlockState()
+                .setValue(ChestBlock.FACING, Direction.NORTH)
+                .setValue(ChestBlock.TYPE, ChestType.LEFT));
+        setBlock(helper, rightRel, Blocks.CHEST.defaultBlockState()
+                .setValue(ChestBlock.FACING, Direction.NORTH)
+                .setValue(ChestBlock.TYPE, ChestType.RIGHT));
+        container(level, left).setItem(0, new ItemStack(Items.EMERALD, 20));
+        container(level, right).setItem(0, new ItemStack(Items.EMERALD, 11));
+
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.EMERALD));
+        VillagerItemFilterData.setAmount(filter, 0, 32);
+        ItemFrame frame = new ItemFrame(level, right.relative(Direction.SOUTH), Direction.SOUTH);
+        frame.setItem(filter);
+        helper.assertTrue(level.addFreshEntity(frame), "double-chest amount filter should spawn");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), left)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "double-chest output assignment");
+
+        ItemStack remainder = AssignedStorageService.depositStackAtAssignedStorage(
+                villager, left, new ItemStack(Items.EMERALD, 5));
+        helper.assertValueEqual(remainder.getCount(), 4,
+                "only one emerald should fit under the combined double-chest limit");
+        helper.assertValueEqual(
+                countItem(container(level, left), Items.EMERALD)
+                        + countItem(container(level, right), Items.EMERALD),
+                32,
+                "both chest halves should contribute to one stock count");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        frame.discard();
+        villager.discard();
         helper.succeed();
     }
 
@@ -513,6 +700,98 @@ public final class VillagerInventoryGameTests {
                 "unrelated ingredients should invalidate the recipe");
         helper.succeed();
     }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerAttributeFilterCopyRecipeCopiesOnlyConfiguration(GameTestHelper helper) {
+        ItemStack configured = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
+        VillagerAttributeFilterData.setSelected(
+                configured,
+                new VillagerAttributeFilterData.Attribute(
+                        VillagerAttributeFilterData.AttributeType.PLACEABLE,
+                        ""),
+                true);
+        configured.set(DataComponents.CUSTOM_NAME, Component.literal("Do not copy this"));
+        ItemStack empty = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
+        CraftingInput input = CraftingInput.of(2, 1, List.of(configured, empty));
+        VillagerAttributeFilterCopyRecipe recipe =
+                new VillagerAttributeFilterCopyRecipe(CraftingBookCategory.MISC);
+
+        helper.assertTrue(recipe.matches(input, helper.getLevel()),
+                "configured and default attribute filters should match in either order");
+        ItemStack result = recipe.assemble(input, helper.getLevel().registryAccess());
+        helper.assertTrue(result.is(VillagerRetaliationItems.ATTRIBUTE_FILTER.get()),
+                "copy recipe should produce attribute filters");
+        helper.assertValueEqual(result.getCount(), 2,
+                "copy recipe should produce two attribute filters");
+        helper.assertValueEqual(
+                VillagerAttributeFilterData.read(result),
+                VillagerAttributeFilterData.read(configured),
+                "copy recipe should preserve the selected attribute and inversion");
+        helper.assertFalse(result.has(DataComponents.CUSTOM_NAME),
+                "copy recipe should not copy unrelated components");
+        helper.assertFalse(recipe.matches(
+                        CraftingInput.of(2, 1, List.of(empty, empty.copy())),
+                        helper.getLevel()),
+                "two default attribute filters should not match");
+        helper.assertFalse(recipe.matches(
+                        CraftingInput.of(2, 1, List.of(configured, new ItemStack(Items.PAPER))),
+                        helper.getLevel()),
+                "unrelated ingredients should invalidate the recipe");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerFilterResetRecipeClearsBothFilterTypes(GameTestHelper helper) {
+        VillagerFilterResetRecipe recipe = new VillagerFilterResetRecipe(CraftingBookCategory.MISC);
+
+        ItemStack itemFilter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(itemFilter, 0, new ItemStack(Items.COBBLESTONE));
+        VillagerItemFilterData.setMode(itemFilter, VillagerItemFilterData.Mode.DENYLIST);
+        itemFilter.set(DataComponents.CUSTOM_NAME, Component.literal("Reset me"));
+        CraftingInput itemInput = CraftingInput.of(1, 1, List.of(itemFilter));
+        helper.assertTrue(recipe.matches(itemInput, helper.getLevel()),
+                "a single item filter should match the reset recipe");
+        ItemStack resetItemFilter = recipe.assemble(itemInput, helper.getLevel().registryAccess());
+        helper.assertTrue(resetItemFilter.is(VillagerRetaliationItems.ITEM_FILTER.get())
+                        && resetItemFilter.getCount() == 1
+                        && VillagerItemFilterData.isDefault(resetItemFilter),
+                "resetting should return one default item filter");
+        helper.assertFalse(resetItemFilter.has(DataComponents.CUSTOM_DATA)
+                        || resetItemFilter.has(DataComponents.CUSTOM_NAME),
+                "reset item filter should not retain NBT or unrelated components");
+
+        ItemStack attributeFilter = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
+        VillagerAttributeFilterData.setSelected(
+                attributeFilter,
+                new VillagerAttributeFilterData.Attribute(
+                        VillagerAttributeFilterData.AttributeType.PLACEABLE,
+                        ""),
+                true);
+        attributeFilter.set(DataComponents.CUSTOM_NAME, Component.literal("Reset me too"));
+        CraftingInput attributeInput = CraftingInput.of(1, 1, List.of(attributeFilter));
+        helper.assertTrue(recipe.matches(attributeInput, helper.getLevel()),
+                "a single attribute filter should match the reset recipe");
+        ItemStack resetAttributeFilter =
+                recipe.assemble(attributeInput, helper.getLevel().registryAccess());
+        helper.assertTrue(resetAttributeFilter.is(VillagerRetaliationItems.ATTRIBUTE_FILTER.get())
+                        && resetAttributeFilter.getCount() == 1
+                        && VillagerAttributeFilterData.isDefault(resetAttributeFilter),
+                "resetting should return one default attribute filter");
+        helper.assertFalse(resetAttributeFilter.has(DataComponents.CUSTOM_DATA)
+                        || resetAttributeFilter.has(DataComponents.CUSTOM_NAME),
+                "reset attribute filter should not retain NBT or unrelated components");
+
+        helper.assertFalse(recipe.matches(
+                        CraftingInput.of(2, 1, List.of(itemFilter, attributeFilter)),
+                        helper.getLevel()),
+                "more than one filter should invalidate the reset recipe");
+        helper.assertFalse(recipe.matches(
+                        CraftingInput.of(1, 1, List.of(new ItemStack(Items.PAPER))),
+                        helper.getLevel()),
+                "ordinary items should not match the reset recipe");
+        helper.succeed();
+    }
+
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void jobInventoryReusesItsLoadedViewUntilRuntimeStateClears(GameTestHelper helper) {

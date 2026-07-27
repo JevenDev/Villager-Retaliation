@@ -562,6 +562,16 @@ public final class VillagerReputationNetworking {
                                         payload.modeId())))
         );
         network.playToServer(
+                ItemFilterAmountChangePayload.TYPE,
+                ItemFilterAmountChangePayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> {
+                            if (player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerItemFilterMenu menu) {
+                                menu.adjustEntryAmount(payload.slot(), payload.delta());
+                            }
+                        }))
+        );
+        network.playToServer(
                 AttributeFilterSelectPayload.TYPE,
                 AttributeFilterSelectPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->

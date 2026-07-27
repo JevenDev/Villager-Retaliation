@@ -29,6 +29,8 @@ import net.minecraft.world.level.Level;
 public final class VillagerItemFilterData {
     public static final int ENTRY_COUNT = 9;
     public static final int MAX_NESTING_DEPTH = 8;
+    public static final int MAX_ENTRY_AMOUNT = 1000;
+    public static final int UNLIMITED_AMOUNT = 0;
     private static final String ROOT_TAG = VillagerRetaliation.MOD_ID + ":item_filter";
     private static final String MODE_TAG = "Mode";
     private static final String ENTRIES_TAG = "Entries";
@@ -36,21 +38,41 @@ public final class VillagerItemFilterData {
     private static final String ITEM_TAG = "Item";
     private static final String DATA_TAG = "Data";
     private static final String POTION_TAG = "Potion";
+    private static final String AMOUNT_TAG = "Amount";
     private static final RegistryOps<Tag> POTION_NBT_OPS = RegistryOps.create(
             NbtOps.INSTANCE,
             new RegistryAccess.ImmutableRegistryAccess(
                     List.of(BuiltInRegistries.POTION, BuiltInRegistries.MOB_EFFECT)));
 
     private final Mode mode;
-    private final List<ItemStack> entries;
+    private final List<ConfiguredEntry> entries;
 
-    private VillagerItemFilterData(Mode mode, List<ItemStack> entries) {
+    private VillagerItemFilterData(Mode mode, List<ConfiguredEntry> entries) {
         this.mode = mode == null ? Mode.ALLOWLIST : mode;
-        List<ItemStack> normalized = emptyEntries();
+        List<ConfiguredEntry> normalized = emptyEntries();
         for (int slot = 0; slot < Math.min(ENTRY_COUNT, entries.size()); slot++) {
-            ItemStack entry = normalizeEntry(entries.get(slot));
-            if (!entry.isEmpty() && normalized.stream().noneMatch(existing -> sameEntry(existing, entry))) {
-                normalized.set(slot, entry);
+            ConfiguredEntry rawEntry = entries.get(slot);
+            ItemStack stack = normalizeEntry(rawEntry.stack());
+            if (stack.isEmpty()) {
+                continue;
+            }
+            int amount = isAmountEntry(stack)
+                    ? Math.clamp(rawEntry.amount(), UNLIMITED_AMOUNT, MAX_ENTRY_AMOUNT)
+                    : UNLIMITED_AMOUNT;
+            boolean valid = true;
+            for (ConfiguredEntry existing : normalized) {
+                if (existing.stack().isEmpty() || !sameEntry(existing.stack(), stack)) {
+                    continue;
+                }
+                if (!isAmountEntry(stack)
+                        || amount == UNLIMITED_AMOUNT
+                        || existing.amount() == UNLIMITED_AMOUNT) {
+                    valid = false;
+                    break;
+                }
+            }
+            if (valid) {
+                normalized.set(slot, new ConfiguredEntry(stack, amount));
             }
         }
         this.entries = Collections.unmodifiableList(normalized);
@@ -73,13 +95,16 @@ public final class VillagerItemFilterData {
             return empty();
         }
         Mode mode = Mode.byId(root.getString(MODE_TAG));
-        List<ItemStack> entries = emptyEntries();
+        List<ConfiguredEntry> entries = emptyEntries();
         ListTag storedEntries = root.getList(ENTRIES_TAG, Tag.TAG_COMPOUND);
         for (Tag rawEntry : storedEntries) {
             if (!(rawEntry instanceof CompoundTag entry)) {
                 continue;
             }
             int slot = entry.getInt(SLOT_TAG);
+            int amount = entry.contains(AMOUNT_TAG, Tag.TAG_INT)
+                    ? entry.getInt(AMOUNT_TAG)
+                    : UNLIMITED_AMOUNT;
             ResourceLocation itemId = ResourceLocation.tryParse(entry.getString(ITEM_TAG));
             if (slot < 0 || slot >= ENTRY_COUNT || itemId == null) {
                 continue;
@@ -96,11 +121,7 @@ public final class VillagerItemFilterData {
                             .result()
                             .ifPresent(contents -> restored.set(DataComponents.POTION_CONTENTS, contents));
                 }
-                ItemStack normalized = normalizeEntry(restored);
-                if (!normalized.isEmpty()
-                        && entries.stream().noneMatch(existing -> sameEntry(existing, normalized))) {
-                    entries.set(slot, normalized);
-                }
+                entries.set(slot, new ConfiguredEntry(restored, amount));
             });
         }
         return new VillagerItemFilterData(mode, entries);
@@ -123,6 +144,42 @@ public final class VillagerItemFilterData {
         return read(filter).entry(slot);
     }
 
+    public static int amount(ItemStack filter, int slot) {
+        VillagerItemFilterData data = read(filter);
+        return slot >= 0 && slot < ENTRY_COUNT ? data.entries.get(slot).amount() : UNLIMITED_AMOUNT;
+    }
+
+    public static int minimumAmount(ItemStack filter, int slot) {
+        VillagerItemFilterData data = read(filter);
+        if (!data.isAmountSlot(slot)) {
+            return UNLIMITED_AMOUNT;
+        }
+        return data.identityEntryCount(slot) > 1 ? 1 : UNLIMITED_AMOUNT;
+    }
+
+    public static int identityEntryCount(ItemStack filter, int slot) {
+        return read(filter).identityEntryCount(slot);
+    }
+
+    public static int combinedAmountForSlot(ItemStack filter, int slot) {
+        VillagerItemFilterData data = read(filter);
+        if (!data.isAmountSlot(slot)) {
+            return UNLIMITED_AMOUNT;
+        }
+        ConfiguredEntry selected = data.entries.get(slot);
+        int combined = 0;
+        for (ConfiguredEntry entry : data.entries) {
+            if (entry.stack().isEmpty() || !sameEntry(selected.stack(), entry.stack())) {
+                continue;
+            }
+            if (entry.amount() == UNLIMITED_AMOUNT) {
+                return UNLIMITED_AMOUNT;
+            }
+            combined += entry.amount();
+        }
+        return combined;
+    }
+
     public static List<ItemStack> entries(ItemStack filter) {
         VillagerItemFilterData data = read(filter);
         List<ItemStack> entries = new ArrayList<>(ENTRY_COUNT);
@@ -133,10 +190,8 @@ public final class VillagerItemFilterData {
     }
 
     /**
-     * Sets one ghost entry. Empty stacks clear it. Duplicate identities, potion variants, and
-     * identically configured nested filters are rejected.
-     *
-     * @return true when the stored configuration changed
+     * Sets one ghost entry. Empty stacks clear it. Concrete identities may repeat only when every
+     * entry in that identity group has a positive amount; a new duplicate starts at one.
      */
     public static boolean setEntry(ItemStack filter, int slot, ItemStack entry) {
         if (!VillagerRetaliationItems.isItemFilter(filter) || slot < 0 || slot >= ENTRY_COUNT) {
@@ -149,20 +204,72 @@ public final class VillagerItemFilterData {
                 || nestingDepth(normalizedEntry, 0) >= MAX_NESTING_DEPTH)) {
             return false;
         }
-        if (!normalizedEntry.isEmpty()) {
-            for (int otherSlot = 0; otherSlot < ENTRY_COUNT; otherSlot++) {
-                if (otherSlot != slot && sameEntry(current.entries.get(otherSlot), normalizedEntry)) {
-                    return false;
-                }
-            }
-        }
-        if (sameEntry(current.entries.get(slot), normalizedEntry)) {
+        if (sameEntry(current.entries.get(slot).stack(), normalizedEntry)) {
             return false;
         }
-        List<ItemStack> updated = copyEntries(current.entries);
-        updated.set(slot, normalizedEntry);
+
+        int amount = UNLIMITED_AMOUNT;
+        if (!normalizedEntry.isEmpty()) {
+            for (int otherSlot = 0; otherSlot < ENTRY_COUNT; otherSlot++) {
+                if (otherSlot == slot) {
+                    continue;
+                }
+                ConfiguredEntry existing = current.entries.get(otherSlot);
+                if (!sameEntry(existing.stack(), normalizedEntry)) {
+                    continue;
+                }
+                if (!isAmountEntry(normalizedEntry) || existing.amount() == UNLIMITED_AMOUNT) {
+                    return false;
+                }
+                amount = 1;
+            }
+        }
+
+        List<ConfiguredEntry> updated = copyEntries(current.entries);
+        updated.set(slot, new ConfiguredEntry(normalizedEntry, amount));
         write(filter, new VillagerItemFilterData(current.mode, updated));
         return true;
+    }
+
+    public static boolean setAmount(ItemStack filter, int slot, int requestedAmount) {
+        if (!VillagerRetaliationItems.isItemFilter(filter) || slot < 0 || slot >= ENTRY_COUNT) {
+            return false;
+        }
+        VillagerItemFilterData current = read(filter);
+        if (!current.isAmountSlot(slot)) {
+            return false;
+        }
+        int minimum = current.identityEntryCount(slot) > 1 ? 1 : UNLIMITED_AMOUNT;
+        int amount = Math.clamp(requestedAmount, minimum, MAX_ENTRY_AMOUNT);
+        ConfiguredEntry selected = current.entries.get(slot);
+        if (selected.amount() == amount) {
+            return false;
+        }
+        List<ConfiguredEntry> updated = copyEntries(current.entries);
+        updated.set(slot, new ConfiguredEntry(selected.stack().copy(), amount));
+        write(filter, new VillagerItemFilterData(current.mode, updated));
+        return true;
+    }
+
+    public static AmountAdjustment adjustAmount(ItemStack filter, int slot, int delta) {
+        if (delta == 0 || mode(filter) != Mode.ALLOWLIST) {
+            return AmountAdjustment.invalid();
+        }
+        VillagerItemFilterData current = read(filter);
+        if (!current.isAmountSlot(slot)) {
+            return AmountAdjustment.invalid();
+        }
+        int previous = current.entries.get(slot).amount();
+        int minimum = current.identityEntryCount(slot) > 1 ? 1 : UNLIMITED_AMOUNT;
+        long requested = (long) previous + delta;
+        int amount = (int) Math.clamp(requested, minimum, MAX_ENTRY_AMOUNT);
+        boolean hitLimit = requested < minimum || requested > MAX_ENTRY_AMOUNT;
+        boolean changed = amount != previous && setAmount(filter, slot, amount);
+        return new AmountAdjustment(true, previous, changed ? amount : previous, changed, hitLimit);
+    }
+
+    public static boolean isAmountEntry(ItemStack entry) {
+        return entry != null && !entry.isEmpty() && !VillagerRetaliationItems.isFilter(entry);
     }
 
     public static void clear(ItemStack filter) {
@@ -171,7 +278,7 @@ public final class VillagerItemFilterData {
 
     public static boolean isDefault(ItemStack filter) {
         VillagerItemFilterData data = read(filter);
-        return data.mode == Mode.ALLOWLIST && data.entries.stream().allMatch(ItemStack::isEmpty);
+        return data.mode == Mode.ALLOWLIST && data.entries.stream().allMatch(entry -> entry.stack().isEmpty());
     }
 
     public static void copyConfiguration(ItemStack source, ItemStack target) {
@@ -203,7 +310,8 @@ public final class VillagerItemFilterData {
         boolean identityMatches = false;
         boolean constraintsMatch = true;
         boolean configured = false;
-        for (ItemStack entry : data.entries) {
+        for (ConfiguredEntry configuredEntry : data.entries) {
+            ItemStack entry = configuredEntry.stack();
             if (entry.isEmpty()) {
                 continue;
             }
@@ -221,6 +329,52 @@ public final class VillagerItemFilterData {
         return data.mode == Mode.ALLOWLIST ? listed : !listed;
     }
 
+    /**
+     * Returns the combined positive stock limit for the candidate, or zero when its amount is
+     * unlimited or quantities do not apply.
+     */
+    public static int amountLimit(ItemStack filter, ItemStack candidate) {
+        VillagerItemFilterData data = read(filter);
+        if (data.mode != Mode.ALLOWLIST || candidate == null || candidate.isEmpty()) {
+            return UNLIMITED_AMOUNT;
+        }
+        boolean matched = false;
+        int combined = 0;
+        for (ConfiguredEntry entry : data.entries) {
+            if (!isAmountEntry(entry.stack()) || !identityMatches(entry.stack(), candidate)) {
+                continue;
+            }
+            matched = true;
+            if (entry.amount() == UNLIMITED_AMOUNT) {
+                return UNLIMITED_AMOUNT;
+            }
+            combined += entry.amount();
+        }
+        return matched ? combined : UNLIMITED_AMOUNT;
+    }
+
+    public static boolean countsTowardAmountLimit(
+            Level level,
+            ItemStack filter,
+            ItemStack candidate,
+            ItemStack stored) {
+        if (amountLimit(filter, candidate) == UNLIMITED_AMOUNT
+                || stored == null
+                || stored.isEmpty()
+                || !matches(level, filter, stored)) {
+            return false;
+        }
+        VillagerItemFilterData data = read(filter);
+        for (ConfiguredEntry entry : data.entries) {
+            if (isAmountEntry(entry.stack())
+                    && identityMatches(entry.stack(), candidate)
+                    && identityMatches(entry.stack(), stored)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static List<Component> tooltip(ItemStack filter) {
         VillagerItemFilterData data = read(filter);
         List<Component> tooltip = new ArrayList<>();
@@ -228,7 +382,8 @@ public final class VillagerItemFilterData {
                 .withStyle(ChatFormatting.GRAY)
                 .append(data.mode.label().copy().withStyle(ChatFormatting.GOLD)));
         int shown = 0;
-        for (ItemStack entry : data.entries) {
+        for (ConfiguredEntry configuredEntry : data.entries) {
+            ItemStack entry = configuredEntry.stack();
             if (entry.isEmpty()) {
                 continue;
             }
@@ -241,9 +396,14 @@ public final class VillagerItemFilterData {
                             ? entry.getHoverName()
                             : VillagerAttributeFilterData.read(entry).attribute().display()
                     : entry.getHoverName();
-            tooltip.add(Component.literal("- ")
+            Component line = Component.literal("- ")
                     .withStyle(ChatFormatting.DARK_GRAY)
-                    .append(description.copy().withStyle(ChatFormatting.GRAY)));
+                    .append(description.copy().withStyle(ChatFormatting.GRAY));
+            if (configuredEntry.amount() > UNLIMITED_AMOUNT) {
+                line = line.copy().append(Component.literal(" ×" + formatAmount(configuredEntry.amount()))
+                        .withStyle(ChatFormatting.GRAY));
+            }
+            tooltip.add(line);
             shown++;
         }
         if (shown == 0) {
@@ -255,11 +415,33 @@ public final class VillagerItemFilterData {
         return List.copyOf(tooltip);
     }
 
+    public static String formatAmount(int amount) {
+        return amount >= MAX_ENTRY_AMOUNT ? "1K" : Integer.toString(Math.max(UNLIMITED_AMOUNT, amount));
+    }
+
     private ItemStack entry(int slot) {
         if (slot < 0 || slot >= ENTRY_COUNT) {
             return ItemStack.EMPTY;
         }
-        return this.entries.get(slot).copy();
+        return this.entries.get(slot).stack().copy();
+    }
+
+    private boolean isAmountSlot(int slot) {
+        return slot >= 0 && slot < ENTRY_COUNT && isAmountEntry(this.entries.get(slot).stack());
+    }
+
+    private int identityEntryCount(int slot) {
+        if (!isAmountSlot(slot)) {
+            return 0;
+        }
+        ItemStack selected = this.entries.get(slot).stack();
+        int count = 0;
+        for (ConfiguredEntry entry : this.entries) {
+            if (!entry.stack().isEmpty() && sameEntry(selected, entry.stack())) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private static void write(ItemStack filter, VillagerItemFilterData data) {
@@ -268,14 +450,15 @@ public final class VillagerItemFilterData {
         }
         CustomData existing = filter.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         CompoundTag customData = existing.isEmpty() ? new CompoundTag() : existing.copyTag();
-        if (data.mode == Mode.ALLOWLIST && data.entries.stream().allMatch(ItemStack::isEmpty)) {
+        if (data.mode == Mode.ALLOWLIST && data.entries.stream().allMatch(entry -> entry.stack().isEmpty())) {
             customData.remove(ROOT_TAG);
         } else {
             CompoundTag root = new CompoundTag();
             root.putString(MODE_TAG, data.mode.id());
             ListTag storedEntries = new ListTag();
             for (int slot = 0; slot < ENTRY_COUNT; slot++) {
-                ItemStack configuredEntry = data.entries.get(slot);
+                ConfiguredEntry configured = data.entries.get(slot);
+                ItemStack configuredEntry = configured.stack();
                 if (configuredEntry.isEmpty()) {
                     continue;
                 }
@@ -295,6 +478,9 @@ public final class VillagerItemFilterData {
                             .result()
                             .ifPresent(encoded -> entry.put(POTION_TAG, encoded));
                 }
+                if (configured.amount() > UNLIMITED_AMOUNT) {
+                    entry.putInt(AMOUNT_TAG, configured.amount());
+                }
                 storedEntries.add(entry);
             }
             root.put(ENTRIES_TAG, storedEntries);
@@ -307,18 +493,18 @@ public final class VillagerItemFilterData {
         }
     }
 
-    private static List<ItemStack> emptyEntries() {
-        List<ItemStack> entries = new ArrayList<>(ENTRY_COUNT);
+    private static List<ConfiguredEntry> emptyEntries() {
+        List<ConfiguredEntry> entries = new ArrayList<>(ENTRY_COUNT);
         for (int slot = 0; slot < ENTRY_COUNT; slot++) {
-            entries.add(ItemStack.EMPTY);
+            entries.add(ConfiguredEntry.empty());
         }
         return entries;
     }
 
-    private static List<ItemStack> copyEntries(List<ItemStack> entries) {
-        List<ItemStack> copy = new ArrayList<>(ENTRY_COUNT);
-        for (ItemStack entry : entries) {
-            copy.add(entry.copy());
+    private static List<ConfiguredEntry> copyEntries(List<ConfiguredEntry> entries) {
+        List<ConfiguredEntry> copy = new ArrayList<>(ENTRY_COUNT);
+        for (ConfiguredEntry entry : entries) {
+            copy.add(new ConfiguredEntry(entry.stack().copy(), entry.amount()));
         }
         return copy;
     }
@@ -375,12 +561,29 @@ public final class VillagerItemFilterData {
             return depth;
         }
         int deepest = depth;
-        for (ItemStack entry : read(filter).entries) {
-            if (VillagerRetaliationItems.isItemFilter(entry)) {
-                deepest = Math.max(deepest, nestingDepth(entry, depth + 1));
+        for (ConfiguredEntry entry : read(filter).entries) {
+            if (VillagerRetaliationItems.isItemFilter(entry.stack())) {
+                deepest = Math.max(deepest, nestingDepth(entry.stack(), depth + 1));
             }
         }
         return deepest;
+    }
+
+    private record ConfiguredEntry(ItemStack stack, int amount) {
+        private static ConfiguredEntry empty() {
+            return new ConfiguredEntry(ItemStack.EMPTY, UNLIMITED_AMOUNT);
+        }
+    }
+
+    public record AmountAdjustment(
+            boolean valid,
+            int previousAmount,
+            int amount,
+            boolean changed,
+            boolean hitLimit) {
+        private static AmountAdjustment invalid() {
+            return new AmountAdjustment(false, UNLIMITED_AMOUNT, UNLIMITED_AMOUNT, false, false);
+        }
     }
 
     public enum Mode {

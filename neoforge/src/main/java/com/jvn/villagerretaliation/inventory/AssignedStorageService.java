@@ -180,7 +180,7 @@ public final class AssignedStorageService {
             return stack;
         }
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
-        ItemStack remainder = VillagerInventoryOverflowService.insertIntoContainers(containers, stack, usedContainers);
+        ItemStack remainder = insertIntoOutputContainers(level, containers, stack, usedContainers);
         VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
         return remainder;
     }
@@ -199,7 +199,7 @@ public final class AssignedStorageService {
             return stack;
         }
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
-        ItemStack remainder = VillagerInventoryOverflowService.insertIntoContainers(containers, stack, usedContainers);
+        ItemStack remainder = insertIntoOutputContainers(level, containers, stack, usedContainers);
         VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
         return remainder;
     }
@@ -208,16 +208,46 @@ public final class AssignedStorageService {
         if (storagePos == null || stack.isEmpty() || !(villager.level() instanceof ServerLevel level)) {
             return stack;
         }
-        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveContainerCandidates(level, villager)) {
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveOutputContainerCandidates(level, villager)) {
             if (!candidate.matches(storagePos) || !candidate.isInInteractionRange(villager)) {
                 continue;
             }
             List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
-            ItemStack remainder = VillagerInventoryOverflowService.insertIntoContainers(List.of(candidate), stack, usedContainers);
+            ItemStack remainder = insertIntoOutputContainers(level, List.of(candidate), stack, usedContainers);
             VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
             return remainder;
         }
         return stack;
+    }
+
+    private static ItemStack insertIntoOutputContainers(
+            ServerLevel level,
+            List<VillagerInventoryOverflowService.ContainerCandidate> containers,
+            ItemStack stack,
+            List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers) {
+        ItemStack remainder = stack.copy();
+        for (VillagerInventoryOverflowService.ContainerCandidate candidate : containers) {
+            if (remainder.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+            int allowance = outputAllowance(level, candidate, remainder);
+            if (allowance <= 0) {
+                continue;
+            }
+            int offeredCount = Math.min(remainder.getCount(), allowance);
+            ItemStack offered = remainder.copyWithCount(offeredCount);
+            ItemStack uninserted = VillagerInventoryOverflowService.insertIntoContainer(
+                    candidate.container(), offered);
+            int moved = offeredCount - uninserted.getCount();
+            if (moved <= 0) {
+                continue;
+            }
+            remainder.shrink(moved);
+            if (usedContainers.stream().noneMatch(used -> used.matches(candidate.pos()))) {
+                usedContainers.add(candidate);
+            }
+        }
+        return remainder;
     }
 
     public static void closeStorageFeedback(ServerLevel level, BlockPos storagePos) {
@@ -373,14 +403,55 @@ public final class AssignedStorageService {
             ServerLevel level,
             VillagerInventoryOverflowService.ContainerCandidate candidate,
             ItemStack stack) {
-        List<ItemStack> filters = courierItemFrameFilters(level, candidate);
-        return filters.isEmpty() || filters.stream().anyMatch(filter -> itemFrameFilterAccepts(level, filter, stack));
+        return outputAllowance(level, candidate, stack) > 0;
     }
 
-    private static boolean itemFrameFilterAccepts(ServerLevel level, ItemStack filter, ItemStack stack) {
-        return VillagerRetaliationItems.isFilter(filter)
-                ? VillagerFilterMatcher.matches(level, filter, stack)
-                : stack.is(filter.getItem());
+    private static int outputAllowance(
+            ServerLevel level,
+            VillagerInventoryOverflowService.ContainerCandidate candidate,
+            ItemStack stack) {
+        List<ItemStack> filters = courierItemFrameFilters(level, candidate);
+        if (filters.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+
+        int bestAllowance = 0;
+        for (ItemStack filter : filters) {
+            if (!VillagerRetaliationItems.isFilter(filter)) {
+                if (stack.is(filter.getItem())) {
+                    return Integer.MAX_VALUE;
+                }
+                continue;
+            }
+            if (!VillagerFilterMatcher.matches(level, filter, stack)) {
+                continue;
+            }
+            if (!VillagerRetaliationItems.isItemFilter(filter)) {
+                return Integer.MAX_VALUE;
+            }
+            int limit = VillagerItemFilterData.amountLimit(filter, stack);
+            if (limit == VillagerItemFilterData.UNLIMITED_AMOUNT) {
+                return Integer.MAX_VALUE;
+            }
+            int stored = countItemsTowardLimit(level, candidate.container(), filter, stack);
+            bestAllowance = Math.max(bestAllowance, Math.max(0, limit - stored));
+        }
+        return bestAllowance;
+    }
+
+    private static int countItemsTowardLimit(
+            ServerLevel level,
+            Container container,
+            ItemStack filter,
+            ItemStack candidate) {
+        int count = 0;
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            ItemStack stored = container.getItem(slot);
+            if (VillagerItemFilterData.countsTowardAmountLimit(level, filter, candidate, stored)) {
+                count += stored.getCount();
+            }
+        }
+        return count;
     }
 
     private static boolean hasCourierItemFrame(

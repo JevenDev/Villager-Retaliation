@@ -38,7 +38,8 @@ public final class VillagerAttributeFilterScreen
     private static final int NEIGHBOR_COUNT = 3;
     private static final int SCROLL_VISIBILITY_TICKS = 30;
     private static final int ATTRIBUTE_TEXT_PADDING = 8;
-    private static final int SELECTOR_Z = 1_000;
+    private static final int SELECTOR_Z = 300;
+    private static final int HOVER_HIGHLIGHT_COLOR = 0x40FFFFFF;
     private static final VillagerNineSlice SCROLL_ROW_NINE_SLICE =
             new VillagerNineSlice(
                     VillagerRetaliationClientAssets.ATTRIBUTE_FILTER_SCROLL_ROW_TEXTURE,
@@ -76,14 +77,14 @@ public final class VillagerAttributeFilterScreen
         this.allowlistButton = Button.builder(
                         Component.translatable("villagerretaliation.gui.item_filter.mode.allowlist"),
                         button -> setInverted(false))
-                .bounds(this.leftPos + 7, this.topPos + 43, 80, 20)
+                .bounds(this.leftPos + 7, this.topPos + 43, 79, 20)
                 .tooltip(Tooltip.create(Component.translatable(
                         "villagerretaliation.gui.attribute_filter.mode.allowlist.description")))
                 .build();
         this.denylistButton = Button.builder(
                         Component.translatable("villagerretaliation.gui.item_filter.mode.denylist"),
                         button -> setInverted(true))
-                .bounds(this.leftPos + 89, this.topPos + 43, 80, 20)
+                .bounds(this.leftPos + 90, this.topPos + 43, 79, 20)
                 .tooltip(Tooltip.create(Component.translatable(
                         "villagerretaliation.gui.attribute_filter.mode.denylist.description")))
                 .build();
@@ -106,7 +107,8 @@ public final class VillagerAttributeFilterScreen
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         refreshButtons();
         super.render(graphics, mouseX, mouseY, partialTick);
-        renderAttributeSelector(graphics);
+        graphics.flush();
+        renderAttributeSelector(graphics, mouseX, mouseY);
         int selectorOffset = selectorOffsetAt(mouseX, mouseY);
         if (selectorOffset == Integer.MIN_VALUE) {
             renderTooltip(graphics, mouseX, mouseY);
@@ -173,14 +175,18 @@ public final class VillagerAttributeFilterScreen
                 && mouseY >= slotY && mouseY < slotY + 18;
     }
 
-    private void renderAttributeSelector(GuiGraphics graphics) {
+    private void renderAttributeSelector(
+            GuiGraphics graphics,
+            int mouseX,
+            int mouseY) {
         boolean scrolling = this.scrollVisibilityTicks > 0;
         int selectorWidth = selectorWidth();
+        int hoveredOffset = selectorOffsetAt(mouseX, mouseY);
         graphics.pose().pushPose();
         graphics.pose().translate(0.0F, 0.0F, SELECTOR_Z);
         try {
             if (scrolling) {
-                renderScrollingRows(graphics, selectorWidth);
+                renderScrollingRows(graphics, selectorWidth, hoveredOffset);
             }
 
             int rowX = this.leftPos + SELECTOR_X;
@@ -192,6 +198,13 @@ public final class VillagerAttributeFilterScreen
                         rowY - SELECTED_ROW_FRAME,
                         selectorWidth + SELECTED_ROW_FRAME * 2,
                         SELECTED_ROW_HEIGHT);
+            }
+            if (hoveredOffset == 0) {
+                renderHoverHighlight(
+                        graphics,
+                        rowX,
+                        rowY,
+                        scrolling ? selectorWidth : SELECTOR_WIDTH);
             }
             if (this.attributes.isEmpty()) {
                 graphics.drawString(
@@ -215,7 +228,10 @@ public final class VillagerAttributeFilterScreen
         }
     }
 
-    private void renderScrollingRows(GuiGraphics graphics, int selectorWidth) {
+    private void renderScrollingRows(
+            GuiGraphics graphics,
+            int selectorWidth,
+            int hoveredOffset) {
         for (int offset = -NEIGHBOR_COUNT; offset <= NEIGHBOR_COUNT; offset++) {
             if (offset == 0) {
                 continue;
@@ -232,9 +248,21 @@ public final class VillagerAttributeFilterScreen
                     selectorY - SCROLL_ROW_FRAME,
                     selectorWidth + SCROLL_ROW_FRAME * 2,
                     SCROLL_ROW_HEIGHT);
+            if (hoveredOffset == offset) {
+                renderHoverHighlight(graphics, selectorX, selectorY, selectorWidth);
+            }
             drawAttribute(graphics, this.attributes.get(index), selectorX, selectorY);
         }
     }
+    private static void renderHoverHighlight(
+            GuiGraphics graphics,
+            int x,
+            int y,
+            int width) {
+        graphics.fill(x, y, x + width, y + SELECTOR_HEIGHT, HOVER_HIGHLIGHT_COLOR);
+    }
+
+
 
     private int selectorY(int offset) {
         int centerY = this.topPos + SELECTOR_Y;
@@ -299,7 +327,8 @@ public final class VillagerAttributeFilterScreen
 
     private int selectorOffsetAt(double mouseX, double mouseY) {
         int selectorLeft = this.leftPos + SELECTOR_X;
-        if (mouseX < selectorLeft || mouseX >= selectorLeft + selectorWidth()) {
+        int interactiveWidth = this.scrollVisibilityTicks > 0 ? selectorWidth() : SELECTOR_WIDTH;
+        if (mouseX < selectorLeft || mouseX >= selectorLeft + interactiveWidth) {
             return Integer.MIN_VALUE;
         }
 

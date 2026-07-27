@@ -28,7 +28,7 @@ public final class VillagerItemFilterMenu extends AbstractContainerMenu {
 
     private final Inventory playerInventory;
     private final SimpleContainer ghostInventory;
-    private final ItemStack contentHolder;
+    private final int editingHotbarSlot;
 
     public VillagerItemFilterMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf data) {
         this(containerId, playerInventory, decodeOpeningStack(data));
@@ -37,27 +37,50 @@ public final class VillagerItemFilterMenu extends AbstractContainerMenu {
     public VillagerItemFilterMenu(int containerId, Inventory playerInventory, ItemStack openingStack) {
         super(VillagerRetaliationMenus.ITEM_FILTER.get(), containerId);
         this.playerInventory = playerInventory;
-        ItemStack selected = playerInventory.getSelected();
-        this.contentHolder = VillagerRetaliationItems.isItemFilter(selected) ? selected : openingStack;
+        this.editingHotbarSlot = playerInventory.selected;
+        ItemStack selected = filterStack();
+        ItemStack initialFilter = selected.isEmpty() ? openingStack : selected;
         this.ghostInventory = new SimpleContainer(GHOST_SLOT_COUNT);
         for (int slot = 0; slot < GHOST_SLOT_COUNT; slot++) {
-            this.ghostInventory.setItem(slot, VillagerItemFilterData.entry(this.contentHolder, slot));
+            this.ghostInventory.setItem(slot, VillagerItemFilterData.entry(initialFilter, slot));
             addSlot(new GhostSlot(this.ghostInventory, slot, GHOST_X + slot * SLOT_SIZE, GHOST_Y));
         }
         addPlayerSlots(playerInventory);
     }
 
     public VillagerItemFilterData.Mode mode() {
-        return VillagerItemFilterData.mode(this.contentHolder);
+        return VillagerItemFilterData.mode(filterStack());
     }
 
     public void setClientMode(VillagerItemFilterData.Mode mode) {
-        VillagerItemFilterData.setMode(this.contentHolder, mode);
+        VillagerItemFilterData.setMode(filterStack(), mode);
+    }
+
+    public int amount(int slot) {
+        return VillagerItemFilterData.amount(filterStack(), slot);
+    }
+
+    public int minimumAmount(int slot) {
+        return VillagerItemFilterData.minimumAmount(filterStack(), slot);
+    }
+
+    public int identityEntryCount(int slot) {
+        return VillagerItemFilterData.identityEntryCount(filterStack(), slot);
+    }
+
+    public int combinedAmount(int slot) {
+        return VillagerItemFilterData.combinedAmountForSlot(filterStack(), slot);
+    }
+
+    public boolean isAmountEntry(int slot) {
+        return slot >= 0
+                && slot < GHOST_SLOT_COUNT
+                && VillagerItemFilterData.isAmountEntry(this.ghostInventory.getItem(slot));
     }
 
     public boolean isEditingHeldFilter() {
-        return VillagerRetaliationItems.isItemFilter(this.contentHolder)
-                && this.playerInventory.getSelected() == this.contentHolder;
+        return this.playerInventory.selected == this.editingHotbarSlot
+                && VillagerRetaliationItems.isItemFilter(filterStack());
     }
 
     @Override
@@ -126,7 +149,7 @@ public final class VillagerItemFilterMenu extends AbstractContainerMenu {
     }
 
     /**
-     * Updates a ghost entry from a client-side item source such as an EMI drag-and-drop action.
+     * Updates a ghost entry from a client-side item source such as a drag-and-drop action.
      * The server validates that this is still the held filter before applying the update.
      */
     public boolean setGhostEntry(int slot, ItemStack entry) {
@@ -134,19 +157,44 @@ public final class VillagerItemFilterMenu extends AbstractContainerMenu {
             return false;
         }
         ItemStack normalized = entry == null || entry.isEmpty() ? ItemStack.EMPTY : entry.copyWithCount(1);
-        boolean changed = VillagerItemFilterData.setEntry(this.contentHolder, slot, normalized);
-        this.ghostInventory.setItem(slot, VillagerItemFilterData.entry(this.contentHolder, slot));
+        ItemStack filter = filterStack();
+        boolean changed = VillagerItemFilterData.setEntry(filter, slot, normalized);
+        this.ghostInventory.setItem(slot, VillagerItemFilterData.entry(filter, slot));
         this.ghostInventory.setChanged();
         if (changed) {
-            this.playerInventory.setChanged();
-            broadcastChanges();
+            markFilterChanged();
         }
         return changed;
     }
 
+    public VillagerItemFilterData.AmountAdjustment adjustEntryAmount(int slot, int delta) {
+        if (!isEditingHeldFilter()
+                || slot < 0
+                || slot >= GHOST_SLOT_COUNT
+                || (delta != -100 && delta != -10 && delta != -5 && delta != -1
+                && delta != 1 && delta != 5 && delta != 10 && delta != 100)) {
+            return new VillagerItemFilterData.AmountAdjustment(false, 0, 0, false, false);
+        }
+        VillagerItemFilterData.AmountAdjustment adjustment =
+                VillagerItemFilterData.adjustAmount(filterStack(), slot, delta);
+        if (adjustment.changed()) {
+            markFilterChanged();
+        }
+        return adjustment;
+    }
+
+    private void markFilterChanged() {
+        this.playerInventory.setChanged();
+        broadcastChanges();
+    }
+
+    private ItemStack filterStack() {
+        ItemStack stack = this.playerInventory.getItem(this.editingHotbarSlot);
+        return VillagerRetaliationItems.isItemFilter(stack) ? stack : ItemStack.EMPTY;
+    }
+
     private boolean isHeldFilterMenuSlot(int menuSlot) {
-        int selectedMenuSlot = PLAYER_HOTBAR_START + this.playerInventory.selected;
-        return menuSlot == selectedMenuSlot;
+        return menuSlot == PLAYER_HOTBAR_START + this.editingHotbarSlot;
     }
 
     private void addPlayerSlots(Inventory inventory) {
