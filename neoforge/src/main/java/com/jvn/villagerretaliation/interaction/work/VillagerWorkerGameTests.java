@@ -613,6 +613,42 @@ public final class VillagerWorkerGameTests {
         villager.discard();
         helper.succeed();
     }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void animalHandlerPeriodicallyDepositsOutputsWhileShearing(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalShearingDeposit");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Sheep sheep = spawnAnimal(helper, EntityType.SHEEP, new BlockPos(4, 2, 3));
+        BlockPos chestRelative = new BlockPos(3, 2, 2);
+        BlockPos chest = helper.absolutePos(chestRelative);
+        setBlock(helper, chestRelative, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+
+        CompoundTag state = new CompoundTag();
+        state.putLong(AnimalBreedingWorker.NEXT_SHEARING_DEPOSIT_GAME_TIME_TAG, level.getGameTime());
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.SHEARS));
+        context.inventory().insertOutput(new ItemStack(Items.WHITE_WOOL, 4));
+
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+        worker.tick(level, villager, hirer, context);
+
+        helper.assertValueEqual(countItem(container(level, chest), Items.WHITE_WOOL), 4, "periodic shearing deposit");
+        helper.assertFalse(context.hasOutputToDeposit(), "periodic shearing deposit should empty job outputs");
+        helper.assertFalse(sheep.isSheared(), "the due deposit should run before the next shearing action");
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void animalHandlerCullCapUsesPerTypePoolsAndWeapon(GameTestHelper helper) {
         buildFloor(helper, 0, 7, 0, 7, 1);

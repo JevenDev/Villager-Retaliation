@@ -52,6 +52,9 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private static final int CULLING_WORK_TICKS = 3;
     private static final int VANILLA_PARENT_BREEDING_COOLDOWN_TICKS = 6000;
     private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
+    static final int PERIODIC_SHEARING_DEPOSIT_INTERVAL_TICKS = 20 * 30;
+    static final String NEXT_SHEARING_DEPOSIT_GAME_TIME_TAG = "NextShearingDepositGameTime";
+    private static final String PERIODIC_SHEARING_DEPOSIT_PENDING_TAG = "PeriodicShearingDepositPending";
     private static final String NEXT_ANIMAL_SCAN_GAME_TIME_TAG = "NextAnimalBreedingScanGameTime";
     private static final String RECENTLY_HANDLED_ANIMALS_TAG = "RecentlyHandledAnimalBreeding";
     private static final String ANIMAL_ID_TAG = "Animal";
@@ -86,6 +89,11 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (!context.hasWorkArea()) {
             return waitForWorkAreaAssignment(level, villager, context);
+        }
+
+        WorkResult shearingDepositResult = continuePeriodicShearingDeposit(level, villager, context);
+        if (shearingDepositResult != null) {
+            return shearingDepositResult;
         }
 
         WorkResult cullResult = cullExcessAnimals(level, villager, context);
@@ -450,6 +458,13 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.animal_breeding.output_full_blocked");
         }
 
+        if (target.kind() == AnimalProductKind.SHEAR) {
+            WorkResult shearingDepositResult = startPeriodicShearingDepositIfDue(level, villager, context);
+            if (shearingDepositResult != null) {
+                return shearingDepositResult;
+            }
+        }
+
         WorkResult gatheredSupply = gatherAnimalHandlingSupply(level, villager, context, target);
         if (gatheredSupply != null) {
             return gatheredSupply;
@@ -486,6 +501,72 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             case SHEAR -> shearSheep(level, villager, context, target.sheep());
             case MILK -> milkAnimal(level, villager, context, target.animal());
         };
+    }
+
+    private WorkResult startPeriodicShearingDepositIfDue(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context) {
+        long gameTime = level.getGameTime();
+        long nextDeposit = context.state().getLong(NEXT_SHEARING_DEPOSIT_GAME_TIME_TAG);
+        if (!context.state().contains(NEXT_SHEARING_DEPOSIT_GAME_TIME_TAG, Tag.TAG_LONG)) {
+            context.state().putLong(
+                    NEXT_SHEARING_DEPOSIT_GAME_TIME_TAG,
+                    gameTime + PERIODIC_SHEARING_DEPOSIT_INTERVAL_TICKS);
+            return null;
+        }
+        if (gameTime < nextDeposit) {
+            return null;
+        }
+
+        context.state().putLong(
+                NEXT_SHEARING_DEPOSIT_GAME_TIME_TAG,
+                gameTime + PERIODIC_SHEARING_DEPOSIT_INTERVAL_TICKS);
+        if (!context.autoDepositOutputs()
+                || !context.hasOutputToDeposit()
+                || context.nearestDepositStorage(level, villager) == null) {
+            return null;
+        }
+
+        context.state().putBoolean(PERIODIC_SHEARING_DEPOSIT_PENDING_TAG, true);
+        return continuePeriodicShearingDeposit(level, villager, context);
+    }
+
+    private WorkResult continuePeriodicShearingDeposit(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context) {
+        if (!context.state().getBoolean(PERIODIC_SHEARING_DEPOSIT_PENDING_TAG)) {
+            return null;
+        }
+        if (!HiredAnimalHandlingOptions.shearSheep(context.state()) || !context.hasOutputToDeposit()) {
+            clearPeriodicShearingDeposit(context);
+            return null;
+        }
+
+        DepositResult result = depositOutputsOrMoveToStorage(level, context, villager, 0.45D);
+        if (result == DepositResult.MOVING) {
+            return WorkResult.progressed("interaction.work.animal_breeding.output_full_depositing");
+        }
+        if (result == DepositResult.DEPOSITED) {
+            if (!context.hasOutputToDeposit()) {
+                clearPeriodicShearingDeposit(context);
+            }
+            return WorkResult.progressed("interaction.work.animal_breeding.output_full_depositing");
+        }
+
+        clearPeriodicShearingDeposit(context);
+        if (result == DepositResult.STORAGE_FULL || result == DepositResult.UNAVAILABLE) {
+            HiredStorageNavigationGoal.clearStorageTarget(context);
+            HiredWorkerBrain.clearFailure(context);
+            clearStorageFullStatus(context);
+        }
+        return null;
+    }
+
+    private static void clearPeriodicShearingDeposit(HiredWorkContext context) {
+        context.state().remove(PERIODIC_SHEARING_DEPOSIT_PENDING_TAG);
+        context.state().remove(NEXT_SHEARING_DEPOSIT_GAME_TIME_TAG);
     }
 
     private WorkResult gatherAnimalHandlingSupply(
