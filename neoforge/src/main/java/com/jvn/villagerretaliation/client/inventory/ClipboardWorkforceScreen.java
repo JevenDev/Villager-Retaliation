@@ -157,6 +157,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final ResourceLocation PAGE_BACKWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_backward_highlighted");
     private static final int TEXT = 0xFF4B2B1D;
     private static final int MUTED = 0xFF8B6247;
+    private static final int NOTICE = 0xFF707070;
     private static final int WARNING = 0xFF9A3B24;
     private static final int SUCCESS = 0xFF2E7135;
     private static final int IDLE = 0xFF936400;
@@ -589,13 +590,11 @@ public final class ClipboardWorkforceScreen extends Screen {
         }
         drawArrowLine(
                 graphics,
-                true,
-                Component.translatable(
-                        "villagerretaliation.gui.clipboard_workforce.summary.warnings",
-                        this.snapshot.warningCount()),
+                hasActionableWarnings(),
+                workforceStatusSummary("villagerretaliation.gui.clipboard_workforce.summary"),
                 SUMMARY_LEFT,
                 WARNINGS_TOP,
-                WARNING);
+                workforceStatusColor());
         renderCenteredDivider(graphics, JOBS_DIVIDER_TOP);
         renderJobsHeading(graphics, JOBS_TOP);
         renderCenteredDivider(graphics, JOB_LIST_DIVIDER_TOP);
@@ -1117,7 +1116,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                             line,
                             lineTop == entryTop ? SUMMARY_LEFT + ROW_ARROW_TEXT_OFFSET : SUMMARY_LEFT,
                             lineTop,
-                            WARNING,
+                            warningColor(entry.warning().type()),
                             false);
                 }
                 lineTop += this.font.lineHeight;
@@ -1174,7 +1173,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         List<net.minecraft.util.FormattedCharSequence> issueLines = warningIssueLines();
         int issueTop = SUMMARY_TOP;
         for (net.minecraft.util.FormattedCharSequence line : issueLines) {
-            graphics.drawString(this.font, line, SUMMARY_LEFT, issueTop, WARNING, false);
+            graphics.drawString(this.font, line, SUMMARY_LEFT, issueTop, warningColor(this.selectedWarning.type()), false);
             issueTop += this.font.lineHeight;
         }
         List<WorkerRow> workers = workersForSelectedWarning();
@@ -1198,11 +1197,11 @@ public final class ClipboardWorkforceScreen extends Screen {
                 }
                 drawArrowLine(
                         graphics,
-                        true,
+                        !isWaitingNotice(this.selectedWarning.type()),
                         Component.literal(worker.displayName()),
                         SUMMARY_LEFT,
                         rowTop,
-                        WARNING);
+                        warningColor(this.selectedWarning.type()));
             }
             rowTop += SUMMARY_ROW_STEP;
         }
@@ -1251,7 +1250,9 @@ public final class ClipboardWorkforceScreen extends Screen {
                 if (lineTop >= SUMMARY_TOP && lineTop + TEXT_PIXEL_HEIGHT <= TEXT_CONTENT_BOTTOM) {
                     if (lineTop == entryTop) {
                         graphics.blit(
-                                VillagerRetaliationClientAssets.CLIPBOARD_WARNING_ARROW_TEXTURE,
+                                entry.notice()
+                                        ? VillagerRetaliationClientAssets.CLIPBOARD_ROW_ARROW_TEXTURE
+                                        : VillagerRetaliationClientAssets.CLIPBOARD_WARNING_ARROW_TEXTURE,
                                 SUMMARY_LEFT,
                                 lineTop,
                                 0.0F,
@@ -1266,7 +1267,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                             line,
                             lineTop == entryTop ? SUMMARY_LEFT + ROW_ARROW_TEXT_OFFSET : SUMMARY_LEFT,
                             lineTop,
-                            WARNING,
+                            entry.notice() ? NOTICE : WARNING,
                             false);
                 }
                 lineTop += this.font.lineHeight;
@@ -1288,7 +1289,8 @@ public final class ClipboardWorkforceScreen extends Screen {
                     warningDiagnostic(type));
             entries.add(new WorkerErrorDisplayEntry(
                     splitArrowWrappedText(diagnostic),
-                    index % 2 != 0));
+                    index % 2 != 0,
+                    isWaitingNotice(type)));
         }
         return entries;
     }
@@ -2251,7 +2253,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         if (contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10)) {
             graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10, HOVER_FILL);
         }
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.warnings", this.snapshot.warningCount()), CONTENT_LEFT, y, warningColor(this.snapshot.warningCount()));
+        drawLine(graphics, workforceStatusSummary("villagerretaliation.gui.clipboard_workforce"), CONTENT_LEFT, y, workforceStatusColor());
         this.rowActions.add(new RowAction(RowKind.WARNINGS, null, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10));
         y += 14;
         drawSmallHeader(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.jobs"), y);
@@ -2313,8 +2315,9 @@ public final class ClipboardWorkforceScreen extends Screen {
             if (hovered) {
                 graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom, HOVER_FILL);
             }
-            drawWrappedLines(graphics, text, CONTENT_LEFT, y, warningTextRight(), WARNING);
-            drawRight(graphics, Component.literal(">"), CONTENT_RIGHT, y, WARNING);
+            int color = warningColor(warning.type());
+            drawWrappedLines(graphics, text, CONTENT_LEFT, y, warningTextRight(), color);
+            drawRight(graphics, Component.literal(">"), CONTENT_RIGHT, y, color);
             this.rowActions.add(new RowAction(RowKind.JOB, warning.role(), CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom));
             y += rowHeight;
         }
@@ -2337,7 +2340,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private int renderWorkerSummary(GuiGraphics graphics, WorkerRow worker, int y) {
         drawLine(graphics, Component.literal(worker.displayName()), CONTENT_LEFT, y, CONTENT_RIGHT - 10, TEXT);
         if (hasWarning(worker)) {
-            drawLine(graphics, Component.literal("!"), CONTENT_RIGHT - 6, y, WARNING);
+            drawLine(graphics, Component.literal("!"), CONTENT_RIGHT - 6, y, mutedForWarning(worker));
         }
         int lineY = y + 10;
         drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_status", statusName(worker.status())), CONTENT_LEFT, lineY, mutedForWarning(worker));
@@ -2350,7 +2353,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                             Component.literal(worker.diagnostic())),
                     CONTENT_LEFT,
                     lineY,
-                    WARNING);
+                    mutedForWarning(worker));
         }
         Component area = workerAreaText(worker);
         lineY = drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area", area), CONTENT_LEFT, lineY, worker.noWorkArea() ? WARNING : MUTED);
@@ -3046,8 +3049,46 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private Component warningText(WarningSummary warning) {
-        String key = "villagerretaliation.gui.clipboard_workforce.warning." + warning.type().name().toLowerCase(java.util.Locale.ROOT);
+        String key = warning.type() == ClipboardWorkforceSnapshot.WarningType.NO_TARGETS
+                        && warning.role() == HiredVillagerRole.ANIMAL_HANDLING
+                ? "villagerretaliation.gui.clipboard_workforce.notice.animal_handling_waiting"
+                : "villagerretaliation.gui.clipboard_workforce.warning."
+                        + warning.type().name().toLowerCase(java.util.Locale.ROOT);
         return Component.translatable(key, warning.count(), roleName(warning.role()));
+    }
+
+    private Component workforceStatusSummary(String prefix) {
+        int warnings = actionableWarningCount();
+        if (warnings > 0) {
+            return Component.translatable(prefix + ".warnings", warnings);
+        }
+        int waiting = waitingNoticeCount();
+        return Component.translatable(prefix + (waiting > 0 ? ".waiting" : ".warnings"), waiting);
+    }
+
+    private int workforceStatusColor() {
+        return hasActionableWarnings() ? WARNING : waitingNoticeCount() > 0 ? NOTICE : TEXT;
+    }
+
+    private int actionableWarningCount() {
+        return this.snapshot.warnings().stream().filter(w -> !isWaitingNotice(w.type())).mapToInt(WarningSummary::count).sum();
+    }
+
+    private int waitingNoticeCount() {
+        return this.snapshot.warnings().stream().filter(w -> isWaitingNotice(w.type())).mapToInt(WarningSummary::count).sum();
+    }
+
+    private boolean hasActionableWarnings() {
+        return actionableWarningCount() > 0;
+    }
+
+    private boolean isWaitingNotice(ClipboardWorkforceSnapshot.WarningType type) {
+        return type == ClipboardWorkforceSnapshot.WarningType.MISSING_MATERIALS
+                || type == ClipboardWorkforceSnapshot.WarningType.NO_TARGETS;
+    }
+
+    private int warningColor(ClipboardWorkforceSnapshot.WarningType type) {
+        return isWaitingNotice(type) ? NOTICE : WARNING;
     }
 
     private int warningColor(int count) {
@@ -3055,22 +3096,22 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private int mutedForWarning(WorkerRow worker) {
-        return hasWarning(worker) ? WARNING : MUTED;
+        return hasActionableWarning(worker) ? WARNING : hasWaitingNotice(worker) ? NOTICE : MUTED;
+    }
+
+    private boolean hasActionableWarning(WorkerRow worker) {
+        return worker.inventoryFull() || worker.unpaid() || worker.noStorage() || worker.noWorkArea()
+                || worker.tooFar() || worker.missingTools() || worker.storageFull()
+                || worker.materialStorageUnreachable() || worker.materialInventoryFull()
+                || worker.buildSiteUnreachable();
+    }
+
+    private boolean hasWaitingNotice(WorkerRow worker) {
+        return worker.noTargets() || worker.missingMaterials();
     }
 
     private boolean hasWarning(WorkerRow worker) {
-        return worker.inventoryFull()
-                || worker.unpaid()
-                || worker.noStorage()
-                || worker.noWorkArea()
-                || worker.noTargets()
-                || worker.tooFar()
-                || worker.missingTools()
-                || worker.storageFull()
-                || worker.missingMaterials()
-                || worker.materialStorageUnreachable()
-                || worker.materialInventoryFull()
-                || worker.buildSiteUnreachable();
+        return hasActionableWarning(worker) || hasWaitingNotice(worker);
     }
 
     private int warningTextRight() {
@@ -3102,8 +3143,11 @@ public final class ClipboardWorkforceScreen extends Screen {
     }
 
     private int statusColor(WorkerRow worker) {
-        if (hasWarning(worker)) {
+        if (hasActionableWarning(worker)) {
             return WARNING;
+        }
+        if (hasWaitingNotice(worker)) {
+            return NOTICE;
         }
         return switch (worker.status()) {
             case PATHING -> PATHING;
@@ -3486,7 +3530,8 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private record WorkerErrorDisplayEntry(
             List<net.minecraft.util.FormattedCharSequence> lines,
-            boolean banded) {
+            boolean banded,
+            boolean notice) {
     }
 
     private record JobSiteButton(Component label, ClipboardWorkAreaActionPayload.Action action) {
