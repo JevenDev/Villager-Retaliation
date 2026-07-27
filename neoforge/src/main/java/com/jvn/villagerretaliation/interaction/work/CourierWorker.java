@@ -99,7 +99,7 @@ public final class CourierWorker implements HiredRoleWorker {
         boolean deliverySweep = PHASE_DELIVER.equals(phase(context));
         boolean servicingInputs = outbound && !deliverySweep;
 
-        WorkResult detour = continueStorageDetour(level, villager, context, route, node, outbound);
+        WorkResult detour = continueStorageDetour(level, villager, context, route, node, index, outbound);
         if (detour != null) {
             return detour;
         }
@@ -140,7 +140,7 @@ public final class CourierWorker implements HiredRoleWorker {
             beginStorageDetour(context, storage, servicingInputs
                     ? AssignedStorageService.INPUT_PURPOSE
                     : AssignedStorageService.OUTPUT_PURPOSE);
-            return continueStorageDetour(level, villager, context, route, node, outbound);
+            return continueStorageDetour(level, villager, context, route, node, index, outbound);
         }
 
         boolean finished = outbound ? index >= lastIndex : index <= 0;
@@ -259,6 +259,7 @@ public final class CourierWorker implements HiredRoleWorker {
             HiredWorkContext context,
             HiredRoute route,
             BlockPos node,
+            int routeIndex,
             boolean outbound) {
         BlockPos storage = storedTarget(context);
         if (storage == null || !context.state().contains(STORAGE_PURPOSE_TAG, Tag.TAG_STRING)) {
@@ -298,9 +299,9 @@ public final class CourierWorker implements HiredRoleWorker {
                     : "interaction.work.courier.moving_to_output");
         }
         rememberVisitedStorage(context, storage);
-        context.state().putBoolean(STORAGE_RETURN_TO_NODE_TAG, true);
         HiredStorageNavigationGoal.clearStorageTarget(context);
         if (movement == HiredStorageNavigationGoal.Result.FAILED) {
+            context.state().putBoolean(STORAGE_RETURN_TO_NODE_TAG, true);
             if (AssignedStorageService.OUTPUT_PURPOSE.equals(purpose)) {
                 AssignedStorageService.rememberOutputStorageFailure(
                         level, villager, storage, "courier_output_unreachable");
@@ -314,18 +315,30 @@ public final class CourierWorker implements HiredRoleWorker {
                     ? "interaction.work.courier.input_unreachable"
                     : "interaction.work.courier.output_unreachable");
         }
+        WorkResult result;
         if (AssignedStorageService.OUTPUT_PURPOSE.equals(purpose)) {
-            return depositAtOutput(level, villager, context, route, storage);
+            result = depositAtOutput(level, villager, context, route, storage);
+        } else {
+            int moved = collectInput(villager, context, storage);
+            HiredWorkerBrain.clearFailure(context);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, storage);
+            if (moved > 0) {
+                animateCargo(level, villager, context);
+            }
+            result = WorkResult.progressed(
+                    "interaction.work.courier.collected_items",
+                    Map.of("count", Integer.toString(moved)));
         }
-        int moved = collectInput(villager, context, storage);
-        HiredWorkerBrain.clearFailure(context);
-        HiredWorkerBrain.setState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, storage);
-        if (moved > 0) {
-            animateCargo(level, villager, context);
+
+        BlockPos nextStorage = AssignedStorageService.INPUT_PURPOSE.equals(purpose)
+                ? selectInputAtNode(level, villager, context, route, routeIndex)
+                : selectOutputAtNode(level, villager, context, route, routeIndex);
+        if (nextStorage != null) {
+            beginStorageDetour(context, nextStorage, purpose);
+        } else {
+            context.state().putBoolean(STORAGE_RETURN_TO_NODE_TAG, true);
         }
-        return WorkResult.progressed(
-                "interaction.work.courier.collected_items",
-                Map.of("count", Integer.toString(moved)));
+        return result;
     }
 
     private static BlockPos selectInputAtNode(
@@ -358,9 +371,9 @@ public final class CourierWorker implements HiredRoleWorker {
         }
         Set<BlockPos> outputs = purposePositions(level, villager, AssignedStorageService.OUTPUT_PURPOSE).stream()
                 .filter(pos -> !hasVisitedStorage(context, pos))
+                .filter(pos -> isTetheredToNode(route, pos, routeIndex))
                 .collect(Collectors.toSet());
-        BlockPos selected = selectOutput(level, villager, context, outputs);
-        return selected != null && isTetheredToNode(route, selected, routeIndex) ? selected : null;
+        return selectOutput(level, villager, context, outputs);
     }
 
     private static boolean isTetheredToNode(HiredRoute route, BlockPos storage, int routeIndex) {

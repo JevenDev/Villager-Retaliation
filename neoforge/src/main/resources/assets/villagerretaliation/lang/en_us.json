@@ -891,6 +891,7 @@
   "villagerretaliation.gui.clipboard_workforce.diagnostic.missing_materials": "Place the required materials in the assigned storage.",
   "villagerretaliation.gui.clipboard_workforce.diagnostic.missing_tools": "Give this villager the tools required for the job.",
   "villagerretaliation.gui.clipboard_workforce.diagnostic.no_storage": "Assign a storage container to this villager.",
+  "villagerretaliation.gui.clipboard_workforce.diagnostic.no_storage.output": "Assign an output container to this villager.",
   "villagerretaliation.gui.clipboard_workforce.diagnostic.no_targets": "Move or expand the work area so it contains valid targets.",
   "villagerretaliation.gui.clipboard_workforce.diagnostic.no_work_area": "Assign a work area to this villager.",
   "villagerretaliation.gui.clipboard_workforce.diagnostic.storage_full": "Make room in the assigned storage.",

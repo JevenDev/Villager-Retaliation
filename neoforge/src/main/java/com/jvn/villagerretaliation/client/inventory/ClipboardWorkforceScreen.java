@@ -1324,6 +1324,12 @@ public final class ClipboardWorkforceScreen extends Screen {
     private Component warningDiagnostic(ClipboardWorkforceSnapshot.WarningType type) {
         String key = "villagerretaliation.gui.clipboard_workforce.diagnostic."
                 + type.name().toLowerCase(java.util.Locale.ROOT);
+        if (type == ClipboardWorkforceSnapshot.WarningType.NO_STORAGE) {
+            if (!this.selectedWorker.diagnostic().isBlank()) {
+                return Component.literal(this.selectedWorker.diagnostic());
+            }
+            return Component.translatable(key + ".output");
+        }
         if (type == ClipboardWorkforceSnapshot.WarningType.UNPAID) {
             return Component.translatable(key, this.selectedWorker.dailyPayText());
         }
