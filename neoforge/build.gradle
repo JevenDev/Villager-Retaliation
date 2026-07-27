@@ -74,6 +74,33 @@ tasks.named('runGameTestServer') {
     }
 }
 
+// A running Windows dev client keeps the generated NeoForge jar open. When
+// IntelliJ refreshes Gradle after an AT/version change, NeoForm cannot replace
+// that jar. Stop only Java processes that Windows confirms hold these outputs.
+tasks.named('createMinecraftArtifacts') {
+    doFirst {
+        if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            def artifactDirectory = layout.buildDirectory.dir('moddev/artifacts').get().asFile
+            def unlockScript = rootProject.file('gradle/windows-unlock-moddev-artifacts.ps1')
+            def unlockProcess = new ProcessBuilder(
+                    'powershell.exe',
+                    '-NoProfile',
+                    '-NonInteractive',
+                    '-ExecutionPolicy', 'Bypass',
+                    '-File', unlockScript.absolutePath,
+                    '-ArtifactDirectory', artifactDirectory.absolutePath)
+                    .inheritIO()
+                    .start()
+
+            def exitCode = unlockProcess.waitFor()
+            if (exitCode != 0) {
+                throw new GradleException(
+                        "Could not release locked ModDevGradle artifacts (PowerShell exit code ${exitCode}).")
+            }
+        }
+    }
+}
+
 def skipGameTests = providers.gradleProperty('skipGameTests')
         .map { it.toBoolean() }
         .orElse(false)
