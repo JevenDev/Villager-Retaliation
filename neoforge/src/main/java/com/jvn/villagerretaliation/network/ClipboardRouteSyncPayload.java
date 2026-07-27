@@ -9,7 +9,7 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceLocation;
 
-public record ClipboardRouteSyncPayload(List<ClipboardRouteEntry> entries, int ticks) implements CustomPacketPayload {
+public record ClipboardRouteSyncPayload(List<ClipboardRouteEntry> entries, int ticks, boolean draft) implements CustomPacketPayload {
     public static final int MAX_ENTRIES = 16;
     private static final int LABEL_LENGTH = 64;
     public static final Type<ClipboardRouteSyncPayload> TYPE = VillagerPayloads.type("clipboard_route_sync");
@@ -21,11 +21,24 @@ public record ClipboardRouteSyncPayload(List<ClipboardRouteEntry> entries, int t
         ticks = Math.max(0, ticks);
     }
 
+    public ClipboardRouteSyncPayload(List<ClipboardRouteEntry> entries, int ticks) {
+        this(entries, ticks, false);
+    }
+
     public static ClipboardRouteSyncPayload single(ResourceLocation dimension, HiredRoute route, int ticks) {
         if (route == null || route.isEmpty()) {
-            return new ClipboardRouteSyncPayload(List.of(), ticks);
+            return new ClipboardRouteSyncPayload(List.of(), ticks, false);
         }
-        return new ClipboardRouteSyncPayload(List.of(new ClipboardRouteEntry(dimension, route.nodes(), route.loop())), ticks);
+        return new ClipboardRouteSyncPayload(
+                List.of(new ClipboardRouteEntry(dimension, route.nodes(), route.loop())), ticks, false);
+    }
+
+    public static ClipboardRouteSyncPayload draft(ResourceLocation dimension, HiredRoute route) {
+        if (route == null || route.isEmpty()) {
+            return new ClipboardRouteSyncPayload(List.of(), 0, true);
+        }
+        return new ClipboardRouteSyncPayload(
+                List.of(new ClipboardRouteEntry(dimension, route.nodes(), route.loop())), 0, true);
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, ClipboardRouteSyncPayload payload) {
@@ -34,6 +47,7 @@ public record ClipboardRouteSyncPayload(List<ClipboardRouteEntry> entries, int t
             encodeEntry(buffer, entry);
         }
         buffer.writeVarInt(payload.ticks());
+        buffer.writeBoolean(payload.draft());
     }
 
     private static ClipboardRouteSyncPayload decode(RegistryFriendlyByteBuf buffer) {
@@ -42,7 +56,7 @@ public record ClipboardRouteSyncPayload(List<ClipboardRouteEntry> entries, int t
         for (int index = 0; index < size; index++) {
             entries.add(decodeEntry(buffer));
         }
-        return new ClipboardRouteSyncPayload(entries, buffer.readVarInt());
+        return new ClipboardRouteSyncPayload(entries, buffer.readVarInt(), buffer.readBoolean());
     }
 
     static void encodeEntry(RegistryFriendlyByteBuf buffer, ClipboardRouteEntry entry) {

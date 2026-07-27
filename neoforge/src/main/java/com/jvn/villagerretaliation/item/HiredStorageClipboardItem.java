@@ -910,13 +910,14 @@ public final class HiredStorageClipboardItem extends Item {
     }
 
     private static void sendSelectedRouteOutline(ServerPlayer player, ServerLevel level, HiredRoute route) {
-        PacketDistributor.sendToPlayer(player, ClipboardRouteSyncPayload.single(level.dimension().location(), route, route == null || route.isEmpty() ? 0 : 160));
+        PacketDistributor.sendToPlayer(player, ClipboardRouteSyncPayload.draft(level.dimension().location(), route));
     }
 
     private static void clearClipboardOutlines(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, new ClipboardAssignedStorageSyncPayload(List.of(), 0));
         clearWorkAreaOutline(player);
         clearRouteOutline(player);
+        clearRouteDraft(player);
     }
 
     private static void clearWorkAreaOutline(ServerPlayer player) {
@@ -925,6 +926,10 @@ public final class HiredStorageClipboardItem extends Item {
 
     private static void clearRouteOutline(ServerPlayer player) {
         PacketDistributor.sendToPlayer(player, new ClipboardRouteSyncPayload(List.of(), 0));
+    }
+
+    private static void clearRouteDraft(ServerPlayer player) {
+        PacketDistributor.sendToPlayer(player, ClipboardRouteSyncPayload.draft(null, HiredRoute.empty()));
     }
 
     public static void assignHeldWorkAreaDraft(ServerPlayer player, ServerLevel level, Villager villager) {
@@ -982,6 +987,7 @@ public final class HiredStorageClipboardItem extends Item {
             if (HiredVillagerWorkService.setRoute(player, level, villager, route)) {
                 clearRouteSelection(stack);
                 syncClipboardStack(player);
+                clearRouteDraft(player);
                 sendRouteOutline(player, level, route);
                 player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_assigned", routeDescription(route)), true);
             }
@@ -992,7 +998,7 @@ public final class HiredStorageClipboardItem extends Item {
         if (!assigned.isEmpty()) {
             saveRouteSelection(stack, level.dimension(), assigned);
             syncClipboardStack(player);
-            sendRouteOutline(player, level, assigned);
+            sendSelectedRouteOutline(player, level, assigned);
             player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_loaded", routeDescription(assigned)), true);
             return;
         }
