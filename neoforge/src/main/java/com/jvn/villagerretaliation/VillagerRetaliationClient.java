@@ -115,6 +115,10 @@ public final class VillagerRetaliationClient {
                 com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.ITEM_FILTER.get(),
                 com.jvn.villagerretaliation.client.inventory.VillagerItemFilterScreen::new
         );
+        event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.ATTRIBUTE_FILTER.get(),
+                com.jvn.villagerretaliation.client.inventory.VillagerAttributeFilterScreen::new
+        );
     }
 
     private static void registerTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {

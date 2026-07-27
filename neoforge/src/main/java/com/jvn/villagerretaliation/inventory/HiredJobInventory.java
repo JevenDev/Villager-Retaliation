@@ -299,7 +299,7 @@ public final class HiredJobInventory implements Container {
             return;
         }
         if (slot == FILTER_SLOT) {
-            if (!stack.isEmpty() && !VillagerRetaliationItems.isItemFilter(stack)) {
+            if (!stack.isEmpty() && !VillagerRetaliationItems.isFilter(stack)) {
                 return;
             }
             this.items.set(slot, stack.isEmpty() ? ItemStack.EMPTY : stack.copyWithCount(1));

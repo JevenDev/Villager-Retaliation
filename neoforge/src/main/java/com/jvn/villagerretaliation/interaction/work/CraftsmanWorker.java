@@ -3,7 +3,9 @@ package com.jvn.villagerretaliation.interaction.work;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
+import com.jvn.villagerretaliation.item.VillagerFilterMatcher;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import java.util.ArrayList;
@@ -50,7 +52,8 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             }
         }
 
-        List<Target> targets = targets(VillagerItemFilterService.assignedFilter(villager));
+        ItemStack filter = VillagerItemFilterService.assignedFilter(villager);
+        List<Target> targets = targets(level, filter);
         if (targets.isEmpty()) {
             context.setProgressTicks(0);
             HiredWorkerBrain.setFailure(context, "craftsman_filter_empty", level.getGameTime() + 100L);
@@ -65,7 +68,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
             return WorkResult.idle("interaction.work.craftsman.no_table");
         }
 
-        Selection selection = select(level, villager, context, targets);
+        Selection selection = select(level, villager, context, targets, filter);
         if (selection == null) {
             context.setProgressTicks(0);
             setTaskState(context, HiredWorkerTaskState.WAITING_FOR_MATERIALS, table);
@@ -122,7 +125,12 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
                         result.getCount(), result.getItem().hashCode()));
     }
 
-    private static Selection select(ServerLevel level, Villager villager, HiredWorkContext context, List<Target> targets) {
+    private static Selection select(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            List<Target> targets,
+            ItemStack filter) {
         Mode mode = mode(context.state());
         int start = mode == Mode.PREFER_FIRST ? 0 : indexAtOrAfter(targets, context.state().getInt(CURSOR_TAG));
         int attempts = mode == Mode.FORCED_ROUND_ROBIN ? 1 : targets.size();
@@ -132,6 +140,7 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
                 CraftingRecipe recipe = holder.value();
                 ItemStack result = recipe.getResultItem(level.registryAccess());
                 if (recipe.isSpecial() || result.isEmpty() || !result.is(target.stack().getItem())
+                        || !VillagerFilterMatcher.matches(level, filter, result)
                         || !HiredSupplyCrafting.canUseRecipe(level, context, recipe)) {
                     continue;
                 }
@@ -208,23 +217,47 @@ public final class CraftsmanWorker extends AbstractBlockWorker {
         return best;
     }
 
-    private static List<Target> targets(ItemStack filter) {
+    private static List<Target> targets(ServerLevel level, ItemStack filter) {
         if (filter.isEmpty()) {
             return List.of();
         }
-        List<ItemStack> entries = VillagerItemFilterData.entries(filter);
-        List<Target> targets = new ArrayList<>();
-        for (int slot = 0; slot < entries.size(); slot++) {
-            if (!entries.get(slot).isEmpty()) {
-                targets.add(new Target(slot, entries.get(slot)));
+        if (VillagerRetaliationItems.isItemFilter(filter)
+                && VillagerItemFilterData.mode(filter) == VillagerItemFilterData.Mode.ALLOWLIST) {
+            List<ItemStack> entries = VillagerItemFilterData.entries(filter);
+            List<Target> configuredTargets = new ArrayList<>();
+            for (int slot = 0; slot < entries.size(); slot++) {
+                ItemStack entry = entries.get(slot);
+                if (!entry.isEmpty() && !VillagerRetaliationItems.isFilter(entry)) {
+                    configuredTargets.add(new Target(slot, entry));
+                }
             }
+            if (!configuredTargets.isEmpty()) {
+                return List.copyOf(configuredTargets);
+            }
+        }
+
+        Map<Item, ItemStack> discovered = new LinkedHashMap<>();
+        for (RecipeHolder<CraftingRecipe> holder
+                : level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING)) {
+            CraftingRecipe recipe = holder.value();
+            ItemStack result = recipe.getResultItem(level.registryAccess());
+            if (!recipe.isSpecial()
+                    && !result.isEmpty()
+                    && VillagerFilterMatcher.matches(level, filter, result)) {
+                discovered.putIfAbsent(result.getItem(), result.copy());
+            }
+        }
+        List<Target> targets = new ArrayList<>(discovered.size());
+        int cursor = 0;
+        for (ItemStack result : discovered.values()) {
+            targets.add(new Target(cursor++, result));
         }
         return List.copyOf(targets);
     }
 
     private static int indexAtOrAfter(List<Target> targets, int cursor) {
         for (int index = 0; index < targets.size(); index++) {
-            if (targets.get(index).slot() >= Math.clamp(cursor, 0, VillagerItemFilterData.ENTRY_COUNT - 1)) {
+            if (targets.get(index).slot() >= Math.max(0, cursor)) {
                 return index;
             }
         }

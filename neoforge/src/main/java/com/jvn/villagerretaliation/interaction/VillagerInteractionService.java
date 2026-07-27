@@ -228,7 +228,7 @@ public final class VillagerInteractionService {
         return hand == InteractionHand.MAIN_HAND
                 && VillagerRetaliationConfig.ENABLE_INTERACTION_SCREEN.get()
                 && hasEmptyHandForVillagerInteraction(player)
-                && VillagerRetaliationItems.isItemFilter(player.getItemInHand(hand))
+                && VillagerRetaliationItems.isFilter(player.getItemInHand(hand))
                 && canOpenInteractionTarget(player, villager, false, VillagerRetaliationConfig.MAX_DIALOGUE_DISTANCE.get());
     }
 
@@ -2856,7 +2856,7 @@ public final class VillagerInteractionService {
                 || stack.is(Items.NAME_TAG)
                 || VillagerRetaliationItems.isClipboard(stack)
                 || ConstructionBlueprintItem.isBlueprint(stack)
-                || VillagerRetaliationItems.isItemFilter(stack)
+                || VillagerRetaliationItems.isFilter(stack)
                 || VillagerRetaliationDebugItems.isDebugVillagerTool(stack.getItem());
     }
 

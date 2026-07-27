@@ -20,6 +20,8 @@ public final class VillagerRetaliationItems {
             ITEMS.register("construction_blueprint", () -> new ConstructionBlueprintItem(new Item.Properties().stacksTo(1)));
     public static final DeferredHolder<Item, Item> ITEM_FILTER =
             ITEMS.register("item_filter", () -> new VillagerItemFilterItem(new Item.Properties().stacksTo(64)));
+    public static final DeferredHolder<Item, Item> ATTRIBUTE_FILTER =
+            ITEMS.register("attribute_filter", () -> new VillagerAttributeFilterItem(new Item.Properties().stacksTo(64)));
     public static final DeferredHolder<Item, BlockItem> PAYMENT_BOX =
             ITEMS.register(
                     "payment_box",
@@ -42,5 +44,13 @@ public final class VillagerRetaliationItems {
 
     public static boolean isItemFilter(ItemStack stack) {
         return stack != null && stack.is(ITEM_FILTER.get());
+    }
+
+    public static boolean isAttributeFilter(ItemStack stack) {
+        return stack != null && stack.is(ATTRIBUTE_FILTER.get());
+    }
+
+    public static boolean isFilter(ItemStack stack) {
+        return isItemFilter(stack) || isAttributeFilter(stack);
     }
 }

@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.skill.VillagerSkill;
 import java.util.ArrayList;
@@ -99,7 +100,7 @@ public final class CookingWorker extends AbstractBlockWorker {
         }
 
         RecipeType<AbstractCookingRecipe> recipeType = recipeType(furnace);
-        Predicate<ItemStack> desiredFood = desiredFoodPredicate(foodFilter);
+        Predicate<ItemStack> desiredFood = desiredFoodPredicate(level, foodFilter);
         ItemStack output = furnace.getItem(RESULT_SLOT);
         if (!output.isEmpty() && (!isFood(output) || !desiredFood.test(output))) {
             context.setProgressTicks(0);
@@ -419,19 +420,20 @@ public final class CookingWorker extends AbstractBlockWorker {
         if (filter == null || filter.isEmpty()) {
             return CraftingAssessment.NONE;
         }
-        Predicate<ItemStack> desiredFood = desiredFoodPredicate(filter);
+        Predicate<ItemStack> desiredFood = desiredFoodPredicate(level, filter);
         List<RecipeHolder<CraftingRecipe>> candidates =
                 level.getRecipeManager().getAllRecipesFor(RecipeType.CRAFTING);
         boolean hasCraftingTable = HiredSupplyCrafting.hasCraftingTable(level, context);
         boolean hasRecipe = false;
         boolean missingCraftingTable = false;
 
-        List<ItemStack> configuredEntries = VillagerItemFilterData.entries(filter);
-        if (VillagerItemFilterData.mode(filter) == VillagerItemFilterData.Mode.ALLOWLIST) {
+        List<ItemStack> configuredEntries = VillagerItemFilterData.entries(filter).stream()
+                .filter(entry -> !VillagerRetaliationItems.isFilter(entry))
+                .toList();
+        if (VillagerRetaliationItems.isItemFilter(filter)
+                && VillagerItemFilterData.mode(filter) == VillagerItemFilterData.Mode.ALLOWLIST
+                && !configuredEntries.isEmpty()) {
             for (ItemStack entry : configuredEntries) {
-                if (entry.isEmpty()) {
-                    continue;
-                }
                 CraftingAssessment assessment = assessCraftingItem(
                         level,
                         villager,
@@ -836,14 +838,15 @@ public final class CookingWorker extends AbstractBlockWorker {
             ItemStack stack,
             RecipeType<AbstractCookingRecipe> recipeType,
             ItemStack filter) {
-        return isCookableFood(level, stack, recipeType, desiredFoodPredicate(filter));
+        return isCookableFood(level, stack, recipeType, desiredFoodPredicate(level, filter));
     }
 
-    private static Predicate<ItemStack> desiredFoodPredicate(ItemStack filter) {
+    private static Predicate<ItemStack> desiredFoodPredicate(ServerLevel level, ItemStack filter) {
         if (filter == null || filter.isEmpty()) {
             return CookingWorker::isFood;
         }
-        return stack -> isFood(stack) && VillagerItemFilterData.matches(filter, stack);
+        return stack -> isFood(stack)
+                && com.jvn.villagerretaliation.item.VillagerFilterMatcher.matches(level, filter, stack);
     }
 
     private static Optional<RecipeHolder<AbstractCookingRecipe>> cookingRecipe(
