@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.block.PaymentBoxBlockEntity;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignmentResult;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.item.VillagerFilterMatcher;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import java.util.ArrayList;
@@ -373,12 +374,12 @@ public final class AssignedStorageService {
             VillagerInventoryOverflowService.ContainerCandidate candidate,
             ItemStack stack) {
         List<ItemStack> filters = courierItemFrameFilters(level, candidate);
-        return filters.isEmpty() || filters.stream().anyMatch(filter -> itemFrameFilterAccepts(filter, stack));
+        return filters.isEmpty() || filters.stream().anyMatch(filter -> itemFrameFilterAccepts(level, filter, stack));
     }
 
-    private static boolean itemFrameFilterAccepts(ItemStack filter, ItemStack stack) {
-        return VillagerRetaliationItems.isItemFilter(filter)
-                ? VillagerItemFilterData.matches(filter, stack)
+    private static boolean itemFrameFilterAccepts(ServerLevel level, ItemStack filter, ItemStack stack) {
+        return VillagerRetaliationItems.isFilter(filter)
+                ? VillagerFilterMatcher.matches(level, filter, stack)
                 : stack.is(filter.getItem());
     }
 

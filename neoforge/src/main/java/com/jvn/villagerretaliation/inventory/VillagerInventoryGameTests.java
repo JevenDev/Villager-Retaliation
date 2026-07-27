@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
+import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerItemFilterItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
@@ -47,6 +48,8 @@ import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
 import net.minecraft.world.level.block.Block;
@@ -95,6 +98,119 @@ public final class VillagerInventoryGameTests {
                 "other players must not be routed into the hired job inventory");
 
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void attributeFiltersMatchDirectlyAndConstrainItemFilterEntries(GameTestHelper helper) {
+        ItemStack fuelFilter = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
+        VillagerAttributeFilterData.Attribute furnaceFuel = new VillagerAttributeFilterData.Attribute(
+                VillagerAttributeFilterData.AttributeType.FURNACE_FUEL,
+                "");
+        helper.assertTrue(VillagerAttributeFilterData.availableAttributes(
+                        new ItemStack(Items.STICK), helper.getLevel()).contains(furnaceFuel),
+                "reference-item inspection should expose furnace fuel");
+        helper.assertTrue(VillagerAttributeFilterData.setSelected(fuelFilter, furnaceFuel, false),
+                "a selected attribute should persist");
+        helper.assertTrue(VillagerAttributeFilterData.matches(
+                        helper.getLevel(), fuelFilter, new ItemStack(Items.WOODEN_PICKAXE)),
+                "a direct attribute filter should accept matching items");
+        helper.assertFalse(VillagerAttributeFilterData.matches(
+                        helper.getLevel(), fuelFilter, new ItemStack(Items.STONE)),
+                "a direct attribute filter should reject non-matching items");
+
+        ItemStack nonStackableFilter = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
+        VillagerAttributeFilterData.setSelected(
+                nonStackableFilter,
+                new VillagerAttributeFilterData.Attribute(
+                        VillagerAttributeFilterData.AttributeType.NOT_STACKABLE,
+                        ""),
+                false);
+
+        ItemStack combined = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        helper.assertTrue(VillagerItemFilterData.setEntry(
+                        combined, 0, new ItemStack(Items.WOODEN_PICKAXE)),
+                "ordinary identity entry should be accepted");
+        helper.assertTrue(VillagerItemFilterData.setEntry(combined, 1, fuelFilter),
+                "configured attribute filter should be accepted as a nested entry");
+        helper.assertTrue(VillagerItemFilterData.setEntry(combined, 2, nonStackableFilter),
+                "multiple distinct attribute constraints should be accepted");
+        helper.assertTrue(VillagerAttributeFilterData.read(
+                        VillagerItemFilterData.entry(combined, 1)).attribute().equals(furnaceFuel),
+                "nested filter configuration must survive item-filter serialization");
+        helper.assertTrue(VillagerItemFilterData.matches(
+                        helper.getLevel(), combined, new ItemStack(Items.WOODEN_PICKAXE)),
+                "identity and every attribute constraint should match conjunctively");
+        helper.assertFalse(VillagerItemFilterData.matches(
+                        helper.getLevel(), combined, new ItemStack(Items.STICK)),
+                "matching attributes must not bypass the configured item identity");
+        helper.assertFalse(VillagerItemFilterData.matches(
+                        helper.getLevel(), combined, new ItemStack(Items.STONE_PICKAXE)),
+                "matching stackability must not bypass identity and fuel constraints");
+
+        VillagerItemFilterData.setMode(combined, VillagerItemFilterData.Mode.DENYLIST);
+        helper.assertFalse(VillagerItemFilterData.matches(
+                        helper.getLevel(), combined, new ItemStack(Items.WOODEN_PICKAXE)),
+                "denylist mode should negate the complete nested expression");
+        helper.assertTrue(VillagerItemFilterData.matches(
+                        helper.getLevel(), combined, new ItemStack(Items.STICK)),
+                "denylist mode should allow candidates outside the complete expression");
+        helper.succeed();
+    }
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void itemFiltersPreservePotionsAndCombineNestedModes(GameTestHelper helper) {
+        ItemStack healing = PotionContents.createItemStack(Items.POTION, Potions.HEALING);
+        ItemStack poison = PotionContents.createItemStack(Items.POTION, Potions.POISON);
+        ItemStack potionFilter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        helper.assertTrue(VillagerItemFilterData.setEntry(potionFilter, 0, healing),
+                "a configured potion should be accepted");
+        helper.assertTrue(ItemStack.isSameItemSameComponents(
+                        VillagerItemFilterData.entry(potionFilter, 0), healing),
+                "potion contents should survive filter serialization");
+        helper.assertTrue(VillagerItemFilterData.matches(helper.getLevel(), potionFilter, healing),
+                "the configured potion should match");
+        helper.assertFalse(VillagerItemFilterData.matches(helper.getLevel(), potionFilter, poison),
+                "a different potion in the same bottle type should not match");
+        helper.assertTrue(VillagerItemFilterData.setEntry(potionFilter, 1, poison),
+                "different potion variants should be valid alternatives");
+
+        ItemStack allowedWood = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(allowedWood, 0, new ItemStack(Items.STICK));
+        VillagerItemFilterData.setEntry(allowedWood, 1, new ItemStack(Items.WOODEN_PICKAXE));
+        ItemStack deniedSticks = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setMode(deniedSticks, VillagerItemFilterData.Mode.DENYLIST);
+        VillagerItemFilterData.setEntry(deniedSticks, 0, new ItemStack(Items.STICK));
+
+        ItemStack combined = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        helper.assertTrue(VillagerItemFilterData.setEntry(combined, 0, allowedWood),
+                "a nested allowlist should be accepted");
+        helper.assertTrue(VillagerItemFilterData.setEntry(combined, 1, deniedSticks),
+                "a nested denylist should be accepted alongside it");
+        helper.assertTrue(VillagerRetaliationItems.isItemFilter(
+                        VillagerItemFilterData.entry(combined, 0)),
+                "nested filter configuration should survive serialization");
+        helper.assertTrue(VillagerItemFilterData.matches(
+                        helper.getLevel(), combined, new ItemStack(Items.WOODEN_PICKAXE)),
+                "an item allowed by the nested allowlist and not denied should pass");
+        helper.assertFalse(VillagerItemFilterData.matches(
+                        helper.getLevel(), combined, new ItemStack(Items.STICK)),
+                "the nested denylist should exclude an otherwise allowed item");
+        helper.assertFalse(VillagerItemFilterData.matches(
+                        helper.getLevel(), combined, new ItemStack(Items.STONE_PICKAXE)),
+                "the nested allowlist should still reject unrelated items");
+        helper.assertFalse(VillagerItemFilterData.setEntry(combined, 2, combined.copy()),
+                "a filter must not directly contain an identical copy of itself");
+
+        ItemStack nested = allowedWood;
+        for (int depth = 0; depth < VillagerItemFilterData.MAX_NESTING_DEPTH; depth++) {
+            ItemStack parent = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+            helper.assertTrue(VillagerItemFilterData.setEntry(parent, 0, nested),
+                    "nesting within the supported depth should be accepted");
+            nested = parent;
+        }
+        ItemStack tooDeep = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        helper.assertFalse(VillagerItemFilterData.setEntry(tooDeep, 0, nested),
+                "nesting beyond the supported depth should be rejected");
         helper.succeed();
     }
 
@@ -216,6 +332,15 @@ public final class VillagerInventoryGameTests {
                 98, outsider.getInventory(), villager, VillagerInventoryMenu.ViewMode.JOB, false, false);
         helper.assertFalse(unauthorizedMenu.getSlot(HiredJobInventory.FILTER_SLOT).mayPickup(outsider),
                 "a non-hirer should not be able to remove the assigned filter");
+        helper.assertTrue(unauthorizedMenu.getSlot(HiredJobInventory.FILTER_SLOT).mayPlace(
+                        new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get())),
+                "the dedicated slot should accept item filters");
+        helper.assertTrue(unauthorizedMenu.getSlot(HiredJobInventory.FILTER_SLOT).mayPlace(
+                        new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get())),
+                "the dedicated slot should accept attribute filters");
+        helper.assertFalse(unauthorizedMenu.getSlot(HiredJobInventory.FILTER_SLOT).mayPlace(
+                        new ItemStack(Items.DIRT)),
+                "the dedicated slot should reject ordinary items");
         outsider.getInventory().setItem(outsider.getInventory().selected, filter.copy());
         VillagerItemFilterItem.handleModeChange(outsider, 9999, -1);
         helper.assertTrue(VillagerItemFilterData.mode(outsider.getMainHandItem()) == VillagerItemFilterData.Mode.ALLOWLIST,

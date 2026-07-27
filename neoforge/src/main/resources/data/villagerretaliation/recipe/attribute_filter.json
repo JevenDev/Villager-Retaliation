@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " C ",
+    "RPR"
+  ],
+  "key": {
+    "C": {
+      "item": "minecraft:comparator"
+    },
+    "P": {
+      "item": "minecraft:paper"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "result": {
+    "id": "villagerretaliation:attribute_filter",
+    "count": 1
+  }
+}

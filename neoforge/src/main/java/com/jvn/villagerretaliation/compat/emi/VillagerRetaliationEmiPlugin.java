@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.compat.emi;
 
+import com.jvn.villagerretaliation.client.inventory.VillagerAttributeFilterScreen;
 import com.jvn.villagerretaliation.client.inventory.VillagerInventoryScreen;
 import com.jvn.villagerretaliation.client.inventory.VillagerItemFilterScreen;
 import com.jvn.villagerretaliation.client.party.PartyInventoryOverlay;
@@ -40,6 +41,22 @@ public final class VillagerRetaliationEmiPlugin implements EmiPlugin {
                 }
                 screen.getMenu().setGhostEntry(slot, stack);
                 PacketDistributor.sendToServer(new ItemFilterGhostSlotPayload(slot, stack));
+                return true;
+            }
+        });
+        registry.addDragDropHandler(VillagerAttributeFilterScreen.class, new EmiDragDropHandler<>() {
+            @Override
+            public boolean dropStack(VillagerAttributeFilterScreen screen, dev.emi.emi.api.stack.EmiIngredient ingredient,
+                    int mouseX, int mouseY) {
+                if (!screen.isReferenceSlotAt(mouseX, mouseY) || ingredient.getEmiStacks().isEmpty()) {
+                    return false;
+                }
+                ItemStack stack = ingredient.getEmiStacks().getFirst().getItemStack();
+                if (stack.isEmpty()) {
+                    return false;
+                }
+                screen.getMenu().setReference(stack);
+                PacketDistributor.sendToServer(new ItemFilterGhostSlotPayload(0, stack));
                 return true;
             }
         });

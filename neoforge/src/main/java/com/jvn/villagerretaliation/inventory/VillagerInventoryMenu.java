@@ -3,6 +3,8 @@ package com.jvn.villagerretaliation.inventory;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.VillagerInteractionTracker;
 import com.jvn.villagerretaliation.mixin.AbstractContainerMenuAccessor;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
+import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -489,6 +491,13 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
     private boolean movePlayerStackToVillager(ItemStack stack) {
         EquipmentSlot equipmentSlot = equipmentSlotFor(stack);
         if (this.viewMode.isWorkInventory()) {
+            if (VillagerRetaliationItems.isFilter(stack)) {
+                return moveItemStackTo(
+                        stack,
+                        HiredJobInventory.FILTER_SLOT,
+                        HiredJobInventory.FILTER_SLOT + 1,
+                        false);
+            }
             return moveItemStackTo(stack, 0, this.villagerSlotCount, false);
         }
 
@@ -847,7 +856,7 @@ public class VillagerInventoryMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return false;
+            return VillagerRetaliationItems.isFilter(stack);
         }
 
         @Override

@@ -25,7 +25,7 @@ final class VillagerItemFilterInteractionHandler {
     static InteractionResult open(Villager villager, ServerPlayer player) {
         if (!(villager.level() instanceof ServerLevel level)
                 || villager.isBaby()
-                || !VillagerRetaliationItems.isItemFilter(player.getMainHandItem())) {
+                || !VillagerRetaliationItems.isFilter(player.getMainHandItem())) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.item_filter.adult_hired_only");
             return InteractionResult.FAIL;
         }
@@ -68,7 +68,7 @@ final class VillagerItemFilterInteractionHandler {
             return true;
         }
         ItemStack heldFilter = player.getMainHandItem();
-        if (!VillagerRetaliationItems.isItemFilter(heldFilter)) {
+        if (!VillagerRetaliationItems.isFilter(heldFilter)) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.item_filter.missing");
             VillagerConversationService.endForPlayer(player, true);
             return true;

@@ -64,6 +64,12 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/party/player_party_inventory_container_pushed_button_highlighted");
     public static final ResourceLocation ITEM_FILTER_CONTAINER_TEXTURE =
             texture("gui/item_filter/filter_container");
+    public static final ResourceLocation ATTRIBUTE_FILTER_CONTAINER_TEXTURE =
+            texture("gui/attribute_filter/filter_container");
+    public static final ResourceLocation ATTRIBUTE_FILTER_SCROLL_ROW_TEXTURE =
+            texture("gui/attribute_filter/scroll_row");
+    public static final ResourceLocation ATTRIBUTE_FILTER_SELECTED_SCROLL_ROW_TEXTURE =
+            texture("gui/attribute_filter/selected_scroll_row");
     public static final ResourceLocation INTERACTION_CONTAINER_TEXTURE =
             texture("gui/villager_interaction_screen/interaction_container");
     public static final ResourceLocation INTERACTION_BUTTON_TEXTURE =

@@ -1,5 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
+import com.jvn.villagerretaliation.item.VillagerFilterMatcher;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -18,19 +20,19 @@ public final class VillagerItemFilterService {
             return ItemStack.EMPTY;
         }
         ItemStack filter = HiredJobInventory.getJobInventory(villager).getItem(HiredJobInventory.FILTER_SLOT);
-        return VillagerRetaliationItems.isItemFilter(filter) ? filter : ItemStack.EMPTY;
+        return VillagerRetaliationItems.isFilter(filter) ? filter : ItemStack.EMPTY;
     }
 
     public static boolean mayWithdraw(Villager villager, ItemStack candidate) {
         ItemStack filter = assignedFilter(villager);
-        return filter.isEmpty() || VillagerItemFilterData.matches(filter, candidate);
+        return filter.isEmpty() || VillagerFilterMatcher.matches(villager.level(), filter, candidate);
     }
 
     /** Replaces the assigned filter with a single configured copy and returns the prior filter. */
     public static ItemStack replaceFilter(Villager villager, ItemStack replacement) {
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         ItemStack oldFilter = inventory.getItem(HiredJobInventory.FILTER_SLOT).copy();
-        ItemStack stored = VillagerRetaliationItems.isItemFilter(replacement)
+        ItemStack stored = VillagerRetaliationItems.isFilter(replacement)
                 ? replacement.copyWithCount(1)
                 : ItemStack.EMPTY;
         inventory.setItem(HiredJobInventory.FILTER_SLOT, stored);
@@ -56,12 +58,17 @@ public final class VillagerItemFilterService {
             return AssignmentResult.REJECTED;
         }
         ItemStack heldFilter = player.getMainHandItem();
-        if (!VillagerRetaliationItems.isItemFilter(heldFilter)) {
+        if (!VillagerRetaliationItems.isFilter(heldFilter)) {
             return AssignmentResult.REJECTED;
         }
 
         ItemStack assignedFilter = heldFilter.copyWithCount(1);
-        VillagerItemFilterData.setMode(assignedFilter, mode);
+        if (VillagerRetaliationItems.isItemFilter(assignedFilter)) {
+            VillagerItemFilterData.setMode(assignedFilter, mode);
+        } else {
+            VillagerAttributeFilterData.setInverted(
+                    assignedFilter, mode == VillagerItemFilterData.Mode.DENYLIST);
+        }
         ItemStack oldFilter = replaceFilter(villager, assignedFilter);
         if (!player.getAbilities().instabuild) {
             heldFilter.shrink(1);

@@ -44,6 +44,10 @@ Authorized players may see separate Personal, Job, and Party inventories. Job in
 - **Allowlist:** only listed items are handled.
 - **Denylist:** listed items are skipped.
 
+Use an :item[villagerretaliation:attribute_filter] to inspect a reference item and select one property such as a tag, creative group, fuel status, recipe capability, enchantment, color, name, or container state. Attribute filters work directly in a villager's filter slot or an output-container item frame.
+
+Inside an Item Filter, ordinary items are alternatives while every nested filter is required. Attribute Filters add property constraints. Nested Item Filters add their complete allowlist or denylist result, so an allowlist and denylist can be combined. Nesting is limited to eight levels. A filter containing a wooden pickaxe, is furnace fuel, and is not stackable therefore accepts only wooden pickaxes satisfying both attributes. Potion entries retain their exact potion contents instead of matching every potion with the same bottle type. The outer Item Filter's mode applies after all constraints are evaluated.
+
 A filter narrows supported work; it does not add recipes, targets, or storage behavior.
 
 :::details{id="worker-troubleshooting" title="Worker troubleshooting order" open="true"}

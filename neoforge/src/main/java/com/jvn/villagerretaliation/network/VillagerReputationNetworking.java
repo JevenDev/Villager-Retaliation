@@ -562,12 +562,25 @@ public final class VillagerReputationNetworking {
                                         payload.modeId())))
         );
         network.playToServer(
+                AttributeFilterSelectPayload.TYPE,
+                AttributeFilterSelectPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> {
+                            if (player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerAttributeFilterMenu menu) {
+                                menu.select(payload.attribute(), payload.inverted(), player);
+                            }
+                        }))
+        );
+        network.playToServer(
                 ItemFilterGhostSlotPayload.TYPE,
                 ItemFilterGhostSlotPayload.STREAM_CODEC,
                 (payload, context) -> ToucanNetwork.enqueue(context, () ->
                         ToucanNetwork.withServerPlayer(context, player -> {
                             if (player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerItemFilterMenu menu) {
                                 menu.setGhostEntry(payload.slot(), payload.entry());
+                            } else if (payload.slot() == 0
+                                    && player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerAttributeFilterMenu menu) {
+                                menu.setReference(payload.entry());
                             }
                         }))
         );
