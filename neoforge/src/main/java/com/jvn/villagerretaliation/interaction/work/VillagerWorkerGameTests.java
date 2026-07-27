@@ -4336,6 +4336,51 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void courierContinuesPastEmptyRouteNodeInSameTick(GameTestHelper helper) {
+        buildFloor(helper, 0, 12, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierEmptyNode");
+        BlockPos firstNodeRel = new BlockPos(2, 2, 2);
+        BlockPos middleNodeRel = new BlockPos(6, 2, 2);
+        BlockPos lastNodeRel = new BlockPos(10, 2, 2);
+        Villager villager = spawnVillager(helper, firstNodeRel);
+        BlockPos inputRel = new BlockPos(10, 2, 5);
+        BlockPos input = helper.absolutePos(inputRel);
+        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        container(level, input).setItem(0, new ItemStack(Items.COBBLESTONE));
+        AssignedStorageService.removeAssignedContainer(level, input);
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "empty-node courier input assignment");
+
+        CompoundTag state = new CompoundTag();
+        state.putString("CourierPhase", "outbound");
+        state.putInt("CourierRouteIndex", 0);
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(firstNodeRel, middleNodeRel, lastNodeRel));
+
+        new CourierWorker().tick(level, villager, hirer, context);
+
+        BlockPos navigationTarget = villager.getNavigation().getTargetPos();
+        helper.assertValueEqual(state.getInt("CourierRouteIndex"), 1,
+                "courier should advance past an empty route node immediately");
+        helper.assertTrue(!villager.getNavigation().isDone()
+                        && navigationTarget != null
+                        && navigationTarget.distSqr(helper.absolutePos(middleNodeRel)) <= 4.0D,
+                "courier should begin walking toward the next node in the same tick");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 500)
     public static void courierBatchesContainersTetheredToTheSameRouteNode(GameTestHelper helper) {
         buildFloor(helper, 0, 14, 0, 10, 1);
