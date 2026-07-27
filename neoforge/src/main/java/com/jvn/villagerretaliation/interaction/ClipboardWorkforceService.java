@@ -1074,8 +1074,11 @@ public final class ClipboardWorkforceService {
         if (reason.contains("courier_missing_input_storage")) {
             return "Courier needs at least one assigned input container.";
         }
-        if (reason.contains("courier_missing_output_storage") || reason.contains("courier_output_unavailable")) {
+        if (reason.contains("courier_missing_output_storage")) {
             return "Courier needs at least one loaded assigned output container.";
+        }
+        if (reason.contains("courier_output_unavailable")) {
+            return "No assigned output container can accept the courier's remaining cargo right now.";
         }
         if (reason.contains("courier_input_empty")) {
             return "Courier is waiting for items in assigned input storage.";

@@ -156,7 +156,7 @@ public final class CourierWorker implements HiredRoleWorker {
         if (outbound) {
             if (deliverySweep && context.inventory().hasOutputItems()) {
                 clearVisitedStorage(context);
-                setRouteIndex(context, lastIndex);
+                setRouteIndex(context, 0);
                 HiredWorkerBrain.setFailure(context, "courier_output_unavailable", level.getGameTime() + 100L);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE, node);
                 return WorkResult.idle("interaction.work.courier.output_unavailable");
