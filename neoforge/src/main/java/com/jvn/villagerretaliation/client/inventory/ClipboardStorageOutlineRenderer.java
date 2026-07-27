@@ -69,7 +69,14 @@ public final class ClipboardStorageOutlineRenderer {
     private static final int ROUTE_LAST_COLOR = 0xFFC8F06A;
     private static final int ROUTE_LOOP_COLOR = 0xFFE1FF6E;
     private static final int ROUTE_INVALID_COLOR = 0xFFEA5C2B;
-    private static final int ROUTE_REACH_COLOR = 0xFFC8F06A;
+    private static final int ROUTE_REACH_COLOR = 0xFFFFA43A;
+    private static final int PLAYER_ROUTE_COLOR = 0xFF55C8FF;
+    private static final int PLAYER_ROUTE_NODE_COLOR = 0xFF68CEFA;
+    private static final int PLAYER_ROUTE_FIRST_COLOR = 0xFF82DBFF;
+    private static final int PLAYER_ROUTE_LAST_COLOR = 0xFFB0EAFF;
+    private static final int PLAYER_ROUTE_LOOP_COLOR = 0xFF91E5FF;
+    private static final int PLAYER_ROUTE_CREATION_COLOR = 0xFFFFA43A;
+    private static final int PLAYER_ROUTE_ACTIVE_COLOR = 0xFFFFE16A;
     private static final float DEBUG_ROUTE_NODE_HALF_WIDTH = 0.5F;
     private static final float DEBUG_ROUTE_NODE_HEIGHT = 0.025F;
     private static final float DEBUG_ROUTE_NODE_ALPHA = 0.5F;
@@ -82,8 +89,15 @@ public final class ClipboardStorageOutlineRenderer {
     private static final double MAX_LABEL_DISTANCE_SQR = 96.0D * 96.0D;
     private static final long ROUTE_GUIDE_CACHE_TICKS = 20L;
     private static final int MAX_ROUTE_GUIDE_CACHE_ENTRIES = 4096;
-    private static final RenderType ROUTE_GUIDE_TYPE = RenderType.debugLineStrip(8.0D);
+    private static final RenderType DEBUG_ROUTE_GUIDE_TYPE = RenderType.debugLineStrip(2.0D);
+    private static final RenderType PLAYER_ROUTE_QUADS_TYPE = RenderType.debugQuads();
     private static final RenderType ROUTE_REACH_TYPE = RenderType.debugLineStrip(4.0D);
+    private static final double ASSIGNED_ROUTE_OUTLINE_HALF_WIDTH = 0.075D;
+    private static final double ASSIGNED_ROUTE_CORE_HALF_WIDTH = 0.045D;
+    private static final double CREATION_ROUTE_OUTLINE_HALF_WIDTH = 0.085D;
+    private static final double CREATION_ROUTE_CORE_HALF_WIDTH = 0.0525D;
+    private static final double PLAYER_ROUTE_HEIGHT_ABOVE_SURFACE = 0.08D;
+    private static final double PLAYER_ROUTE_SEGMENT_OVERLAP = 0.012D;
     private static final int ROUTE_REACH_SEGMENTS = 64;
     private static final List<OutlinedStoragePosition> ASSIGNED_POSITIONS = new ArrayList<>();
     private static final List<WorkAreaPosition> WORK_AREAS = new ArrayList<>();
@@ -293,7 +307,6 @@ public final class ClipboardStorageOutlineRenderer {
             clearRetainedRoutePreview();
             return;
         }
-        boolean debugRouteNodes = minecraft.getEntityRenderDispatcher().shouldRenderHitBoxes();
         if (mode.isStorageAssignmentMode() || mode == ClipboardMode.ASSIGN_PAYMENT) {
             List<StoragePosition> selected = HiredStorageClipboardItem.selectedContainers(clipboard);
             renderPositions(event, selected, mode == ClipboardMode.ASSIGN_PAYMENT ? PAYMENT_COLOR : SELECTED_COLOR);
@@ -301,8 +314,8 @@ public final class ClipboardStorageOutlineRenderer {
         }
 
         if (mode == ClipboardMode.ROUTE) {
-            renderHeldRouteDraft(event, clipboard, debugRouteNodes);
-            renderRoutePlacementPreview(event, clipboard, debugRouteNodes);
+            renderHeldRouteDraft(event, clipboard);
+            renderRoutePlacementPreview(event, clipboard);
             return;
         }
         clearRetainedRoutePreview();
@@ -325,9 +338,12 @@ public final class ClipboardStorageOutlineRenderer {
             ASSIGNED_POSITIONS.clear();
         }
         if (gameTime <= routesVisibleUntilGameTime) {
-            boolean debugRouteNodes = minecraft.getEntityRenderDispatcher().shouldRenderHitBoxes();
-            renderRoutes(event, ROUTES, ROUTE_COLOR, debugRouteNodes);
-            renderRouteLabels(event, ROUTES, false, false);
+            if (minecraft.getEntityRenderDispatcher().shouldRenderHitBoxes()) {
+                renderDebugRoutes(event, ROUTES, ROUTE_COLOR);
+            } else {
+                renderAssignedRoutes(event, ROUTES, ROUTE_COLOR);
+                renderRouteLabels(event, ROUTES, false, false);
+            }
         } else {
             ROUTES.clear();
         }
@@ -383,16 +399,14 @@ public final class ClipboardStorageOutlineRenderer {
         return true;
     }
 
-    private static boolean renderHeldRouteDraft(RenderLevelStageEvent event, ItemStack clipboard, boolean debugRouteNodes) {
+    private static boolean renderHeldRouteDraft(RenderLevelStageEvent event, ItemStack clipboard) {
         RouteDraft draft = clientRouteDraft(clipboard);
         if (draft.isEmpty()) {
             return false;
         }
         RoutePosition route = new RoutePosition(draft.dimension(), draft.route().nodes(), draft.route().loop(), "", "");
-        renderRoutes(event, List.of(route), ROUTE_COLOR, debugRouteNodes);
-        if (!debugRouteNodes) {
-            renderRouteLabels(event, List.of(route), true, false);
-        }
+        renderCreationRoute(event, route);
+        renderRouteLabels(event, List.of(route), true, false);
         if (!route.loop() && route.nodes().size() < HiredRoute.MAX_NODES) {
             renderRouteReach(event, route.nodes().getLast());
             renderRouteContinuationLabel(event, route.nodes().getLast());
@@ -400,7 +414,7 @@ public final class ClipboardStorageOutlineRenderer {
         return true;
     }
 
-    private static void renderRoutePlacementPreview(RenderLevelStageEvent event, ItemStack clipboard, boolean debugRouteNodes) {
+    private static void renderRoutePlacementPreview(RenderLevelStageEvent event, ItemStack clipboard) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null) {
             return;
@@ -416,29 +430,15 @@ public final class ClipboardStorageOutlineRenderer {
         poseStack.translate(-camera.x, -camera.y, -camera.z);
         MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
         VertexConsumer boxConsumer = bufferSource.getBuffer(RenderType.lines());
-        int color = preview.valid() ? ROUTE_LOOP_COLOR : ROUTE_INVALID_COLOR;
-        boolean renderedDebugTarget = false;
+        int color = preview.valid() ? PLAYER_ROUTE_CREATION_COLOR : ROUTE_INVALID_COLOR;
         if (preview.showTargetMarker()) {
-            if (debugRouteNodes && preview.valid()) {
-                renderDebugRouteNode(poseStack, bufferSource, preview.target());
-                renderedDebugTarget = true;
-            } else {
-                renderColoredBox(poseStack, boxConsumer, markerBox(preview.target()), color);
-            }
+            renderColoredBox(poseStack, boxConsumer, markerBox(preview.target()), color);
         }
         if (preview.from() != null) {
-            VertexConsumer guideConsumer = bufferSource.getBuffer(ROUTE_GUIDE_TYPE);
-            renderRouteGuide(poseStack, guideConsumer, preview.from(), preview.target(), color);
-            bufferSource.endBatch(ROUTE_GUIDE_TYPE);
+            renderCreationRouteSegment(poseStack, bufferSource, preview.from(), preview.target(), color);
         }
         poseStack.popPose();
         bufferSource.endBatch(RenderType.lines());
-        if (debugRouteNodes) {
-            bufferSource.endBatch(RenderType.debugFilledBox());
-            if (renderedDebugTarget) {
-                renderDebugRouteNodeLabel(event, preview.target(), "Route", preview.nodeIndex());
-            }
-        }
         renderRoutePreviewLabel(event, preview);
     }
 
@@ -561,7 +561,11 @@ public final class ClipboardStorageOutlineRenderer {
                     .filter(route -> matchesClipboardScope(route.ownerName(), route.jobName(), problemsOnly))
                     .toList();
             renderWorkAreas(event, workAreas, problemsOnly ? ROUTE_INVALID_COLOR : WORK_AREA_COLOR);
-            renderRoutes(event, routes, problemsOnly ? ROUTE_INVALID_COLOR : ROUTE_COLOR, true);
+            renderAssignedOrDebugRoutes(
+                    event,
+                    minecraft,
+                    routes,
+                    problemsOnly ? ROUTE_INVALID_COLOR : ROUTE_COLOR);
             renderAssignedPositions(
                     event,
                     storage,
@@ -578,7 +582,7 @@ public final class ClipboardStorageOutlineRenderer {
         }
         if (nearbyWorkAreaPreviewsEnabled) {
             renderWorkAreas(event, DEBUG_WORK_AREAS, WORK_AREA_COLOR);
-            renderRoutes(event, DEBUG_ROUTES, ROUTE_COLOR, true);
+            renderAssignedOrDebugRoutes(event, minecraft, DEBUG_ROUTES, ROUTE_COLOR);
         }
         renderAssignedPositions(event, DEBUG_ASSIGNED_POSITIONS, nearbyStoragePreviewsEnabled, nearbyPaymentPreviewsEnabled);
         renderDebugLabels(
@@ -756,6 +760,59 @@ public final class ClipboardStorageOutlineRenderer {
             }
         }
         return names;
+    }
+
+    private static ActiveRouteTargets activeRouteTargets(
+            RoutePosition route,
+            ResourceKey<Level> currentDimension) {
+        Set<String> owners = splitOwnerNames(route.ownerName());
+        if (owners.isEmpty()) {
+            return ActiveRouteTargets.EMPTY;
+        }
+        Set<Integer> activeNodes = new HashSet<>();
+        Set<RouteEdge> activeEdges = new HashSet<>();
+        for (WorkforceMarker marker : clipboardWorkforceMarkers) {
+            if (!marker.dimension().equals(currentDimension)
+                    || marker.targetPos() == null
+                    || owners.stream().noneMatch(owner -> owner.equalsIgnoreCase(marker.ownerName()))
+                    || !route.jobName().isBlank() && !route.jobName().equalsIgnoreCase(marker.jobName())) {
+                continue;
+            }
+            int targetIndex = route.nodes().indexOf(marker.targetPos());
+            if (targetIndex < 0) {
+                continue;
+            }
+            activeNodes.add(targetIndex);
+            int sourceIndex = nearestConnectedRouteNode(route, targetIndex, marker.pos());
+            if (sourceIndex >= 0) {
+                activeEdges.add(RouteEdge.of(sourceIndex, targetIndex));
+            }
+        }
+        if (activeNodes.isEmpty()) {
+            return ActiveRouteTargets.EMPTY;
+        }
+        return new ActiveRouteTargets(Set.copyOf(activeNodes), Set.copyOf(activeEdges));
+    }
+
+    private static int nearestConnectedRouteNode(RoutePosition route, int targetIndex, BlockPos villagerPos) {
+        int size = route.nodes().size();
+        if (size < 2) {
+            return -1;
+        }
+        int previous = targetIndex - 1;
+        int next = targetIndex + 1;
+        if (route.loop()) {
+            previous = Math.floorMod(previous, size);
+            next = Math.floorMod(next, size);
+        }
+        if (previous < 0) {
+            return next < size ? next : -1;
+        }
+        if (next >= size) {
+            return previous;
+        }
+        return villagerPos.distSqr(route.nodes().get(previous))
+                <= villagerPos.distSqr(route.nodes().get(next)) ? previous : next;
     }
 
     private static void renderWorkforceMarkers(
@@ -947,7 +1004,7 @@ public final class ClipboardStorageOutlineRenderer {
                             new Vec3(node.getX() + 0.5D, node.getY() + 1.35D, node.getZ() + 0.5D),
                             Integer.toString(index + 1),
                             "",
-                            routeNodeColor(route, index)
+                            playerRouteNodeColor(route, index, PLAYER_ROUTE_CREATION_COLOR)
                     ));
                 }
             }
@@ -965,14 +1022,14 @@ public final class ClipboardStorageOutlineRenderer {
                 Component.translatable(
                         "villagerretaliation.clipboard.route_preview.continue",
                         HiredRoute.MAX_NODE_DISTANCE).getString(),
-                ROUTE_LAST_COLOR)));
+                PLAYER_ROUTE_CREATION_COLOR)));
     }
 
     private static void renderRoutePreviewLabel(RenderLevelStageEvent event, RoutePreview preview) {
         if (preview.hint().isBlank()) {
             return;
         }
-        int color = preview.valid() ? ROUTE_LOOP_COLOR : ROUTE_INVALID_COLOR;
+        int color = preview.valid() ? PLAYER_ROUTE_CREATION_COLOR : ROUTE_INVALID_COLOR;
         double labelHeight = preview.valid() ? 1.8D : 2.2D;
         renderLabels(event, List.of(new DebugLabelPosition(
                 new Vec3(
@@ -1196,7 +1253,45 @@ public final class ClipboardStorageOutlineRenderer {
         bufferSource.endBatch(RenderType.lines());
     }
 
-    private static void renderRoutes(RenderLevelStageEvent event, List<RoutePosition> routes, int color, boolean debugRouteNodes) {
+    private static void renderAssignedOrDebugRoutes(
+            RenderLevelStageEvent event,
+            Minecraft minecraft,
+            List<RoutePosition> routes,
+            int color) {
+        if (minecraft.getEntityRenderDispatcher().shouldRenderHitBoxes()) {
+            renderDebugRoutes(event, routes, color);
+        } else {
+            renderAssignedRoutes(event, routes, color);
+        }
+    }
+
+    private static void renderAssignedRoutes(RenderLevelStageEvent event, List<RoutePosition> routes, int color) {
+        renderPlayerRoutes(
+                event,
+                routes,
+                color == ROUTE_COLOR ? PLAYER_ROUTE_COLOR : color,
+                ASSIGNED_ROUTE_OUTLINE_HALF_WIDTH,
+                ASSIGNED_ROUTE_CORE_HALF_WIDTH,
+                true);
+    }
+
+    private static void renderCreationRoute(RenderLevelStageEvent event, RoutePosition route) {
+        renderPlayerRoutes(
+                event,
+                List.of(route),
+                PLAYER_ROUTE_CREATION_COLOR,
+                CREATION_ROUTE_OUTLINE_HALF_WIDTH,
+                CREATION_ROUTE_CORE_HALF_WIDTH,
+                false);
+    }
+
+    private static void renderPlayerRoutes(
+            RenderLevelStageEvent event,
+            List<RoutePosition> routes,
+            int color,
+            double outlineHalfWidth,
+            double coreHalfWidth,
+            boolean highlightActiveTargets) {
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.level == null || routes.isEmpty()) {
             return;
@@ -1207,7 +1302,7 @@ public final class ClipboardStorageOutlineRenderer {
         poseStack.pushPose();
         poseStack.translate(-camera.x, -camera.y, -camera.z);
         MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
-        VertexConsumer boxConsumer = bufferSource.getBuffer(RenderType.lines());
+        VertexConsumer routeConsumer = bufferSource.getBuffer(PLAYER_ROUTE_QUADS_TYPE);
         ResourceKey<Level> currentDimension = minecraft.level.dimension();
         int maxVisibleNodes = Math.max(0, VillagerRetaliationConfig.DEBUG_PREVIEW_MAX_VISIBLE_NODES.get());
         int renderedNodes = 0;
@@ -1216,41 +1311,161 @@ public final class ClipboardStorageOutlineRenderer {
             if (!route.dimension().equals(currentDimension) || route.nodes().isEmpty()) {
                 continue;
             }
+            ActiveRouteTargets activeTargets = highlightActiveTargets
+                    ? activeRouteTargets(route, currentDimension)
+                    : ActiveRouteTargets.EMPTY;
+            if (remainingSegments > 0) {
+                remainingSegments -= renderPlayerRouteGuide(
+                        event,
+                        minecraft,
+                        poseStack,
+                        routeConsumer,
+                        route,
+                        color,
+                        remainingSegments,
+                        outlineHalfWidth,
+                        coreHalfWidth,
+                        activeTargets.edges());
+            }
             for (int index = 0; index < route.nodes().size() && renderedNodes < maxVisibleNodes; index++) {
                 BlockPos node = route.nodes().get(index);
                 if (minecraft.level.hasChunkAt(node) && isVisible(event, markerBox(node))) {
-                    if (debugRouteNodes) {
-                        renderDebugRouteNode(poseStack, bufferSource, node);
-                    } else {
-                        renderColoredBox(poseStack, boxConsumer, markerBox(node), routeNodeColor(route, index));
-                    }
+                    renderPlayerRouteNode(
+                            poseStack,
+                            routeConsumer,
+                            minecraft.level,
+                            route,
+                            index,
+                            activeTargets.nodes().contains(index)
+                                    ? PLAYER_ROUTE_ACTIVE_COLOR
+                                    : playerRouteNodeColor(route, index, color));
+                    renderedNodes++;
+                }
+            }
+            if (renderedNodes >= maxVisibleNodes && remainingSegments <= 0) {
+                break;
+            }
+        }
+        bufferSource.endBatch(PLAYER_ROUTE_QUADS_TYPE);
+        poseStack.popPose();
+    }
+
+    private static void renderDebugRoutes(RenderLevelStageEvent event, List<RoutePosition> routes, int color) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null || routes.isEmpty()) {
+            return;
+        }
+
+        PoseStack poseStack = event.getPoseStack();
+        Vec3 camera = event.getCamera().getPosition();
+        poseStack.pushPose();
+        poseStack.translate(-camera.x, -camera.y, -camera.z);
+        MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
+        ResourceKey<Level> currentDimension = minecraft.level.dimension();
+        int maxVisibleNodes = Math.max(0, VillagerRetaliationConfig.DEBUG_PREVIEW_MAX_VISIBLE_NODES.get());
+        int renderedNodes = 0;
+        int remainingSegments = Math.max(0, VillagerRetaliationConfig.DEBUG_PREVIEW_MAX_VISIBLE_SEGMENTS.get());
+        for (RoutePosition route : routes) {
+            if (!route.dimension().equals(currentDimension) || route.nodes().isEmpty()) {
+                continue;
+            }
+            for (BlockPos node : route.nodes()) {
+                if (renderedNodes >= maxVisibleNodes) {
+                    break;
+                }
+                if (minecraft.level.hasChunkAt(node) && isVisible(event, markerBox(node))) {
+                    renderDebugRouteNode(poseStack, bufferSource, node);
                     renderedNodes++;
                 }
             }
             if (remainingSegments > 0) {
-                remainingSegments -= renderRouteGuide(
-                        event, minecraft, poseStack, bufferSource, route, color, remainingSegments);
+                remainingSegments -= renderRouteGuideLayer(
+                        event,
+                        minecraft,
+                        poseStack,
+                        bufferSource,
+                        route,
+                        color,
+                        ROUTE_LOOP_COLOR,
+                        remainingSegments,
+                        DEBUG_ROUTE_GUIDE_TYPE);
             }
             if (renderedNodes >= maxVisibleNodes && remainingSegments <= 0) {
                 break;
             }
         }
         poseStack.popPose();
-        bufferSource.endBatch(RenderType.lines());
-        if (debugRouteNodes) {
-            bufferSource.endBatch(RenderType.debugFilledBox());
-            renderDebugRouteNodeLabels(event, routes);
-        }
+        bufferSource.endBatch(RenderType.debugFilledBox());
+        renderDebugRouteNodeLabels(event, routes);
     }
 
-    private static int renderRouteGuide(
+    private static int renderPlayerRouteGuide(
+            RenderLevelStageEvent event,
+            Minecraft minecraft,
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            RoutePosition route,
+            int color,
+            int segmentBudget,
+            double outlineHalfWidth,
+            double coreHalfWidth,
+            Set<RouteEdge> activeEdges) {
+        if (route.nodes().size() < 2 || segmentBudget <= 0) {
+            return 0;
+        }
+        int renderedSegments = 0;
+        for (int index = 1; index < route.nodes().size() && renderedSegments < segmentBudget; index++) {
+            BlockPos previous = route.nodes().get(index - 1);
+            BlockPos current = route.nodes().get(index);
+            AABB segmentBounds = new AABB(Vec3.atCenterOf(previous), Vec3.atCenterOf(current)).inflate(1.0D);
+            if (minecraft.level.hasChunkAt(previous)
+                    && minecraft.level.hasChunkAt(current)
+                    && isVisible(event, segmentBounds)) {
+                renderPlayerRouteBeam(
+                        poseStack,
+                        consumer,
+                        minecraft.level,
+                        previous,
+                        current,
+                        activeEdges.contains(RouteEdge.of(index - 1, index)) ? PLAYER_ROUTE_ACTIVE_COLOR : color,
+                        outlineHalfWidth,
+                        coreHalfWidth);
+                renderedSegments++;
+            }
+        }
+        if (route.loop() && renderedSegments < segmentBudget) {
+            BlockPos first = route.nodes().getFirst();
+            BlockPos last = route.nodes().getLast();
+            if (minecraft.level.hasChunkAt(last)
+                    && minecraft.level.hasChunkAt(first)
+                    && isVisible(event, new AABB(Vec3.atCenterOf(last), Vec3.atCenterOf(first)).inflate(1.0D))) {
+                renderPlayerRouteBeam(
+                        poseStack,
+                        consumer,
+                        minecraft.level,
+                        last,
+                        first,
+                        activeEdges.contains(RouteEdge.of(route.nodes().size() - 1, 0))
+                                ? PLAYER_ROUTE_ACTIVE_COLOR
+                                : playerRouteLoopColor(color),
+                        outlineHalfWidth,
+                        coreHalfWidth);
+                renderedSegments++;
+            }
+        }
+        return renderedSegments;
+    }
+
+    private static int renderRouteGuideLayer(
             RenderLevelStageEvent event,
             Minecraft minecraft,
             PoseStack poseStack,
             MultiBufferSource.BufferSource bufferSource,
             RoutePosition route,
             int color,
-            int segmentBudget) {
+            int loopColor,
+            int segmentBudget,
+            RenderType guideType) {
         if (route.nodes().size() < 2 || segmentBudget <= 0) {
             return 0;
         }
@@ -1266,18 +1481,18 @@ public final class ClipboardStorageOutlineRenderer {
                     && isVisible(event, segmentBounds)) {
                 boolean includeStart = !renderedGuide;
                 if (!renderedGuide) {
-                    guideConsumer = bufferSource.getBuffer(ROUTE_GUIDE_TYPE);
+                    guideConsumer = bufferSource.getBuffer(guideType);
                     renderedGuide = true;
                 }
                 renderRouteGuide(poseStack, guideConsumer, minecraft.level, previous, current, color, includeStart);
                 renderedSegments++;
             } else if (renderedGuide) {
-                bufferSource.endBatch(ROUTE_GUIDE_TYPE);
+                bufferSource.endBatch(guideType);
                 renderedGuide = false;
             }
         }
         if (renderedGuide) {
-            bufferSource.endBatch(ROUTE_GUIDE_TYPE);
+            bufferSource.endBatch(guideType);
         }
         if (route.loop() && renderedSegments < segmentBudget) {
             BlockPos first = route.nodes().getFirst();
@@ -1285,13 +1500,219 @@ public final class ClipboardStorageOutlineRenderer {
             if (minecraft.level.hasChunkAt(last)
                     && minecraft.level.hasChunkAt(first)
                     && isVisible(event, new AABB(Vec3.atCenterOf(last), Vec3.atCenterOf(first)).inflate(1.0D))) {
-                VertexConsumer loopConsumer = bufferSource.getBuffer(ROUTE_GUIDE_TYPE);
-                renderRouteGuide(poseStack, loopConsumer, minecraft.level, last, first, ROUTE_LOOP_COLOR, true);
-                bufferSource.endBatch(ROUTE_GUIDE_TYPE);
+                VertexConsumer loopConsumer = bufferSource.getBuffer(guideType);
+                renderRouteGuide(poseStack, loopConsumer, minecraft.level, last, first, loopColor, true);
+                bufferSource.endBatch(guideType);
                 renderedSegments++;
             }
         }
         return renderedSegments;
+    }
+
+    private static void renderCreationRouteSegment(
+            PoseStack poseStack,
+            MultiBufferSource.BufferSource bufferSource,
+            BlockPos first,
+            BlockPos second,
+            int color) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) {
+            return;
+        }
+        VertexConsumer consumer = bufferSource.getBuffer(PLAYER_ROUTE_QUADS_TYPE);
+        renderPlayerRouteBeam(
+                poseStack,
+                consumer,
+                minecraft.level,
+                first,
+                second,
+                color,
+                CREATION_ROUTE_OUTLINE_HALF_WIDTH,
+                CREATION_ROUTE_CORE_HALF_WIDTH);
+        bufferSource.endBatch(PLAYER_ROUTE_QUADS_TYPE);
+    }
+
+    private static void renderPlayerRouteBeam(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            Level level,
+            BlockPos first,
+            BlockPos second,
+            int color,
+            double outlineHalfWidth,
+            double coreHalfWidth) {
+        double heightAdjustment = PLAYER_ROUTE_HEIGHT_ABOVE_SURFACE - ROUTE_GUIDE_HEIGHT_ABOVE_SURFACE;
+        List<Vec3> points = routeGuidePoints(level, first, second).stream()
+                .map(point -> point.add(0.0D, heightAdjustment, 0.0D))
+                .toList();
+        renderRouteCuboidPath(poseStack, consumer, points, coreHalfWidth, color);
+    }
+
+    private static void renderRouteCuboidPath(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            List<Vec3> points,
+            double halfWidth,
+            int color) {
+        for (int index = 1; index < points.size(); index++) {
+            Vec3 start = points.get(index - 1);
+            Vec3 end = points.get(index);
+            Vec3 difference = end.subtract(start);
+            double length = difference.length();
+            if (length < 1.0E-4D) {
+                continue;
+            }
+            Vec3 direction = difference.scale(1.0D / length);
+            double overlap = Math.min(PLAYER_ROUTE_SEGMENT_OVERLAP, length * 0.2D);
+            renderRouteCuboid(
+                    poseStack,
+                    consumer,
+                    start.subtract(direction.scale(overlap)),
+                    end.add(direction.scale(overlap)),
+                    halfWidth,
+                    color);
+        }
+    }
+
+    private static void renderRouteCuboid(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            Vec3 start,
+            Vec3 end,
+            double halfWidth,
+            int color) {
+        Vec3 direction = end.subtract(start).normalize();
+        Vec3 reference = Math.abs(direction.y) > 0.9D
+                ? new Vec3(1.0D, 0.0D, 0.0D)
+                : new Vec3(0.0D, 1.0D, 0.0D);
+        Vec3 side = direction.cross(reference).normalize();
+        Vec3 top = side.cross(direction).normalize();
+        if (top.y < 0.0D) {
+            side = side.scale(-1.0D);
+            top = top.scale(-1.0D);
+        }
+        Vec3 sideOffset = side.scale(halfWidth);
+        Vec3 topOffset = top.scale(halfWidth);
+
+        Vec3 startSideTop = start.add(sideOffset).add(topOffset);
+        Vec3 startSideBottom = start.add(sideOffset).subtract(topOffset);
+        Vec3 startOppositeTop = start.subtract(sideOffset).add(topOffset);
+        Vec3 startOppositeBottom = start.subtract(sideOffset).subtract(topOffset);
+        Vec3 endSideTop = end.add(sideOffset).add(topOffset);
+        Vec3 endSideBottom = end.add(sideOffset).subtract(topOffset);
+        Vec3 endOppositeTop = end.subtract(sideOffset).add(topOffset);
+        Vec3 endOppositeBottom = end.subtract(sideOffset).subtract(topOffset);
+
+        renderRouteQuad(poseStack, consumer, startSideTop, endSideTop, endOppositeTop, startOppositeTop,
+                shadeRouteColor(color, 1.0D));
+        renderRouteQuad(poseStack, consumer, startSideBottom, endSideBottom, endSideTop, startSideTop,
+                shadeRouteColor(color, 0.82D));
+        renderRouteQuad(poseStack, consumer, startOppositeTop, endOppositeTop, endOppositeBottom, startOppositeBottom,
+                shadeRouteColor(color, 0.68D));
+        renderRouteQuad(poseStack, consumer, startOppositeBottom, endOppositeBottom, endSideBottom, startSideBottom,
+                shadeRouteColor(color, 0.52D));
+        renderRouteQuad(poseStack, consumer, startOppositeTop, startOppositeBottom, startSideBottom, startSideTop,
+                shadeRouteColor(color, 0.74D));
+        renderRouteQuad(poseStack, consumer, endSideTop, endSideBottom, endOppositeBottom, endOppositeTop,
+                shadeRouteColor(color, 0.88D));
+    }
+
+    private static void renderPlayerRouteNode(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            Level level,
+            RoutePosition route,
+            int nodeIndex,
+            int color) {
+        BlockPos node = route.nodes().get(nodeIndex);
+        double halfSize = 0.09D;
+        Vec3 center = new Vec3(
+                node.getX() + 0.5D,
+                routeGuideSurfaceY(level, node.getX(), node.getY(), node.getZ())
+                        + PLAYER_ROUTE_HEIGHT_ABOVE_SURFACE
+                        - ROUTE_GUIDE_HEIGHT_ABOVE_SURFACE
+                        + 0.02D,
+                node.getZ() + 0.5D);
+        renderAxisAlignedRouteCuboid(
+                poseStack,
+                consumer,
+                center.x - halfSize,
+                center.y - halfSize,
+                center.z - halfSize,
+                center.x + halfSize,
+                center.y + halfSize,
+                center.z + halfSize,
+                color);
+    }
+
+    private static void renderAxisAlignedRouteCuboid(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            double minX,
+            double minY,
+            double minZ,
+            double maxX,
+            double maxY,
+            double maxZ,
+            int color) {
+        Vec3 bottomNorthWest = new Vec3(minX, minY, minZ);
+        Vec3 bottomNorthEast = new Vec3(maxX, minY, minZ);
+        Vec3 bottomSouthEast = new Vec3(maxX, minY, maxZ);
+        Vec3 bottomSouthWest = new Vec3(minX, minY, maxZ);
+        Vec3 topNorthWest = new Vec3(minX, maxY, minZ);
+        Vec3 topNorthEast = new Vec3(maxX, maxY, minZ);
+        Vec3 topSouthEast = new Vec3(maxX, maxY, maxZ);
+        Vec3 topSouthWest = new Vec3(minX, maxY, maxZ);
+        renderRouteQuad(poseStack, consumer, topNorthWest, topSouthWest, topSouthEast, topNorthEast,
+                shadeRouteColor(color, 1.0D));
+        renderRouteQuad(poseStack, consumer, bottomNorthEast, bottomSouthEast, bottomSouthWest, bottomNorthWest,
+                shadeRouteColor(color, 0.5D));
+        renderRouteQuad(poseStack, consumer, bottomNorthWest, bottomSouthWest, topSouthWest, topNorthWest,
+                shadeRouteColor(color, 0.72D));
+        renderRouteQuad(poseStack, consumer, bottomSouthEast, bottomNorthEast, topNorthEast, topSouthEast,
+                shadeRouteColor(color, 0.82D));
+        renderRouteQuad(poseStack, consumer, bottomNorthEast, bottomNorthWest, topNorthWest, topNorthEast,
+                shadeRouteColor(color, 0.66D));
+        renderRouteQuad(poseStack, consumer, bottomSouthWest, bottomSouthEast, topSouthEast, topSouthWest,
+                shadeRouteColor(color, 0.88D));
+    }
+
+    private static int shadeRouteColor(int color, double brightness) {
+        int alpha = color >> 24 & 0xFF;
+        int red = (int) Math.round((color >> 16 & 0xFF) * brightness);
+        int green = (int) Math.round((color >> 8 & 0xFF) * brightness);
+        int blue = (int) Math.round((color & 0xFF) * brightness);
+        return alpha << 24
+                | Math.min(255, red) << 16
+                | Math.min(255, green) << 8
+                | Math.min(255, blue);
+    }
+
+    private static void renderRouteQuad(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            Vec3 first,
+            Vec3 second,
+            Vec3 third,
+            Vec3 fourth,
+            int color) {
+        renderRouteQuadVertex(poseStack, consumer, first, color);
+        renderRouteQuadVertex(poseStack, consumer, second, color);
+        renderRouteQuadVertex(poseStack, consumer, third, color);
+        renderRouteQuadVertex(poseStack, consumer, fourth, color);
+    }
+
+    private static void renderRouteQuadVertex(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            Vec3 point,
+            int color) {
+        int red = color >> 16 & 0xFF;
+        int green = color >> 8 & 0xFF;
+        int blue = color & 0xFF;
+        int alpha = color >> 24 & 0xFF;
+        consumer.addVertex(poseStack.last(), (float) point.x, (float) point.y, (float) point.z)
+                .setColor(red, green, blue, alpha);
     }
 
     private static void renderRouteReach(RenderLevelStageEvent event, BlockPos center) {
@@ -1426,6 +1847,32 @@ public final class ClipboardStorageOutlineRenderer {
         int alpha = (color >> 24) & 0xFF;
         consumer.addVertex(poseStack.last(), (float) point.x, (float) point.y, (float) point.z)
                 .setColor(red, green, blue, alpha);
+    }
+
+    private static int playerRouteNodeColor(RoutePosition route, int index, int routeColor) {
+        if (routeColor == ROUTE_INVALID_COLOR) {
+            return ROUTE_INVALID_COLOR;
+        }
+        if (routeColor == PLAYER_ROUTE_CREATION_COLOR) {
+            return PLAYER_ROUTE_CREATION_COLOR;
+        }
+        if (route.loop() && index == 0) {
+            return PLAYER_ROUTE_LOOP_COLOR;
+        }
+        if (index == 0) {
+            return PLAYER_ROUTE_FIRST_COLOR;
+        }
+        if (!route.loop() && index == route.nodes().size() - 1) {
+            return PLAYER_ROUTE_LAST_COLOR;
+        }
+        return PLAYER_ROUTE_NODE_COLOR;
+    }
+
+    private static int playerRouteLoopColor(int routeColor) {
+        if (routeColor == ROUTE_INVALID_COLOR || routeColor == PLAYER_ROUTE_CREATION_COLOR) {
+            return routeColor;
+        }
+        return PLAYER_ROUTE_LOOP_COLOR;
     }
 
     private static int routeNodeColor(RoutePosition route, int index) {
@@ -1597,6 +2044,16 @@ public final class ClipboardStorageOutlineRenderer {
         WORKFORCE,
         ASSIGNMENTS,
         PROBLEMS
+    }
+
+    private record RouteEdge(int first, int second) {
+        private static RouteEdge of(int first, int second) {
+            return first <= second ? new RouteEdge(first, second) : new RouteEdge(second, first);
+        }
+    }
+
+    private record ActiveRouteTargets(Set<Integer> nodes, Set<RouteEdge> edges) {
+        private static final ActiveRouteTargets EMPTY = new ActiveRouteTargets(Set.of(), Set.of());
     }
 
     public record WorkforceMarker(
