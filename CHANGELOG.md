@@ -1,4 +1,5 @@
 # Changelog
+- Fixed couriers becoming permanently stuck at the end of their route after a temporarily unavailable output-storage sweep.
 - Improved courier node stops so they visit every eligible assigned container tethered to that node before returning to the route.
 - Added cooperative villager traffic handling: villagers approaching the same narrow passage or route now use stable right-of-way, briefly queue when blocked, and sidestep when nearby terrain provides a safe passing space.
 - Fixed checkbox and icon option labels being clipped instead of wrapping, and added an "Assign and Keep Selection" clipboard action for reusing selected containers across villagers.

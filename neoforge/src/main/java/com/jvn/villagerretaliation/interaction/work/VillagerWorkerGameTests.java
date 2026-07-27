@@ -4411,6 +4411,62 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 500)
+    public static void courierRetriesOutputSweepFromRouteStart(GameTestHelper helper) {
+        buildFloor(helper, 0, 14, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierOutputRetry");
+        BlockPos firstNodeRel = new BlockPos(2, 2, 2);
+        BlockPos outputRel = new BlockPos(3, 2, 2);
+        BlockPos lastNodeRel = new BlockPos(12, 2, 2);
+        Villager villager = spawnVillager(helper, firstNodeRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, output);
+        Container outputContainer = container(level, output);
+        for (int slot = 0; slot < outputContainer.getContainerSize(); slot++) {
+            outputContainer.setItem(slot, new ItemStack(Items.STONE, 64));
+        }
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "courier retry output assignment");
+
+        CompoundTag state = new CompoundTag();
+        state.putString("CourierPhase", "deliver");
+        state.putInt("CourierRouteIndex", 0);
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(firstNodeRel, new BlockPos(7, 2, 2), lastNodeRel));
+        helper.assertTrue(
+                context.inventory().insertOutput(new ItemStack(Items.COBBLESTONE, 12)).isEmpty(),
+                "courier retry cargo should fit");
+        CourierWorker worker = new CourierWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 300, () ->
+                "courier_output_unavailable".equals(state.getString("WorkerFailureReason")));
+        helper.assertValueEqual(state.getInt("CourierRouteIndex"), 0,
+                "a failed delivery sweep should restart from the route beginning");
+
+        outputContainer.clearContent();
+        AssignedStorageService.clearStorageFailure(level, villager, output);
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 180, () ->
+                countItem(outputContainer, Items.COBBLESTONE) == 12);
+
+        helper.assertFalse(context.inventory().hasOutputItems(),
+                "courier should deliver retained cargo after output storage becomes available");
+        helper.assertFalse("courier_output_unavailable".equals(state.getString("WorkerFailureReason")),
+                "successful output retry should clear the unavailable-output failure");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 500)
     public static void courierAppliesSkillScaledCapacityPerInputContainer(GameTestHelper helper) {
         buildFloor(helper, 0, 12, 0, 5, 1);
         ServerLevel level = helper.getLevel();
