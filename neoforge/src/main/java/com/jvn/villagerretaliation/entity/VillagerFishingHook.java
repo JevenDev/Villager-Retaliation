@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.entity;
 
 import com.jvn.villagerretaliation.interaction.HiredVillagerRoles;
 import com.jvn.villagerretaliation.villager.VillagerEquipmentMending;
+import com.jvn.villagerretaliation.villager.VillagerWorkExperience;
 import com.mojang.logging.LogUtils;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -20,11 +21,11 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.item.ItemStack;
@@ -558,8 +559,13 @@ public class VillagerFishingHook extends Projectile {
 
         public void spawnExperience(Level level, LivingEntity owner, ItemStack rod) {
             if (this.experience > 0
+                    && owner instanceof Villager villager
                     && VillagerEquipmentMending.hasRepairWithXpEffect(rod, EquipmentSlot.MAINHAND, owner)) {
-                level.addFreshEntity(new ExperienceOrb(level, owner.getX(), owner.getY() + 0.5D, owner.getZ() + 0.5D, this.experience));
+                VillagerWorkExperience.spawn(
+                        level,
+                        villager,
+                        new Vec3(owner.getX(), owner.getY() + 0.5D, owner.getZ() + 0.5D),
+                        this.experience);
             }
         }
     }

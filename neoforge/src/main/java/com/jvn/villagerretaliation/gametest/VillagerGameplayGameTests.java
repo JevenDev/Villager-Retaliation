@@ -303,6 +303,7 @@ public final class VillagerGameplayGameTests {
         ItemStack sword = new ItemStack(Items.IRON_SWORD);
         var enchantments = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
         sword.enchant(enchantments.getOrThrow(Enchantments.MENDING), 1);
+        sword.setDamageValue(20);
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, EquipmentSlot.MAINHAND, sword);
         Zombie zombie = spawnZombie(helper, new BlockPos(3, 2, 1));
 
@@ -315,6 +316,26 @@ public final class VillagerGameplayGameTests {
                 "an XP-bearing mob killed by a villager with Mending equipment should drop experience");
         helper.assertTrue(experience.stream().mapToInt(orb -> orb.value).sum() > 0,
                 "villager-kill experience should retain the mob's positive vanilla reward");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void villagerConsumesKillExperienceWhenMendingEquipmentIsFull(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().getRule(GameRules.RULE_DOMOBLOOT).set(true, level.getServer());
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ItemStack sword = new ItemStack(Items.IRON_SWORD);
+        var enchantments = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        sword.enchant(enchantments.getOrThrow(Enchantments.MENDING), 1);
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, EquipmentSlot.MAINHAND, sword);
+        Zombie zombie = spawnZombie(helper, new BlockPos(3, 2, 1));
+
+        zombie.hurt(level.damageSources().mobAttack(villager), 1000.0F);
+
+        List<ExperienceOrb> experience = level.getEntitiesOfClass(
+                ExperienceOrb.class,
+                zombie.getBoundingBox().inflate(2.0D));
+        verifyFullDurabilityWorkExperienceIsVoided(helper, villager, experience);
         helper.succeed();
     }
 
@@ -1388,7 +1409,11 @@ public final class VillagerGameplayGameTests {
         ItemStack mendingRod = new ItemStack(Items.FISHING_ROD);
         var enchantments = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
         mendingRod.enchant(enchantments.getOrThrow(Enchantments.MENDING), 1);
-        catchResult.spawnExperience(helper.getLevel(), villager, mendingRod);
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(
+                villager,
+                EquipmentSlot.MAINHAND,
+                mendingRod);
+        catchResult.spawnExperience(helper.getLevel(), villager, villager.getMainHandItem());
 
         List<ExperienceOrb> experience = helper.getLevel().getEntitiesOfClass(
                 ExperienceOrb.class,
@@ -1397,6 +1422,7 @@ public final class VillagerGameplayGameTests {
                 "hired fishing should generate one experience orb for a Mending rod");
         helper.assertValueEqual(experience.getFirst().value, 5,
                 "hired fishing should preserve the catch experience value");
+        verifyFullDurabilityWorkExperienceIsVoided(helper, villager, experience);
         helper.succeed();
     }
 
@@ -1765,6 +1791,25 @@ public final class VillagerGameplayGameTests {
         helper.assertValueEqual(actual.horizontalRadius(), expected.horizontalRadius(), label + " horizontal radius");
         helper.assertValueEqual(actual.verticalRadius(), expected.verticalRadius(), label + " vertical radius");
         helper.assertValueEqual(actual.explicitlyAssigned(), expected.explicitlyAssigned(), label + " assigned flag");
+    }
+
+    private static void verifyFullDurabilityWorkExperienceIsVoided(
+            GameTestHelper helper,
+            Villager villager,
+            List<ExperienceOrb> experience) {
+        helper.assertValueEqual(experience.size(), 1,
+                "work experience should still spawn when Mending equipment is fully repaired");
+        ExperienceOrb orb = experience.getFirst();
+        orb.tickCount = 1;
+        orb.tick();
+        orb.setPos(villager.position());
+        orb.setDeltaMovement(Vec3.ZERO);
+        orb.tick();
+
+        helper.assertTrue(orb.isRemoved(),
+                "the owning villager should consume and void work experience after its Mending equipment is full");
+        helper.assertValueEqual(villager.getMainHandItem().getDamageValue(), 0,
+                "voided work experience should leave fully repaired Mending equipment unchanged");
     }
 
     private static Villager spawnVillager(GameTestHelper helper, BlockPos relativePos) {
