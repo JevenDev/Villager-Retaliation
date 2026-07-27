@@ -580,6 +580,42 @@
         "That part is done: Recurring payment disabled."
       ],
       "id": "global.messages.19_work_storage_and_payment.messages.interaction.auto_payment.disabled.029"
+    },
+    {
+      "key": "interaction.storage.selected_not_assigned",
+      "lines": [
+        "Those selected containers are not assigned to me.",
+        "I do not have an assignment for those selected containers.",
+        "None of those selected containers belong to my assignments."
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.selected_not_assigned.030"
+    },
+    {
+      "key": "interaction.storage.selected_removed_count",
+      "lines": [
+        "Removed {count} selected assignment{plural}.",
+        "I removed {count} selected assignment{plural}.",
+        "Those {count} selected assignment{plural} are cleared."
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.selected_removed_count.031"
+    },
+    {
+      "key": "interaction.storage.selected_changed_count",
+      "lines": [
+        "Changed {count} selected assignment{plural} to the clipboard type.",
+        "I updated {count} selected assignment{plural} to the new type.",
+        "Those {count} selected assignment{plural} now use the clipboard type."
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.selected_changed_count.032"
+    },
+    {
+      "key": "interaction.storage.change_invalid",
+      "lines": [
+        "That container cannot use the selected assignment type.",
+        "I cannot change that container to this clipboard type.",
+        "The selected assignment type does not fit that container."
+      ],
+      "id": "global.messages.19_work_storage_and_payment.messages.interaction.storage.change_invalid.033"
     }
   ]
 }

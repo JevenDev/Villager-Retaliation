@@ -124,6 +124,7 @@ public final class VillagerInteractionClientHandler {
                 payload.routineChatMuted(),
                 payload.forcedDialogue(),
                 payload.clipboardMenu(),
+                payload.clipboardSelectionAssigned(),
                 payload.hiredByPlayer(),
                 payload.hiredByOtherPlayer(),
                 payload.hiredRemainingDays(),

@@ -151,6 +151,33 @@ public final class AssignedStorageService {
         return AssignedStorageSavedData.get(level).removeAssignedTo(villager.getUUID(), PAYMENT_PURPOSE);
     }
 
+    public static List<AssignedContainerRecord> assignedStorageAt(
+            ServerLevel level,
+            Villager villager,
+            List<StoragePosition> positions) {
+        if (positions.isEmpty()) {
+            return List.of();
+        }
+        return AssignedStorageSavedData.get(level).assignedTo(villager.getUUID()).stream()
+                .filter(record -> positions.stream().anyMatch(position ->
+                        position.dimension().equals(record.dimension())
+                                && position.pos().equals(record.pos())))
+                .toList();
+    }
+
+    public static int removeAssignedStorageAt(
+            ServerLevel level,
+            Villager villager,
+            List<StoragePosition> positions) {
+        int removed = 0;
+        AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
+        for (AssignedContainerRecord record : assignedStorageAt(level, villager, positions)) {
+            if (data.removeAssignment(record)) {
+                removed++;
+            }
+        }
+        return removed;
+    }
     public static boolean removeAssignedContainer(ServerLevel level, BlockPos pos) {
         return AssignedStorageSavedData.get(level).removeAssignedAt(level.dimension(), pos);
     }

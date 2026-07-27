@@ -1413,6 +1413,8 @@ public final class VillagerInteractionService {
             case ASSIGN_KEEP_SELECTION -> assignClipboardStorage(player, level, villager, clipboard, true);
             case SHOW -> showAssignedStorage(player, level, villager);
             case REMOVE -> removeAssignedStorage(player, level, villager);
+            case REMOVE_SELECTION -> removeSelectedStorage(player, level, villager, clipboard);
+            case CHANGE_SELECTION -> changeSelectedStorage(player, level, villager, clipboard);
             case CLEAR_SELECTION -> {
                 HiredStorageClipboardItem.clearSelection(player, clipboard);
                 sendVillagerNotice(player, villager, "interaction.clipboard.selection_cleared");
@@ -2202,6 +2204,131 @@ public final class VillagerInteractionService {
         message.ifPresent(summary -> sendVillagerNotice(player, villager, summary.key(), summary.replacements()));
     }
 
+    private static void removeSelectedStorage(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            ItemStack clipboard) {
+        List<SelectedStoragePosition> selected = selectedClipboardStorage(clipboard);
+        if (selected.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.storage.select_with_clipboard");
+            return;
+        }
+        List<AssignedContainerRecord> assigned = selectedAssignments(level, villager, selected);
+        if (assigned.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.storage.selected_not_assigned");
+            return;
+        }
+        if (!canManageSelectedAssignments(player, level, villager, assigned)) {
+            return;
+        }
+        int removed = AssignedStorageService.removeAssignedStorageAt(
+                level, villager, selected.stream().map(SelectedStoragePosition::position).toList());
+        if (assigned.stream().anyMatch(record -> AssignedStorageService.PAYMENT_PURPOSE.equals(
+                AssignedStorageService.normalizePurpose(record.purpose())))
+                && !AssignedStorageService.hasAssignedPaymentStorage(level, villager)) {
+            HiredVillagerContractService.setAutoPaymentEnabled(villager, false);
+        }
+        if (removed > 0) {
+            HiredStorageClipboardItem.clearSelection(player, clipboard);
+        }
+        sendVillagerNotice(player, villager, "interaction.storage.selected_removed_count", Map.of(
+                "count", Integer.toString(removed),
+                "plural", plural(removed)));
+    }
+
+    private static void changeSelectedStorage(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            ItemStack clipboard) {
+        List<SelectedStoragePosition> selected = selectedClipboardStorage(clipboard);
+        if (selected.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.storage.select_with_clipboard");
+            return;
+        }
+        List<AssignedContainerRecord> assigned = selectedAssignments(level, villager, selected);
+        if (assigned.isEmpty()) {
+            sendVillagerNotice(player, villager, "interaction.storage.selected_not_assigned");
+            return;
+        }
+        if (!canManageSelectedAssignments(player, level, villager, assigned)) {
+            return;
+        }
+        List<SelectedStoragePosition> changes = selected.stream()
+                .filter(selection -> assigned.stream().anyMatch(record ->
+                        record.dimension().equals(selection.position().dimension())
+                                && record.pos().equals(selection.position().pos())))
+                .toList();
+        for (SelectedStoragePosition change : changes) {
+            ServerLevel targetLevel = player.server.getLevel(change.position().dimension());
+            if (targetLevel == null || !AssignedStorageService.isValidContainerForPurpose(
+                    targetLevel, change.position().pos(), change.purpose())) {
+                sendVillagerNotice(player, villager, "interaction.storage.change_invalid");
+                return;
+            }
+        }
+        if (changes.stream().anyMatch(SelectedStoragePosition::paymentPurpose)
+                && !HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.payment_storage.requires_hire");
+            return;
+        }
+        if (changes.stream().anyMatch(change -> !change.paymentPurpose())
+                && !canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.storage.assign_requires_access");
+            return;
+        }
+
+        AssignedStorageService.removeAssignedStorageAt(
+                level, villager, changes.stream().map(SelectedStoragePosition::position).toList());
+        HiredStorageClipboardItem.assignSelectedStorage(player, level, villager, clipboard, changes, false);
+        sendVillagerNotice(player, villager, "interaction.storage.selected_changed_count", Map.of(
+                "count", Integer.toString(changes.size()),
+                "plural", plural(changes.size())));
+    }
+
+    private static List<SelectedStoragePosition> selectedClipboardStorage(ItemStack clipboard) {
+        return HiredStorageClipboardItem.selectedStoragePositions(
+                clipboard, HiredStorageClipboardItem.mode(clipboard).assignmentPurpose());
+    }
+
+    private static List<AssignedContainerRecord> selectedAssignments(
+            ServerLevel level,
+            Villager villager,
+            List<SelectedStoragePosition> selected) {
+        return AssignedStorageService.assignedStorageAt(
+                level, villager, selected.stream().map(SelectedStoragePosition::position).toList());
+    }
+
+    private static boolean canManageSelectedAssignments(
+            ServerPlayer player,
+            ServerLevel level,
+            Villager villager,
+            List<AssignedContainerRecord> assigned) {
+        boolean includesPayment = assigned.stream().anyMatch(record -> AssignedStorageService.PAYMENT_PURPOSE.equals(
+                AssignedStorageService.normalizePurpose(record.purpose())));
+        boolean includesStorage = assigned.stream().anyMatch(record -> !AssignedStorageService.PAYMENT_PURPOSE.equals(
+                AssignedStorageService.normalizePurpose(record.purpose())));
+        if (includesPayment && !HiredVillagerContractService.isHiredBy(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.payment_storage.remove_requires_hirer");
+            return false;
+        }
+        if (includesStorage && !canManageAssignedStorage(level, villager, player)) {
+            sendVillagerNotice(player, villager, "interaction.storage.remove_requires_access");
+            return false;
+        }
+        return true;
+    }
+
+    static boolean clipboardSelectionHasAssignment(ServerPlayer player, ServerLevel level, Villager villager) {
+        ItemStack clipboard = findClipboard(player);
+        if (clipboard.isEmpty()) {
+            return false;
+        }
+        List<SelectedStoragePosition> selected = selectedClipboardStorage(clipboard);
+        return !selected.isEmpty() && !selectedAssignments(level, villager, selected).isEmpty();
+    }
+
     private static void showAssignedStorage(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!canManageAssignedStorage(level, villager, player)) {
             sendVillagerNotice(player, villager, "interaction.storage.inspect_requires_access");
@@ -2301,7 +2428,7 @@ public final class VillagerInteractionService {
         return VillagerInventoryAccess.canAccess(level, villager, player);
     }
 
-    private static ItemStack findClipboard(ServerPlayer player) {
+    static ItemStack findClipboard(ServerPlayer player) {
         ItemStack mainHand = player.getMainHandItem();
         if (VillagerRetaliationItems.isClipboard(mainHand)) {
             return mainHand;

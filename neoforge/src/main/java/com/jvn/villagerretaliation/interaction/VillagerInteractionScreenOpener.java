@@ -216,6 +216,7 @@ public final class VillagerInteractionScreenOpener {
                 VillagerInteractionTracker.isRoutineChatMuted(level, villager, player),
                 forcedConversation,
                 clipboardMenu,
+                clipboardMenu && VillagerInteractionService.clipboardSelectionHasAssignment(player, level, villager),
                 hiredByPlayer,
                 hiredAnyPlayer && !hiredByPlayer,
                 HiredVillagerContractService.getRemainingHireDays(level, villager),
