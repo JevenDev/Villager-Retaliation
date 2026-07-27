@@ -30,7 +30,7 @@ public record ClipboardRouteSyncPayload(List<ClipboardRouteEntry> entries, int t
             return new ClipboardRouteSyncPayload(List.of(), ticks, false);
         }
         return new ClipboardRouteSyncPayload(
-                List.of(new ClipboardRouteEntry(dimension, route.nodes(), route.loop())), ticks, false);
+                List.of(new ClipboardRouteEntry(dimension, route.nodes(), route.loop(), route.branches(), "", "")), ticks, false);
     }
 
     public static ClipboardRouteSyncPayload draft(ResourceLocation dimension, HiredRoute route) {
@@ -38,7 +38,7 @@ public record ClipboardRouteSyncPayload(List<ClipboardRouteEntry> entries, int t
             return new ClipboardRouteSyncPayload(List.of(), 0, true);
         }
         return new ClipboardRouteSyncPayload(
-                List.of(new ClipboardRouteEntry(dimension, route.nodes(), route.loop())), 0, true);
+                List.of(new ClipboardRouteEntry(dimension, route.nodes(), route.loop(), route.branches(), "", "")), 0, true);
     }
 
     private static void encode(RegistryFriendlyByteBuf buffer, ClipboardRouteSyncPayload payload) {
@@ -66,6 +66,11 @@ public record ClipboardRouteSyncPayload(List<ClipboardRouteEntry> entries, int t
             buffer.writeBlockPos(node);
         }
         buffer.writeBoolean(entry.loop());
+        buffer.writeVarInt(Math.min(HiredRoute.MAX_BRANCHES, entry.branches().size()));
+        for (HiredRoute.Branch branch : entry.branches()) {
+            buffer.writeBlockPos(branch.anchor());
+            buffer.writeBlockPos(branch.end());
+        }
         buffer.writeUtf(entry.ownerName(), LABEL_LENGTH);
         buffer.writeUtf(entry.jobName(), LABEL_LENGTH);
     }
@@ -77,10 +82,17 @@ public record ClipboardRouteSyncPayload(List<ClipboardRouteEntry> entries, int t
         for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++) {
             nodes.add(buffer.readBlockPos());
         }
+        boolean loop = buffer.readBoolean();
+        int branchCount = VillagerPayloads.readCollectionSize(buffer, HiredRoute.MAX_BRANCHES, "clipboard route branches");
+        List<HiredRoute.Branch> branches = new ArrayList<>(branchCount);
+        for (int branchIndex = 0; branchIndex < branchCount; branchIndex++) {
+            branches.add(new HiredRoute.Branch(buffer.readBlockPos(), buffer.readBlockPos()));
+        }
         return new ClipboardRouteEntry(
                 dimension,
                 nodes,
-                buffer.readBoolean(),
+                loop,
+                branches,
                 buffer.readUtf(LABEL_LENGTH),
                 buffer.readUtf(LABEL_LENGTH));
     }

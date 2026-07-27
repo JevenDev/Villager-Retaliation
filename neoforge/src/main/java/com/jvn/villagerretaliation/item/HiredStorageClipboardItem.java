@@ -64,6 +64,9 @@ public final class HiredStorageClipboardItem extends Item {
     private static final String SECOND_POS_TAG = "SecondPos";
     private static final String NODES_TAG = "Nodes";
     private static final String LOOP_TAG = "Loop";
+    private static final String BRANCHES_TAG = "Branches";
+    private static final String BRANCH_ANCHOR_TAG = "BranchAnchor";
+    private static final String BRANCH_END_TAG = "End";
     private static final String MODE_TAG = "Mode";
     private static final String LAST_STORAGE_MODE_TAG = "LastStorageMode";
     private static final int MAX_SELECTIONS = 8;
@@ -129,7 +132,7 @@ public final class HiredStorageClipboardItem extends Item {
             assignSelectedWorkArea(serverPlayer, level, villager, stack);
             return InteractionResult.SUCCESS;
         }
-        if (clipboardMode == ClipboardMode.ROUTE) {
+        if (clipboardMode == ClipboardMode.ROUTE || clipboardMode == ClipboardMode.BRANCH) {
             handleRouteVillager(serverPlayer, level, villager, stack);
             return InteractionResult.SUCCESS;
         }
@@ -188,7 +191,7 @@ public final class HiredStorageClipboardItem extends Item {
         tooltip.add(Component.translatable("item.villagerretaliation.clipboard.mode").withStyle(ChatFormatting.GRAY)
                 .append(currentMode.labelComponent()));
 
-        int count = currentMode == ClipboardMode.ROUTE ? 0 : selectedContainers(stack).size();
+        int count = currentMode == ClipboardMode.ROUTE || currentMode == ClipboardMode.BRANCH ? 0 : selectedContainers(stack).size();
         if (count > 0) {
             String key = count == 1 ? "selected_container" : "selected_containers";
             tooltip.add(Component.translatable("item.villagerretaliation.clipboard." + key, count).withStyle(ChatFormatting.AQUA));
@@ -226,13 +229,14 @@ public final class HiredStorageClipboardItem extends Item {
                 tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.work_area_resize").withStyle(ChatFormatting.GRAY));
             }
             case ROUTE -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.route").withStyle(ChatFormatting.GRAY));
+            case BRANCH -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.branch").withStyle(ChatFormatting.GRAY));
         }
         if (currentMode == ClipboardMode.NONE) {
             return;
         }
         String clearKey = currentMode == ClipboardMode.SET_WORK_AREA
                 ? "item.villagerretaliation.clipboard.controls.clear_work_area"
-                : currentMode == ClipboardMode.ROUTE
+                : currentMode == ClipboardMode.ROUTE || currentMode == ClipboardMode.BRANCH
                 ? "item.villagerretaliation.clipboard.controls.clear_route"
                 : "item.villagerretaliation.clipboard.controls.clear";
         tooltip.add(Component.translatable(clearKey).withStyle(ChatFormatting.GRAY));
@@ -255,7 +259,9 @@ public final class HiredStorageClipboardItem extends Item {
         ClipboardMode current = mode(stack);
         ClipboardMode rememberedStorageMode = lastStorageMode(stack);
         ClipboardMode next = storageVariantOnly
-                ? current.cycleStorageVariant(delta)
+                ? current.isStorageAssignmentMode()
+                        ? current.cycleStorageVariant(delta)
+                        : current.cycleRouteVariant(delta)
                 : current.cycleInventoryMode(delta, rememberedStorageMode);
         ClipboardMode nextLastStorageMode = next.isStorageAssignmentMode() ? next : rememberedStorageMode;
         CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
@@ -516,8 +522,35 @@ public final class HiredStorageClipboardItem extends Item {
         if (nodes.isEmpty()) {
             return RouteDraft.empty();
         }
+        List<HiredRoute.Branch> branches = new ArrayList<>();
+        ListTag branchTags = selectionTag.getList(BRANCHES_TAG, Tag.TAG_COMPOUND);
+        for (Tag rawBranch : branchTags) {
+            if (rawBranch instanceof CompoundTag branchTag
+                    && branchTag.contains(BRANCH_ANCHOR_TAG, Tag.TAG_LONG)
+                    && branchTag.contains(BRANCH_END_TAG, Tag.TAG_LONG)
+                    && branches.size() < HiredRoute.MAX_BRANCHES) {
+                branches.add(new HiredRoute.Branch(
+                        BlockPos.of(branchTag.getLong(BRANCH_ANCHOR_TAG)),
+                        BlockPos.of(branchTag.getLong(BRANCH_END_TAG))));
+            }
+        }
         ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, dimensionId);
-        return new RouteDraft(dimension, new HiredRoute(nodes, selectionTag.getBoolean(LOOP_TAG)).validatedChain());
+        return new RouteDraft(dimension, new HiredRoute(nodes, selectionTag.getBoolean(LOOP_TAG), branches).validatedChain());
+    }
+
+    public static BlockPos selectedBranchAnchor(ItemStack stack) {
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (customData.isEmpty() || !customData.contains(TAG)) {
+            return null;
+        }
+        CompoundTag clipboardTag = customData.copyTag().getCompound(TAG);
+        if (!clipboardTag.contains(ROUTE_SELECTION_TAG, Tag.TAG_COMPOUND)) {
+            return null;
+        }
+        CompoundTag selectionTag = clipboardTag.getCompound(ROUTE_SELECTION_TAG);
+        return selectionTag.contains(BRANCH_ANCHOR_TAG, Tag.TAG_LONG)
+                ? BlockPos.of(selectionTag.getLong(BRANCH_ANCHOR_TAG))
+                : null;
     }
 
     public static InteractionResult selectContainer(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
@@ -578,6 +611,7 @@ public final class HiredStorageClipboardItem extends Item {
                 yield centerWorkAreaDraft(level, player, stack, pos);
             }
             case ROUTE -> editRoute(level, player, stack, pos);
+            case BRANCH -> editBranch(level, player, stack, pos);
         };
     }
 
@@ -620,7 +654,7 @@ public final class HiredStorageClipboardItem extends Item {
 
         if (node.equals(nodes.getFirst()) && nodes.size() >= 2) {
             if (route.loop()) {
-                HiredRoute updated = new HiredRoute(nodes, false);
+                HiredRoute updated = new HiredRoute(nodes, false, route.branches());
                 saveRouteSelection(stack, level.dimension(), updated);
                 syncClipboardStack(player);
                 sendSelectedRouteOutline(player, level, updated);
@@ -632,7 +666,7 @@ public final class HiredStorageClipboardItem extends Item {
                         "villagerretaliation.clipboard.message.route_loop_too_far", HiredRoute.MAX_NODE_DISTANCE), true);
                 return InteractionResult.FAIL;
             }
-            HiredRoute updated = new HiredRoute(nodes, true);
+            HiredRoute updated = new HiredRoute(nodes, true, route.branches());
             saveRouteSelection(stack, level.dimension(), updated);
             syncClipboardStack(player);
             sendSelectedRouteOutline(player, level, updated);
@@ -658,11 +692,80 @@ public final class HiredStorageClipboardItem extends Item {
         }
 
         nodes.add(node);
-        HiredRoute updated = new HiredRoute(nodes, false);
+        HiredRoute updated = new HiredRoute(nodes, false, route.branches());
         saveRouteSelection(stack, level.dimension(), updated);
         syncClipboardStack(player);
         sendSelectedRouteOutline(player, level, updated);
         player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_node_added", updated.nodes().size(), HiredRoute.MAX_NODES), true);
+        return InteractionResult.SUCCESS;
+    }
+
+    private static InteractionResult editBranch(ServerLevel level, ServerPlayer player, ItemStack stack, BlockPos pos) {
+        RouteDraft draft = selectedRoute(stack);
+        if (draft.isEmpty()) {
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.branch_requires_route"), true);
+            return InteractionResult.FAIL;
+        }
+        if (!level.dimension().equals(draft.dimension())) {
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.route_wrong_dimension"), true);
+            return InteractionResult.FAIL;
+        }
+        HiredRoute route = draft.route();
+        if (player.isShiftKeyDown()) {
+            HiredRoute.Branch removed = route.branches().stream()
+                    .filter(branch -> branch.anchor().distSqr(pos) <= 4.0D || branch.end().distSqr(pos) <= 4.0D)
+                    .min(java.util.Comparator.comparingDouble(branch -> Math.min(
+                            branch.anchor().distSqr(pos), branch.end().distSqr(pos))))
+                    .orElse(null);
+            if (removed == null) {
+                player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.branch_missing"), true);
+                return InteractionResult.SUCCESS;
+            }
+            List<HiredRoute.Branch> branches = new ArrayList<>(route.branches());
+            branches.remove(removed);
+            HiredRoute updated = new HiredRoute(route.nodes(), route.loop(), branches);
+            saveRouteSelection(stack, level.dimension(), updated);
+            syncClipboardStack(player);
+            sendSelectedRouteOutline(player, level, updated);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.branch_removed"), true);
+            return InteractionResult.SUCCESS;
+        }
+
+        BlockPos anchor = selectedBranchAnchor(stack);
+        if (anchor == null) {
+            BlockPos attachment = route.nearestBaseAttachment(pos, 2, 2);
+            if (attachment == null) {
+                player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.branch_select_route"), true);
+                return InteractionResult.FAIL;
+            }
+            saveBranchAnchor(stack, attachment);
+            syncClipboardStack(player);
+            sendSelectedRouteOutline(player, level, route);
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.branch_anchor_selected"), true);
+            return InteractionResult.SUCCESS;
+        }
+        if (route.branches().size() >= HiredRoute.MAX_BRANCHES) {
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.branch_full", HiredRoute.MAX_BRANCHES), true);
+            return InteractionResult.FAIL;
+        }
+        BlockPos end = pos.immutable();
+        if (anchor.equals(end)) {
+            player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.branch_same_node"), true);
+            return InteractionResult.FAIL;
+        }
+        if (!HiredRoute.canConnect(anchor, end)) {
+            player.displayClientMessage(Component.translatable(
+                    "villagerretaliation.clipboard.message.branch_too_far", HiredRoute.MAX_NODE_DISTANCE), true);
+            return InteractionResult.FAIL;
+        }
+        List<HiredRoute.Branch> branches = new ArrayList<>(route.branches());
+        branches.add(new HiredRoute.Branch(anchor, end));
+        HiredRoute updated = new HiredRoute(route.nodes(), route.loop(), branches);
+        saveRouteSelection(stack, level.dimension(), updated);
+        syncClipboardStack(player);
+        sendSelectedRouteOutline(player, level, updated);
+        player.displayClientMessage(Component.translatable(
+                "villagerretaliation.clipboard.message.branch_added", updated.branches().size(), HiredRoute.MAX_BRANCHES), true);
         return InteractionResult.SUCCESS;
     }
 
@@ -680,7 +783,7 @@ public final class HiredStorageClipboardItem extends Item {
 
         List<BlockPos> nodes = new ArrayList<>(draft.route().nodes());
         nodes.remove(removedIndex);
-        HiredRoute updated = new HiredRoute(nodes, false).validatedChain();
+        HiredRoute updated = new HiredRoute(nodes, false, draft.route().branches()).validatedChain();
         boolean truncated = updated.nodes().size() < nodes.size();
         if (updated.isEmpty()) {
             clearRouteSelection(stack);
@@ -1045,7 +1148,10 @@ public final class HiredStorageClipboardItem extends Item {
 
     private static String routeDescription(HiredRoute route) {
         int count = route == null ? 0 : route.nodes().size();
-        return count + " node" + (count == 1 ? "" : "s") + (route != null && route.loop() ? ", loop" : ", back-and-forth");
+        int branches = route == null ? 0 : route.branches().size();
+        return count + " node" + (count == 1 ? "" : "s")
+                + (branches == 0 ? "" : ", " + branches + " branch" + (branches == 1 ? "" : "es"))
+                + (route != null && route.loop() ? ", loop" : ", back-and-forth");
     }
 
     private static SelectionAddResult addSelection(
@@ -1122,6 +1228,16 @@ public final class HiredStorageClipboardItem extends Item {
         });
     }
 
+    private static void saveBranchAnchor(ItemStack stack, BlockPos anchor) {
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, tag -> {
+            CompoundTag clipboardTag = tag.getCompound(TAG);
+            CompoundTag selectionTag = clipboardTag.getCompound(ROUTE_SELECTION_TAG);
+            selectionTag.putLong(BRANCH_ANCHOR_TAG, anchor.asLong());
+            clipboardTag.put(ROUTE_SELECTION_TAG, selectionTag);
+            tag.put(TAG, clipboardTag);
+        });
+    }
+
     private static void saveRouteSelection(ItemStack stack, ResourceKey<Level> dimension, HiredRoute route) {
         if (route == null || route.isEmpty()) {
             clearRouteSelection(stack);
@@ -1140,6 +1256,14 @@ public final class HiredStorageClipboardItem extends Item {
             selectionTag.putString(DIMENSION_TAG, dimension.location().toString());
             selectionTag.put(NODES_TAG, nodeTags);
             selectionTag.putBoolean(LOOP_TAG, safeRoute.loop());
+            ListTag branchTags = new ListTag();
+            for (HiredRoute.Branch branch : safeRoute.branches()) {
+                CompoundTag branchTag = new CompoundTag();
+                branchTag.putLong(BRANCH_ANCHOR_TAG, branch.anchor().asLong());
+                branchTag.putLong(BRANCH_END_TAG, branch.end().asLong());
+                branchTags.add(branchTag);
+            }
+            selectionTag.put(BRANCHES_TAG, branchTags);
             clipboardTag.put(ROUTE_SELECTION_TAG, selectionTag);
             tag.put(TAG, clipboardTag);
         });
@@ -1228,7 +1352,8 @@ public final class HiredStorageClipboardItem extends Item {
         ASSIGN_PAYMENT("assign_payment", "Assign Payment Box"),
         WORK_AREA("work_area", "Preview Job Site"),
         SET_WORK_AREA("set_work_area", "Edit Job Site"),
-        ROUTE("route", "Route Mode");
+        ROUTE("route", "Route Mode"),
+        BRANCH("branch", "Branch Mode");
 
         private static final ClipboardMode[] VALUES = values();
         private static final ClipboardMode[] STORAGE_VALUES = {
@@ -1236,6 +1361,10 @@ public final class HiredStorageClipboardItem extends Item {
                 ASSIGN_TOOL_STORAGE,
                 ASSIGN_INPUT_STORAGE,
                 ASSIGN_OUTPUT_STORAGE
+        };
+        private static final ClipboardMode[] ROUTE_VALUES = {
+                ROUTE,
+                BRANCH
         };
         private static final ClipboardMode[] INVENTORY_CYCLE_VALUES = {
                 NONE,
@@ -1268,7 +1397,7 @@ public final class HiredStorageClipboardItem extends Item {
             case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> ChatFormatting.BLUE;
             case WORK_AREA -> ChatFormatting.YELLOW;
             case SET_WORK_AREA -> ChatFormatting.GOLD;
-            case ROUTE -> ChatFormatting.AQUA;
+            case ROUTE, BRANCH -> ChatFormatting.AQUA;
             };
         }
 
@@ -1300,7 +1429,7 @@ public final class HiredStorageClipboardItem extends Item {
             if (delta == 0) {
                 return this;
             }
-            ClipboardMode inventoryMode = isStorageAssignmentMode() ? ASSIGN_STORAGE : this;
+            ClipboardMode inventoryMode = isStorageAssignmentMode() ? ASSIGN_STORAGE : this == BRANCH ? ROUTE : this;
             for (int i = 0; i < INVENTORY_CYCLE_VALUES.length; i++) {
                 if (INVENTORY_CYCLE_VALUES[i] == inventoryMode) {
                     int index = Math.floorMod(i + Integer.compare(delta, 0), INVENTORY_CYCLE_VALUES.length);
@@ -1309,6 +1438,18 @@ public final class HiredStorageClipboardItem extends Item {
                 }
             }
             return lastStorageMode;
+        }
+
+        private ClipboardMode cycleRouteVariant(int delta) {
+            if (delta == 0 || this != ROUTE && this != BRANCH) {
+                return this;
+            }
+            for (int i = 0; i < ROUTE_VALUES.length; i++) {
+                if (ROUTE_VALUES[i] == this) {
+                    return ROUTE_VALUES[Math.floorMod(i + Integer.compare(delta, 0), ROUTE_VALUES.length)];
+                }
+            }
+            return ROUTE;
         }
 
         private ClipboardMode cycleStorageVariant(int delta) {

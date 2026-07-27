@@ -25,6 +25,7 @@ public final class ClipboardModeClient {
         }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null
+                || minecraft.level == null
                 || minecraft.screen != null
                 || !isHoldingClipboard(minecraft)) {
             return;
@@ -35,13 +36,20 @@ public final class ClipboardModeClient {
         if (delta == 0) {
             return;
         }
+        HiredStorageClipboardItem.ClipboardMode mode = HiredStorageClipboardItem.mode(clipboard);
         if (Screen.hasControlDown()
-                && HiredStorageClipboardItem.mode(clipboard).isStorageAssignmentMode()) {
+                && (mode.isStorageAssignmentMode()
+                        || mode == HiredStorageClipboardItem.ClipboardMode.ROUTE
+                        || mode == HiredStorageClipboardItem.ClipboardMode.BRANCH)) {
             PacketDistributor.sendToServer(new ClipboardModeChangePayload(delta, -1, true));
             event.setCanceled(true);
             return;
         }
-        if (HiredStorageClipboardItem.mode(clipboard) != HiredStorageClipboardItem.ClipboardMode.SET_WORK_AREA) {
+        if (mode != HiredStorageClipboardItem.ClipboardMode.SET_WORK_AREA) {
+            return;
+        }
+        HiredStorageClipboardItem.WorkAreaDraft draft = HiredStorageClipboardItem.selectedWorkArea(clipboard);
+        if (!draft.complete() || !minecraft.level.dimension().equals(draft.dimension())) {
             return;
         }
 

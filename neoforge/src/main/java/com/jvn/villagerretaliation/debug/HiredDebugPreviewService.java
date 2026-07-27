@@ -273,7 +273,7 @@ public final class HiredDebugPreviewService {
             }
             HiredRoute route = HiredVillagerWorkService.route(level, villager);
             if (!route.isEmpty() && routes.size() < HiredDebugPreviewSyncPayload.MAX_ROUTES) {
-                routes.add(new ClipboardRouteEntry(currentDimension, route.nodes(), route.loop(), ownerName, role.label()));
+                routes.add(new ClipboardRouteEntry(currentDimension, route.nodes(), route.loop(), route.branches(), ownerName, role.label()));
             }
             storageAssignments.add(new NamedStorageAssignments(
                     ownerName,

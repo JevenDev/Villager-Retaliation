@@ -65,6 +65,63 @@ public final class CourierChunkLoadingGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void courierWindowTargetsExpandedBranchNode(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        ChunkPos current = villager.chunkPosition();
+        BlockPos routeEnd = chunkCenter(current.x + 1, current.z, villager.getBlockY());
+        BlockPos branchEnd = routeEnd.offset(0, 0, 12);
+        HiredRoute route = new HiredRoute(
+                List.of(villager.blockPosition(), routeEnd),
+                false,
+                List.of(new HiredRoute.Branch(routeEnd, branchEnd)));
+        CompoundTag state = new CompoundTag();
+        state.putInt("CourierRouteIndex", 2);
+
+        Set<ChunkPos> desired = CourierRouteChunkLoader.desiredChunks(
+                helper.getLevel(), villager, state, route);
+
+        helper.assertTrue(
+                desired.contains(new ChunkPos(branchEnd)),
+                "courier ticket window should follow the expanded branch traversal node");
+        helper.succeed();
+    }
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void courierWindowPrioritizesStorageAtActiveBranch(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
+        var level = helper.getLevel();
+        ChunkPos current = villager.chunkPosition();
+        BlockPos routeEnd = chunkCenter(current.x + 1, current.z, villager.getBlockY());
+        BlockPos branchEnd = new BlockPos(
+                ((current.x + 1) << 4) + 15,
+                villager.getBlockY(),
+                (current.z << 4) + 8);
+        BlockPos activeBranchInput = branchEnd.east();
+        BlockPos distantInput = chunkCenter(current.x + 4, current.z, villager.getBlockY());
+        BlockPos distantOutput = chunkCenter(current.x + 5, current.z, villager.getBlockY());
+        UUID hirerId = UUID.randomUUID();
+
+        AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
+        data.assign(record(level, villager, hirerId, distantInput, AssignedStorageService.INPUT_PURPOSE, 0));
+        data.assign(record(level, villager, hirerId, activeBranchInput, AssignedStorageService.INPUT_PURPOSE, 1));
+        data.assign(record(level, villager, hirerId, distantOutput, AssignedStorageService.OUTPUT_PURPOSE, 2));
+
+        HiredRoute route = new HiredRoute(
+                List.of(villager.blockPosition(), routeEnd),
+                false,
+                List.of(new HiredRoute.Branch(routeEnd, branchEnd)));
+        CompoundTag state = new CompoundTag();
+        state.putInt("CourierRouteIndex", 2);
+
+        Set<ChunkPos> desired = CourierRouteChunkLoader.desiredChunks(level, villager, state, route);
+
+        helper.assertTrue(
+                desired.contains(new ChunkPos(activeBranchInput)),
+                "the active branch input must take ticket priority over distant fallback assignments");
+        helper.assertTrue(desired.size() <= 4, "active branch ticket window must remain bounded");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void courierWindowRestoresPersistedDetourTarget(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         ChunkPos current = villager.chunkPosition();

@@ -107,11 +107,11 @@ public final class CourierRouteChunkLoader {
         }
 
         List<AssignedContainerRecord> records = activeAssignedStorage(level, villager);
-        addFirstPurposeChunk(records, AssignedStorageService.INPUT_PURPOSE, desired);
-        addFirstPurposeChunk(records, AssignedStorageService.OUTPUT_PURPOSE, desired);
         if (routeTarget != null) {
             addNearbyStorageChunks(state, routeTarget, records, desired);
         }
+        addFirstPurposeChunk(records, AssignedStorageService.INPUT_PURPOSE, desired);
+        addFirstPurposeChunk(records, AssignedStorageService.OUTPUT_PURPOSE, desired);
         return limit(desired, MAX_CHUNKS_PER_COURIER);
     }
 
@@ -149,11 +149,12 @@ public final class CourierRouteChunkLoader {
     }
 
     private static BlockPos routeTarget(CompoundTag state, HiredRoute route) {
-        int lastIndex = route.nodes().size() - 1;
+        List<BlockPos> traversalNodes = route.traversalNodes();
+        int lastIndex = traversalNodes.size() - 1;
         int index = state.contains(ROUTE_INDEX_TAG, Tag.TAG_INT)
                 ? Math.clamp(state.getInt(ROUTE_INDEX_TAG), 0, lastIndex)
                 : 0;
-        return route.nodes().get(index);
+        return traversalNodes.get(index);
     }
 
     private static List<AssignedContainerRecord> activeAssignedStorage(

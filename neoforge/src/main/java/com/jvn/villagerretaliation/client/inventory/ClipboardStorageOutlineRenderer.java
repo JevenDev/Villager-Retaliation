@@ -77,6 +77,8 @@ public final class ClipboardStorageOutlineRenderer {
     private static final int PLAYER_ROUTE_LOOP_COLOR = 0xFF91E5FF;
     private static final int PLAYER_ROUTE_CREATION_COLOR = 0xFFFFA43A;
     private static final int PLAYER_ROUTE_ACTIVE_COLOR = 0xFFFFE16A;
+    private static final int PLAYER_BRANCH_COLOR = 0xFF9BE3FF;
+    private static final int PLAYER_BRANCH_NODE_COLOR = 0xFFBDEEFF;
     private static final float DEBUG_ROUTE_NODE_HALF_WIDTH = 0.5F;
     private static final float DEBUG_ROUTE_NODE_HEIGHT = 0.025F;
     private static final float DEBUG_ROUTE_NODE_ALPHA = 0.5F;
@@ -262,6 +264,7 @@ public final class ClipboardStorageOutlineRenderer {
                 ResourceKey.create(Registries.DIMENSION, entry.dimension()),
                 entry.nodes(),
                 entry.loop(),
+                entry.branches(),
                 entry.ownerName(),
                 entry.jobName()
         );
@@ -316,6 +319,11 @@ public final class ClipboardStorageOutlineRenderer {
         if (mode == ClipboardMode.ROUTE) {
             renderHeldRouteDraft(event, clipboard);
             renderRoutePlacementPreview(event, clipboard);
+            return;
+        }
+        if (mode == ClipboardMode.BRANCH) {
+            renderHeldRouteDraft(event, clipboard);
+            renderBranchPlacementPreview(event, clipboard);
             return;
         }
         clearRetainedRoutePreview();
@@ -404,7 +412,7 @@ public final class ClipboardStorageOutlineRenderer {
         if (draft.isEmpty()) {
             return false;
         }
-        RoutePosition route = new RoutePosition(draft.dimension(), draft.route().nodes(), draft.route().loop(), "", "");
+        RoutePosition route = new RoutePosition(draft.dimension(), draft.route().nodes(), draft.route().loop(), draft.route().branches(), "", "");
         renderCreationRoute(event, route);
         renderRouteLabels(event, List.of(route), true, false);
         if (!route.loop() && route.nodes().size() < HiredRoute.MAX_NODES) {
@@ -412,6 +420,38 @@ public final class ClipboardStorageOutlineRenderer {
             renderRouteContinuationLabel(event, route.nodes().getLast());
         }
         return true;
+    }
+
+    private static void renderBranchPlacementPreview(RenderLevelStageEvent event, ItemStack clipboard) {
+        Minecraft minecraft = Minecraft.getInstance();
+        RouteDraft draft = clientRouteDraft(clipboard);
+        if (minecraft.level == null || draft.isEmpty()
+                || !minecraft.level.dimension().equals(draft.dimension())
+                || !(minecraft.hitResult instanceof BlockHitResult hit)
+                || hit.getType() != HitResult.Type.BLOCK) {
+            return;
+        }
+        BlockPos target = hit.getBlockPos().immutable();
+        BlockPos pendingAnchor = HiredStorageClipboardItem.selectedBranchAnchor(clipboard);
+        BlockPos anchor = pendingAnchor == null
+                ? draft.route().nearestBaseAttachment(target, 2, 2)
+                : pendingAnchor;
+        int color = anchor != null && (pendingAnchor == null || HiredRoute.canConnect(anchor, target))
+                ? PLAYER_BRANCH_COLOR
+                : ROUTE_INVALID_COLOR;
+        PoseStack poseStack = event.getPoseStack();
+        Vec3 camera = event.getCamera().getPosition();
+        poseStack.pushPose();
+        poseStack.translate(-camera.x, -camera.y, -camera.z);
+        MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
+        VertexConsumer boxConsumer = bufferSource.getBuffer(RenderType.lines());
+        renderColoredBox(poseStack, boxConsumer, markerBox(target), color);
+        if (anchor != null) {
+            renderCreationRouteSegment(poseStack, bufferSource, anchor, target, color);
+            renderColoredBox(poseStack, boxConsumer, markerBox(anchor), PLAYER_BRANCH_NODE_COLOR);
+        }
+        poseStack.popPose();
+        bufferSource.endBatch(RenderType.lines());
     }
 
     private static void renderRoutePlacementPreview(RenderLevelStageEvent event, ItemStack clipboard) {
@@ -525,7 +565,10 @@ public final class ClipboardStorageOutlineRenderer {
             }
             return new RouteDraft(
                     synchronizedRouteDraft.dimension(),
-                    new HiredRoute(synchronizedRouteDraft.nodes(), synchronizedRouteDraft.loop()));
+                    new HiredRoute(
+                            synchronizedRouteDraft.nodes(),
+                            synchronizedRouteDraft.loop(),
+                            synchronizedRouteDraft.branches()));
         }
         return HiredStorageClipboardItem.selectedRoute(clipboard);
     }
@@ -771,11 +814,17 @@ public final class ClipboardStorageOutlineRenderer {
         }
         Set<Integer> activeNodes = new HashSet<>();
         Set<RouteEdge> activeEdges = new HashSet<>();
+        Set<Integer> activeBranches = new HashSet<>();
         for (WorkforceMarker marker : clipboardWorkforceMarkers) {
             if (!marker.dimension().equals(currentDimension)
                     || marker.targetPos() == null
                     || owners.stream().noneMatch(owner -> owner.equalsIgnoreCase(marker.ownerName()))
                     || !route.jobName().isBlank() && !route.jobName().equalsIgnoreCase(marker.jobName())) {
+                continue;
+            }
+            int branchIndex = activeBranchIndex(route, marker);
+            if (branchIndex >= 0) {
+                activeBranches.add(branchIndex);
                 continue;
             }
             int targetIndex = route.nodes().indexOf(marker.targetPos());
@@ -788,10 +837,60 @@ public final class ClipboardStorageOutlineRenderer {
                 activeEdges.add(RouteEdge.of(sourceIndex, targetIndex));
             }
         }
-        if (activeNodes.isEmpty()) {
+        if (activeNodes.isEmpty() && activeBranches.isEmpty()) {
             return ActiveRouteTargets.EMPTY;
         }
-        return new ActiveRouteTargets(Set.copyOf(activeNodes), Set.copyOf(activeEdges));
+        return new ActiveRouteTargets(
+                Set.copyOf(activeNodes),
+                Set.copyOf(activeEdges),
+                Set.copyOf(activeBranches));
+    }
+
+    private static int activeBranchIndex(RoutePosition route, WorkforceMarker marker) {
+        for (int index = 0; index < route.branches().size(); index++) {
+            HiredRoute.Branch branch = route.branches().get(index);
+            if (marker.targetPos().equals(branch.end())) {
+                return index;
+            }
+            double branchDistance = squaredDistanceToSegment(marker.pos(), branch.anchor(), branch.end());
+            if (marker.targetPos().equals(branch.anchor())
+                    && branchDistance <= 4.0D
+                    && branchDistance + 0.01D < squaredDistanceToBaseRoute(marker.pos(), route)) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
+    private static double squaredDistanceToBaseRoute(BlockPos pos, RoutePosition route) {
+        double distance = Double.MAX_VALUE;
+        for (int index = 1; index < route.nodes().size(); index++) {
+            distance = Math.min(distance, squaredDistanceToSegment(
+                    pos, route.nodes().get(index - 1), route.nodes().get(index)));
+        }
+        if (route.loop() && route.nodes().size() > 1) {
+            distance = Math.min(distance, squaredDistanceToSegment(
+                    pos, route.nodes().getLast(), route.nodes().getFirst()));
+        }
+        return distance;
+    }
+
+    private static double squaredDistanceToSegment(BlockPos pos, BlockPos first, BlockPos second) {
+        double vx = second.getX() - first.getX();
+        double vy = second.getY() - first.getY();
+        double vz = second.getZ() - first.getZ();
+        double lengthSqr = vx * vx + vy * vy + vz * vz;
+        if (lengthSqr <= 0.0001D) {
+            return pos.distSqr(first);
+        }
+        double progress = Math.max(0.0D, Math.min(1.0D,
+                ((pos.getX() - first.getX()) * vx
+                        + (pos.getY() - first.getY()) * vy
+                        + (pos.getZ() - first.getZ()) * vz) / lengthSqr));
+        double dx = pos.getX() - (first.getX() + vx * progress);
+        double dy = pos.getY() - (first.getY() + vy * progress);
+        double dz = pos.getZ() - (first.getZ() + vz * progress);
+        return dx * dx + dy * dy + dz * dz;
     }
 
     private static int nearestConnectedRouteNode(RoutePosition route, int targetIndex, BlockPos villagerPos) {
@@ -1327,6 +1426,40 @@ public final class ClipboardStorageOutlineRenderer {
                         coreHalfWidth,
                         activeTargets.edges());
             }
+            for (int branchIndex = 0; branchIndex < route.branches().size(); branchIndex++) {
+                HiredRoute.Branch branch = route.branches().get(branchIndex);
+                if (remainingSegments <= 0) {
+                    break;
+                }
+                AABB branchBounds = new AABB(Vec3.atCenterOf(branch.anchor()), Vec3.atCenterOf(branch.end())).inflate(1.0D);
+                if (minecraft.level.hasChunkAt(branch.anchor())
+                        && minecraft.level.hasChunkAt(branch.end())
+                        && isVisible(event, branchBounds)) {
+                    renderPlayerRouteBeam(
+                            poseStack,
+                            routeConsumer,
+                            minecraft.level,
+                            branch.anchor(),
+                            branch.end(),
+                            activeTargets.branches().contains(branchIndex)
+                                    ? PLAYER_ROUTE_ACTIVE_COLOR
+                                    : PLAYER_BRANCH_COLOR,
+                            outlineHalfWidth,
+                            coreHalfWidth);
+                    if (renderedNodes < maxVisibleNodes) {
+                        renderPlayerBranchNode(
+                                poseStack,
+                                routeConsumer,
+                                minecraft.level,
+                                branch.end(),
+                                activeTargets.branches().contains(branchIndex)
+                                        ? PLAYER_ROUTE_ACTIVE_COLOR
+                                        : PLAYER_BRANCH_NODE_COLOR);
+                        renderedNodes++;
+                    }
+                    remainingSegments--;
+                }
+            }
             for (int index = 0; index < route.nodes().size() && renderedNodes < maxVisibleNodes; index++) {
                 BlockPos node = route.nodes().get(index);
                 if (minecraft.level.hasChunkAt(node) && isVisible(event, markerBox(node))) {
@@ -1378,6 +1511,15 @@ public final class ClipboardStorageOutlineRenderer {
                     renderedNodes++;
                 }
             }
+            for (HiredRoute.Branch branch : route.branches()) {
+                if (renderedNodes >= maxVisibleNodes) {
+                    break;
+                }
+                if (minecraft.level.hasChunkAt(branch.end()) && isVisible(event, markerBox(branch.end()))) {
+                    renderDebugBranchNode(poseStack, bufferSource, branch.end());
+                    renderedNodes++;
+                }
+            }
             if (remainingSegments > 0) {
                 remainingSegments -= renderRouteGuideLayer(
                         event,
@@ -1389,6 +1531,29 @@ public final class ClipboardStorageOutlineRenderer {
                         ROUTE_LOOP_COLOR,
                         remainingSegments,
                         DEBUG_ROUTE_GUIDE_TYPE);
+            }
+            for (HiredRoute.Branch branch : route.branches()) {
+                if (remainingSegments <= 0) {
+                    break;
+                }
+                AABB branchBounds = new AABB(
+                        Vec3.atCenterOf(branch.anchor()),
+                        Vec3.atCenterOf(branch.end())).inflate(1.0D);
+                if (minecraft.level.hasChunkAt(branch.anchor())
+                        && minecraft.level.hasChunkAt(branch.end())
+                        && isVisible(event, branchBounds)) {
+                    VertexConsumer branchConsumer = bufferSource.getBuffer(DEBUG_ROUTE_GUIDE_TYPE);
+                    renderRouteGuide(
+                            poseStack,
+                            branchConsumer,
+                            minecraft.level,
+                            branch.anchor(),
+                            branch.end(),
+                            PLAYER_BRANCH_COLOR,
+                            true);
+                    bufferSource.endBatch(DEBUG_ROUTE_GUIDE_TYPE);
+                    remainingSegments--;
+                }
             }
             if (renderedNodes >= maxVisibleNodes && remainingSegments <= 0) {
                 break;
@@ -1615,6 +1780,32 @@ public final class ClipboardStorageOutlineRenderer {
                 shadeRouteColor(color, 0.74D));
         renderRouteQuad(poseStack, consumer, endSideTop, endSideBottom, endOppositeBottom, endOppositeTop,
                 shadeRouteColor(color, 0.88D));
+    }
+
+    private static void renderPlayerBranchNode(
+            PoseStack poseStack,
+            VertexConsumer consumer,
+            Level level,
+            BlockPos node,
+            int color) {
+        double halfSize = 0.09D;
+        Vec3 center = new Vec3(
+                node.getX() + 0.5D,
+                routeGuideSurfaceY(level, node.getX(), node.getY(), node.getZ())
+                        + PLAYER_ROUTE_HEIGHT_ABOVE_SURFACE
+                        - ROUTE_GUIDE_HEIGHT_ABOVE_SURFACE
+                        + 0.02D,
+                node.getZ() + 0.5D);
+        renderAxisAlignedRouteCuboid(
+                poseStack,
+                consumer,
+                center.x - halfSize,
+                center.y - halfSize,
+                center.z - halfSize,
+                center.x + halfSize,
+                center.y + halfSize,
+                center.z + halfSize,
+                color);
     }
 
     private static void renderPlayerRouteNode(
@@ -1911,6 +2102,18 @@ public final class ClipboardStorageOutlineRenderer {
     }
 
     private static void renderDebugRouteNode(PoseStack poseStack, MultiBufferSource bufferSource, BlockPos pos) {
+        renderDebugRouteNode(poseStack, bufferSource, pos, 0xFF0000FF);
+    }
+
+    private static void renderDebugBranchNode(PoseStack poseStack, MultiBufferSource bufferSource, BlockPos pos) {
+        renderDebugRouteNode(poseStack, bufferSource, pos, PLAYER_BRANCH_NODE_COLOR);
+    }
+
+    private static void renderDebugRouteNode(
+            PoseStack poseStack,
+            MultiBufferSource bufferSource,
+            BlockPos pos,
+            int color) {
         AABB box = debugRouteNodeBox(pos);
         LevelRenderer.addChainedFilledBoxVertices(
                 poseStack,
@@ -1921,9 +2124,9 @@ public final class ClipboardStorageOutlineRenderer {
                 box.maxX,
                 box.maxY,
                 box.maxZ,
-                0.0F,
-                0.0F,
-                1.0F,
+                ((color >> 16) & 0xFF) / 255.0F,
+                ((color >> 8) & 0xFF) / 255.0F,
+                (color & 0xFF) / 255.0F,
                 DEBUG_ROUTE_NODE_ALPHA);
     }
 
@@ -1961,6 +2164,18 @@ public final class ClipboardStorageOutlineRenderer {
                     addDebugRouteNodeLabel(labels, routeLabelName(route), node, index + 1);
                 }
             }
+            for (int index = 0; index < route.branches().size(); index++) {
+                BlockPos branchEnd = route.branches().get(index).end();
+                Vec3 labelPos = new Vec3(
+                        branchEnd.getX() + 0.5D,
+                        branchEnd.getY() + DEBUG_ROUTE_LABEL_HEIGHT,
+                        branchEnd.getZ() + 0.5D);
+                if (minecraft.level.hasChunkAt(branchEnd)
+                        && labelPos.distanceToSqr(camera) <= MAX_LABEL_DISTANCE_SQR
+                        && isVisible(event, markerBox(branchEnd).inflate(1.0D))) {
+                    addDebugBranchNodeLabel(labels, routeLabelName(route), branchEnd, index + 1);
+                }
+            }
         }
         renderLabels(event, labels);
     }
@@ -1980,6 +2195,19 @@ public final class ClipboardStorageOutlineRenderer {
                 labelName,
                 "Node #" + Math.max(1, nodeIndex),
                 DEBUG_ROUTE_LABEL_COLOR
+        ));
+    }
+
+    private static void addDebugBranchNodeLabel(
+            List<DebugLabelPosition> labels,
+            String labelName,
+            BlockPos node,
+            int branchIndex) {
+        labels.add(new DebugLabelPosition(
+                new Vec3(node.getX() + 0.5D, node.getY() + DEBUG_ROUTE_LABEL_HEIGHT, node.getZ() + 0.5D),
+                labelName,
+                "Branch #" + Math.max(1, branchIndex),
+                PLAYER_BRANCH_NODE_COLOR
         ));
     }
 
@@ -2052,8 +2280,8 @@ public final class ClipboardStorageOutlineRenderer {
         }
     }
 
-    private record ActiveRouteTargets(Set<Integer> nodes, Set<RouteEdge> edges) {
-        private static final ActiveRouteTargets EMPTY = new ActiveRouteTargets(Set.of(), Set.of());
+    private record ActiveRouteTargets(Set<Integer> nodes, Set<RouteEdge> edges, Set<Integer> branches) {
+        private static final ActiveRouteTargets EMPTY = new ActiveRouteTargets(Set.of(), Set.of(), Set.of());
     }
 
     public record WorkforceMarker(
@@ -2092,7 +2320,13 @@ public final class ClipboardStorageOutlineRenderer {
     private record OutlinedStoragePosition(ResourceKey<Level> dimension, BlockPos pos, boolean payment, String ownerName, String storageType) {
     }
 
-    private record RoutePosition(ResourceKey<Level> dimension, List<BlockPos> nodes, boolean loop, String ownerName, String jobName) {
+    private record RoutePosition(
+            ResourceKey<Level> dimension,
+            List<BlockPos> nodes,
+            boolean loop,
+            List<HiredRoute.Branch> branches,
+            String ownerName,
+            String jobName) {
         private RoutePosition {
             List<BlockPos> safeNodes = new ArrayList<>();
             if (nodes != null) {
@@ -2104,6 +2338,7 @@ public final class ClipboardStorageOutlineRenderer {
             }
             nodes = List.copyOf(safeNodes);
             loop = loop && nodes.size() > 1 && HiredRoute.canConnect(nodes.getLast(), nodes.getFirst());
+            branches = branches == null ? List.of() : List.copyOf(branches);
             ownerName = ownerName == null ? "" : ownerName;
             jobName = jobName == null ? "" : jobName;
         }

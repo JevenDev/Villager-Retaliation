@@ -245,8 +245,20 @@ public final class HiredRouteNavigator {
      * @return the index of the closest route node
      */
     public static int restartAtNearestNode(Villager villager, HiredRoute route) {
-        int nearestIndex = nearestNodeIndex(route, villager.blockPosition());
-        BlockPos nearestNode = route.nodes().get(nearestIndex);
+        return restartAtNearestNode(villager, route.nodes());
+    }
+
+    static int restartAtNearestNode(Villager villager, List<BlockPos> routeNodes) {
+        int nearestIndex = 0;
+        double nearestDistanceSqr = Double.MAX_VALUE;
+        for (int index = 0; index < routeNodes.size(); index++) {
+            double distanceSqr = villager.blockPosition().distSqr(routeNodes.get(index));
+            if (distanceSqr < nearestDistanceSqr) {
+                nearestDistanceSqr = distanceSqr;
+                nearestIndex = index;
+            }
+        }
+        BlockPos nearestNode = routeNodes.get(nearestIndex);
         VillagerTaskNavigationUtil.stopHiredNavigation(villager);
         HiredPathMemory.clearNavigationProgress(villager);
         HiredPathMemory.clearAvoided(villager, nearestNode);

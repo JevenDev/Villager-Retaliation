@@ -118,6 +118,15 @@ public final class HiredWorkAssignment {
             maxY = Math.max(maxY, node.getY());
             maxZ = Math.max(maxZ, node.getZ());
         }
+        for (HiredRoute.Branch branch : this.route.branches()) {
+            BlockPos end = branch.end();
+            minX = Math.min(minX, end.getX());
+            minY = Math.min(minY, end.getY());
+            minZ = Math.min(minZ, end.getZ());
+            maxX = Math.max(maxX, end.getX());
+            maxY = Math.max(maxY, end.getY());
+            maxZ = Math.max(maxZ, end.getZ());
+        }
         return new AABB(
                 minX - horizontalPadding,
                 minY - verticalPadding,
@@ -134,13 +143,15 @@ public final class HiredWorkAssignment {
         List<AABB> bounds = new ArrayList<>(Math.max(1, nodes.size()));
         if (nodes.size() == 1) {
             bounds.add(segmentBounds(nodes.getFirst(), nodes.getFirst(), horizontalPadding, verticalPadding));
-            return bounds;
         }
         for (int index = 1; index < nodes.size(); index++) {
             bounds.add(segmentBounds(nodes.get(index - 1), nodes.get(index), horizontalPadding, verticalPadding));
         }
         if (this.route.loop()) {
             bounds.add(segmentBounds(nodes.getLast(), nodes.getFirst(), horizontalPadding, verticalPadding));
+        }
+        for (HiredRoute.Branch branch : this.route.branches()) {
+            bounds.add(segmentBounds(branch.anchor(), branch.end(), horizontalPadding, verticalPadding));
         }
         return bounds;
     }

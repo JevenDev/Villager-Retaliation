@@ -1,5 +1,10 @@
 # Changelog
-- Fixed couriers becoming permanently stuck at the end of their route after a temporarily unavailable output-storage sweep.
+- Fixed long-route branch couriers skipping unloaded branch containers by prioritizing storage near the active branch within the bounded chunk-ticket window.
+- Fixed terminal branches being traversed twice at route reversal, gave overlapping branch storage priority at branch endpoints, and extended active yellow route highlighting onto branches.
+- Added clipboard Branch Mode for one-node route extensions, including light-blue normal and debug previews and courier input and output servicing along branch endpoints.
+- Wired branch anchors and endpoints into the courier traversal as ordinary out-and-back route nodes, so branch containers use the established route-node servicing path.
+- Fixed newly added branches disappearing from the clipboard preview until the route was assigned to a villager.
+- Fixed long-route couriers stalling at the endpoint after an unavailable output sweep by retracing route nodes before retrying from the start.
 - Improved courier node stops so they visit every eligible assigned container tethered to that node before returning to the route.
 - Added cooperative villager traffic handling: villagers approaching the same narrow passage or route now use stable right-of-way, briefly queue when blocked, and sidestep when nearby terrain provides a safe passing space.
 - Fixed checkbox and icon option labels being clipped instead of wrapping, and added an "Assign and Keep Selection" clipboard action for reusing selected containers across villagers.
