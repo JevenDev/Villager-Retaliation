@@ -278,6 +278,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean routineChatMuted;
     private final boolean forcedDialogue;
     private final boolean clipboardMenu;
+    private final boolean clipboardSelectionAssigned;
     private boolean hiredByPlayer;
     private final boolean hiredByOtherPlayer;
     private int hiredRemainingDays;
@@ -419,6 +420,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean routineChatMuted,
             boolean forcedDialogue,
             boolean clipboardMenu,
+            boolean clipboardSelectionAssigned,
             boolean hiredByPlayer,
             boolean hiredByOtherPlayer,
             int hiredRemainingDays,
@@ -486,6 +488,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.routineChatMuted = routineChatMuted;
         this.forcedDialogue = forcedDialogue;
         this.clipboardMenu = clipboardMenu;
+        this.clipboardSelectionAssigned = clipboardSelectionAssigned;
         this.hiredByPlayer = hiredByPlayer;
         this.hiredByOtherPlayer = hiredByOtherPlayer;
         this.hiredRemainingDays = Math.max(0, hiredRemainingDays);
@@ -1952,6 +1955,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption("clipboard.assign_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.ASSIGN));
         addOption("clipboard.assign_storage_keep_selection",
                 () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.ASSIGN_KEEP_SELECTION));
+        if (this.clipboardSelectionAssigned) {
+            addOption("clipboard.remove_selected_storage",
+                    () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.REMOVE_SELECTION));
+            addOption("clipboard.change_selected_storage",
+                    () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.CHANGE_SELECTION));
+        }
         addOption("clipboard.show_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.SHOW));
         addOption("clipboard.remove_storage", () -> requestClipboardStorage(ClipboardStorageActionPayload.Action.REMOVE));
         addOption("root.goodbye", this::leaveConversation);

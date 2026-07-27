@@ -36,6 +36,7 @@ public record OpenVillagerInteractionPayload(
         boolean routineChatMuted,
         boolean forcedDialogue,
         boolean clipboardMenu,
+        boolean clipboardSelectionAssigned,
         boolean hiredByPlayer,
         boolean hiredByOtherPlayer,
         int hiredRemainingDays,
@@ -117,6 +118,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeBoolean(payload.routineChatMuted());
         buffer.writeBoolean(payload.forcedDialogue());
         buffer.writeBoolean(payload.clipboardMenu());
+        buffer.writeBoolean(payload.clipboardSelectionAssigned());
         buffer.writeBoolean(payload.hiredByPlayer());
         buffer.writeBoolean(payload.hiredByOtherPlayer());
         buffer.writeVarInt(payload.hiredRemainingDays());
@@ -187,6 +189,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readVarLong(),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),

@@ -1,4 +1,5 @@
 # Changelog
+- Added clipboard actions to remove only selected container or payment-box assignments and to change selected assignments to the clipboard type.
 - Fixed long-route branch couriers skipping unloaded branch containers by prioritizing storage near the active branch within the bounded chunk-ticket window.
 - Fixed terminal branches being traversed twice at route reversal, gave overlapping branch storage priority at branch endpoints, and extended active yellow route highlighting onto branches.
 - Added clipboard Branch Mode for one-node route extensions, including light-blue normal and debug previews and courier input and output servicing along branch endpoints.

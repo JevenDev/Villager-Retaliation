@@ -28,6 +28,8 @@ public record ClipboardStorageActionPayload(int entityId, Action action) impleme
         SHOW,
         REMOVE,
         CLEAR_SELECTION,
-        ASSIGN_KEEP_SELECTION
+        ASSIGN_KEEP_SELECTION,
+        REMOVE_SELECTION,
+        CHANGE_SELECTION
     }
 }
