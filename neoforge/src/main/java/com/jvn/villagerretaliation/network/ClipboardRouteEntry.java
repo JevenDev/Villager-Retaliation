@@ -10,6 +10,7 @@ public record ClipboardRouteEntry(
         ResourceLocation dimension,
         List<BlockPos> nodes,
         boolean loop,
+        List<HiredRoute.Branch> branches,
         String ownerName,
         String jobName) {
     private static final int LABEL_LENGTH = 64;
@@ -25,12 +26,13 @@ public record ClipboardRouteEntry(
         }
         nodes = List.copyOf(safeNodes);
         loop = loop && nodes.size() > 1 && HiredRoute.canConnect(nodes.getLast(), nodes.getFirst());
+        branches = branches == null ? List.of() : List.copyOf(branches.stream().limit(HiredRoute.MAX_BRANCHES).toList());
         ownerName = sanitizeLabel(ownerName);
         jobName = sanitizeLabel(jobName);
     }
 
     public ClipboardRouteEntry(ResourceLocation dimension, List<BlockPos> nodes, boolean loop) {
-        this(dimension, nodes, loop, "", "");
+        this(dimension, nodes, loop, List.of(), "", "");
     }
 
     private static String sanitizeLabel(String label) {

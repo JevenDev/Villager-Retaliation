@@ -1152,7 +1152,10 @@ public final class ClipboardWorkforceService {
 
     private static String routeDescription(HiredRoute route) {
         int count = route == null ? 0 : route.nodes().size();
-        return count + " node" + (count == 1 ? "" : "s") + (route != null && route.loop() ? ", loop" : ", back-and-forth");
+        int branches = route == null ? 0 : route.branches().size();
+        return count + " node" + (count == 1 ? "" : "s")
+                + (branches == 0 ? "" : ", " + branches + " branch" + (branches == 1 ? "" : "es"))
+                + (route != null && route.loop() ? ", loop" : ", back-and-forth");
     }
 
     private static void addWarning(Map<WarningKey, Integer> warnings, WarningType type, HiredVillagerRole role, boolean active) {

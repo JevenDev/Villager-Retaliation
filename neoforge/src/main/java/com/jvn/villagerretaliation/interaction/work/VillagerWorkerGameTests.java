@@ -31,6 +31,7 @@ import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.HiredJobInventorySlotType;
 import com.jvn.villagerretaliation.inventory.PaymentBoxChunkLoadingService;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterService;
+import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.mixin.AbstractArrowAccessor;
@@ -4228,6 +4229,144 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 700)
+    public static void courierCollectsInputsThroughTwoBranchEndpoints(GameTestHelper helper) {
+        buildFloor(helper, 0, 14, 0, 14, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierBranchInputs");
+        BlockPos firstNodeRel = new BlockPos(2, 2, 2);
+        BlockPos lastNodeRel = new BlockPos(12, 2, 2);
+        BlockPos firstAnchorRel = new BlockPos(4, 2, 2);
+        BlockPos firstBranchEndRel = new BlockPos(4, 2, 6);
+        BlockPos firstInputRel = new BlockPos(4, 2, 8);
+        BlockPos secondAnchorRel = new BlockPos(8, 2, 2);
+        BlockPos secondBranchEndRel = new BlockPos(8, 2, 10);
+        BlockPos secondInputRel = new BlockPos(8, 2, 12);
+        BlockPos outputRel = new BlockPos(2, 2, 4);
+        Villager villager = spawnVillager(helper, firstNodeRel);
+        BlockPos firstInput = helper.absolutePos(firstInputRel);
+        BlockPos secondInput = helper.absolutePos(secondInputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, firstInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, secondInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        container(level, firstInput).setItem(0, new ItemStack(Items.DIRT, 7));
+        container(level, secondInput).setItem(0, new ItemStack(Items.COBBLESTONE, 9));
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), firstInput),
+                        new AssignedStorageService.StoragePosition(level.dimension(), secondInput)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "two branch input assignments");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "branch output assignment");
+
+        HiredRoute route = new HiredRoute(
+                List.of(helper.absolutePos(firstNodeRel), helper.absolutePos(lastNodeRel)),
+                false,
+                List.of(
+                        new HiredRoute.Branch(
+                                helper.absolutePos(firstAnchorRel),
+                                helper.absolutePos(firstBranchEndRel)),
+                        new HiredRoute.Branch(
+                                helper.absolutePos(secondAnchorRel),
+                                helper.absolutePos(secondBranchEndRel))));
+        helper.assertValueEqual(
+                route.traversalNodes(),
+                List.of(
+                        helper.absolutePos(firstNodeRel),
+                        helper.absolutePos(firstAnchorRel),
+                        helper.absolutePos(firstBranchEndRel),
+                        helper.absolutePos(firstAnchorRel),
+                        helper.absolutePos(secondAnchorRel),
+                        helper.absolutePos(secondBranchEndRel),
+                        helper.absolutePos(secondAnchorRel),
+                        helper.absolutePos(lastNodeRel)),
+                "both branches should become ordinary out-and-back route nodes");
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(helper, villager, state, route, 100);
+        CourierWorker worker = new CourierWorker();
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 600, () ->
+                countItem(container(level, output), Items.DIRT) == 7
+                        && countItem(container(level, output), Items.COBBLESTONE) == 9
+                        && "pickup".equals(state.getString("CourierPhase")));
+
+        helper.assertValueEqual(countItem(container(level, firstInput), Items.DIRT), 0,
+                "courier should empty the first branch input");
+        helper.assertValueEqual(countItem(container(level, secondInput), Items.COBBLESTONE), 0,
+                "courier should empty the second branch input");
+        helper.assertValueEqual(countItem(container(level, output), Items.DIRT), 7,
+                "courier should deliver the first branch cargo");
+        helper.assertValueEqual(countItem(container(level, output), Items.COBBLESTONE), 9,
+                "courier should deliver the second branch cargo");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 700)
+    public static void courierServicesOverlappingInputFromTerminalBranchOnce(GameTestHelper helper) {
+        buildFloor(helper, 0, 18, 0, 18, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierTerminalBranch");
+        BlockPos firstNodeRel = new BlockPos(2, 2, 2);
+        BlockPos lastNodeRel = new BlockPos(16, 2, 2);
+        BlockPos branchEndRel = new BlockPos(16, 2, 14);
+        BlockPos inputRel = new BlockPos(16, 2, 16);
+        BlockPos outputRel = new BlockPos(2, 2, 4);
+        Villager villager = spawnVillager(helper, firstNodeRel);
+        BlockPos input = helper.absolutePos(inputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        container(level, input).setItem(0, new ItemStack(Items.DIRT, 11));
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "overlapping branch input assignment");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "terminal branch output assignment");
+
+        BlockPos firstNode = helper.absolutePos(firstNodeRel);
+        BlockPos lastNode = helper.absolutePos(lastNodeRel);
+        BlockPos branchEnd = helper.absolutePos(branchEndRel);
+        HiredRoute route = new HiredRoute(
+                List.of(firstNode, lastNode),
+                false,
+                List.of(new HiredRoute.Branch(lastNode, branchEnd)));
+        helper.assertValueEqual(
+                route.traversalNodes(),
+                List.of(firstNode, lastNode, branchEnd),
+                "a terminal branch must extend the route without returning to its anchor before reversal");
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(helper, villager, state, route, 100);
+        CourierWorker worker = new CourierWorker();
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 600, () ->
+                countItem(container(level, output), Items.DIRT) == 11
+                        && "pickup".equals(state.getString("CourierPhase")));
+
+        helper.assertValueEqual(countItem(container(level, input), Items.DIRT), 0,
+                "courier should collect an input overlapping the base and terminal branch ranges");
+        helper.assertValueEqual(countItem(container(level, output), Items.DIRT), 11,
+                "courier should deliver cargo collected from the terminal branch");
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 200)
     public static void courierMovesInputToOutputAlongAssignedRoute(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 5, 1);
@@ -4578,8 +4717,18 @@ public final class VillagerWorkerGameTests {
 
         runWorkerUntil(helper, worker, level, villager, hirer, context, 300, () ->
                 "courier_output_unavailable".equals(state.getString("WorkerFailureReason")));
-        helper.assertValueEqual(state.getInt("CourierRouteIndex"), 0,
-                "a failed delivery sweep should restart from the route beginning");
+        helper.assertValueEqual(state.getString("CourierPhase"), "return",
+                "a failed delivery sweep should retrace the route before retrying");
+        helper.assertValueEqual(state.getInt("CourierRouteIndex"), 2,
+                "the retry return should begin at the courier's physical endpoint");
+
+        worker.tick(level, villager, hirer, context);
+        helper.assertValueEqual(state.getInt("CourierRouteIndex"), 1,
+                "the courier should retrace the next route node instead of pathing directly to the start");
+        BlockPos returnTarget = villager.getNavigation().getTargetPos();
+        helper.assertTrue(returnTarget != null
+                        && returnTarget.distSqr(helper.absolutePos(new BlockPos(7, 2, 2))) <= 4.0D,
+                "the unavailable-output retry should follow the route backward; target=" + returnTarget);
 
         outputContainer.clearContent();
         AssignedStorageService.clearStorageFailure(level, villager, output);
@@ -4592,6 +4741,96 @@ public final class VillagerWorkerGameTests {
                 "successful output retry should clear the unavailable-output failure");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 1000)
+    public static void courierResumesBranchInputsWhenCarriedCargoMatchesNoOutput(GameTestHelper helper) {
+        buildFloor(helper, 0, 20, 0, 18, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierUnmatchedCargo");
+        BlockPos firstNodeRel = new BlockPos(2, 2, 2);
+        BlockPos branchAnchorRel = new BlockPos(16, 2, 2);
+        BlockPos branchEndRel = new BlockPos(16, 2, 12);
+        BlockPos inputRel = new BlockPos(16, 2, 14);
+        BlockPos leatherOutputRel = new BlockPos(2, 2, 5);
+        BlockPos muttonOutputRel = new BlockPos(5, 2, 5);
+        Villager villager = spawnVillager(helper, firstNodeRel);
+        BlockPos input = helper.absolutePos(inputRel);
+        BlockPos leatherOutput = helper.absolutePos(leatherOutputRel);
+        BlockPos muttonOutput = helper.absolutePos(muttonOutputRel);
+        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, leatherOutputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, muttonOutputRel, Blocks.CHEST.defaultBlockState());
+        container(level, input).setItem(0, new ItemStack(Items.LEATHER, 6));
+        container(level, input).setItem(1, new ItemStack(Items.BEEF, 8));
+
+        ItemFrame leatherFrame = new ItemFrame(
+                level,
+                leatherOutput.relative(Direction.SOUTH),
+                Direction.SOUTH);
+        leatherFrame.setItem(new ItemStack(Items.LEATHER));
+        helper.assertTrue(level.addFreshEntity(leatherFrame), "leather output frame should spawn");
+        ItemFrame cookedMuttonFrame = new ItemFrame(
+                level,
+                muttonOutput.relative(Direction.SOUTH),
+                Direction.SOUTH);
+        cookedMuttonFrame.setItem(new ItemStack(Items.COOKED_MUTTON));
+        helper.assertTrue(level.addFreshEntity(cookedMuttonFrame), "cooked-mutton output frame should spawn");
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "unmatched-cargo branch input");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), leatherOutput),
+                        new AssignedStorageService.StoragePosition(level.dimension(), muttonOutput)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 2, "filtered unmatched-cargo outputs");
+
+        HiredRoute route = new HiredRoute(
+                List.of(helper.absolutePos(firstNodeRel), helper.absolutePos(branchAnchorRel)),
+                false,
+                List.of(new HiredRoute.Branch(
+                        helper.absolutePos(branchAnchorRel),
+                        helper.absolutePos(branchEndRel))));
+        CompoundTag state = new CompoundTag();
+        state.putString("CourierPhase", "deliver");
+        state.putInt("CourierRouteIndex", 0);
+        HiredWorkContext context = routeContext(helper, villager, state, route, 100);
+        helper.assertTrue(context.inventory().insertOutput(new ItemStack(Items.MUTTON, 7)).isEmpty(),
+                "raw mutton should seed the unmatched retained cargo");
+        CourierWorker worker = new CourierWorker();
+        boolean[] resumedInputSweep = {false};
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 900, () -> {
+            if ("outbound".equals(state.getString("CourierPhase"))
+                    && context.inventory().hasOutput(stack -> stack.is(Items.MUTTON))) {
+                resumedInputSweep[0] = true;
+            }
+            return countItem(container(level, leatherOutput), Items.LEATHER) == 6;
+        });
+
+        helper.assertTrue(resumedInputSweep[0],
+                "an unmatched delivery sweep should return to collecting branch inputs");
+        helper.assertValueEqual(countItem(container(level, input), Items.LEATHER), 0,
+                "retained unmatched cargo must not block leather pickup");
+        helper.assertValueEqual(countItem(container(level, input), Items.BEEF), 0,
+                "retained unmatched cargo must not block other branch pickup");
+        helper.assertValueEqual(countItem(container(level, leatherOutput), Items.LEATHER), 6,
+                "newly collected leather should still reach its matching output");
+        helper.assertValueEqual(countItem(container(level, muttonOutput), Items.MUTTON), 0,
+                "raw mutton must not enter a cooked-mutton filtered output");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.MUTTON), 7,
+                "unmatched raw mutton should remain retained until a compatible output exists");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        leatherFrame.discard();
+        cookedMuttonFrame.discard();
         villager.discard();
         helper.succeed();
     }
@@ -6318,10 +6557,19 @@ public final class VillagerWorkerGameTests {
         HiredVillagerContractService.startHireContract(level, villager, hirer, 1, 8, HiredVillagerRole.COMBAT);
         BlockPos firstRouteNode = helper.absolutePos(new BlockPos(2, 2, 2));
         BlockPos secondRouteNode = helper.absolutePos(new BlockPos(6, 2, 2));
-        HiredRoute route = new HiredRoute(List.of(firstRouteNode, secondRouteNode), false);
+        BlockPos branchAnchor = helper.absolutePos(new BlockPos(4, 2, 2));
+        BlockPos branchEnd = helper.absolutePos(new BlockPos(4, 2, 18));
+        HiredRoute route = new HiredRoute(
+                List.of(firstRouteNode, secondRouteNode),
+                false,
+                List.of(new HiredRoute.Branch(branchAnchor, branchEnd)));
         helper.assertTrue(
                 HiredVillagerWorkService.setRoute(hirer, level, villager, route),
                 "route assignment should succeed");
+        helper.assertValueEqual(
+                HiredVillagerWorkService.route(level, villager).branches().size(),
+                1,
+                "assigned branch should survive route persistence");
 
         HiredWorkSession routeOnly = HiredWorkSession.active(level, villager);
         helper.assertFalse(routeOnly.context().hasWorkArea(), "route-only combat worker should not need a work site");
@@ -6339,6 +6587,10 @@ public final class VillagerWorkerGameTests {
                         routeOnly.context(),
                         firstRouteNode),
                 "route node should be inside the effective assignment");
+        BlockPos branchReach = helper.absolutePos(new BlockPos(4, 2, 30));
+        helper.assertTrue(
+                routeOnly.context().isInsideRouteArea(branchReach),
+                "branch should extend route filtering beyond the base route corridor");
 
         villager.getBrain().setMemory(MemoryModuleType.INTERACTION_TARGET, otherVillager);
         villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(otherVillager.blockPosition()));
@@ -6869,7 +7121,21 @@ public final class VillagerWorkerGameTests {
         for (BlockPos node : routeRelativeNodes) {
             routeNodes.add(helper.absolutePos(node));
         }
-        BlockPos center = routeNodes.isEmpty() ? helper.absolutePos(BlockPos.ZERO) : routeNodes.getFirst();
+        return routeContext(
+                helper,
+                villager,
+                state,
+                new HiredRoute(routeNodes, false),
+                transferCapacityPercent);
+    }
+
+    private static HiredWorkContext routeContext(
+            GameTestHelper helper,
+            Villager villager,
+            CompoundTag state,
+            HiredRoute route,
+            int transferCapacityPercent) {
+        BlockPos center = route.nodes().isEmpty() ? helper.absolutePos(BlockPos.ZERO) : route.nodes().getFirst();
         HiredWorkArea disabledArea = HiredWorkArea.fromCenter(center, 1, 2, false).asUsable(false);
         HiredWorkerBrain.initialize(state);
         return new HiredWorkContext(
@@ -6888,7 +7154,7 @@ public final class VillagerWorkerGameTests {
                 true,
                 true,
                 HiredJobSite.fromWorkArea(disabledArea),
-                new HiredRoute(routeNodes, false));
+                route);
     }
 
     private static double horizontalDistance(BlockPos first, BlockPos second) {
