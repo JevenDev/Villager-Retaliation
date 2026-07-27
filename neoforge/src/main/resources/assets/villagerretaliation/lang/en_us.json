@@ -1186,6 +1186,7 @@
   "villagerretaliation.gui.recruit.animal_cull_cap_option": "Cull over %s",
   "villagerretaliation.gui.recruit.animal_cull_disabled": "Off",
   "villagerretaliation.gui.recruit.animal_handling_targets": "Breeding Targets",
+  "villagerretaliation.gui.recruit.animal_shearing": "Shear Sheep",
   "villagerretaliation.gui.recruit.assign_mount": "Assign Mount",
   "villagerretaliation.gui.recruit.auto_payment": "Auto/Recurring Payment",
   "villagerretaliation.gui.recruit.brewing_amount_1": "Brew 1",

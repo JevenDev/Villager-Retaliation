@@ -26,6 +26,7 @@ import com.jvn.villagerretaliation.dialogue.normal.DialogueTreeService;
 import com.jvn.villagerretaliation.interaction.work.builder.BuilderStructureCatalog;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalBreedingTargets;
 import com.jvn.villagerretaliation.interaction.work.HiredAnimalCullSettings;
+import com.jvn.villagerretaliation.interaction.work.HiredAnimalHandlingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingOptions;
 import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
 import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
@@ -35,6 +36,7 @@ import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.HiredAnimalBreedingTargetPayload;
 import com.jvn.villagerretaliation.network.HiredAnimalCullCapPayload;
+import com.jvn.villagerretaliation.network.HiredAnimalHandlingOptionPayload;
 import com.jvn.villagerretaliation.network.HiredBuilderOrderPayload;
 import com.jvn.villagerretaliation.network.HiredBrewingOrderPayload;
 import com.jvn.villagerretaliation.network.HiredFarmingOptionPayload;
@@ -315,6 +317,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private boolean loggingPickUpDecayDrops;
     private final Set<String> selectedAnimalBreedingTargets = new LinkedHashSet<>();
     private int animalCullCap;
+    private boolean animalShearing;
     private boolean forceCameraTowardsVillager;
     private OpenVillagerDuelPayload duelStatus;
     private DuelLoadout duelLoadout = DuelLoadout.BARE_HANDED;
@@ -456,6 +459,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean loggingPickUpDecayDrops,
             List<String> selectedAnimalBreedingTargets,
             int animalCullCap,
+            boolean animalShearing,
             List<DialogueOptionDefinition> dialogueOptions,
             List<String> knownLikedGiftNames,
             List<String> knownDislikedGiftNames,
@@ -530,6 +534,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.animalCullCap = HiredAnimalCullSettings.isValidCap(animalCullCap)
                 ? animalCullCap
                 : HiredAnimalCullSettings.DISABLED_CAP;
+        this.animalShearing = animalShearing;
         this.forceCameraTowardsVillager = forceCameraTowardsVillager;
         this.dialogueOptions.addAll(dialogueOptions);
         this.knownLikedGiftNames.addAll(knownLikedGiftNames);
@@ -1658,6 +1663,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void addAnimalHandlingOptions() {
         addOption("recruit.animal_handling_targets", this::openAnimalBreedingTargetsPage);
+        this.options.add(DialogueOption.checkbox(
+                translate("recruit.animal_shearing"),
+                this.animalShearing,
+                () -> requestAnimalHandlingOption(HiredAnimalHandlingOptions.SHEAR_SHEEP)));
         this.options.add(DialogueOption.enabled(
                 translate("recruit.animal_cull_cap", animalCullCapLabel(this.animalCullCap)),
                 this::openAnimalCullCapsPage));
@@ -2817,6 +2826,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 || action == VillagerRecruitRequestPayload.Action.HIRE_SEVEN_DAYS
                 || action == VillagerRecruitRequestPayload.Action.HIRE_FIFTEEN_DAYS
                 || action == VillagerRecruitRequestPayload.Action.HIRE_THIRTY_DAYS;
+    }
+
+    private void requestAnimalHandlingOption(String optionId) {
+        if (!HiredAnimalHandlingOptions.SHEAR_SHEEP.equals(optionId)) {
+            return;
+        }
+        sendToServer(new HiredAnimalHandlingOptionPayload(this.villagerEntityId, optionId));
+        this.animalShearing = !this.animalShearing;
+        rebuildOptionsKeepingListPosition();
     }
 
     private void requestAnimalBreedingTarget(String targetId) {

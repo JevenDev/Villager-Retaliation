@@ -2103,6 +2103,18 @@ public final class VillagerInteractionService {
         HiredVillagerWorkService.toggleAnimalBreedingTarget(player, level, villager, targetId);
     }
 
+    public static void handleAnimalHandlingOptionRequest(ServerPlayer player, int entityId, String optionId) {
+        Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
+        if (target.isEmpty()) {
+            return;
+        }
+        InteractionTargetContext contextTarget = target.get();
+        Villager villager = contextTarget.villager();
+        ServerLevel level = contextTarget.level();
+        focusVillagerOnPlayer(villager, player);
+        HiredVillagerWorkService.toggleAnimalHandlingOption(player, level, villager, optionId);
+    }
+
     public static void handleAnimalCullCapRequest(ServerPlayer player, int entityId, int cap) {
         Optional<InteractionTargetContext> target = InteractionRequestValidator.requireRecruitConversation(player, entityId);
         if (target.isEmpty()) {
