@@ -1123,6 +1123,48 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void fishingWorkerDepositsAfterEveryCatch(GameTestHelper helper) {
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrFishingCatchDeposit");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        BlockPos chestRel = new BlockPos(3, 2, 2);
+        BlockPos chest = helper.absolutePos(chestRel);
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, chest);
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                state,
+                new BlockPos(1, 2, 1),
+                new BlockPos(5, 4, 5),
+                true);
+        context.inventory().insertOutput(new ItemStack(Items.COD));
+        FishingWorker.queueCompletedCatch(context);
+
+        WorkResult result = new FishingWorker().tick(level, villager, hirer, context);
+
+        helper.assertValueEqual(
+                countItem(container(level, chest), Items.COD),
+                1,
+                "fisherman should deposit a catch without waiting for output inventory to fill");
+        helper.assertFalse(context.hasOutputToDeposit(), "completed catch should leave no carried output");
+        helper.assertTrue(result.completed(), "catch should complete after the immediate deposit");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void fishingWorkerAimsPastVeryCloseShoreWater(GameTestHelper helper) {
         buildFloor(helper, 0, 11, 0, 4, 1);
         ServerLevel level = helper.getLevel();

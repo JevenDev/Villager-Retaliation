@@ -1101,7 +1101,9 @@ public final class ClipboardWorkforceScreen extends Screen {
                 if (lineTop >= SUMMARY_TOP && lineTop + TEXT_PIXEL_HEIGHT <= TEXT_CONTENT_BOTTOM) {
                     if (lineTop == entryTop) {
                         graphics.blit(
-                                VillagerRetaliationClientAssets.CLIPBOARD_WARNING_ARROW_TEXTURE,
+                                isWaitingNotice(entry.warning().type())
+                                        ? VillagerRetaliationClientAssets.CLIPBOARD_ROW_ARROW_TEXTURE
+                                        : VillagerRetaliationClientAssets.CLIPBOARD_WARNING_ARROW_TEXTURE,
                                 SUMMARY_LEFT,
                                 lineTop,
                                 0.0F,

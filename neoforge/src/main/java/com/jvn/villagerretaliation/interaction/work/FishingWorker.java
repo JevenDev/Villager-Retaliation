@@ -391,7 +391,7 @@ public final class FishingWorker extends AbstractBlockWorker {
         level.playSound(null, villager.getX(), villager.getY(), villager.getZ(), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.NEUTRAL, 1.0F, 0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F));
         villager.swing(InteractionHand.MAIN_HAND, true);
         villager.gameEvent(GameEvent.ITEM_INTERACT_FINISH);
-        context.state().putBoolean(CATCH_COMPLETED_TAG, true);
+        queueCompletedCatch(context);
         if (practiceUnits > 0.0D) {
             context.state().putDouble(CATCH_PRACTICE_UNITS_TAG, Math.min(3.0D, practiceUnits));
             context.state().putLong(CATCH_REPETITION_KEY_TAG, repetitionKey);
@@ -400,6 +400,13 @@ public final class FishingWorker extends AbstractBlockWorker {
             context.state().putBoolean(CATCH_OVERFLOW_TAG, true);
         }
         clearHookState(context);
+    }
+
+    static void queueCompletedCatch(HiredWorkContext context) {
+        context.state().putBoolean(CATCH_COMPLETED_TAG, true);
+        if (context.hasOutputToDeposit()) {
+            context.state().putBoolean(DEPOSITING_OUTPUTS_TAG, true);
+        }
     }
 
     private VillagerFishingHook activeHook(ServerLevel level, HiredWorkContext context) {
