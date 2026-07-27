@@ -1,9 +1,9 @@
 package com.jvn.villagerretaliation.mixin;
 
 import com.jvn.villagerretaliation.villager.VillagerEquipmentMending;
+import com.jvn.villagerretaliation.villager.VillagerWorkExperience;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.GameRules;
@@ -44,7 +44,7 @@ public abstract class LivingEntityVillagerExperienceMixin {
                 null,
                 defeated.getExperienceReward(level, villager));
         if (reward > 0) {
-            ExperienceOrb.award(level, defeated.position(), reward);
+            VillagerWorkExperience.spawn(level, villager, defeated.position(), reward);
         }
     }
 }

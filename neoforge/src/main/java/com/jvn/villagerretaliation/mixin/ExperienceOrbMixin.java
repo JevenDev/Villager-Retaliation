@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.mixin;
 
 import com.jvn.villagerretaliation.villager.VillagerEquipmentMending;
+import com.jvn.villagerretaliation.villager.VillagerWorkExperience;
 import net.minecraft.world.entity.ExperienceOrb;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.player.Player;
@@ -31,7 +32,10 @@ public abstract class ExperienceOrbMixin {
         for (Villager villager : orb.level().getEntitiesOfClass(
                 Villager.class,
                 searchArea,
-                candidate -> candidate.isAlive() && VillagerEquipmentMending.canRepair(candidate)
+                candidate -> candidate.isAlive()
+                        && (VillagerEquipmentMending.canRepair(candidate)
+                        || VillagerWorkExperience.belongsTo(orb, candidate)
+                        && VillagerEquipmentMending.hasMendingEquipment(candidate))
         )) {
             double distance = villager.distanceToSqr(orb);
             if (distance < 64.0D && distance < nearestDistance) {
@@ -41,7 +45,9 @@ public abstract class ExperienceOrbMixin {
         }
 
         if (nearestVillager != null
-                && (followingPlayer == null || nearestDistance < followingPlayer.distanceToSqr(orb))) {
+                && (VillagerWorkExperience.belongsTo(orb, nearestVillager)
+                || followingPlayer == null
+                || nearestDistance < followingPlayer.distanceToSqr(orb))) {
             followingPlayer = null;
             villagerretaliation$followingVillager = nearestVillager;
         } else {
@@ -53,17 +59,22 @@ public abstract class ExperienceOrbMixin {
     private void villagerretaliation$repairVillagerArmorOnContact(CallbackInfo callback) {
         ExperienceOrb orb = (ExperienceOrb) (Object) this;
         Villager villager = villagerretaliation$followingVillager;
+        boolean canConsumeWorkExperience = villager != null
+                && VillagerWorkExperience.belongsTo(orb, villager)
+                && VillagerEquipmentMending.hasMendingEquipment(villager);
         if (villager == null
                 || !villager.isAlive()
                 || villager.level() != orb.level()
                 || villager.distanceToSqr(orb) >= 64.0D
-                || !VillagerEquipmentMending.canRepair(villager)) {
+                || !VillagerEquipmentMending.canRepair(villager) && !canConsumeWorkExperience) {
             villagerretaliation$followingVillager = null;
             return;
         }
 
-        if (!orb.getBoundingBox().intersects(villager.getBoundingBox())
-                || !VillagerEquipmentMending.repairWithXp(villager, value)) {
+        if (!orb.getBoundingBox().intersects(villager.getBoundingBox())) {
+            return;
+        }
+        if (!VillagerEquipmentMending.repairWithXp(villager, value) && !canConsumeWorkExperience) {
             return;
         }
 
