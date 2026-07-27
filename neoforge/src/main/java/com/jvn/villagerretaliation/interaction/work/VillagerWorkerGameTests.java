@@ -56,6 +56,7 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -4331,6 +4332,80 @@ public final class VillagerWorkerGameTests {
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         frame.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 500)
+    public static void courierBatchesContainersTetheredToTheSameRouteNode(GameTestHelper helper) {
+        buildFloor(helper, 0, 14, 0, 10, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierNodeBatch");
+        BlockPos firstNodeRel = new BlockPos(3, 2, 3);
+        BlockPos lastNodeRel = new BlockPos(12, 2, 3);
+        Villager villager = spawnVillager(helper, firstNodeRel);
+        BlockPos firstInputRel = new BlockPos(3, 2, 6);
+        BlockPos secondInputRel = new BlockPos(6, 2, 6);
+        BlockPos outputRel = new BlockPos(12, 2, 6);
+        BlockPos firstInput = helper.absolutePos(firstInputRel);
+        BlockPos secondInput = helper.absolutePos(secondInputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, firstInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, secondInputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, firstInput);
+        AssignedStorageService.removeAssignedContainer(level, secondInput);
+        AssignedStorageService.removeAssignedContainer(level, output);
+        container(level, firstInput).setItem(0, new ItemStack(Items.COBBLESTONE, 8));
+        container(level, secondInput).setItem(0, new ItemStack(Items.DIRT, 6));
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), firstInput),
+                        new AssignedStorageService.StoragePosition(level.dimension(), secondInput)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "same-node courier input assignments");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "same-node courier output assignment");
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(firstNodeRel, lastNodeRel));
+        CourierWorker worker = new CourierWorker();
+        boolean[] sawDirectContainerHandoff = {false};
+        boolean[] sawPrematureNodeReturn = {false};
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 400, () -> {
+            if (AssignedStorageService.INPUT_PURPOSE.equals(state.getString("CourierStoragePurpose"))
+                    && state.getLongArray("CourierVisitedStorage").length == 1) {
+                if (state.getBoolean("CourierStorageReturnToNode")) {
+                    sawPrematureNodeReturn[0] = true;
+                } else if (state.contains("CourierStorageTarget", Tag.TAG_LONG)) {
+                    sawDirectContainerHandoff[0] = true;
+                }
+            }
+            return countItem(container(level, output), Items.COBBLESTONE) == 8
+                    && countItem(container(level, output), Items.DIRT) == 6
+                    && "pickup".equals(state.getString("CourierPhase"));
+        });
+
+        helper.assertTrue(sawDirectContainerHandoff[0],
+                "courier should move directly between containers tethered to one route node");
+        helper.assertFalse(sawPrematureNodeReturn[0],
+                "courier should not return to the route node until its container batch is complete");
+        helper.assertValueEqual(countItem(container(level, firstInput), Items.COBBLESTONE), 0,
+                "courier should collect the first same-node input");
+        helper.assertValueEqual(countItem(container(level, secondInput), Items.DIRT), 0,
+                "courier should collect the second same-node input");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
         villager.discard();
         helper.succeed();
     }
