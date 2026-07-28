@@ -18,6 +18,8 @@ public final class HiredRouteNavigator {
     private static final String ROUTE_RETRY_AFTER_GAME_TIME_TAG = "RouteRetryAfterGameTime";
     private static final String ROUTE_FAILED_PATH_COUNT_TAG = "RouteFailedPathCount";
     private static final String ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG = "RouteLastNodeReachedGameTime";
+    private static final RouteTraversalCursor.Tags CURSOR_TAGS = new RouteTraversalCursor.Tags(
+            ROUTE_NODE_INDEX_TAG, ROUTE_DIRECTION_TAG, ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
     private static final double ARRIVAL_DISTANCE_SQR = 4.0D;
     private static final long PATH_RETRY_TICKS = 60L;
     private static final long ROUTE_RECOVERY_TICKS = 20L * 30L;
@@ -33,17 +35,17 @@ public final class HiredRouteNavigator {
             return false;
         }
         CompoundTag state = context.state();
-        int nodeIndex = routeNodeIndex(state, route);
-        BlockPos target = route.nodes().get(nodeIndex);
-        double distanceSqr = villager.blockPosition().distSqr(target);
         long gameTime = level.getGameTime();
-        initializeRouteWatchdog(state, gameTime);
-        if (distanceSqr > ARRIVAL_DISTANCE_SQR && routeRecoveryDue(state, gameTime)) {
-            nodeIndex = recoverAtNearestNode(villager, state, route, gameTime);
-            target = route.nodes().get(nodeIndex);
-            distanceSqr = villager.blockPosition().distSqr(target);
+        RouteTraversalCursor cursor = new RouteTraversalCursor(state, CURSOR_TAGS);
+        RouteTraversalCursor.Prepared prepared = cursor.prepareCurrentNode(
+                villager, route.nodes(), nearestNodeIndex(route, state), gameTime,
+                ARRIVAL_DISTANCE_SQR, ROUTE_RECOVERY_TICKS);
+        int nodeIndex = prepared.index();
+        BlockPos target = prepared.target();
+        if (prepared.recovered()) {
+            clearPathFailure(state);
         }
-        if (distanceSqr > ARRIVAL_DISTANCE_SQR
+        if (villager.blockPosition().distSqr(target) > ARRIVAL_DISTANCE_SQR
                 && gameTime < state.getLong(ROUTE_RETRY_AFTER_GAME_TIME_TAG)) {
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, target);
             return true;
@@ -51,8 +53,8 @@ public final class HiredRouteNavigator {
 
         NodeMovement movement = moveToRouteNode(level, villager, target, speed);
         if (movement == NodeMovement.ARRIVED) {
-            state.putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
-            nodeIndex = advanceRouteNode(state, route, nodeIndex);
+            cursor.markNodeReached(gameTime);
+            nodeIndex = advanceRouteNode(state, route, cursor, nodeIndex);
             target = route.nodes().get(nodeIndex);
             if (route.nodes().size() == 1) {
                 VillagerTaskNavigationUtil.stopHiredNavigation(villager);
@@ -173,23 +175,9 @@ public final class HiredRouteNavigator {
         if (state == null) {
             return;
         }
-        state.remove(ROUTE_NODE_INDEX_TAG);
-        state.remove(ROUTE_DIRECTION_TAG);
+        new RouteTraversalCursor(state, CURSOR_TAGS).clear();
         state.remove(ROUTE_RETRY_AFTER_GAME_TIME_TAG);
         state.remove(ROUTE_FAILED_PATH_COUNT_TAG);
-        state.remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
-    }
-
-    private static int routeNodeIndex(CompoundTag state, HiredRoute route) {
-        int maxIndex = route.nodes().size() - 1;
-        int index = state.contains(ROUTE_NODE_INDEX_TAG, Tag.TAG_INT)
-                ? Math.clamp(state.getInt(ROUTE_NODE_INDEX_TAG), 0, maxIndex)
-                : nearestNodeIndex(route, state);
-        state.putInt(ROUTE_NODE_INDEX_TAG, index);
-        if (!state.contains(ROUTE_DIRECTION_TAG, Tag.TAG_INT) || state.getInt(ROUTE_DIRECTION_TAG) == 0) {
-            state.putInt(ROUTE_DIRECTION_TAG, 1);
-        }
-        return index;
     }
 
     private static int nearestNodeIndex(HiredRoute route, CompoundTag state) {
@@ -203,93 +191,10 @@ public final class HiredRouteNavigator {
         return 0;
     }
 
-    private static int nearestNodeIndex(HiredRoute route, BlockPos position) {
-        int nearestIndex = 0;
-        double nearestDistanceSqr = Double.MAX_VALUE;
-        for (int index = 0; index < route.nodes().size(); index++) {
-            double distanceSqr = position.distSqr(route.nodes().get(index));
-            if (distanceSqr < nearestDistanceSqr) {
-                nearestDistanceSqr = distanceSqr;
-                nearestIndex = index;
-            }
-        }
-        return nearestIndex;
-    }
-
-    private static void initializeRouteWatchdog(CompoundTag state, long gameTime) {
-        if (!state.contains(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, Tag.TAG_LONG)
-                || state.getLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG) > gameTime) {
-            state.putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
-        }
-    }
-
-    private static boolean routeRecoveryDue(CompoundTag state, long gameTime) {
-        return gameTime - state.getLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG) >= ROUTE_RECOVERY_TICKS;
-    }
-
-    private static int recoverAtNearestNode(
-            Villager villager,
-            CompoundTag state,
-            HiredRoute route,
-            long gameTime) {
-        int nearestIndex = restartAtNearestNode(villager, route);
-        state.putInt(ROUTE_NODE_INDEX_TAG, nearestIndex);
-        state.putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
+    private static int advanceRouteNode(CompoundTag state, HiredRoute route,
+            RouteTraversalCursor cursor, int currentIndex) {
         clearPathFailure(state);
-        return nearestIndex;
-    }
-
-    /**
-     * Cancels a stalled route path so its caller can immediately retry from the closest route node.
-     *
-     * @return the index of the closest route node
-     */
-    public static int restartAtNearestNode(Villager villager, HiredRoute route) {
-        return restartAtNearestNode(villager, route.nodes());
-    }
-
-    static int restartAtNearestNode(Villager villager, List<BlockPos> routeNodes) {
-        int nearestIndex = 0;
-        double nearestDistanceSqr = Double.MAX_VALUE;
-        for (int index = 0; index < routeNodes.size(); index++) {
-            double distanceSqr = villager.blockPosition().distSqr(routeNodes.get(index));
-            if (distanceSqr < nearestDistanceSqr) {
-                nearestDistanceSqr = distanceSqr;
-                nearestIndex = index;
-            }
-        }
-        BlockPos nearestNode = routeNodes.get(nearestIndex);
-        VillagerTaskNavigationUtil.stopHiredNavigation(villager);
-        HiredPathMemory.clearNavigationProgress(villager);
-        HiredPathMemory.clearAvoided(villager, nearestNode);
-        return nearestIndex;
-    }
-
-    private static int advanceRouteNode(CompoundTag state, HiredRoute route, int currentIndex) {
-        clearPathFailure(state);
-        int size = route.nodes().size();
-        if (size <= 1) {
-            state.putInt(ROUTE_NODE_INDEX_TAG, 0);
-            state.putInt(ROUTE_DIRECTION_TAG, 1);
-            return 0;
-        }
-        int nextIndex;
-        if (route.loop()) {
-            nextIndex = Math.floorMod(currentIndex + 1, size);
-        } else {
-            int direction = state.getInt(ROUTE_DIRECTION_TAG) < 0 ? -1 : 1;
-            nextIndex = currentIndex + direction;
-            if (nextIndex >= size) {
-                direction = -1;
-                nextIndex = size - 2;
-            } else if (nextIndex < 0) {
-                direction = 1;
-                nextIndex = 1;
-            }
-            state.putInt(ROUTE_DIRECTION_TAG, direction);
-        }
-        state.putInt(ROUTE_NODE_INDEX_TAG, nextIndex);
-        return nextIndex;
+        return cursor.advancePatrol(currentIndex, route.nodes().size(), route.loop());
     }
 
     private static void rememberPathFailure(
@@ -303,7 +208,7 @@ public final class HiredRouteNavigator {
         int failures = Math.max(0, state.getInt(ROUTE_FAILED_PATH_COUNT_TAG)) + 1;
         if (failures >= PATH_FAILURE_SKIP_LIMIT && route.nodes().size() > 1) {
             state.putInt(ROUTE_FAILED_PATH_COUNT_TAG, 0);
-            advanceRouteNode(state, route, nodeIndex);
+            advanceRouteNode(state, route, new RouteTraversalCursor(state, CURSOR_TAGS), nodeIndex);
             HiredWorkerBrain.setFailure(context, "route_node_unreachable_skipped", level.getGameTime() + PATH_RETRY_TICKS);
         } else {
             state.putInt(ROUTE_FAILED_PATH_COUNT_TAG, failures);

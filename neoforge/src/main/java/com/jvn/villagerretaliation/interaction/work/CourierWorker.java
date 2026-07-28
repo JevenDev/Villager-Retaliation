@@ -13,23 +13,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 
 public final class CourierWorker implements HiredRoleWorker {
-    private static final String PHASE_TAG = "CourierPhase";
-    private static final String STORAGE_TARGET_TAG = "CourierStorageTarget";
-    private static final String STORAGE_PURPOSE_TAG = "CourierStoragePurpose";
-    private static final String STORAGE_RETURN_TO_NODE_TAG = "CourierStorageReturnToNode";
-    private static final String VISITED_STORAGE_TAG = "CourierVisitedStorage";
-    private static final String STORAGE_BATCH_TAG = "CourierStorageBatch";
-    private static final String ROUTE_INDEX_TAG = "CourierRouteIndex";
-    private static final String RETURN_TO_INPUT_SWEEP_TAG = "CourierReturnToInputSweep";
-    private static final String ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG = "CourierRouteLastNodeReachedGameTime";
     private static final String PHASE_PICKUP = "pickup";
     private static final String PHASE_OUTBOUND = "outbound";
     private static final String PHASE_DELIVER = "deliver";
@@ -116,9 +105,9 @@ public final class CourierWorker implements HiredRoleWorker {
             boolean outbound) {
         List<BlockPos> traversalNodes = route.traversalNodes();
         int lastIndex = traversalNodes.size() - 1;
-        int index = context.state().contains(ROUTE_INDEX_TAG, Tag.TAG_INT)
-                ? Math.clamp(context.state().getInt(ROUTE_INDEX_TAG), 0, lastIndex)
-                : outbound ? 0 : lastIndex;
+        CourierWorkState workState = courierState(context);
+        RouteTraversalCursor cursor = workState.routeCursor();
+        int index = cursor.index(traversalNodes, outbound ? 0 : lastIndex);
         boolean deliverySweep = PHASE_DELIVER.equals(phase(context));
         boolean servicingInputs = outbound && !deliverySweep;
         BlockPos node = traversalNodes.get(index);
@@ -128,25 +117,18 @@ public final class CourierWorker implements HiredRoleWorker {
             return detour;
         }
 
-        long gameTime = level.getGameTime();
         while (true) {
-            node = traversalNodes.get(index);
-            initializeRouteWatchdog(context, gameTime);
-            if (villager.blockPosition().distSqr(node) > ROUTE_ARRIVAL_DISTANCE_SQR
-                    && routeRecoveryDue(context, gameTime)) {
-                index = HiredRouteNavigator.restartAtNearestNode(villager, traversalNodes);
-                setRouteIndex(context, index);
-                initializeRouteWatchdog(context, gameTime);
-                node = traversalNodes.get(index);
-            }
-            HiredRouteNavigator.NodeMovement movement = HiredRouteNavigator.moveToRouteNode(
-                    level, villager, node, MOVE_SPEED);
-            if (movement == HiredRouteNavigator.NodeMovement.FAILED) {
+            RouteTraversalCursor.Traversal traversal = cursor.moveToCurrentNode(
+                    level, villager, traversalNodes, index, MOVE_SPEED,
+                    ROUTE_ARRIVAL_DISTANCE_SQR, ROUTE_RECOVERY_TICKS);
+            index = traversal.index();
+            node = traversal.target();
+            if (traversal.movement() == HiredRouteNavigator.NodeMovement.FAILED) {
                 HiredWorkerBrain.setFailure(context, "courier_route_unreachable", level.getGameTime() + 100L);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.FAILED_COOLDOWN, node);
                 return WorkResult.idle("interaction.work.courier.route_unreachable");
             }
-            if (movement == HiredRouteNavigator.NodeMovement.MOVING) {
+            if (traversal.movement() == HiredRouteNavigator.NodeMovement.MOVING) {
                 HiredWorkerBrain.clearFailure(context);
                 HiredWorkerBrain.setState(
                         context,
@@ -156,8 +138,6 @@ public final class CourierWorker implements HiredRoleWorker {
                         ? "interaction.work.courier.following_route_outbound"
                         : "interaction.work.courier.following_route_return");
             }
-
-            context.state().putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
 
             String storagePurpose = servicingInputs
                     ? AssignedStorageService.INPUT_PURPOSE
@@ -174,19 +154,17 @@ public final class CourierWorker implements HiredRoleWorker {
             if (finished) {
                 break;
             }
-            index += outbound ? 1 : -1;
-            setRouteIndex(context, index);
+            index = cursor.advanceLinear(index, outbound ? 1 : -1, traversalNodes.size());
         }
 
-        context.state().remove(ROUTE_INDEX_TAG);
-        context.state().remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
+        cursor.clear();
         if (outbound) {
             if (deliverySweep && context.inventory().hasOutputItems()) {
                 boolean hasCompatibleOutputRoute = compatibleOutputState(villager, context)
                         != AssignedStorageService.AssignedOutputState.NO_ROUTE;
                 beginReturn(context, traversalNodes);
                 if (!hasCompatibleOutputRoute) {
-                    context.state().putBoolean(RETURN_TO_INPUT_SWEEP_TAG, true);
+                    workState.setReturnToInputSweep(true);
                     HiredWorkerBrain.setFailure(context, "courier_output_unavailable", level.getGameTime() + 100L);
                     HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE, node);
                 } else {
@@ -197,7 +175,7 @@ public final class CourierWorker implements HiredRoleWorker {
             }
             beginReturn(context, traversalNodes);
         } else {
-            if (context.state().getBoolean(RETURN_TO_INPUT_SWEEP_TAG)) {
+            if (workState.returnToInputSweep()) {
                 beginOutbound(context);
                 HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_TARGET, route.first());
                 return WorkResult.progressed("interaction.work.courier.following_route_outbound");
@@ -300,11 +278,12 @@ public final class CourierWorker implements HiredRoleWorker {
             BlockPos node,
             int routeIndex,
             boolean outbound) {
-        BlockPos storage = storedTarget(context);
-        if (storage == null || !context.state().contains(STORAGE_PURPOSE_TAG, Tag.TAG_STRING)) {
+        CourierWorkState workState = courierState(context);
+        BlockPos storage = workState.storageTarget();
+        if (storage == null || !workState.hasStoragePurpose()) {
             return null;
         }
-        if (context.state().getBoolean(STORAGE_RETURN_TO_NODE_TAG)) {
+        if (workState.returningToRouteNode()) {
             HiredRouteNavigator.NodeMovement movement = HiredRouteNavigator.moveToRouteNode(
                     level, villager, node, MOVE_SPEED);
             if (movement == HiredRouteNavigator.NodeMovement.FAILED) {
@@ -323,10 +302,10 @@ public final class CourierWorker implements HiredRoleWorker {
                         : "interaction.work.courier.following_route_return");
             }
             clearStorageDetour(context);
-            context.state().putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, level.getGameTime());
+            workState.routeCursor().markNodeReached(level.getGameTime());
             return null;
         }
-        String purpose = context.state().getString(STORAGE_PURPOSE_TAG);
+        String purpose = workState.storagePurpose();
         HiredStorageNavigationGoal.Result movement = HiredStorageNavigationGoal.moveToStorageTarget(
                 level, context, villager, storage, MOVE_SPEED);
         if (movement == HiredStorageNavigationGoal.Result.MOVING) {
@@ -339,7 +318,7 @@ public final class CourierWorker implements HiredRoleWorker {
         }
         HiredStorageNavigationGoal.clearStorageTarget(context);
         if (movement == HiredStorageNavigationGoal.Result.FAILED) {
-            context.state().putBoolean(STORAGE_RETURN_TO_NODE_TAG, true);
+            workState.setReturningToRouteNode(true);
             if (AssignedStorageService.OUTPUT_PURPOSE.equals(purpose)) {
                 AssignedStorageService.rememberOutputStorageFailure(
                         level, villager, storage, "courier_output_unreachable");
@@ -374,7 +353,7 @@ public final class CourierWorker implements HiredRoleWorker {
             beginStorageDetour(context, nextStorage, purpose);
         } else {
             clearStorageBatch(context);
-            context.state().putBoolean(STORAGE_RETURN_TO_NODE_TAG, true);
+            workState.setReturningToRouteNode(true);
         }
         return result;
     }
@@ -430,8 +409,7 @@ public final class CourierWorker implements HiredRoleWorker {
             List<BlockPos> storages,
             String purpose) {
         BlockPos first = storages.getFirst();
-        context.state().putLongArray(
-                STORAGE_BATCH_TAG,
+        courierState(context).setStorageBatch(
                 storages.stream().skip(1L).mapToLong(BlockPos::asLong).toArray());
         beginStorageDetour(context, first, purpose);
     }
@@ -441,11 +419,11 @@ public final class CourierWorker implements HiredRoleWorker {
             Villager villager,
             HiredWorkContext context,
             String purpose) {
-        long[] pending = context.state().getLongArray(STORAGE_BATCH_TAG);
+        CourierWorkState workState = courierState(context);
+        long[] pending = workState.storageBatch();
         for (int index = 0; index < pending.length; index++) {
             BlockPos candidate = BlockPos.of(pending[index]);
-            context.state().putLongArray(
-                    STORAGE_BATCH_TAG,
+            workState.setStorageBatch(
                     java.util.Arrays.copyOfRange(pending, index + 1, pending.length));
             if (!AssignedStorageService.isValidContainerForPurpose(level, candidate, purpose)
                     || hasVisitedStorage(level, villager, context, candidate)) {
@@ -472,7 +450,7 @@ public final class CourierWorker implements HiredRoleWorker {
     }
 
     private static void clearStorageBatch(HiredWorkContext context) {
-        context.state().remove(STORAGE_BATCH_TAG);
+        courierState(context).clearStorageBatch();
     }
 
     private static boolean isStorageTetheredToNode(
@@ -532,9 +510,10 @@ public final class CourierWorker implements HiredRoleWorker {
     }
 
     private static void beginStorageDetour(HiredWorkContext context, BlockPos storage, String purpose) {
-        storeTarget(context, storage);
-        context.state().putString(STORAGE_PURPOSE_TAG, purpose);
-        context.state().remove(STORAGE_RETURN_TO_NODE_TAG);
+        CourierWorkState workState = courierState(context);
+        workState.setStorageTarget(storage);
+        workState.setStoragePurpose(purpose);
+        workState.setReturningToRouteNode(false);
     }
 
     private static boolean hasVisitedStorage(
@@ -542,7 +521,7 @@ public final class CourierWorker implements HiredRoleWorker {
             Villager villager,
             HiredWorkContext context,
             BlockPos storage) {
-        long[] visitedPositions = context.state().getLongArray(VISITED_STORAGE_TAG);
+        long[] visitedPositions = courierState(context).visitedStorage();
         return AssignedStorageService.assignedStorageInteractionPositions(level, villager, storage).stream()
                 .mapToLong(BlockPos::asLong)
                 .anyMatch(target -> java.util.Arrays.stream(visitedPositions)
@@ -554,7 +533,8 @@ public final class CourierWorker implements HiredRoleWorker {
             Villager villager,
             HiredWorkContext context,
             BlockPos storage) {
-        long[] existing = context.state().getLongArray(VISITED_STORAGE_TAG);
+        CourierWorkState workState = courierState(context);
+        long[] existing = workState.visitedStorage();
         long[] additions = AssignedStorageService.assignedStorageInteractionPositions(level, villager, storage).stream()
                 .mapToLong(BlockPos::asLong)
                 .filter(target -> java.util.Arrays.stream(existing).noneMatch(visited -> visited == target))
@@ -564,17 +544,15 @@ public final class CourierWorker implements HiredRoleWorker {
         }
         long[] visited = java.util.Arrays.copyOf(existing, existing.length + additions.length);
         System.arraycopy(additions, 0, visited, existing.length, additions.length);
-        context.state().putLongArray(VISITED_STORAGE_TAG, visited);
+        workState.setVisitedStorage(visited);
     }
 
-    private static void clearVisitedStorage(HiredWorkContext context) {
-        context.state().remove(VISITED_STORAGE_TAG);
-    }
 
     private static void clearStorageDetour(HiredWorkContext context) {
-        clearStoredTarget(context);
-        context.state().remove(STORAGE_PURPOSE_TAG);
-        context.state().remove(STORAGE_RETURN_TO_NODE_TAG);
+        CourierWorkState workState = courierState(context);
+        workState.clearStorageTarget();
+        workState.clearStoragePurpose();
+        workState.setReturningToRouteNode(false);
         clearStorageBatch(context);
         HiredStorageNavigationGoal.clearStorageTarget(context);
     }
@@ -618,78 +596,43 @@ public final class CourierWorker implements HiredRoleWorker {
 
     private static void beginOutbound(HiredWorkContext context) {
         setPhase(context, PHASE_OUTBOUND);
-        context.state().remove(RETURN_TO_INPUT_SWEEP_TAG);
-        clearVisitedStorage(context);
-        setRouteIndex(context, 0);
+        CourierWorkState workState = courierState(context);
+        workState.setReturnToInputSweep(false);
+        workState.clearVisitedStorage();
+        workState.routeCursor().reset(0);
     }
 
     private static void beginDeliverySweep(HiredWorkContext context) {
         setPhase(context, PHASE_DELIVER);
-        context.state().remove(RETURN_TO_INPUT_SWEEP_TAG);
-        clearVisitedStorage(context);
-        setRouteIndex(context, 0);
+        CourierWorkState workState = courierState(context);
+        workState.setReturnToInputSweep(false);
+        workState.clearVisitedStorage();
+        workState.routeCursor().reset(0);
     }
 
     private static void beginReturn(HiredWorkContext context, List<BlockPos> routeNodes) {
         setPhase(context, PHASE_RETURN);
-        context.state().remove(RETURN_TO_INPUT_SWEEP_TAG);
-        clearVisitedStorage(context);
-        setRouteIndex(context, routeNodes.size() - 1);
+        CourierWorkState workState = courierState(context);
+        workState.setReturnToInputSweep(false);
+        workState.clearVisitedStorage();
+        workState.routeCursor().reset(routeNodes.size() - 1);
     }
 
     private static String phase(HiredWorkContext context) {
-        String phase = context.state().getString(PHASE_TAG);
-        return phase.isBlank() ? PHASE_PICKUP : phase;
+        return courierState(context).phase(PHASE_PICKUP);
     }
 
     private static void setPhase(HiredWorkContext context, String phase) {
-        context.state().putString(PHASE_TAG, phase);
-        context.state().remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
+        courierState(context).setPhase(phase);
         clearStorageDetour(context);
     }
 
-    private static void setRouteIndex(HiredWorkContext context, int index) {
-        context.state().putInt(ROUTE_INDEX_TAG, index);
-        context.state().remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
-    }
-
-    private static void initializeRouteWatchdog(HiredWorkContext context, long gameTime) {
-        CompoundTag state = context.state();
-        if (!state.contains(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, Tag.TAG_LONG)
-                || state.getLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG) > gameTime) {
-            state.putLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG, gameTime);
-        }
-    }
-
-    private static boolean routeRecoveryDue(HiredWorkContext context, long gameTime) {
-        return gameTime - context.state().getLong(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG) >= ROUTE_RECOVERY_TICKS;
-    }
-
-    private static BlockPos storedTarget(HiredWorkContext context) {
-        return context.state().contains(STORAGE_TARGET_TAG, Tag.TAG_LONG)
-                ? BlockPos.of(context.state().getLong(STORAGE_TARGET_TAG))
-                : null;
-    }
-
-    private static void storeTarget(HiredWorkContext context, BlockPos target) {
-        context.state().putLong(STORAGE_TARGET_TAG, target.asLong());
-    }
-
-    private static void clearStoredTarget(HiredWorkContext context) {
-        context.state().remove(STORAGE_TARGET_TAG);
+    private static CourierWorkState courierState(HiredWorkContext context) {
+        return new CourierWorkState(context.state());
     }
 
     private static void clearTrip(HiredWorkContext context) {
-        CompoundTag state = context.state();
-        state.remove(PHASE_TAG);
-        state.remove(STORAGE_TARGET_TAG);
-        state.remove(STORAGE_PURPOSE_TAG);
-        state.remove(STORAGE_RETURN_TO_NODE_TAG);
-        state.remove(VISITED_STORAGE_TAG);
-        state.remove(STORAGE_BATCH_TAG);
-        state.remove(ROUTE_INDEX_TAG);
-        state.remove(RETURN_TO_INPUT_SWEEP_TAG);
-        state.remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
+        courierState(context).clearTrip();
         HiredStorageNavigationGoal.clearStorageTarget(context);
     }
 

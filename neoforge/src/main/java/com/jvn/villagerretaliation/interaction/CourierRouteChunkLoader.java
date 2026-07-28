@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.interaction.work.CourierWorkState;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.util.TickThrottle;
@@ -14,7 +15,6 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -31,9 +31,6 @@ import net.minecraft.world.level.ChunkPos;
  * duplicating a container inventory. When the villager is loaded again, the window is rebuilt.</p>
  */
 public final class CourierRouteChunkLoader {
-    private static final String ROUTE_INDEX_TAG = "CourierRouteIndex";
-    private static final String STORAGE_TARGET_TAG = "CourierStorageTarget";
-    private static final String VISITED_STORAGE_TAG = "CourierVisitedStorage";
     private static final int ENTITY_TICKING_TICKET_DISTANCE = 2;
     private static final int TICKET_TIMEOUT_TICKS = 20 * 15;
     private static final int RECONCILE_INTERVAL_TICKS = 20;
@@ -117,19 +114,20 @@ public final class CourierRouteChunkLoader {
             return Set.copyOf(desired);
         }
 
-        BlockPos routeTarget = routeTarget(state, route);
+        CourierWorkState workState = new CourierWorkState(state);
+        BlockPos routeTarget = routeTarget(workState, route);
         if (routeTarget != null) {
             desired.add(new ChunkPos(routeTarget));
         }
 
-        BlockPos storageTarget = readPos(state, STORAGE_TARGET_TAG);
+        BlockPos storageTarget = workState.storageTarget();
         if (storageTarget != null) {
             desired.add(new ChunkPos(storageTarget));
         }
 
         List<AssignedContainerRecord> records = activeAssignedStorage(level, villager);
         if (routeTarget != null) {
-            addNearbyStorageChunks(state, routeTarget, records, desired);
+            addNearbyStorageChunks(workState, routeTarget, records, desired);
         }
         addFirstPurposeChunk(records, AssignedStorageService.INPUT_PURPOSE, desired);
         addFirstPurposeChunk(records, AssignedStorageService.OUTPUT_PURPOSE, desired);
@@ -169,12 +167,9 @@ public final class CourierRouteChunkLoader {
         return state.getBoolean("Enabled") && HiredRoute.fromState(state).usableForNavigation();
     }
 
-    private static BlockPos routeTarget(CompoundTag state, HiredRoute route) {
+    private static BlockPos routeTarget(CourierWorkState state, HiredRoute route) {
         List<BlockPos> traversalNodes = route.traversalNodes();
-        int lastIndex = traversalNodes.size() - 1;
-        int index = state.contains(ROUTE_INDEX_TAG, Tag.TAG_INT)
-                ? Math.clamp(state.getInt(ROUTE_INDEX_TAG), 0, lastIndex)
-                : 0;
+        int index = state.routeCursor().currentIndex(traversalNodes, 0);
         return traversalNodes.get(index);
     }
 
@@ -203,7 +198,7 @@ public final class CourierRouteChunkLoader {
     }
 
     private static void addNearbyStorageChunks(
-            CompoundTag state,
+            CourierWorkState state,
             BlockPos routeTarget,
             List<AssignedContainerRecord> records,
             LinkedHashSet<ChunkPos> desired) {
@@ -221,18 +216,8 @@ public final class CourierRouteChunkLoader {
                 });
     }
 
-    private static boolean visited(CompoundTag state, BlockPos pos) {
-        long packed = pos.asLong();
-        for (long visited : state.getLongArray(VISITED_STORAGE_TAG)) {
-            if (visited == packed) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static BlockPos readPos(CompoundTag state, String key) {
-        return state.contains(key, Tag.TAG_LONG) ? BlockPos.of(state.getLong(key)) : null;
+    private static boolean visited(CourierWorkState state, BlockPos pos) {
+        return state.hasVisited(pos);
     }
 
     private static Set<ChunkPos> limit(Set<ChunkPos> chunks, int limit) {
