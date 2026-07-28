@@ -139,8 +139,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_STATE_BOTTOM_ENTRANCE_PADDING = 12;
     private static final int INFO_VALUE_COLOR = 0xFFF8F6EF;
     private static final int INFO_SECONDARY_COLOR = 0xB8D5D0C6;
-    private static final int GIFT_BUTTON_WIDTH = 64;
-    private static final int GIFT_BUTTON_HEIGHT = 18;
+    private static final int GIFT_BUTTON_WIDTH = 112;
+    private static final int GIFT_BUTTON_HEIGHT = 20;
     private static final int PROFILE_CHART_RADIUS = 36;
     private static final int PROFILE_CHART_AXIS_COLOR = 0x55E8E4DA;
     private static final int PROFILE_CHART_OUTLINE_COLOR = 0x90E8E4DA;
@@ -366,6 +366,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private String selectedBuilderCategory;
     private BuilderStructureCatalog.Entry selectedBuilderStructure;
     private int selectedInventorySlot = -1;
+    private int selectedGiftAmount = 1;
     private boolean pixelOptionEdgeScaleInitialized;
     private float pixelOptionTopEdgeScaleBlend;
     private float pixelOptionBottomEdgeScaleBlend;
@@ -835,6 +836,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         noteInteractionActivity();
         double interactionMouseY = interactionMouseY(mouseY);
         double interactionContentMouseX = interactionContentMouseX(mouseX);
+        if (this.page == DialoguePage.GIFT
+                && VillagerInteractionGiftPage.tryScroll(
+                this.giftPageContext,
+                interactionContentMouseX,
+                interactionMouseY,
+                scrollY,
+                this.width,
+                this.height)) {
+            return true;
+        }
         if (this.page == DialoguePage.SKILLS
                 && maxSkillScroll() > 0.0F
                 && isPointInsideSkillsInfoScrollArea(interactionContentMouseX, interactionMouseY)) {
@@ -2191,6 +2202,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void openGiftPage() {
         this.selectedInventorySlot = firstGiftableInventorySlot();
+        this.selectedGiftAmount = 1;
         openPage(DialoguePage.GIFT);
     }
 
@@ -2378,8 +2390,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.selectedInventorySlot < 0) {
             return;
         }
-        sendToServer(new VillagerGiftRequestPayload(this.villagerEntityId, this.selectedInventorySlot));
+        sendToServer(new VillagerGiftRequestPayload(this.villagerEntityId, this.selectedInventorySlot, this.selectedGiftAmount));
         this.selectedInventorySlot = firstGiftableInventorySlot();
+        this.selectedGiftAmount = 1;
     }
 
     private void requestDialogue(String optionId) {
@@ -3314,9 +3327,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 mouseX,
                 mouseY,
                 partialTick,
-                interactionContainerLeft(),
-                interactionNameplateTop(),
-                INTERACTION_CONTAINER_WIDTH
+                this.width,
+                this.height
         );
     }
 
@@ -4684,9 +4696,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 this.giftPageContext,
                 mouseX,
                 mouseY,
-                interactionContainerLeft(),
-                interactionNameplateTop(),
-                INTERACTION_CONTAINER_WIDTH);
+                this.width,
+                this.height);
     }
 
     private int firstGiftableInventorySlot() {
@@ -4702,11 +4713,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int giftInventoryLeft() {
-        return VillagerInteractionGiftPage.giftInventoryLeft(interactionContainerLeft(), INTERACTION_CONTAINER_WIDTH);
+        return VillagerInteractionGiftPage.giftInventoryLeft(this.width);
     }
 
     private int giftInventoryTop() {
-        return VillagerInteractionGiftPage.giftInventoryTop(interactionNameplateTop());
+        return VillagerInteractionGiftPage.giftInventoryTop(this.height);
     }
 
     private boolean isPointInsideOptionScrollArea(double mouseX, double mouseY) {
@@ -5639,6 +5650,25 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public void setSelectedInventorySlot(int slot) {
             VillagerInteractionScreen.this.selectedInventorySlot = slot;
+            VillagerInteractionScreen.this.selectedGiftAmount = 1;
+        }
+
+        @Override
+        public int selectedGiftAmount() {
+            return VillagerInteractionScreen.this.selectedGiftAmount;
+        }
+
+        @Override
+        public void adjustSelectedGiftAmount(int delta) {
+            ItemStack stack = stackForInventorySlot(VillagerInteractionScreen.this.selectedInventorySlot);
+            if (stack.isEmpty()) {
+                VillagerInteractionScreen.this.selectedGiftAmount = 1;
+                return;
+            }
+            VillagerInteractionScreen.this.selectedGiftAmount = Mth.clamp(
+                    VillagerInteractionScreen.this.selectedGiftAmount + delta,
+                    1,
+                    stack.getCount());
         }
 
         @Override

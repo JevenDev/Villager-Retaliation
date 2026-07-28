@@ -598,8 +598,8 @@ public final class VillagerInteractionService {
         }
     }
 
-    public static void handleGiftRequest(ServerPlayer player, int entityId, int inventorySlot) {
-        VillagerGiftRequestHandler.handle(player, entityId, inventorySlot);
+    public static void handleGiftRequest(ServerPlayer player, int entityId, int inventorySlot, int amount) {
+        VillagerGiftRequestHandler.handle(player, entityId, inventorySlot, amount);
     }
 
     public static void handleRecruitRequest(
