@@ -1,0 +1,8 @@
+{
+    "item":  "minecraft:orange_dye",
+    "item_count":  {
+                       "min":  3,
+                       "max":  12
+                   },
+    "currency_count":  1
+}

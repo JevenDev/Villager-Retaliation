@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.allegiance.VillageBoundsDebugService;
 import com.jvn.villagerretaliation.api.VillagerRetaliationRegistries;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlockEntityTypes;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
+import com.jvn.villagerretaliation.block.SellBoxCapabilities;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.compat.secondwind.VillagerSecondWindCompat;
 import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
@@ -28,6 +29,7 @@ import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.recipe.VillagerRetaliationRecipes;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphService;
 import com.jvn.villagerretaliation.social.VillagerBirthService;
+import com.jvn.villagerretaliation.sell.SellBoxMarketSyncService;
 import com.jvn.villagerretaliation.dialogue.forced.ForcedDialogueService;
 import com.jvn.villagerretaliation.trade.VillagerSkillTradeEvents;
 import com.jvn.villagerretaliation.villager.VillagerConversionPersistenceService;
@@ -63,6 +65,7 @@ public class VillagerRetaliation {
         VillagerRetaliationDebugItems.register(modEventBus);
         ToucanEventBuses.on(modEventBus)
                 .listener(VillagerRetaliationEvents::onEntityAttributeModification)
+                .listener(SellBoxCapabilities::register)
                 .listener(VillagerReputationNetworking::registerPayloads);
         ToucanEventBuses.game()
                 .listener(VillagerRetaliationEvents::onServerStarted)
@@ -85,6 +88,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onEntitySize)
                 .listener(VillagerRetaliationEvents::onPlayerLoggedIn)
                 .listener(VillagerRetaliationEvents::onServerTickPost)
+                .listener(SellBoxMarketSyncService::onServerTickPost)
                 .listener(VillageAllegianceService::onServerTickPost)
                 .listener(VillageCombatAuthorizationService::onServerTickPost)
                 .listener(VillagerReputationEvents::onServerTickPost)

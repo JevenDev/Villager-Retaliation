@@ -66,6 +66,8 @@ public final class VillagerRetaliationClient {
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelInventoryClientState::onScreenClosing);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.duel.DuelInventoryClientState::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient::onItemTooltip);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.SellBoxClientState::onItemTooltip);
+        NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.SellBoxClientState::onLoggingOut);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.GeneratedContainerTooltipClient::onKeyPressed);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.inventory.ClipboardStorageOutlineRenderer::onRenderLevelStage);
@@ -110,6 +112,10 @@ public final class VillagerRetaliationClient {
         event.register(
                 com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.PAYMENT_BOX.get(),
                 com.jvn.villagerretaliation.client.inventory.PaymentBoxScreen::new
+        );
+        event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.SELL_BOX.get(),
+                com.jvn.villagerretaliation.client.inventory.SellBoxScreen::new
         );
         event.register(
                 com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.ITEM_FILTER.get(),

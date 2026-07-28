@@ -26,6 +26,7 @@ import com.jvn.villagerretaliation.scene.SceneResources;
 import com.jvn.villagerretaliation.scene.SceneRuntime;
 import com.jvn.villagerretaliation.scene.persistence.SceneSavedData;
 import com.jvn.villagerretaliation.scene.encounter.EncounterResources;
+import com.jvn.villagerretaliation.sell.SellPriceResources;
 import com.jvn.villagerretaliation.reputation.VillagerReputationSavedData;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.trade.SkillTradeResources;
@@ -47,6 +48,7 @@ public final class VillagerDataWarmup {
         VillagerGiftResources.warm(server);
         ProfessionLootResources.warm(server);
         SkillTradeResources.warm(server);
+        SellPriceResources.warm(server);
         VillagerCurrencyResources.warm(server);
         VillagerItemText.warm(server);
         VillagerNaturalJobArmorResources.warm(server);
@@ -90,6 +92,7 @@ public final class VillagerDataWarmup {
         VillagerGiftResources.clearCache();
         ProfessionLootResources.clearCache();
         SkillTradeResources.clearCache();
+        SellPriceResources.clearCache();
         VillagerCurrencyResources.clearCache();
         VillagerItemText.clearCache();
         VillagerNaturalJobArmorResources.clearCache();

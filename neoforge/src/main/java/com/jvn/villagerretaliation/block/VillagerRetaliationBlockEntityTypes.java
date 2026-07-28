@@ -15,6 +15,10 @@ public final class VillagerRetaliationBlockEntityTypes {
             BLOCK_ENTITY_TYPES.register("payment_box", () -> BlockEntityType.Builder
                     .of(PaymentBoxBlockEntity::new, VillagerRetaliationBlocks.paymentBoxBlocks())
                     .build(null));
+    public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SellBoxBlockEntity>> SELL_BOX =
+            BLOCK_ENTITY_TYPES.register("sell_box", () -> BlockEntityType.Builder
+                    .of(SellBoxBlockEntity::new, VillagerRetaliationBlocks.SELL_BOX.get())
+                    .build(null));
 
     private VillagerRetaliationBlockEntityTypes() {
     }

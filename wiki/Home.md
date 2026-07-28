@@ -68,6 +68,7 @@ Run `/reload`, talk to a villager, and confirm the option appears.
 
 - [Pack Development](Pack-Development.md)
 - [JSON Reference](JSON-Reference.md)
+- [Sell Box and Daily Market](Sell-Box-And-Daily-Market.md)
 - [First Quest Guide](First-Quest.md) if you are making quests
 - One of: [Dialogue](Dialogue.md), [Forced Dialogue](Forced-Dialogue.md), [Quests](Quests.md), [Notifications](Notifications.md), or [Builder Structures](Builder-Structures.md)
 - [Example Packs](Example-Packs.md)

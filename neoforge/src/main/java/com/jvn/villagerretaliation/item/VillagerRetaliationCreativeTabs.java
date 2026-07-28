@@ -20,6 +20,7 @@ public final class VillagerRetaliationCreativeTabs {
                     .icon(() -> new ItemStack(VillagerRetaliationItems.CLIPBOARD.get()))
                     .displayItems((parameters, output) -> {
                         VillagerRetaliationBlocks.PAYMENT_BOXES.forEach(block -> output.accept(block.get()));
+                        output.accept(VillagerRetaliationBlocks.SELL_BOX.get());
                         output.accept(VillagerRetaliationItems.CLIPBOARD.get());
                         output.accept(VillagerRetaliationItems.CONSTRUCTION_BLUEPRINT.get());
                         output.accept(VillagerRetaliationItems.ITEM_FILTER.get());

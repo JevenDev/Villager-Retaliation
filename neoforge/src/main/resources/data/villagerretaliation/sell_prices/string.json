@@ -1,0 +1,8 @@
+{
+    "item":  "minecraft:string",
+    "item_count":  {
+                       "min":  14,
+                       "max":  20
+                   },
+    "currency_count":  1
+}

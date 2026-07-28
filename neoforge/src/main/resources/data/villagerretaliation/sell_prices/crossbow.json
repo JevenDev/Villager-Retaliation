@@ -1,0 +1,8 @@
+{
+    "item":  "minecraft:crossbow",
+    "item_count":  1,
+    "currency_count":  {
+                           "min":  3,
+                           "max":  22
+                       }
+}
