@@ -347,7 +347,7 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), storage)),
-                AssignedStorageService.INPUT_PURPOSE);
+                AssignedStorageService.SUPPLY_PURPOSE);
         HiredWorkContext context = context(
                 helper,
                 villager,
@@ -1706,7 +1706,7 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(storage),
-                AssignedStorageService.TOOL_PURPOSE);
+                AssignedStorageService.SUPPLY_PURPOSE);
         AssignedStorageService.AssignSummary outputSummary = AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -1723,7 +1723,7 @@ public final class VillagerWorkerGameTests {
                 "global storage purpose should persist");
         helper.assertTrue(
                 AssignedStorageService.assignedStorage(level, villager).stream()
-                        .anyMatch(record -> AssignedStorageService.TOOL_PURPOSE.equals(record.purpose())),
+                        .anyMatch(record -> AssignedStorageService.SUPPLY_PURPOSE.equals(record.purpose())),
                 "tool storage purpose should persist");
         helper.assertTrue(
                 AssignedStorageService.assignedStorage(level, villager).stream()
@@ -1734,14 +1734,14 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(storage),
-                AssignedStorageService.TOOL_PURPOSE);
+                AssignedStorageService.SUPPLY_PURPOSE);
         helper.assertValueEqual(duplicateTool.alreadyAssigned(), 1, "duplicate tool storage assignment should not add another record");
 
         AssignedStorageService.AssignSummary shared = AssignedStorageService.assign(
                 hirer,
                 otherVillager,
                 List.of(storage),
-                AssignedStorageService.INPUT_PURPOSE);
+                AssignedStorageService.SUPPLY_PURPOSE);
         helper.assertValueEqual(shared.assigned(), 1, "same physical storage should be shareable by another villager");
         helper.assertValueEqual(
                 AssignedStorageService.assignedStorage(level, otherVillager).size(),
@@ -2096,7 +2096,7 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
-                AssignedStorageService.INPUT_PURPOSE);
+                AssignedStorageService.SUPPLY_PURPOSE);
         AssignedStorageService.AssignSummary outputSummary = AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -4244,7 +4244,7 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "reachable route input assignment");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 1, "reachable route input assignment");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -4315,12 +4315,12 @@ public final class VillagerWorkerGameTests {
                 List.of(
                         new AssignedStorageService.StoragePosition(level.dimension(), lowerFar),
                         new AssignedStorageService.StoragePosition(level.dimension(), upperFar)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "far-half input assignments");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 2, "far-half input assignments");
         AssignedStorageService.AssignSummary duplicateHalf = AssignedStorageService.assign(
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), lowerNear)),
-                AssignedStorageService.INPUT_PURPOSE);
+                AssignedStorageService.SUPPLY_PURPOSE);
         helper.assertValueEqual(duplicateHalf.assigned(), 0,
                 "the connected half must not create a second assignment");
         helper.assertValueEqual(duplicateHalf.alreadyAssigned(), 1,
@@ -4399,7 +4399,7 @@ public final class VillagerWorkerGameTests {
                 List.of(
                         new AssignedStorageService.StoragePosition(level.dimension(), firstInput),
                         new AssignedStorageService.StoragePosition(level.dimension(), secondInput)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "two branch input assignments");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 2, "two branch input assignments");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -4472,7 +4472,7 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "overlapping branch input assignment");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 1, "overlapping branch input assignment");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -4527,7 +4527,7 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "courier input assignment");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 1, "courier input assignment");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -4590,7 +4590,7 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "backpressure input assignment");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 1, "backpressure input assignment");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -4665,7 +4665,7 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "framed courier input assignment");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 1, "framed courier input assignment");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -4794,7 +4794,7 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "empty-node courier input assignment");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 1, "empty-node courier input assignment");
 
         CompoundTag state = new CompoundTag();
         state.putString("CourierPhase", "outbound");
@@ -4849,7 +4849,7 @@ public final class VillagerWorkerGameTests {
                 List.of(
                         new AssignedStorageService.StoragePosition(level.dimension(), firstInput),
                         new AssignedStorageService.StoragePosition(level.dimension(), secondInput)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "same-node courier input assignments");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 2, "same-node courier input assignments");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -4867,7 +4867,7 @@ public final class VillagerWorkerGameTests {
         boolean[] sawPrematureNodeReturn = {false};
 
         runWorkerUntil(helper, worker, level, villager, hirer, context, 400, () -> {
-            if (AssignedStorageService.INPUT_PURPOSE.equals(state.getString("CourierStoragePurpose"))
+            if (AssignedStorageService.SUPPLY_PURPOSE.equals(state.getString("CourierStoragePurpose"))
                     && state.getLongArray("CourierVisitedStorage").length == 1) {
                 if (state.getBoolean("CourierStorageReturnToNode")) {
                     sawPrematureNodeReturn[0] = true;
@@ -4993,7 +4993,7 @@ public final class VillagerWorkerGameTests {
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "unmatched-cargo branch input");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 1, "unmatched-cargo branch input");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -5074,7 +5074,7 @@ public final class VillagerWorkerGameTests {
                 List.of(
                         new AssignedStorageService.StoragePosition(level.dimension(), firstInput),
                         new AssignedStorageService.StoragePosition(level.dimension(), secondInput)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "courier input assignments");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 2, "courier input assignments");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -5131,7 +5131,7 @@ public final class VillagerWorkerGameTests {
                 List.of(
                         new AssignedStorageService.StoragePosition(level.dimension(), firstInput),
                         new AssignedStorageService.StoragePosition(level.dimension(), secondInput)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "courier empty-input assignments");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 2, "courier empty-input assignments");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,
@@ -5199,7 +5199,7 @@ public final class VillagerWorkerGameTests {
                 List.of(
                         new AssignedStorageService.StoragePosition(level.dimension(), firstInput),
                         new AssignedStorageService.StoragePosition(level.dimension(), secondInput)),
-                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "courier multi-input assignment");
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 2, "courier multi-input assignment");
         helper.assertValueEqual(AssignedStorageService.assign(
                 hirer,
                 villager,

@@ -48,7 +48,7 @@ public final class CourierChunkLoadingGameTests {
         UUID hirerId = UUID.randomUUID();
 
         AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
-        data.assign(record(level, villager, hirerId, input, AssignedStorageService.INPUT_PURPOSE, 0));
+        data.assign(record(level, villager, hirerId, input, AssignedStorageService.SUPPLY_PURPOSE, 0));
         data.assign(record(level, villager, hirerId, output, AssignedStorageService.OUTPUT_PURPOSE, 1));
 
         HiredRoute route = new HiredRoute(List.of(villager.blockPosition(), routeTarget), false);
@@ -101,8 +101,8 @@ public final class CourierChunkLoadingGameTests {
         UUID hirerId = UUID.randomUUID();
 
         AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
-        data.assign(record(level, villager, hirerId, distantInput, AssignedStorageService.INPUT_PURPOSE, 0));
-        data.assign(record(level, villager, hirerId, activeBranchInput, AssignedStorageService.INPUT_PURPOSE, 1));
+        data.assign(record(level, villager, hirerId, distantInput, AssignedStorageService.SUPPLY_PURPOSE, 0));
+        data.assign(record(level, villager, hirerId, activeBranchInput, AssignedStorageService.SUPPLY_PURPOSE, 1));
         data.assign(record(level, villager, hirerId, distantOutput, AssignedStorageService.OUTPUT_PURPOSE, 2));
 
         HiredRoute route = new HiredRoute(
@@ -187,7 +187,7 @@ public final class CourierChunkLoadingGameTests {
                 villager,
                 UUID.randomUUID(),
                 storagePos,
-                AssignedStorageService.INPUT_PURPOSE,
+                AssignedStorageService.SUPPLY_PURPOSE,
                 0));
 
         AtomicInteger received = new AtomicInteger();

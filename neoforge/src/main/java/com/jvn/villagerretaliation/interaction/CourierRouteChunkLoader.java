@@ -129,7 +129,7 @@ public final class CourierRouteChunkLoader {
         if (routeTarget != null) {
             addNearbyStorageChunks(workState, routeTarget, records, desired);
         }
-        addFirstPurposeChunk(records, AssignedStorageService.INPUT_PURPOSE, desired);
+        addFirstPurposeChunk(records, AssignedStorageService.SUPPLY_PURPOSE, desired);
         addFirstPurposeChunk(records, AssignedStorageService.OUTPUT_PURPOSE, desired);
         return limit(desired, MAX_CHUNKS_PER_COURIER);
     }

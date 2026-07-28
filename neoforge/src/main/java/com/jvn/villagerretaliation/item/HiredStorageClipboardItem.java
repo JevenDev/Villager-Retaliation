@@ -217,7 +217,7 @@ public final class HiredStorageClipboardItem extends Item {
         tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.change_mode").withStyle(ChatFormatting.GRAY));
         switch (currentMode) {
             case NONE -> tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.none").withStyle(ChatFormatting.GRAY));
-            case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> {
+            case ASSIGN_STORAGE, ASSIGN_SUPPLY_STORAGE, ASSIGN_OUTPUT_STORAGE -> {
                 tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.assign_storage").withStyle(ChatFormatting.GRAY));
                 tooltip.add(Component.translatable("item.villagerretaliation.clipboard.controls.assign_storage_variant").withStyle(ChatFormatting.GRAY));
             }
@@ -441,8 +441,7 @@ public final class HiredStorageClipboardItem extends Item {
         List<String> parts = new ArrayList<>();
         List<String> knownPurposes = List.of(
                 AssignedStorageService.GENERAL_PURPOSE,
-                AssignedStorageService.TOOL_PURPOSE,
-                AssignedStorageService.INPUT_PURPOSE,
+                AssignedStorageService.SUPPLY_PURPOSE,
                 AssignedStorageService.OUTPUT_PURPOSE,
                 AssignedStorageService.PAYMENT_PURPOSE);
         for (String purpose : knownPurposes) {
@@ -461,8 +460,7 @@ public final class HiredStorageClipboardItem extends Item {
 
     private static String purposeLabel(String purpose) {
         return switch (AssignedStorageService.normalizePurpose(purpose)) {
-            case AssignedStorageService.TOOL_PURPOSE -> "tool";
-            case AssignedStorageService.INPUT_PURPOSE -> "input";
+            case AssignedStorageService.SUPPLY_PURPOSE -> "supply";
             case AssignedStorageService.OUTPUT_PURPOSE -> "output";
             case AssignedStorageService.PAYMENT_PURPOSE -> "payment";
             default -> "global";
@@ -598,7 +596,7 @@ public final class HiredStorageClipboardItem extends Item {
                 ClipboardWorkforceService.openClipboard(player);
                 yield InteractionResult.SUCCESS;
             }
-            case ASSIGN_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_PAYMENT -> selectContainer(level, player, stack, pos);
+            case ASSIGN_STORAGE, ASSIGN_SUPPLY_STORAGE, ASSIGN_OUTPUT_STORAGE, ASSIGN_PAYMENT -> selectContainer(level, player, stack, pos);
             case WORK_AREA -> {
                 player.displayClientMessage(Component.translatable("villagerretaliation.clipboard.message.preview_job_site_mode"), true);
                 yield InteractionResult.SUCCESS;
@@ -992,11 +990,8 @@ public final class HiredStorageClipboardItem extends Item {
         if (AssignedStorageService.PAYMENT_PURPOSE.equals(normalized)) {
             return "Payment";
         }
-        if (AssignedStorageService.TOOL_PURPOSE.equals(normalized)) {
-            return "Tool";
-        }
-        if (AssignedStorageService.INPUT_PURPOSE.equals(normalized)) {
-            return "Input";
+        if (AssignedStorageService.SUPPLY_PURPOSE.equals(normalized)) {
+            return "Supplies";
         }
         if (AssignedStorageService.OUTPUT_PURPOSE.equals(normalized)) {
             return "Output";
@@ -1346,8 +1341,7 @@ public final class HiredStorageClipboardItem extends Item {
     public enum ClipboardMode {
         NONE("none", "None"),
         ASSIGN_STORAGE("assign_storage", "Assign Global Storage"),
-        ASSIGN_TOOL_STORAGE("assign_tool_storage", "Assign Tool Storage"),
-        ASSIGN_INPUT_STORAGE("assign_input_storage", "Assign Input Storage"),
+        ASSIGN_SUPPLY_STORAGE("assign_supply_storage", "Assign Supplies"),
         ASSIGN_OUTPUT_STORAGE("assign_output_storage", "Assign Output Storage"),
         ASSIGN_PAYMENT("assign_payment", "Assign Payment Box"),
         WORK_AREA("work_area", "Preview Job Site"),
@@ -1358,8 +1352,7 @@ public final class HiredStorageClipboardItem extends Item {
         private static final ClipboardMode[] VALUES = values();
         private static final ClipboardMode[] STORAGE_VALUES = {
                 ASSIGN_STORAGE,
-                ASSIGN_TOOL_STORAGE,
-                ASSIGN_INPUT_STORAGE,
+                ASSIGN_SUPPLY_STORAGE,
                 ASSIGN_OUTPUT_STORAGE
         };
         private static final ClipboardMode[] ROUTE_VALUES = {
@@ -1394,7 +1387,7 @@ public final class HiredStorageClipboardItem extends Item {
             return switch (this) {
             case NONE -> ChatFormatting.GRAY;
             case ASSIGN_PAYMENT -> ChatFormatting.GREEN;
-            case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> ChatFormatting.BLUE;
+            case ASSIGN_STORAGE, ASSIGN_SUPPLY_STORAGE, ASSIGN_OUTPUT_STORAGE -> ChatFormatting.BLUE;
             case WORK_AREA -> ChatFormatting.YELLOW;
             case SET_WORK_AREA -> ChatFormatting.GOLD;
             case ROUTE, BRANCH -> ChatFormatting.AQUA;
@@ -1403,7 +1396,7 @@ public final class HiredStorageClipboardItem extends Item {
 
         public boolean isStorageAssignmentMode() {
             return switch (this) {
-                case ASSIGN_STORAGE, ASSIGN_TOOL_STORAGE, ASSIGN_INPUT_STORAGE, ASSIGN_OUTPUT_STORAGE -> true;
+                case ASSIGN_STORAGE, ASSIGN_SUPPLY_STORAGE, ASSIGN_OUTPUT_STORAGE -> true;
                 default -> false;
             };
         }
@@ -1418,8 +1411,7 @@ public final class HiredStorageClipboardItem extends Item {
 
         public String storagePurpose() {
             return switch (this) {
-                case ASSIGN_TOOL_STORAGE -> AssignedStorageService.TOOL_PURPOSE;
-                case ASSIGN_INPUT_STORAGE -> AssignedStorageService.INPUT_PURPOSE;
+                case ASSIGN_SUPPLY_STORAGE -> AssignedStorageService.SUPPLY_PURPOSE;
                 case ASSIGN_OUTPUT_STORAGE -> AssignedStorageService.OUTPUT_PURPOSE;
                 default -> AssignedStorageService.GENERAL_PURPOSE;
             };
@@ -1466,6 +1458,9 @@ public final class HiredStorageClipboardItem extends Item {
         }
 
         private static ClipboardMode byId(String id) {
+            if ("assign_tool_storage".equals(id) || "assign_input_storage".equals(id)) {
+                return ASSIGN_SUPPLY_STORAGE;
+            }
             for (ClipboardMode mode : VALUES) {
                 if (mode.id.equals(id)) {
                     return mode;

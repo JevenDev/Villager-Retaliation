@@ -387,11 +387,8 @@ public final class HiredDebugPreviewService {
         if (AssignedStorageService.PAYMENT_PURPOSE.equals(normalized)) {
             return "Payment";
         }
-        if (AssignedStorageService.TOOL_PURPOSE.equals(normalized)) {
-            return "Tool";
-        }
-        if (AssignedStorageService.INPUT_PURPOSE.equals(normalized)) {
-            return "Input";
+        if (AssignedStorageService.SUPPLY_PURPOSE.equals(normalized)) {
+            return "Supplies";
         }
         if (AssignedStorageService.OUTPUT_PURPOSE.equals(normalized)) {
             return "Output";

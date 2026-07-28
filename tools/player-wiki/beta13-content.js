@@ -284,7 +284,7 @@
           <li>${icon("toggle-right")}<strong>Check Work Enabled and payment.</strong><span>An unpaid or manually paused worker will not start a target.</span></li>
           <li>${icon("map-pin")}<strong>Check the area or route.</strong><span>Make sure it is committed, in the same dimension, loaded, and physically reachable.</span></li>
           <li>${icon("hammer")}<strong>Check the role tool or station.</strong><span>Use the warning and current target readout to identify the exact missing piece.</span></li>
-          <li>${icon("package-open")}<strong>Check assigned purposes.</strong><span>Input, Output, Tool, General, and Payment storage are not interchangeable for every job.</span></li>
+          <li>${icon("package-open")}<strong>Check assigned purposes.</strong><span>Supplies, Output, General, and Payment storage are not interchangeable for every job.</span></li>
           <li>${icon("boxes")}<strong>Check capacity and filters.</strong><span>Full inventories, a restrictive Item Filter, or incompatible station contents can pause otherwise valid work.</span></li>
         </ol>
       `)}
@@ -355,9 +355,8 @@
           ["Purpose", "How it works"],
           [
             ["General", "Fallback supplies and returned contract items where a more specific purpose is not required."],
-            ["Input", "Ingredients, fuel, seeds, breeding food, raw ore, and courier pickup sources."],
+            ["Supplies", "Tools, weapons, ammunition, ladders, job equipment, ingredients, fuel, seeds, breeding food, raw ore, and courier pickup sources."],
             ["Output", "Produced items, catches, drops, gathered products, and courier delivery destinations."],
-            ["Tool", "Pickaxes, axes, hoes, rods, weapons, ammunition, ladders, and other job equipment."],
             ["Payment", "Payment Box only. Funds automatic renewal of an ordinary hired contract."]
           ]
         )}
@@ -499,7 +498,7 @@
           ["Universal and restricted roles", "Courier is ready for every adult; Nitwit work is available only to nitwits"],
           ["Aptitude", "Rounded 70 percent primary skill + 30 percent support skill"],
           ["Skill work speed", "75 to 125 percent from aptitude; it changes task cadence, not furnace, smoker, blast-furnace, or brewing timers"],
-          ["Transfer capacity", "50 to 150 percent from aptitude for supported collection trips; Couriers carry 64 to 128 items per assigned input container"]
+          ["Transfer capacity", "50 to 150 percent from aptitude for supported collection trips; Couriers carry 64 to 128 items per assigned supply container"]
         ])}
       `)}
       ${section("Role Skill Pairs", beta13Table(
@@ -1026,7 +1025,7 @@
       "Storage, Inventory, And Equipment",
       "Hired Workers",
       "package-open",
-      "Assigned Input, Output, Tool, General, and Payment storage, plus job inventories, protected items, filters, supplies, and equipment.",
+      "Assigned Supplies, Output, General, and Payment storage, plus job inventories, protected items, filters, supplies, and equipment.",
       beta13RenderStorageInventory
     ),
     beta13NewPage(

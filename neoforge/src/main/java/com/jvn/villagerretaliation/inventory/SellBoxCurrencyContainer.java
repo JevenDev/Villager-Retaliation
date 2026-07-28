@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack;
 
 /**
  * A courier-only view of a sell box. It exposes minted whole currency units and never exposes the
- * pending sale stack through the assigned-input-storage APIs.
+ * pending sale stack through the assigned-supply-storage APIs.
  */
 final class SellBoxCurrencyContainer implements Container {
     private final SellBoxBlockEntity sellBox;

@@ -661,7 +661,7 @@ public final class VillagerGameplayGameTests {
                 hirer,
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
-                AssignedStorageService.INPUT_PURPOSE);
+                AssignedStorageService.SUPPLY_PURPOSE);
         helper.assertValueEqual(storage.assigned(), 1, "the repaired hirer should assign a courier input container");
 
         HiredRoute route = new HiredRoute(List.of(

@@ -1413,6 +1413,40 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void assignedStorageMigratesToolAndInputPurposesToSupplies(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        UUID villagerId = UUID.nameUUIDFromBytes(
+                "villagerretaliation:storage-purpose-migration".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        CompoundTag root = new CompoundTag();
+        ListTag entries = new ListTag();
+        for (int index = 0; index < 2; index++) {
+            CompoundTag entry = new CompoundTag();
+            entry.putString("Dimension", level.dimension().location().toString());
+            entry.putLong("Pos", helper.absolutePos(new BlockPos(2 + index, 2, 2)).asLong());
+            entry.putUUID("Villager", villagerId);
+            entry.putString("Purpose", index == 0 ? "tool" : "input");
+            entries.add(entry);
+        }
+        root.put("Entries", entries);
+
+        AssignedStorageSavedData loaded = AssignedStorageSavedData.load(root, level.registryAccess());
+        List<AssignedStorageSavedData.AssignedContainerRecord> supplies =
+                loaded.assignedTo(villagerId, AssignedStorageService.SUPPLY_PURPOSE);
+        helper.assertValueEqual(supplies.size(), 2, "legacy tool and input assignments should both become supplies");
+        helper.assertTrue(supplies.stream().allMatch(record -> AssignedStorageService.SUPPLY_PURPOSE.equals(record.purpose())),
+                "migrated assignments should expose only the canonical supply purpose");
+
+        CompoundTag saved = loaded.save(new CompoundTag(), level.registryAccess());
+        ListTag savedEntries = saved.getList("Entries", Tag.TAG_COMPOUND);
+        helper.assertTrue(savedEntries.stream()
+                        .filter(CompoundTag.class::isInstance)
+                        .map(CompoundTag.class::cast)
+                        .allMatch(entry -> AssignedStorageService.SUPPLY_PURPOSE.equals(entry.getString("Purpose"))),
+                "migrated assignments should save back using only the supply purpose");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void assignedStoragePersistsOutputFilterSnapshots(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());

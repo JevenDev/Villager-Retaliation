@@ -73,7 +73,7 @@ public final class CourierWorker implements HiredRoleWorker {
             Villager villager,
             HiredWorkContext context,
             HiredRoute route) {
-        Set<BlockPos> inputs = purposePositions(level, villager, AssignedStorageService.INPUT_PURPOSE);
+        Set<BlockPos> inputs = purposePositions(level, villager, AssignedStorageService.SUPPLY_PURPOSE);
         if (inputs.isEmpty()) {
             HiredWorkerBrain.setFailure(context, "courier_missing_input_storage", level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE, null);
@@ -140,7 +140,7 @@ public final class CourierWorker implements HiredRoleWorker {
             }
 
             String storagePurpose = servicingInputs
-                    ? AssignedStorageService.INPUT_PURPOSE
+                    ? AssignedStorageService.SUPPLY_PURPOSE
                     : AssignedStorageService.OUTPUT_PURPOSE;
             List<BlockPos> storageBatch = servicingInputs
                     ? selectInputsAtNode(level, villager, context, route, traversalNodes, index)
@@ -312,7 +312,7 @@ public final class CourierWorker implements HiredRoleWorker {
             HiredWorkerBrain.setStorageTarget(context, storage);
             HiredWorkerBrain.clearFailure(context);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.MOVING_TO_STORAGE, storage);
-            return WorkResult.progressed(AssignedStorageService.INPUT_PURPOSE.equals(purpose)
+            return WorkResult.progressed(AssignedStorageService.SUPPLY_PURPOSE.equals(purpose)
                     ? "interaction.work.courier.moving_to_input"
                     : "interaction.work.courier.moving_to_output");
         }
@@ -323,12 +323,12 @@ public final class CourierWorker implements HiredRoleWorker {
                 AssignedStorageService.rememberOutputStorageFailure(
                         level, villager, storage, "courier_output_unreachable");
             }
-            String failure = AssignedStorageService.INPUT_PURPOSE.equals(purpose)
+            String failure = AssignedStorageService.SUPPLY_PURPOSE.equals(purpose)
                     ? "courier_input_unreachable"
                     : "courier_output_unreachable";
             HiredWorkerBrain.setFailure(context, failure, level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.FAILED_COOLDOWN, storage);
-            return WorkResult.idle(AssignedStorageService.INPUT_PURPOSE.equals(purpose)
+            return WorkResult.idle(AssignedStorageService.SUPPLY_PURPOSE.equals(purpose)
                     ? "interaction.work.courier.input_unreachable"
                     : "interaction.work.courier.output_unreachable");
         }
@@ -429,7 +429,7 @@ public final class CourierWorker implements HiredRoleWorker {
                     || hasVisitedStorage(level, villager, context, candidate)) {
                 continue;
             }
-            if (AssignedStorageService.INPUT_PURPOSE.equals(purpose)) {
+            if (AssignedStorageService.SUPPLY_PURPOSE.equals(purpose)) {
                 return context.inventory().hasOutputSpace() ? candidate : null;
             }
             if (!context.inventory().hasOutputItems()) {
