@@ -1,8 +1,10 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
@@ -12,6 +14,7 @@ import net.neoforged.neoforge.event.entity.living.LivingUseTotemEvent;
 
 /** Owns automatic off-hand totems without giving the equipped stack a second inventory owner. */
 public final class VillagerDefensiveLoadoutService {
+    private static final long IDLE_SCAN_INTERVAL_TICKS = 20L;
     private static final String STATE_TAG = "VillagerRetaliationDefensiveLoadout";
     private static final String GUARD_STATE_TAG = "VillagerRetaliationGuardShieldLoan";
     private static final String SOURCE_KIND_TAG = "SourceKind";
@@ -29,14 +32,22 @@ public final class VillagerDefensiveLoadoutService {
         if (villager == null || villager.level().isClientSide || villager.isBaby() || !villager.isAlive()) {
             return;
         }
+        CompoundTag persistentData = villager.getPersistentData();
+        boolean hasGuardLoan = persistentData.contains(GUARD_STATE_TAG, Tag.TAG_COMPOUND);
         if (!com.jvn.villagerretaliation.party.PartyQuickCommandService.isStandingGuard(villager)
-                && hasBorrowedGuardShield(villager)) {
+                && hasGuardLoan) {
             returnGuardShield(villager);
         }
-        reconcileChangedLoan(villager);
+        if (persistentData.contains(STATE_TAG, Tag.TAG_COMPOUND)) {
+            reconcileChangedLoan(villager);
+        }
         if (VillagerInventoryAccess.hasOpenInventory(villager)
                 || villager.getMainHandItem().is(Items.TOTEM_OF_UNDYING)
-                || villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING)
+                || villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING)) {
+            return;
+        }
+        if (!TickThrottle.isSpreadTick(
+                villager.getUUID(), villager.level().getGameTime(), IDLE_SCAN_INTERVAL_TICKS)
                 || hasManualOffhandOverride(villager)) {
             return;
         }
