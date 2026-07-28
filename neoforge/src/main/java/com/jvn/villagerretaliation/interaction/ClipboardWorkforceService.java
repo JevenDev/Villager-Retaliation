@@ -343,6 +343,7 @@ public final class ClipboardWorkforceService {
             case SELECTING_TARGET, FINDING_CHAIN_TARGET, VALIDATING_TARGET -> activeWorkStatus(role);
             case MOVING_TO_STORAGE, DEPOSITING -> WorkerStatus.DEPOSITING;
             case WAITING_FOR_MATERIALS -> WorkerStatus.WAITING;
+            case PAUSED_OUTPUT_BACKPRESSURE -> WorkerStatus.OUTPUT_BACKPRESSURE;
             case WORKING, COLLECTING_OUTPUT -> activeWorkStatus(role);
             case IDLE, AWAITING_INSTRUCTION, FAILED_COOLDOWN, PAUSED_MISSING_TOOL, PAUSED_FULL_INVENTORY ->
                     WorkerStatus.WAITING;
@@ -515,6 +516,7 @@ public final class ClipboardWorkforceService {
             case SELECTING_TARGET, FINDING_CHAIN_TARGET, VALIDATING_TARGET, WORKING, COLLECTING_OUTPUT ->
                     activeWorkStatus(role);
             case MOVING_TO_STORAGE, DEPOSITING -> WorkerStatus.DEPOSITING;
+            case PAUSED_OUTPUT_BACKPRESSURE -> WorkerStatus.OUTPUT_BACKPRESSURE;
             case PAUSED_STORAGE_FULL -> WorkerStatus.STORAGE_FULL;
             case PAUSED_NO_STORAGE -> WorkerStatus.NO_STORAGE;
             case PAUSED_MISSING_TOOL -> WorkerStatus.MISSING_TOOLS;

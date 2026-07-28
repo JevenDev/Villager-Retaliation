@@ -84,6 +84,7 @@ public final class ClipboardStorageOutlineRenderer {
     private static final float DEBUG_ROUTE_NODE_ALPHA = 0.5F;
     private static final int DEBUG_ROUTE_LABEL_COLOR = 0xFFFFFFFF;
     private static final float DEBUG_LABEL_SCALE = 0.025F;
+    private static final int OWNER_NAMES_PER_LINE = 5;
     private static final double DEBUG_ROUTE_LABEL_HEIGHT = 1.36D;
     private static final double ROUTE_GUIDE_HEIGHT_ABOVE_SURFACE = 0.55D;
     private static final int ROUTE_GUIDE_SURFACE_SEARCH_UP = 3;
@@ -1054,8 +1055,9 @@ public final class ClipboardStorageOutlineRenderer {
             ));
         }
         addRouteOwnerLabels(minecraft, currentDimension, routes, labels);
-        Map<BlockPos, Integer> storageLabelCounts = new HashMap<>();
-        double storageLabelStackStep = (minecraft.font.lineHeight + 1.0D) * 2.0D * DEBUG_LABEL_SCALE;
+        Map<BlockPos, Integer> storageLabelLineCounts = new HashMap<>();
+        double storageLabelLineStep = (minecraft.font.lineHeight + 1.0D) * DEBUG_LABEL_SCALE;
+        BlockPos hoveredBlock = hoveredBlock(minecraft);
         for (OutlinedStoragePosition position : storagePositions) {
             if (!position.dimension().equals(currentDimension)
                     || position.payment() && !includePaymentStorage
@@ -1064,16 +1066,24 @@ public final class ClipboardStorageOutlineRenderer {
                     || !minecraft.level.hasChunkAt(position.pos())) {
                 continue;
             }
-            int stackIndex = storageLabelCounts.merge(position.pos(), 1, Integer::sum) - 1;
+            int precedingLines = storageLabelLineCounts.getOrDefault(position.pos(), 0);
+            int ownerLineCount = showVillagerNames()
+                    ? ownerNameLines(position.ownerName(), position.pos().equals(hoveredBlock)).size()
+                    : 0;
+            int labelLineCount = ownerLineCount + (position.storageType().isBlank() ? 0 : 1);
+            int expandedPushUpLines = Math.max(0, labelLineCount - 2);
             labels.add(new DebugLabelPosition(
                     new Vec3(
                             position.pos().getX() + 0.5D,
-                            position.pos().getY() + 1.25D + stackIndex * storageLabelStackStep,
+                            position.pos().getY() + 1.25D
+                                    + (precedingLines + expandedPushUpLines) * storageLabelLineStep,
                             position.pos().getZ() + 0.5D),
                     position.ownerName(),
                     position.storageType(),
-                    position.payment() ? PAYMENT_COLOR : ASSIGNED_COLOR
+                    position.payment() ? PAYMENT_COLOR : ASSIGNED_COLOR,
+                    position.pos()
             ));
+            storageLabelLineCounts.put(position.pos(), precedingLines + labelLineCount);
         }
         renderLabels(event, labels);
     }
@@ -1145,6 +1155,8 @@ public final class ClipboardStorageOutlineRenderer {
             ResourceKey<Level> currentDimension,
             List<RoutePosition> routes,
             List<DebugLabelPosition> labels) {
+        Map<BlockPos, Integer> routeLabelCounts = new HashMap<>();
+        double routeLabelStackStep = (minecraft.font.lineHeight + 1.0D) * 2.0D * DEBUG_LABEL_SCALE;
         for (RoutePosition route : routes) {
             if (!route.dimension().equals(currentDimension)
                     || route.ownerName().isBlank()
@@ -1153,8 +1165,12 @@ public final class ClipboardStorageOutlineRenderer {
                 continue;
             }
             BlockPos labelPos = route.nodes().getFirst();
+            int stackIndex = routeLabelCounts.merge(labelPos, 1, Integer::sum) - 1;
             labels.add(new DebugLabelPosition(
-                    new Vec3(labelPos.getX() + 0.5D, labelPos.getY() + 1.75D, labelPos.getZ() + 0.5D),
+                    new Vec3(
+                            labelPos.getX() + 0.5D,
+                            labelPos.getY() + 1.75D + stackIndex * routeLabelStackStep,
+                            labelPos.getZ() + 0.5D),
                     route.ownerName(),
                     route.jobName().isBlank() ? routeDescription(route) : route.jobName() + " route",
                     ROUTE_COLOR
@@ -1184,22 +1200,63 @@ public final class ClipboardStorageOutlineRenderer {
         MultiBufferSource.BufferSource bufferSource = minecraft.renderBuffers().bufferSource();
         Font font = minecraft.font;
         int background = ((int) (minecraft.options.getBackgroundOpacity(0.25F) * 255.0F)) << 24;
+        BlockPos hoveredBlock = hoveredBlock(minecraft);
         for (DebugLabelPosition label : visibleLabels) {
             String ownerName = showVillagerNames() ? label.ownerName() : "";
-            String firstLine = ownerName.isBlank() ? label.jobName() : ownerName;
-            String secondLine = ownerName.isBlank() ? "" : label.jobName();
+            boolean storageLabel = label.hoverTarget() != null;
+            boolean expanded = storageLabel && label.hoverTarget().equals(hoveredBlock);
+            List<String> lines = new ArrayList<>(storageLabel
+                    ? ownerNameLines(ownerName, expanded)
+                    : ownerName.isBlank() ? List.of() : List.of(ownerName));
+            if (!label.jobName().isBlank()) {
+                lines.add(label.jobName());
+            }
             poseStack.pushPose();
             poseStack.translate(label.pos().x - camera.x, label.pos().y - camera.y, label.pos().z - camera.z);
             poseStack.mulPose(minecraft.getEntityRenderDispatcher().cameraOrientation());
             poseStack.scale(DEBUG_LABEL_SCALE, -DEBUG_LABEL_SCALE, DEBUG_LABEL_SCALE);
             Matrix4f pose = poseStack.last().pose();
-            renderLabelLine(font, bufferSource, pose, firstLine, 0.0F, background, label.color());
-            if (!secondLine.isBlank()) {
-                renderLabelLine(font, bufferSource, pose, secondLine, font.lineHeight + 1.0F, background, label.color());
+            for (int lineIndex = 0; lineIndex < lines.size(); lineIndex++) {
+                renderLabelLine(
+                        font,
+                        bufferSource,
+                        pose,
+                        lines.get(lineIndex),
+                        lineIndex * (font.lineHeight + 1.0F),
+                        background,
+                        label.color());
             }
             poseStack.popPose();
         }
         bufferSource.endBatch();
+    }
+
+    private static BlockPos hoveredBlock(Minecraft minecraft) {
+        if (minecraft.hitResult instanceof BlockHitResult hit
+                && hit.getType() == HitResult.Type.BLOCK) {
+            return hit.getBlockPos();
+        }
+        return null;
+    }
+
+    private static List<String> ownerNameLines(String ownerNames, boolean expanded) {
+        if (ownerNames == null || ownerNames.isBlank()) {
+            return List.of();
+        }
+        List<String> names = List.of(ownerNames.split(",\\s*"));
+        if (names.size() <= OWNER_NAMES_PER_LINE) {
+            return List.of(String.join(", ", names));
+        }
+        if (!expanded) {
+            return List.of(
+                    String.join(", ", names.subList(0, OWNER_NAMES_PER_LINE))
+                            + ", ... +" + (names.size() - OWNER_NAMES_PER_LINE) + " More");
+        }
+        List<String> lines = new ArrayList<>();
+        for (int start = 0; start < names.size(); start += OWNER_NAMES_PER_LINE) {
+            lines.add(String.join(", ", names.subList(start, Math.min(start + OWNER_NAMES_PER_LINE, names.size()))));
+        }
+        return lines;
     }
 
     private static boolean isVisible(RenderLevelStageEvent event, AABB bounds) {
@@ -2359,7 +2416,10 @@ public final class ClipboardStorageOutlineRenderer {
         }
     }
 
-    private record DebugLabelPosition(Vec3 pos, String ownerName, String jobName, int color) {
+    private record DebugLabelPosition(Vec3 pos, String ownerName, String jobName, int color, BlockPos hoverTarget) {
+        private DebugLabelPosition(Vec3 pos, String ownerName, String jobName, int color) {
+            this(pos, ownerName, jobName, color, null);
+        }
     }
 
     private record RouteGuideCacheKey(ResourceKey<Level> dimension, BlockPos first, BlockPos second) {

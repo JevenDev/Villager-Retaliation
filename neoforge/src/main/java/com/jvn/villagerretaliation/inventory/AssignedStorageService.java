@@ -426,11 +426,121 @@ public final class AssignedStorageService {
         return false;
     }
 
+    /**
+     * Returns whether at least one live assigned output can accept one item from the supplied
+     * stacks. This includes both the container's physical capacity and any framed filter limit.
+     */
+    public static boolean hasAssignedOutputCapacityFor(Villager villager, List<ItemStack> stacks) {
+        if (!(villager.level() instanceof ServerLevel level) || stacks == null || stacks.isEmpty()) {
+            return false;
+        }
+        List<ItemStack> nonEmpty = stacks.stream()
+                .filter(stack -> stack != null && !stack.isEmpty())
+                .toList();
+        if (nonEmpty.isEmpty()) {
+            return false;
+        }
+        return nonEmpty.stream().anyMatch(stack -> assignedOutputCapacityFor(villager, stack, 1) > 0);
+    }
+
+    /**
+     * Returns whether any live assigned output is configured for one of the supplied stacks,
+     * regardless of its current amount limit or physical free space.
+     */
+    public static boolean hasAssignedOutputRouteFor(Villager villager, List<ItemStack> stacks) {
+        if (!(villager.level() instanceof ServerLevel level) || stacks == null || stacks.isEmpty()) {
+            return false;
+        }
+        return liveOutputContainerCandidates(level, villager).stream()
+                .anyMatch(output -> stacks.stream()
+                        .filter(stack -> stack != null && !stack.isEmpty())
+                        .anyMatch(stack -> outputFilterMatches(level, output, stack)));
+    }
+
+    public static int assignedOutputCapacityFor(Villager villager, ItemStack stack, int maximum) {
+        if (!(villager.level() instanceof ServerLevel level) || stack == null || stack.isEmpty() || maximum <= 0) {
+            return 0;
+        }
+        int capacity = 0;
+        for (VillagerInventoryOverflowService.ContainerCandidate output : liveOutputContainerCandidates(level, villager)) {
+            capacity += outputContainerCapacity(level, output, stack, maximum - capacity);
+            if (capacity >= maximum) {
+                return maximum;
+            }
+        }
+        return capacity;
+    }
+
+    /**
+     * Preflights a courier pickup so a full downstream buffer applies backpressure before cargo
+     * is removed from an input container.
+     */
+    public static CourierTransferState courierTransferState(ServerLevel level, Villager villager) {
+        if (level == null || villager == null) {
+            return CourierTransferState.NO_INPUT;
+        }
+        boolean hasInput = false;
+        boolean hasOutputRoute = false;
+        List<VillagerInventoryOverflowService.ContainerCandidate> outputs =
+                liveOutputContainerCandidates(level, villager);
+        for (VillagerInventoryOverflowService.ContainerCandidate input : liveInputContainerCandidates(level, villager)) {
+            Container container = input.container();
+            for (int slot = 0; slot < container.getContainerSize(); slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (stack.isEmpty() || !VillagerItemFilterService.mayWithdraw(villager, stack)) {
+                    continue;
+                }
+                hasInput = true;
+                if (outputs.stream().anyMatch(output -> outputFilterMatches(level, output, stack))) {
+                    hasOutputRoute = true;
+                }
+                if (outputs.stream().anyMatch(output -> outputContainerCapacity(level, output, stack, 1) > 0)) {
+                    return CourierTransferState.AVAILABLE;
+                }
+            }
+        }
+        if (!hasInput) {
+            return CourierTransferState.NO_INPUT;
+        }
+        return hasOutputRoute
+                ? CourierTransferState.OUTPUT_BACKPRESSURED
+                : CourierTransferState.NO_OUTPUT_ROUTE;
+    }
+
     private static boolean courierOutputAccepts(
             ServerLevel level,
             VillagerInventoryOverflowService.ContainerCandidate candidate,
             ItemStack stack) {
         return outputAllowance(level, candidate, stack) > 0;
+    }
+
+    private static int outputContainerCapacity(
+            ServerLevel level,
+            VillagerInventoryOverflowService.ContainerCandidate candidate,
+            ItemStack stack,
+            int maximum) {
+        int allowance = Math.min(outputAllowance(level, candidate, stack), Math.max(0, maximum));
+        if (allowance <= 0) {
+            return 0;
+        }
+        Container container = candidate.container();
+        int capacity = 0;
+        for (int slot = 0; slot < container.getContainerSize(); slot++) {
+            ItemStack existing = container.getItem(slot);
+            if (existing.isEmpty()) {
+                if (container.canPlaceItem(slot, stack)) {
+                    capacity += Math.min(stack.getMaxStackSize(), container.getMaxStackSize());
+                }
+            } else if (ItemStack.isSameItemSameComponents(existing, stack)
+                    && container.canPlaceItem(slot, stack)
+                    && existing.getCount() < Math.min(existing.getMaxStackSize(), container.getMaxStackSize())) {
+                capacity += Math.min(existing.getMaxStackSize(), container.getMaxStackSize()) - existing.getCount();
+            }
+            if (capacity >= allowance) {
+                return allowance;
+            }
+        }
+        return Math.min(capacity, allowance);
     }
 
     private static int outputAllowance(
@@ -464,6 +574,26 @@ public final class AssignedStorageService {
             bestAllowance = Math.max(bestAllowance, Math.max(0, limit - stored));
         }
         return bestAllowance;
+    }
+
+    private static boolean outputFilterMatches(
+            ServerLevel level,
+            VillagerInventoryOverflowService.ContainerCandidate candidate,
+            ItemStack stack) {
+        List<ItemStack> filters = courierItemFrameFilters(level, candidate);
+        if (filters.isEmpty()) {
+            return true;
+        }
+        for (ItemStack filter : filters) {
+            if (VillagerRetaliationItems.isFilter(filter)) {
+                if (VillagerFilterMatcher.matches(level, filter, stack)) {
+                    return true;
+                }
+            } else if (stack.is(filter.getItem())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static int countItemsTowardLimit(
@@ -953,6 +1083,73 @@ public final class AssignedStorageService {
             int maxCount,
             Function<ItemStack, ItemStack> receiver) {
         return transferItemsAtAssignedStorage(villager, storagePos, predicate, maxCount, receiver, StorageUse.INPUT);
+    }
+
+    public static int transferCourierItemsAtAssignedStorage(
+            Villager villager,
+            BlockPos storagePos,
+            int maxCount,
+            Function<ItemStack, ItemStack> receiver) {
+        if (storagePos == null
+                || maxCount <= 0
+                || receiver == null
+                || !(villager.level() instanceof ServerLevel level)) {
+            return 0;
+        }
+        Predicate<ItemStack> mayWithdraw = withdrawalPredicate(villager, ignored -> true);
+        List<ItemStack> plannedCargo = new ArrayList<>();
+        List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
+        int movedTotal = 0;
+        for (VillagerInventoryOverflowService.ContainerCandidate input : liveInputContainerCandidates(level, villager)) {
+            if (!input.matches(storagePos) || !input.isInInteractionRange(villager)) {
+                continue;
+            }
+            Container container = input.container();
+            for (int slot = 0; slot < container.getContainerSize() && movedTotal < maxCount; slot++) {
+                ItemStack stack = container.getItem(slot);
+                if (stack.isEmpty() || !mayWithdraw.test(stack)) {
+                    continue;
+                }
+                int alreadyPlanned = plannedCargo.stream()
+                        .filter(planned -> ItemStack.isSameItemSameComponents(planned, stack))
+                        .mapToInt(ItemStack::getCount)
+                        .sum();
+                int requested = Math.min(maxCount - movedTotal, stack.getCount());
+                boolean hasOutputRoute = hasAssignedOutputRouteFor(villager, List.of(stack));
+                if (hasOutputRoute) {
+                    int downstreamCapacity = assignedOutputCapacityFor(villager, stack, maxCount);
+                    requested = Math.min(
+                            requested,
+                            Math.max(0, downstreamCapacity - alreadyPlanned));
+                }
+                if (requested <= 0) {
+                    continue;
+                }
+                ItemStack extracted = VillagerInventoryOverflowService.extractUpTo(
+                        villager, container, slot, requested);
+                if (extracted.isEmpty()) {
+                    continue;
+                }
+                ItemStack remainder = receiver.apply(extracted.copy());
+                int moved = acceptedCount(extracted, remainder);
+                int unaccepted = extracted.getCount() - moved;
+                if (unaccepted > 0) {
+                    VillagerInventoryOverflowService.restoreToContainerOrDrop(
+                            villager, container, extracted.copyWithCount(unaccepted));
+                }
+                if (moved <= 0) {
+                    continue;
+                }
+                plannedCargo.add(extracted.copyWithCount(moved));
+                movedTotal += moved;
+                if (!usedContainers.contains(input)) {
+                    usedContainers.add(input);
+                }
+            }
+            break;
+        }
+        VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
+        return movedTotal;
     }
 
     public static int transferItemsAtAssignedStorageIgnoringFilter(
@@ -1464,6 +1661,13 @@ public final class AssignedStorageService {
     }
 
     private record StorageFailure(String reason, long expiresGameTime) {
+    }
+
+    public enum CourierTransferState {
+        AVAILABLE,
+        NO_INPUT,
+        NO_OUTPUT_ROUTE,
+        OUTPUT_BACKPRESSURED
     }
 
     public record StoragePosition(ResourceKey<Level> dimension, BlockPos pos) {

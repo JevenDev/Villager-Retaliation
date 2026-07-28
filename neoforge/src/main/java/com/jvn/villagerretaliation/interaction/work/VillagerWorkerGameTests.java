@@ -4465,6 +4465,81 @@ public final class VillagerWorkerGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 400)
+    public static void courierPausesAndResumesAtFilteredOutputLimit(GameTestHelper helper) {
+        buildFloor(helper, 0, 9, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierBackpressure");
+        Villager villager = spawnVillager(helper, new BlockPos(1, 2, 2));
+        BlockPos inputRel = new BlockPos(2, 2, 2);
+        BlockPos outputRel = new BlockPos(7, 2, 2);
+        BlockPos input = helper.absolutePos(inputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        Container inputContainer = container(level, input);
+        Container outputContainer = container(level, output);
+        inputContainer.setItem(0, new ItemStack(Items.EMERALD, 16));
+        outputContainer.setItem(0, new ItemStack(Items.EMERALD, 8));
+
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.EMERALD));
+        VillagerItemFilterData.setAmount(filter, 0, 8);
+        ItemFrame frame = new ItemFrame(level, output.relative(Direction.SOUTH), Direction.SOUTH);
+        frame.setItem(filter);
+        helper.assertTrue(level.addFreshEntity(frame), "bounded courier output filter should spawn");
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 1, "backpressure input assignment");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "backpressure output assignment");
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(inputRel, outputRel));
+        CourierWorker worker = new CourierWorker();
+
+        worker.tick(level, villager, hirer, context);
+        HiredWorkerBrain.Snapshot paused = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertValueEqual(paused.taskState(), HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE,
+                "a courier should pause before collecting from a full bounded output");
+        helper.assertValueEqual(countItem(inputContainer, Items.EMERALD), 16,
+                "backpressure must leave upstream input untouched");
+        helper.assertFalse(context.inventory().hasOutputItems(),
+                "a paused courier must not retain avoidable cargo");
+        helper.assertValueEqual(
+                ClipboardWorkforceService.previewStatus(HiredVillagerRole.COURIER, paused, context.inventory()),
+                ClipboardWorkforceSnapshot.WorkerStatus.OUTPUT_BACKPRESSURE,
+                "clipboard preview should present backpressure as an informational status");
+
+        outputContainer.removeItem(0, 1);
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 260, () ->
+                countItem(outputContainer, Items.EMERALD) == 8
+                        && countItem(inputContainer, Items.EMERALD) == 15
+                        && !context.inventory().hasOutputItems()
+                        && HiredWorkerBrain.snapshot(state, level.getGameTime()).taskState()
+                                == HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE);
+
+        helper.assertValueEqual(countItem(inputContainer, Items.EMERALD), 15,
+                "the resumed courier should collect only the downstream allowance");
+        helper.assertValueEqual(countItem(outputContainer, Items.EMERALD), 8,
+                "the resumed courier should restore, but never exceed, the configured stock target");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        frame.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 400)
     public static void courierRoutesCargoUsingOutputItemFrames(GameTestHelper helper) {
         buildFloor(helper, 0, 11, 0, 5, 1);
         ServerLevel level = helper.getLevel();
@@ -4757,30 +4832,25 @@ public final class VillagerWorkerGameTests {
                 "courier retry cargo should fit");
         CourierWorker worker = new CourierWorker();
 
-        runWorkerUntil(helper, worker, level, villager, hirer, context, 300, () ->
-                "courier_output_unavailable".equals(state.getString("WorkerFailureReason")));
-        helper.assertValueEqual(state.getString("CourierPhase"), "return",
-                "a failed delivery sweep should retrace the route before retrying");
-        helper.assertValueEqual(state.getInt("CourierRouteIndex"), 2,
-                "the retry return should begin at the courier's physical endpoint");
-
         worker.tick(level, villager, hirer, context);
-        helper.assertValueEqual(state.getInt("CourierRouteIndex"), 1,
-                "the courier should retrace the next route node instead of pathing directly to the start");
-        BlockPos returnTarget = villager.getNavigation().getTargetPos();
-        helper.assertTrue(returnTarget != null
-                        && returnTarget.distSqr(helper.absolutePos(new BlockPos(7, 2, 2))) <= 4.0D,
-                "the unavailable-output retry should follow the route backward; target=" + returnTarget);
+        HiredWorkerBrain.Snapshot paused = HiredWorkerBrain.snapshot(state, level.getGameTime());
+        helper.assertValueEqual(paused.taskState(), HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE,
+                "a courier with retained cargo should pause when every matching output is full");
+        helper.assertFalse(state.contains("WorkerFailureReason", Tag.TAG_STRING),
+                "output backpressure should not be reported as a worker failure");
+        helper.assertValueEqual(
+                ClipboardWorkforceService.previewStatus(HiredVillagerRole.COURIER, paused, context.inventory()),
+                ClipboardWorkforceSnapshot.WorkerStatus.OUTPUT_BACKPRESSURE,
+                "clipboard preview should report a normal output-capacity pause");
 
         outputContainer.clearContent();
-        AssignedStorageService.clearStorageFailure(level, villager, output);
         runWorkerUntil(helper, worker, level, villager, hirer, context, 180, () ->
                 countItem(outputContainer, Items.COBBLESTONE) == 12);
 
         helper.assertFalse(context.inventory().hasOutputItems(),
                 "courier should deliver retained cargo after output storage becomes available");
-        helper.assertFalse("courier_output_unavailable".equals(state.getString("WorkerFailureReason")),
-                "successful output retry should clear the unavailable-output failure");
+        helper.assertFalse(state.contains("WorkerFailureReason", Tag.TAG_STRING),
+                "successful backpressure recovery should remain failure-free");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         villager.discard();

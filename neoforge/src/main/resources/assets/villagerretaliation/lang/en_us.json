@@ -1072,6 +1072,7 @@
   "villagerretaliation.gui.clipboard_workforce.status.no_storage": "No storage",
   "villagerretaliation.gui.clipboard_workforce.status.no_targets": "No targets",
   "villagerretaliation.gui.clipboard_workforce.status.no_work_area": "No work area",
+  "villagerretaliation.gui.clipboard_workforce.status.output_backpressure": "Output target reached",
   "villagerretaliation.gui.clipboard_workforce.status.pathing": "Pathing",
   "villagerretaliation.gui.clipboard_workforce.status.smelting": "Smelting",
   "villagerretaliation.gui.clipboard_workforce.status.storage_full": "Storage full",
