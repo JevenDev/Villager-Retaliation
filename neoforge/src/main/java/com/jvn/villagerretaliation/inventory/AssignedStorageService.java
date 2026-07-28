@@ -108,6 +108,16 @@ public final class AssignedStorageService {
                 invalid++;
                 continue;
             }
+            boolean containerAlreadyAssigned = resolvedContainerPositions(targetLevel, position.pos()).stream()
+                    .anyMatch(containerPos -> data.assignedAt(
+                            position.dimension(),
+                            containerPos,
+                            villager.getUUID(),
+                            normalizedPurpose) != null);
+            if (containerAlreadyAssigned) {
+                alreadyAssigned++;
+                continue;
+            }
             AssignmentResult result = data.assign(new AssignedContainerRecord(
                     position.dimension(),
                     position.pos().immutable(),
@@ -159,9 +169,7 @@ public final class AssignedStorageService {
             return List.of();
         }
         return AssignedStorageSavedData.get(level).assignedTo(villager.getUUID()).stream()
-                .filter(record -> positions.stream().anyMatch(position ->
-                        position.dimension().equals(record.dimension())
-                                && position.pos().equals(record.pos())))
+                .filter(record -> positions.stream().anyMatch(position -> matchesResolvedContainer(level, record, position)))
                 .toList();
     }
 
@@ -179,7 +187,38 @@ public final class AssignedStorageService {
         return removed;
     }
     public static boolean removeAssignedContainer(ServerLevel level, BlockPos pos) {
-        return AssignedStorageSavedData.get(level).removeAssignedAt(level.dimension(), pos);
+        AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
+        boolean removed = false;
+        for (BlockPos containerPos : resolvedContainerPositions(level, pos)) {
+            removed |= data.removeAssignedAt(level.dimension(), containerPos);
+        }
+        return removed;
+    }
+
+    private static boolean matchesResolvedContainer(
+            ServerLevel level,
+            AssignedContainerRecord record,
+            StoragePosition position) {
+        if (!position.dimension().equals(record.dimension())) {
+            return false;
+        }
+        ServerLevel targetLevel = level.getServer().getLevel(position.dimension());
+        if (targetLevel == null) {
+            return position.pos().equals(record.pos());
+        }
+        return resolvedContainerPositions(targetLevel, position.pos()).contains(record.pos());
+    }
+
+    private static List<BlockPos> resolvedContainerPositions(ServerLevel level, BlockPos pos) {
+        if (level == null || pos == null || !level.hasChunkAt(pos)) {
+            return pos == null ? List.of() : List.of(pos.immutable());
+        }
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (!(blockEntity instanceof Container container)) {
+            return List.of(pos.immutable());
+        }
+        return VillagerInventoryOverflowService.ContainerCandidate.resolve(
+                level, pos.immutable(), container).positions();
     }
 
     public static boolean isValidContainer(ServerLevel level, BlockPos pos) {
@@ -301,10 +340,11 @@ public final class AssignedStorageService {
             return;
         }
         UUID villagerId = villager.getUUID();
+        List<BlockPos> containerPositions = resolvedContainerPositions(level, storagePos);
         STORAGE_FAILURES.keySet().removeIf(key ->
                 key.villagerId().equals(villagerId)
                         && key.dimension().equals(level.dimension())
-                        && key.pos().equals(storagePos));
+                        && containerPositions.contains(key.pos()));
     }
 
     public static boolean canInteractWithAssignedStorage(Villager villager) {

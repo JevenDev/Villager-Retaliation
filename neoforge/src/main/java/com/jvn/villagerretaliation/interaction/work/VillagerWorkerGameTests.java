@@ -4271,6 +4271,104 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void courierCollectsStackedDoubleChestInputsAssignedByFarHalf(GameTestHelper helper) {
+        buildFloor(helper, 0, 14, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierStackedDoubleInput");
+        BlockPos routeNodeRel = new BlockPos(3, 2, 2);
+        BlockPos lowerNearRel = new BlockPos(6, 2, 2);
+        BlockPos lowerFarRel = lowerNearRel.east();
+        BlockPos upperNearRel = lowerNearRel.above();
+        BlockPos upperFarRel = lowerFarRel.above();
+        BlockPos outputRel = new BlockPos(12, 2, 2);
+        Villager villager = spawnVillager(helper, routeNodeRel);
+        tickVillager(level, villager, 20);
+        villager.moveTo(helper.absolutePos(routeNodeRel).getCenter());
+        VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
+
+        setBlock(helper, lowerNearRel, Blocks.CHEST.defaultBlockState()
+                .setValue(ChestBlock.FACING, Direction.NORTH)
+                .setValue(ChestBlock.TYPE, ChestType.LEFT));
+        setBlock(helper, lowerFarRel, Blocks.CHEST.defaultBlockState()
+                .setValue(ChestBlock.FACING, Direction.NORTH)
+                .setValue(ChestBlock.TYPE, ChestType.RIGHT));
+        setBlock(helper, upperNearRel, Blocks.CHEST.defaultBlockState()
+                .setValue(ChestBlock.FACING, Direction.NORTH)
+                .setValue(ChestBlock.TYPE, ChestType.LEFT));
+        setBlock(helper, upperFarRel, Blocks.CHEST.defaultBlockState()
+                .setValue(ChestBlock.FACING, Direction.NORTH)
+                .setValue(ChestBlock.TYPE, ChestType.RIGHT));
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+
+        BlockPos lowerNear = helper.absolutePos(lowerNearRel);
+        BlockPos lowerFar = helper.absolutePos(lowerFarRel);
+        BlockPos upperNear = helper.absolutePos(upperNearRel);
+        BlockPos upperFar = helper.absolutePos(upperFarRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        container(level, lowerNear).setItem(0, new ItemStack(Items.COD, 7));
+        container(level, upperNear).setItem(0, new ItemStack(Items.SALMON, 9));
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(
+                        new AssignedStorageService.StoragePosition(level.dimension(), lowerFar),
+                        new AssignedStorageService.StoragePosition(level.dimension(), upperFar)),
+                AssignedStorageService.INPUT_PURPOSE).assigned(), 2, "far-half input assignments");
+        AssignedStorageService.AssignSummary duplicateHalf = AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), lowerNear)),
+                AssignedStorageService.INPUT_PURPOSE);
+        helper.assertValueEqual(duplicateHalf.assigned(), 0,
+                "the connected half must not create a second assignment");
+        helper.assertValueEqual(duplicateHalf.alreadyAssigned(), 1,
+                "either half should resolve to the existing multiblock assignment");
+        helper.assertValueEqual(AssignedStorageService.assignedStorageAt(
+                        level,
+                        villager,
+                        List.of(new AssignedStorageService.StoragePosition(level.dimension(), upperNear))).size(),
+                1,
+                "assignment lookup should recognize the unrecorded connected half");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "stacked-double output assignment");
+
+        CompoundTag state = new CompoundTag();
+        state.putString("CourierPhase", "outbound");
+        state.putInt("CourierRouteIndex", 0);
+        HiredWorkContext context = routeContext(
+                helper,
+                villager,
+                state,
+                List.of(routeNodeRel, outputRel));
+        CourierWorker worker = new CourierWorker();
+        worker.tick(level, villager, hirer, context);
+        worker.tick(level, villager, hirer, context);
+
+        helper.assertValueEqual(countItem(container(level, lowerNear), Items.COD), 0,
+                "courier should collect the nearer half of the lower assigned double chest");
+        helper.assertValueEqual(countItem(container(level, upperNear), Items.SALMON), 0,
+                "courier should collect the nearer half of the stacked assigned double chest");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.COD), 7,
+                "lower double-chest cargo should enter the courier inventory");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.SALMON), 9,
+                "upper double-chest cargo should enter the courier inventory");
+
+        helper.assertValueEqual(AssignedStorageService.removeAssignedStorageAt(
+                        level,
+                        villager,
+                        List.of(new AssignedStorageService.StoragePosition(level.dimension(), lowerNear))),
+                1,
+                "removing from either half should remove the whole-container assignment");
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 700)
     public static void courierCollectsInputsThroughTwoBranchEndpoints(GameTestHelper helper) {
         buildFloor(helper, 0, 14, 0, 14, 1);
