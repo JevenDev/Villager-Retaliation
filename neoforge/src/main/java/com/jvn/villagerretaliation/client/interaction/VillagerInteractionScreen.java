@@ -33,7 +33,6 @@ import com.jvn.villagerretaliation.interaction.work.HiredHuntingTargets;
 import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingFilters;
 import com.jvn.villagerretaliation.interaction.work.logging.HiredLoggingOptions;
-import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.network.ClipboardStorageActionPayload;
 import com.jvn.villagerretaliation.network.HiredAnimalBreedingTargetPayload;
 import com.jvn.villagerretaliation.network.HiredAnimalCullCapPayload;
@@ -58,7 +57,6 @@ import com.jvn.villagerretaliation.network.VillagerMouseEasterEggPayload;
 import com.jvn.villagerretaliation.network.VillagerProfileRequestPayload;
 import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import com.jvn.villagerretaliation.network.RecruitmentResultPayload;
-import com.jvn.villagerretaliation.network.VillagerRoutineChatTogglePayload;
 import com.jvn.villagerretaliation.network.VillagerTradeRequestPayload;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
@@ -2205,16 +2203,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         };
     }
 
-    private void openSkillsPage() {
-        this.profileRefreshRequested = false;
-        clearSelectedSkillDetails();
-        clearSelectedProfileAttributeDetails();
-        clearSelectedJobDetails();
-        this.draggingSkillScrollbar = false;
-        this.skillsProfilePanel = SkillsProfilePanel.SKILLS;
-        requestProfileRefresh();
-        openPage(DialoguePage.SKILLS);
-    }
 
     private void openGiftPage() {
         this.selectedInventorySlot = firstGiftableInventorySlot();
@@ -2338,13 +2326,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         openPage(DialoguePage.BUILDER_STRUCTURE_CATEGORY);
     }
 
-    private void openFamilyPage() {
-        openPage(DialoguePage.FAMILY);
-    }
 
-    private void openRelationshipPage() {
-        openPage(DialoguePage.RELATIONSHIPS);
-    }
 
     private void openDuelPage() {
         this.duelStartPending = false;
@@ -2368,11 +2350,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         sendToServer(new VillagerTradeRequestPayload(this.villagerEntityId));
     }
 
-    private void toggleRoutineChat() {
-        this.routineChatMuted = !this.routineChatMuted;
-        sendToServer(new VillagerRoutineChatTogglePayload(this.villagerEntityId, this.routineChatMuted));
-        rebuildOptionsKeepingListPosition();
-    }
 
     private void requestInventory() {
         sendToServer(new VillagerInventoryRequestPayload(this.villagerEntityId));
@@ -4372,9 +4349,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return interactionContainerTopForPage(this.page);
     }
 
-    private int interactionNameplateTop() {
-        return interactionContainerTop() + INTERACTION_NAMEPLATE_Y;
-    }
 
     private int interactionContainerTopForPage(DialoguePage page) {
         if (page == DialoguePage.SKILLS) {
@@ -4502,11 +4476,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         VillagerInteractionNavigation.renderHint(this.navigationContext, graphics);
     }
 
-    private boolean isFamilyPageActive() {
-        return this.page == DialoguePage.FAMILY
-                || this.page == DialoguePage.ANCESTRY
-                || this.page == DialoguePage.DESCENDANTS;
-    }
 
     private void updateMouseSelection(int mouseX, int mouseY) {
         if (usesRootIconMenu()) {
@@ -4528,27 +4497,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
     }
 
-    private boolean tryClickBackButton(double mouseX, double mouseY) {
-        if (!isTopBackButtonVisible() || !isPointInsideTopBackButton(mouseX, mouseY)) {
-            return false;
-        }
-
-        if (this.page == DialoguePage.SKILLS && this.selectedSkillDetails != null) {
-            clearSelectedSkillDetails();
-            return true;
-        }
-        if (this.page == DialoguePage.SKILLS && this.selectedProfileAttributeDetails != null) {
-            clearSelectedProfileAttributeDetails();
-            return true;
-        }
-        if (this.page == DialoguePage.SKILLS && this.selectedJobDetails != null) {
-            clearSelectedJobDetails();
-            return true;
-        }
-
-        navigateBackPage();
-        return true;
-    }
 
     private boolean tryBeginScrollbarDrag(double mouseX, double mouseY) {
         // The compact interaction stack uses scroll arrows instead of a scrollbar.
@@ -4883,9 +4831,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return optionsTopForViewport(fullOptionViewportHeight());
     }
 
-    private int optionViewportBottom() {
-        return optionViewportTop() + fullOptionViewportHeight();
-    }
 
     private int optionTextLeft() {
         return layoutOptionsLeft() + optionTextInset();
@@ -4925,9 +4870,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return translate("info.reputation", this.reputation);
     }
 
-    private String walletText() {
-        return translate("info.wallet", this.walletCurrencyLabel, this.walletEmeralds, this.maxWalletEmeralds);
-    }
 
     private String moodText() {
         return translate("info.mood", moodName(this.primaryMood));
@@ -4982,18 +4924,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 .orElse(null);
     }
 
-    private ItemStack clipboardStack() {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.player == null) {
-            return ItemStack.EMPTY;
-        }
-        ItemStack mainHand = minecraft.player.getMainHandItem();
-        if (VillagerRetaliationItems.isClipboard(mainHand)) {
-            return mainHand;
-        }
-        ItemStack offhand = minecraft.player.getOffhandItem();
-        return VillagerRetaliationItems.isClipboard(offhand) ? offhand : ItemStack.EMPTY;
-    }
 
     private int focusCenterY() {
         return VillagerInteractionLayoutMetrics.focusCenterY(this.height);

@@ -38,7 +38,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
@@ -2136,18 +2135,6 @@ public final class ClipboardStorageOutlineRenderer {
         return PLAYER_ROUTE_LOOP_COLOR;
     }
 
-    private static int routeNodeColor(RoutePosition route, int index) {
-        if (route.loop() && index == 0) {
-            return ROUTE_LOOP_COLOR;
-        }
-        if (index == 0) {
-            return ROUTE_FIRST_COLOR;
-        }
-        if (!route.loop() && index == route.nodes().size() - 1) {
-            return ROUTE_LAST_COLOR;
-        }
-        return ROUTE_NODE_COLOR;
-    }
 
     private static String routeDescription(RoutePosition route) {
         int count = route.nodes().size();
@@ -2250,14 +2237,6 @@ public final class ClipboardStorageOutlineRenderer {
         renderLabels(event, labels);
     }
 
-    private static void renderDebugRouteNodeLabel(RenderLevelStageEvent event, BlockPos node, String labelName, int nodeIndex) {
-        Minecraft minecraft = Minecraft.getInstance();
-        if (minecraft.level != null && minecraft.level.hasChunkAt(node)) {
-            List<DebugLabelPosition> labels = new ArrayList<>();
-            addDebugRouteNodeLabel(labels, labelName, node, nodeIndex);
-            renderLabels(event, labels);
-        }
-    }
 
     private static void addDebugRouteNodeLabel(List<DebugLabelPosition> labels, String labelName, BlockPos node, int nodeIndex) {
         labels.add(new DebugLabelPosition(
