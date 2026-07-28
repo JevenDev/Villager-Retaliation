@@ -391,6 +391,10 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int dialogueLineScroll;
     private long dialogueTextAnimationStartMillis;
     private boolean dialogueTextAnimationSkipped;
+    private long optionLayoutVersion;
+    private long interactionOptionWidthVersion = Long.MIN_VALUE;
+    private int cachedInteractionOptionWidth = INTERACTION_OPTION_WIDTH;
+    private final VillagerInteractionOptionList.LayoutCache optionLayout = new VillagerInteractionOptionList.LayoutCache();
     private final Random dialogueBlipRandom = new Random();
     private float dialogueBlipPitch = 1.0F;
     private int nextDialogueBlipVisibleCharacter = Integer.MAX_VALUE;
@@ -1028,6 +1032,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void rebuildOptions() {
         this.options.clear();
+        this.optionLayoutVersion++;
         if (this.page == DialoguePage.TALK) {
             if (this.forcedDialogue) {
                 addDialogueOptions();
@@ -5035,6 +5040,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int interactionOptionStackWidth() {
+        if (this.interactionOptionWidthVersion == this.optionLayoutVersion) {
+            return this.cachedInteractionOptionWidth;
+        }
         int desiredWidth = INTERACTION_OPTION_WIDTH;
         for (int index = 0; index < this.options.size(); index++) {
             for (String line : VillagerInteractionOptionList.pixelOptionLabelLines(
@@ -5058,7 +5066,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         int maxAvailableWidth = Math.max(
                 INTERACTION_OPTION_WIDTH,
                 this.width - INTERACTION_OPTION_SCREEN_MARGIN - interactionOptionStackRightClearance());
-        return Math.min(desiredWidth, maxAvailableWidth);
+        this.cachedInteractionOptionWidth = Math.min(desiredWidth, maxAvailableWidth);
+        this.interactionOptionWidthVersion = this.optionLayoutVersion;
+        return this.cachedInteractionOptionWidth;
     }
 
     private String interactionOptionLabel(int index) {
@@ -5663,6 +5673,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private final class OptionListContext implements VillagerInteractionOptionList.Context {
+        @Override
+        public long optionLayoutVersion() {
+            return VillagerInteractionScreen.this.optionLayoutVersion;
+        }
+
+        @Override
+        public VillagerInteractionOptionList.LayoutCache optionLayout() {
+            return VillagerInteractionScreen.this.optionLayout;
+        }
+
         @Override
         public Font font() {
             return VillagerInteractionScreen.this.font;

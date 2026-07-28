@@ -30,6 +30,7 @@ final class VillagerInteractionOptionList {
     }
 
     static void render(Context context, GuiGraphics graphics, int mouseX, int mouseY) {
+        LayoutCache layout = layout(context);
         int left = context.optionsLeft();
         int top = context.optionsTop();
         int viewportHeight = context.optionViewportHeight();
@@ -48,11 +49,11 @@ final class VillagerInteractionOptionList {
                 top + scissorOffsetY,
                 context.optionsScrollbarLeft() - scissorInset + scissorOffsetX,
                 viewportBottom + scissorOffsetY);
-        for (int index = 0; index < context.optionCount(); index++) {
-            int rowHeight = optionHeight(context, index);
-            float y = top + optionOffset(context, index) - context.optionScroll();
-            if (y + rowHeight < top || y > viewportBottom) {
-                continue;
+        for (int index = layout.firstVisibleIndex(context.optionScroll()); index < context.optionCount(); index++) {
+            int rowHeight = layout.height(index);
+            float y = top + layout.offset(index) - context.optionScroll();
+            if (y > viewportBottom) {
+                break;
             }
             renderOption(context, graphics, index, hovered, mouseX, mouseY, left, y, rowHeight, top, viewportBottom);
         }
@@ -71,46 +72,23 @@ final class VillagerInteractionOptionList {
         if (mouseY < top || mouseY >= bottom) {
             return -1;
         }
-        for (int index = 0; index < context.optionCount(); index++) {
-            float y = top + optionOffset(context, index) - context.optionScroll();
-            int rowHeight = optionHeight(context, index);
-            if (mouseY >= y && mouseY < y + rowHeight) {
-                return index;
-            }
-        }
-        return -1;
+        return layout(context).optionAt((float) mouseY - top + context.optionScroll());
     }
 
     static float optionOffset(Context context, int optionIndex) {
-        float offset = 0.0F;
-        for (int index = 0; index < optionIndex; index++) {
-            offset += optionHeight(context, index) + optionGap(context);
-        }
-        return offset;
+        return layout(context).offset(optionIndex);
     }
 
     static int optionHeight(Context context, int optionIndex) {
-        if (context.usePixelOptionButtons()) {
-            int wrappedLines = pixelOptionLabelLines(context, optionIndex).size();
-            return context.optionHeight() + Math.max(0, wrappedLines - 1) * context.pixelOptionLineStep();
-        }
-        return context.optionHeight() + wrappedExtraHeight(context, optionIndex);
+        return layout(context).height(optionIndex);
     }
 
     static float optionContentHeight(Context context) {
-        float height = 0.0F;
-        for (int index = 0; index < context.optionCount(); index++) {
-            height += optionHeight(context, index);
-            if (index < context.optionCount() - 1) {
-                height += optionGap(context);
-            }
-        }
-        return height;
+        return layout(context).contentHeight();
     }
 
-    private static int optionGap(Context context) {
-        int gap = context.optionStride() - context.optionHeight();
-        return context.usePixelOptionButtons() ? gap : Math.max(0, gap);
+    private static LayoutCache layout(Context context) {
+        return context.optionLayout().update(context);
     }
 
     static List<String> wrappedOptionLabelLines(Context context, String label, float scale) {
@@ -186,23 +164,26 @@ final class VillagerInteractionOptionList {
         }
         int scissorOffsetX = context.guiScissorOffsetX();
         graphics.enableScissor(left + scissorOffsetX, top + scissorOffsetY, scissorRight + scissorOffsetX, viewportBottom + scissorOffsetY);
+        LayoutCache layout = layout(context);
         List<Integer> visibleIndices = new java.util.ArrayList<>();
-        float maxScroll = Math.max(0.0F, optionContentHeight(context) - context.optionViewportHeight());
+        float maxScroll = Math.max(0.0F, layout.contentHeight() - context.optionViewportHeight());
         boolean hasHiddenAbove = context.optionScroll() > 0.75F;
         boolean hasHiddenBelow = context.optionScroll() < maxScroll - 0.75F;
-        for (int index = 0; index < context.optionCount(); index++) {
-            int rowHeight = optionHeight(context, index);
-            float y = top + optionOffset(context, index) - context.optionScroll();
+        for (int index = layout.firstVisibleIndex(context.optionScroll()); index < context.optionCount(); index++) {
+            int rowHeight = layout.height(index);
+            float y = top + layout.offset(index) - context.optionScroll();
             if (isVisible(y, rowHeight, top, viewportBottom)) {
                 visibleIndices.add(index);
+            } else if (y >= viewportBottom) {
+                break;
             }
         }
 
         context.updatePixelOptionEdgeScaling(hasHiddenAbove, hasHiddenBelow);
         for (int visibleSlot = 0; visibleSlot < visibleIndices.size(); visibleSlot++) {
             int index = visibleIndices.get(visibleSlot);
-            int rowHeight = optionHeight(context, index);
-            float y = top + optionOffset(context, index) - context.optionScroll();
+            int rowHeight = layout.height(index);
+            float y = top + layout.offset(index) - context.optionScroll();
             int edgePosition = PIXEL_OPTION_EDGE_NONE;
             if (visibleIndices.size() > 1) {
                 if (visibleSlot == 0 && hasHiddenAbove) {
@@ -257,7 +238,7 @@ final class VillagerInteractionOptionList {
             int textLeft = left + context.optionTextInset() + checkboxTextOffset + iconTextOffset;
             int textWidth = Math.max(1, context.optionWidth() - context.optionTextInset()
                     - checkboxTextOffset - iconTextOffset - context.pixelOptionTextRightPadding());
-            List<String> lines = pixelOptionLabelLines(context, index);
+            List<String> lines = layout(context).pixelLines(index);
             int textColor = context.pixelOptionTextColor(keyboardFocused, isHovered || active);
             renderPixelOptionCheckbox(context, graphics, index, left, drawTop, rowHeight);
             renderPixelOptionIcon(context, graphics, index, left, drawTop, rowHeight, checkboxTextOffset);
@@ -687,8 +668,95 @@ final class VillagerInteractionOptionList {
         return lines.isEmpty() ? List.of(text) : lines;
     }
 
+    static final class LayoutCache {
+        private long version = Long.MIN_VALUE;
+        private float[] offsets = new float[0];
+        private int[] heights = new int[0];
+        private List<List<String>> pixelLines = List.of();
+        private float contentHeight;
+
+        LayoutCache update(Context context) {
+            if (this.version == context.optionLayoutVersion()) {
+                return this;
+            }
+
+            int count = context.optionCount();
+            this.offsets = new float[count];
+            this.heights = new int[count];
+            List<List<String>> newPixelLines = context.usePixelOptionButtons()
+                    ? new java.util.ArrayList<>(count)
+                    : List.of();
+            int rawGap = context.optionStride() - context.optionHeight();
+            int gap = context.usePixelOptionButtons() ? rawGap : Math.max(0, rawGap);
+            float offset = 0.0F;
+            for (int index = 0; index < count; index++) {
+                this.offsets[index] = offset;
+                int height;
+                if (context.usePixelOptionButtons()) {
+                    List<String> lines = pixelOptionLabelLines(context, index);
+                    newPixelLines.add(lines);
+                    height = context.optionHeight()
+                            + Math.max(0, lines.size() - 1) * context.pixelOptionLineStep();
+                } else {
+                    height = context.optionHeight() + wrappedExtraHeight(context, index);
+                }
+                this.heights[index] = height;
+                offset += height;
+                if (index < count - 1) {
+                    offset += gap;
+                }
+            }
+            this.pixelLines = context.usePixelOptionButtons() ? List.copyOf(newPixelLines) : List.of();
+            this.contentHeight = offset;
+            this.version = context.optionLayoutVersion();
+            return this;
+        }
+
+        float offset(int index) {
+            return index >= 0 && index < this.offsets.length ? this.offsets[index] : 0.0F;
+        }
+
+        int height(int index) {
+            return index >= 0 && index < this.heights.length ? this.heights[index] : 0;
+        }
+
+        float contentHeight() {
+            return this.contentHeight;
+        }
+
+        List<String> pixelLines(int index) {
+            return index >= 0 && index < this.pixelLines.size() ? this.pixelLines.get(index) : List.of("");
+        }
+
+        int firstVisibleIndex(float scroll) {
+            int low = 0;
+            int high = this.offsets.length;
+            while (low < high) {
+                int middle = (low + high) >>> 1;
+                if (this.offsets[middle] + this.heights[middle] <= scroll) {
+                    low = middle + 1;
+                } else {
+                    high = middle;
+                }
+            }
+            return low;
+        }
+
+        int optionAt(float position) {
+            int index = firstVisibleIndex(position);
+            if (index >= this.offsets.length || position < this.offsets[index]) {
+                return -1;
+            }
+            return position < this.offsets[index] + this.heights[index] ? index : -1;
+        }
+    }
+
     interface Context {
         Font font();
+
+        long optionLayoutVersion();
+
+        LayoutCache optionLayout();
 
         int optionsLeft();
 
