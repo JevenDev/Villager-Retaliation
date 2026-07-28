@@ -66,6 +66,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 
 public final class LoggingWorker extends AbstractBlockWorker {
     private static final String NEXT_WORK_GAME_TIME_TAG = "NextWorkGameTime";
+    private static final String TREE_DEPOSIT_PENDING_TAG = "LoggingTreeDepositPending";
     private static final int MAX_TREE_LOGS_PER_HARVEST_TICK = 10;
     private static final int MAX_TREE_SCAN_POSITIONS_PER_WORK_TICK = 512;
     private static final int MAX_SAPLING_SCAN_POSITIONS_PER_WORK_TICK = 768;
@@ -175,6 +176,11 @@ public final class LoggingWorker extends AbstractBlockWorker {
             LoggingHarvestPlan.clear(context);
             LoggingWorkerState.clear(context);
             return waitForWorkAreaAssignment(level, villager, context);
+        }
+
+        WorkResult treeDepositResult = continueCompletedTreeDeposit(level, villager, context);
+        if (treeDepositResult != null) {
+            return treeDepositResult;
         }
 
         WorkResult pendingHarvestResult = continuePendingTreeHarvest(level, villager, context);
@@ -346,6 +352,7 @@ public final class LoggingWorker extends AbstractBlockWorker {
     @Override
     public void stop(ServerLevel level, Villager villager, HiredWorkContext context) {
         LoggingHarvestPlan.clear(context);
+        context.state().remove(TREE_DEPOSIT_PENDING_TAG);
         LoggingWorkerState.clear(context);
         super.stop(level, villager, context);
     }
@@ -751,8 +758,41 @@ public final class LoggingWorker extends AbstractBlockWorker {
                 : "interaction.work.logging.working_target";
     }
 
+    private WorkResult continueCompletedTreeDeposit(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context) {
+        if (!context.state().getBoolean(TREE_DEPOSIT_PENDING_TAG)) {
+            return null;
+        }
+        if (!context.autoDepositOutputs() || !context.hasOutputToDeposit()) {
+            context.state().remove(TREE_DEPOSIT_PENDING_TAG);
+            return null;
+        }
+
+        DepositResult depositResult = depositOutputsOrMoveToStorage(level, context, villager, 0.55D);
+        if (depositResult == DepositResult.MOVING) {
+            return WorkResult.progressed("interaction.work.logging.no_target_depositing");
+        }
+        if (depositResult == DepositResult.DEPOSITED) {
+            if (!context.hasOutputToDeposit()) {
+                context.state().remove(TREE_DEPOSIT_PENDING_TAG);
+            }
+            return WorkResult.progressed("interaction.work.logging.no_target_depositing");
+        }
+        if (depositResult == DepositResult.STORAGE_FULL) {
+            return WorkResult.idle(storageFullStatus(context));
+        }
+        if (depositResult == DepositResult.UNAVAILABLE) {
+            return WorkResult.idle("interaction.work.logging.no_target_depositing");
+        }
+        context.state().remove(TREE_DEPOSIT_PENDING_TAG);
+        return null;
+    }
+
     private static WorkResult completedTreeWork(HiredWorkContext context, int logsCut) {
         context.state().remove(NEXT_WORK_GAME_TIME_TAG);
+        context.state().putBoolean(TREE_DEPOSIT_PENDING_TAG, true);
         LoggingWorkerState.wakeTreeSearch(context);
         return WorkResult.progressedWithPractice(
                 "interaction.work.logging.completed",
