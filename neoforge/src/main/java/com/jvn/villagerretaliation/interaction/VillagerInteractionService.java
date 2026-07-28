@@ -369,8 +369,8 @@ public final class VillagerInteractionService {
         if (!canUseBuilderBlueprintService(player, level, villager)) {
             return InteractionResult.FAIL;
         }
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         if (BuilderTaskState.hasTask(state)) {
             sendVillagerNotice(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
             return InteractionResult.SUCCESS;
@@ -842,8 +842,8 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.brewing.choose_amount");
             return;
         }
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         if (BrewingWorker.hasOrder(state)) {
             sendVillagerNotice(player, villager, "interaction.work.brewing.already_brewing");
             return;
@@ -892,8 +892,8 @@ public final class VillagerInteractionService {
         if (!canUseBuilderBlueprintService(player, level, villager)) {
             return;
         }
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         if (action != HiredBuilderOrderPayload.Action.CANCEL && BuilderTaskState.hasTask(state)) {
             sendVillagerNotice(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
             return;
@@ -1758,11 +1758,11 @@ public final class VillagerInteractionService {
             case TOGGLE_HORIZONTAL_MINING_FLOOR_PATCHING -> HiredVillagerWorkService.toggleHorizontalMiningFloorPatching(player, level, villager);
             case CYCLE_CRAFTSMAN_MODE -> {
                 var mode = com.jvn.villagerretaliation.interaction.work.CraftsmanWorker
-                        .cycleMode(HiredVillagerWorkService.state(villager));
+                        .cycleMode(HiredWorkStateStore.state(villager));
                 sendVillagerNotice(player, villager, "interaction.work.craftsman.mode_changed", Map.of("mode", mode.label()));
             }
             case STOP_BREWING -> stopBrewingOrder(player, level, villager);
-            case STOP_BUILDER_BUILD -> cancelBuilderOrder(player, level, villager, HiredVillagerWorkService.state(villager));
+            case STOP_BUILDER_BUILD -> cancelBuilderOrder(player, level, villager, HiredWorkStateStore.state(villager));
             default -> HiredVillagerWorkService.configureRole(player, level, villager, configureRole);
         }
         return true;
@@ -1891,8 +1891,8 @@ public final class VillagerInteractionService {
             return;
         }
 
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         if (BuilderTaskState.hasTask(state)) {
             rejectConstructionBlueprintStart(player, villager, "interaction.work.builder.already_building", BuilderTaskState.replacements(state));
             return;
@@ -2037,8 +2037,8 @@ public final class VillagerInteractionService {
             sendVillagerNotice(player, villager, "interaction.work.brewing.requires_role_change");
             return;
         }
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         BrewingWorker.clearOrder(state);
         HiredVillagerWorkService.stopWork(level, villager, HiredVillagerRole.BREWING, "interaction.work.brewing.stopped");
         sendVillagerNotice(player, villager, "interaction.work.brewing.stopped");

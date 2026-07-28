@@ -66,7 +66,7 @@ public final class CourierRouteChunkLoader {
             return;
         }
 
-        CompoundTag state = HiredVillagerWorkService.state(villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
         HiredRoute route = HiredRoute.fromState(state);
         Set<ChunkPos> desired = desiredChunks(level, villager, state, route);
         if (desired.isEmpty()) {
@@ -164,8 +164,8 @@ public final class CourierRouteChunkLoader {
             return false;
         }
 
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         return state.getBoolean("Enabled") && HiredRoute.fromState(state).usableForNavigation();
     }
 

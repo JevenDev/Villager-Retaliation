@@ -37,8 +37,8 @@ public final class HiredVillagerFocusService {
             return;
         }
 
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         HiredVillagerRole role = activeWorkerRole(level, villager, state);
         if (role == null) {
             return;
@@ -57,8 +57,8 @@ public final class HiredVillagerFocusService {
             return false;
         }
 
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         HiredVillagerRole role = activeWorkerRole(level, villager, state);
         return role != null && shouldSuppressForActiveHiredJob(level, villager, state, role);
     }
@@ -67,8 +67,8 @@ public final class HiredVillagerFocusService {
         if (level == null || villager == null || villager.isBaby() || !villager.isAlive()) {
             return false;
         }
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         if (!state.getBoolean("Enabled")
                 || HiredVillagerContractService.isAwaitingAutoPayment(level, villager)) {
             return false;
@@ -127,8 +127,8 @@ public final class HiredVillagerFocusService {
         if (shouldSkipHiredFocus(level, villager)) {
             return false;
         }
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         HiredVillagerRole role = activeWorkerRole(level, villager, state);
         return role != null && shouldSuppressClaimedJobSiteBlockUse(level, villager, state, role);
     }
@@ -137,8 +137,8 @@ public final class HiredVillagerFocusService {
         if (shouldSkipHiredFocus(level, villager)) {
             return;
         }
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         HiredVillagerRole role = activeWorkerRole(level, villager, state);
         if (role != null) {
             suppressClaimedJobSiteBlockNavigation(level, villager, state, role);
@@ -336,8 +336,8 @@ public final class HiredVillagerFocusService {
         if (shouldSkipHiredFocus(level, villager)) {
             return false;
         }
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         HiredVillagerRole role = activeWorkerRole(level, villager, state);
         return role != null && shouldSuppressSocialDistractionsForHiredJob(level, villager, state, role);
     }

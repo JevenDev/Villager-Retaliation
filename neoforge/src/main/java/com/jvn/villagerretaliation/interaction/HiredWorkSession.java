@@ -24,8 +24,8 @@ public record HiredWorkSession(
     }
 
     public static HiredWorkSession create(ServerLevel level, Villager villager, HiredVillagerRole role) {
-        CompoundTag state = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(state, villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(state, villager);
         HiredVillagerRole safeRole = role == null ? HiredVillagerRoles.defaultRole(level, villager) : role;
         HiredRoleWorker worker = HiredRoleWorkerRegistry.get(safeRole);
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
