@@ -164,6 +164,10 @@ final class LoggingHarvestPlan {
         putPositions(context.state(), LOGS_TAG, positions);
     }
 
+    static void replaceLeaves(HiredWorkContext context, long[] positions) {
+        putPositions(context.state(), LEAVES_TAG, positions);
+    }
+
     static void removeLeaf(HiredWorkContext context, BlockPos pos) {
         removePosition(context.state(), LEAVES_TAG, pos);
     }
