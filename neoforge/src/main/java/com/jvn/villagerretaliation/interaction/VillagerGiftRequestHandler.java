@@ -39,7 +39,7 @@ public final class VillagerGiftRequestHandler {
     private VillagerGiftRequestHandler() {
     }
 
-    public static void handle(ServerPlayer player, int entityId, int inventorySlot) {
+    public static void handle(ServerPlayer player, int entityId, int inventorySlot, int amount) {
         if (!ServerboundRequestLimiter.tryAcquire(
                 player,
                 VillagerGiftRequestPayload.TYPE.id(),
@@ -73,12 +73,18 @@ public final class VillagerGiftRequestHandler {
             return;
         }
 
+        if (amount < 1 || amount > selectedStack.getCount()) {
+            VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_invalid");
+            return;
+        }
+
         ServerLevel level = target.level();
         String locale = VillagerLocale.locale(player);
         VillagerProfession profession = villager.getVillagerData().getProfession();
-        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, selectedStack);
+        ItemStack offeredStack = selectedStack.copyWithCount(amount);
+        VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, offeredStack);
         boolean rejected = rejectsGift(giftPreference.reaction());
-        if (!rejected && !VillagerInventoryAccess.canAddItems(villager, List.of(selectedStack.copy()))) {
+        if (!rejected && !VillagerInventoryAccess.canAddItems(villager, List.of(offeredStack))) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_inventory_full");
             return;
         }
@@ -88,6 +94,7 @@ public final class VillagerGiftRequestHandler {
         ItemStack giftedStack = takeOfferedStack(
                 player.getInventory(),
                 inventorySlot,
+                amount,
                 giftPreference.reaction());
         VillagerTakenItemTracker.clear(giftedStack);
         if (rejected) {
@@ -155,12 +162,20 @@ public final class VillagerGiftRequestHandler {
     static ItemStack takeOfferedStack(
             Inventory inventory,
             int inventorySlot,
+            int amount,
             VillagerGiftPreferences.GiftReaction reaction) {
         ItemStack selectedStack = inventory.getItem(inventorySlot);
         if (rejectsGift(reaction)) {
-            return selectedStack.copy();
+            return selectedStack.copyWithCount(amount);
         }
-        return inventory.removeItem(inventorySlot, selectedStack.getCount());
+        return inventory.removeItem(inventorySlot, amount);
+    }
+
+    static ItemStack takeOfferedStack(
+            Inventory inventory,
+            int inventorySlot,
+            VillagerGiftPreferences.GiftReaction reaction) {
+        return takeOfferedStack(inventory, inventorySlot, inventory.getItem(inventorySlot).getCount(), reaction);
     }
 
     private static boolean rejectsGift(VillagerGiftPreferences.GiftReaction reaction) {

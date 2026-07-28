@@ -4,7 +4,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record VillagerGiftRequestPayload(int entityId, int inventorySlot) implements CustomPacketPayload {
+public record VillagerGiftRequestPayload(int entityId, int inventorySlot, int amount) implements CustomPacketPayload {
     public static final Type<VillagerGiftRequestPayload> TYPE = VillagerPayloads.type("villager_gift_request");
     public static final StreamCodec<RegistryFriendlyByteBuf, VillagerGiftRequestPayload> STREAM_CODEC =
             VillagerPayloads.codec(VillagerGiftRequestPayload::encode, VillagerGiftRequestPayload::decode);
@@ -12,10 +12,11 @@ public record VillagerGiftRequestPayload(int entityId, int inventorySlot) implem
     private static void encode(RegistryFriendlyByteBuf buffer, VillagerGiftRequestPayload payload) {
         buffer.writeVarInt(payload.entityId());
         buffer.writeVarInt(payload.inventorySlot());
+        buffer.writeVarInt(payload.amount());
     }
 
     private static VillagerGiftRequestPayload decode(RegistryFriendlyByteBuf buffer) {
-        return new VillagerGiftRequestPayload(buffer.readVarInt(), buffer.readVarInt());
+        return new VillagerGiftRequestPayload(buffer.readVarInt(), buffer.readVarInt(), buffer.readVarInt());
     }
 
     @Override

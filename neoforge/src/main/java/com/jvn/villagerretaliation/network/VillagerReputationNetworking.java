@@ -386,7 +386,8 @@ public final class VillagerReputationNetworking {
                         ToucanNetwork.withServerPlayer(context, player -> VillagerInteractionService.handleGiftRequest(
                             player,
                             payload.entityId(),
-                            payload.inventorySlot()
+                            payload.inventorySlot(),
+                            payload.amount()
                     )))
         );
         network.playToServer(

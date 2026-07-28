@@ -89,6 +89,25 @@ public final class VillagerInteractionRoutingGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void partialGiftOffersTransferOnlyTheChosenAmount(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.getInventory().setItem(0, new ItemStack(Items.APPLE, 16));
+
+        ItemStack acceptedOffer = VillagerGiftRequestHandler.takeOfferedStack(
+                player.getInventory(),
+                0,
+                5,
+                VillagerGiftPreferences.GiftReaction.LIKED);
+
+        helper.assertTrue(acceptedOffer.is(Items.APPLE) && acceptedOffer.getCount() == 5,
+                "the accepted gift should contain exactly the selected amount");
+        helper.assertTrue(player.getInventory().getItem(0).is(Items.APPLE)
+                        && player.getInventory().getItem(0).getCount() == 11,
+                "the unselected remainder should stay in the player's inventory");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void giftKnowledgeTooltipUsesItemDisplayCapitalization(GameTestHelper helper) {
         helper.assertValueEqual(
                 VillagerGiftKnowledgeService.displayItemName(Items.EMERALD),
