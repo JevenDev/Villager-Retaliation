@@ -145,6 +145,7 @@ public final class VillagerRetaliationConfig {
     public static final ConfigValue<Integer> HIRED_CONTRACT_FEARED_COST_MODIFIER = bind("balance.hiredContractFearedCostModifier", Integer.class);
     public static final ConfigValue<Integer> HIRED_CONTRACT_EARLY_END_REFUND_PERCENT = bind("balance.hiredContractEarlyEndRefundPercent", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_TICK_INTERVAL = bind("balance.hiredWorkTickInterval", Integer.class);
+    public static final ConfigValue<Integer> HIRED_WORK_DECISION_BUDGET = bind("balance.hiredWorkDecisionBudget", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_NOTICE_COOLDOWN_SECONDS = bind("balance.hiredWorkNoticeCooldownSeconds", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_DEFAULT_RADIUS = bind("balance.hiredWorkDefaultRadius", Integer.class);
     public static final ConfigValue<Integer> HIRED_WORK_MAX_RADIUS = bind("balance.hiredWorkMaxRadius", Integer.class);

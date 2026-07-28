@@ -17,6 +17,7 @@ public final class HireContractLifecycle {
         if (!contract.oneOffBuilderJob()) lockProfession(villager, contract);
         HireContractStore.save(villager, contract);
         HireContractAssignmentAdapter.synchronize(level, villager);
+        HiredWorkSession.invalidate(villager);
         HiredVillagerContractService.takeOverJobInventoryOverflow(villager);
         HiredJobInventory.getJobInventory(villager).markRemovableItemsForContract(contract.id());
         HiredVillagerIndex.update(level, villager);
