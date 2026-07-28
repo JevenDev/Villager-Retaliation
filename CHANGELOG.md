@@ -1,4 +1,5 @@
 # Changelog
+- Fixed recent FPS and integrated-server frame-time regressions by caching output item-frame queries until placement, interaction, removal, load, or unload invalidates them and reusing parsed clipboard preview owner labels instead of rebuilding them every frame.
 - Persisted assigned output item-frame filters and amount limits so unloaded frame entities retain their last known routing and backpressure configuration; loaded frames refresh the snapshot automatically.
 - Hardened multiblock assigned storage so either half of a double chest shares assignment lookup, removal, route tethering, visit tracking, cooldown clearing, and courier pickup without relinking.
 - Fixed severe integrated-server stutter from output backpressure checks repeatedly rescanning assigned containers and nearby item frames for every courier inventory slot.

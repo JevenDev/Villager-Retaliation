@@ -102,6 +102,7 @@ public final class ClipboardStorageOutlineRenderer {
     private static final double PLAYER_ROUTE_HEIGHT_ABOVE_SURFACE = 0.08D;
     private static final double PLAYER_ROUTE_SEGMENT_OVERLAP = 0.012D;
     private static final int ROUTE_REACH_SEGMENTS = 64;
+    private static final int MAX_OWNER_NAME_LAYOUT_CACHE_ENTRIES = 1024;
     private static final List<OutlinedStoragePosition> ASSIGNED_POSITIONS = new ArrayList<>();
     private static final List<WorkAreaPosition> WORK_AREAS = new ArrayList<>();
     private static final List<RoutePosition> ROUTES = new ArrayList<>();
@@ -109,6 +110,7 @@ public final class ClipboardStorageOutlineRenderer {
     private static final List<WorkAreaPosition> DEBUG_WORK_AREAS = new ArrayList<>();
     private static final List<RoutePosition> DEBUG_ROUTES = new ArrayList<>();
     private static final Map<RouteGuideCacheKey, CachedRouteGuide> ROUTE_GUIDE_CACHE = new HashMap<>();
+    private static final Map<String, OwnerNameLayout> OWNER_NAME_LAYOUT_CACHE = new HashMap<>();
     private static RoutePreview retainedRoutePreview;
     private static RoutePreviewKey retainedRoutePreviewKey;
     private static RoutePosition synchronizedRouteDraft;
@@ -284,6 +286,7 @@ public final class ClipboardStorageOutlineRenderer {
             DEBUG_WORK_AREAS.clear();
             DEBUG_ROUTES.clear();
             ROUTE_GUIDE_CACHE.clear();
+            OWNER_NAME_LAYOUT_CACHE.clear();
             clearRetainedRoutePreview();
             synchronizedRouteDraft = null;
             routeDraftSynchronized = false;
@@ -1243,20 +1246,30 @@ public final class ClipboardStorageOutlineRenderer {
         if (ownerNames == null || ownerNames.isBlank()) {
             return List.of();
         }
+        OwnerNameLayout cached = OWNER_NAME_LAYOUT_CACHE.get(ownerNames);
+        if (cached == null) {
+            if (OWNER_NAME_LAYOUT_CACHE.size() >= MAX_OWNER_NAME_LAYOUT_CACHE_ENTRIES) {
+                OWNER_NAME_LAYOUT_CACHE.clear();
+            }
+            cached = createOwnerNameLayout(ownerNames);
+            OWNER_NAME_LAYOUT_CACHE.put(ownerNames, cached);
+        }
+        return expanded ? cached.expandedLines() : cached.collapsedLines();
+    }
+
+    private static OwnerNameLayout createOwnerNameLayout(String ownerNames) {
         List<String> names = List.of(ownerNames.split(",\\s*"));
         if (names.size() <= OWNER_NAMES_PER_LINE) {
-            return List.of(String.join(", ", names));
-        }
-        if (!expanded) {
-            return List.of(
-                    String.join(", ", names.subList(0, OWNER_NAMES_PER_LINE))
-                            + ", ... +" + (names.size() - OWNER_NAMES_PER_LINE) + " More");
+            List<String> singleLine = List.of(String.join(", ", names));
+            return new OwnerNameLayout(singleLine, singleLine);
         }
         List<String> lines = new ArrayList<>();
         for (int start = 0; start < names.size(); start += OWNER_NAMES_PER_LINE) {
             lines.add(String.join(", ", names.subList(start, Math.min(start + OWNER_NAMES_PER_LINE, names.size()))));
         }
-        return lines;
+        List<String> collapsed = List.of(
+                lines.getFirst() + ", ... +" + (names.size() - OWNER_NAMES_PER_LINE) + " More");
+        return new OwnerNameLayout(collapsed, List.copyOf(lines));
     }
 
     private static boolean isVisible(RenderLevelStageEvent event, AABB bounds) {
@@ -2430,6 +2443,9 @@ public final class ClipboardStorageOutlineRenderer {
     }
 
     private record CachedRouteGuide(long validUntilGameTime, List<Vec3> points) {
+    }
+
+    private record OwnerNameLayout(List<String> collapsedLines, List<String> expandedLines) {
     }
 
     private record ResolvedWorkforceMarker(WorkforceMarker marker, AABB box, Vec3 labelPos) {

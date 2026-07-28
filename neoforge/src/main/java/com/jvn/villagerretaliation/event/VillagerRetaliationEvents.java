@@ -91,6 +91,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.npc.Villager;
@@ -436,6 +437,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
+        if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
+            AssignedStorageService.invalidateOutputFilterCache(level, frame);
+        }
         if (event.getEntity() instanceof LivingEntity livingEntity) {
             VillagerCombatAttributeCompat.ensureCombatAttributes(livingEntity);
         }
@@ -479,6 +483,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        if (event.getTarget() instanceof ItemFrame frame && frame.level() instanceof ServerLevel level) {
+            AssignedStorageService.invalidateOutputFilterCache(level, frame);
+        }
         if (com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.handleEntityInteract(event)) {
             return;
         }
@@ -848,6 +855,9 @@ public final class VillagerRetaliationEvents {
     }
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
+        if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
+            AssignedStorageService.invalidateOutputFilterCache(level, frame);
+        }
         VillageCombatAuthorizationService.clearFor(event.getEntity());
         Entity.RemovalReason removalReason = event.getEntity().getRemovalReason();
         if (!event.getLevel().isClientSide()
