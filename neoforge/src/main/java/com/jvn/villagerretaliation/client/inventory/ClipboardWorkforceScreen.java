@@ -30,7 +30,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
-import net.minecraft.world.level.Level;
 import net.neoforged.neoforge.network.PacketDistributor;
 import org.lwjgl.glfw.GLFW;
 
@@ -2241,187 +2240,19 @@ public final class ClipboardWorkforceScreen extends Screen {
         super.removed();
     }
 
-    private void renderOverview(GuiGraphics graphics, double mouseX, double mouseY) {
-        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.title"), TITLE_Y, TEXT);
-        int y = CONTENT_TOP + 2;
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.hired",
-                this.snapshot.totalHired(),
-                this.snapshot.maxHired() < 0 ? Component.translatable("villagerretaliation.gui.clipboard_workforce.unknown").getString() : this.snapshot.maxHired()), CONTENT_LEFT, y, TEXT);
-        y += 12;
-        drawMetricPair(graphics, y,
-                Component.translatable("villagerretaliation.gui.clipboard_workforce.working", this.snapshot.workingCount()),
-                Component.translatable("villagerretaliation.gui.clipboard_workforce.idle", this.snapshot.idleCount()));
-        y += 12;
-        if (contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10)) {
-            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10, HOVER_FILL);
-        }
-        drawLine(graphics, workforceStatusSummary("villagerretaliation.gui.clipboard_workforce"), CONTENT_LEFT, y, workforceStatusColor());
-        this.rowActions.add(new RowAction(RowKind.WARNINGS, null, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, y + 10));
-        y += 14;
-        drawSmallHeader(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.jobs"), y);
-        y += HEADER_ROW_START_OFFSET;
-        int rowIndex = 0;
-        for (OverviewRow row : overviewRows()) {
-            boolean selected = this.showOverviewSelection && this.selectedOverviewRow == rowIndex;
-            y = drawNavigationRow(graphics, mouseX, mouseY, y, selected, row.label(), row.value(), row.kind(), row.role(), row.muted());
-            rowIndex++;
-        }
-        renderOverviewPageButton(graphics, mouseX, mouseY);
-    }
 
-    private void renderJobPage(GuiGraphics graphics, double mouseX, double mouseY) {
-        renderBackRow(graphics, mouseX, mouseY);
-        drawCentered(graphics, roleName(this.selectedRole), TITLE_Y, TEXT);
-        List<WorkerRow> workers = workersForSelectedRole();
-        if (workers.isEmpty()) {
-            int y = CONTENT_TOP + 22;
-            drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.no_workers"), CONTENT_LEFT, y, MUTED);
-            drawWrapped(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.controls_coming"), y + 12);
-            return;
-        }
-        int maxScroll = Math.max(0, workers.size() - visibleWorkerRows());
-        this.workerScroll = Mth.clamp(this.workerScroll, 0, maxScroll);
-        int y = CONTENT_TOP + JOB_PAGE_ROW_START_OFFSET;
-        int end = Math.min(workers.size(), this.workerScroll + visibleWorkerRows());
-        for (int index = this.workerScroll; index < end; index++) {
-            WorkerRow worker = workers.get(index);
-            renderWorkerRow(graphics, mouseX, mouseY, worker, y);
-            y += WORKER_ROW_HEIGHT;
-        }
-        if (maxScroll > 0) {
-            drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.page_count", this.workerScroll + 1, maxScroll + 1), CONTENT_BOTTOM - 4, MUTED);
-        }
-    }
 
-    private void renderWarningsPage(GuiGraphics graphics, double mouseX, double mouseY) {
-        renderBackRow(graphics, mouseX, mouseY);
-        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.warning_header"), TITLE_Y, TEXT);
-        if (this.snapshot.warnings().isEmpty()) {
-            drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.no_warnings"), CONTENT_LEFT, CONTENT_TOP + 22, MUTED);
-            return;
-        }
 
-        int maxScroll = Math.max(0, this.snapshot.warnings().size() - visibleWarningRows());
-        this.workerScroll = Mth.clamp(this.workerScroll, 0, maxScroll);
-        int y = CONTENT_TOP + 16;
-        int end = Math.min(this.snapshot.warnings().size(), this.workerScroll + visibleWarningRows());
-        for (int index = this.workerScroll; index < end; index++) {
-            WarningSummary warning = this.snapshot.warnings().get(index);
-            Component text = warningText(warning);
-            int rowHeight = warningRowHeight(text);
-            int rowBottom = y + rowHeight - 2;
-            if (rowBottom > CONTENT_BOTTOM) {
-                return;
-            }
-            boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom);
-            if (hovered) {
-                graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom, HOVER_FILL);
-            }
-            int color = warningColor(warning.type());
-            drawWrappedLines(graphics, text, CONTENT_LEFT, y, warningTextRight(), color);
-            drawRight(graphics, Component.literal(">"), CONTENT_RIGHT, y, color);
-            this.rowActions.add(new RowAction(RowKind.JOB, warning.role(), CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom));
-            y += rowHeight;
-        }
-        if (maxScroll > 0) {
-            drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.page_count", this.workerScroll + 1, maxScroll + 1), CONTENT_BOTTOM - 4, MUTED);
-        }
-    }
 
-    private void renderWorkerRow(GuiGraphics graphics, double mouseX, double mouseY, WorkerRow worker, int y) {
-        int rowBottom = Math.max(y + WORKER_ROW_HEIGHT - WORKER_ROW_BOTTOM_INSET, workerSummaryBottom(worker, y));
-        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom);
-        if (hovered) {
-            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom, HOVER_FILL);
-        }
-        renderWorkerSummary(graphics, worker, y);
-        drawRight(graphics, Component.literal(">"), CONTENT_RIGHT, y, mutedForWarning(worker));
-        this.rowActions.add(RowAction.worker(worker, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom));
-    }
 
-    private int renderWorkerSummary(GuiGraphics graphics, WorkerRow worker, int y) {
-        drawLine(graphics, Component.literal(worker.displayName()), CONTENT_LEFT, y, CONTENT_RIGHT - 10, TEXT);
-        if (hasWarning(worker)) {
-            drawLine(graphics, Component.literal("!"), CONTENT_RIGHT - 6, y, mutedForWarning(worker));
-        }
-        int lineY = y + 10;
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_status", statusName(worker.status())), CONTENT_LEFT, lineY, mutedForWarning(worker));
-        lineY += 10;
-        if (!worker.diagnostic().isBlank()) {
-            lineY = drawWrappedLines(
-                    graphics,
-                    Component.translatable(
-                            "villagerretaliation.gui.clipboard_workforce.worker_issue",
-                            Component.literal(worker.diagnostic())),
-                    CONTENT_LEFT,
-                    lineY,
-                    mutedForWarning(worker));
-        }
-        Component area = workerAreaText(worker);
-        lineY = drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area", area), CONTENT_LEFT, lineY, worker.noWorkArea() ? WARNING : MUTED);
-        if (!worker.target().isBlank()) {
-            lineY = drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_target", Component.literal(worker.target())), CONTENT_LEFT, lineY, MUTED);
-        }
-        if (!worker.workMode().isBlank()) {
-            lineY = drawWrappedLines(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_mode", Component.literal(worker.workMode())), CONTENT_LEFT, lineY, MUTED);
-        }
-        return drawWrappedLines(graphics, workerStorageText(worker), CONTENT_LEFT, lineY + 1, worker.noStorage() ? WARNING : MUTED);
-    }
 
-    private int workerSummaryBottom(WorkerRow worker, int y) {
-        int lineY = y + 20;
-        if (!worker.diagnostic().isBlank()) {
-            lineY += wrappedLineCount(Component.translatable(
-                    "villagerretaliation.gui.clipboard_workforce.worker_issue",
-                    Component.literal(worker.diagnostic()))) * WRAPPED_LINE_STEP;
-        }
-        lineY += wrappedLineCount(Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area", workerAreaText(worker))) * WRAPPED_LINE_STEP;
-        if (!worker.target().isBlank()) {
-            lineY += wrappedLineCount(Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_target", Component.literal(worker.target()))) * WRAPPED_LINE_STEP;
-        }
-        if (!worker.workMode().isBlank()) {
-            lineY += wrappedLineCount(Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_mode", Component.literal(worker.workMode()))) * WRAPPED_LINE_STEP;
-        }
-        return lineY + 1 + wrappedLineCount(workerStorageText(worker)) * WRAPPED_LINE_STEP;
-    }
 
-    private int wrappedLineCount(Component text) {
-        return Math.max(1, this.font.split(text, CONTENT_RIGHT - CONTENT_LEFT).size());
-    }
-
-    private Component workerAreaText(WorkerRow worker) {
-        if (routeAssigned(worker)) {
-            return Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_route_assigned",
-                    worker.workAreaCenter());
-        }
-        return worker.hasWorkArea()
-                ? Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_assigned",
-                        workerAreaSourceText(worker),
-                        worker.workAreaCenter(),
-                        worker.horizontalRadius(),
-                        worker.verticalRadius())
-                : Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_missing");
-    }
 
     private boolean routeAssigned(WorkerRow worker) {
         return worker != null && "route".equals(worker.areaStatus());
     }
 
-    private Component workerAreaSourceText(WorkerRow worker) {
-        String source = worker.areaStatus() == null || worker.areaStatus().isBlank()
-                ? "assigned_area"
-                : worker.areaStatus();
-        return Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_area_source." + source);
-    }
 
-    private Component workerStorageText(WorkerRow worker) {
-        return Component.translatable("villagerretaliation.gui.clipboard_workforce.worker_storage",
-                worker.storageAssigned()
-                        ? Component.translatable("villagerretaliation.gui.clipboard_workforce.assigned")
-                        : Component.translatable("villagerretaliation.gui.clipboard_workforce.missing"),
-                worker.storageCount(),
-                worker.dailyWage());
-    }
 
     private void renderJobSitePage(GuiGraphics graphics, double mouseX, double mouseY) {
         Component title = Component.translatable("villagerretaliation.gui.clipboard_workforce.job_site");
@@ -2617,59 +2448,9 @@ public final class ClipboardWorkforceScreen extends Screen {
         }
     }
 
-    private void renderStoragePage(GuiGraphics graphics, double mouseX, double mouseY) {
-        renderBackRow(graphics, mouseX, mouseY);
-        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.storage"), TITLE_Y, TEXT);
-        int missing = (int) this.snapshot.workers().stream().filter(WorkerRow::noStorage).count();
-        int y = CONTENT_TOP + 18;
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.assigned_containers", this.snapshot.assignedStorageCount()), CONTENT_LEFT, y, TEXT);
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.missing_storage_workers", missing), CONTENT_LEFT, y + 14, warningColor(missing));
-        drawWrapped(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.storage_placeholder"), y + 34);
-    }
 
-    private void renderPaymentPage(GuiGraphics graphics, double mouseX, double mouseY) {
-        renderBackRow(graphics, mouseX, mouseY);
-        drawCentered(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.payment"), TITLE_Y, TEXT);
-        int y = CONTENT_TOP + 18;
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.daily_wages", this.snapshot.dailyWages()), CONTENT_LEFT, y, TEXT);
-        drawLine(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.payment_containers", this.snapshot.paymentContainerCount()), CONTENT_LEFT, y + 14, TEXT);
-        drawWrapped(graphics, Component.translatable("villagerretaliation.gui.clipboard_workforce.payment_placeholder"), y + 36);
-    }
 
-    private int drawNavigationRow(
-            GuiGraphics graphics,
-            double mouseX,
-            double mouseY,
-            int y,
-            boolean selected,
-            Component label,
-            String value,
-            RowKind kind,
-            HiredVillagerRole role,
-            boolean muted) {
-        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 1, CONTENT_RIGHT + 1, y + ROW_OPTION_HEIGHT - 1);
-        int rowBottom = y + ROW_OPTION_HEIGHT - 3;
-        if (selected || hovered) {
-            graphics.fill(CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom, selected ? SELECTED_FILL : HOVER_FILL);
-        }
-        drawLine(graphics, Component.literal(selected ? ">" : ""), CONTENT_LEFT - 8, y, TEXT);
-        drawRight(graphics, Component.literal(value), CONTENT_RIGHT, y, muted ? MUTED : TEXT);
-        drawLine(graphics, label, CONTENT_LEFT, y, CONTENT_RIGHT - this.font.width(value) - 8, muted ? MUTED : TEXT);
-        this.rowActions.add(new RowAction(kind, role, CONTENT_LEFT - 2, y - 2, CONTENT_RIGHT + 1, rowBottom));
-        return y + ROW_HEIGHT;
-    }
 
-    private void renderBackRow(GuiGraphics graphics, double mouseX, double mouseY) {
-        Component back = Component.translatable("villagerretaliation.gui.clipboard_workforce.back");
-        int y = CONTENT_TOP + 2;
-        int right = CONTENT_LEFT + Math.min(46, this.font.width(back) + 4);
-        boolean hovered = contains(mouseX, mouseY, CONTENT_LEFT - 2, y - 2, right, y + 9);
-        if (hovered) {
-            graphics.fill(CONTENT_LEFT - 2, y - 2, right, y + 9, HOVER_FILL);
-        }
-        drawLine(graphics, back, CONTENT_LEFT, y, TEXT);
-        this.rowActions.add(new RowAction(RowKind.BACK, null, CONTENT_LEFT - 2, y - 2, right, y + 9));
-    }
 
     private int drawJobSiteActionRow(
             GuiGraphics graphics,
@@ -2789,43 +2570,6 @@ public final class ClipboardWorkforceScreen extends Screen {
                         .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
     }
 
-    private void renderOverviewPageButton(GuiGraphics graphics, double mouseX, double mouseY) {
-        boolean hovered = contains(mouseX, mouseY, PAGE_BUTTON_LEFT, PAGE_BUTTON_TOP, PAGE_BUTTON_LEFT + PAGE_BUTTON_WIDTH, PAGE_BUTTON_TOP + PAGE_BUTTON_HEIGHT);
-        ResourceLocation sprite = this.overviewPage == 0
-                ? (hovered ? PAGE_FORWARD_HIGHLIGHTED : PAGE_FORWARD)
-                : (hovered ? PAGE_BACKWARD_HIGHLIGHTED : PAGE_BACKWARD);
-        graphics.blitSprite(sprite, PAGE_BUTTON_LEFT, PAGE_BUTTON_TOP, PAGE_BUTTON_WIDTH, PAGE_BUTTON_HEIGHT);
-        this.rowActions.add(new RowAction(
-                RowKind.PAGE_TURN,
-                null,
-                PAGE_BUTTON_LEFT,
-                PAGE_BUTTON_TOP,
-                PAGE_BUTTON_LEFT + PAGE_BUTTON_WIDTH,
-                PAGE_BUTTON_TOP + PAGE_BUTTON_HEIGHT));
-    }
-
-    private void drawMetricPair(GuiGraphics graphics, int y, Component left, Component right) {
-        int rightWidth = this.font.width(right);
-        drawLine(graphics, left, CONTENT_LEFT, y, CONTENT_RIGHT - rightWidth - 4, TEXT);
-        drawRight(graphics, right, CONTENT_RIGHT, y, TEXT);
-    }
-
-    private void drawSmallHeader(GuiGraphics graphics, Component text, int y) {
-        drawLine(graphics, text, CONTENT_LEFT, y, MUTED);
-        graphics.fill(CONTENT_LEFT, y + HEADER_DIVIDER_Y, CONTENT_RIGHT, y + HEADER_DIVIDER_Y + 1, 0x5A7A442F);
-    }
-
-    private void drawWrapped(GuiGraphics graphics, Component text, int y) {
-        int lineY = y;
-        for (net.minecraft.util.FormattedCharSequence line : this.font.split(text, CONTENT_RIGHT - CONTENT_LEFT)) {
-            graphics.drawString(this.font, line, CONTENT_LEFT, lineY, MUTED, false);
-            lineY += WRAPPED_LINE_STEP;
-            if (lineY > CONTENT_BOTTOM - 8) {
-                return;
-            }
-        }
-    }
-
     private int drawWrappedLines(GuiGraphics graphics, Component text, int x, int y, int color) {
         return drawWrappedLines(graphics, text, x, y, CONTENT_RIGHT, color);
     }
@@ -2854,16 +2598,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         graphics.drawString(this.font, fit(text.getString(), width), x, y, color, false);
     }
 
-    private void drawRight(GuiGraphics graphics, Component text, int right, int y, int color) {
-        String line = fit(text.getString(), right - CONTENT_LEFT);
-        graphics.drawString(this.font, line, right - this.font.width(line), y, color, false);
-    }
 
-    private void drawCentered(GuiGraphics graphics, Component text, int y, int color) {
-        int width = CONTENT_RIGHT - CONTENT_LEFT;
-        String line = fit(text.getString(), width);
-        graphics.drawString(this.font, line, CONTENT_LEFT + (width - this.font.width(line)) / 2, y, color, false);
-    }
 
     private List<WorkerRow> workersForSelectedRole() {
         return this.snapshot.workers().stream()
@@ -2872,13 +2607,7 @@ public final class ClipboardWorkforceScreen extends Screen {
                 .toList();
     }
 
-    private int visibleWorkerRows() {
-        return Math.max(1, (CONTENT_BOTTOM - (CONTENT_TOP + 12)) / WORKER_ROW_HEIGHT);
-    }
 
-    private int visibleWarningRows() {
-        return Math.max(1, (CONTENT_BOTTOM - (CONTENT_TOP + 16)) / ROW_HEIGHT);
-    }
 
     private void openOverview() {
         this.page = Page.OVERVIEW;
@@ -2956,82 +2685,10 @@ public final class ClipboardWorkforceScreen extends Screen {
         PacketDistributor.sendToServer(new ClipboardWorkAreaActionPayload(worker.villagerId(), action, hasShiftDown() ? 5 : 1));
     }
 
-    private void moveOverviewSelection(int direction) {
-        if (this.page != Page.OVERVIEW) {
-            return;
-        }
-        int rowCount = overviewRows().size();
-        this.selectedOverviewRow = Mth.clamp(this.selectedOverviewRow + direction, 0, Math.max(0, rowCount - 1));
-        this.showOverviewSelection = true;
-    }
 
-    private void activateOverviewSelection() {
-        if (this.page != Page.OVERVIEW) {
-            return;
-        }
-        List<OverviewRow> rows = overviewRows();
-        if (this.selectedOverviewRow < 0 || this.selectedOverviewRow >= rows.size()) {
-            return;
-        }
-        if (!this.showOverviewSelection) {
-            this.showOverviewSelection = true;
-            return;
-        }
-        OverviewRow row = rows.get(this.selectedOverviewRow);
-        this.showOverviewSelection = false;
-        switch (row.kind()) {
-            case JOB -> openJob(row.role());
-            case WARNINGS -> this.page = Page.WARNINGS;
-            case STORAGE -> this.page = Page.STORAGE;
-            case PAYMENT -> this.page = Page.PAYMENT;
-            default -> {
-            }
-        }
-    }
 
-    private void turnOverviewPage() {
-        this.overviewPage = this.overviewPage == 0 ? 1 : 0;
-        this.selectedOverviewRow = 0;
-        this.showOverviewSelection = false;
-    }
 
-    private List<OverviewRow> overviewRows() {
-        List<OverviewRow> rows = new ArrayList<>();
-        for (HiredVillagerRole role : overviewPageRoles()) {
-            int count = jobCount(role);
-            rows.add(new OverviewRow(
-                    RowKind.JOB,
-                    role,
-                    roleName(role),
-                    Integer.toString(count),
-                    count == 0));
-        }
-        if (this.overviewPage == 1) {
-            rows.add(new OverviewRow(
-                    RowKind.WARNINGS,
-                    null,
-                    Component.translatable("villagerretaliation.gui.clipboard_workforce.warning_header"),
-                    Integer.toString(this.snapshot.warningCount()),
-                    this.snapshot.warningCount() == 0));
-            rows.add(new OverviewRow(
-                    RowKind.STORAGE,
-                    null,
-                    Component.translatable("villagerretaliation.gui.clipboard_workforce.storage"),
-                    Integer.toString(this.snapshot.assignedStorageCount()),
-                    false));
-            rows.add(new OverviewRow(
-                    RowKind.PAYMENT,
-                    null,
-                    Component.translatable("villagerretaliation.gui.clipboard_workforce.payment"),
-                    Integer.toString(this.snapshot.paymentContainerCount()),
-                    false));
-        }
-        return rows;
-    }
 
-    private List<HiredVillagerRole> overviewPageRoles() {
-        return this.overviewPage == 0 ? FIRST_OVERVIEW_PAGE_ROLES : SECOND_OVERVIEW_PAGE_ROLES;
-    }
 
     private int jobCount(HiredVillagerRole role) {
         for (ClipboardWorkforceSnapshot.JobSummary job : this.snapshot.jobs()) {
@@ -3097,9 +2754,6 @@ public final class ClipboardWorkforceScreen extends Screen {
         return count > 0 ? WARNING : TEXT;
     }
 
-    private int mutedForWarning(WorkerRow worker) {
-        return hasActionableWarning(worker) ? WARNING : hasWaitingNotice(worker) ? NOTICE : MUTED;
-    }
 
     private boolean hasActionableWarning(WorkerRow worker) {
         return worker.inventoryFull() || worker.unpaid() || worker.noStorage() || worker.noWorkArea()
@@ -3116,15 +2770,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         return hasActionableWarning(worker) || hasWaitingNotice(worker);
     }
 
-    private int warningTextRight() {
-        return CONTENT_RIGHT - WARNING_ARROW_GAP;
-    }
 
-    private int warningRowHeight(Component text) {
-        int width = warningTextRight() - CONTENT_LEFT;
-        int lines = Math.max(1, this.font.split(text, width).size());
-        return Math.max(ROW_HEIGHT, lines * WRAPPED_LINE_STEP + 1);
-    }
 
     private String fit(String text, int width) {
         if (this.font.width(text) <= width) {
@@ -3519,8 +3165,6 @@ public final class ClipboardWorkforceScreen extends Screen {
         }
     }
 
-    private record OverviewRow(RowKind kind, HiredVillagerRole role, Component label, String value, boolean muted) {
-    }
 
     private record JobListRow(HiredVillagerRole role, Component label, int count) {
     }

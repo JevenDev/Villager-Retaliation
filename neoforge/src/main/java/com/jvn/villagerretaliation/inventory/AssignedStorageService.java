@@ -584,13 +584,6 @@ public final class AssignedStorageService {
                 : CourierTransferState.NO_OUTPUT_ROUTE;
     }
 
-    private static boolean courierOutputAccepts(
-            ServerLevel level,
-            VillagerInventoryOverflowService.ContainerCandidate candidate,
-            ItemStack stack) {
-        return outputAllowance(level, candidate, stack) > 0;
-    }
-
     private static int outputContainerCapacity(
             ServerLevel level,
             VillagerInventoryOverflowService.ContainerCandidate candidate,
@@ -795,11 +788,6 @@ public final class AssignedStorageService {
         return count;
     }
 
-    private static boolean hasCourierItemFrame(
-            ServerLevel level,
-            VillagerInventoryOverflowService.ContainerCandidate candidate) {
-        return !courierItemFrameFilters(level, candidate).isEmpty();
-    }
 
     private static List<ItemStack> courierItemFrameFilters(
             ServerLevel level,

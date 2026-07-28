@@ -49,7 +49,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
@@ -90,7 +89,6 @@ public final class HiredVillagerWorkService {
     private static final int RETURN_INTERMEDIATE_SEARCH_RADIUS = 10;
     private static final int RETURN_INTERMEDIATE_VERTICAL_RADIUS = 3;
     private static final int MAX_RETURN_INTERMEDIATE_PATH_ATTEMPTS = 24;
-    private static final int EXCAVATION_SURFACE_ENTRY_SEARCH_RADIUS = 2;
     private static final float WORK_AREA_RETURN_WALK_SPEED = 0.5F;
     private static final int WORK_AREA_RETURN_CLOSE_ENOUGH = 0;
     private static final int WORK_AREA_RETURN_INTERMEDIATE_CLOSE_ENOUGH = 2;
@@ -491,76 +489,6 @@ public final class HiredVillagerWorkService {
             return null;
         }
         return MiningWorker.excavationEntryTarget(level, session.context());
-    }
-
-    private static BlockPos bestExcavationSurfaceEntryTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
-        int entryY = context.workMax().getY() + 1;
-        List<ReturnIntermediate> candidates = new ArrayList<>();
-        addExcavationSurfaceCandidate(level, villager, context, candidates, new BlockPos(
-                context.workCenter().getX(),
-                entryY,
-                context.workCenter().getZ()));
-
-        BlockPos min = context.workMin().offset(-EXCAVATION_SURFACE_ENTRY_SEARCH_RADIUS, 1, -EXCAVATION_SURFACE_ENTRY_SEARCH_RADIUS);
-        BlockPos max = context.workMax().offset(EXCAVATION_SURFACE_ENTRY_SEARCH_RADIUS, 1, EXCAVATION_SURFACE_ENTRY_SEARCH_RADIUS);
-        for (BlockPos raw : BlockPos.betweenClosed(min, max)) {
-            BlockPos candidate = raw.immutable();
-            if (candidate.getY() != entryY) {
-                continue;
-            }
-            addExcavationSurfaceCandidate(level, villager, context, candidates, candidate);
-        }
-
-        candidates.sort(Comparator.comparingDouble(ReturnIntermediate::score));
-        BlockPos best = null;
-        double bestScore = Double.MAX_VALUE;
-        for (ReturnIntermediate candidate : candidates) {
-            if (HiredPathMemory.isApproachRecentlyUnreachable(level, villager, candidate.pos())) {
-                continue;
-            }
-            Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
-            if (path != null && path.canReach() && !pathEntersLiquid(level, path)) {
-                HiredPathMemory.clearUnreachableApproach(villager, candidate.pos());
-                double score = candidate.score() + HiredMoveToBlockFaceJob.pathTraversalCost(level, path);
-                if (score < bestScore) {
-                    bestScore = score;
-                    best = candidate.pos();
-                }
-            } else {
-                HiredPathMemory.rememberUnreachableApproach(level, villager, candidate.pos());
-            }
-        }
-        return best != null ? best : candidates.isEmpty() ? null : candidates.getFirst().pos();
-    }
-
-    private static void addExcavationSurfaceCandidate(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context,
-            List<ReturnIntermediate> candidates,
-            BlockPos candidate) {
-        if (!isValidWorkAreaReturnTarget(level, candidate)) {
-            return;
-        }
-        candidates.add(new ReturnIntermediate(candidate, excavationSurfaceEntryScore(villager, context, candidate)));
-    }
-
-    private static double excavationSurfaceEntryScore(Villager villager, HiredWorkContext context, BlockPos pos) {
-        double centerDistance = pos.distSqr(context.workCenter().above());
-        double villagerDistance = villager.distanceToSqr(pos.getCenter());
-        int outsideX = distanceOutside(pos.getX(), context.workMin().getX(), context.workMax().getX());
-        int outsideZ = distanceOutside(pos.getZ(), context.workMin().getZ(), context.workMax().getZ());
-        return villagerDistance + centerDistance * 0.5D + (outsideX + outsideZ) * 6.0D;
-    }
-
-    private static int distanceOutside(int value, int min, int max) {
-        if (value < min) {
-            return min - value;
-        }
-        if (value > max) {
-            return value - max;
-        }
-        return 0;
     }
 
     private static boolean moveTowardWorkAreaIntermediate(
