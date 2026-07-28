@@ -194,6 +194,18 @@ public final class HiredVillagerWorkService {
             return;
         }
 
+        if (isOutputBackpressured(level, villager, session)) {
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            HiredWorkerBrain.clearFailure(session.context());
+            HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE);
+            setStatus(session.state(), "interaction.work.status.paused");
+            return;
+        }
+        if (HiredWorkerBrain.snapshot(session.state(), level.getGameTime()).taskState()
+                == HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE) {
+            HiredWorkerBrain.clearFailure(session.context());
+        }
+
         WorkResult result = session.worker().tick(level, villager, hirer, session.context());
         setStatus(session.state(), result.status(), result.replacements());
         maybeNotifyStorageFull(level, villager, hirer, session.context(), session.state());
@@ -217,6 +229,22 @@ public final class HiredVillagerWorkService {
                 HiredVillagerContractService.finishOneOffBuilderJob(level, villager, result.status());
             }
         }
+    }
+
+    private static boolean isOutputBackpressured(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkSession session) {
+        if (session.role() == HiredVillagerRole.COURIER
+                || !session.inventory().hasOutputItems()
+                || !AssignedStorageService.hasLiveAssignedOutputStorage(level, villager)) {
+            return false;
+        }
+        List<ItemStack> outputs = session.inventory().collectOutputItems().stream()
+                .map(HiredJobInventory.OutputStack::stack)
+                .toList();
+        return AssignedStorageService.hasAssignedOutputRouteFor(villager, outputs)
+                && !AssignedStorageService.hasAssignedOutputCapacityFor(villager, outputs);
     }
 
     private static boolean shouldSkipHiredWorkTick(ServerLevel level, Villager villager) {
@@ -2058,6 +2086,7 @@ public final class HiredVillagerWorkService {
             case RETURNING_TO_WORK_AREA -> "interaction.work.activity.returning_to_work_area";
             case DEPOSITING -> "interaction.work.activity.depositing";
             case WAITING_FOR_MATERIALS -> "interaction.work.activity.waiting_for_materials";
+            case PAUSED_OUTPUT_BACKPRESSURE -> "interaction.work.activity.waiting";
             case PAUSED_STORAGE_FULL -> "interaction.work.activity.paused_storage_full";
             case NO_WORK_AREA -> "interaction.work.activity.no_work_area";
             case PAUSED_FULL_INVENTORY -> "interaction.work.activity.paused_full_inventory";

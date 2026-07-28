@@ -3153,6 +3153,7 @@ public final class ClipboardWorkforceScreen extends Screen {
         }
         return switch (worker.status()) {
             case PATHING -> PATHING;
+            case OUTPUT_BACKPRESSURE -> NOTICE;
             case WAITING, WAITING_FOR_CROPS -> IDLE;
             case UNKNOWN -> MUTED;
             case WORKING,

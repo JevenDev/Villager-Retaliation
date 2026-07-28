@@ -55,6 +55,19 @@ public final class CourierWorker implements HiredRoleWorker {
         }
 
         String phase = phase(context);
+        if (context.inventory().hasOutputItems()
+                && !PHASE_RETURN.equals(phase)
+                && hasCompatibleOutputRoute(villager, context)
+                && !hasCompatibleOutput(level, villager, context)) {
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            HiredWorkerBrain.clearFailure(context);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE);
+            return WorkResult.idle("interaction.work.status.paused");
+        }
+        if (HiredWorkerBrain.snapshot(context.state(), level.getGameTime()).taskState()
+                == HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE) {
+            HiredWorkerBrain.clearFailure(context);
+        }
         if (context.inventory().hasOutputItems() && PHASE_PICKUP.equals(phase)) {
             beginOutbound(context);
             phase = PHASE_OUTBOUND;
@@ -81,6 +94,13 @@ public final class CourierWorker implements HiredRoleWorker {
             HiredWorkerBrain.setFailure(context, "courier_missing_output_storage", level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE, null);
             return WorkResult.idle("interaction.work.courier.missing_output_storage");
+        }
+        if (AssignedStorageService.courierTransferState(level, villager)
+                == AssignedStorageService.CourierTransferState.OUTPUT_BACKPRESSURED) {
+            VillagerTaskNavigationUtil.stopHiredNavigation(villager);
+            HiredWorkerBrain.clearFailure(context);
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE);
+            return WorkResult.idle("interaction.work.status.paused");
         }
         beginOutbound(context);
         HiredWorkerBrain.clearFailure(context);
@@ -162,13 +182,16 @@ public final class CourierWorker implements HiredRoleWorker {
         context.state().remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
         if (outbound) {
             if (deliverySweep && context.inventory().hasOutputItems()) {
-                boolean hasCompatibleOutput = hasCompatibleOutput(level, villager, context);
+                boolean hasCompatibleOutputRoute = hasCompatibleOutputRoute(villager, context);
                 beginReturn(context, traversalNodes);
-                if (!hasCompatibleOutput) {
+                if (!hasCompatibleOutputRoute) {
                     context.state().putBoolean(RETURN_TO_INPUT_SWEEP_TAG, true);
+                    HiredWorkerBrain.setFailure(context, "courier_output_unavailable", level.getGameTime() + 100L);
+                    HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE, node);
+                } else {
+                    HiredWorkerBrain.clearFailure(context);
+                    HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE, node);
                 }
-                HiredWorkerBrain.setFailure(context, "courier_output_unavailable", level.getGameTime() + 100L);
-                HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_NO_STORAGE, node);
                 return WorkResult.idle("interaction.work.courier.output_unavailable");
             }
             beginReturn(context, traversalNodes);
@@ -542,10 +565,9 @@ public final class CourierWorker implements HiredRoleWorker {
         if (!context.inventory().hasOutputSpace()) {
             return 0;
         }
-        return AssignedStorageService.transferItemsAtAssignedStorage(
+        return AssignedStorageService.transferCourierItemsAtAssignedStorage(
                 villager,
                 input,
-                stack -> !stack.isEmpty(),
                 containerCapacity,
                 context.inventory()::insertOutput);
     }
@@ -560,12 +582,19 @@ public final class CourierWorker implements HiredRoleWorker {
             ServerLevel level,
             Villager villager,
             HiredWorkContext context) {
-        Set<BlockPos> outputs = purposePositions(level, villager, AssignedStorageService.OUTPUT_PURPOSE);
-        return context.inventory().collectOutputItems().stream()
+        List<ItemStack> cargo = context.inventory().collectOutputItems().stream()
                 .map(output -> output.stack())
                 .filter(stack -> !stack.isEmpty())
-                .anyMatch(stack -> outputs.stream().anyMatch(output ->
-                        AssignedStorageService.courierOutputStorageAccepts(level, villager, output, stack)));
+                .toList();
+        return AssignedStorageService.hasAssignedOutputCapacityFor(villager, cargo);
+    }
+
+    private static boolean hasCompatibleOutputRoute(Villager villager, HiredWorkContext context) {
+        List<ItemStack> cargo = context.inventory().collectOutputItems().stream()
+                .map(output -> output.stack())
+                .filter(stack -> !stack.isEmpty())
+                .toList();
+        return AssignedStorageService.hasAssignedOutputRouteFor(villager, cargo);
     }
 
     private static Set<BlockPos> purposePositions(ServerLevel level, Villager villager, String purpose) {

@@ -82,6 +82,7 @@ public record ClipboardWorkforceSnapshot(
         BUILDING,
         DEPOSITING,
         WAITING,
+        OUTPUT_BACKPRESSURE,
         WAITING_FOR_CROPS,
         NO_WORK_AREA,
         NO_TARGETS,

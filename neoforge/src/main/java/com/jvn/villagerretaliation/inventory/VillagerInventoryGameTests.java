@@ -331,6 +331,18 @@ public final class VillagerInventoryGameTests {
                 "assigned output should insert only the two items remaining under its stock limit");
         helper.assertValueEqual(countItem(chest, Items.EMERALD), 32,
                 "existing contents should count toward the framed filter amount");
+        helper.assertValueEqual(
+                AssignedStorageService.assignedOutputCapacityFor(
+                        villager,
+                        new ItemStack(Items.EMERALD),
+                        10),
+                0,
+                "a reached stock target should expose no downstream capacity");
+        chest.removeItem(0, 2);
+        helper.assertValueEqual(AssignedStorageService.assignedOutputCapacityFor(
+                villager, new ItemStack(Items.EMERALD), 10), 2,
+                "removing stock should immediately reopen exactly that much downstream capacity");
+        chest.getItem(0).grow(2);
         helper.assertFalse(AssignedStorageService.courierOutputStorageAccepts(
                         level, villager, output, new ItemStack(Items.EMERALD)),
                 "a capped output should stop accepting matching courier cargo");

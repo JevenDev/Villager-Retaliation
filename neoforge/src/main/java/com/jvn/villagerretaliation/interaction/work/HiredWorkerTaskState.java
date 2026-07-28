@@ -16,6 +16,7 @@ public enum HiredWorkerTaskState {
     WAITING_FOR_MATERIALS("waiting_for_materials"),
     PAUSED_FULL_INVENTORY("paused_full_inventory"),
     PAUSED_STORAGE_FULL("paused_storage_full"),
+    PAUSED_OUTPUT_BACKPRESSURE("paused_output_backpressure"),
     PAUSED_NO_STORAGE("paused_no_storage"),
     FAILED_COOLDOWN("failed_cooldown"),
     AWAITING_INSTRUCTION("awaiting_instruction"),
@@ -58,7 +59,7 @@ public enum HiredWorkerTaskState {
     public boolean isWaitingState() {
         return switch (this) {
             case IDLE, AWAITING_INSTRUCTION, NO_WORK_AREA, WAITING_FOR_MATERIALS,
-                    PAUSED_FULL_INVENTORY, PAUSED_STORAGE_FULL, PAUSED_NO_STORAGE,
+                    PAUSED_FULL_INVENTORY, PAUSED_STORAGE_FULL, PAUSED_OUTPUT_BACKPRESSURE, PAUSED_NO_STORAGE,
                     PAUSED_MISSING_TOOL, FAILED_COOLDOWN -> true;
             default -> false;
         };
