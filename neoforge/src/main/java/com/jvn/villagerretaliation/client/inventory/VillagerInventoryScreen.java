@@ -110,7 +110,7 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
                 TEXTURE_HEIGHT
         );
         graphics.blit(
-                VillagerRetaliationClientAssets.GIFT_INVENTORY_TEXTURE,
+                VillagerRetaliationClientAssets.PLAYER_INVENTORY_TEXTURE,
                 this.leftPos + playerTextureLeft(),
                 this.topPos + playerTextureTop(),
                 0,
