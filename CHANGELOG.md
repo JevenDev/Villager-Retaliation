@@ -1,4 +1,6 @@
 # Changelog
+- Villagers now stow held weapons outside combat whenever personal or party storage has room, while active workers keep and dynamically switch the tool needed for their current job action; saved melee/range preferences still control which weapon they draw for combat.
+- Added an Unequip Weapon(s) action for authorized party villagers, moving held weapons and shields into party hotbar slots first and then other party inventory slots.
 - Standardized unmounted villager movement across vanilla AI and mod-owned routes: ordinary roaming, work, gathering, and nearby following now use vanilla walking speed, while retaliation, fleeing, regrouping, and following beyond eight blocks use Vindicator-equivalent running speed.
 - Fixed Chat Heads player icons disappearing after animated villager dialogue caused Villager Retaliation to replace the vanilla chat renderer. When Chat Heads is installed, chat now stays on the compatible vanilla rendering path while villager dialogue retains its static styling.
 - Added a titled, top-layer scrolling-instructions tooltip to the Gift button and the item-filter-style preview shake when scrolling reaches or pushes past the selected stack limit.

@@ -1,18 +1,23 @@
 package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.duel.DuelService;
+import com.jvn.villagerretaliation.interaction.HiredVillagerWorkService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import com.jvn.villagerretaliation.party.PartyWeaponPreference;
+import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.function.Predicate;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /** Keeps a party villager's durable weapon preference separate from its current order. */
 public final class VillagerCombatLoadoutService {
@@ -33,7 +38,11 @@ public final class VillagerCombatLoadoutService {
         if (villager == null || preference == null || preference == PartyWeaponPreference.AUTO) {
             return;
         }
-        ensurePreferredWeapon(villager, preference);
+        if (VillagerRetaliationVillagerCombatUtil.isInCombat(villager)) {
+            ensurePreferredWeapon(villager, preference);
+        } else {
+            stowIdleWeapon(villager);
+        }
     }
 
     public static boolean hasPersistentEquippedPreference(Villager villager) {
@@ -41,7 +50,57 @@ public final class VillagerCombatLoadoutService {
     }
 
     public static boolean maintainEquippedPreference(Villager villager) {
-        return hasPersistentEquippedPreference(villager) && ensurePreferredWeapon(villager);
+        return VillagerRetaliationVillagerCombatUtil.isInCombat(villager)
+                && hasPersistentEquippedPreference(villager)
+                && ensurePreferredWeapon(villager);
+    }
+
+    /** Stows held weapons, and optionally shields, while leaving them available for later combat. */
+    public static boolean stowWeapons(Villager villager, boolean includeShield) {
+        if (villager == null || VillagerInventoryAccess.hasOpenInventory(villager)
+                || DuelService.isParticipant(villager)) {
+            return false;
+        }
+        boolean changed = false;
+        if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)) {
+            VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
+            changed = !VillagerInventoryAccess.hasBorrowedCombatWeapon(villager);
+        }
+        changed |= HiredJobInventory.stowCombatEquipment(villager, includeShield);
+        changed |= stowPersonalHand(villager, EquipmentSlot.MAINHAND,
+                stack -> VillagerRetaliationVillagerWeapons.isUsableWeapon(stack)
+                        || includeShield && stack.is(Items.SHIELD));
+        if (includeShield) {
+            if (villager.isUsingItem() && villager.getUseItem().is(Items.SHIELD)) {
+                villager.stopUsingItem();
+            }
+            changed |= stowPersonalHand(villager, EquipmentSlot.OFFHAND, stack -> stack.is(Items.SHIELD));
+        }
+        return changed;
+    }
+
+    public static boolean stowIdleWeapon(Villager villager) {
+        return villager != null
+                && !VillagerRetaliationVillagerCombatUtil.isInCombat(villager)
+                && !HiredVillagerWorkService.isActivelyWorking(villager)
+                && stowWeapons(villager, false);
+    }
+
+    private static boolean stowPersonalHand(
+            Villager villager, EquipmentSlot slot, Predicate<ItemStack> predicate) {
+        if (HiredJobInventory.hasJobEquipmentForSlot(villager, slot)) {
+            return false;
+        }
+        ItemStack held = villager.getItemBySlot(slot);
+        if (held.isEmpty() || !predicate.test(held)) {
+            return false;
+        }
+        ItemStack remainder = VillagerInventoryAccess.addItem(villager, held.copy());
+        if (!remainder.isEmpty()) {
+            return false;
+        }
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(villager, slot, ItemStack.EMPTY);
+        return true;
     }
 
     public static boolean ensurePreferredWeapon(Villager villager) {

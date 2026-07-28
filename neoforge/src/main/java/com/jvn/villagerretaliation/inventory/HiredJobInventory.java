@@ -573,6 +573,63 @@ public final class HiredJobInventory implements Container {
         return selected;
     }
 
+    /** Moves equipped combat gear back into party/job storage without dropping it. */
+    public static boolean stowCombatEquipment(Villager villager, boolean includeShield) {
+        if (villager == null || !isJobInventoryAvailable(villager) || jobInventoryTag(villager).isEmpty()) {
+            return false;
+        }
+        HiredJobInventory inventory = getJobInventory(villager);
+        boolean changed = inventory.stowEquipmentSlot(
+                MAINHAND_SLOT, EquipmentSlot.MAINHAND,
+                stack -> com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons.isUsableWeapon(stack)
+                        || includeShield && stack.is(Items.SHIELD));
+        if (includeShield) {
+            changed |= inventory.stowEquipmentSlot(
+                    OFFHAND_SLOT, EquipmentSlot.OFFHAND, stack -> stack.is(Items.SHIELD));
+        }
+        return changed;
+    }
+
+    private boolean stowEquipmentSlot(int sourceSlot, EquipmentSlot equipmentSlot, Predicate<ItemStack> predicate) {
+        ItemStack equipped = this.items.get(sourceSlot);
+        if (equipped.isEmpty() || !predicate.test(equipped)) {
+            return false;
+        }
+        int destination = findStowDestination(equipped);
+        if (destination < 0) {
+            return false;
+        }
+        ItemStack stored = this.items.get(destination);
+        if (stored.isEmpty()) {
+            this.items.set(destination, equipped);
+        } else {
+            stored.grow(equipped.getCount());
+        }
+        this.slotTypes[destination] = HiredJobInventorySlotType.SUPPLY;
+        this.items.set(sourceSlot, ItemStack.EMPTY);
+        this.slotTypes[sourceSlot] = defaultType(sourceSlot);
+        VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, equipmentSlot, ItemStack.EMPTY);
+        setChanged();
+        return true;
+    }
+
+    private int findStowDestination(ItemStack stack) {
+        for (int start : new int[] {HOTBAR_START, MAIN_GRID_START}) {
+            int end = start == HOTBAR_START ? FILTER_SLOT : HOTBAR_START;
+            for (int slot = start; slot < end; slot++) {
+                if (!canInsertToolIntoSlot(this.items, this.slotTypes, slot, true)) {
+                    continue;
+                }
+                ItemStack stored = this.items.get(slot);
+                if (stored.isEmpty() || ItemStack.isSameItemSameComponents(stored, stack)
+                        && stored.getCount() + stack.getCount() <= stored.getMaxStackSize()) {
+                    return slot;
+                }
+            }
+        }
+        return -1;
+    }
+
     public void syncMainHandEquipment() {
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, EquipmentSlot.MAINHAND, this.items.get(MAINHAND_SLOT));
         setChanged();

@@ -11,6 +11,7 @@ import com.jvn.villagerretaliation.combat.VillagerRetaliationRetaliationUtil;
 import com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
+import com.jvn.villagerretaliation.interaction.HiredWorkStateStore;
 import com.jvn.villagerretaliation.interaction.VillagerContractTime;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.interaction.VillagerAssignmentStore;
@@ -19,6 +20,7 @@ import com.jvn.villagerretaliation.interaction.VillagerCurrencyPayment;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.interaction.work.HiredRangedAmmo;
+import com.jvn.villagerretaliation.interaction.work.HiredWorkerTaskState;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.inventory.VillagerJobInventoryAuthorization;
@@ -172,7 +174,7 @@ public final class PartyGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
-    public static void rangeAndMeleeCommandsEquipWeaponsOutsideCombat(GameTestHelper helper) {
+    public static void rangeAndMeleeCommandsKeepWeaponsStowedOutsideCombat(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_idle_loadout"));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
@@ -189,36 +191,78 @@ public final class PartyGameTests {
 
         PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
                 PartyQuickCommand.MELEE));
-        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
-                        .isMeleeWeapon(villager.getMainHandItem()),
-                "melee should equip a carried melee weapon immediately while idle");
-        VillagerRetaliationHandler.clearCustomTarget(villager);
-        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
-                        .isMeleeWeapon(villager.getMainHandItem()),
-                "idle combat cleanup must retain the selected melee loadout");
+        helper.assertTrue(villager.getMainHandItem().isEmpty(),
+                "melee preference should keep the weapon stowed while idle");
 
         PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
                 PartyQuickCommand.RANGE));
-        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
-                        .isBowWeapon(villager.getMainHandItem()),
-                "range should swap immediately to a carried bow while idle");
-        VillagerRetaliationHandler.clearCustomTarget(villager);
-        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
-                        .isBowWeapon(villager.getMainHandItem()),
-                "idle combat cleanup must retain the selected ranged loadout");
+        helper.assertTrue(villager.getMainHandItem().isEmpty(),
+                "range preference should keep the bow stowed while idle");
 
         PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
                 PartyQuickCommand.MELEE));
-        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
-                        .isMeleeWeapon(villager.getMainHandItem()),
-                "melee should re-equip the stored sword after switching to range");
-        VillagerRetaliationHandler.clearCustomTarget(villager);
-        helper.assertTrue(com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons
-                        .isMeleeWeapon(villager.getMainHandItem()),
-                "idle combat cleanup must retain melee after switching back from range");
+        helper.assertTrue(villager.getMainHandItem().isEmpty(),
+                "switching preferences should not draw a weapon outside combat");
 
         PartyService.deleteParty(level, party.id());
         PartyQuickCommandService.clearRuntimeState();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void partyUnequipStowsWeaponsAndShieldsInHotbar(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        inventory.setItem(HiredJobInventory.OFFHAND_SLOT, new ItemStack(Items.SHIELD));
+
+        helper.assertTrue(
+                com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService.stowWeapons(villager, true),
+                "unequip should move held party combat equipment into storage");
+        helper.assertTrue(villager.getMainHandItem().isEmpty() && villager.getOffhandItem().isEmpty(),
+                "unequip should clear both held weapon slots");
+        helper.assertTrue(inventory.getItem(HiredJobInventory.HOTBAR_START).is(Items.IRON_SWORD)
+                        && inventory.getItem(HiredJobInventory.HOTBAR_START + 1).is(Items.SHIELD),
+                "unequip should prefer consecutive party hotbar slots");
+
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void activeWorkerKeepsAndCanSwitchJobTool(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
+        inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.SHEARS));
+        CompoundTag workState = HiredWorkStateStore.state(villager);
+        workState.putBoolean("Enabled", true);
+        workState.putString("WorkerTaskState", HiredWorkerTaskState.WORKING.id());
+
+        helper.assertFalse(
+                VillagerCombatLoadoutService.stowIdleWeapon(villager),
+                "idle combat cleanup must not stow the active worker axe");
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_AXE),
+                "an active worker should visibly hold the tool selected for its current task");
+
+        ItemStack switchedTool = inventory.equipBestTool(
+                stack -> stack.is(Items.SHEARS),
+                stack -> 1.0D);
+        helper.assertTrue(switchedTool.is(Items.SHEARS) && villager.getMainHandItem().is(Items.SHEARS),
+                "worker tool selection should still switch the held tool as the job action changes");
+        helper.assertFalse(
+                VillagerCombatLoadoutService.stowIdleWeapon(villager),
+                "idle combat cleanup must leave the newly selected work tool equipped");
+
+        workState.putString("WorkerTaskState", HiredWorkerTaskState.IDLE.id());
+        inventory.equipBestTool(stack -> stack.is(Items.IRON_AXE), stack -> 1.0D);
+        helper.assertTrue(
+                VillagerCombatLoadoutService.stowIdleWeapon(villager),
+                "the weapon-like job tool should return to storage after work becomes idle");
+        helper.assertTrue(villager.getMainHandItem().isEmpty(),
+                "an idle worker should no longer visibly hold the axe");
+
         villager.discard();
         helper.succeed();
     }
