@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
+import com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -18,6 +19,8 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -64,6 +67,40 @@ public final class VillagerRangedCombatGameTests {
                         * VillagerCombatRoles.movementSpeed(villager)
                         - RetaliationCombatStats.RUN_SPEED) < 0.000001D,
                 "retaliation should use the expected run speed");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void movementPolicyNormalizesWalkRunAndFollowSpeeds(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        villager.getBrain().setMemory(
+                MemoryModuleType.WALK_TARGET,
+                new WalkTarget(villager.position().add(4.0D, 0.0D, 0.0D), 0.9F, 0));
+
+        VillagerMovementSpeedPolicy.enforce(helper.getLevel(), villager);
+        helper.assertTrue(
+                Math.abs(villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
+                        .orElseThrow()
+                        .getSpeedModifier() - VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER) < 0.000001D,
+                "ordinary movement uses the vanilla villager walk modifier");
+
+        villager.getBrain().setMemory(MemoryModuleType.HEARD_BELL_TIME, helper.getLevel().getGameTime());
+        VillagerMovementSpeedPolicy.enforce(helper.getLevel(), villager);
+        helper.assertTrue(
+                Math.abs(villager.getBrain().getMemory(MemoryModuleType.WALK_TARGET)
+                        .orElseThrow()
+                        .getSpeedModifier() - VillagerMovementSpeedPolicy.RUN_SPEED_MODIFIER) < 0.000001D,
+                "flee movement uses the Vindicator-equivalent run modifier");
+        helper.assertValueEqual(
+                VillagerMovementSpeedPolicy.following(8.0D * 8.0D),
+                VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER,
+                "followers walk within eight blocks");
+        helper.assertValueEqual(
+                VillagerMovementSpeedPolicy.following(8.01D * 8.01D),
+                VillagerMovementSpeedPolicy.RUN_SPEED_MODIFIER,
+                "followers run beyond eight blocks");
+
+        villager.discard();
         helper.succeed();
     }
 

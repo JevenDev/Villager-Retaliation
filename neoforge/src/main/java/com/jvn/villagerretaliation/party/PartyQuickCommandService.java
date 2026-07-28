@@ -50,9 +50,9 @@ public final class PartyQuickCommandService {
     private static final double ARRIVAL_DISTANCE_SQR = 1.75D * 1.75D;
     private static final double REGROUP_ARRIVAL_DISTANCE_SQR = 2.5D * 2.5D;
     private static final int MOVE_TO_RETURN_RADIUS = 3;
-    private static final double MOVE_SPEED = 0.72D;
-    private static final double REGROUP_SPEED = 0.9D;
-    private static final double GATHER_SPEED = 0.78D;
+    private static final double MOVE_SPEED = com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
+    private static final double REGROUP_SPEED = com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.RUN_SPEED_MODIFIER;
+    private static final double GATHER_SPEED = com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
     private static final double ITEM_PICKUP_DISTANCE_SQR = 1.5D * 1.5D;
     private static final double DROP_SEARCH_HORIZONTAL_RADIUS = 32.0D;
     private static final double DROP_SEARCH_VERTICAL_RADIUS = 12.0D;

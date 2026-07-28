@@ -18,7 +18,8 @@ public final class VillagerConversationService {
     private static final int FOREIGN_HIRED_WORKER_IDLE_TIMEOUT_TICKS = IDLE_TIMEOUT_TICKS / 2;
     private static final double FORCED_DIALOGUE_APPROACH_START_DISTANCE = 5.5D;
     private static final double FORCED_DIALOGUE_APPROACH_STOP_DISTANCE = 4.0D;
-    private static final double FORCED_DIALOGUE_APPROACH_SPEED = 0.55D;
+    private static final double FORCED_DIALOGUE_APPROACH_SPEED =
+            com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
     private static final Map<UUID, VillagerConversationSession> SESSIONS_BY_PLAYER = new HashMap<>();
     private static final Map<UUID, UUID> PLAYER_BY_VILLAGER = new HashMap<>();
 

@@ -57,7 +57,8 @@ final class MiningHazardManager {
     private static final int HAZARD_SCAN_MARGIN = 1;
     private static final double HAZARD_PLACEMENT_REACH = HiredMoveToBlockFaceJob.MAX_REACH + 1.5D;
     private static final double PLACEMENT_REACH_SQR = HAZARD_PLACEMENT_REACH * HAZARD_PLACEMENT_REACH;
-    private static final double MOVEMENT_SPEED = 0.55D;
+    private static final double MOVEMENT_SPEED =
+            com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
 
     private MiningHazardManager() {
     }
