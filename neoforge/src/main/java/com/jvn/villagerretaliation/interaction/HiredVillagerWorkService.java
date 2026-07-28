@@ -243,8 +243,8 @@ public final class HiredVillagerWorkService {
         List<ItemStack> outputs = session.inventory().collectOutputItems().stream()
                 .map(HiredJobInventory.OutputStack::stack)
                 .toList();
-        return AssignedStorageService.hasAssignedOutputRouteFor(villager, outputs)
-                && !AssignedStorageService.hasAssignedOutputCapacityFor(villager, outputs);
+        return AssignedStorageService.assignedOutputStateFor(villager, outputs)
+                == AssignedStorageService.AssignedOutputState.BACKPRESSURED;
     }
 
     private static boolean shouldSkipHiredWorkTick(ServerLevel level, Villager villager) {

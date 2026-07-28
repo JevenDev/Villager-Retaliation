@@ -431,16 +431,7 @@ public final class AssignedStorageService {
      * stacks. This includes both the container's physical capacity and any framed filter limit.
      */
     public static boolean hasAssignedOutputCapacityFor(Villager villager, List<ItemStack> stacks) {
-        if (!(villager.level() instanceof ServerLevel level) || stacks == null || stacks.isEmpty()) {
-            return false;
-        }
-        List<ItemStack> nonEmpty = stacks.stream()
-                .filter(stack -> stack != null && !stack.isEmpty())
-                .toList();
-        if (nonEmpty.isEmpty()) {
-            return false;
-        }
-        return nonEmpty.stream().anyMatch(stack -> assignedOutputCapacityFor(villager, stack, 1) > 0);
+        return assignedOutputStateFor(villager, stacks) == AssignedOutputState.AVAILABLE;
     }
 
     /**
@@ -448,27 +439,37 @@ public final class AssignedStorageService {
      * regardless of its current amount limit or physical free space.
      */
     public static boolean hasAssignedOutputRouteFor(Villager villager, List<ItemStack> stacks) {
+        return assignedOutputStateFor(villager, stacks) != AssignedOutputState.NO_ROUTE;
+    }
+
+    public static AssignedOutputState assignedOutputStateFor(Villager villager, List<ItemStack> stacks) {
         if (!(villager.level() instanceof ServerLevel level) || stacks == null || stacks.isEmpty()) {
-            return false;
+            return AssignedOutputState.NO_ROUTE;
         }
-        return liveOutputContainerCandidates(level, villager).stream()
-                .anyMatch(output -> stacks.stream()
-                        .filter(stack -> stack != null && !stack.isEmpty())
-                        .anyMatch(stack -> outputFilterMatches(level, output, stack)));
+        List<ItemStack> nonEmpty = stacks.stream()
+                .filter(stack -> stack != null && !stack.isEmpty())
+                .toList();
+        if (nonEmpty.isEmpty()) {
+            return AssignedOutputState.NO_ROUTE;
+        }
+        OutputCapacityPlan plan = outputCapacityPlan(level, villager);
+        boolean hasRoute = false;
+        for (ItemStack stack : nonEmpty) {
+            if (plan.hasRoute(stack)) {
+                hasRoute = true;
+                if (plan.capacityFor(stack, 1) > 0) {
+                    return AssignedOutputState.AVAILABLE;
+                }
+            }
+        }
+        return hasRoute ? AssignedOutputState.BACKPRESSURED : AssignedOutputState.NO_ROUTE;
     }
 
     public static int assignedOutputCapacityFor(Villager villager, ItemStack stack, int maximum) {
         if (!(villager.level() instanceof ServerLevel level) || stack == null || stack.isEmpty() || maximum <= 0) {
             return 0;
         }
-        int capacity = 0;
-        for (VillagerInventoryOverflowService.ContainerCandidate output : liveOutputContainerCandidates(level, villager)) {
-            capacity += outputContainerCapacity(level, output, stack, maximum - capacity);
-            if (capacity >= maximum) {
-                return maximum;
-            }
-        }
-        return capacity;
+        return outputCapacityPlan(level, villager).capacityFor(stack, maximum);
     }
 
     /**
@@ -481,8 +482,7 @@ public final class AssignedStorageService {
         }
         boolean hasInput = false;
         boolean hasOutputRoute = false;
-        List<VillagerInventoryOverflowService.ContainerCandidate> outputs =
-                liveOutputContainerCandidates(level, villager);
+        OutputCapacityPlan outputs = outputCapacityPlan(level, villager);
         for (VillagerInventoryOverflowService.ContainerCandidate input : liveInputContainerCandidates(level, villager)) {
             Container container = input.container();
             for (int slot = 0; slot < container.getContainerSize(); slot++) {
@@ -491,10 +491,10 @@ public final class AssignedStorageService {
                     continue;
                 }
                 hasInput = true;
-                if (outputs.stream().anyMatch(output -> outputFilterMatches(level, output, stack))) {
+                if (outputs.hasRoute(stack)) {
                     hasOutputRoute = true;
                 }
-                if (outputs.stream().anyMatch(output -> outputContainerCapacity(level, output, stack, 1) > 0)) {
+                if (outputs.capacityFor(stack, 1) > 0) {
                     return CourierTransferState.AVAILABLE;
                 }
             }
@@ -519,7 +519,17 @@ public final class AssignedStorageService {
             VillagerInventoryOverflowService.ContainerCandidate candidate,
             ItemStack stack,
             int maximum) {
-        int allowance = Math.min(outputAllowance(level, candidate, stack), Math.max(0, maximum));
+        return outputContainerCapacity(
+                level, candidate, courierItemFrameFilters(level, candidate), stack, maximum);
+    }
+
+    private static int outputContainerCapacity(
+            ServerLevel level,
+            VillagerInventoryOverflowService.ContainerCandidate candidate,
+            List<ItemStack> filters,
+            ItemStack stack,
+            int maximum) {
+        int allowance = Math.min(outputAllowance(level, candidate, filters, stack), Math.max(0, maximum));
         if (allowance <= 0) {
             return 0;
         }
@@ -547,7 +557,14 @@ public final class AssignedStorageService {
             ServerLevel level,
             VillagerInventoryOverflowService.ContainerCandidate candidate,
             ItemStack stack) {
-        List<ItemStack> filters = courierItemFrameFilters(level, candidate);
+        return outputAllowance(level, candidate, courierItemFrameFilters(level, candidate), stack);
+    }
+
+    private static int outputAllowance(
+            ServerLevel level,
+            VillagerInventoryOverflowService.ContainerCandidate candidate,
+            List<ItemStack> filters,
+            ItemStack stack) {
         if (filters.isEmpty()) {
             return Integer.MAX_VALUE;
         }
@@ -580,7 +597,13 @@ public final class AssignedStorageService {
             ServerLevel level,
             VillagerInventoryOverflowService.ContainerCandidate candidate,
             ItemStack stack) {
-        List<ItemStack> filters = courierItemFrameFilters(level, candidate);
+        return outputFilterMatches(level, courierItemFrameFilters(level, candidate), stack);
+    }
+
+    private static boolean outputFilterMatches(
+            ServerLevel level,
+            List<ItemStack> filters,
+            ItemStack stack) {
         if (filters.isEmpty()) {
             return true;
         }
@@ -594,6 +617,44 @@ public final class AssignedStorageService {
             }
         }
         return false;
+    }
+
+    private static OutputCapacityPlan outputCapacityPlan(ServerLevel level, Villager villager) {
+        List<OutputTarget> targets = liveOutputContainerCandidates(level, villager).stream()
+                .map(candidate -> new OutputTarget(candidate, courierItemFrameFilters(level, candidate)))
+                .toList();
+        return new OutputCapacityPlan(level, targets);
+    }
+
+    private record OutputTarget(
+            VillagerInventoryOverflowService.ContainerCandidate candidate,
+            List<ItemStack> filters) {
+    }
+
+    private record OutputCapacityPlan(ServerLevel level, List<OutputTarget> targets) {
+        private boolean hasRoute(ItemStack stack) {
+            return targets.stream().anyMatch(target ->
+                    outputFilterMatches(level, target.filters(), stack));
+        }
+
+        private int capacityFor(ItemStack stack, int maximum) {
+            if (stack == null || stack.isEmpty() || maximum <= 0) {
+                return 0;
+            }
+            int capacity = 0;
+            for (OutputTarget target : targets) {
+                capacity += outputContainerCapacity(
+                        level,
+                        target.candidate(),
+                        target.filters(),
+                        stack,
+                        maximum - capacity);
+                if (capacity >= maximum) {
+                    return maximum;
+                }
+            }
+            return capacity;
+        }
     }
 
     private static int countItemsTowardLimit(
@@ -1099,6 +1160,7 @@ public final class AssignedStorageService {
         Predicate<ItemStack> mayWithdraw = withdrawalPredicate(villager, ignored -> true);
         List<ItemStack> plannedCargo = new ArrayList<>();
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
+        OutputCapacityPlan outputPlan = outputCapacityPlan(level, villager);
         int movedTotal = 0;
         for (VillagerInventoryOverflowService.ContainerCandidate input : liveInputContainerCandidates(level, villager)) {
             if (!input.matches(storagePos) || !input.isInInteractionRange(villager)) {
@@ -1115,9 +1177,9 @@ public final class AssignedStorageService {
                         .mapToInt(ItemStack::getCount)
                         .sum();
                 int requested = Math.min(maxCount - movedTotal, stack.getCount());
-                boolean hasOutputRoute = hasAssignedOutputRouteFor(villager, List.of(stack));
+                boolean hasOutputRoute = outputPlan.hasRoute(stack);
                 if (hasOutputRoute) {
-                    int downstreamCapacity = assignedOutputCapacityFor(villager, stack, maxCount);
+                    int downstreamCapacity = outputPlan.capacityFor(stack, maxCount);
                     requested = Math.min(
                             requested,
                             Math.max(0, downstreamCapacity - alreadyPlanned));
@@ -1655,6 +1717,12 @@ public final class AssignedStorageService {
         TOOL,
         ANY_NON_PAYMENT,
         PAYMENT
+    }
+
+    public enum AssignedOutputState {
+        NO_ROUTE,
+        AVAILABLE,
+        BACKPRESSURED
     }
 
     private record StorageFailureKey(UUID villagerId, ResourceKey<Level> dimension, BlockPos pos, StorageUse use) {
