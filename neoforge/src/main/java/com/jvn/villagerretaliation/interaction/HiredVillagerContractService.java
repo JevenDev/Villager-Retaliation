@@ -73,6 +73,33 @@ public final class HiredVillagerContractService {
         return hasActiveOrPendingContract(villager);
     }
 
+    /**
+     * Reads the current contract without performing lifecycle maintenance. Callers
+     * that require up-to-date expiration state must run maintenance before taking
+     * the snapshot.
+     */
+    public static HireContractSnapshot snapshot(ServerLevel level, Villager villager) {
+        Optional<HireContract> storedContract = HireContractStore.load(villager);
+        if (storedContract.isEmpty()) {
+            return HireContractSnapshot.inactive(HiredVillagerRoles.defaultRole(level, villager));
+        }
+        HireContract contract = storedContract.get();
+        boolean hired = contract.isActiveOrAwaitingAutoPayment();
+        if (!hired) {
+            return HireContractSnapshot.inactive(HiredVillagerRoles.defaultRole(level, villager));
+        }
+        HiredVillagerRole role = contract.role();
+        if (role == null) {
+            role = HiredVillagerRoles.defaultRole(level, villager);
+        }
+        return new HireContractSnapshot(
+                true,
+                contract.owner(),
+                role,
+                contract.isAwaitingAutoPayment(),
+                contract.oneOffBuilderJob());
+    }
+
     /** Non-mutating query for policies that run while vanilla AI evaluates behavior. */
     public static boolean hasActiveOrPendingContract(Villager villager) {
         return HireContractStore.load(villager).filter(HireContract::isActiveOrAwaitingAutoPayment).isPresent();

@@ -100,11 +100,16 @@ public final class HiredVillagerWorkService {
     }
 
     public static void onVillagerTickPost(Villager villager) {
-        if (!(villager.level() instanceof ServerLevel level)
-                || shouldSkipHiredWorkTick(level, villager)) {
+        if (!(villager.level() instanceof ServerLevel level) || shouldSkipHiredWorkTick(villager)) {
             return;
         }
-        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        HiredVillagerContractService.expireHireContractIfNeeded(level, villager);
+        HireContractSnapshot contract = HiredVillagerContractService.snapshot(level, villager);
+        if (!contract.hired()) {
+            return;
+        }
+
+        HiredWorkSession session = HiredWorkSession.create(level, villager, contract.role());
         if (VillagerRecruitmentService.isFollowingAnyPlayer(villager)) {
             VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
             pauseForRecruitmentCommand(level, villager, session);
@@ -116,13 +121,13 @@ public final class HiredVillagerWorkService {
         }
         clearVanillaRestPause(session.state());
 
-        if (HiredVillagerContractService.isAwaitingAutoPayment(level, villager)) {
+        if (contract.awaitingAutoPayment()) {
             VillagerTaskNavigationUtil.enableHiredWaterTraversal(villager);
             VillagerTaskNavigationUtil.moveInWaterTowardNavigationTarget(level, villager, WORK_AREA_RETURN_WALK_SPEED);
             return;
         }
 
-        UUID hirerId = HiredVillagerContractService.getHirer(level, villager).orElse(null);
+        UUID hirerId = contract.hirer().orElse(null);
         if (hirerId == null || !(level.getServer().getPlayerList().getPlayer(hirerId) instanceof ServerPlayer hirer)) {
             CompoundTag waitingState = state(villager);
             initializeDefaults(waitingState, villager);
@@ -217,7 +222,7 @@ public final class HiredVillagerWorkService {
                     workReportReplacements(hirer, level, villager, session, snapshot),
                     hiredWorkReportNoticeCooldownTicks());
             if (session.role() == HiredVillagerRole.BUILDER
-                    && HiredVillagerContractService.isOneOffBuilderJob(level, villager)
+                    && contract.oneOffBuilderJob()
                     && !BuilderTaskState.hasTask(session.state())) {
                 HiredVillagerContractService.finishOneOffBuilderJob(level, villager, result.status());
             }
@@ -238,7 +243,7 @@ public final class HiredVillagerWorkService {
                 == AssignedStorageService.AssignedOutputState.BACKPRESSURED;
     }
 
-    private static boolean shouldSkipHiredWorkTick(ServerLevel level, Villager villager) {
+    private static boolean shouldSkipHiredWorkTick(Villager villager) {
         return villager.isBaby()
                 || !villager.isAlive()
                 || villager.isTrading()
@@ -246,8 +251,7 @@ public final class HiredVillagerWorkService {
                 || VillagerRecoveryService.isForcingRecovery(villager)
                 || villager.getTarget() != null
                 || villager.getLastHurtByMob() != null
-                || !HiredVillagerContractService.hasContract(villager)
-                || !HiredVillagerContractService.isHired(level, villager);
+                || !HiredVillagerContractService.hasContract(villager);
     }
 
     private static void pauseForVanillaRest(ServerLevel level, Villager villager, HiredWorkSession session) {
