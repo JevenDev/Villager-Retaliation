@@ -56,7 +56,8 @@ public final class FishingWorker extends AbstractBlockWorker {
     private static final double CAST_TARGET_FAR_OFFSET = 2.5D;
     private static final double CAST_TARGET_OFFSET_STEP = 0.5D;
     private static final double CAST_TARGET_WATER_SURFACE_OFFSET = 0.45D;
-    private static final double CAST_SPEED = 0.45D;
+    private static final double CAST_SPEED =
+            com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
 
     @Override
     public HiredVillagerRole role() {

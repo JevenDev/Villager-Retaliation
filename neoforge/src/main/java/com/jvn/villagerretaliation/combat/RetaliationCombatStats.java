@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.combat;
 
+import com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -8,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 final class RetaliationCombatStats {
     static final double WALK_SPEED = 0.5D;
     static final double RUN_SPEED = 0.35D;
-    static final double COMBAT_SPEED_MODIFIER = RUN_SPEED / WALK_SPEED;
+    static final double COMBAT_SPEED_MODIFIER = VillagerMovementSpeedPolicy.RUN_SPEED_MODIFIER;
     static final double PLAYER_FIST_DAMAGE = 1.0D;
     private static final double NORMAL_DIFFICULTY_DAMAGE_BONUS = 0.5D;
     private static final double HARD_DIFFICULTY_DAMAGE_BONUS = 1.0D;

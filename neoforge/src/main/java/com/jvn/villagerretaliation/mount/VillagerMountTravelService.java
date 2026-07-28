@@ -29,7 +29,8 @@ public final class VillagerMountTravelService {
     static final double PARK_RETURN_DISTANCE_SQR = 10.0D * 10.0D;
     static final double PARK_SETTLE_DISTANCE_SQR = 3.0D * 3.0D;
     static final int PARK_RESTRICTION_RADIUS = 8;
-    private static final double APPROACH_SPEED = 0.9D;
+    private static final double APPROACH_SPEED =
+            com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
     private static final double PARK_RETURN_SPEED = 0.8D;
     private static final long RETRY_INTERVAL_TICKS = 20L;
     private static final long PARKING_INTERVAL_TICKS = 10L;

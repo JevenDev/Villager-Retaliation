@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.util.VillagerInteractionTextUtil;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerBrainUtil;
+import com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -13,7 +14,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BiomeTags;
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.npc.Villager;
@@ -26,8 +26,7 @@ public final class VillagerCommandController {
     private static final double FOLLOW_STOP_DISTANCE_SQR = 0.75D * 0.75D;
     private static final double STAY_RETURN_START_DISTANCE_SQR = 2.25D * 2.25D;
     private static final double STAY_RETURN_STOP_DISTANCE_SQR = 1.25D * 1.25D;
-    private static final double FOLLOW_SPEED = 0.62D;
-    private static final double STAY_SPEED = 0.52D;
+    private static final double STAY_SPEED = VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
     private static final double VEHICLE_BOARD_DISTANCE_SQR = 4.0D * 4.0D;
     private static final long JOURNEY_UPDATE_INTERVAL_TICKS = 20L;
     private static final int PATH_RECALCULATION_MIN_TICKS = 4;
@@ -125,7 +124,9 @@ public final class VillagerCommandController {
         }
         Entity anchor = owner.getVehicle() == null ? owner : owner.getVehicle();
         double distanceSqr = villager.distanceToSqr(anchor);
-        if (distanceSqr > FOLLOW_START_DISTANCE_SQR) moveToward(villager, anchor, adaptiveSpeed(distanceSqr));
+        if (distanceSqr > FOLLOW_START_DISTANCE_SQR) {
+            moveToward(villager, anchor, VillagerMovementSpeedPolicy.following(distanceSqr));
+        }
         else if (distanceSqr < FOLLOW_STOP_DISTANCE_SQR) stopNavigation(villager);
         return TickResult.NONE;
     }
@@ -189,11 +190,6 @@ public final class VillagerCommandController {
         PATH_STATES.put(villager.getUUID(), new PathState(target.getUUID(), target.getX(), target.getY(), target.getZ(), gameTime + delay));
         if (moved) rememberOwnedNavigationTarget(villager);
         return moved;
-    }
-
-    private static double adaptiveSpeed(double distanceSqr) {
-        double distancePastComfort = Math.max(0.0D, Math.sqrt(distanceSqr) - Math.sqrt(FOLLOW_STOP_DISTANCE_SQR));
-        return FOLLOW_SPEED * Mth.clamp(distancePastComfort * 0.12D, 0.85D, 1.45D);
     }
 
     private static void rememberOwnedNavigationTarget(Villager villager) {

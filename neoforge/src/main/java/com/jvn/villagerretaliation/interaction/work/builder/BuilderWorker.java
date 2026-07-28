@@ -53,7 +53,8 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 
 public final class BuilderWorker extends AbstractBlockWorker {
     private static final String BUILD_SITE_NAV_TARGET_TAG = "BuilderSiteNavigationTarget";
-    private static final double BUILD_WALK_SPEED = 0.52D;
+    private static final double BUILD_WALK_SPEED =
+            com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
     private static final int BUILD_WALK_CLOSE_ENOUGH = 1;
     private static final int MAX_BUILD_TARGETS_TO_PATHFIND = 128;
     private static final double BUILD_REACH = 12.0D;

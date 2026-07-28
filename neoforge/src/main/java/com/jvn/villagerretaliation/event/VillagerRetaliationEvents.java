@@ -419,6 +419,9 @@ public final class VillagerRetaliationEvents {
             VillagerSocialGraphService.onEntityTickPost(event);
             VillagerReputationEvents.onEntityTickPost(event);
             com.jvn.villagerretaliation.duel.DuelService.onVillagerTickPost(villager);
+            if (villager.level() instanceof ServerLevel level) {
+                com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.enforce(level, villager);
+            }
             return;
         }
         if (entity instanceof AbstractVillager villager

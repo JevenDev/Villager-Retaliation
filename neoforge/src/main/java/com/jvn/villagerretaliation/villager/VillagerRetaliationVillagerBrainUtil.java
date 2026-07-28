@@ -15,7 +15,7 @@ import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.phys.Vec3;
 
 public final class VillagerRetaliationVillagerBrainUtil {
-    private static final float FLEE_SPEED_MODIFIER = 0.75F;
+    private static final float FLEE_SPEED_MODIFIER = (float) VillagerMovementSpeedPolicy.RUN_SPEED_MODIFIER;
     private static final int FLEE_HORIZONTAL_RANGE = 16;
     private static final int FLEE_VERTICAL_RANGE = 7;
 

@@ -29,7 +29,8 @@ public final class CombatWorker implements HiredRoleWorker {
     private static final int MIN_PATROL_DELAY_TICKS = 60;
     private static final int RANDOM_PATROL_DELAY_TICKS = 80;
     private static final int TARGET_SCAN_INTERVAL_TICKS = 20;
-    private static final double PATROL_SPEED = 0.55D;
+    private static final double PATROL_SPEED =
+            com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy.WALK_SPEED_MODIFIER;
     private static final int PATROL_TARGET_ATTEMPTS = 10;
     private static final double TARGET_SCAN_RADIUS_PADDING = 4.0D;
 
