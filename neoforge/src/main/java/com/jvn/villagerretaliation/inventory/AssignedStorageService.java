@@ -43,12 +43,24 @@ public final class AssignedStorageService {
     private static final long STORAGE_RETRY_COOLDOWN_TICKS = 20L * 15L;
     private static final long STORAGE_FULL_COOLDOWN_TICKS = 20L * 45L;
     private static final Map<StorageFailureKey, StorageFailure> STORAGE_FAILURES = new HashMap<>();
+    private static final Map<OutputFilterCacheKey, List<ItemStack>> OUTPUT_FILTER_CACHE = new HashMap<>();
 
     private AssignedStorageService() {
     }
 
     public static void clearRuntimeState() {
         STORAGE_FAILURES.clear();
+        OUTPUT_FILTER_CACHE.clear();
+    }
+
+    public static void invalidateOutputFilterCache(ServerLevel level, ItemFrame frame) {
+        if (level == null || frame == null) {
+            return;
+        }
+        BlockPos attachedPos = frame.getPos().relative(frame.getDirection().getOpposite());
+        OUTPUT_FILTER_CACHE.keySet().removeIf(key ->
+                key.dimension().equals(level.dimension())
+                        && key.pos().distManhattan(attachedPos) <= 1);
     }
 
     public static boolean hasAssignedStorage(ServerLevel level, Villager villager) {
@@ -693,8 +705,16 @@ public final class AssignedStorageService {
         boolean frameEntitiesAvailable = candidate.positions().stream()
                 .allMatch(level::isPositionEntityTicking);
         if (frameEntitiesAvailable) {
-            List<ItemStack> liveFilters = courierItemFrameFilters(level, candidate);
-            records.forEach(record -> data.updateOutputFilterSnapshot(record, liveFilters));
+            OutputFilterCacheKey cacheKey =
+                    new OutputFilterCacheKey(level.dimension(), candidate.pos().immutable(), villager.getUUID());
+            List<ItemStack> liveFilters = OUTPUT_FILTER_CACHE.get(cacheKey);
+            if (liveFilters == null) {
+                liveFilters = List.copyOf(courierItemFrameFilters(level, candidate));
+                OUTPUT_FILTER_CACHE.put(cacheKey, liveFilters);
+                for (AssignedContainerRecord record : records) {
+                    data.updateOutputFilterSnapshot(record, liveFilters);
+                }
+            }
             return new OutputTarget(candidate, liveFilters, true);
         }
         return records.stream()
@@ -1809,6 +1829,9 @@ public final class AssignedStorageService {
     }
 
     private record StorageFailureKey(UUID villagerId, ResourceKey<Level> dimension, BlockPos pos, StorageUse use) {
+    }
+
+    private record OutputFilterCacheKey(ResourceKey<Level> dimension, BlockPos pos, UUID villagerId) {
     }
 
     private record StorageFailure(String reason, long expiresGameTime) {
