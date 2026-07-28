@@ -10,8 +10,10 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.ChatVisiblity;
+import net.neoforged.fml.ModList;
 
 public final class VillagerChatEffectRenderer {
+    private static final String CHAT_HEADS_MOD_ID = "chat_heads";
     private static final int MESSAGE_INDENT = 4;
     private static final int BOTTOM_MARGIN = 40;
     private static final int CHAT_X_OFFSET = 4;
@@ -32,7 +34,13 @@ public final class VillagerChatEffectRenderer {
         return minecraft != null
                 && minecraft.gui != null
                 && minecraft.gui.getChat() != null
+                && animatedChatEffectsEnabled()
                 && VillagerAnimatedChatText.hasTrackedEffects();
+    }
+
+    static boolean animatedChatEffectsEnabled() {
+        return !VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get()
+                && !ModList.get().isLoaded(CHAT_HEADS_MOD_ID);
     }
 
     public static void render(GuiGraphics graphics, Minecraft minecraft) {

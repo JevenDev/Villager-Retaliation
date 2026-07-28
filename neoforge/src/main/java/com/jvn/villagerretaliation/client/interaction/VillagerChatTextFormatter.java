@@ -1,6 +1,5 @@
 package com.jvn.villagerretaliation.client.interaction;
 
-import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import java.util.List;
@@ -12,7 +11,7 @@ public final class VillagerChatTextFormatter {
     }
 
     public static void onClientChatReceived(ClientChatReceivedEvent event) {
-        if (VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get()) {
+        if (!VillagerChatEffectRenderer.animatedChatEffectsEnabled()) {
             Component stripped = stripEffectMarkup(event.getMessage());
             if (stripped != event.getMessage()) {
                 event.setMessage(stripped);
