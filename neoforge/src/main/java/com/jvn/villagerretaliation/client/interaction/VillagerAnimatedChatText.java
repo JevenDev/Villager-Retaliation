@@ -19,7 +19,7 @@ final class VillagerAnimatedChatText {
     }
 
     static void remember(List<DialogueTextSegment> textSegments) {
-        if (VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get()) {
+        if (!VillagerChatEffectRenderer.animatedChatEffectsEnabled()) {
             return;
         }
         if (!VillagerStyledTextRenderer.hasAnimatedEffects(textSegments)) {
@@ -46,7 +46,7 @@ final class VillagerAnimatedChatText {
     }
 
     static boolean hasTrackedEffects() {
-        if (VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get()) {
+        if (!VillagerChatEffectRenderer.animatedChatEffectsEnabled()) {
             return false;
         }
         return !ENTRIES.isEmpty();

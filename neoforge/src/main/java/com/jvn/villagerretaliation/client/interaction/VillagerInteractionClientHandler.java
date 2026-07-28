@@ -406,7 +406,7 @@ public final class VillagerInteractionClientHandler {
     }
 
     private static boolean dialogueTextEffectsDisabled() {
-        return VillagerRetaliationConfig.DISABLE_DIALOGUE_TEXT_EFFECTS.get();
+        return !VillagerChatEffectRenderer.animatedChatEffectsEnabled();
     }
 
     private static int villagerChatAccentColor(Minecraft minecraft, int entityId) {
