@@ -5,6 +5,12 @@ import com.jvn.villagerretaliation.inventory.VillagerItemFilterMenu;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.network.ItemFilterAmountChangePayload;
 import com.jvn.villagerretaliation.network.ItemFilterModeChangePayload;
+import com.jvn.toucanlib.client.interaction.ToucanInputModifiers;
+import com.jvn.toucanlib.client.interaction.ToucanLimitFeedback;
+import com.jvn.toucanlib.client.interaction.ToucanSlotAmounts;
+import com.jvn.toucanlib.client.interaction.ToucanSlotBounds;
+import com.jvn.toucanlib.client.interaction.ToucanSlotRenderer;
+import com.jvn.toucanlib.client.tooltip.ToucanTooltips;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.ChatFormatting;
@@ -23,7 +29,7 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
     private static final int TEXTURE_HEIGHT = 166;
     private static final int LIMIT_FEEDBACK_TICKS = 8;
 
-    private final int[] limitFeedback = new int[VillagerItemFilterMenu.GHOST_SLOT_COUNT];
+    private final ToucanLimitFeedback[] limitFeedback = createLimitFeedback();
     private Button allowlistButton;
     private Button denylistButton;
 
@@ -63,10 +69,8 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
     @Override
     protected void containerTick() {
         super.containerTick();
-        for (int slot = 0; slot < this.limitFeedback.length; slot++) {
-            if (this.limitFeedback[slot] > 0) {
-                this.limitFeedback[slot]--;
-            }
+        for (ToucanLimitFeedback feedback : this.limitFeedback) {
+            feedback.tick();
         }
     }
 
@@ -98,15 +102,13 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
                 && slot >= 0
                 && this.menu.mode() == VillagerItemFilterData.Mode.ALLOWLIST
                 && this.menu.isAmountEntry(slot)) {
-            int step = hasControlDown() && hasShiftDown()
-                    ? 100
-                    : hasControlDown() ? 10 : hasShiftDown() ? 5 : 1;
+            int step = ToucanSlotAmounts.step(ToucanInputModifiers.current());
             int delta = scrollY > 0.0 ? step : -step;
             VillagerItemFilterData.AmountAdjustment adjustment =
                     this.menu.adjustEntryAmount(slot, delta);
             if (adjustment.valid()) {
                 if (adjustment.hitLimit()) {
-                    this.limitFeedback[slot] = LIMIT_FEEDBACK_TICKS;
+                    this.limitFeedback[slot].trigger(LIMIT_FEEDBACK_TICKS);
                 }
                 if (adjustment.changed()) {
                     PacketDistributor.sendToServer(new ItemFilterAmountChangePayload(slot, delta));
@@ -143,18 +145,9 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
                     .withStyle(ChatFormatting.GRAY));
         }
         if (this.menu.mode() == VillagerItemFilterData.Mode.ALLOWLIST) {
-            tooltip.add(Component.translatable(
-                    "villagerretaliation.gui.item_filter.amount.scroll")
-                    .withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.translatable(
-                    "villagerretaliation.gui.item_filter.amount.scroll_shift")
-                    .withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.translatable(
-                    "villagerretaliation.gui.item_filter.amount.scroll_control")
-                    .withStyle(ChatFormatting.GRAY));
-            tooltip.add(Component.translatable(
-                    "villagerretaliation.gui.item_filter.amount.scroll_control_shift")
-                    .withStyle(ChatFormatting.GRAY));
+            ToucanTooltips.appendScrollInstructions(
+                    tooltip,
+                    "villagerretaliation.gui.item_filter.amount.scroll");
         }
         if (this.menu.mode() == VillagerItemFilterData.Mode.DENYLIST) {
             tooltip.add(Component.translatable(
@@ -183,20 +176,28 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
         }
 
         String label = VillagerItemFilterData.formatAmount(amount);
-        int x = slot.x + 17 - this.font.width(label);
         int color = this.menu.mode() == VillagerItemFilterData.Mode.ALLOWLIST
                 ? 0xFFFFFFFF
                 : 0xFFAAAAAA;
-        if (this.limitFeedback[slot.index] > 0) {
+        int offset = 0;
+        if (this.limitFeedback[slot.index].active()) {
             color = 0xFFFF7777;
-            int phase = this.limitFeedback[slot.index] & 3;
-            x += phase == 0 ? -1 : phase == 2 ? 1 : 0;
+            offset = this.limitFeedback[slot.index].horizontalOffset();
         }
+        ToucanSlotRenderer.renderCountLabel(
+                graphics,
+                this.font,
+                ToucanSlotBounds.square(slot.x + offset, slot.y, 18),
+                label,
+                color);
+    }
 
-        graphics.pose().pushPose();
-        graphics.pose().translate(0.0F, 0.0F, 200.0F);
-        graphics.drawString(this.font, label, x, slot.y + 9, color, true);
-        graphics.pose().popPose();
+    private static ToucanLimitFeedback[] createLimitFeedback() {
+        ToucanLimitFeedback[] feedback = new ToucanLimitFeedback[VillagerItemFilterMenu.GHOST_SLOT_COUNT];
+        for (int slot = 0; slot < feedback.length; slot++) {
+            feedback[slot] = new ToucanLimitFeedback();
+        }
+        return feedback;
     }
 
     private static Tooltip modeTooltip(
