@@ -192,8 +192,8 @@ public final class VillagerInteractionScreenOpener {
         VillagerWalletService.WalletSnapshot wallet = VillagerWalletService.getWallet(villager);
         VillagerCurrencyResources.Text currencyText = VillagerCurrencyResources.text(level.getServer());
         VillagerReputationNetworking.sendProfile(player, villager, profile);
-        net.minecraft.nbt.CompoundTag workState = HiredVillagerWorkService.state(villager);
-        HiredVillagerWorkService.initializeDefaults(workState, villager);
+        net.minecraft.nbt.CompoundTag workState = HiredWorkStateStore.state(villager);
+        HiredWorkStateStore.initializeDefaults(workState, villager);
         HiredHuntingTargets.Selection huntingTargets = HiredHuntingTargets.fromState(workState);
         return new OpenVillagerInteractionPayload(
                 villager.getId(),

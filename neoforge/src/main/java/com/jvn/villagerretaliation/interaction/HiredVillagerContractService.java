@@ -628,12 +628,12 @@ public final class HiredVillagerContractService {
         HiredVillagerRole currentRole = roleFromContract(level, villager, tag);
         if (currentRole != role) {
             if (currentRole == HiredVillagerRole.BUILDER
-                    && BuilderTaskState.hasTask(HiredVillagerWorkService.state(villager))) {
+                    && BuilderTaskState.hasTask(HiredWorkStateStore.state(villager))) {
                 return false;
             }
             clearContractScopedOrders(level, villager, currentRole);
-            HiredVillagerWorkService.cancelWork(level, villager, currentRole, "Work stopped. Role changed.");
-            HiredVillagerWorkService.resetReportProgress(level, villager);
+            HiredWorkStateStore.cancelWork(level, villager, currentRole, "Work stopped. Role changed.", Map.of());
+            HiredWorkStateStore.resetReportProgress(villager);
         }
         tag.putString(ROLE_TAG, role.serializedName());
         VillagerAssignmentStore.setRole(villager, role);
@@ -706,7 +706,7 @@ public final class HiredVillagerContractService {
             return;
         }
         HiredVillagerRole role = roleFromContract(level, villager, tag);
-        HiredVillagerWorkService.pauseWork(level, villager, role, "Contract paused. Assigned payment box must be in a loaded chunk for renewal.");
+        HiredWorkStateStore.pauseWork(level, villager, role, "Contract paused. Assigned payment box must be in a loaded chunk for renewal.", Map.of());
         setWorkStatus(villager, "Contract paused. Assigned payment box must be in a loaded chunk for renewal.");
         tag.putString(STATUS_TAG, STATUS_AWAITING_AUTO_PAYMENT);
         tag.putLong(AWAITING_AUTO_PAYMENT_START_GAME_TIME_TAG, level.getGameTime());
@@ -729,7 +729,7 @@ public final class HiredVillagerContractService {
                 expireContract(level, villager, tag, "Work stopped. Recurring payment was unpaid for more than a day.");
                 return;
             }
-            HiredWorkerBrain.setState(HiredVillagerWorkService.state(villager), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            HiredWorkerBrain.setState(HiredWorkStateStore.state(villager), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setWorkStatus(villager, "Contract paused. Recurring payment is unpaid.");
             return;
         }
@@ -743,12 +743,12 @@ public final class HiredVillagerContractService {
             return;
         }
         if (result == AutoPaymentResult.INSUFFICIENT_FUNDS) {
-            HiredWorkerBrain.setState(HiredVillagerWorkService.state(villager), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+            HiredWorkerBrain.setState(HiredWorkStateStore.state(villager), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             setWorkStatus(villager, "Contract paused. Assigned payment box has no renewal payment.");
             return;
         }
 
-        HiredWorkerBrain.setState(HiredVillagerWorkService.state(villager), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
+        HiredWorkerBrain.setState(HiredWorkStateStore.state(villager), HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
         setWorkStatus(villager, "Contract paused. Assigned payment box must be in a loaded chunk for renewal.");
     }
 
@@ -781,7 +781,7 @@ public final class HiredVillagerContractService {
         extendActiveContract(level, tag, 1, dailyCost);
         tag.putString(STATUS_TAG, STATUS_ACTIVE);
         tag.remove(AWAITING_AUTO_PAYMENT_START_GAME_TIME_TAG);
-        HiredWorkerBrain.setState(HiredVillagerWorkService.state(villager), HiredWorkerTaskState.IDLE, null);
+        HiredWorkerBrain.setState(HiredWorkStateStore.state(villager), HiredWorkerTaskState.IDLE, null);
         setWorkStatus(villager, "Contract renewed from assigned payment box.");
         villager.setPersistenceRequired();
         return AutoPaymentResult.SUCCESS;
@@ -822,7 +822,7 @@ public final class HiredVillagerContractService {
         HiredVillagerRole role = roleFromContract(level, villager, tag);
         UUID contractId = ensureContractId(tag);
         finalizeBuilderJobForContractEnd(level, villager, tag, role);
-        HiredVillagerWorkService.finishWork(level, villager, role, workStatus);
+        HiredWorkStateStore.finishWork(level, villager, role, workStatus, Map.of());
         clearContractScopedOrders(level, villager, role);
         tag.putString(STATUS_TAG, contractStatus);
         unlockProfessionAfterHire(villager, tag);
@@ -853,7 +853,7 @@ public final class HiredVillagerContractService {
         if (role != HiredVillagerRole.BUILDER) {
             return;
         }
-        CompoundTag state = HiredVillagerWorkService.state(villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
         if (!BuilderTaskState.hasTask(state)) {
             return;
         }
@@ -882,7 +882,7 @@ public final class HiredVillagerContractService {
     }
 
     private static void setWorkStatus(Villager villager, String status) {
-        CompoundTag state = HiredVillagerWorkService.state(villager);
+        CompoundTag state = HiredWorkStateStore.state(villager);
         String safeStatus = status == null ? "" : status;
         if (!safeStatus.equals(state.getString("Status"))) {
             state.putString("Status", safeStatus);
@@ -891,7 +891,7 @@ public final class HiredVillagerContractService {
 
     private static void clearContractScopedOrders(ServerLevel level, Villager villager, HiredVillagerRole role) {
         if (role == HiredVillagerRole.BREWING) {
-            BrewingWorker.clearOrder(HiredVillagerWorkService.state(villager));
+            BrewingWorker.clearOrder(HiredWorkStateStore.state(villager));
         }
     }
 

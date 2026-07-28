@@ -57,20 +57,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.Path;
 
 public final class HiredVillagerWorkService {
-    private static final String TAG = "VillagerRetaliationHiredWork";
     private static final String NEXT_WORK_AREA_RETURN_PATH_GAME_TIME_TAG = "NextWorkAreaReturnPathGameTime";
     private static final String WORK_AREA_RETURN_TARGET_TAG = "WorkAreaReturnTarget";
     private static final String WORK_AREA_RETURN_DISTANCE_SQR_TAG = "WorkAreaReturnDistanceSqr";
     private static final String WORK_AREA_RETURN_LAST_CHECK_GAME_TIME_TAG = "WorkAreaReturnLastCheckGameTime";
     private static final String WORK_AREA_RETURN_STUCK_CHECKS_TAG = "WorkAreaReturnStuckChecks";
     private static final String STORAGE_FULL_NOTICE_SHOWN_TAG = "StorageFullNoticeShown";
-    private static final String STATUS_REPLACEMENTS_TAG = "StatusReplacements";
-    private static final String COMPLETED_TASKS_TAG = "CompletedTasks";
     private static final String VANILLA_REST_PAUSED_TAG = "VanillaRestPaused";
     private static final String DISABLED_WORK_PAUSED_TAG = "DisabledWorkPaused";
     private static final String DESPISED_HIRER_WORK_PAUSED_TAG = "DespisedHirerWorkPaused";
-    private static final String DEFAULTS_VERSION_TAG = "DefaultsVersion";
-    private static final int DEFAULTS_VERSION = 1;
     public static final String WAITING_FOR_HIRER_STATUS = "interaction.work.status.waiting_for_hirer";
     private static final String STORAGE_FULL_NOTICE = "interaction.work.status.storage_full";
     private static final String PAUSED_FOR_COMMAND_STATUS = "interaction.work.status.paused_for_command";
@@ -961,18 +956,11 @@ public final class HiredVillagerWorkService {
 
     /** Returns whether durable worker state currently describes an active work operation. */
     public static boolean isActivelyWorking(Villager villager) {
-        if (villager == null || !villager.getPersistentData().contains(TAG, Tag.TAG_COMPOUND)) {
-            return false;
-        }
-        CompoundTag state = villager.getPersistentData().getCompound(TAG);
-        if (!state.getBoolean("Enabled") || !state.contains("WorkerTaskState", Tag.TAG_STRING)) {
-            return false;
-        }
-        return !HiredWorkerTaskState.byId(state.getString("WorkerTaskState")).isWaitingState();
+        return HiredWorkStateStore.isActivelyWorking(villager);
     }
 
     public static void clearInheritedStateForNewborn(Villager child) {
-        if (child != null) child.getPersistentData().remove(TAG);
+        HiredWorkStateStore.clearInheritedStateForNewborn(child);
     }
 
     public static void onVillagerLeaveLevel(ServerLevel level, Villager villager) {
@@ -1072,9 +1060,7 @@ public final class HiredVillagerWorkService {
     }
 
     public static void resetReportProgress(ServerLevel level, Villager villager) {
-        CompoundTag state = state(villager);
-        initializeDefaults(state, villager);
-        resetReportProgress(state);
+        HiredWorkStateStore.resetReportProgress(villager);
     }
 
     public static void stopWork(ServerLevel level, Villager villager, HiredVillagerRole role, String status) {
@@ -1100,7 +1086,7 @@ public final class HiredVillagerWorkService {
             HiredVillagerRole role,
             String status,
             Map<String, String> replacements) {
-        updateWorkLifecycle(level, villager, role, status, replacements, WorkLifecycle.PAUSE);
+        HiredWorkStateStore.pauseWork(level, villager, role, status, replacements);
     }
 
     public static void cancelWork(ServerLevel level, Villager villager, HiredVillagerRole role, String status) {
@@ -1113,7 +1099,7 @@ public final class HiredVillagerWorkService {
             HiredVillagerRole role,
             String status,
             Map<String, String> replacements) {
-        updateWorkLifecycle(level, villager, role, status, replacements, WorkLifecycle.CANCEL);
+        HiredWorkStateStore.cancelWork(level, villager, role, status, replacements);
     }
 
     public static void finishWork(ServerLevel level, Villager villager, HiredVillagerRole role, String status) {
@@ -1126,36 +1112,8 @@ public final class HiredVillagerWorkService {
             HiredVillagerRole role,
             String status,
             Map<String, String> replacements) {
-        updateWorkLifecycle(level, villager, role, status, replacements, WorkLifecycle.FINISH);
+        HiredWorkStateStore.finishWork(level, villager, role, status, replacements);
     }
-
-    private static void updateWorkLifecycle(
-            ServerLevel level,
-            Villager villager,
-            HiredVillagerRole role,
-            String status,
-            Map<String, String> replacements,
-            WorkLifecycle lifecycle) {
-        HiredWorkSession session = HiredWorkSession.create(level, villager, role);
-        if (session.worker() != null) {
-            if (lifecycle == WorkLifecycle.PAUSE) {
-                session.worker().pause(level, villager, session.context());
-            } else {
-                session.worker().stop(level, villager, session.context());
-            }
-        } else {
-            session.context().setProgressTicks(0);
-        }
-        session.state().remove("NextWorkGameTime");
-        setStatus(session.state(), status, replacements);
-    }
-
-    private enum WorkLifecycle {
-        PAUSE,
-        CANCEL,
-        FINISH
-    }
-
     public static void toggleEnabled(ServerPlayer player, ServerLevel level, Villager villager) {
         CompoundTag state = state(villager);
         initializeDefaults(state, villager);
@@ -1734,90 +1692,19 @@ public final class HiredVillagerWorkService {
     }
 
     static CompoundTag state(Villager villager) {
-        CompoundTag persistentData = villager.getPersistentData();
-        if (!persistentData.contains(TAG, Tag.TAG_COMPOUND)) {
-            persistentData.put(TAG, new CompoundTag());
-        }
-        return persistentData.getCompound(TAG);
+        return HiredWorkStateStore.state(villager);
     }
 
     static void initializeDefaults(CompoundTag state, Villager villager) {
-        if (state.getInt(DEFAULTS_VERSION_TAG) >= DEFAULTS_VERSION) {
-            return;
-        }
-        boolean hadStoredArea = state.contains(HiredWorkArea.WORK_CENTER_POS_TAG, Tag.TAG_LONG)
-                && state.contains(HiredWorkArea.WORK_MIN_POS_TAG, Tag.TAG_LONG)
-                && state.contains(HiredWorkArea.WORK_MAX_POS_TAG, Tag.TAG_LONG);
-        if (!state.contains("Enabled", Tag.TAG_BYTE)) {
-            state.putBoolean("Enabled", true);
-        }
-        if (!state.contains(HiredWorkArea.RADIUS_TAG, Tag.TAG_INT)) {
-            state.putInt(HiredWorkArea.RADIUS_TAG, Mth.clamp(
-                    VillagerRetaliationConfig.HIRED_WORK_DEFAULT_RADIUS.get(),
-                    MIN_WORK_RADIUS,
-                    baseWorkRadiusCap()));
-        }
-        if (!state.contains(HiredWorkArea.WORK_AREA_ASSIGNED_TAG, Tag.TAG_BYTE)) {
-            state.putBoolean(HiredWorkArea.WORK_AREA_ASSIGNED_TAG, false);
-        }
-        if (!state.contains("UseAssignedStorageForSupplies", Tag.TAG_BYTE)) {
-            state.putBoolean("UseAssignedStorageForSupplies", true);
-        }
-        if (!state.contains("AutoDepositOutputs", Tag.TAG_BYTE)) {
-            state.putBoolean("AutoDepositOutputs", true);
-        }
-        if (!state.contains("LoggingFilter", Tag.TAG_STRING)) {
-            state.putString("LoggingFilter", "any");
-        }
-        HiredLoggingOptions.initializeDefaults(state);
-        HiredFarmingOptions.initializeDefaults(state);
-        HiredAnimalHandlingOptions.initializeDefaults(state);
-        if (!state.contains("NavigationTargetType", Tag.TAG_STRING)) {
-            state.putString("NavigationTargetType", "interesting");
-        }
-        if (!state.contains(HiredCombatMode.STATE_TAG, Tag.TAG_STRING)) {
-            state.putString(HiredCombatMode.STATE_TAG, HiredCombatMode.GUARD.serializedName());
-        }
-        if (!state.contains(HiredHuntingMode.STATE_TAG, Tag.TAG_STRING)) {
-            state.putString(HiredHuntingMode.STATE_TAG, HiredHuntingMode.fromState(state).serializedName());
-        }
-        HiredHuntingTargets.initializeDefaults(state);
-        MiningHorizontalOptions.initializeDefaults(state);
-        if (!state.contains("Status", Tag.TAG_STRING)) {
-            setStatus(state, "interaction.work.status.waiting_tick");
-        }
-        HiredWorkerBrain.initialize(state);
-        if (!hadStoredArea) {
-            int radius = Mth.clamp(state.getInt(HiredWorkArea.RADIUS_TAG), MIN_WORK_RADIUS, baseWorkRadiusCap());
-            HiredWorkArea.fromCenter(villager.blockPosition(), radius, Math.min(radius, 8), state.getBoolean(HiredWorkArea.WORK_AREA_ASSIGNED_TAG)).save(state);
-        }
-        state.putInt(DEFAULTS_VERSION_TAG, DEFAULTS_VERSION);
-    }
-
-    private static BlockPos workCenter(CompoundTag state, Villager villager) {
-        if (!state.contains(HiredWorkArea.WORK_CENTER_POS_TAG, Tag.TAG_LONG)) {
-            state.putLong(HiredWorkArea.WORK_CENTER_POS_TAG, villager.blockPosition().asLong());
-        }
-        return BlockPos.of(state.getLong(HiredWorkArea.WORK_CENTER_POS_TAG));
+        HiredWorkStateStore.initializeDefaults(state, villager);
     }
 
     private static HiredWorkArea workArea(CompoundTag state, Villager villager) {
-        if (!state.contains(HiredWorkArea.WORK_MIN_POS_TAG, Tag.TAG_LONG) || !state.contains(HiredWorkArea.WORK_MAX_POS_TAG, Tag.TAG_LONG)) {
-            initializeDefaults(state, villager);
-        }
-        return HiredWorkArea.fromState(state, workCenter(state, villager));
+        return HiredWorkStateStore.workArea(state, villager);
     }
 
     static HiredWorkArea workAreaWithinMax(CompoundTag state, Villager villager, int maxRadius) {
-        int safeMaxRadius = Math.max(MIN_WORK_RADIUS, maxRadius);
-        HiredWorkArea area = workArea(state, villager);
-        HiredWorkArea clamped = area.clampedTo(safeMaxRadius);
-        if (!clamped.min().equals(area.min()) || !clamped.max().equals(area.max()) || state.getInt(HiredWorkArea.RADIUS_TAG) > safeMaxRadius) {
-            clamped.save(state);
-            return clamped;
-        }
-        state.putInt(HiredWorkArea.RADIUS_TAG, Mth.clamp(area.horizontalRadius(), MIN_WORK_RADIUS, safeMaxRadius));
-        return area;
+        return HiredWorkStateStore.workAreaWithinMax(state, villager, maxRadius);
     }
 
     static int maxWorkRadius(ServerLevel level, Villager villager, HiredVillagerRole role) {
@@ -1862,88 +1749,27 @@ public final class HiredVillagerWorkService {
     }
 
     private static void setStatus(CompoundTag state, String status) {
-        String safeStatus = status == null ? "" : status;
-        boolean statusMatches = state.contains("Status", Tag.TAG_STRING)
-                && safeStatus.equals(state.getString("Status"));
-        boolean hasReplacements = state.contains(STATUS_REPLACEMENTS_TAG, Tag.TAG_COMPOUND);
-        if (statusMatches && !hasReplacements) {
-            return;
-        }
-        if (!statusMatches) {
-            state.putString("Status", safeStatus);
-        }
-        if (hasReplacements) {
-            state.remove(STATUS_REPLACEMENTS_TAG);
-        }
+        HiredWorkStateStore.setStatus(state, status);
     }
 
     private static void setStatus(CompoundTag state, String status, Map<String, String> replacements) {
-        String safeStatus = status == null ? "" : status;
-        boolean statusMatches = state.contains("Status", Tag.TAG_STRING)
-                && safeStatus.equals(state.getString("Status"));
-        if (replacements == null || replacements.isEmpty()) {
-            if (statusMatches && !state.contains(STATUS_REPLACEMENTS_TAG, Tag.TAG_COMPOUND)) {
-                return;
-            }
-            if (!statusMatches) {
-                state.putString("Status", safeStatus);
-            }
-            if (state.contains(STATUS_REPLACEMENTS_TAG)) {
-                state.remove(STATUS_REPLACEMENTS_TAG);
-            }
-            return;
-        }
-        if (statusMatches && replacementsMatch(state, replacements)) {
-            return;
-        }
-        if (!statusMatches) {
-            state.putString("Status", safeStatus);
-        }
-        CompoundTag replacementTag = new CompoundTag();
-        replacements.forEach((key, value) -> replacementTag.putString(key, value == null ? "" : value));
-        state.put(STATUS_REPLACEMENTS_TAG, replacementTag);
-    }
-
-    private static boolean replacementsMatch(CompoundTag state, Map<String, String> replacements) {
-        if (!state.contains(STATUS_REPLACEMENTS_TAG, Tag.TAG_COMPOUND)) {
-            return false;
-        }
-        CompoundTag replacementTag = state.getCompound(STATUS_REPLACEMENTS_TAG);
-        if (replacementTag.getAllKeys().size() != replacements.size()) {
-            return false;
-        }
-        for (Map.Entry<String, String> entry : replacements.entrySet()) {
-            String safeValue = entry.getValue() == null ? "" : entry.getValue();
-            if (!replacementTag.contains(entry.getKey(), Tag.TAG_STRING)
-                    || !safeValue.equals(replacementTag.getString(entry.getKey()))) {
-                return false;
-            }
-        }
-        return true;
+        HiredWorkStateStore.setStatus(state, status, replacements);
     }
 
     private static Map<String, String> statusReplacements(CompoundTag state) {
-        if (!state.contains(STATUS_REPLACEMENTS_TAG, Tag.TAG_COMPOUND)) {
-            return Map.of();
-        }
-        CompoundTag replacementTag = state.getCompound(STATUS_REPLACEMENTS_TAG);
-        Map<String, String> replacements = new java.util.LinkedHashMap<>();
-        for (String key : replacementTag.getAllKeys()) {
-            replacements.put(key, replacementTag.getString(key));
-        }
-        return replacements;
+        return HiredWorkStateStore.statusReplacements(state);
     }
 
     private static void recordCompletedTask(CompoundTag state) {
-        state.putInt(COMPLETED_TASKS_TAG, Math.max(0, state.getInt(COMPLETED_TASKS_TAG)) + 1);
+        HiredWorkStateStore.recordCompletedTask(state);
     }
 
     private static void resetReportProgress(CompoundTag state) {
-        state.remove(COMPLETED_TASKS_TAG);
+        HiredWorkStateStore.resetReportProgress(state);
     }
 
     private static int completedTasks(CompoundTag state) {
-        return Math.max(0, state.getInt(COMPLETED_TASKS_TAG));
+        return HiredWorkStateStore.completedTasks(state);
     }
 
     private static String completedTasksPhrase(int count) {

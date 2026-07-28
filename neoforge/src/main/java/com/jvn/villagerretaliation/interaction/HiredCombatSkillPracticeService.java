@@ -49,7 +49,7 @@ public final class HiredCombatSkillPracticeService {
                 villager,
                 hirer,
                 role,
-                HiredVillagerWorkService.state(villager),
+                HiredWorkStateStore.state(villager),
                 HiredWorkPractice.combat(ranged, role == HiredVillagerRole.HUNTING,
                         event.getNewDamage() * threatFactor, repetitionKey));
     }
@@ -86,7 +86,7 @@ public final class HiredCombatSkillPracticeService {
                 villager,
                 hirer,
                 role,
-                HiredVillagerWorkService.state(villager),
+                HiredWorkStateStore.state(villager),
                 HiredWorkPractice.combatKill(ranged, role == HiredVillagerRole.HUNTING, threat, repetitionKey));
     }
 }
