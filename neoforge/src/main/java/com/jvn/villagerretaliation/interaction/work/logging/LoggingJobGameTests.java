@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
@@ -21,6 +22,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -70,6 +72,20 @@ public final class LoggingJobGameTests {
         HiredLoggingOptions.ToggleResult invalid = HiredLoggingOptions.toggle(state, "unknown_option");
         helper.assertTrue(invalid.invalid(), "unknown option should report invalid");
         helper.assertValueEqual(state, beforeInvalidToggle, "unknown option must not mutate persisted state");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void harvestLeavesRequiresShearsOrSilkTouchHoe(GameTestHelper helper) {
+        ItemStack plainHoe = new ItemStack(Items.IRON_HOE);
+        ItemStack silkTouchHoe = plainHoe.copy();
+        var enchantments = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+        silkTouchHoe.enchant(enchantments.getOrThrow(Enchantments.SILK_TOUCH), 1);
+
+        helper.assertTrue(LoggingWorker.isLeafHarvestTool(new ItemStack(Items.SHEARS)), "shears should harvest leaf blocks");
+        helper.assertFalse(LoggingWorker.isLeafHarvestTool(plainHoe), "an unenchanted hoe should use natural leaf drops");
+        helper.assertTrue(LoggingWorker.isLeafHarvestTool(silkTouchHoe), "a Silk Touch hoe should harvest leaf blocks");
+        helper.assertFalse(LoggingWorker.isLeafHarvestTool(new ItemStack(Items.DIAMOND_AXE)), "axes are not leaf-harvest tools");
         helper.succeed();
     }
 
@@ -219,12 +235,14 @@ public final class LoggingJobGameTests {
         }
         BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false);
         BlockPos crown = root.above(12);
-        for (BlockPos leaf : List.of(crown, crown.north(), crown.south(), crown.east(), crown.west())) {
+        List<BlockPos> treeLeaves = List.of(crown, crown.north(), crown.south(), crown.east(), crown.west());
+        for (BlockPos leaf : treeLeaves) {
             setBlock(level, leaf, leaves);
         }
 
         CompoundTag state = new CompoundTag();
         HiredLoggingOptions.initializeDefaults(state);
+        HiredLoggingOptions.toggle(state, HiredLoggingOptions.PLANT_SAPLINGS);
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.DIAMOND_AXE));
         HiredWorkContext context = new HiredWorkContext(
@@ -259,7 +277,58 @@ public final class LoggingJobGameTests {
                 treeLogs.stream().noneMatch(pos -> level.getBlockState(pos).is(BlockTags.OAK_LOGS)),
                 "remaining original logs should not be abandoned");
         helper.assertTrue(LoggingHarvestPlan.read(context) == null, "completed tree should clear its persisted harvest plan");
+        helper.assertTrue(
+                treeLeaves.stream().noneMatch(pos -> LoggingTreeGeometry.isNaturalLeaf(level.getBlockState(pos))),
+                "completed tree should remove all of its natural leaves");
         helper.assertTrue(inventory.hasOutput(stack -> stack.is(Items.OAK_LOG)), "completed original tree should keep its oak output");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void loggingWorkerBreaksTreeBlockedExit(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        BlockPos villagerPos = helper.absolutePos(new BlockPos(4, 2, 4));
+        setBlock(level, villagerPos.below(), Blocks.STONE.defaultBlockState());
+
+        for (BlockPos blockedSide : List.of(villagerPos.north(), villagerPos.south(), villagerPos.west())) {
+            setBlock(level, blockedSide, Blocks.STONE.defaultBlockState());
+            setBlock(level, blockedSide.above(), Blocks.STONE.defaultBlockState());
+        }
+        BlockPos exitLog = villagerPos.east();
+        BlockPos exitLeaf = exitLog.above();
+        setBlock(level, exitLog, Blocks.OAK_LOG.defaultBlockState());
+        setBlock(level, exitLeaf, Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false));
+
+        Villager villager = EntityType.VILLAGER.create(level);
+        helper.assertTrue(villager != null, "blocked-exit fixture villager");
+        villager.moveTo(villagerPos.getX() + 0.5D, villagerPos.getY(), villagerPos.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(level.addFreshEntity(villager), "blocked-exit villager should enter the level");
+
+        CompoundTag state = new CompoundTag();
+        HiredLoggingOptions.initializeDefaults(state);
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
+        HiredWorkContext context = new HiredWorkContext(
+                inventory,
+                state,
+                villagerPos,
+                villagerPos.offset(-3, -1, -3),
+                villagerPos.offset(3, 3, 3),
+                16,
+                16,
+                true,
+                100,
+                false,
+                false);
+        LoggingWorker worker = new LoggingWorker();
+
+        worker.tick(level, villager, hirer, context);
+        helper.assertFalse(LoggingTreeGeometry.isNaturalLeaf(level.getBlockState(exitLeaf)), "logger should clear the leaf blocking its head");
+        worker.tick(level, villager, hirer, context);
+        helper.assertFalse(level.getBlockState(exitLog).is(BlockTags.LOGS), "logger should axe the log still blocking its feet");
+        helper.assertTrue(inventory.hasOutput(stack -> stack.is(Items.OAK_LOG)), "blocked exit log should retain its simulated drop");
         villager.discard();
         helper.succeed();
     }

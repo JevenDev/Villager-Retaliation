@@ -5955,6 +5955,8 @@ public final class VillagerWorkerGameTests {
         }
 
         CompoundTag state = new CompoundTag();
+        HiredLoggingOptions.initializeDefaults(state);
+        HiredLoggingOptions.toggle(state, HiredLoggingOptions.PLANT_SAPLINGS);
         HiredWorkContext context = context(
                 helper,
                 villager,
@@ -5966,7 +5968,8 @@ public final class VillagerWorkerGameTests {
         LoggingWorker worker = new LoggingWorker();
 
         runWorkerUntil(helper, worker, level, villager, hirer, context, 260, () ->
-                countItem(container(level, chest), Items.OAK_LOG) == 3);
+                countItem(container(level, chest), Items.OAK_LOG) == 3
+                        && !context.hasOutputToDeposit());
 
         helper.assertValueEqual(
                 countItem(container(level, chest), Items.OAK_LOG),
