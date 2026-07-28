@@ -32,6 +32,18 @@ public final class VillagerCurrencyPayment {
         return true;
     }
 
+    public static void give(ServerPlayer player, int amount) {
+        int remaining = Math.max(0, amount);
+        while (remaining > 0) {
+            int chunk = Math.min(VillagerCurrencyResources.maxStackSize(player.serverLevel().getServer()), remaining);
+            ItemStack stack = VillagerCurrencyResources.createStack(player.serverLevel().getServer(), chunk);
+            if (!player.getInventory().add(stack)) {
+                player.drop(stack, false);
+            }
+            remaining -= chunk;
+        }
+    }
+
     private static int count(ServerPlayer player, List<ItemStack> stacks) {
         int count = 0;
         for (ItemStack stack : stacks) {
