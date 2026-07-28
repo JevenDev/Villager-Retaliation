@@ -325,6 +325,13 @@ public final class VillagerInventoryGameTests {
                 villager,
                 List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
                 AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "amount-filtered output assignment");
+        AssignedStorageSavedData.AssignedContainerRecord assigned =
+                AssignedStorageService.assignedStorage(level, villager).getFirst();
+        helper.assertTrue(assigned.outputFilterSnapshotKnown(),
+                "assigning a loaded output should persist its item-frame configuration");
+        helper.assertValueEqual(assigned.outputFilters().size(), 1, "persisted output filter count");
+        helper.assertTrue(ItemStack.matches(assigned.outputFilters().getFirst(), filter.copyWithCount(1)),
+                "the durable output filter should preserve item-filter components and amount limits");
 
         ItemStack remainder = AssignedStorageService.depositStack(villager, new ItemStack(Items.EMERALD, 10));
         helper.assertValueEqual(remainder.getCount(), 8,
@@ -358,6 +365,11 @@ public final class VillagerInventoryGameTests {
                 "a matching unlimited frame should override a capped alternative");
         helper.assertValueEqual(countItem(chest, Items.EMERALD), 35,
                 "the unlimited alternative should permit normal insertion");
+        AssignedStorageService.assignedOutputCapacityFor(villager, new ItemStack(Items.EMERALD), 1);
+        AssignedStorageSavedData.AssignedContainerRecord refreshed =
+                AssignedStorageService.assignedStorage(level, villager).getFirst();
+        helper.assertValueEqual(refreshed.outputFilters().size(), 2,
+                "an observable frame edit should refresh the durable output-filter snapshot");
 
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         unlimitedFrame.discard();
@@ -1392,9 +1404,43 @@ public final class VillagerInventoryGameTests {
         helper.assertValueEqual(record.hirerId(), hirerId, "legacy storage hirer");
         helper.assertValueEqual(record.purpose(), "general", "missing legacy purpose should default safely");
         helper.assertValueEqual(record.validationStatus(), "unknown", "missing legacy validation should default safely");
+        helper.assertFalse(record.outputFilterSnapshotKnown(),
+                "legacy storage should remain fail-closed until its frame configuration is observed");
 
         CompoundTag saved = loaded.save(new CompoundTag(), level.registryAccess());
         helper.assertValueEqual(saved.getList("Entries", Tag.TAG_COMPOUND).size(), 1, "save should keep only valid assigned storage");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void assignedStoragePersistsOutputFilterSnapshots(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(filter, 0, new ItemStack(Items.DIAMOND));
+        VillagerItemFilterData.setAmount(filter, 0, 24);
+        UUID villagerId = UUID.nameUUIDFromBytes(
+                "villagerretaliation:durable-output-filter".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        AssignedStorageSavedData data = new AssignedStorageSavedData();
+        data.assign(new AssignedStorageSavedData.AssignedContainerRecord(
+                level.dimension(),
+                helper.absolutePos(new BlockPos(2, 2, 2)),
+                villagerId,
+                UUID.randomUUID(),
+                AssignedStorageService.OUTPUT_PURPOSE,
+                0,
+                "valid",
+                List.of(filter),
+                true));
+
+        CompoundTag saved = data.save(new CompoundTag(), level.registryAccess());
+        AssignedStorageSavedData loaded = AssignedStorageSavedData.load(saved, level.registryAccess());
+        AssignedStorageSavedData.AssignedContainerRecord restored = loaded.assignedTo(villagerId).getFirst();
+        helper.assertTrue(restored.outputFilterSnapshotKnown(),
+                "serialized output assignment should retain a known filter snapshot");
+        helper.assertValueEqual(restored.outputFilters().size(), 1,
+                "serialized output assignment should retain every framed filter");
+        helper.assertTrue(ItemStack.matches(restored.outputFilters().getFirst(), filter.copyWithCount(1)),
+                "serialized output assignment should retain filter identity, expression, and amount limit");
         helper.succeed();
     }
 

@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 
@@ -29,6 +30,8 @@ public final class AssignedStorageSavedData extends SavedData {
     private static final String TAG_PURPOSE = "Purpose";
     private static final String TAG_PRIORITY = "Priority";
     private static final String TAG_VALIDATION = "Validation";
+    private static final String TAG_OUTPUT_FILTERS = "OutputFilters";
+    private static final String TAG_OUTPUT_FILTER_SNAPSHOT_KNOWN = "OutputFilterSnapshotKnown";
 
     private final Map<ContainerKey, AssignedContainerRecord> byContainer = new HashMap<>();
     private final Map<UUID, List<AssignedContainerRecord>> byVillager = new HashMap<>();
@@ -55,6 +58,15 @@ public final class AssignedStorageSavedData extends SavedData {
             }
             ResourceKey<Level> dimension = ResourceKey.create(Registries.DIMENSION, dimensionId);
             UUID hirer = entryTag.hasUUID(TAG_HIRER) ? entryTag.getUUID(TAG_HIRER) : null;
+            List<ItemStack> outputFilters = new ArrayList<>();
+            for (Tag rawFilter : entryTag.getList(TAG_OUTPUT_FILTERS, Tag.TAG_COMPOUND)) {
+                if (rawFilter instanceof CompoundTag filterTag) {
+                    ItemStack filter = ItemStack.parseOptional(provider, filterTag);
+                    if (!filter.isEmpty()) {
+                        outputFilters.add(filter.copyWithCount(1));
+                    }
+                }
+            }
             AssignedContainerRecord record = new AssignedContainerRecord(
                     dimension,
                     BlockPos.of(entryTag.getLong(TAG_POS)),
@@ -62,7 +74,9 @@ public final class AssignedStorageSavedData extends SavedData {
                     hirer,
                     entryTag.getString(TAG_PURPOSE).isBlank() ? "general" : entryTag.getString(TAG_PURPOSE),
                     entryTag.getInt(TAG_PRIORITY),
-                    entryTag.getString(TAG_VALIDATION).isBlank() ? "unknown" : entryTag.getString(TAG_VALIDATION)
+                    entryTag.getString(TAG_VALIDATION).isBlank() ? "unknown" : entryTag.getString(TAG_VALIDATION),
+                    outputFilters,
+                    entryTag.getBoolean(TAG_OUTPUT_FILTER_SNAPSHOT_KNOWN)
             );
             data.put(record);
         }
@@ -83,6 +97,14 @@ public final class AssignedStorageSavedData extends SavedData {
             entryTag.putString(TAG_PURPOSE, record.purpose());
             entryTag.putInt(TAG_PRIORITY, record.priority());
             entryTag.putString(TAG_VALIDATION, record.validationStatus());
+            entryTag.putBoolean(TAG_OUTPUT_FILTER_SNAPSHOT_KNOWN, record.outputFilterSnapshotKnown());
+            if (!record.outputFilters().isEmpty()) {
+                ListTag filtersTag = new ListTag();
+                for (ItemStack filter : record.outputFilters()) {
+                    filtersTag.add(filter.saveOptional(provider));
+                }
+                entryTag.put(TAG_OUTPUT_FILTERS, filtersTag);
+            }
             entriesTag.add(entryTag);
         }
         tag.put(TAG_ENTRIES, entriesTag);
@@ -179,7 +201,9 @@ public final class AssignedStorageSavedData extends SavedData {
                     record.hirerId(),
                     record.purpose(),
                     record.priority(),
-                    record.validationStatus()
+                    record.validationStatus(),
+                    record.outputFilters(),
+                    record.outputFilterSnapshotKnown()
             ));
         }
         setDirty();
@@ -240,10 +264,52 @@ public final class AssignedStorageSavedData extends SavedData {
                 record.hirerId(),
                 record.purpose(),
                 record.priority(),
-                safeValidationStatus
+                safeValidationStatus,
+                record.outputFilters(),
+                record.outputFilterSnapshotKnown()
         );
         put(updated);
         setDirty();
+    }
+
+    public void updateOutputFilterSnapshot(AssignedContainerRecord record, List<ItemStack> filters) {
+        List<ItemStack> safeFilters = copyFilters(filters);
+        if (record.outputFilterSnapshotKnown() && sameFilters(record.outputFilters(), safeFilters)) {
+            return;
+        }
+        put(new AssignedContainerRecord(
+                record.dimension(),
+                record.pos(),
+                record.villagerId(),
+                record.hirerId(),
+                record.purpose(),
+                record.priority(),
+                record.validationStatus(),
+                safeFilters,
+                true));
+        setDirty();
+    }
+
+    private static List<ItemStack> copyFilters(List<ItemStack> filters) {
+        if (filters == null || filters.isEmpty()) {
+            return List.of();
+        }
+        return filters.stream()
+                .filter(stack -> stack != null && !stack.isEmpty())
+                .map(stack -> stack.copyWithCount(1))
+                .toList();
+    }
+
+    private static boolean sameFilters(List<ItemStack> first, List<ItemStack> second) {
+        if (first.size() != second.size()) {
+            return false;
+        }
+        for (int index = 0; index < first.size(); index++) {
+            if (!ItemStack.matches(first.get(index), second.get(index))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void put(AssignedContainerRecord record) {
@@ -296,7 +362,24 @@ public final class AssignedStorageSavedData extends SavedData {
             UUID hirerId,
             String purpose,
             int priority,
-            String validationStatus) {
+            String validationStatus,
+            List<ItemStack> outputFilters,
+            boolean outputFilterSnapshotKnown) {
+        public AssignedContainerRecord {
+            pos = pos.immutable();
+            outputFilters = copyFilters(outputFilters);
+        }
+
+        public AssignedContainerRecord(
+                ResourceKey<Level> dimension,
+                BlockPos pos,
+                UUID villagerId,
+                UUID hirerId,
+                String purpose,
+                int priority,
+                String validationStatus) {
+            this(dimension, pos, villagerId, hirerId, purpose, priority, validationStatus, List.of(), false);
+        }
     }
 
     private record ContainerKey(ResourceKey<Level> dimension, BlockPos pos, UUID villagerId, String purpose) {

@@ -118,6 +118,15 @@ public final class AssignedStorageService {
                 alreadyAssigned++;
                 continue;
             }
+            List<ItemStack> outputFilters = List.of();
+            boolean outputFilterSnapshotKnown = false;
+            if (OUTPUT_PURPOSE.equals(normalizedPurpose)
+                    && targetLevel.getBlockEntity(position.pos()) instanceof Container container) {
+                outputFilters = courierItemFrameFilters(
+                        targetLevel,
+                        VillagerInventoryOverflowService.ContainerCandidate.resolve(targetLevel, position.pos(), container));
+                outputFilterSnapshotKnown = true;
+            }
             AssignmentResult result = data.assign(new AssignedContainerRecord(
                     position.dimension(),
                     position.pos().immutable(),
@@ -125,7 +134,9 @@ public final class AssignedStorageService {
                     player.getUUID(),
                     normalizedPurpose,
                     priorityBase + assigned,
-                    "valid"
+                    "valid",
+                    outputFilters,
+                    outputFilterSnapshotKnown
             ));
             if (result == AssignmentResult.ASSIGNED) {
                 assigned++;
@@ -434,19 +445,21 @@ public final class AssignedStorageService {
                 ? List.of()
                 : cargo.stream().filter(stack -> stack != null && !stack.isEmpty()).toList();
         BlockPos villagerPos = villager.blockPosition();
-        return liveOutputContainerCandidates(level, villager).stream()
-                .filter(candidate -> candidate.anyPositionMatches(safeFilter))
-                .filter(candidate -> !isStorageRecentlyFailed(level, villager, candidate, StorageUse.OUTPUT))
-                .filter(candidate -> nonEmptyCargo.stream().anyMatch(stack -> courierOutputAccepts(level, candidate, stack)))
+        return outputCapacityPlan(level, villager).targets().stream()
+                .filter(OutputTarget::filterSnapshotKnown)
+                .filter(target -> target.candidate().anyPositionMatches(safeFilter))
+                .filter(target -> !isStorageRecentlyFailed(level, villager, target.candidate(), StorageUse.OUTPUT))
+                .filter(target -> nonEmptyCargo.stream().anyMatch(stack ->
+                        outputAllowance(level, target.candidate(), target.filters(), stack) > 0))
                 .min((first, second) -> {
                     int framedComparison = Boolean.compare(
-                            hasCourierItemFrame(level, second),
-                            hasCourierItemFrame(level, first));
+                            !second.filters().isEmpty(),
+                            !first.filters().isEmpty());
                     return framedComparison != 0
                             ? framedComparison
-                            : Double.compare(first.distanceToSqr(villagerPos), second.distanceToSqr(villagerPos));
+                            : Double.compare(first.candidate().distanceToSqr(villagerPos), second.candidate().distanceToSqr(villagerPos));
                 })
-                .map(candidate -> candidate.nearestPosition(villagerPos, safeFilter))
+                .map(target -> target.candidate().nearestPosition(villagerPos, safeFilter))
                 .orElse(null);
     }
 
@@ -458,9 +471,10 @@ public final class AssignedStorageService {
         if (level == null || villager == null || storagePos == null || stack == null || stack.isEmpty()) {
             return false;
         }
-        for (VillagerInventoryOverflowService.ContainerCandidate candidate : liveOutputContainerCandidates(level, villager)) {
-            if (candidate.matches(storagePos)) {
-                return courierOutputAccepts(level, candidate, stack);
+        for (OutputTarget target : outputCapacityPlan(level, villager).targets()) {
+            if (target.candidate().matches(storagePos)) {
+                return target.filterSnapshotKnown()
+                        && outputAllowance(level, target.candidate(), target.filters(), stack) > 0;
             }
         }
         return false;
@@ -661,20 +675,46 @@ public final class AssignedStorageService {
 
     private static OutputCapacityPlan outputCapacityPlan(ServerLevel level, Villager villager) {
         List<OutputTarget> targets = liveOutputContainerCandidates(level, villager).stream()
-                .map(candidate -> new OutputTarget(candidate, courierItemFrameFilters(level, candidate)))
+                .map(candidate -> durableOutputTarget(level, villager, candidate))
                 .toList();
         return new OutputCapacityPlan(level, targets);
     }
 
+    private static OutputTarget durableOutputTarget(
+            ServerLevel level,
+            Villager villager,
+            VillagerInventoryOverflowService.ContainerCandidate candidate) {
+        AssignedStorageSavedData data = AssignedStorageSavedData.get(level);
+        List<AssignedContainerRecord> records = candidate.positions().stream()
+                .map(pos -> data.assignedAt(level.dimension(), pos, villager.getUUID(), OUTPUT_PURPOSE))
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        boolean frameEntitiesAvailable = candidate.positions().stream()
+                .allMatch(level::isPositionEntityTicking);
+        if (frameEntitiesAvailable) {
+            List<ItemStack> liveFilters = courierItemFrameFilters(level, candidate);
+            records.forEach(record -> data.updateOutputFilterSnapshot(record, liveFilters));
+            return new OutputTarget(candidate, liveFilters, true);
+        }
+        return records.stream()
+                .filter(AssignedContainerRecord::outputFilterSnapshotKnown)
+                .findFirst()
+                .map(record -> new OutputTarget(candidate, record.outputFilters(), true))
+                .orElseGet(() -> new OutputTarget(candidate, List.of(), false));
+    }
+
     private record OutputTarget(
             VillagerInventoryOverflowService.ContainerCandidate candidate,
-            List<ItemStack> filters) {
+            List<ItemStack> filters,
+            boolean filterSnapshotKnown) {
     }
 
     private record OutputCapacityPlan(ServerLevel level, List<OutputTarget> targets) {
         private boolean hasRoute(ItemStack stack) {
             return targets.stream().anyMatch(target ->
-                    outputFilterMatches(level, target.filters(), stack));
+                    target.filterSnapshotKnown()
+                            && outputFilterMatches(level, target.filters(), stack));
         }
 
         private int capacityFor(ItemStack stack, int maximum) {
@@ -683,6 +723,9 @@ public final class AssignedStorageService {
             }
             int capacity = 0;
             for (OutputTarget target : targets) {
+                if (!target.filterSnapshotKnown()) {
+                    continue;
+                }
                 capacity += outputContainerCapacity(
                         level,
                         target.candidate(),

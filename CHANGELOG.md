@@ -1,4 +1,5 @@
 # Changelog
+- Persisted assigned output item-frame filters and amount limits so unloaded frame entities retain their last known routing and backpressure configuration; loaded frames refresh the snapshot automatically.
 - Hardened multiblock assigned storage so either half of a double chest shares assignment lookup, removal, route tethering, visit tracking, cooldown clearing, and courier pickup without relinking.
 - Fixed severe integrated-server stutter from output backpressure checks repeatedly rescanning assigned containers and nearby item frames for every courier inventory slot.
 - Added hired-work output backpressure: workers pause without warning when every assigned output is full or filter-capped, resume automatically when capacity returns, and couriers preflight and collect only the downstream allowance.
