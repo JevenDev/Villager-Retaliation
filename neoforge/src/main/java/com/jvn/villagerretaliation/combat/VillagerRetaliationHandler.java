@@ -323,6 +323,14 @@ public final class VillagerRetaliationHandler {
         boolean transientMainHandActive = VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
                 || RETALIATION.hasTemporaryWeapon(villager)
                 || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager);
+        if (!VillagerRetaliationVillagerCombatUtil.isInCombat(villager)
+                && !VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+                && !RETALIATION.hasTemporaryWeapon(villager)
+                && !VillagerCombatStateMachine.hasActiveMode(villager)) {
+            VillagerCombatLoadoutService.stowIdleWeapon(villager);
+            transientMainHandActive = RETALIATION.hasTemporaryWeapon(villager)
+                    || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager);
+        }
         if (!transientMainHandActive
                 && !VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
             HiredJobInventory.maintainEquipmentSlots(villager);
@@ -1011,6 +1019,7 @@ public final class VillagerRetaliationHandler {
         }
         VillagerRetaliationRetaliationUtil.restoreCombatMovement(villager);
         boolean keepSelectedLoadout = VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)
+                && VillagerRetaliationVillagerCombatUtil.isInCombat(villager)
                 && !VillagerInventoryAccess.hasOpenInventory(villager);
         if (keepSelectedLoadout && !preservePotionUse) {
             RETALIATION.restoreTemporaryWeapon(villager);
@@ -1479,6 +1488,7 @@ public final class VillagerRetaliationHandler {
 
     private static void ensureProfessionMainHand(Villager villager) {
         if (VillagerInventoryAccess.hasOpenInventory(villager)
+                || !VillagerRetaliationVillagerCombatUtil.isInCombat(villager)
                 || VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)
                 || VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(villager)
                 || RETALIATION.hasTemporaryWeapon(villager)
@@ -1624,8 +1634,7 @@ public final class VillagerRetaliationHandler {
     }
 
     private static void returnBorrowedCombatWeaponIfActive(Villager villager) {
-        if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
-                && !VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
+        if (VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)) {
             VillagerInventoryAccess.returnBorrowedCombatWeapon(villager);
         }
     }

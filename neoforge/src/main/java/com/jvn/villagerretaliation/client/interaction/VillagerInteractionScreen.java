@@ -1417,6 +1417,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                                     ? VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT
                                     : VillagerRecruitRequestPayload.Action.START_MOUNT_ASSIGNMENT));
                 }
+                addOption("party.unequip_weapons",
+                        () -> requestRecruit(VillagerRecruitRequestPayload.Action.UNEQUIP_PARTY_WEAPONS));
                 addOption("party.dismiss", this::openPartyDismissConfirmationPage);
             }
             return;
