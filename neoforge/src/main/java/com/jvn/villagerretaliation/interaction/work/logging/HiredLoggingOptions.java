@@ -21,7 +21,7 @@ public final class HiredLoggingOptions {
     private static final Option STRIP_LOGS_OPTION = new Option(STRIP_LOGS, STRIP_LOGS_TAG, "Strip logs", false);
     private static final Option HARVEST_LEAVES_OPTION = new Option(HARVEST_LEAVES, HARVEST_LEAVES_TAG, "Harvest leaves", false);
     private static final Option BONEMEAL_SAPLINGS_OPTION = new Option(BONEMEAL_SAPLINGS, BONEMEAL_SAPLINGS_TAG, "Bonemeal saplings", false);
-    private static final Option PLANT_SAPLINGS_OPTION = new Option(PLANT_SAPLINGS, PLANT_SAPLINGS_TAG, "Plant saplings", false);
+    private static final Option PLANT_SAPLINGS_OPTION = new Option(PLANT_SAPLINGS, PLANT_SAPLINGS_TAG, "Plant saplings", true);
     private static final Option PICK_UP_DECAY_DROPS_OPTION = new Option(PICK_UP_DECAY_DROPS, PICK_UP_DECAY_DROPS_TAG, "Pick up decay drops", true);
     private static final Map<String, Option> OPTIONS = Map.of(
             STRIP_LOGS, STRIP_LOGS_OPTION,

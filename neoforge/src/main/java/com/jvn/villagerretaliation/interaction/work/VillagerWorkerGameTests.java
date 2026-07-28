@@ -5919,6 +5919,69 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 400)
+    public static void loggingWorkerDepositsAfterEveryCompletedTree(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrWorkerLoggingDeposit");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        BlockPos chestRel = new BlockPos(2, 2, 2);
+        BlockPos chest = helper.absolutePos(chestRel);
+        setBlock(helper, chestRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, chest);
+        AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), chest)),
+                AssignedStorageService.OUTPUT_PURPOSE);
+
+        BlockPos rootRel = new BlockPos(4, 2, 3);
+        setBlock(helper, rootRel.below(), Blocks.DIRT.defaultBlockState());
+        for (int y = 2; y <= 4; y++) {
+            setBlock(helper, new BlockPos(4, y, 3), Blocks.OAK_LOG.defaultBlockState());
+        }
+        BlockState leaves = Blocks.OAK_LEAVES.defaultBlockState().setValue(BlockStateProperties.PERSISTENT, false);
+        for (BlockPos rel : List.of(
+                new BlockPos(4, 5, 3),
+                new BlockPos(3, 5, 3),
+                new BlockPos(5, 5, 3),
+                new BlockPos(4, 5, 2),
+                new BlockPos(4, 5, 4),
+                new BlockPos(3, 4, 3),
+                new BlockPos(5, 4, 3),
+                new BlockPos(4, 4, 2),
+                new BlockPos(4, 4, 4))) {
+            setBlock(helper, rel, leaves);
+        }
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                state,
+                new BlockPos(1, 2, 1),
+                new BlockPos(7, 6, 5),
+                true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_AXE));
+        LoggingWorker worker = new LoggingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 260, () ->
+                countItem(container(level, chest), Items.OAK_LOG) == 3);
+
+        helper.assertValueEqual(
+                countItem(container(level, chest), Items.OAK_LOG),
+                3,
+                "logger should deposit the completed tree's logs immediately");
+        helper.assertFalse(context.hasOutputToDeposit(), "completed tree deposit should empty carried outputs");
+        helper.assertFalse(
+                level.getBlockState(helper.absolutePos(rootRel)).is(BlockTags.LOGS),
+                "logger should finish chopping before depositing");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
     public static void loggingWorkerKeepsLeafConnectedTreeFamiliesSeparate(GameTestHelper helper) {
         buildFloor(helper, 0, 10, 0, 6, 1);

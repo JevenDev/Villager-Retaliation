@@ -59,6 +59,7 @@ public final class LoggingJobGameTests {
         HiredLoggingOptions.initializeDefaults(state);
         helper.assertFalse(HiredLoggingOptions.stripLogs(state), "invalid persisted option type should normalize to its default");
         helper.assertTrue(HiredLoggingOptions.pickUpDecayDrops(state), "decay drop pickup should default on");
+        helper.assertTrue(HiredLoggingOptions.plantSaplings(state), "sapling replanting should default on");
 
         HiredLoggingOptions.ToggleResult toggled = HiredLoggingOptions.toggle(state, "  HARVEST_LEAVES  ");
         helper.assertValueEqual(toggled.optionId(), HiredLoggingOptions.HARVEST_LEAVES, "normalized option id");
