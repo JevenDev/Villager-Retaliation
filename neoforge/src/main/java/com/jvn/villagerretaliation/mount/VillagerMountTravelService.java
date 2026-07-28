@@ -8,9 +8,7 @@ import com.jvn.villagerretaliation.party.PartyRecord;
 import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerContractService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.Collection;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
@@ -136,12 +134,8 @@ public final class VillagerMountTravelService {
             return;
         }
         VillagerMountAssignmentSavedData data = VillagerMountAssignmentSavedData.get(server.overworld());
-        Set<UUID> handledMounts = new HashSet<>();
-        for (VillagerMountAssignment assignment : List.copyOf(data.assignments())) {
-            if (!handledMounts.add(assignment.mountId())) {
-                continue;
-            }
-            Entity mount = VillagerMountEntities.loaded(server, assignment.mountId());
+        for (UUID mountId : data.mountIds()) {
+            Entity mount = VillagerMountEntities.loaded(server, mountId);
             if (mount == null) {
                 continue;
             }
@@ -150,7 +144,7 @@ public final class VillagerMountTravelService {
             if (adapter == null) {
                 continue;
             }
-            List<VillagerMountAssignment> mountAssignments = data.assignmentsForMount(assignment.mountId());
+            Collection<VillagerMountAssignment> mountAssignments = data.assignmentsForMountView(mountId);
             boolean wanted = false;
             for (VillagerMountAssignment mountAssignment : mountAssignments) {
                 Entity assigned = VillagerMountEntities.loaded(server, mountAssignment.villagerId());
@@ -169,12 +163,15 @@ public final class VillagerMountTravelService {
                 adapter.clearRestriction(mount);
                 continue;
             }
-            VillagerMountAssignment parked = mountAssignments.stream()
-                    .filter(candidate -> candidate.parkingPosition() != null
-                            && candidate.parkingDimension() != null
-                            && candidate.parkingDimension().equals(mount.level().dimension().location()))
-                    .findFirst()
-                    .orElse(null);
+            VillagerMountAssignment parked = null;
+            for (VillagerMountAssignment candidate : mountAssignments) {
+                if (candidate.parkingPosition() != null
+                        && candidate.parkingDimension() != null
+                        && candidate.parkingDimension().equals(mount.level().dimension().location())) {
+                    parked = candidate;
+                    break;
+                }
+            }
             if (parked == null) {
                 continue;
             }
@@ -258,8 +255,7 @@ public final class VillagerMountTravelService {
             return new TravelDecision(
                     true,
                     party.mountMode() && partyVillager.quickCommandsEnabled(),
-                    partyVillager.commandMode() == PartyCommandMode.STAY,
-                    currentTravelTarget(villager));
+                    partyVillager.commandMode() == PartyCommandMode.STAY);
         }
         if (!HiredVillagerContractService.isHired(level, villager)) {
             return TravelDecision.INACTIVE;
@@ -276,7 +272,7 @@ public final class VillagerMountTravelService {
         boolean wantsMount = mounted
                 ? distance > ROLE_DISMOUNT_DISTANCE_SQR
                 : distance >= ROLE_MOUNT_DISTANCE_SQR;
-        return new TravelDecision(true, wantsMount, false, target);
+        return new TravelDecision(true, wantsMount, false);
     }
 
     private static BlockPos currentTravelTarget(Villager villager) {
@@ -324,10 +320,9 @@ public final class VillagerMountTravelService {
     private record TravelDecision(
             boolean activeContract,
             boolean wantsMount,
-            boolean staying,
-            BlockPos travelTarget) {
-        private static final TravelDecision INACTIVE = new TravelDecision(false, false, false, null);
-        private static final TravelDecision ACTIVE_ON_FOOT = new TravelDecision(true, false, false, null);
+            boolean staying) {
+        private static final TravelDecision INACTIVE = new TravelDecision(false, false, false);
+        private static final TravelDecision ACTIVE_ON_FOOT = new TravelDecision(true, false, false);
     }
 
 }

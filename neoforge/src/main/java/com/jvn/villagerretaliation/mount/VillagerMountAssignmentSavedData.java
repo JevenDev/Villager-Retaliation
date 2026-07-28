@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -33,8 +34,7 @@ public final class VillagerMountAssignmentSavedData extends SavedData {
 
     private final Map<UUID, VillagerMountAssignment> byVillager = new LinkedHashMap<>();
     private final Map<UUID, LinkedHashMap<UUID, VillagerMountAssignment>> byMount = new LinkedHashMap<>();
-    private final Collection<VillagerMountAssignment> assignments =
-            Collections.unmodifiableCollection(this.byVillager.values());
+    private final Set<UUID> mountIds = Collections.unmodifiableSet(this.byMount.keySet());
 
     public static VillagerMountAssignmentSavedData get(ServerLevel level) {
         return level.getServer().overworld().getDataStorage().computeIfAbsent(
@@ -87,8 +87,13 @@ public final class VillagerMountAssignmentSavedData extends SavedData {
         return records == null ? List.of() : List.copyOf(records.values());
     }
 
-    public Collection<VillagerMountAssignment> assignments() {
-        return assignments;
+    Set<UUID> mountIds() {
+        return mountIds;
+    }
+
+    Collection<VillagerMountAssignment> assignmentsForMountView(UUID mountId) {
+        Map<UUID, VillagerMountAssignment> records = mountId == null ? null : byMount.get(mountId);
+        return records == null ? List.of() : records.values();
     }
 
     public boolean assign(VillagerMountAssignment assignment) {
@@ -127,7 +132,7 @@ public final class VillagerMountAssignmentSavedData extends SavedData {
     }
 
     public boolean updateMountLocation(UUID mountId, ResourceLocation dimension, BlockPos position) {
-        List<VillagerMountAssignment> current = assignmentsForMount(mountId);
+        Collection<VillagerMountAssignment> current = assignmentsForMountView(mountId);
         if (current.isEmpty() || dimension == null || position == null) {
             return false;
         }

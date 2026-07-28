@@ -312,7 +312,6 @@ public final class VillagerMountAssignmentService {
             return;
         }
         long now = server.overworld().getGameTime();
-        List<ServerPlayer> expiredPlayers = new ArrayList<>();
         Iterator<Map.Entry<UUID, PendingTarget>> iterator = PENDING_TARGETS.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<UUID, PendingTarget> entry = iterator.next();
@@ -322,12 +321,9 @@ public final class VillagerMountAssignmentService {
             iterator.remove();
             ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
             if (player != null) {
-                expiredPlayers.add(player);
+                sendTargetMode(player, false, -1, 0);
+                notice(player, "villagerretaliation.mount.target_timed_out");
             }
-        }
-        for (ServerPlayer player : expiredPlayers) {
-            sendTargetMode(player, false, -1, 0);
-            notice(player, "villagerretaliation.mount.target_timed_out");
         }
     }
 
