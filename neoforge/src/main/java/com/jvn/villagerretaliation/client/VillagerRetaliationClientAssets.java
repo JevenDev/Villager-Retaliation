@@ -20,6 +20,8 @@ public final class VillagerRetaliationClientAssets {
 
     public static final ResourceLocation GIFT_INVENTORY_TEXTURE =
             texture("gui/villager_interaction_screen/gift_inventory");
+    public static final ResourceLocation PLAYER_INVENTORY_TEXTURE =
+            texture("gui/villager_interaction_screen/player_inventory");
     public static final ResourceLocation GIFT_INFO_ICON_TEXTURE =
             texture("gui/villager_interaction_screen/info_icon");
     public static final ResourceLocation VILLAGER_INVENTORY_TEXTURE =
