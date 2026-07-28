@@ -1,0 +1,8 @@
+{
+    "item":  "minecraft:coal",
+    "item_count":  {
+                       "min":  10,
+                       "max":  15
+                   },
+    "currency_count":  1
+}

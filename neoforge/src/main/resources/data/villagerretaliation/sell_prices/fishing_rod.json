@@ -1,0 +1,8 @@
+{
+    "item":  "minecraft:fishing_rod",
+    "item_count":  1,
+    "currency_count":  {
+                           "min":  8,
+                           "max":  22
+                       }
+}

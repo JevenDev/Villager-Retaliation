@@ -1,5 +1,8 @@
 # Example Packs
 
+## Sell prices
+
+`example-packs/sell-prices-example/` shows all three market operations: adding a new item under your own namespace, overriding the built-in coal definition at the same resource ID, and disabling the built-in rotten-flesh definition.
 ## Persistent cinematic gate ambush
 
 `example-packs/cinematic-gate-ambush/` is the complete beta.13 scene-orchestration example: two named villagers, player/party ownership, a recorded choice branch, movement, dialogue, a persisted wait, controlled encounter scaling and cleanup, quest completion/failure, and provider-unload recovery.

@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "villagerretaliation:payment_box"
+    "villagerretaliation:payment_box",
+    "villagerretaliation:sell_box"
   ]
 }

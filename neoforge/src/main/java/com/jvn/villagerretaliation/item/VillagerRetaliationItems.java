@@ -26,6 +26,10 @@ public final class VillagerRetaliationItems {
             ITEMS.register(
                     "payment_box",
                     () -> new BlockItem(VillagerRetaliationBlocks.PAYMENT_BOX.get(), new Item.Properties()));
+    public static final DeferredHolder<Item, BlockItem> SELL_BOX =
+            ITEMS.register(
+                    "sell_box",
+                    () -> new BlockItem(VillagerRetaliationBlocks.SELL_BOX.get(), new Item.Properties().stacksTo(1)));
 
     private VillagerRetaliationItems() {
     }

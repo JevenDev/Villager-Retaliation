@@ -1,0 +1,8 @@
+{
+    "item":  "minecraft:flint",
+    "item_count":  {
+                       "min":  10,
+                       "max":  30
+                   },
+    "currency_count":  1
+}

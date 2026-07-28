@@ -311,7 +311,9 @@ final class VillagerInventoryOverflowService {
     }
 
     static void restoreToContainerOrDrop(Villager villager, Container container, ItemStack stack) {
-        ItemStack remainder = insertIntoContainer(container, stack);
+        ItemStack remainder = container instanceof SellBoxCurrencyContainer sellBox
+                ? sellBox.restore(stack)
+                : insertIntoContainer(container, stack);
         if (!remainder.isEmpty() && villager != null) {
             villager.spawnAtLocation(remainder);
         }

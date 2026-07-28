@@ -1,6 +1,8 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.block.PaymentBoxBlockEntity;
+import com.jvn.villagerretaliation.block.SellBoxBlockEntity;
+import com.jvn.villagerretaliation.sell.DailySellMarket;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignmentResult;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -256,8 +258,16 @@ public final class AssignedStorageService {
         if (!(blockEntity instanceof Container)) {
             return false;
         }
-        boolean paymentBox = blockEntity instanceof PaymentBoxBlockEntity;
-        return PAYMENT_PURPOSE.equals(normalizePurpose(purpose)) ? paymentBox : !paymentBox;
+        String normalizedPurpose = normalizePurpose(purpose);
+        if (PAYMENT_PURPOSE.equals(normalizedPurpose)) {
+            return blockEntity instanceof PaymentBoxBlockEntity;
+        }
+        if (blockEntity instanceof PaymentBoxBlockEntity) {
+            return false;
+        }
+        return !(blockEntity instanceof SellBoxBlockEntity)
+                || INPUT_PURPOSE.equals(normalizedPurpose)
+                || OUTPUT_PURPOSE.equals(normalizedPurpose);
     }
 
     public static ItemStack depositStack(Villager villager, ItemStack stack) {
@@ -325,8 +335,9 @@ public final class AssignedStorageService {
             }
             int offeredCount = Math.min(remainder.getCount(), allowance);
             ItemStack offered = remainder.copyWithCount(offeredCount);
-            ItemStack uninserted = VillagerInventoryOverflowService.insertIntoContainer(
-                    candidate.container(), offered);
+            ItemStack uninserted = candidate.container() instanceof SellBoxBlockEntity sellBox
+                    ? sellBox.insertForSale(offered, false)
+                    : VillagerInventoryOverflowService.insertIntoContainer(candidate.container(), offered);
             int moved = offeredCount - uninserted.getCount();
             if (moved <= 0) {
                 continue;
@@ -600,6 +611,9 @@ public final class AssignedStorageService {
             return 0;
         }
         Container container = candidate.container();
+        if (container instanceof SellBoxBlockEntity) {
+            return allowance;
+        }
         int capacity = 0;
         for (int slot = 0; slot < container.getContainerSize(); slot++) {
             ItemStack existing = container.getItem(slot);
@@ -631,6 +645,10 @@ public final class AssignedStorageService {
             VillagerInventoryOverflowService.ContainerCandidate candidate,
             List<ItemStack> filters,
             ItemStack stack) {
+        if (candidate.container() instanceof SellBoxBlockEntity
+                && DailySellMarket.price(level.getServer(), stack).isEmpty()) {
+            return 0;
+        }
         if (filters.isEmpty()) {
             return Integer.MAX_VALUE;
         }
@@ -653,7 +671,9 @@ public final class AssignedStorageService {
             if (limit == VillagerItemFilterData.UNLIMITED_AMOUNT) {
                 return Integer.MAX_VALUE;
             }
-            int stored = countItemsTowardLimit(level, candidate.container(), filter, stack);
+            int stored = candidate.container() instanceof SellBoxBlockEntity
+                    ? 0
+                    : countItemsTowardLimit(level, candidate.container(), filter, stack);
             bestAllowance = Math.max(bestAllowance, Math.max(0, limit - stored));
         }
         return bestAllowance;
@@ -1619,7 +1639,23 @@ public final class AssignedStorageService {
             ServerLevel level,
             Villager villager,
             StorageUse use) {
-        return liveContainerCandidates(level, villager, record -> purposeMatchesUse(record.purpose(), use));
+        List<VillagerInventoryOverflowService.ContainerCandidate> candidates =
+                liveContainerCandidates(level, villager, record -> purposeMatchesUse(record.purpose(), use));
+        if (use != StorageUse.INPUT) {
+            return candidates;
+        }
+        return candidates.stream()
+                .map(AssignedStorageService::inputContainerView)
+                .toList();
+    }
+
+    private static VillagerInventoryOverflowService.ContainerCandidate inputContainerView(
+            VillagerInventoryOverflowService.ContainerCandidate candidate) {
+        if (!(candidate.container() instanceof SellBoxBlockEntity sellBox)) {
+            return candidate;
+        }
+        return new VillagerInventoryOverflowService.ContainerCandidate(
+                candidate.pos(), new SellBoxCurrencyContainer(sellBox), candidate.positions());
     }
 
     private static List<VillagerInventoryOverflowService.ContainerCandidate> livePaymentContainerCandidates(ServerLevel level, Villager villager) {

@@ -1,0 +1,8 @@
+{
+    "item":  "minecraft:compass",
+    "item_count":  1,
+    "currency_count":  {
+                           "min":  1,
+                           "max":  4
+                       }
+}

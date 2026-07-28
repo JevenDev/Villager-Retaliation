@@ -1,0 +1,8 @@
+{
+    "item":  "minecraft:diamond_axe",
+    "item_count":  1,
+    "currency_count":  {
+                           "min":  17,
+                           "max":  31
+                       }
+}

@@ -1,0 +1,8 @@
+{
+    "item":  "minecraft:filled_map",
+    "item_count":  1,
+    "currency_count":  {
+                           "min":  12,
+                           "max":  14
+                       }
+}
