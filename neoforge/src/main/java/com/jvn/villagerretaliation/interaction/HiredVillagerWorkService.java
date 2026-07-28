@@ -194,7 +194,7 @@ public final class HiredVillagerWorkService {
             return;
         }
 
-        if (isOutputBackpressured(level, villager, session)) {
+        if (isOutputBackpressured(villager, session)) {
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             HiredWorkerBrain.clearFailure(session.context());
             HiredWorkerBrain.setState(session.context(), HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE);
@@ -232,12 +232,10 @@ public final class HiredVillagerWorkService {
     }
 
     private static boolean isOutputBackpressured(
-            ServerLevel level,
             Villager villager,
             HiredWorkSession session) {
         if (session.role() == HiredVillagerRole.COURIER
-                || !session.inventory().hasOutputItems()
-                || !AssignedStorageService.hasLiveAssignedOutputStorage(level, villager)) {
+                || !session.inventory().hasOutputItems()) {
             return false;
         }
         List<ItemStack> outputs = session.inventory().collectOutputItems().stream()

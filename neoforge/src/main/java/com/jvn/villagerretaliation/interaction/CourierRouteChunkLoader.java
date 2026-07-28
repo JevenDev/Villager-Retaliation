@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.inventory.AssignedStorageSavedData.AssignedContainerRecord;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -35,6 +36,8 @@ public final class CourierRouteChunkLoader {
     private static final String VISITED_STORAGE_TAG = "CourierVisitedStorage";
     private static final int ENTITY_TICKING_TICKET_DISTANCE = 2;
     private static final int TICKET_TIMEOUT_TICKS = 20 * 15;
+    private static final int RECONCILE_INTERVAL_TICKS = 20;
+    private static final int TICKET_REFRESH_INTERVAL_TICKS = 20 * 10;
     private static final int MAX_CHUNKS_PER_COURIER = 4;
     private static final int MAX_ACTIVE_COURIERS_PER_SERVER = 16;
     private static final int MAX_TICKETS_PER_SERVER =
@@ -49,10 +52,15 @@ public final class CourierRouteChunkLoader {
     }
 
     /**
-     * Reconciles this courier's window. Re-adding the same ticket refreshes its timeout without
-     * accumulating another ticket.
+     * Reconciles this courier's window on a UUID-staggered cadence. Unchanged tickets are only
+     * refreshed with a safety margin before timeout, avoiding per-tick chunk distance-manager work.
      */
     public static void onVillagerTick(ServerLevel level, Villager villager) {
+        if (level == null
+                || villager == null
+                || !shouldReconcile(villager.getUUID(), level.getGameTime())) {
+            return;
+        }
         if (!isEligible(level, villager)) {
             release(level, villager);
             return;
@@ -68,6 +76,19 @@ public final class CourierRouteChunkLoader {
         reconcile(level, villager.getUUID(), desired);
     }
 
+    static boolean shouldReconcile(UUID villagerId, long gameTime) {
+        return villagerId != null
+                && TickThrottle.isSpreadTick(villagerId, gameTime, RECONCILE_INTERVAL_TICKS);
+    }
+
+    static boolean shouldRefreshTicket(long gameTime, long nextRefreshGameTime) {
+        return gameTime >= nextRefreshGameTime;
+    }
+
+    static long nextTicketRefreshGameTime(long gameTime) {
+        return gameTime + TICKET_REFRESH_INTERVAL_TICKS;
+    }
+
     public static void onVillagerLeaveLevel(ServerLevel level, Villager villager) {
         release(level, villager);
     }
@@ -80,8 +101,8 @@ public final class CourierRouteChunkLoader {
         if (tracked == null) {
             return;
         }
-        for (Map.Entry<LevelOwner, Set<ChunkPos>> entry : tracked.byOwner.entrySet()) {
-            removeTickets(entry.getKey().level(), entry.getKey().villagerId(), entry.getValue());
+        for (Map.Entry<LevelOwner, TicketWindow> entry : tracked.byOwner.entrySet()) {
+            removeTickets(entry.getKey().level(), entry.getKey().villagerId(), entry.getValue().chunks());
         }
     }
 
@@ -230,14 +251,18 @@ public final class CourierRouteChunkLoader {
         ServerTickets serverTickets =
                 ACTIVE_TICKETS.computeIfAbsent(server, ignored -> new ServerTickets());
         LevelOwner owner = new LevelOwner(level, villagerId);
-        Set<ChunkPos> previous = serverTickets.byOwner.get(owner);
-        if (previous == null && serverTickets.byOwner.size() >= MAX_ACTIVE_COURIERS_PER_SERVER) {
+        TicketWindow previousWindow = serverTickets.byOwner.get(owner);
+        if (previousWindow == null && serverTickets.byOwner.size() >= MAX_ACTIVE_COURIERS_PER_SERVER) {
             return;
         }
+        Set<ChunkPos> previous = previousWindow == null ? Set.of() : previousWindow.chunks();
+        long gameTime = level.getGameTime();
+        boolean refreshDue = previousWindow == null
+                || shouldRefreshTicket(gameTime, previousWindow.nextRefreshGameTime());
 
         LinkedHashSet<ChunkPos> actual = new LinkedHashSet<>();
         int trackedTicketCount = serverTickets.ticketCount();
-        if (previous != null) {
+        if (previousWindow != null) {
             for (ChunkPos chunk : previous) {
                 if (!desired.contains(chunk)) {
                     removeTicket(level, villagerId, chunk);
@@ -247,16 +272,18 @@ public final class CourierRouteChunkLoader {
         }
 
         for (ChunkPos chunk : desired) {
-            boolean alreadyTracked = previous != null && previous.contains(chunk);
+            boolean alreadyTracked = previous.contains(chunk);
             if (!alreadyTracked && trackedTicketCount >= MAX_TICKETS_PER_SERVER) {
                 continue;
             }
-            level.getChunkSource().addRegionTicket(
-                    COURIER_TICKET,
-                    chunk,
-                    ENTITY_TICKING_TICKET_DISTANCE,
-                    villagerId,
-                    true);
+            if (!alreadyTracked || refreshDue) {
+                level.getChunkSource().addRegionTicket(
+                        COURIER_TICKET,
+                        chunk,
+                        ENTITY_TICKING_TICKET_DISTANCE,
+                        villagerId,
+                        true);
+            }
             actual.add(chunk);
             if (!alreadyTracked) {
                 trackedTicketCount++;
@@ -266,7 +293,10 @@ public final class CourierRouteChunkLoader {
         if (actual.isEmpty()) {
             serverTickets.byOwner.remove(owner);
         } else {
-            serverTickets.byOwner.put(owner, Set.copyOf(actual));
+            long nextRefresh = refreshDue
+                    ? nextTicketRefreshGameTime(gameTime)
+                    : previousWindow.nextRefreshGameTime();
+            serverTickets.byOwner.put(owner, new TicketWindow(Set.copyOf(actual), nextRefresh));
         }
         if (serverTickets.byOwner.isEmpty()) {
             ACTIVE_TICKETS.remove(server);
@@ -282,9 +312,9 @@ public final class CourierRouteChunkLoader {
         if (serverTickets == null) {
             return;
         }
-        Set<ChunkPos> chunks =
+        TicketWindow window =
                 serverTickets.byOwner.remove(new LevelOwner(level, villager.getUUID()));
-        removeTickets(level, villager.getUUID(), chunks);
+        removeTickets(level, villager.getUUID(), window == null ? null : window.chunks());
         if (serverTickets.byOwner.isEmpty()) {
             ACTIVE_TICKETS.remove(server);
         }
@@ -317,11 +347,14 @@ public final class CourierRouteChunkLoader {
     private record LevelOwner(ServerLevel level, UUID villagerId) {
     }
 
+    private record TicketWindow(Set<ChunkPos> chunks, long nextRefreshGameTime) {
+    }
+
     private static final class ServerTickets {
-        private final Map<LevelOwner, Set<ChunkPos>> byOwner = new java.util.HashMap<>();
+        private final Map<LevelOwner, TicketWindow> byOwner = new java.util.HashMap<>();
 
         private int ticketCount() {
-            return byOwner.values().stream().mapToInt(Set::size).sum();
+            return byOwner.values().stream().mapToInt(window -> window.chunks().size()).sum();
         }
     }
 }

@@ -143,6 +143,38 @@ public final class CourierChunkLoadingGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void courierTicketMaintenanceIsStaggeredAndBounded(GameTestHelper helper) {
+        UUID firstCourier = new UUID(0L, 3L);
+        UUID secondCourier = new UUID(0L, 11L);
+        int firstRuns = 0;
+        int secondRuns = 0;
+        for (long gameTime = 0L; gameTime < 20L; gameTime++) {
+            if (CourierRouteChunkLoader.shouldReconcile(firstCourier, gameTime)) {
+                firstRuns++;
+            }
+            if (CourierRouteChunkLoader.shouldReconcile(secondCourier, gameTime)) {
+                secondRuns++;
+            }
+        }
+
+        helper.assertValueEqual(firstRuns, 1, "each courier should reconcile once per one-second window");
+        helper.assertValueEqual(secondRuns, 1, "each courier should reconcile once per one-second window");
+        helper.assertFalse(
+                CourierRouteChunkLoader.shouldReconcile(firstCourier, 11L),
+                "courier maintenance should be spread by UUID rather than synchronized");
+
+        long nextRefresh = CourierRouteChunkLoader.nextTicketRefreshGameTime(100L);
+        helper.assertValueEqual(nextRefresh, 300L, "ticket refresh should retain a five-second timeout margin");
+        helper.assertFalse(
+                CourierRouteChunkLoader.shouldRefreshTicket(nextRefresh - 1L, nextRefresh),
+                "an unchanged ticket must not refresh early");
+        helper.assertTrue(
+                CourierRouteChunkLoader.shouldRefreshTicket(nextRefresh, nextRefresh),
+                "an unchanged ticket must refresh with a safety margin before timeout");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void assignedTransferResolvesReplacementContainer(GameTestHelper helper) {
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
         var level = helper.getLevel();
