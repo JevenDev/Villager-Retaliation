@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.dialogue.normal.DialogueOptionDefinition;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
+import com.jvn.villagerretaliation.network.VillagerRecruitRequestPayload;
 import java.util.List;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -46,6 +47,73 @@ public final class VillagerInteractionRoutingGameTests {
         helper.assertFalse(
                 VillagerItemFilterInteractionHandler.handlesOption(null),
                 "item-filter handler claimed a missing option id");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void recruitmentActionsUseCanonicalMappings(GameTestHelper helper) {
+        helper.assertValueEqual(
+                RecruitmentActionMappings.hireDays(VillagerRecruitRequestPayload.Action.HIRE_FIFTEEN_DAYS),
+                15,
+                "hire duration mapping");
+        helper.assertValueEqual(
+                RecruitmentActionMappings.extensionDays(VillagerRecruitRequestPayload.Action.EXTEND_THIRTY_DAYS),
+                30,
+                "extension duration mapping");
+        helper.assertValueEqual(
+                RecruitmentActionMappings.role(VillagerRecruitRequestPayload.Action.SET_ROLE_COURIER),
+                HiredVillagerRole.COURIER,
+                "role mapping");
+        helper.assertValueEqual(
+                RecruitmentActionMappings.hireDays(VillagerRecruitRequestPayload.Action.SET_ROLE_COURIER),
+                0,
+                "non-hire action duration");
+        helper.assertValueEqual(
+                RecruitmentActionMappings.role(VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY),
+                null,
+                "non-role action mapping");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void hiredContractTransactionDebitsBeforeMutationAndRollsBackFailure(GameTestHelper helper) {
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.getInventory().setItem(0, new ItemStack(Items.EMERALD, 5));
+
+        HiredContractRequestHandler.TransactionResult success = HiredContractRequestHandler.transact(
+                player,
+                3,
+                () -> VillagerCurrencyPayment.count(player) == 2);
+        helper.assertValueEqual(
+                success,
+                HiredContractRequestHandler.TransactionResult.SUCCESS,
+                "successful transaction result");
+        helper.assertValueEqual(VillagerCurrencyPayment.count(player), 2, "successful transaction debit");
+
+        HiredContractRequestHandler.TransactionResult rolledBack = HiredContractRequestHandler.transact(
+                player,
+                2,
+                () -> false);
+        helper.assertValueEqual(
+                rolledBack,
+                HiredContractRequestHandler.TransactionResult.MUTATION_FAILED,
+                "failed mutation result");
+        helper.assertValueEqual(VillagerCurrencyPayment.count(player), 2, "failed mutation payment rollback");
+
+        boolean[] called = {false};
+        HiredContractRequestHandler.TransactionResult insufficient = HiredContractRequestHandler.transact(
+                player,
+                3,
+                () -> {
+                    called[0] = true;
+                    return true;
+                });
+        helper.assertValueEqual(
+                insufficient,
+                HiredContractRequestHandler.TransactionResult.PAYMENT_FAILED,
+                "insufficient payment result");
+        helper.assertFalse(called[0], "mutation must not run before payment validation succeeds");
+        helper.assertValueEqual(VillagerCurrencyPayment.count(player), 2, "rejected transaction balance");
         helper.succeed();
     }
 

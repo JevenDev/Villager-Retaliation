@@ -746,10 +746,7 @@ public final class VillagerInteractionService {
             return;
         }
 
-        if (handleHireDurationRequest(player, level, villager, action, selectedRole)) {
-            return;
-        }
-        if (handleHireExtensionRequest(player, level, villager, action)) {
+        if (HiredContractRequestHandler.handle(player, level, villager, action, selectedRole)) {
             return;
         }
         if (handleHiredRoleRequest(player, level, villager, action)) {
@@ -917,7 +914,7 @@ public final class VillagerInteractionService {
             VillagerAssignmentSnapshot assignment,
             boolean wasFollowingPlayer,
             boolean wasStayingHere) {
-        if (action.name().startsWith("HIRE_")) {
+        if (RecruitmentActionMappings.hireDays(action) > 0) {
             return assignment.ownedBy(player.getUUID())
                     && HiredVillagerContractService.isHiredBy(player.serverLevel(), villager, player);
         }
@@ -930,28 +927,8 @@ public final class VillagerInteractionService {
             case SET_ROLE_COMBAT, SET_ROLE_HUNTING, SET_ROLE_MINING, SET_ROLE_LOGGING,
                  SET_ROLE_FARMING, SET_ROLE_FISHING, SET_ROLE_BREWING, SET_ROLE_CRAFTSMAN,
                  SET_ROLE_BUILDER, SET_ROLE_ANIMAL_HANDLING, SET_ROLE_NITWIT, SET_ROLE_COOK,
-                 SET_ROLE_SMELTER, SET_ROLE_COURIER -> assignment.role() == roleForAction(action);
+                 SET_ROLE_SMELTER, SET_ROLE_COURIER -> assignment.role() == RecruitmentActionMappings.role(action);
             default -> true;
-        };
-    }
-
-    private static HiredVillagerRole roleForAction(VillagerRecruitRequestPayload.Action action) {
-        return switch (action) {
-            case SET_ROLE_COMBAT -> HiredVillagerRole.COMBAT;
-            case SET_ROLE_HUNTING -> HiredVillagerRole.HUNTING;
-            case SET_ROLE_MINING -> HiredVillagerRole.MINING;
-            case SET_ROLE_LOGGING -> HiredVillagerRole.LOGGING;
-            case SET_ROLE_FARMING -> HiredVillagerRole.FARMING;
-            case SET_ROLE_FISHING -> HiredVillagerRole.FISHING;
-            case SET_ROLE_BREWING -> HiredVillagerRole.BREWING;
-            case SET_ROLE_CRAFTSMAN -> HiredVillagerRole.CRAFTSMAN;
-            case SET_ROLE_BUILDER -> HiredVillagerRole.BUILDER;
-            case SET_ROLE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
-            case SET_ROLE_NITWIT -> HiredVillagerRole.NITWIT;
-            case SET_ROLE_COOK -> HiredVillagerRole.COOK;
-            case SET_ROLE_SMELTER -> HiredVillagerRole.SMELTER;
-            case SET_ROLE_COURIER -> HiredVillagerRole.COURIER;
-            default -> null;
         };
     }
 
@@ -977,17 +954,9 @@ public final class VillagerInteractionService {
                 && !HiredVillagerRoles.availableContractRoles(player.serverLevel(), villager).contains(requestedRole)) {
             return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INVALID_ROLE;
         }
-        if (action.name().startsWith("HIRE_")) {
-            int days = switch (action) {
-                case HIRE_ONE_DAY -> 1;
-                case HIRE_THREE_DAYS -> 3;
-                case HIRE_FIVE_DAYS -> 5;
-                case HIRE_SEVEN_DAYS -> 7;
-                case HIRE_FIFTEEN_DAYS -> 15;
-                case HIRE_THIRTY_DAYS -> 30;
-                default -> 0;
-            };
-            if (days > 0 && countCurrency(player) < HiredVillagerContractService.getHireCost(
+        int days = RecruitmentActionMappings.hireDays(action);
+        if (days > 0) {
+            if (countCurrency(player) < HiredVillagerContractService.getHireCost(
                     player.serverLevel(), villager, player, days, requestedRole)) {
                 return com.jvn.villagerretaliation.network.RecruitmentResultPayload.FailureReason.INSUFFICIENT_PAYMENT;
             }
@@ -1506,182 +1475,12 @@ public final class VillagerInteractionService {
         };
     }
 
-    private static boolean handleHireDurationRequest(
-            ServerPlayer player,
-            ServerLevel level,
-            Villager villager,
-            VillagerRecruitRequestPayload.Action action,
-            HiredVillagerRole selectedRole) {
-        int days = switch (action) {
-            case HIRE_ONE_DAY -> 1;
-            case HIRE_THREE_DAYS -> 3;
-            case HIRE_FIVE_DAYS -> 5;
-            case HIRE_SEVEN_DAYS -> 7;
-            case HIRE_FIFTEEN_DAYS -> 15;
-            case HIRE_THIRTY_DAYS -> 30;
-            default -> 0;
-        };
-        if (days <= 0) {
-            return false;
-        }
-        if (HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendHiredContractNotice(player, level, villager);
-            return true;
-        }
-        if (com.jvn.villagerretaliation.party.PartyService.getPartyForVillager(level, villager.getUUID()).isPresent()) {
-            sendVillagerNotice(player, villager, "interaction.party.error.already_in_party");
-            return true;
-        }
-        if (HiredVillagerContractService.isHired(level, villager)) {
-            sendVillagerNotice(player, villager, "interaction.hired_contract_taken");
-            return true;
-        }
-        if (villager.isTrading() || villager.getTarget() != null || villager.getLastHurtByMob() != null) {
-            sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
-            return true;
-        }
-        HiredVillagerIndex.reconcileLoadedFor(player);
-        if (HiredVillagerIndex.targetsFor(player).size() >= HiredVillagerIndex.MAX_ASSIGNMENTS_PER_PLAYER) {
-            sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
-            return true;
-        }
-        if (HiredVillagerContractService.hasForeignJobInventoryOverflow(level, villager, player)) {
-            sendVillagerNotice(
-                    player,
-                    villager,
-                    "interaction.hire_overflow_blocked",
-                    HiredVillagerContractService.jobInventoryOverflowReplacements(level, villager));
-            return true;
-        }
-
-        HiredVillagerRole hireRole = selectedRole == null
-                ? HiredVillagerRoles.defaultRole(level, villager)
-                : selectedRole;
-        if (!HiredVillagerRoles.availableContractRoles(level, villager).contains(hireRole)) {
-            sendVillagerNotice(
-                    player,
-                    villager,
-                    "interaction.role_not_suitable",
-                    Map.of("role", hireRole.label())
-            );
-            return true;
-        }
-
-        int cost = HiredVillagerContractService.getHireCost(level, villager, player, days, hireRole);
-        if (countCurrency(player) < cost) {
-            sendVillagerNotice(
-                    player,
-                    villager,
-                    "interaction.hire_cost",
-                    Map.of(
-                            "time_remaining", formatDaysRemaining(days),
-                            "contract_cost", formatCurrency(level, cost)
-                    )
-            );
-            return true;
-        }
-        if (!HiredVillagerContractService.startHireContract(level, villager, player, days, cost, hireRole)) {
-            sendVillagerNotice(player, villager, "interaction.recruit_unavailable");
-            return true;
-        }
-        removeCurrency(player, cost);
-        HiredVillagerWorkService.resetForNewContract(level, villager);
-        VillagerRecruitmentService.sendHiredNotice(player, villager);
-        sendVillagerNotice(
-                player,
-                villager,
-                "interaction.hire_started",
-                Map.of(
-                        "time_remaining", formatDaysRemaining(days),
-                        "contract_cost", formatCurrency(level, cost),
-                        "role", hireRole.label()
-                )
-        );
-        VillagerInteractionScreenOpener.refreshNormal(player, villager);
-        return true;
-    }
-
-    private static boolean handleHireExtensionRequest(
-            ServerPlayer player,
-            ServerLevel level,
-            Villager villager,
-            VillagerRecruitRequestPayload.Action action) {
-        int days = switch (action) {
-            case EXTEND_ONE_DAY -> 1;
-            case EXTEND_THREE_DAYS -> 3;
-            case EXTEND_FIVE_DAYS -> 5;
-            case EXTEND_SEVEN_DAYS -> 7;
-            case EXTEND_FIFTEEN_DAYS -> 15;
-            case EXTEND_THIRTY_DAYS -> 30;
-            default -> 0;
-        };
-        if (days <= 0) {
-            return false;
-        }
-        if (!HiredVillagerContractService.isHiredBy(level, villager, player)) {
-            sendVillagerNotice(player, villager, "interaction.hire.extend_requires_hirer");
-            return true;
-        }
-        int extensionDays = HiredVillagerContractService.getAvailableExtensionDays(level, villager, player, days);
-        if (extensionDays <= 0) {
-            sendVillagerNotice(player, villager, "interaction.extend_unavailable");
-            return true;
-        }
-        int cost = HiredVillagerContractService.getExtensionCost(level, villager, player, days);
-        if (countCurrency(player) < cost) {
-            sendVillagerNotice(
-                    player,
-                    villager,
-                    "interaction.extend_cost",
-                    Map.of(
-                            "time_remaining", formatDaysRemaining(extensionDays),
-                            "contract_cost", formatCurrency(level, cost)
-                    )
-            );
-            return true;
-        }
-        if (!HiredVillagerContractService.extendHireContract(level, villager, player, days, cost)) {
-            sendVillagerNotice(player, villager, "interaction.extend_unavailable");
-            return true;
-        }
-        removeCurrency(player, cost);
-        int remainingDays = HiredVillagerContractService.getRemainingHireDays(level, villager);
-        sendVillagerNotice(
-                player,
-                villager,
-                "interaction.extend_success",
-                Map.of(
-                        "time_remaining", formatDaysRemaining(extensionDays),
-                        "contract_cost", formatCurrency(level, cost),
-                        "new_time_remaining", formatDaysRemaining(remainingDays)
-                )
-        );
-        VillagerInteractionScreenOpener.refreshNormal(player, villager);
-        return true;
-    }
-
     private static boolean handleHiredRoleRequest(
             ServerPlayer player,
             ServerLevel level,
             Villager villager,
             VillagerRecruitRequestPayload.Action action) {
-        HiredVillagerRole role = switch (action) {
-            case SET_ROLE_COMBAT -> HiredVillagerRole.COMBAT;
-            case SET_ROLE_HUNTING -> HiredVillagerRole.HUNTING;
-            case SET_ROLE_MINING -> HiredVillagerRole.MINING;
-            case SET_ROLE_LOGGING -> HiredVillagerRole.LOGGING;
-            case SET_ROLE_FARMING -> HiredVillagerRole.FARMING;
-            case SET_ROLE_FISHING -> HiredVillagerRole.FISHING;
-            case SET_ROLE_BREWING -> HiredVillagerRole.BREWING;
-            case SET_ROLE_CRAFTSMAN -> HiredVillagerRole.CRAFTSMAN;
-            case SET_ROLE_BUILDER -> HiredVillagerRole.BUILDER;
-            case SET_ROLE_ANIMAL_HANDLING -> HiredVillagerRole.ANIMAL_HANDLING;
-            case SET_ROLE_NITWIT -> HiredVillagerRole.NITWIT;
-            case SET_ROLE_COOK -> HiredVillagerRole.COOK;
-            case SET_ROLE_SMELTER -> HiredVillagerRole.SMELTER;
-            case SET_ROLE_COURIER -> HiredVillagerRole.COURIER;
-            default -> null;
-        };
+        HiredVillagerRole role = RecruitmentActionMappings.role(action);
         if (role == null) {
             return false;
         }
@@ -2150,7 +1949,7 @@ public final class VillagerInteractionService {
         );
     }
 
-    private static void sendHiredContractNotice(ServerPlayer player, ServerLevel level, Villager villager) {
+    static void sendHiredContractNotice(ServerPlayer player, ServerLevel level, Villager villager) {
         if (!HiredVillagerContractService.isHired(level, villager)) {
             int dailyCost = HiredVillagerContractService.getDailyCost(level, villager, player);
             sendVillagerNotice(
@@ -2531,18 +2330,10 @@ public final class VillagerInteractionService {
     }
 
     private static void giveCurrency(ServerPlayer player, int count) {
-        int remaining = count;
-        while (remaining > 0) {
-            int chunk = Math.min(VillagerCurrencyResources.maxStackSize(player.serverLevel().getServer()), remaining);
-            ItemStack stack = VillagerCurrencyResources.createStack(player.serverLevel().getServer(), chunk);
-            if (!player.getInventory().add(stack)) {
-                player.drop(stack, false);
-            }
-            remaining -= chunk;
-        }
+        VillagerCurrencyPayment.give(player, count);
     }
 
-    private static String formatCurrency(ServerLevel level, int count) {
+    static String formatCurrency(ServerLevel level, int count) {
         return VillagerCurrencyResources.format(level.getServer(), count);
     }
 
@@ -2550,7 +2341,7 @@ public final class VillagerInteractionService {
         return count == 1 ? "" : "s";
     }
 
-    private static String formatDaysRemaining(int count) {
+    static String formatDaysRemaining(int count) {
         return count + " day" + plural(count);
     }
 
