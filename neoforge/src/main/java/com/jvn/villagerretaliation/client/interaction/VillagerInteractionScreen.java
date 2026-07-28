@@ -3,6 +3,7 @@ package com.jvn.villagerretaliation.client.interaction;
 import com.jvn.toucanlib.client.ToucanScrollbarThumb;
 import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.toucanlib.client.ToucanScrollbars;
+import com.jvn.toucanlib.client.interaction.ToucanLimitFeedback;
 import com.jvn.villagerretaliation.VillagerRetaliation;
 import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.party.PartyRosterClient;
@@ -366,7 +367,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private String selectedBuilderCategory;
     private BuilderStructureCatalog.Entry selectedBuilderStructure;
     private int selectedInventorySlot = -1;
-    private int selectedGiftAmount = 1;
+    private int selectedGiftAmount = 0;
+    private final ToucanLimitFeedback giftLimitFeedback = new ToucanLimitFeedback();
     private boolean pixelOptionEdgeScaleInitialized;
     private float pixelOptionTopEdgeScaleBlend;
     private float pixelOptionBottomEdgeScaleBlend;
@@ -572,6 +574,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             finishClosingAnimation();
             return;
         }
+        this.giftLimitFeedback.tick();
         tickSkillsProfileKeepAlive();
         updateDialogueMouthAnimation();
         syncCameraFocusState();
@@ -750,6 +753,19 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         graphics.pose().popPose();
         VillagerClientUiUtil.popGuiLayer(graphics);
         VillagerReputationNotificationOverlay.renderAboveInteractionMenu(graphics, partialTick);
+        if (this.page == DialoguePage.GIFT && !this.closingWithAnimation) {
+            VillagerClientUiUtil.pushGuiLayer(graphics, VillagerClientUiUtil.tooltipLayerZ());
+            VillagerInteractionGiftPage.renderGiftButtonTooltip(
+                    this.giftPageContext,
+                    graphics,
+                    mouseX,
+                    mouseY,
+                    this.width,
+                    this.height,
+                    contentOffsetX,
+                    totalOffsetY);
+            VillagerClientUiUtil.popGuiLayer(graphics);
+        }
     }
 
     @Override
@@ -2202,7 +2218,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void openGiftPage() {
         this.selectedInventorySlot = firstGiftableInventorySlot();
-        this.selectedGiftAmount = 1;
+        this.selectedGiftAmount = 0;
+        this.giftLimitFeedback.trigger(0);
         openPage(DialoguePage.GIFT);
     }
 
@@ -2392,7 +2409,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
         sendToServer(new VillagerGiftRequestPayload(this.villagerEntityId, this.selectedInventorySlot, this.selectedGiftAmount));
         this.selectedInventorySlot = firstGiftableInventorySlot();
-        this.selectedGiftAmount = 1;
+        this.selectedGiftAmount = 0;
+        this.giftLimitFeedback.trigger(0);
     }
 
     private void requestDialogue(String optionId) {
@@ -5650,7 +5668,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         @Override
         public void setSelectedInventorySlot(int slot) {
             VillagerInteractionScreen.this.selectedInventorySlot = slot;
-            VillagerInteractionScreen.this.selectedGiftAmount = 1;
+            VillagerInteractionScreen.this.selectedGiftAmount = 0;
+            VillagerInteractionScreen.this.giftLimitFeedback.trigger(0);
         }
 
         @Override
@@ -5659,16 +5678,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         @Override
-        public void adjustSelectedGiftAmount(int delta) {
+        public void setSelectedGiftAmount(int amount) {
             ItemStack stack = stackForInventorySlot(VillagerInteractionScreen.this.selectedInventorySlot);
-            if (stack.isEmpty()) {
-                VillagerInteractionScreen.this.selectedGiftAmount = 1;
+            if (stack.isEmpty() || amount == 0) {
+                VillagerInteractionScreen.this.selectedGiftAmount = 0;
                 return;
             }
-            VillagerInteractionScreen.this.selectedGiftAmount = Mth.clamp(
-                    VillagerInteractionScreen.this.selectedGiftAmount + delta,
-                    1,
-                    stack.getCount());
+            VillagerInteractionScreen.this.selectedGiftAmount = Mth.clamp(amount, 1, stack.getCount());
+        }
+
+        @Override
+        public int giftLimitFeedbackOffset() {
+            return VillagerInteractionScreen.this.giftLimitFeedback.horizontalOffset();
+        }
+
+        @Override
+        public void triggerGiftLimitFeedback(int durationTicks) {
+            VillagerInteractionScreen.this.giftLimitFeedback.trigger(durationTicks);
         }
 
         @Override

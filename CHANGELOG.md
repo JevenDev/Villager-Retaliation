@@ -1,4 +1,6 @@
 # Changelog
+- Added a titled, top-layer scrolling-instructions tooltip to the Gift button and the item-filter-style preview shake when scrolling reaches or pushes past the selected stack limit.
+- Reworked gift selection so clicking leaves the source stack untouched and shows an unnumbered give-all item preview, scrolling visually moves individual items between the inventory and preview without mutating inventory, and gifting resolves the chosen amount only on confirmation; the slot, hover, highlight, scroll, and tooltip behavior now comes from unreleased ToucanLib 0.4.0.
 - Fixed recent FPS and integrated-server frame-time regressions by caching output item-frame queries until placement, interaction, removal, load, or unload invalidates them and reusing parsed clipboard preview owner labels instead of rebuilding them every frame.
 - Persisted assigned output item-frame filters and amount limits so unloaded frame entities retain their last known routing and backpressure configuration; loaded frames refresh the snapshot automatically.
 - Hardened multiblock assigned storage so either half of a double chest shares assignment lookup, removal, route tethering, visit tracking, cooldown clearing, and courier pickup without relinking.

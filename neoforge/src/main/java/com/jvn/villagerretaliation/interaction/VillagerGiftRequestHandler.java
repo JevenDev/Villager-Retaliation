@@ -73,7 +73,8 @@ public final class VillagerGiftRequestHandler {
             return;
         }
 
-        if (amount < 1 || amount > selectedStack.getCount()) {
+        int resolvedAmount = amount == 0 ? selectedStack.getCount() : amount;
+        if (resolvedAmount < 1 || resolvedAmount > selectedStack.getCount()) {
             VillagerInteractionService.sendVillagerNotice(player, villager, "interaction.gift_invalid");
             return;
         }
@@ -81,7 +82,7 @@ public final class VillagerGiftRequestHandler {
         ServerLevel level = target.level();
         String locale = VillagerLocale.locale(player);
         VillagerProfession profession = villager.getVillagerData().getProfession();
-        ItemStack offeredStack = selectedStack.copyWithCount(amount);
+        ItemStack offeredStack = selectedStack.copyWithCount(resolvedAmount);
         VillagerGiftPreferences.GiftPreference giftPreference = VillagerGiftPreferences.evaluate(level, villager, offeredStack);
         boolean rejected = rejectsGift(giftPreference.reaction());
         if (!rejected && !VillagerInventoryAccess.canAddItems(villager, List.of(offeredStack))) {
@@ -94,7 +95,7 @@ public final class VillagerGiftRequestHandler {
         ItemStack giftedStack = takeOfferedStack(
                 player.getInventory(),
                 inventorySlot,
-                amount,
+                resolvedAmount,
                 giftPreference.reaction());
         VillagerTakenItemTracker.clear(giftedStack);
         if (rejected) {

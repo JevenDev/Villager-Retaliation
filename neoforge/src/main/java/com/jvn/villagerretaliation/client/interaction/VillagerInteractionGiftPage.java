@@ -4,6 +4,12 @@ import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerClientUiUtil;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.VillagerGiftKnowledgeService.GiftTooltipReaction;
+import com.jvn.toucanlib.client.interaction.ToucanInputModifiers;
+import com.jvn.toucanlib.client.interaction.ToucanSlotAmounts;
+import com.jvn.toucanlib.client.interaction.ToucanSlotBounds;
+import com.jvn.toucanlib.client.interaction.ToucanSlotRegistry;
+import com.jvn.toucanlib.client.interaction.ToucanSlotRenderer;
+import com.jvn.toucanlib.client.tooltip.ToucanTooltips;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -12,7 +18,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
@@ -29,13 +34,15 @@ final class VillagerInteractionGiftPage {
     private static final int INVENTORY_SLOT_START_X = 7;
     private static final int INVENTORY_SLOT_START_Y = 33;
     private static final int INVENTORY_HOTBAR_Y = 91;
-    private static final int INVENTORY_ITEM_OFFSET = 1;
     private static final int INVENTORY_BUTTON_WIDTH = 112;
     private static final int INVENTORY_BUTTON_HEIGHT = 20;
     private static final int GIFT_PREVIEW_SLOT_X = 34;
     private static final int GIFT_PREVIEW_SLOT_Y = 9;
     private static final int GIFT_INFO_ICON_WIDTH = 24;
     private static final int GIFT_INFO_ICON_HEIGHT = 22;
+    private static final int PREVIEW_SLOT_ID = -1;
+    private static final int LIMIT_FEEDBACK_TICKS = 8;
+    private static final ToucanSlotRegistry<Integer> GIFT_SLOTS = createGiftSlots();
     private VillagerInteractionGiftPage() {
     }
 
@@ -52,8 +59,10 @@ final class VillagerInteractionGiftPage {
         double localMouseY = transform.localY(mouseY);
         int localMouseXi = Mth.floor(localMouseX);
         int localMouseYi = Mth.floor(localMouseY);
-        int hoveredSlot = giftSlotAt(localMouseX, localMouseY, 0, 0);
-        boolean previewHovered = isPointInsideGiftPreview(localMouseX, localMouseY, 0, 0);
+        int hoveredSlot = GIFT_SLOTS.hovered(localMouseX, localMouseY)
+                .map(ToucanSlotRegistry.Entry::id)
+                .orElse(Integer.MIN_VALUE);
+        boolean previewHovered = hoveredSlot == PREVIEW_SLOT_ID;
 
         graphics.pose().pushPose();
         graphics.pose().translate(transform.left(), transform.top(), 0.0F);
@@ -66,24 +75,26 @@ final class VillagerInteractionGiftPage {
 
         ItemStack hoveredStack = previewHovered
                 ? selectedGiftStack(context)
-                : context.stackForInventorySlot(hoveredSlot);
+                : hoveredSlot >= 0 ? context.stackForInventorySlot(hoveredSlot) : ItemStack.EMPTY;
         if (isPointInsideGiftInfoIcon(localMouseX, localMouseY, 0, 0)) {
             renderGiftKnowledgeTooltip(context, graphics, localMouseXi, localMouseYi, transform.scale(), transform.left(), transform.top());
         } else if (!hoveredStack.isEmpty()) {
-            renderGiftItemTooltip(context, graphics, hoveredStack, localMouseXi, localMouseYi, transform.scale(), transform.left(), transform.top());
+            renderGiftItemTooltip(context, graphics, hoveredStack,
+                    localMouseXi, localMouseYi, transform.scale(), transform.left(), transform.top());
         }
 
         graphics.pose().popPose();
     }
 
-    private static void renderGiftItemTooltip(Context context, GuiGraphics graphics, ItemStack stack, int mouseX, int mouseY, float scale, int originX, int originY) {
-        List<Component> tooltip = new ArrayList<>(VillagerInteractionUiUtil.itemTooltipLines(stack));
+    private static void renderGiftItemTooltip(Context context, GuiGraphics graphics, ItemStack stack,
+            int mouseX, int mouseY, float scale, int originX, int originY) {
+        List<Component> tooltip = new ArrayList<>(ToucanTooltips.itemTooltipLines(stack));
         if (VillagerRetaliationConfig.SHOW_GIFT_REACTION_TOOLTIP.get()) {
             context.giftTooltipReaction(stack)
                     .filter(reaction -> !VillagerRetaliationConfig.GIFT_REACTION_TOOLTIP_REQUIRES_KNOWN_GIFT.get() || reaction.known())
                     .ifPresent(reaction -> tooltip.add(giftReactionTooltip(reaction)));
         }
-        VillagerInteractionUiUtil.renderBoundedComponentTooltipInCurrentPose(
+        ToucanTooltips.renderBounded(
                 graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
     }
 
@@ -110,15 +121,12 @@ final class VillagerInteractionGiftPage {
         GiftTransform transform = giftTransform(screenWidth, screenHeight);
         double localMouseX = transform.localX(mouseX);
         double localMouseY = transform.localY(mouseY);
-        int clickedSlot = giftSlotAt(localMouseX, localMouseY, 0, 0);
-        if (clickedSlot >= 0) {
-            ItemStack stack = context.stackForInventorySlot(clickedSlot);
-            if (!stack.isEmpty()) {
+        Optional<ToucanSlotRegistry.Entry<Integer>> clicked = GIFT_SLOTS.hovered(localMouseX, localMouseY);
+        if (clicked.isPresent()) {
+            int clickedSlot = clicked.orElseThrow().id();
+            if (clickedSlot >= 0 && !context.stackForInventorySlot(clickedSlot).isEmpty()) {
                 context.setSelectedInventorySlot(clickedSlot);
             }
-            return true;
-        }
-        if (isPointInsideGiftPreview(localMouseX, localMouseY, 0, 0)) {
             return true;
         }
         if (tryClickGiftButton(context, localMouseX, localMouseY)) {
@@ -138,16 +146,24 @@ final class VillagerInteractionGiftPage {
             return false;
         }
         GiftTransform transform = giftTransform(screenWidth, screenHeight);
-        if (!isPointInsideGiftPreview(transform.localX(mouseX), transform.localY(mouseY), 0, 0)) {
+        int hoveredSlot = GIFT_SLOTS.hovered(transform.localX(mouseX), transform.localY(mouseY))
+                .map(ToucanSlotRegistry.Entry::id)
+                .orElse(Integer.MIN_VALUE);
+        if (hoveredSlot != PREVIEW_SLOT_ID && hoveredSlot != context.selectedInventorySlot()) {
             return false;
         }
-        int step = net.minecraft.client.gui.screens.Screen.hasControlDown()
-                && net.minecraft.client.gui.screens.Screen.hasShiftDown()
-                ? 100
-                : net.minecraft.client.gui.screens.Screen.hasControlDown()
-                ? 10
-                : net.minecraft.client.gui.screens.Screen.hasShiftDown() ? 5 : 1;
-        context.adjustSelectedGiftAmount(scrollY > 0.0D ? step : -step);
+        ItemStack selected = context.stackForInventorySlot(context.selectedInventorySlot());
+        if (selected.isEmpty()) {
+            return true;
+        }
+        ToucanSlotAmounts.Adjustment adjustment = ToucanSlotAmounts.adjust(
+                context.selectedGiftAmount(), selected.getCount(), scrollY, ToucanInputModifiers.current());
+        if (adjustment.hitLimit() && scrollY > 0.0D) {
+            context.triggerGiftLimitFeedback(LIMIT_FEEDBACK_TICKS);
+        }
+        if (adjustment.changed()) {
+            context.setSelectedGiftAmount(adjustment.amount());
+        }
         return true;
     }
 
@@ -184,68 +200,55 @@ final class VillagerInteractionGiftPage {
                 INVENTORY_TEXTURE_WIDTH,
                 INVENTORY_TEXTURE_HEIGHT
         );
-
-        for (int row = 0; row < INVENTORY_MAIN_ROWS; row++) {
-            for (int column = 0; column < INVENTORY_COLUMNS; column++) {
-                int inventorySlot = 9 + row * INVENTORY_COLUMNS + column;
-                renderGiftSlot(
-                        context,
-                        graphics,
-                        inventorySlot,
-                        left + INVENTORY_SLOT_START_X + column * INVENTORY_SLOT_SIZE,
-                        top + INVENTORY_SLOT_START_Y + row * INVENTORY_SLOT_SIZE,
-                        hoveredSlot
-                );
+        for (ToucanSlotRegistry.Entry<Integer> entry : GIFT_SLOTS.entries()) {
+            int inventorySlot = entry.id();
+            if (inventorySlot < 0) {
+                continue;
             }
-        }
-
-        for (int column = 0; column < INVENTORY_COLUMNS; column++) {
-            renderGiftSlot(
-                    context,
+            ToucanSlotRenderer.render(
                     graphics,
-                    column,
-                    left + INVENTORY_SLOT_START_X + column * INVENTORY_SLOT_SIZE,
-                    top + INVENTORY_HOTBAR_Y,
-                    hoveredSlot
-            );
+                    context.font(),
+                    translated(entry.bounds(), left, top),
+                    displayedInventoryStack(context, inventorySlot),
+                    inventorySlot == context.selectedInventorySlot(),
+                    inventorySlot == hoveredSlot);
         }
     }
 
     private static void renderGiftPreview(Context context, GuiGraphics graphics, int left, int top, boolean hovered) {
-        int x = left + GIFT_PREVIEW_SLOT_X + INVENTORY_ITEM_OFFSET;
-        int y = top + GIFT_PREVIEW_SLOT_Y + INVENTORY_ITEM_OFFSET;
-        ItemStack stack = selectedGiftStack(context);
-        if (!stack.isEmpty()) {
-            graphics.renderItem(stack, x, y);
-            graphics.renderItemDecorations(context.font(), stack, x, y);
-        }
-        if (hovered) {
-            AbstractContainerScreen.renderSlotHighlight(graphics, x, y, 0);
-        }
+        ToucanSlotBounds bounds = GIFT_SLOTS.entry(PREVIEW_SLOT_ID).orElseThrow().bounds();
+        ToucanSlotBounds renderedBounds = translated(
+                bounds, left + context.giftLimitFeedbackOffset(), top);
+        ToucanSlotRenderer.render(
+                graphics,
+                context.font(),
+                renderedBounds,
+                selectedGiftStack(context),
+                false,
+                hovered);
+
     }
 
     private static ItemStack selectedGiftStack(Context context) {
         ItemStack selected = context.stackForInventorySlot(context.selectedInventorySlot());
-        if (selected.isEmpty()) {
+        int previewAmount = ToucanSlotAmounts.previewDisplayCount(context.selectedGiftAmount(), selected.getCount());
+        if (selected.isEmpty() || previewAmount == 0) {
             return ItemStack.EMPTY;
         }
-        return selected.copyWithCount(Mth.clamp(context.selectedGiftAmount(), 1, selected.getCount()));
+        return selected.copyWithCount(previewAmount);
     }
 
-    private static void renderGiftSlot(Context context, GuiGraphics graphics, int inventorySlot, int x, int y, int hoveredSlot) {
-        boolean selected = inventorySlot == context.selectedInventorySlot();
-        boolean hovered = inventorySlot == hoveredSlot;
+    private static ItemStack displayedInventoryStack(Context context, int inventorySlot) {
         ItemStack stack = context.stackForInventorySlot(inventorySlot);
-        if (selected) {
-            graphics.fill(x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET, x + 16 + INVENTORY_ITEM_OFFSET, y + 16 + INVENTORY_ITEM_OFFSET, 0x8832D74B);
+        if (stack.isEmpty() || inventorySlot != context.selectedInventorySlot()) {
+            return stack;
         }
-        if (!stack.isEmpty()) {
-            graphics.renderItem(stack, x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET);
-            graphics.renderItemDecorations(context.font(), stack, x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET);
-        }
-        if (hovered && !selected) {
-            AbstractContainerScreen.renderSlotHighlight(graphics, x + INVENTORY_ITEM_OFFSET, y + INVENTORY_ITEM_OFFSET, 0);
-        }
+        int remaining = ToucanSlotAmounts.remaining(context.selectedGiftAmount(), stack.getCount());
+        return remaining == 0 ? ItemStack.EMPTY : stack.copyWithCount(remaining);
+    }
+
+    private static ToucanSlotBounds translated(ToucanSlotBounds bounds, int left, int top) {
+        return new ToucanSlotBounds(bounds.left() + left, bounds.top() + top, bounds.width(), bounds.height());
     }
 
     private static void renderGiftButton(Context context, GuiGraphics graphics, int mouseX, int mouseY, float partialTick, int left, int top) {
@@ -275,18 +278,54 @@ final class VillagerInteractionGiftPage {
         }
 
         GiftButtonBounds bounds = giftButtonBounds(left, top);
-        context.adjustSelectedGiftAmount(0);
         int selectedSlot = context.selectedInventorySlot();
         boolean enabled = selectedSlot >= 0 && !context.stackForInventorySlot(selectedSlot).isEmpty();
         giftButton.setPosition(bounds.left(), bounds.top());
         giftButton.setWidth(bounds.width());
         giftButton.setHeight(bounds.height());
-        giftButton.setMessage(Component.translatable(giftButtonKey(context.selectedGiftAmount())));
+        giftButton.setMessage(Component.translatable(giftButtonKey(context, selectedSlot)));
+        giftButton.setTooltip(null);
+
         giftButton.active = enabled;
         giftButton.visible = true;
     }
 
-    private static String giftButtonKey(int amount) {
+    static void renderGiftButtonTooltip(
+            Context context,
+            GuiGraphics graphics,
+            int mouseX,
+            int mouseY,
+            int screenWidth,
+            int screenHeight,
+            int contentOffsetX,
+            int contentOffsetY) {
+        GiftTransform transform = giftTransform(screenWidth, screenHeight);
+        GiftButtonBounds bounds = giftButtonBounds(
+                transform.left() + contentOffsetX,
+                transform.top() + contentOffsetY);
+        if (!VillagerClientUiUtil.containsInclusive(
+                mouseX, mouseY, bounds.left(), bounds.top(), bounds.right(), bounds.bottom())) {
+            return;
+        }
+
+        String translationPrefix = GUI_KEY_PREFIX + "gift.amount.scroll";
+        List<Component> tooltip = new ArrayList<>();
+        tooltip.add(Component.translatable(translationPrefix + "_title").withStyle(ChatFormatting.AQUA));
+        ToucanTooltips.appendScrollInstructions(
+                tooltip,
+                List.of(
+                        Component.translatable(translationPrefix),
+                        Component.translatable(translationPrefix + "_down"),
+                        Component.translatable(translationPrefix + "_all")),
+                translationPrefix);
+        ToucanTooltips.renderBounded(graphics, context.font(), tooltip, mouseX, mouseY, 1.0F, 0.0F, 0.0F);
+    }
+
+    private static String giftButtonKey(Context context, int selectedSlot) {
+        ItemStack selected = selectedSlot < 0 ? ItemStack.EMPTY : context.stackForInventorySlot(selectedSlot);
+        int amount = selected.isEmpty()
+                ? 0
+                : ToucanSlotAmounts.resolve(context.selectedGiftAmount(), selected.getCount());
         return amount > 1 ? GUI_KEY_PREFIX + "gift.give_stack" : GUI_KEY_PREFIX + "gift.give";
     }
 
@@ -323,7 +362,7 @@ final class VillagerInteractionGiftPage {
             addGiftTooltipSection(tooltip, "gift.likes", context.knownLikedGiftNames(), ChatFormatting.GREEN);
             addGiftTooltipSection(tooltip, "gift.dislikes", context.knownDislikedGiftNames(), ChatFormatting.RED);
         }
-        VillagerInteractionUiUtil.renderBoundedComponentTooltipInCurrentPose(graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
+        ToucanTooltips.renderBounded(graphics, context.font(), tooltip, mouseX, mouseY, scale, originX, originY);
     }
 
     private static void addGiftTooltipSection(List<Component> tooltip, String labelKey, List<String> giftNames, ChatFormatting color) {
@@ -337,44 +376,28 @@ final class VillagerInteractionGiftPage {
         }
     }
 
-    private static int giftSlotAt(double mouseX, double mouseY, int left, int top) {
-        int slotLeft = left + INVENTORY_SLOT_START_X;
-        int mainTop = top + INVENTORY_SLOT_START_Y;
-        if (VillagerClientUiUtil.containsExclusive(
-                mouseX,
-                mouseY,
-                slotLeft,
-                mainTop,
-                slotLeft + INVENTORY_COLUMNS * INVENTORY_SLOT_SIZE,
-                mainTop + INVENTORY_MAIN_ROWS * INVENTORY_SLOT_SIZE)) {
-            int column = Mth.floor((mouseX - slotLeft) / INVENTORY_SLOT_SIZE);
-            int row = Mth.floor((mouseY - mainTop) / INVENTORY_SLOT_SIZE);
-            return 9 + row * INVENTORY_COLUMNS + column;
+    private static ToucanSlotRegistry<Integer> createGiftSlots() {
+        ToucanSlotRegistry<Integer> slots = new ToucanSlotRegistry<>();
+        List<Integer> mainInventorySlots = new ArrayList<>(INVENTORY_COLUMNS * INVENTORY_MAIN_ROWS);
+        for (int slot = 9; slot < 36; slot++) {
+            mainInventorySlots.add(slot);
         }
-
-        int hotbarTop = top + INVENTORY_HOTBAR_Y;
-        if (VillagerClientUiUtil.containsExclusive(
-                mouseX,
-                mouseY,
-                slotLeft,
-                hotbarTop,
-                slotLeft + INVENTORY_COLUMNS * INVENTORY_SLOT_SIZE,
-                hotbarTop + INVENTORY_SLOT_SIZE)) {
-            return Mth.floor((mouseX - slotLeft) / INVENTORY_SLOT_SIZE);
+        slots.registerGrid(mainInventorySlots, INVENTORY_SLOT_START_X, INVENTORY_SLOT_START_Y,
+                INVENTORY_COLUMNS, INVENTORY_SLOT_SIZE);
+        List<Integer> hotbarSlots = new ArrayList<>(INVENTORY_COLUMNS);
+        for (int slot = 0; slot < INVENTORY_COLUMNS; slot++) {
+            hotbarSlots.add(slot);
         }
-        return -1;
+        slots.registerGrid(hotbarSlots, INVENTORY_SLOT_START_X, INVENTORY_HOTBAR_Y,
+                INVENTORY_COLUMNS, INVENTORY_SLOT_SIZE);
+        slots.register(PREVIEW_SLOT_ID, ToucanSlotBounds.square(
+                GIFT_PREVIEW_SLOT_X, GIFT_PREVIEW_SLOT_Y, INVENTORY_SLOT_SIZE));
+        return slots;
     }
 
     private static boolean isPointInsideGiftInfoIcon(double mouseX, double mouseY, int left, int top) {
         GiftInfoIconBounds bounds = giftInfoIconBounds(left, top);
         return VillagerClientUiUtil.containsInclusive(mouseX, mouseY, bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
-    }
-
-    private static boolean isPointInsideGiftPreview(double mouseX, double mouseY, int left, int top) {
-        int slotLeft = left + GIFT_PREVIEW_SLOT_X;
-        int slotTop = top + GIFT_PREVIEW_SLOT_Y;
-        return VillagerClientUiUtil.containsExclusive(
-                mouseX, mouseY, slotLeft, slotTop, slotLeft + INVENTORY_SLOT_SIZE, slotTop + INVENTORY_SLOT_SIZE);
     }
 
     private static GiftButtonBounds giftButtonBounds(int left, int top) {
@@ -406,7 +429,11 @@ final class VillagerInteractionGiftPage {
 
         int selectedGiftAmount();
 
-        void adjustSelectedGiftAmount(int delta);
+        void setSelectedGiftAmount(int amount);
+
+        int giftLimitFeedbackOffset();
+
+        void triggerGiftLimitFeedback(int durationTicks);
 
         Button giftButton();
 
