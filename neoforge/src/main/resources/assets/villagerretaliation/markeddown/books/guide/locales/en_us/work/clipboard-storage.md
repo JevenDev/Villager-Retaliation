@@ -6,7 +6,7 @@ keywords:
   - clipboard
   - work area
   - route
-  - input
+  - supplies
   - output
   - item filter
 ---
@@ -18,9 +18,8 @@ Use a :item[villagerretaliation:clipboard] in the air to open the workforce dash
 ## Assignment modes
 
 - **General:** fallback supplies and returned contract items.
-- **Input:** ingredients, fuel, seeds, breeding food, raw materials, and courier pickup.
+- **Supplies:** tools, weapons, ammunition, ladders, job equipment, ingredients, fuel, seeds, breeding food, raw materials, and courier pickup.
 - **Output:** produced items, catches, drops, and courier delivery.
-- **Tool:** tools, weapons, ammunition, ladders, and job equipment.
 - **Payment:** a Payment Box used for renewal.
 - **Work Area Preview / Set Work Area:** inspect or commit a three-dimensional job area.
 - **Route:** ordered nodes for Combat, Hunting, or Courier work.
@@ -54,7 +53,7 @@ A filter narrows supported work; it does not add recipes, targets, or storage be
 1. Check **Work Enabled** and payment.
 2. Check that the area or route is committed, loaded, and reachable.
 3. Check the exact required tool, station, ammunition, fuel, or material.
-4. Check Input, Output, Tool, General, and Payment assignments.
+4. Check Supplies, Output, General, and Payment assignments.
 5. Check capacity, filters, and incompatible station contents.
 :::
 

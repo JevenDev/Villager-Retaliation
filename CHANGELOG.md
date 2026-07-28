@@ -1,4 +1,5 @@
 # Changelog
+- Consolidated assigned Tool and Input storage into Supplies; existing assignments and saved Clipboard modes migrate automatically, and both workers and couriers use the unified chest purpose.
 - Villagers now stow held weapons outside combat whenever personal or party storage has room, while active workers keep and dynamically switch the tool needed for their current job action; saved melee/range preferences still control which weapon they draw for combat.
 - Added an Unequip Weapon(s) action for authorized party villagers, moving held weapons and shields into party hotbar slots first and then other party inventory slots.
 - Standardized unmounted villager movement across vanilla AI and mod-owned routes: ordinary roaming, work, gathering, and nearby following now use vanilla walking speed, while retaliation, fleeing, regrouping, and following beyond eight blocks use Vindicator-equivalent running speed.

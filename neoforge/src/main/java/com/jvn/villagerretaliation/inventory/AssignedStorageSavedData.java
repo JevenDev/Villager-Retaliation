@@ -46,6 +46,7 @@ public final class AssignedStorageSavedData extends SavedData {
     public static AssignedStorageSavedData load(CompoundTag tag, HolderLookup.Provider provider) {
         AssignedStorageSavedData data = new AssignedStorageSavedData();
         ListTag entriesTag = tag.getList(TAG_ENTRIES, Tag.TAG_COMPOUND);
+        boolean migratedPurpose = false;
         for (Tag rawEntry : entriesTag) {
             if (!(rawEntry instanceof CompoundTag entryTag)
                     || !entryTag.hasUUID(TAG_VILLAGER)
@@ -67,18 +68,24 @@ public final class AssignedStorageSavedData extends SavedData {
                     }
                 }
             }
+            String rawPurpose = entryTag.getString(TAG_PURPOSE);
+            String purpose = AssignedStorageService.normalizePurpose(rawPurpose);
+            migratedPurpose |= !purpose.equals(rawPurpose);
             AssignedContainerRecord record = new AssignedContainerRecord(
                     dimension,
                     BlockPos.of(entryTag.getLong(TAG_POS)),
                     entryTag.getUUID(TAG_VILLAGER),
                     hirer,
-                    entryTag.getString(TAG_PURPOSE).isBlank() ? "general" : entryTag.getString(TAG_PURPOSE),
+                    purpose,
                     entryTag.getInt(TAG_PRIORITY),
                     entryTag.getString(TAG_VALIDATION).isBlank() ? "unknown" : entryTag.getString(TAG_VALIDATION),
                     outputFilters,
                     entryTag.getBoolean(TAG_OUTPUT_FILTER_SNAPSHOT_KNOWN)
             );
             data.put(record);
+        }
+        if (migratedPurpose) {
+            data.setDirty();
         }
         return data;
     }
@@ -347,7 +354,7 @@ public final class AssignedStorageSavedData extends SavedData {
     }
 
     private static String normalizePurpose(String purpose) {
-        return purpose == null || purpose.isBlank() ? "general" : purpose;
+        return AssignedStorageService.normalizePurpose(purpose);
     }
 
     public enum AssignmentResult {
@@ -367,6 +374,7 @@ public final class AssignedStorageSavedData extends SavedData {
             boolean outputFilterSnapshotKnown) {
         public AssignedContainerRecord {
             pos = pos.immutable();
+            purpose = AssignedStorageService.normalizePurpose(purpose);
             outputFilters = copyFilters(outputFilters);
         }
 

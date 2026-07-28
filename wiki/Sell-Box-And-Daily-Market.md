@@ -7,8 +7,8 @@ box sells the old stack first, as one transaction, and leaves the new stack pend
 The box keeps an exact shared balance. **Collect** moves only whole primary-currency items that fit
 in the player's inventory; any fractional remainder stays in the box. Hoppers and other item
 handlers insert through the top or sides and extract whole primary-currency items from the bottom.
-An assigned output courier can deposit saleable items, while an assigned input courier can collect
-currency. Pending sale items are never exposed as courier input.
+An assigned output courier can deposit saleable items, while a courier can collect currency from
+assigned Supplies storage. Pending sale items are never exposed as courier supplies.
 
 ## Price definitions
 

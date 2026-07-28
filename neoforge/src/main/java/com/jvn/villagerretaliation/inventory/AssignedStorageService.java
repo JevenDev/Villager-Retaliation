@@ -37,9 +37,10 @@ import net.minecraft.world.phys.Vec3;
 
 public final class AssignedStorageService {
     public static final String GENERAL_PURPOSE = "general";
-    public static final String INPUT_PURPOSE = "input";
+    public static final String SUPPLY_PURPOSE = "supply";
     public static final String OUTPUT_PURPOSE = "output";
-    public static final String TOOL_PURPOSE = "tool";
+    private static final String LEGACY_INPUT_PURPOSE = "input";
+    private static final String LEGACY_TOOL_PURPOSE = "tool";
     public static final String PAYMENT_PURPOSE = "payment";
     private static final double STORAGE_INTERACTION_REACH_SQR = 25.0D;
     private static final long STORAGE_RETRY_COOLDOWN_TICKS = 20L * 15L;
@@ -266,7 +267,7 @@ public final class AssignedStorageService {
             return false;
         }
         return !(blockEntity instanceof SellBoxBlockEntity)
-                || INPUT_PURPOSE.equals(normalizedPurpose)
+                || SUPPLY_PURPOSE.equals(normalizedPurpose)
                 || OUTPUT_PURPOSE.equals(normalizedPurpose);
     }
 
@@ -551,7 +552,7 @@ public final class AssignedStorageService {
 
     /**
      * Preflights a courier pickup so a full downstream buffer applies backpressure before cargo
-     * is removed from an input container.
+     * is removed from a supply container.
      */
     public static CourierTransferState courierTransferState(ServerLevel level, Villager villager) {
         if (level == null || villager == null) {
@@ -1629,7 +1630,7 @@ public final class AssignedStorageService {
             StorageUse use) {
         List<VillagerInventoryOverflowService.ContainerCandidate> candidates =
                 liveContainerCandidates(level, villager, record -> purposeMatchesUse(record.purpose(), use));
-        if (use != StorageUse.INPUT) {
+        if (use != StorageUse.INPUT && use != StorageUse.TOOL) {
             return candidates;
         }
         return candidates.stream()
@@ -1743,7 +1744,14 @@ public final class AssignedStorageService {
     }
 
     public static String normalizePurpose(String purpose) {
-        return purpose == null || purpose.isBlank() ? GENERAL_PURPOSE : purpose;
+        if (purpose == null || purpose.isBlank()) {
+            return GENERAL_PURPOSE;
+        }
+        String normalized = purpose.trim().toLowerCase(java.util.Locale.ROOT);
+        return switch (normalized) {
+            case LEGACY_INPUT_PURPOSE, LEGACY_TOOL_PURPOSE, "supplies" -> SUPPLY_PURPOSE;
+            default -> normalized;
+        };
     }
 
     private static boolean isGlobalPurpose(String purpose) {
@@ -1760,9 +1768,9 @@ public final class AssignedStorageService {
             return use != StorageUse.PAYMENT;
         }
         return switch (use) {
-            case INPUT -> INPUT_PURPOSE.equals(normalized);
+            case INPUT -> SUPPLY_PURPOSE.equals(normalized);
             case OUTPUT -> OUTPUT_PURPOSE.equals(normalized);
-            case TOOL -> TOOL_PURPOSE.equals(normalized);
+            case TOOL -> SUPPLY_PURPOSE.equals(normalized);
             case ANY_NON_PAYMENT -> true;
             case PAYMENT -> false;
         };
