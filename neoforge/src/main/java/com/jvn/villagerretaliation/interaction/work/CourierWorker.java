@@ -57,8 +57,8 @@ public final class CourierWorker implements HiredRoleWorker {
         String phase = phase(context);
         if (context.inventory().hasOutputItems()
                 && !PHASE_RETURN.equals(phase)
-                && hasCompatibleOutputRoute(villager, context)
-                && !hasCompatibleOutput(level, villager, context)) {
+                && compatibleOutputState(villager, context)
+                        == AssignedStorageService.AssignedOutputState.BACKPRESSURED) {
             VillagerTaskNavigationUtil.stopHiredNavigation(villager);
             HiredWorkerBrain.clearFailure(context);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.PAUSED_OUTPUT_BACKPRESSURE);
@@ -182,7 +182,8 @@ public final class CourierWorker implements HiredRoleWorker {
         context.state().remove(ROUTE_LAST_NODE_REACHED_GAME_TIME_TAG);
         if (outbound) {
             if (deliverySweep && context.inventory().hasOutputItems()) {
-                boolean hasCompatibleOutputRoute = hasCompatibleOutputRoute(villager, context);
+                boolean hasCompatibleOutputRoute = compatibleOutputState(villager, context)
+                        != AssignedStorageService.AssignedOutputState.NO_ROUTE;
                 beginReturn(context, traversalNodes);
                 if (!hasCompatibleOutputRoute) {
                     context.state().putBoolean(RETURN_TO_INPUT_SWEEP_TAG, true);
@@ -578,23 +579,14 @@ public final class CourierWorker implements HiredRoleWorker {
                 .sum();
     }
 
-    private static boolean hasCompatibleOutput(
-            ServerLevel level,
+    private static AssignedStorageService.AssignedOutputState compatibleOutputState(
             Villager villager,
             HiredWorkContext context) {
         List<ItemStack> cargo = context.inventory().collectOutputItems().stream()
                 .map(output -> output.stack())
                 .filter(stack -> !stack.isEmpty())
                 .toList();
-        return AssignedStorageService.hasAssignedOutputCapacityFor(villager, cargo);
-    }
-
-    private static boolean hasCompatibleOutputRoute(Villager villager, HiredWorkContext context) {
-        List<ItemStack> cargo = context.inventory().collectOutputItems().stream()
-                .map(output -> output.stack())
-                .filter(stack -> !stack.isEmpty())
-                .toList();
-        return AssignedStorageService.hasAssignedOutputRouteFor(villager, cargo);
+        return AssignedStorageService.assignedOutputStateFor(villager, cargo);
     }
 
     private static Set<BlockPos> purposePositions(ServerLevel level, Villager villager, String purpose) {
