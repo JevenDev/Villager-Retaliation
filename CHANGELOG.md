@@ -1,4 +1,5 @@
 # Changelog
+- Hardened multiblock assigned storage so either half of a double chest shares assignment lookup, removal, route tethering, visit tracking, cooldown clearing, and courier pickup without relinking.
 - Fixed severe integrated-server stutter from output backpressure checks repeatedly rescanning assigned containers and nearby item frames for every courier inventory slot.
 - Added hired-work output backpressure: workers pause without warning when every assigned output is full or filter-capped, resume automatically when capacity returns, and couriers preflight and collect only the downstream allowance.
 - Fixed animal handlers and fishermen leaving excess work experience orbs behind after their Mending equipment reached full durability; they now attract and consume the remaining work XP without retaining it.

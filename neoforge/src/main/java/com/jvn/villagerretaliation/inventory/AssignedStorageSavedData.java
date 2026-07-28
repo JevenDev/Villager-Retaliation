@@ -109,6 +109,18 @@ public final class AssignedStorageSavedData extends SavedData {
         return matches;
     }
 
+    public AssignedContainerRecord assignedAt(
+            ResourceKey<Level> dimension,
+            BlockPos pos,
+            UUID villagerId,
+            String purpose) {
+        if (dimension == null || pos == null || villagerId == null) {
+            return null;
+        }
+        return this.byContainer.get(new ContainerKey(
+                dimension, pos.immutable(), villagerId, normalizePurpose(purpose)));
+    }
+
     public AssignmentResult assign(AssignedContainerRecord record) {
         ContainerKey key = key(record);
         AssignedContainerRecord existing = this.byContainer.get(key);

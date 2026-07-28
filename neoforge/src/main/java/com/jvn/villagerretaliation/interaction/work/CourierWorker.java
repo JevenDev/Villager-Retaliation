@@ -353,7 +353,7 @@ public final class CourierWorker implements HiredRoleWorker {
                     ? "interaction.work.courier.input_unreachable"
                     : "interaction.work.courier.output_unreachable");
         }
-        rememberVisitedStorage(context, storage);
+        rememberVisitedStorage(level, villager, context, storage);
         WorkResult result;
         if (AssignedStorageService.OUTPUT_PURPOSE.equals(purpose)) {
             result = depositAtOutput(level, villager, context, route, storage);
@@ -389,15 +389,13 @@ public final class CourierWorker implements HiredRoleWorker {
         if (!context.inventory().hasOutputSpace()) {
             return List.of();
         }
-        Set<BlockPos> inputs = purposePositions(level, villager, AssignedStorageService.INPUT_PURPOSE);
         return AssignedStorageService.assignedStoragePositionsContaining(
                         level,
                         villager,
                         stack -> !stack.isEmpty())
                 .stream()
-                .filter(inputs::contains)
-                .filter(pos -> !hasVisitedStorage(context, pos))
-                .filter(pos -> isTetheredToNode(route, routeNodes, pos, routeIndex))
+                .filter(pos -> !hasVisitedStorage(level, villager, context, pos))
+                .filter(pos -> isStorageTetheredToNode(level, villager, route, routeNodes, pos, routeIndex))
                 .toList();
     }
 
@@ -412,8 +410,8 @@ public final class CourierWorker implements HiredRoleWorker {
             return List.of();
         }
         Set<BlockPos> outputs = purposePositions(level, villager, AssignedStorageService.OUTPUT_PURPOSE).stream()
-                .filter(pos -> !hasVisitedStorage(context, pos))
-                .filter(pos -> isTetheredToNode(route, routeNodes, pos, routeIndex))
+                .filter(pos -> !hasVisitedStorage(level, villager, context, pos))
+                .filter(pos -> isStorageTetheredToNode(level, villager, route, routeNodes, pos, routeIndex))
                 .collect(Collectors.toSet());
         List<BlockPos> ordered = new ArrayList<>();
         while (!outputs.isEmpty()) {
@@ -450,7 +448,7 @@ public final class CourierWorker implements HiredRoleWorker {
                     STORAGE_BATCH_TAG,
                     java.util.Arrays.copyOfRange(pending, index + 1, pending.length));
             if (!AssignedStorageService.isValidContainerForPurpose(level, candidate, purpose)
-                    || hasVisitedStorage(context, candidate)) {
+                    || hasVisitedStorage(level, villager, context, candidate)) {
                 continue;
             }
             if (AssignedStorageService.INPUT_PURPOSE.equals(purpose)) {
@@ -475,6 +473,17 @@ public final class CourierWorker implements HiredRoleWorker {
 
     private static void clearStorageBatch(HiredWorkContext context) {
         context.state().remove(STORAGE_BATCH_TAG);
+    }
+
+    private static boolean isStorageTetheredToNode(
+            ServerLevel level,
+            Villager villager,
+            HiredRoute route,
+            List<BlockPos> routeNodes,
+            BlockPos storage,
+            int routeIndex) {
+        return AssignedStorageService.assignedStorageInteractionPositions(level, villager, storage).stream()
+                .anyMatch(position -> isTetheredToNode(route, routeNodes, position, routeIndex));
     }
 
     private static boolean isTetheredToNode(
@@ -528,24 +537,33 @@ public final class CourierWorker implements HiredRoleWorker {
         context.state().remove(STORAGE_RETURN_TO_NODE_TAG);
     }
 
-    private static boolean hasVisitedStorage(HiredWorkContext context, BlockPos storage) {
-        long target = storage.asLong();
-        for (long visited : context.state().getLongArray(VISITED_STORAGE_TAG)) {
-            if (visited == target) {
-                return true;
-            }
-        }
-        return false;
+    private static boolean hasVisitedStorage(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos storage) {
+        long[] visitedPositions = context.state().getLongArray(VISITED_STORAGE_TAG);
+        return AssignedStorageService.assignedStorageInteractionPositions(level, villager, storage).stream()
+                .mapToLong(BlockPos::asLong)
+                .anyMatch(target -> java.util.Arrays.stream(visitedPositions)
+                        .anyMatch(visited -> visited == target));
     }
 
-    private static void rememberVisitedStorage(HiredWorkContext context, BlockPos storage) {
-        if (hasVisitedStorage(context, storage)) {
+    private static void rememberVisitedStorage(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos storage) {
+        long[] existing = context.state().getLongArray(VISITED_STORAGE_TAG);
+        long[] additions = AssignedStorageService.assignedStorageInteractionPositions(level, villager, storage).stream()
+                .mapToLong(BlockPos::asLong)
+                .filter(target -> java.util.Arrays.stream(existing).noneMatch(visited -> visited == target))
+                .toArray();
+        if (additions.length == 0) {
             return;
         }
-        long[] existing = context.state().getLongArray(VISITED_STORAGE_TAG);
-        long[] visited = new long[existing.length + 1];
-        System.arraycopy(existing, 0, visited, 0, existing.length);
-        visited[existing.length] = storage.asLong();
+        long[] visited = java.util.Arrays.copyOf(existing, existing.length + additions.length);
+        System.arraycopy(additions, 0, visited, existing.length, additions.length);
         context.state().putLongArray(VISITED_STORAGE_TAG, visited);
     }
 
