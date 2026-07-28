@@ -569,6 +569,7 @@ public final class HiredVillagerContractService {
             HiredWorkStateStore.resetReportProgress(villager);
         }
         tag.putString(ROLE_TAG, role.serializedName());
+        HiredWorkSession.invalidate(villager);
         HireContractAssignmentAdapter.roleChanged(villager, role);
         villager.setPersistenceRequired();
         return true;
@@ -772,6 +773,7 @@ public final class HiredVillagerContractService {
         VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
         VillagerRecruitmentService.stopFollowing(villager);
         HireContractAssignmentAdapter.contractEnded(villager);
+        HiredWorkSession.invalidate(villager);
         villager.setPersistenceRequired();
         HiredVillagerIndex.remove(villager);
         com.jvn.villagerretaliation.network.VillagerReputationNetworking.syncNameToTracking(villager);

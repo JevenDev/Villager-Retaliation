@@ -109,6 +109,9 @@ public final class HiredVillagerWorkService {
             return;
         }
 
+        boolean decisionOpportunity = HiredWorkDecisionScheduler.isDecisionOpportunity(level, villager);
+        boolean decisionTick = decisionOpportunity && HiredWorkDecisionScheduler.tryAcquire(level, villager);
+
         HiredWorkSession session = HiredWorkSession.create(level, villager, contract.role());
         if (VillagerRecruitmentService.isFollowingAnyPlayer(villager)) {
             VillagerTaskNavigationUtil.restoreHiredWaterTraversal(villager);
@@ -176,13 +179,12 @@ public final class HiredVillagerWorkService {
         }
         VillagerTaskNavigationUtil.moveInWaterTowardNavigationTarget(level, villager, WORK_AREA_RETURN_WALK_SPEED);
         HiredVillagerFocusService.suppressNonWorkAi(level, villager, session.context());
-        if (shouldReturnToWorkArea(session) && returnVillagerToWorkArea(level, villager, session)) {
+        if (shouldReturnToWorkArea(session) && returnVillagerToWorkArea(level, villager, session, decisionTick)) {
             return;
         }
         session.worker().maintain(level, villager, session.context());
 
-        int interval = effectiveWorkTickInterval(session.efficiency());
-        if (Math.floorMod(level.getGameTime() + villager.getUUID().getLeastSignificantBits(), interval) != 0L) {
+        if (!decisionTick) {
             return;
         }
 
@@ -323,7 +325,11 @@ public final class HiredVillagerWorkService {
         return session.role() != HiredVillagerRole.BUILDER || !BuilderTaskState.hasTask(session.state());
     }
 
-    private static boolean returnVillagerToWorkArea(ServerLevel level, Villager villager, HiredWorkSession session) {
+    private static boolean returnVillagerToWorkArea(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkSession session,
+            boolean allowPathCreation) {
         HiredWorkContext context = session.context();
         CompoundTag state = session.state();
         if (!context.hasWorkArea()) {
@@ -370,6 +376,12 @@ public final class HiredVillagerWorkService {
                 setStatus(state, "interaction.work.status.returning_bounds");
                 return true;
             }
+        }
+
+        if (!allowPathCreation) {
+            HiredWorkerBrain.setState(context, HiredWorkerTaskState.RETURNING_TO_WORK_AREA, null);
+            setStatus(state, "interaction.work.status.waiting_tick");
+            return true;
         }
 
         long gameTime = level.getGameTime();
@@ -944,6 +956,8 @@ public final class HiredVillagerWorkService {
 
     public static void clearRuntimeState() {
         HiredRoleWorkerRegistry.clearRuntimeState();
+        HiredWorkSession.clearRuntimeState();
+        HiredWorkDecisionScheduler.clearRuntimeState();
     }
 
     private static void pauseForDespisedHirer(ServerLevel level, Villager villager, HiredWorkSession session) {
@@ -974,6 +988,7 @@ public final class HiredVillagerWorkService {
 
         VillagerTaskNavigationUtil.stopNavigationAndClearTargets(villager);
         HiredRoleWorkerRegistry.clearRuntimeState(villager);
+        HiredWorkSession.invalidate(villager);
     }
 
     public static void sendStatus(ServerPlayer player, ServerLevel level, Villager villager) {
@@ -1002,6 +1017,14 @@ public final class HiredVillagerWorkService {
                 + ", hired=" + HiredVillagerContractService.isHired(level, villager)
                 + ", enabled=" + session.state().getBoolean("Enabled")
                 + ", efficiency=" + session.efficiency() + "%");
+        HiredWorkDecisionScheduler.DebugSnapshot decisionDebug =
+                HiredWorkDecisionScheduler.debugSnapshot(level, villager);
+        lines.add("Decision budget: limit=" + decisionDebug.budget()
+                + ", eligible=" + decisionDebug.eligible()
+                + ", granted=" + decisionDebug.granted()
+                + ", deferredThisTick=" + decisionDebug.deferredThisTick()
+                + ", deferredTotal=" + decisionDebug.totalDeferred()
+                + ", workerDeferred=" + decisionDebug.workerDeferred());
         lines.add("State: task=" + snapshot.taskState().id()
                 + ", progress=" + snapshot.progressTicks()
                 + ", target=" + HiredWorkerBrain.formatPos(snapshot.targetPos())
