@@ -4562,6 +4562,60 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void courierLeavesUnmatchedSourceItemsUntouched(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrCourierUnmatchedSource");
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        BlockPos inputRel = new BlockPos(3, 2, 2);
+        BlockPos outputRel = new BlockPos(6, 2, 2);
+        BlockPos input = helper.absolutePos(inputRel);
+        BlockPos output = helper.absolutePos(outputRel);
+        setBlock(helper, inputRel, Blocks.CHEST.defaultBlockState());
+        setBlock(helper, outputRel, Blocks.CHEST.defaultBlockState());
+        AssignedStorageService.removeAssignedContainer(level, input);
+        AssignedStorageService.removeAssignedContainer(level, output);
+        Container inputContainer = container(level, input);
+        inputContainer.setItem(0, new ItemStack(Items.BEEF, 8));
+
+        ItemFrame frame = new ItemFrame(
+                level,
+                output.relative(Direction.SOUTH),
+                Direction.SOUTH);
+        frame.setItem(new ItemStack(Items.LEATHER));
+        helper.assertTrue(level.addFreshEntity(frame), "leather output frame should spawn");
+
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), input)),
+                AssignedStorageService.SUPPLY_PURPOSE).assigned(), 1, "unmatched input assignment");
+        helper.assertValueEqual(AssignedStorageService.assign(
+                hirer,
+                villager,
+                List.of(new AssignedStorageService.StoragePosition(level.dimension(), output)),
+                AssignedStorageService.OUTPUT_PURPOSE).assigned(), 1, "filtered output assignment");
+
+        helper.assertValueEqual(
+                AssignedStorageService.courierTransferState(level, villager),
+                AssignedStorageService.CourierTransferState.NO_OUTPUT_ROUTE,
+                "unmatched input should have no output route");
+        int moved = AssignedStorageService.transferCourierItemsAtAssignedStorage(
+                villager,
+                input,
+                64,
+                ignored -> ItemStack.EMPTY);
+        helper.assertValueEqual(moved, 0, "no-output-route pickup must move nothing");
+        helper.assertValueEqual(countItem(inputContainer, Items.BEEF), 8,
+                "unmatched source items must remain untouched");
+
+        AssignedStorageService.removeAllAssignedStorage(level, villager);
+        frame.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 400)
     public static void courierPausesAndResumesAtFilteredOutputLimit(GameTestHelper helper) {
         buildFloor(helper, 0, 9, 0, 5, 1);
@@ -5029,8 +5083,10 @@ public final class VillagerWorkerGameTests {
                 "an unmatched delivery sweep should return to collecting branch inputs");
         helper.assertValueEqual(countItem(container(level, input), Items.LEATHER), 0,
                 "retained unmatched cargo must not block leather pickup");
-        helper.assertValueEqual(countItem(container(level, input), Items.BEEF), 0,
-                "retained unmatched cargo must not block other branch pickup");
+        helper.assertValueEqual(countItem(container(level, input), Items.BEEF), 8,
+                "an unmatched source variant must remain in its input container");
+        helper.assertValueEqual(countInventoryItem(context.inventory(), Items.BEEF), 0,
+                "an unmatched source variant must not become courier cargo");
         helper.assertValueEqual(countItem(container(level, leatherOutput), Items.LEATHER), 6,
                 "newly collected leather should still reach its matching output");
         helper.assertValueEqual(countItem(container(level, muttonOutput), Items.MUTTON), 0,

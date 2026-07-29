@@ -1289,13 +1289,8 @@ public final class AssignedStorageService {
                         .mapToInt(ItemStack::getCount)
                         .sum();
                 int requested = Math.min(maxCount - movedTotal, stack.getCount());
-                boolean hasOutputRoute = outputPlan.hasRoute(stack);
-                if (hasOutputRoute) {
-                    int downstreamCapacity = outputPlan.capacityFor(stack, maxCount);
-                    requested = Math.min(
-                            requested,
-                            Math.max(0, downstreamCapacity - alreadyPlanned));
-                }
+                int downstreamCapacity = outputPlan.capacityFor(stack, maxCount);
+                requested = Math.min(requested, Math.max(0, downstreamCapacity - alreadyPlanned));
                 if (requested <= 0) {
                     continue;
                 }
