@@ -1,7 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
-import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
 import com.jvn.villagerretaliation.item.VillagerFilterMatcher;
+import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
@@ -25,7 +25,9 @@ public final class VillagerItemFilterService {
 
     public static boolean mayWithdraw(Villager villager, ItemStack candidate) {
         ItemStack filter = assignedFilter(villager);
-        return filter.isEmpty() || VillagerFilterMatcher.matches(villager.level(), filter, candidate);
+        return filter.isEmpty()
+                || VillagerRetaliationItems.isRecipeFilter(filter)
+                || VillagerFilterMatcher.matches(villager.level(), filter, candidate);
     }
 
     /** Replaces the assigned filter with a single configured copy and returns the prior filter. */
@@ -63,12 +65,11 @@ public final class VillagerItemFilterService {
         }
 
         ItemStack assignedFilter = heldFilter.copyWithCount(1);
-        if (VillagerRetaliationItems.isItemFilter(assignedFilter)) {
-            VillagerItemFilterData.setMode(assignedFilter, mode);
-        } else {
-            VillagerAttributeFilterData.setInverted(
-                    assignedFilter, mode == VillagerItemFilterData.Mode.DENYLIST);
-        }
+        VillagerFilterPolicy.ListMode listMode = mode == VillagerItemFilterData.Mode.DENYLIST
+                ? VillagerFilterPolicy.ListMode.DENY_MATCHING
+                : VillagerFilterPolicy.ListMode.ALLOW_MATCHING;
+        VillagerFilterPolicy.applyChange(
+                assignedFilter, VillagerFilterPolicy.PolicyField.LIST_MODE, listMode.networkId());
         ItemStack oldFilter = replaceFilter(villager, assignedFilter);
         if (!player.getAbilities().instabuild) {
             heldFilter.shrink(1);

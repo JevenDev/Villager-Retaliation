@@ -25,6 +25,7 @@ public final class VillagerRetaliationCreativeTabs {
                         output.accept(VillagerRetaliationItems.CONSTRUCTION_BLUEPRINT.get());
                         output.accept(VillagerRetaliationItems.ITEM_FILTER.get());
                         output.accept(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
+                        output.accept(VillagerRetaliationItems.RECIPE_FILTER.get());
                     })
                     .build());
 

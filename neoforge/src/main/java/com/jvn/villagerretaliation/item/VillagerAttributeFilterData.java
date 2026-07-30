@@ -13,6 +13,8 @@ import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -22,6 +24,7 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.item.Equipable;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
@@ -40,12 +43,16 @@ import net.neoforged.neoforge.fluids.capability.IFluidHandlerItem;
 /**
  * Persistent representation and vanilla/NeoForge attribute catalogue for the attribute filter.
  *
- * <p>The reference item shown in the editor is intentionally transient. Only the selected
- * attribute and its inversion are stored, so changing tags or recipes in a datapack immediately
+ * <p>The reference item shown in the editor is intentionally transient. Only selected attributes
+ * and legacy inversion are stored, so changing tags or recipes in a datapack immediately
  * changes what an existing filter accepts.</p>
  */
 public final class VillagerAttributeFilterData {
+    public static final int CURRENT_VERSION = 1;
+    public static final int MAX_ATTRIBUTES = 32;
     private static final String ROOT_TAG = VillagerRetaliation.MOD_ID + ":attribute_filter";
+    private static final String VERSION_TAG = "Version";
+    private static final String ATTRIBUTES_TAG = "Attributes";
     private static final String TYPE_TAG = "Type";
     private static final String VALUE_TAG = "Value";
     private static final String INVERTED_TAG = "Inverted";
@@ -57,12 +64,61 @@ public final class VillagerAttributeFilterData {
         if (!VillagerRetaliationItems.isAttributeFilter(filter)) {
             return Configuration.EMPTY;
         }
-        CompoundTag root = customRoot(filter);
-        AttributeType type = AttributeType.byId(root.getString(TYPE_TAG));
-        if (type == null) {
+        CustomData data = filter.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (data.isEmpty()) {
             return Configuration.EMPTY;
         }
-        return new Configuration(new Attribute(type, root.getString(VALUE_TAG)), root.getBoolean(INVERTED_TAG));
+        CompoundTag customData = data.copyTag();
+        if (!customData.contains(ROOT_TAG)) {
+            return Configuration.EMPTY;
+        }
+        if (!customData.contains(ROOT_TAG, Tag.TAG_COMPOUND)) {
+            return Configuration.MALFORMED;
+        }
+        CompoundTag root = customData.getCompound(ROOT_TAG);
+        if (root.isEmpty()) {
+            return Configuration.EMPTY;
+        }
+        if (root.contains(INVERTED_TAG) && !root.contains(INVERTED_TAG, Tag.TAG_BYTE)) {
+            return Configuration.MALFORMED;
+        }
+        boolean inverted = root.getBoolean(INVERTED_TAG);
+        if (root.contains(VERSION_TAG)) {
+            if (!root.contains(VERSION_TAG, Tag.TAG_INT)
+                    || root.getInt(VERSION_TAG) != CURRENT_VERSION
+                    || !root.contains(ATTRIBUTES_TAG, Tag.TAG_LIST)) {
+                return Configuration.MALFORMED;
+            }
+            ListTag entries = root.getList(ATTRIBUTES_TAG, Tag.TAG_COMPOUND);
+            if (entries.size() > MAX_ATTRIBUTES) {
+                return Configuration.MALFORMED;
+            }
+            LinkedHashSet<Attribute> attributes = new LinkedHashSet<>();
+            for (Tag raw : entries) {
+                if (!(raw instanceof CompoundTag entry)
+                        || !entry.contains(TYPE_TAG, Tag.TAG_STRING)
+                        || entry.contains(VALUE_TAG) && !entry.contains(VALUE_TAG, Tag.TAG_STRING)) {
+                    return Configuration.MALFORMED;
+                }
+                AttributeType type = AttributeType.byId(entry.getString(TYPE_TAG));
+                Attribute attribute = type == null
+                        ? null
+                        : new Attribute(type, entry.getString(VALUE_TAG));
+                if (attribute == null || !attributes.add(attribute)) {
+                    return Configuration.MALFORMED;
+                }
+            }
+            return Configuration.of(List.copyOf(attributes), inverted);
+        }
+        if (!root.contains(TYPE_TAG, Tag.TAG_STRING)
+                || root.contains(VALUE_TAG) && !root.contains(VALUE_TAG, Tag.TAG_STRING)) {
+            return Configuration.MALFORMED;
+        }
+        AttributeType type = AttributeType.byId(root.getString(TYPE_TAG));
+        if (type == null) {
+            return Configuration.MALFORMED;
+        }
+        return Configuration.of(List.of(new Attribute(type, root.getString(VALUE_TAG))), inverted);
     }
 
     public static boolean setSelected(ItemStack filter, Attribute attribute, boolean inverted) {
@@ -70,7 +126,7 @@ public final class VillagerAttributeFilterData {
             return false;
         }
         Configuration previous = read(filter);
-        Configuration next = new Configuration(attribute, inverted);
+        Configuration next = Configuration.of(List.of(attribute), inverted);
         if (previous.equals(next)) {
             return false;
         }
@@ -78,10 +134,34 @@ public final class VillagerAttributeFilterData {
         return true;
     }
 
+    public static boolean toggleSelected(ItemStack filter, Attribute attribute) {
+        if (!VillagerRetaliationItems.isAttributeFilter(filter) || attribute == null) {
+            return false;
+        }
+        Configuration current = read(filter);
+        if (current.malformed()) {
+            return false;
+        }
+        LinkedHashSet<Attribute> selected = new LinkedHashSet<>(current.attributes());
+        if (!selected.remove(attribute)) {
+            if (selected.size() >= MAX_ATTRIBUTES) {
+                return false;
+            }
+            selected.add(attribute);
+        }
+        write(filter, Configuration.of(List.copyOf(selected), current.inverted()));
+        return true;
+    }
+
     public static boolean setInverted(ItemStack filter, boolean inverted) {
         Configuration configuration = read(filter);
-        return configuration.attribute() != null
-                && setSelected(filter, configuration.attribute(), inverted);
+        if (configuration.attributes().isEmpty()
+                || configuration.malformed()
+                || configuration.inverted() == inverted) {
+            return false;
+        }
+        write(filter, Configuration.of(configuration.attributes(), inverted));
+        return true;
     }
 
     public static void clear(ItemStack filter) {
@@ -89,7 +169,7 @@ public final class VillagerAttributeFilterData {
     }
 
     public static boolean isDefault(ItemStack filter) {
-        return read(filter).attribute() == null
+        return read(filter).attributes().isEmpty()
                 && !VillagerFilterPolicy.hasStoredPolicy(filter);
     }
 
@@ -99,17 +179,42 @@ public final class VillagerAttributeFilterData {
     }
 
     public static boolean matches(Level level, ItemStack filter, ItemStack candidate) {
+        return VillagerFilterMatcher.matches(level, filter, candidate);
+    }
+
+    static boolean rawMatches(
+            Level level,
+            ItemStack filter,
+            ItemStack candidate,
+            VillagerFilterMatcher.MatchContext context) {
         if (!VillagerRetaliationItems.isAttributeFilter(filter)
                 || candidate == null
                 || candidate.isEmpty()) {
             return false;
         }
         Configuration configuration = read(filter);
-        if (configuration.attribute() == null) {
+        if (configuration.malformed()) {
+            context.invalidate();
             return false;
         }
-        boolean applies = configuration.attribute().appliesTo(candidate, level);
-        return configuration.inverted() ? !applies : applies;
+        if (configuration.attributes().isEmpty()) {
+            return false;
+        }
+        VillagerFilterPolicy.Policy policy = VillagerFilterPolicy.read(filter);
+        if (!policy.valid()) {
+            context.invalidate();
+            return false;
+        }
+        boolean any = false;
+        boolean all = true;
+        for (Attribute attribute : configuration.attributes()) {
+            boolean applies = attribute.appliesTo(candidate, level);
+            any |= applies;
+            all &= applies;
+        }
+        return policy.combinationMode() == VillagerFilterPolicy.CombinationMode.MATCH_ALL
+                ? all
+                : any;
     }
 
     public static List<Attribute> availableAttributes(ItemStack stack, Level level) {
@@ -176,40 +281,49 @@ public final class VillagerAttributeFilterData {
     public static List<Component> tooltip(ItemStack filter) {
         Configuration configuration = read(filter);
         List<Component> tooltip = new ArrayList<>(VillagerFilterPolicy.tooltip(filter));
-        if (configuration.attribute() == null) {
+        if (configuration.malformed()) {
+            tooltip.add(Component.translatable("item.villagerretaliation.attribute_filter.malformed")
+                    .withStyle(ChatFormatting.RED));
+        } else if (configuration.attributes().isEmpty()) {
             tooltip.add(Component.translatable("item.villagerretaliation.attribute_filter.empty")
                     .withStyle(ChatFormatting.DARK_GRAY));
         } else {
-            tooltip.add(Component.literal("- ")
-                    .withStyle(ChatFormatting.DARK_GRAY)
-                    .append(configuration.attribute().display().copy().withStyle(ChatFormatting.GRAY)));
+            for (int index = 0; index < Math.min(4, configuration.attributes().size()); index++) {
+                tooltip.add(Component.literal("- ")
+                        .withStyle(ChatFormatting.DARK_GRAY)
+                        .append(configuration.attributes().get(index).display().copy()
+                                .withStyle(ChatFormatting.GRAY)));
+            }
+            if (configuration.attributes().size() > 4) {
+                tooltip.add(Component.literal("- ...").withStyle(ChatFormatting.DARK_GRAY));
+            }
         }
         tooltip.add(Component.translatable("item.villagerretaliation.attribute_filter.controls")
                 .withStyle(ChatFormatting.DARK_GRAY));
         return List.copyOf(tooltip);
     }
 
-    private static CompoundTag customRoot(ItemStack filter) {
-        var customData = filter.getOrDefault(DataComponents.CUSTOM_DATA,
-                net.minecraft.world.item.component.CustomData.EMPTY);
-        return customData.isEmpty() ? new CompoundTag() : customData.copyTag().getCompound(ROOT_TAG);
-    }
-
     private static void write(ItemStack filter, Configuration configuration) {
         if (!VillagerRetaliationItems.isAttributeFilter(filter)) {
             return;
         }
-        var existing = filter.getOrDefault(DataComponents.CUSTOM_DATA,
-                net.minecraft.world.item.component.CustomData.EMPTY);
+        CustomData existing = filter.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         CompoundTag customData = existing.isEmpty() ? new CompoundTag() : existing.copyTag();
-        if (configuration.attribute() == null) {
+        if (configuration.attributes().isEmpty() || configuration.malformed()) {
             customData.remove(ROOT_TAG);
         } else {
             CompoundTag root = new CompoundTag();
-            root.putString(TYPE_TAG, configuration.attribute().type().id);
-            if (!configuration.attribute().value().isEmpty()) {
-                root.putString(VALUE_TAG, configuration.attribute().value());
+            root.putInt(VERSION_TAG, CURRENT_VERSION);
+            ListTag attributes = new ListTag();
+            for (Attribute attribute : configuration.attributes()) {
+                CompoundTag entry = new CompoundTag();
+                entry.putString(TYPE_TAG, attribute.type().id);
+                if (!attribute.value().isEmpty()) {
+                    entry.putString(VALUE_TAG, attribute.value());
+                }
+                attributes.add(entry);
             }
+            root.put(ATTRIBUTES_TAG, attributes);
             if (configuration.inverted()) {
                 root.putBoolean(INVERTED_TAG, true);
             }
@@ -218,8 +332,7 @@ public final class VillagerAttributeFilterData {
         if (customData.isEmpty()) {
             filter.remove(DataComponents.CUSTOM_DATA);
         } else {
-            filter.set(DataComponents.CUSTOM_DATA,
-                    net.minecraft.world.item.component.CustomData.of(customData));
+            filter.set(DataComponents.CUSTOM_DATA, CustomData.of(customData));
         }
     }
 
@@ -313,8 +426,21 @@ public final class VillagerAttributeFilterData {
         return fluids;
     }
 
-    public record Configuration(Attribute attribute, boolean inverted) {
-        private static final Configuration EMPTY = new Configuration(null, false);
+    public record Configuration(List<Attribute> attributes, boolean inverted, boolean malformed) {
+        private static final Configuration EMPTY = new Configuration(List.of(), false, false);
+        private static final Configuration MALFORMED = new Configuration(List.of(), false, true);
+
+        public Configuration {
+            attributes = attributes == null ? List.of() : List.copyOf(attributes);
+        }
+
+        public Attribute attribute() {
+            return attributes.isEmpty() ? null : attributes.getFirst();
+        }
+
+        private static Configuration of(List<Attribute> attributes, boolean inverted) {
+            return new Configuration(attributes, inverted, false);
+        }
     }
 
     public record Attribute(AttributeType type, String value) {

@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "66";
+    private static final String PROTOCOL_VERSION = "67";
 
     private VillagerReputationNetworking() {
     }
@@ -604,6 +604,28 @@ public final class VillagerReputationNetworking {
                         ToucanNetwork.withServerPlayer(context, player -> {
                             if (player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerAttributeFilterMenu menu) {
                                 menu.select(payload.attribute(), payload.inverted(), player);
+                            }
+                        }))
+        );
+        network.playToServer(
+                RecipeFilterSelectPayload.TYPE,
+                RecipeFilterSelectPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> {
+                            if (payload.valid()
+                                    && player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerRecipeFilterMenu menu) {
+                                menu.selectRecipe(payload.parsedRecipeId());
+                            }
+                        }))
+        );
+        network.playToServer(
+                RecipeFilterIngredientPayload.TYPE,
+                RecipeFilterIngredientPayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player -> {
+                            if (payload.valid()
+                                    && player.containerMenu instanceof com.jvn.villagerretaliation.inventory.VillagerRecipeFilterMenu menu) {
+                                menu.setIngredient(payload.slot(), payload.parsedItemId());
                             }
                         }))
         );
