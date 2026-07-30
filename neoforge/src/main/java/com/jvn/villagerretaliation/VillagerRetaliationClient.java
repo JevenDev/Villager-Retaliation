@@ -16,6 +16,7 @@ public final class VillagerRetaliationClient {
     public VillagerRetaliationClient(IEventBus modEventBus, ModContainer modContainer) {
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, (IConfigScreenFactory) VillagerRetaliationClient::createConfigScreen);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerRenderers);
+        modEventBus.addListener(VillagerRetaliationClient::registerClientExtensions);
         modEventBus.addListener(com.jvn.villagerretaliation.client.VillagerRetaliationClientRenderers::registerLayerDefinitions);
         modEventBus.addListener(com.jvn.villagerretaliation.client.quest.VillagerQuestKeyMappings::register);
         modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintKeyMappings::register);
@@ -24,6 +25,7 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.party.PartyQuickCommandWheel::registerGuiLayer);
         modEventBus.addListener(com.jvn.villagerretaliation.client.mount.VillagerMountTargetClient::registerGuiLayer);
         com.jvn.villagerretaliation.client.item.VillagerFishingRodItemProperties.register();
+        modEventBus.addListener(com.jvn.villagerretaliation.client.item.ConstructionBlueprintItemProperties::register);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerStatNameTagOverlay::onRenderNameTag);
         NeoForge.EVENT_BUS.addListener(com.jvn.villagerretaliation.client.villager.VillagerNameTagOverlay::onClientTick);
@@ -104,6 +106,23 @@ public final class VillagerRetaliationClient {
         modEventBus.addListener(com.jvn.villagerretaliation.client.villager.VillagerStatNameTagOverlay::registerReloadListener);
     }
 
+
+    private static void registerClientExtensions(
+            net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {
+        net.minecraft.client.Minecraft minecraft = net.minecraft.client.Minecraft.getInstance();
+        net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer renderer =
+                new com.jvn.villagerretaliation.client.renderer.SellBoxItemRenderer(
+                        minecraft.getBlockEntityRenderDispatcher(),
+                        minecraft.getEntityModels());
+        event.registerItem(
+                new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+                    @Override
+                    public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                        return renderer;
+                    }
+                },
+                com.jvn.villagerretaliation.item.VillagerRetaliationItems.SELL_BOX.get());
+    }
     private static void registerMenuScreens(RegisterMenuScreensEvent event) {
         event.register(
                 com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.VILLAGER_INVENTORY.get(),

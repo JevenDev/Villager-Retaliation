@@ -124,6 +124,14 @@ public final class ConstructionBlueprintItem extends Item {
         return stack != null && stack.is(VillagerRetaliationItems.CONSTRUCTION_BLUEPRINT.get()) && blueprintTag(stack).isPresent();
     }
 
+    public static boolean isStarted(ItemStack stack) {
+        return blueprintTag(stack)
+                .map(tag -> tag.getBoolean(STARTED_TAG)
+                        || tag.getLong(STARTED_GAME_TIME_TAG) > 0L)
+                .orElse(false);
+    }
+
+
     public static void expireMatchingBlueprints(ServerPlayer player, UUID jobId) {
         if (player == null || jobId == null) {
             return;

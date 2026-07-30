@@ -18,12 +18,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.ChestLidController;
 import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
+import net.minecraft.world.level.block.entity.LidBlockEntity;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.items.IItemHandler;
 
-public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity {
+public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity implements LidBlockEntity {
     public static final int SLOT_COUNT = 1;
     private static final String BALANCE_TAG = "SellBalance";
 
@@ -34,18 +36,17 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity {
     private final ContainerOpenersCounter openersCounter = new ContainerOpenersCounter() {
         @Override
         protected void onOpen(Level level, BlockPos pos, BlockState state) {
-            setOpen(state, true);
-            playSound(SoundEvents.BARREL_OPEN);
+            playSound(SoundEvents.CHEST_OPEN);
         }
 
         @Override
         protected void onClose(Level level, BlockPos pos, BlockState state) {
-            setOpen(state, false);
-            playSound(SoundEvents.BARREL_CLOSE);
+            playSound(SoundEvents.CHEST_CLOSE);
         }
 
         @Override
         protected void openerCountChanged(Level level, BlockPos pos, BlockState state, int count, int openCount) {
+            signalOpenCount(level, pos, state, count, openCount);
         }
 
         @Override
@@ -53,9 +54,14 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity {
             return player.containerMenu instanceof SellBoxMenu menu && menu.isContainer(SellBoxBlockEntity.this);
         }
     };
+    private final ChestLidController chestLidController = new ChestLidController();
 
     public SellBoxBlockEntity(BlockPos pos, BlockState blockState) {
         super(VillagerRetaliationBlockEntityTypes.SELL_BOX.get(), pos, blockState);
+    }
+
+    public static void lidAnimateTick(Level level, BlockPos pos, BlockState state, SellBoxBlockEntity sellBox) {
+        sellBox.chestLidController.tickLid();
     }
 
     @Override
@@ -222,6 +228,24 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity {
         }
     }
 
+    @Override
+    public boolean triggerEvent(int id, int type) {
+        if (id == 1) {
+            this.chestLidController.shouldBeOpen(type > 0);
+            return true;
+        }
+        return super.triggerEvent(id, type);
+    }
+
+    @Override
+    public float getOpenNess(float partialTicks) {
+        return this.chestLidController.getOpenness(partialTicks);
+    }
+
+    private void signalOpenCount(Level level, BlockPos pos, BlockState state, int oldCount, int openCount) {
+        level.blockEvent(pos, state.getBlock(), 1, openCount);
+    }
+
     public void recheckOpen() {
         if (!remove) {
             openersCounter.recheckOpeners(getLevel(), getBlockPos(), getBlockState());
@@ -268,12 +292,6 @@ public final class SellBoxBlockEntity extends RandomizableContainerBlockEntity {
             level.updateNeighbourForOutputSignal(worldPosition, getBlockState().getBlock());
         }
         SellBoxMenu.syncViewers(this);
-    }
-
-    private void setOpen(BlockState state, boolean open) {
-        if (level != null && state.hasProperty(SellBoxBlock.OPEN)) {
-            level.setBlock(worldPosition, state.setValue(SellBoxBlock.OPEN, open), 3);
-        }
     }
 
     private void playSound(SoundEvent sound) {

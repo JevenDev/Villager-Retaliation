@@ -1,6 +1,6 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "minecraft:item/name_tag"
+    "layer0": "villagerretaliation:item/attribute_filter"
   }
 }
