@@ -4,7 +4,11 @@ import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.client.ui.VillagerNineSlice;
 import com.jvn.villagerretaliation.inventory.VillagerAttributeFilterMenu;
 import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
+import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.network.AttributeFilterSelectPayload;
+import com.jvn.villagerretaliation.network.FilterPolicyChangePayload;
+import com.jvn.toucanlib.client.interaction.ToucanInputModifiers;
+import com.jvn.toucanlib.client.interaction.ToucanSlotAmounts;
 import java.util.List;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -56,9 +60,13 @@ public final class VillagerAttributeFilterScreen
     private ItemStack lastReference = ItemStack.EMPTY;
     private int focusedIndex;
     private int scrollVisibilityTicks;
-    private boolean inverted;
     private Button allowlistButton;
     private Button denylistButton;
+    private Button entryCombinationButton;
+    private Button directionButton;
+    private Button decreaseStockButton;
+    private Button stockTargetButton;
+    private Button increaseStockButton;
 
     public VillagerAttributeFilterScreen(
             VillagerAttributeFilterMenu menu,
@@ -73,23 +81,42 @@ public final class VillagerAttributeFilterScreen
     @Override
     protected void init() {
         super.init();
-        this.inverted = this.menu.configuration().inverted();
         this.allowlistButton = Button.builder(
-                        Component.translatable("villagerretaliation.gui.item_filter.mode.allowlist"),
-                        button -> setInverted(false))
-                .bounds(this.leftPos + 7, this.topPos + 43, 79, 20)
+                        Component.translatable("villagerretaliation.gui.filter_policy.mode.allow_matching"),
+                        button -> setListMode(VillagerFilterPolicy.ListMode.ALLOW_MATCHING))
+                .bounds(this.leftPos + 8, this.topPos + 43, 52, 20)
                 .tooltip(Tooltip.create(Component.translatable(
-                        "villagerretaliation.gui.attribute_filter.mode.allowlist.description")))
+                        "villagerretaliation.gui.filter_policy.mode.allow_matching.description")))
                 .build();
         this.denylistButton = Button.builder(
-                        Component.translatable("villagerretaliation.gui.item_filter.mode.denylist"),
-                        button -> setInverted(true))
-                .bounds(this.leftPos + 90, this.topPos + 43, 79, 20)
+                        Component.translatable("villagerretaliation.gui.filter_policy.mode.deny_matching"),
+                        button -> setListMode(VillagerFilterPolicy.ListMode.DENY_MATCHING))
+                .bounds(this.leftPos + 62, this.topPos + 43, 52, 20)
                 .tooltip(Tooltip.create(Component.translatable(
-                        "villagerretaliation.gui.attribute_filter.mode.denylist.description")))
+                        "villagerretaliation.gui.filter_policy.mode.deny_matching.description")))
+                .build();
+        this.entryCombinationButton = Button.builder(Component.empty(), button -> cycleEntryCombination())
+                .bounds(this.leftPos + 116, this.topPos + 43, 52, 20)
+                .build();
+        this.directionButton = Button.builder(Component.empty(), button -> cycleDirection())
+                .bounds(this.leftPos + 8, this.topPos + 64, 52, 18)
+                .build();
+        this.decreaseStockButton = Button.builder(Component.literal("-"), button -> adjustStock(-1))
+                .bounds(this.leftPos + 62, this.topPos + 64, 20, 18)
+                .build();
+        this.stockTargetButton = Button.builder(Component.empty(), button -> toggleStockTarget())
+                .bounds(this.leftPos + 84, this.topPos + 64, 62, 18)
+                .build();
+        this.increaseStockButton = Button.builder(Component.literal("+"), button -> adjustStock(1))
+                .bounds(this.leftPos + 148, this.topPos + 64, 20, 18)
                 .build();
         addRenderableWidget(this.allowlistButton);
         addRenderableWidget(this.denylistButton);
+        addRenderableWidget(this.entryCombinationButton);
+        addRenderableWidget(this.directionButton);
+        addRenderableWidget(this.decreaseStockButton);
+        addRenderableWidget(this.stockTargetButton);
+        addRenderableWidget(this.increaseStockButton);
         refreshReference(true);
         refreshButtons();
     }
@@ -132,6 +159,11 @@ public final class VillagerAttributeFilterScreen
     }
 
     @Override
+    protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
+        graphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0x404040, false);
+    }
+
+    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0) {
             int offset = selectorOffsetAt(mouseX, mouseY);
@@ -151,6 +183,14 @@ public final class VillagerAttributeFilterScreen
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (scrollY != 0.0
+                && this.stockTargetButton != null
+                && this.stockTargetButton.isMouseOver(mouseX, mouseY)
+                && this.menu.filterPolicy().listMode() == VillagerFilterPolicy.ListMode.ALLOW_MATCHING) {
+            int step = ToucanSlotAmounts.step(ToucanInputModifiers.current());
+            adjustStock(scrollY > 0.0 ? step : -step);
+            return true;
+        }
         if (scrollY != 0.0 && selectorOffsetAt(mouseX, mouseY) != Integer.MIN_VALUE
                 && this.attributes.size() > 1) {
             int nextIndex = Mth.clamp(
@@ -356,31 +396,91 @@ public final class VillagerAttributeFilterScreen
         this.scrollVisibilityTicks = 0;
     }
 
-    private void setInverted(boolean inverted) {
-        this.inverted = inverted;
-        VillagerAttributeFilterData.Attribute selected = this.menu.configuration().attribute();
-        if (selected != null) {
-            select(selected);
-        }
+    private void setListMode(VillagerFilterPolicy.ListMode mode) {
+        changePolicy(VillagerFilterPolicy.PolicyField.LIST_MODE, mode.networkId());
+    }
+
+    private void cycleEntryCombination() {
+        VillagerFilterPolicy.CombinationMode current = this.menu.filterPolicy().combinationMode();
+        VillagerFilterPolicy.CombinationMode next = current == VillagerFilterPolicy.CombinationMode.MATCH_ANY
+                ? VillagerFilterPolicy.CombinationMode.MATCH_ALL
+                : VillagerFilterPolicy.CombinationMode.MATCH_ANY;
+        changePolicy(VillagerFilterPolicy.PolicyField.COMBINATION, next.networkId());
+    }
+
+    private void cycleDirection() {
+        VillagerFilterPolicy.TransferDirection current = this.menu.filterPolicy().direction();
+        VillagerFilterPolicy.TransferDirection next = switch (current) {
+            case RECEIVE -> VillagerFilterPolicy.TransferDirection.PROVIDE;
+            case PROVIDE -> VillagerFilterPolicy.TransferDirection.BOTH;
+            case BOTH -> VillagerFilterPolicy.TransferDirection.RECEIVE;
+        };
+        changePolicy(VillagerFilterPolicy.PolicyField.DIRECTION, next.networkId());
+    }
+
+    private void toggleStockTarget() {
+        int target = this.menu.filterPolicy().stockTarget().isPresent() ? 0 : 64;
+        changePolicy(VillagerFilterPolicy.PolicyField.STOCK_TARGET, target);
+    }
+
+    private void adjustStock(int delta) {
+        changePolicy(VillagerFilterPolicy.PolicyField.STOCK_DELTA, delta);
+    }
+
+    private void changePolicy(VillagerFilterPolicy.PolicyField field, int value) {
+        this.menu.applyClientPolicyChange(field, value);
+        PacketDistributor.sendToServer(new FilterPolicyChangePayload(field, value));
         refreshButtons();
     }
 
     private void select(VillagerAttributeFilterData.Attribute attribute) {
         VillagerAttributeFilterData.Configuration current = this.menu.configuration();
-        if (attribute.equals(current.attribute()) && this.inverted == current.inverted()) {
+        boolean inverted = this.menu.filterPolicy().listMode()
+                == VillagerFilterPolicy.ListMode.DENY_MATCHING;
+        if (attribute.equals(current.attribute()) && inverted == current.inverted()) {
             return;
         }
-        this.menu.setClientSelection(attribute, this.inverted);
+        this.menu.setClientSelection(attribute, inverted);
         PacketDistributor.sendToServer(new AttributeFilterSelectPayload(
-                attribute.type(), attribute.value(), this.inverted));
+                attribute.type(), attribute.value(), inverted));
     }
 
     private void refreshButtons() {
-        if (this.allowlistButton == null || this.denylistButton == null) {
+        if (this.allowlistButton == null
+                || this.denylistButton == null
+                || this.entryCombinationButton == null
+                || this.directionButton == null
+                || this.stockTargetButton == null) {
             return;
         }
-        this.allowlistButton.active = this.inverted;
-        this.denylistButton.active = !this.inverted;
+        VillagerFilterPolicy.Policy policy = this.menu.filterPolicy();
+        this.allowlistButton.active = policy.listMode() != VillagerFilterPolicy.ListMode.ALLOW_MATCHING;
+        this.denylistButton.active = policy.listMode() != VillagerFilterPolicy.ListMode.DENY_MATCHING;
+        VillagerFilterPolicy.CombinationMode combination = policy.combinationMode();
+        this.entryCombinationButton.setMessage(Component.translatable(
+                "villagerretaliation.gui.filter_policy.combination." + combination.id()));
+        this.entryCombinationButton.setTooltip(Tooltip.create(Component.translatable(
+                "villagerretaliation.gui.filter_policy.combination." + combination.id() + ".description")));
+        this.directionButton.setMessage(Component.translatable(
+                "villagerretaliation.gui.filter_policy.direction." + policy.direction().id()));
+        this.directionButton.setTooltip(Tooltip.create(Component.translatable(
+                "villagerretaliation.gui.filter_policy.direction.description")));
+        Component target = policy.stockTarget().isPresent()
+                ? Component.literal(Integer.toString(policy.stockTarget().getAsInt()))
+                : Component.translatable("villagerretaliation.gui.filter_policy.stock.unlimited");
+        this.stockTargetButton.setMessage(Component.translatable(
+                "villagerretaliation.gui.filter_policy.stock." + policy.direction().id(), target));
+        boolean quantitative = policy.listMode() == VillagerFilterPolicy.ListMode.ALLOW_MATCHING;
+        Tooltip stockTooltip = Tooltip.create(Component.translatable(quantitative
+                ? "villagerretaliation.gui.filter_policy.stock.description"
+                : "villagerretaliation.gui.filter_policy.stock.inactive_deny"));
+        this.stockTargetButton.setTooltip(stockTooltip);
+        this.decreaseStockButton.setTooltip(stockTooltip);
+        this.increaseStockButton.setTooltip(stockTooltip);
+        this.stockTargetButton.active = quantitative;
+        this.decreaseStockButton.active = quantitative && policy.stockTarget().isPresent();
+        this.increaseStockButton.active = quantitative
+                && policy.stockTarget().orElse(0) < VillagerFilterPolicy.MAX_STOCK_TARGET;
     }
 
     private Component trimmed(Component component, int width) {

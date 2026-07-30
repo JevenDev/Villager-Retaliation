@@ -411,13 +411,7 @@ public final class VillagerItemFilterData {
 
     public static List<Component> tooltip(ItemStack filter) {
         VillagerItemFilterData data = read(filter);
-        List<Component> tooltip = new ArrayList<>();
-        tooltip.add(Component.translatable("item.villagerretaliation.item_filter.mode")
-                .withStyle(ChatFormatting.GRAY)
-                .append(data.mode.label().copy().withStyle(ChatFormatting.GOLD)));
-        tooltip.add(Component.translatable("item.villagerretaliation.item_filter.entry_combination")
-                .withStyle(ChatFormatting.GRAY)
-                .append(data.entryCombination.label().copy().withStyle(ChatFormatting.AQUA)));
+        List<Component> tooltip = new ArrayList<>(VillagerFilterPolicy.tooltip(filter));
         int shown = 0;
         for (ConfiguredEntry configuredEntry : data.entries) {
             ItemStack entry = configuredEntry.stack();

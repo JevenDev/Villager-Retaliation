@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -12,7 +13,8 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
-public final class VillagerItemFilterMenu extends AbstractContainerMenu {
+public final class VillagerItemFilterMenu extends AbstractContainerMenu
+        implements VillagerFilterPolicyMenu {
     public static final int GHOST_SLOT_COUNT = VillagerItemFilterData.ENTRY_COUNT;
     private static final int PLAYER_INVENTORY_COUNT = 27;
     private static final int PLAYER_HOTBAR_COUNT = 9;
@@ -46,6 +48,30 @@ public final class VillagerItemFilterMenu extends AbstractContainerMenu {
             addSlot(new GhostSlot(this.ghostInventory, slot, GHOST_X + slot * SLOT_SIZE, GHOST_Y));
         }
         addPlayerSlots(playerInventory);
+    }
+
+    @Override
+    public VillagerFilterPolicy.Policy filterPolicy() {
+        return VillagerFilterPolicy.read(filterStack());
+    }
+
+    @Override
+    public boolean applyPolicyChange(VillagerFilterPolicy.PolicyField field, int value) {
+        if (!isEditingHeldFilter()) {
+            return false;
+        }
+        boolean changed = VillagerFilterPolicy.applyChange(filterStack(), field, value);
+        if (changed) {
+            markFilterChanged();
+        }
+        return changed;
+    }
+
+    @Override
+    public void applyClientPolicyChange(VillagerFilterPolicy.PolicyField field, int value) {
+        if (isEditingHeldFilter()) {
+            VillagerFilterPolicy.applyChange(filterStack(), field, value);
+        }
     }
 
     public VillagerItemFilterData.Mode mode() {

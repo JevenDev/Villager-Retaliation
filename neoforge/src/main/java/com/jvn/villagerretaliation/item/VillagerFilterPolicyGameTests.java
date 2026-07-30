@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.item;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.network.FilterPolicyChangePayload;
 import java.util.OptionalInt;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
@@ -114,6 +115,39 @@ public final class VillagerFilterPolicyGameTests {
         helper.assertTrue(VillagerFilterPolicy.receiveAllowance(deny, 0, 0)
                         == VillagerFilterPolicy.UNLIMITED_ALLOWANCE,
                 "deny rules must not apply quantitative targets");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void editorChangesRejectExploitValues(GameTestHelper helper) {
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        helper.assertTrue(VillagerFilterPolicy.applyChange(
+                        filter,
+                        VillagerFilterPolicy.PolicyField.DIRECTION,
+                        VillagerFilterPolicy.TransferDirection.BOTH.networkId()),
+                "valid editor directions should be accepted");
+        VillagerFilterPolicy.Policy baseline = VillagerFilterPolicy.read(filter);
+        helper.assertFalse(VillagerFilterPolicy.applyChange(
+                        filter, VillagerFilterPolicy.PolicyField.DIRECTION, 99),
+                "unknown direction IDs must be rejected");
+        helper.assertTrue(VillagerFilterPolicy.read(filter).equals(baseline),
+                "rejected direction packets must not mutate policy data");
+        helper.assertFalse(VillagerFilterPolicy.applyChange(
+                        filter, VillagerFilterPolicy.PolicyField.STOCK_TARGET, 1001),
+                "out-of-range stock targets must be rejected rather than clamped from packets");
+        helper.assertFalse(VillagerFilterPolicy.applyChange(
+                        filter, VillagerFilterPolicy.PolicyField.STOCK_DELTA, 2),
+                "unsupported stock deltas must be rejected");
+        helper.assertTrue(VillagerFilterPolicy.applyChange(
+                        filter,
+                        VillagerFilterPolicy.PolicyField.LIST_MODE,
+                        VillagerFilterPolicy.ListMode.DENY_MATCHING.networkId()),
+                "valid deny mode edits should be accepted");
+        helper.assertFalse(VillagerFilterPolicy.applyChange(
+                        filter, VillagerFilterPolicy.PolicyField.STOCK_TARGET, 64),
+                "deny rules must reject inactive stock edits");
+        helper.assertTrue(new FilterPolicyChangePayload(99, 1).requestedField() == null,
+                "unknown packet fields must not resolve to an editor action");
         helper.succeed();
     }
 
