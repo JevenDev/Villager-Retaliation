@@ -251,6 +251,17 @@ public final class PlayerRaidDialogueService {
         SESSIONS.clear();
     }
 
+    static void endSessionsForRaid(MinecraftServer server, UUID raidId) {
+        for (Map.Entry<UUID, Session> entry : new ArrayList<>(SESSIONS.entrySet())) {
+            if (!entry.getValue().raidId.equals(raidId)
+                    || !SESSIONS.remove(entry.getKey(), entry.getValue())) {
+                continue;
+            }
+            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+            if (player != null) VillagerConversationService.endForPlayer(player, true);
+        }
+    }
+
     static boolean hasSession(UUID raidId) {
         return SESSIONS.values().stream().anyMatch(session -> session.raidId.equals(raidId));
     }

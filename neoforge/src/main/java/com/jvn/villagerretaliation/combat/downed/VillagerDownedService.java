@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.scene.SceneLifecycleIntegration;
 import com.jvn.villagerretaliation.compat.secondwind.VillagerSecondWindCompat;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.interaction.VillagerConversationService;
+import com.jvn.villagerretaliation.raid.PlayerRaidService;
 import com.jvn.villagerretaliation.villager.VillagerBehaviorSuppressionPolicy;
 import java.util.HashMap;
 import java.util.Map;
@@ -158,6 +159,7 @@ public final class VillagerDownedService {
                 .orElseGet(() -> VillagerDownedPose.forVillager(villager.getUUID()));
         state.putString(POSE_KEY, pose.id().toString());
         villager.getPersistentData().put(STATE_KEY, state);
+        PlayerRaidService.onVillagerDowned(villager);
         com.jvn.villagerretaliation.social.VillagerBreedingPolicy.cancelActiveAttempt(level, villager);
         NEXT_THREAT_SCAN_TICKS.remove(villager.getUUID());
         villager.setHealth(1.0F);

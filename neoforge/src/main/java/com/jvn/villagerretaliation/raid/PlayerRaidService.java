@@ -137,12 +137,6 @@ public final class PlayerRaidService {
         }
         villageId = village.id();
         long now = level.getServer().overworld().getGameTime();
-        if (VillagerRetaliationConfig.CONFIRM_RAID_HORN.get()
-                && !RAID_CONFIRMATIONS.consumeOrArm(initiator.getUUID(), villageId, now)) {
-            initiator.sendSystemMessage(Component.translatable("villagerretaliation.player_raid.horn_confirmation")
-                    .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
-            return false;
-        }
         PlayerRaidSavedData data = PlayerRaidSavedData.get(level);
         boolean overlappingPlayerRaid = data.raids().stream().anyMatch(raid -> raid.running()
                 && raid.dimension().equals(level.dimension().location())
@@ -213,6 +207,12 @@ public final class PlayerRaidService {
                 return false;
             }
         }
+        if (VillagerRetaliationConfig.CONFIRM_RAID_HORN.get()
+                && !RAID_CONFIRMATIONS.consumeOrArm(initiator.getUUID(), villageId, now)) {
+            initiator.sendSystemMessage(Component.translatable("villagerretaliation.player_raid.horn_confirmation")
+                    .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+            return false;
+        }
 
         PlayerRaidSavedData.RaidRecord raid = data.create(
                 villageId, level.dimension().location(), village.center(), village.footprintSections(),
@@ -237,6 +237,7 @@ public final class PlayerRaidService {
         PlayerRaidSavedData data = PlayerRaidSavedData.get(server.overworld());
         PlayerRaidSavedData.RaidRecord raid = data.raid(raidId);
         if (raid == null || raid.phase() != PlayerRaidSavedData.Phase.DECLARATION) return;
+        PlayerRaidDialogueService.endSessionsForRaid(server, raidId);
         long now = server.overworld().getGameTime();
         raid.setPhase(PlayerRaidSavedData.Phase.PREPARING, now);
         raid.setAbsenceStarted(-1L);
@@ -312,9 +313,9 @@ public final class PlayerRaidService {
             ServerLevel level, PlayerRaidSavedData data, PlayerRaidSavedData.RaidRecord raid, long now) {
         reclassifyLoadedNoncombatants(level.getServer(), data, raid);
         if (resolveDefenderObjective(level.getServer(), data, raid, now)) return;
-        int combatants = raid.raiderPlayers().size() + raid.raiderVillagers().size();
+        int raiderPlayers = raid.raiderPlayers().size();
         raid.setGolemBudget(calculateGolemBudget(
-                raid.initialDefenderCount(), combatants, existingAlignedGolems(level, raid),
+                raid.initialDefenderCount(), raiderPlayers, existingAlignedGolems(level, raid),
                 VillagerRetaliationConfig.PLAYER_RAID_DEFENDERS_PER_GOLEM.get(),
                 VillagerRetaliationConfig.PLAYER_RAID_RAIDERS_PER_BONUS_GOLEM.get(),
                 VillagerRetaliationConfig.PLAYER_RAID_MINIMUM_GOLEMS.get(),
@@ -418,6 +419,10 @@ public final class PlayerRaidService {
     private static void releaseRaidCombatState(MinecraftServer server, PlayerRaidSavedData.RaidRecord raid) {
         for (UUID raiderId : raid.raiderVillagers()) {
             Entity entity = find(server, raiderId);
+            if (entity instanceof Villager villager) VillagerRetaliationHandler.clearCustomTarget(villager);
+        }
+        for (UUID defenderId : raid.defenders()) {
+            Entity entity = find(server, defenderId);
             if (entity instanceof Villager villager) VillagerRetaliationHandler.clearCustomTarget(villager);
         }
         for (UUID candidateId : raid.mercyCandidates()) {
@@ -545,6 +550,14 @@ public final class PlayerRaidService {
         if (event.getEntity().level() instanceof ServerLevel level) removeDefender(level, event.getEntity().getUUID());
     }
 
+    /** A protected villager who is downed has been neutralized for the current raid objective. */
+    public static void onVillagerDowned(Villager villager) {
+        if (villager != null && villager.level() instanceof ServerLevel level) {
+            VillagerRetaliationHandler.clearCustomTarget(villager);
+            removeDefender(level, villager.getUUID());
+        }
+    }
+
     /** Covers permanent removals which do not emit a usable living-death event, such as explicit discards. */
     public static void onEntityPermanentlyRemoved(Entity entity) {
         if (entity != null && entity.level() instanceof ServerLevel level) {
@@ -572,6 +585,7 @@ public final class PlayerRaidService {
             MinecraftServer server, PlayerRaidSavedData data, PlayerRaidSavedData.RaidRecord raid,
             boolean raidersWon, long now) {
         releaseRaidCombatState(server, raid);
+        PlayerRaidDialogueService.endSessionsForRaid(server, raid.id());
         PlayerRaidMercyService.onRaidFinished(server, raid.id());
         raid.setPhase(raidersWon ? PlayerRaidSavedData.Phase.RAIDER_VICTORY : PlayerRaidSavedData.Phase.DEFENDER_VICTORY, now);
         raid.setOutcomeCleanupAt(now + OUTCOME_DISPLAY_TICKS);
@@ -744,10 +758,10 @@ public final class PlayerRaidService {
     }
 
     static int calculateGolemBudget(
-            int defenders, int combatants, int existing, int defendersPerGolem,
+            int defenders, int raiderPlayers, int existing, int defendersPerGolem,
             int raidersPerBonus, int minimum, int maximum) {
         int desired = (int) Math.ceil(Math.max(0, defenders) / (double) Math.max(1, defendersPerGolem))
-                + Math.max(0, combatants - 1) / Math.max(1, raidersPerBonus);
+                + Math.max(0, raiderPlayers - 1) / Math.max(1, raidersPerBonus);
         desired = Math.max(minimum, desired);
         desired = Math.min(maximum, desired);
         return Math.max(0, desired - Math.max(0, existing));
