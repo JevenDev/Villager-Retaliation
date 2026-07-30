@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.interaction;
 
+import com.jvn.villagerretaliation.debug.HiredStressGridService;
 import com.jvn.villagerretaliation.interaction.work.HiredWorkContext;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.interaction.work.FarmerHoeRequirement;
@@ -86,6 +87,9 @@ public final class HiredVillagerFocusService {
     }
 
     public static boolean shouldUseVanillaRest(ServerLevel level, Villager villager) {
+        if (HiredStressGridService.isStressWorker(villager)) {
+            return false;
+        }
         Brain<Villager> brain = villager.getBrain();
         return isVanillaRestActive(villager)
                 || scheduledActivity(level, brain) == Activity.REST;
@@ -96,12 +100,13 @@ public final class HiredVillagerFocusService {
     }
 
     public static boolean shouldSkipHiredFocus(ServerLevel level, Villager villager) {
+        boolean stressWorker = HiredStressGridService.isStressWorker(villager);
         return villager.isBaby()
                 || !villager.isAlive()
-                || villager.isSleeping()
+                || (!stressWorker && villager.isSleeping())
                 || villager.isTrading()
                 || VillagerConversationService.isConversing(villager)
-                || villager.getTarget() != null
+                || (!stressWorker && villager.getTarget() != null)
                 || villager.getLastHurtByMob() != null
                 || !HiredVillagerContractService.isHired(level, villager);
     }

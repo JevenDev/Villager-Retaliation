@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.util.VillagerLocale;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.debug.HiredStressGridService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.resources.VillagerDialogueResources;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
@@ -108,6 +109,8 @@ public final class HiredVillagerWorkService {
         if (!contract.hired()) {
             return;
         }
+        HiredStressGridService.keepStressWorkerAwake(villager);
+        HiredStressGridService.maintainStressWorker(level, villager);
 
         boolean decisionOpportunity = HiredWorkDecisionScheduler.isDecisionOpportunity(level, villager);
         boolean decisionTick = decisionOpportunity && HiredWorkDecisionScheduler.tryAcquire(level, villager);
@@ -118,7 +121,8 @@ public final class HiredVillagerWorkService {
             pauseForRecruitmentCommand(level, villager, session);
             return;
         }
-        if (HiredVillagerFocusService.isVanillaRestActive(villager)) {
+        if (!HiredStressGridService.isStressWorker(villager)
+                && HiredVillagerFocusService.isVanillaRestActive(villager)) {
             pauseForVanillaRest(level, villager, session);
             return;
         }
@@ -246,12 +250,13 @@ public final class HiredVillagerWorkService {
     }
 
     private static boolean shouldSkipHiredWorkTick(Villager villager) {
+        boolean stressWorker = HiredStressGridService.isStressWorker(villager);
         return villager.isBaby()
                 || !villager.isAlive()
                 || villager.isTrading()
                 || VillagerConversationService.isConversing(villager)
                 || VillagerRecoveryService.isForcingRecovery(villager)
-                || villager.getTarget() != null
+                || (!stressWorker && villager.getTarget() != null)
                 || villager.getLastHurtByMob() != null
                 || !HiredVillagerContractService.hasContract(villager);
     }
