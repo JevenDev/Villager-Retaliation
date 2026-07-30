@@ -1419,20 +1419,12 @@ public final class VillagerQuestJournalScreen extends Screen {
         return Mth.clamp(this.visualOptionScroll, 0.0F, maxOptionScroll());
     }
 
-    private float detailsRenderScroll() {
-        return Mth.clamp(this.visualDetailsScroll, 0.0F, maxDetailsScroll());
-    }
-
     private float maxOptionScroll() {
         return ToucanScrollState.maxScroll(optionContentHeight(), optionViewportHeight());
     }
 
     private float maxDetailsScroll() {
         return 0.0F;
-    }
-
-    private int detailsContentHeight(QuestTrackerSyncPayload.Entry selected) {
-        return detailContentHeight(buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP));
     }
 
     private float optionContentHeight() {

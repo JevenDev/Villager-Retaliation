@@ -17,8 +17,6 @@ import net.minecraft.util.Mth;
 final class VillagerQuestHudRenderer {
     private static final int PANEL_GAP = 4;
     private static final int NOTIFICATION_MIN_HEIGHT = 70;
-    private static final int NOTIFICATION_SCROLL_TOP_HOLD_TICKS = 52;
-    private static final int NOTIFICATION_SCROLL_TICKS = 96;
     private static final int TRACKER_SCROLL_HOLD_TICKS = 54;
     private static final int TRACKER_SCROLL_TICKS = 96;
     private static final int PRIMARY_HEIGHT = 90;
@@ -95,28 +93,6 @@ final class VillagerQuestHudRenderer {
         renderEntry(graphics, font, entry, x, y, width, height, alpha, true, age);
     }
 
-    private static List<NotificationLine> buildNotificationLines(
-            Font font,
-            QuestTrackerSyncPayload.Entry entry,
-            int contentWidth,
-            int lineStep) {
-        List<NotificationLine> lines = new ArrayList<>();
-        int wrapWidth = VillagerClientUiUtil.scaledWrapWidth(contentWidth, textScale());
-        int y = 0;
-        y = addNotificationLines(lines, font, entry.title(), wrapWidth, VillagerQuestUi.TITLE_COLOR, true, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(3, 1));
-        y = addNotificationLines(lines, font, entry.objective(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
-        if (!entry.status().isBlank()) {
-            y = addNotificationLines(lines, font, entry.status(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
-        }
-        if (!entry.questItems().isEmpty()) {
-            y = addNotificationLines(lines, font, questItemsLine(entry), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, VillagerAdaptiveGuiScale.unitAtLeast(2, 1));
-        }
-        if (!entry.metadata().isBlank()) {
-            addNotificationLines(lines, font, entry.metadata(), wrapWidth, VillagerQuestUi.MUTED_TEXT_COLOR, false, y, lineStep, 0);
-        }
-        return lines;
-    }
-
     private static int addNotificationLines(
             List<NotificationLine> lines,
             Font font,
@@ -144,18 +120,6 @@ final class VillagerQuestHudRenderer {
         }
         NotificationLine lastLine = lines.get(lines.size() - 1);
         return lastLine.top() + lineStep;
-    }
-
-    private static int notificationScroll(int age, int overflow) {
-        if (overflow <= 0) {
-            return 0;
-        }
-        float progress = Mth.clamp(
-                (age - NOTIFICATION_SCROLL_TOP_HOLD_TICKS) / (float) NOTIFICATION_SCROLL_TICKS,
-                0.0F,
-                1.0F);
-        float eased = progress * progress * (3.0F - 2.0F * progress);
-        return Math.round(overflow * eased);
     }
 
     private static int trackerScroll(int age, int overflow) {

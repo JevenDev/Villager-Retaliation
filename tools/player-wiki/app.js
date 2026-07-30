@@ -194,20 +194,6 @@ function capitalizeStatValue(value) {
   return text.length > 0 ? `${text.charAt(0).toUpperCase()}${text.slice(1)}` : text;
 }
 
-function countDialogueLines() {
-  if (typeof DATA.stats?.dialogueLinesEstimate === "number") {
-    return DATA.stats.dialogueLinesEstimate;
-  }
-  return DATA.quests.reduce((total, quest) => {
-    const dialogue = quest.dialogue || {};
-    return total + Object.values(dialogue).reduce((questTotal, value) => {
-      if (Array.isArray(value)) return questTotal + value.length;
-      if (typeof value === "string") return questTotal + (value.trim() ? 1 : 0);
-      return questTotal;
-    }, 0);
-  }, 0);
-}
-
 function pageUrl(id) {
   return `#/page/${id}`;
 }

@@ -478,17 +478,6 @@ public final class QuestDialogueCompiler {
         return fallback;
     }
 
-    private static void copyActionObjects(JsonObject target, List<JsonObject> actions) {
-        if (actions == null || actions.isEmpty()) {
-            return;
-        }
-        JsonArray array = new JsonArray();
-        for (JsonObject action : actions) {
-            array.add(action.deepCopy());
-        }
-        target.add("actions", array);
-    }
-
     private static void copyResponseActionObjects(
             JsonObject target,
             List<JsonObject> actions,

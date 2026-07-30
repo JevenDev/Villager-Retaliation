@@ -125,35 +125,8 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int CONTAINER_TAB_3_WIDTH = 31;
     private static final int CONTAINER_TAB_3_HEIGHT = 32;
     private static final int CONTAINER_TAB_3_TOP = 96;
-    private static final int CONTENT_LEFT = 30;
     private static final int CONTENT_RIGHT = 149;
-    private static final int CONTENT_TOP = 54;
     private static final int CONTENT_BOTTOM = 184;
-    private static final int TITLE_Y = 44;
-    private static final int PAGE_BUTTON_WIDTH = 23;
-    private static final int PAGE_BUTTON_HEIGHT = 13;
-    private static final int PAGE_BUTTON_LEFT = CONTENT_RIGHT - PAGE_BUTTON_WIDTH + 1;
-    private static final int PAGE_BUTTON_TOP = CONTENT_BOTTOM - PAGE_BUTTON_HEIGHT;
-    private static final List<HiredVillagerRole> FIRST_OVERVIEW_PAGE_ROLES = List.of(
-            HiredVillagerRole.COMBAT,
-            HiredVillagerRole.HUNTING,
-            HiredVillagerRole.MINING,
-            HiredVillagerRole.LOGGING,
-            HiredVillagerRole.FARMING,
-            HiredVillagerRole.FISHING,
-            HiredVillagerRole.BREWING,
-            HiredVillagerRole.COOK);
-    private static final List<HiredVillagerRole> SECOND_OVERVIEW_PAGE_ROLES = List.of(
-            HiredVillagerRole.BUILDER,
-            HiredVillagerRole.SMELTER,
-            HiredVillagerRole.COURIER,
-            HiredVillagerRole.ANIMAL_HANDLING,
-            HiredVillagerRole.CRAFTSMAN,
-            HiredVillagerRole.NITWIT);
-    private static final ResourceLocation PAGE_FORWARD = ResourceLocation.withDefaultNamespace("widget/page_forward");
-    private static final ResourceLocation PAGE_FORWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_forward_highlighted");
-    private static final ResourceLocation PAGE_BACKWARD = ResourceLocation.withDefaultNamespace("widget/page_backward");
-    private static final ResourceLocation PAGE_BACKWARD_HIGHLIGHTED = ResourceLocation.withDefaultNamespace("widget/page_backward_highlighted");
     private static final int TEXT = 0xFF4B2B1D;
     private static final int MUTED = 0xFF8B6247;
     private static final int NOTICE = 0xFF707070;
@@ -163,16 +136,8 @@ public final class ClipboardWorkforceScreen extends Screen {
     private static final int PATHING = 0xFFB44B0B;
     private static final int HOVER_FILL = 0x30A66A34;
     private static final int SELECTED_FILL = 0x3DA65C2B;
-    private static final int ROW_HEIGHT = 11;
     private static final int JOB_SITE_ROW_STEP = 10;
-    private static final int ROW_OPTION_HEIGHT = 12;
-    private static final int WORKER_ROW_HEIGHT = 66;
     private static final int WRAPPED_LINE_STEP = 9;
-    private static final int HEADER_DIVIDER_Y = 10;
-    private static final int HEADER_ROW_START_OFFSET = 14;
-    private static final int WARNING_ARROW_GAP = 10;
-    private static final int JOB_PAGE_ROW_START_OFFSET = 15;
-    private static final int WORKER_ROW_BOTTOM_INSET = 7;
 
     private ClipboardWorkforceSnapshot snapshot;
     private final List<RowAction> rowActions = new ArrayList<>();
@@ -180,9 +145,7 @@ public final class ClipboardWorkforceScreen extends Screen {
     private HiredVillagerRole selectedRole = HiredVillagerRole.MINING;
     private WarningSummary selectedWarning;
     private WorkerRow selectedWorker;
-    private int selectedOverviewRow;
     private boolean showOverviewSelection;
-    private int overviewPage;
     private int workerScroll;
     private int jobScroll;
     private int warningScroll;

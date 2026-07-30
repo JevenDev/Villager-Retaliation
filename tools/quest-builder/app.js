@@ -615,10 +615,6 @@
     return control.value;
   }
 
-  function getNested(target, path) {
-    return String(path).split(".").reduce((value, key) => value?.[key], target);
-  }
-
   function setNested(target, path, value, options = {}) {
     const parts = String(path).split(".");
     let owner = target;
