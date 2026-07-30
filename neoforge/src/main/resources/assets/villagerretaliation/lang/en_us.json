@@ -1253,6 +1253,8 @@
   "villagerretaliation.gui.job_stats.info.practice": "Higher aptitude makes work faster or increases each collection trip. Successful hired work trains both listed skills.",
   "villagerretaliation.gui.job_stats.info.profession": "A matching vanilla profession automatically qualifies for its canonical job. Adult villagers can always be couriers; only nitwits can take Nitwit work.",
   "villagerretaliation.gui.job_stats.info.qualification": "Most jobs require their two relevant skills to total at least 61. Exactly 60 remains locked.",
+  "villagerretaliation.gui.job_icon.tooltip.contract.many": "Contract: %s paid days remaining",
+  "villagerretaliation.gui.job_icon.tooltip.contract.one": "Contract: %s paid day remaining",
   "villagerretaliation.gui.job_icon.tooltip.hired_by": "Hired by: %s",
   "villagerretaliation.gui.job_icon.tooltip.job": "Job: %s",
   "villagerretaliation.gui.job_stats.info.title": "What job stats do",
