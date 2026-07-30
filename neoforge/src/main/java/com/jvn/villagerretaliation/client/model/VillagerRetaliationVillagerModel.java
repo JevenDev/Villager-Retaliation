@@ -6,6 +6,7 @@ import com.jvn.villagerretaliation.client.pose.VillagerPoseAnimator;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
 import com.jvn.villagerretaliation.client.renderer.VillagerRenderEquipmentState;
 import com.jvn.villagerretaliation.client.villager.VillagerDownedClientCache;
+import com.jvn.villagerretaliation.client.villager.VillagerNameClientCache;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
@@ -164,7 +165,9 @@ public class VillagerRetaliationVillagerModel<T extends AbstractVillager> extend
         VillagerArmPose pose = this.poseProvider == null
                 ? VillagerArmPose.NONE
                 : this.poseProvider.getArmPose(villager, this.attackTime);
-        this.setArmLayout(pose != VillagerArmPose.NONE || VillagerRenderEquipmentState.hasArmorEquipped(villager));
+        this.setArmLayout(pose != VillagerArmPose.NONE
+                || VillagerRenderEquipmentState.hasArmorEquipped(villager)
+                || VillagerNameClientCache.isHired(villager.getId()));
         if (pose == VillagerArmPose.NONE) {
             this.syncRobe(villager);
             this.dialogueMouthParts.apply(villager, ageInTicks);

@@ -754,11 +754,12 @@ public final class VillagerReputationNetworking {
         String name = villager.hasCustomName() && villager.getCustomName() != null
                 ? villager.getCustomName().getString().trim()
                 : VillagerPresetNameRegistry.resolvePresetName(villager);
-        if (name.isBlank()) {
+        boolean hired = isHiredVillager(villager);
+        if (name.isBlank() && !hired) {
             return null;
         }
         return new VillagerNameSyncPayload(
-                villager.getId(), villager.getUUID(), "", name, isHiredVillager(villager));
+                villager.getId(), villager.getUUID(), "", name, hired);
     }
 
     private static boolean isHiredVillager(Entity entity) {

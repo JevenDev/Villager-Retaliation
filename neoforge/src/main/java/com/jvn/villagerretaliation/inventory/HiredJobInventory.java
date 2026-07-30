@@ -562,7 +562,12 @@ public final class HiredJobInventory implements Container {
             return ItemStack.EMPTY;
         }
         if (bestSlot == MAINHAND_SLOT) {
-            return this.items.get(MAINHAND_SLOT);
+            ItemStack selected = this.items.get(MAINHAND_SLOT);
+            if (!VillagerRetaliationVillagerEquipment.mainHandMatchesStack(this.villager, selected)
+                    || !VillagerRetaliationVillagerEquipment.isPlayerManagedMainHand(this.villager)) {
+                VillagerRetaliationVillagerEquipment.setInventoryEquipment(this.villager, EquipmentSlot.MAINHAND, selected);
+            }
+            return selected;
         }
         ItemStack selected = this.items.get(bestSlot);
         ItemStack previousMainhand = this.items.get(MAINHAND_SLOT);

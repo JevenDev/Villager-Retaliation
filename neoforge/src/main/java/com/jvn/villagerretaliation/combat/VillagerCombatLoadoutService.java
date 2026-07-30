@@ -39,11 +39,27 @@ public final class VillagerCombatLoadoutService {
         if (villager == null || preference == null || preference == PartyWeaponPreference.AUTO) {
             return;
         }
-        if (VillagerRetaliationVillagerCombatUtil.isInCombat(villager)) {
-            ensurePreferredWeapon(villager, preference);
-        } else {
-            stowIdleWeapon(villager);
+        ensurePreferredWeapon(villager, preference);
+    }
+
+    /** Keeps an unsheathed party member visibly ready even between combat targets. */
+    public static boolean maintainPartyReadiness(Villager villager) {
+        PartyVillagerRecord record = partyRecord(villager);
+        if (record == null || record.weaponsSheathed()
+                || VillagerInventoryAccess.hasOpenInventory(villager)
+                || DuelService.isParticipant(villager)
+                || villager.isUsingItem()) {
+            return false;
         }
+        if (record.weaponPreference() == PartyWeaponPreference.AUTO) {
+            return tryEquip(villager, VillagerRetaliationVillagerWeapons::isUsableWeapon);
+        }
+        return ensurePreferredWeapon(villager, record.weaponPreference());
+    }
+
+    public static boolean shouldKeepPartyWeaponReady(Villager villager) {
+        PartyVillagerRecord record = partyRecord(villager);
+        return record != null && !record.weaponsSheathed();
     }
 
     public static boolean hasPersistentEquippedPreference(Villager villager) {
@@ -84,8 +100,18 @@ public final class VillagerCombatLoadoutService {
         return villager != null
                 && !VillagerRetaliationVillagerCombatUtil.isInCombat(villager)
                 && !HiredVillagerWorkService.isActivelyWorking(villager)
+                && !shouldKeepPartyWeaponReady(villager)
                 && !VillagerEquipmentMending.shouldKeepMainHandEquipped(villager)
                 && stowWeapons(villager, false);
+    }
+
+    private static PartyVillagerRecord partyRecord(Villager villager) {
+        if (villager == null || !(villager.level() instanceof ServerLevel level)) {
+            return null;
+        }
+        return PartyService.getPartyForVillager(level, villager.getUUID())
+                .map(party -> party.villager(villager.getUUID()))
+                .orElse(null);
     }
 
     private static boolean stowPersonalHand(
