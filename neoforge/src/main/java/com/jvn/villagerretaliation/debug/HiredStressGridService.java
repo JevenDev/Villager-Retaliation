@@ -66,7 +66,7 @@ import net.minecraft.world.level.block.state.properties.ChestType;
 
 /** Builds a self-contained production workload for every hired villager role. */
 public final class HiredStressGridService {
-    public static final int MAX_COUNT = 100;
+    public static final int MAX_COUNT = 500;
     public static final int CONTRACT_DAYS = 30;
     public static final int ROLE_COUNT = HiredVillagerRole.values().length;
     private static final String STRESS_WORKER_TAG = "VillagerRetaliationHiredStressWorker";

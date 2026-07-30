@@ -8,13 +8,17 @@ import com.jvn.villagerretaliation.allegiance.VillageAllegianceCombatPolicy;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceId;
 import com.jvn.villagerretaliation.allegiance.VillageAllegianceRegistrySavedData;
 import com.jvn.villagerretaliation.combat.VillagerRetaliationHandler;
+import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
+import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.interaction.VillagerConversationService;
 import com.jvn.villagerretaliation.item.BannerHelmetData;
 import com.jvn.villagerretaliation.item.OminousBannerRecognition;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationAdvancements;
 import com.jvn.villagerretaliation.village.VillagerRaidMemorySavedData;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
@@ -211,6 +215,44 @@ public final class PlayerRaidGameTests {
         helper.assertTrue(restored != null, "legacy raid should load");
         helper.assertFalse(restored.mercyEnabled(), "legacy raid should retain its original lifecycle");
         helper.assertTrue(restored.mercyCandidates().isEmpty(), "legacy raid should not invent candidates");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void preparationClosesBetrayalDialogueSession(GameTestHelper helper) {
+        PlayerRaidDialogueService.clearRuntimeState();
+        ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
+        player.moveTo(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        Villager defector = EntityType.VILLAGER.create(helper.getLevel());
+        helper.assertTrue(defector != null, "defector should be creatable");
+        defector.moveTo(center.getX() + 1.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(defector), "defector should spawn");
+
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
+        PlayerRaidSavedData.RaidRecord raid = data.create(
+                VillageAllegianceId.random(), helper.getLevel().dimension().location(), center,
+                Set.of(SectionPos.asLong(center)), "Dialogue Village", player.getUUID(), UUID.randomUUID(),
+                Set.of(player.getUUID()), Set.of(), Set.of(defector.getUUID()), Set.of(), Set.of(),
+                Set.of(defector.getUUID()), 42L);
+        helper.assertTrue(PlayerRaidDialogueService.begin(player, raid),
+                "betrayal dialogue should start for a loaded defector");
+        helper.assertTrue(PlayerRaidDialogueService.hasSession(raid.id()),
+                "raid should own a declaration dialogue session");
+        helper.assertTrue(VillagerConversationService.isConversing(player),
+                "the generic conversation service should hold the forced session");
+
+        PlayerRaidService.beginPreparation(helper.getLevel().getServer(), raid.id());
+        helper.assertValueEqual(raid.phase(), PlayerRaidSavedData.Phase.PREPARING,
+                "declaration should advance to preparation");
+        helper.assertFalse(PlayerRaidDialogueService.hasSession(raid.id()),
+                "preparation should remove the raid declaration session");
+        helper.assertFalse(VillagerConversationService.isConversing(player),
+                "preparation should close the underlying forced conversation");
+
+        data.remove(raid.id());
+        defector.discard();
+        player.discard();
         helper.succeed();
     }
 
@@ -544,6 +586,40 @@ public final class PlayerRaidGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
+    public static void downedDefenderLeavesRaidObjectiveAlive(GameTestHelper helper) {
+        BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
+        Villager defender = EntityType.VILLAGER.create(helper.getLevel());
+        helper.assertTrue(defender != null, "villager should be creatable");
+        defender.moveTo(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(defender), "villager should spawn");
+
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
+        UUID player = UUID.randomUUID();
+        PlayerRaidSavedData.RaidRecord raid = data.create(
+                VillageAllegianceId.random(), helper.getLevel().dimension().location(), center,
+                Set.of(SectionPos.asLong(center)), "Downed Village", player, null,
+                Set.of(player), Set.of(), Set.of(defender.getUUID()), Set.of(), 42L);
+        raid.setPhase(PlayerRaidSavedData.Phase.ACTIVE, 43L);
+
+        helper.assertTrue(VillagerDownedService.enterDowned(
+                        helper.getLevel(),
+                        defender,
+                        new VillagerDeathProtectionResolver.ProtectionResult(
+                                true, List.of("player_raid_test"))),
+                "protected raid defender should enter the downed state");
+        helper.assertTrue(defender.isAlive(), "downed raid defender should survive");
+        helper.assertTrue(raid.defenders().isEmpty(),
+                "a downed defender should leave the combat objective");
+        helper.assertValueEqual(raid.phase(), PlayerRaidSavedData.Phase.RAIDER_VICTORY,
+                "downing the final combat defender should settle the raid");
+
+        VillagerDownedService.recover(defender);
+        data.remove(raid.id());
+        defender.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
     public static void activePlayerRaidSidesRemainLegalCombatOpponents(GameTestHelper helper) {
         BlockPos center = helper.absolutePos(new BlockPos(4, 2, 4));
         Villager raider = EntityType.VILLAGER.create(helper.getLevel());
@@ -599,6 +675,10 @@ public final class PlayerRaidGameTests {
                 "defender should target a nearer participating recruited villager");
         helper.assertTrue(VillagerRetaliationHandler.isHostileTowards(defender, player),
                 "every participating raider player should remain an aggressor while another party member is targeted");
+
+        PlayerRaidService.debugFinishRaid(helper.getLevel(), center, player.getUUID(), false);
+        helper.assertFalse(VillagerRetaliationHandler.hasActiveRetaliationTarget(defender),
+                "settling a raid should clear the surviving defender's forced target");
 
         data.remove(raid.id());
         recruitedRaider.discard();
