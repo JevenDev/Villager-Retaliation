@@ -308,11 +308,13 @@ public final class VillagerItemFilterData {
         VillagerItemFilterData data = read(filter);
         return data.mode == Mode.ALLOWLIST
                 && data.entryCombination == EntryCombination.ANY
-                && data.entries.stream().allMatch(entry -> entry.stack().isEmpty());
+                && data.entries.stream().allMatch(entry -> entry.stack().isEmpty())
+                && !VillagerFilterPolicy.hasStoredPolicy(filter);
     }
 
     public static void copyConfiguration(ItemStack source, ItemStack target) {
         write(target, read(source));
+        VillagerFilterPolicy.copyConfiguration(source, target);
     }
 
     public static boolean matches(ItemStack filter, ItemStack candidate) {
