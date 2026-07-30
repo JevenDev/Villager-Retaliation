@@ -164,6 +164,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_CONTAINER_WIDTH = 283;
     private static final int INTERACTION_CONTAINER_HEIGHT = 85;
     private static final int INTERACTION_CONTAINER_HOTBAR_GAP = 5;
+    private static final int INTERACTION_JOB_ICON_SIZE = 18;
+    private static final int INTERACTION_JOB_ICON_BOTTOM_INSET = 4;
     private static final int SKILLS_DIALOGUE_CONTAINER_WIDTH = 283;
     private static final int SKILLS_DIALOGUE_CONTAINER_HEIGHT = 64;
     private static final int SKILLS_DIALOGUE_CONTAINER_GAP = 1;
@@ -205,7 +207,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final int INTERACTION_DIALOGUE_SCROLL_ICON_BOTTOM = 56;
     private static final int INTERACTION_DIALOGUE_SCROLL_ICON_WIDTH = 7;
     private static final int INTERACTION_DIALOGUE_SCROLL_ICON_HEIGHT = 5;
-    private static final int INTERACTION_PORTRAIT_LEFT = 4;
+    private static final int INTERACTION_PORTRAIT_LEFT = 5;
     private static final int INTERACTION_PORTRAIT_TOP = 4;
     private static final int INTERACTION_PORTRAIT_RIGHT = 55;
     private static final int INTERACTION_PORTRAIT_BOTTOM = 60;
@@ -282,6 +284,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final boolean clipboardSelectionAssigned;
     private boolean hiredByPlayer;
     private final boolean hiredByOtherPlayer;
+    private String hirerName;
     private int hiredRemainingDays;
     private final boolean inventoryAvailable;
     private final boolean jobInventoryAvailable;
@@ -432,6 +435,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean clipboardSelectionAssigned,
             boolean hiredByPlayer,
             boolean hiredByOtherPlayer,
+            String hirerName,
             int hiredRemainingDays,
             boolean inventoryAvailable,
             boolean jobInventoryAvailable,
@@ -502,6 +506,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.clipboardSelectionAssigned = clipboardSelectionAssigned;
         this.hiredByPlayer = hiredByPlayer;
         this.hiredByOtherPlayer = hiredByOtherPlayer;
+        this.hirerName = hirerName == null ? "" : hirerName.trim();
         this.hiredRemainingDays = Math.max(0, hiredRemainingDays);
         this.inventoryAvailable = inventoryAvailable;
         this.jobInventoryAvailable = jobInventoryAvailable;
@@ -2794,6 +2799,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 .filter(owner -> Minecraft.getInstance().player != null
                         && owner.equals(Minecraft.getInstance().player.getUUID()))
                 .isPresent();
+        if (ownsAssignment && Minecraft.getInstance().player != null) {
+            this.hirerName = Minecraft.getInstance().player.getGameProfile().getName();
+        } else if (payload.assignment().owner().isEmpty()) {
+            this.hirerName = "";
+        }
         this.hiredByPlayer = ownsAssignment;
         this.followingPlayer = ownsAssignment
                 && payload.assignment().command() == com.jvn.villagerretaliation.interaction.VillagerAssignmentCommand.FOLLOW;
@@ -3331,6 +3341,24 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return translate("job_stats.role." + role.serializedName());
     }
 
+    private static ChatFormatting hiredJobColor(HiredVillagerRole role) {
+        return switch (role) {
+            case COMBAT -> ChatFormatting.RED;
+            case HUNTING -> ChatFormatting.DARK_GREEN;
+            case MINING -> ChatFormatting.GRAY;
+            case LOGGING -> ChatFormatting.GOLD;
+            case FARMING -> ChatFormatting.GREEN;
+            case FISHING -> ChatFormatting.AQUA;
+            case BREWING -> ChatFormatting.LIGHT_PURPLE;
+            case CRAFTSMAN -> ChatFormatting.YELLOW;
+            case ANIMAL_HANDLING -> ChatFormatting.DARK_AQUA;
+            case COOK -> ChatFormatting.GOLD;
+            case SMELTER -> ChatFormatting.DARK_GRAY;
+            case COURIER -> ChatFormatting.BLUE;
+            case BUILDER, NITWIT -> ChatFormatting.WHITE;
+        };
+    }
+
     private ResourceLocation skillsDialogueScrollIcon(List<String> lines, int lineScroll) {
         int maxScroll = maxInteractionDialogueLineScroll(lines);
         if (maxScroll <= 0) {
@@ -3376,6 +3404,50 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         renderInteractionVillagerPortrait(graphics, left, top);
         renderInteractionDialogue(graphics, left, top);
         renderInteractionInfoRow(graphics, left, top);
+        renderHiredJobIcon(graphics, left, top);
+    }
+
+    private void renderHiredJobIcon(GuiGraphics graphics, int left, int top) {
+        if (!this.hiredByPlayer && !this.hiredByOtherPlayer) {
+            return;
+        }
+        ResourceLocation icon = VillagerRetaliationClientAssets.hiredJobIcon(this.activeHiredRole);
+        if (icon == null) {
+            return;
+        }
+        int iconLeft = hiredJobIconLeft(left);
+        int iconTop = hiredJobIconTop(top);
+        graphics.blit(
+                icon,
+                iconLeft,
+                iconTop,
+                0,
+                0,
+                INTERACTION_JOB_ICON_SIZE,
+                INTERACTION_JOB_ICON_SIZE,
+                INTERACTION_JOB_ICON_SIZE,
+                INTERACTION_JOB_ICON_SIZE
+        );
+    }
+
+    private static int hiredJobIconLeft(int containerLeft) {
+        return containerLeft
+                + (INTERACTION_PORTRAIT_LEFT + INTERACTION_PORTRAIT_RIGHT - INTERACTION_JOB_ICON_SIZE) / 2;
+    }
+
+    private static int hiredJobIconTop(int containerTop) {
+        return containerTop + INTERACTION_CONTAINER_HEIGHT - INTERACTION_JOB_ICON_SIZE - INTERACTION_JOB_ICON_BOTTOM_INSET;
+    }
+
+    private boolean isPointInsideHiredJobIcon(int mouseX, int mouseY) {
+        if ((!this.hiredByPlayer && !this.hiredByOtherPlayer)
+                || VillagerRetaliationClientAssets.hiredJobIcon(this.activeHiredRole) == null) {
+            return false;
+        }
+        int left = hiredJobIconLeft(interactionContainerLeft());
+        int top = hiredJobIconTop(interactionContainerTop());
+        return mouseX >= left && mouseX < left + INTERACTION_JOB_ICON_SIZE
+                && mouseY >= top && mouseY < top + INTERACTION_JOB_ICON_SIZE;
     }
 
     private void renderInteractionMenuButtons(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -4252,6 +4324,23 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void renderInteractionStatTooltips(GuiGraphics graphics, int mouseX, int mouseY) {
         if (!shouldRenderInteractionContainer()) {
+            return;
+        }
+
+        if (isPointInsideHiredJobIcon(mouseX, mouseY)) {
+            Component job = Component.literal(jobRoleLabel(this.activeHiredRole))
+                    .withStyle(hiredJobColor(this.activeHiredRole));
+            Component playerName = Component.literal(this.hirerName.isBlank() ? "Player" : this.hirerName)
+                    .withStyle(ChatFormatting.YELLOW);
+            renderInteractionTooltip(
+                    graphics,
+                    List.of(
+                            Component.translatable(GUI_KEY_PREFIX + "job_icon.tooltip.job", job)
+                                    .withStyle(ChatFormatting.GRAY),
+                            Component.translatable(GUI_KEY_PREFIX + "job_icon.tooltip.hired_by", playerName)
+                                    .withStyle(ChatFormatting.GRAY)),
+                    mouseX,
+                    mouseY);
             return;
         }
 

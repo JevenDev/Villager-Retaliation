@@ -57,6 +57,7 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
     private static final int TAB_HIGHLIGHT_COLOR = 0x40FFFFFF;
     private static final int PARTY_ICON_SIZE = 20;
     private static final int PARTY_ICON_BOTTOM_INSET = 93;
+    private static final float PARTY_ICON_Z = 100.0F;
 
     private static final int STATS_CENTER_X = 27;
     private static final int STATS_TOP = 27;
@@ -202,6 +203,8 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
         }
         int left = this.leftPos + (TEXTURE_WIDTH - PARTY_ICON_SIZE) / 2;
         int top = this.topPos + TEXTURE_HEIGHT - PARTY_ICON_BOTTOM_INSET - PARTY_ICON_SIZE;
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, 0.0F, PARTY_ICON_Z);
         graphics.blit(
                 VillagerRetaliationClientAssets.VILLAGER_INVENTORY_PARTY_ICON_TEXTURE,
                 left,
@@ -213,6 +216,7 @@ public class VillagerInventoryScreen extends AbstractContainerScreen<VillagerInv
                 PARTY_ICON_SIZE,
                 PARTY_ICON_SIZE
         );
+        graphics.pose().popPose();
     }
 
     private void renderTabsAndNameplate(GuiGraphics graphics, int mouseX, int mouseY) {
