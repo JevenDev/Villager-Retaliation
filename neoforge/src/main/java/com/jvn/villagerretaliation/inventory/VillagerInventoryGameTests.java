@@ -601,11 +601,13 @@ public final class VillagerInventoryGameTests {
         ItemFrame unlimitedFrame = new ItemFrame(level, output.relative(Direction.NORTH), Direction.NORTH);
         unlimitedFrame.setItem(new ItemStack(Items.EMERALD));
         helper.assertTrue(level.addFreshEntity(unlimitedFrame), "unlimited item frame should spawn");
-        helper.assertTrue(AssignedStorageService.depositStack(
-                        villager, new ItemStack(Items.EMERALD, 3)).isEmpty(),
-                "a matching unlimited frame should override a capped alternative");
-        helper.assertValueEqual(countItem(chest, Items.EMERALD), 35,
-                "the unlimited alternative should permit normal insertion");
+        ContainerFilterResolver.invalidateFrame(level, unlimitedFrame);
+        ItemStack constrainedRemainder = AssignedStorageService.depositStack(
+                villager, new ItemStack(Items.EMERALD, 3));
+        helper.assertValueEqual(constrainedRemainder.getCount(), 3,
+                "a finite matching frame should remain more restrictive than an unlimited alternative");
+        helper.assertValueEqual(countItem(chest, Items.EMERALD), 32,
+                "an unlimited alternative must not bypass a reached finite target");
         AssignedStorageService.assignedOutputCapacityFor(villager, new ItemStack(Items.EMERALD), 1);
         AssignedStorageSavedData.AssignedContainerRecord refreshed =
                 AssignedStorageService.assignedStorage(level, villager).getFirst();

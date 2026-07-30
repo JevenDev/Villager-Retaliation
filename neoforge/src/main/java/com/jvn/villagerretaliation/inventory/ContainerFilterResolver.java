@@ -112,11 +112,11 @@ public final class ContainerFilterResolver {
 
     private static boolean canResolveLive(ServerLevel level, List<BlockPos> positions) {
         for (BlockPos pos : positions) {
-            if (!level.isPositionEntityTicking(pos)) {
+            if (!level.hasChunkAt(pos)) {
                 return false;
             }
             for (Direction direction : Direction.values()) {
-                if (!level.isPositionEntityTicking(pos.relative(direction))) {
+                if (!level.hasChunkAt(pos.relative(direction))) {
                     return false;
                 }
             }

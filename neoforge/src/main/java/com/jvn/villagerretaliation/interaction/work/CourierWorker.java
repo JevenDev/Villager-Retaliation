@@ -37,12 +37,14 @@ public final class CourierWorker implements HiredRoleWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         HiredRoute route = context.route();
         if (route == null || !route.usableForNavigation()) {
+            AssignedStorageService.releaseCourierClaims(villager);
             clearTrip(context);
             HiredWorkerBrain.setFailure(context, "courier_missing_route", level.getGameTime() + 100L);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.AWAITING_INSTRUCTION, null);
             return WorkResult.idle("interaction.work.courier.missing_route");
         }
 
+        AssignedStorageService.reconcileCourierClaims(villager, cargoStacks(context));
         String phase = phase(context);
         if (context.inventory().hasOutputItems()
                 && !PHASE_RETURN.equals(phase)
@@ -306,6 +308,12 @@ public final class CourierWorker implements HiredRoleWorker {
             return null;
         }
         String purpose = workState.storagePurpose();
+        if (AssignedStorageService.SUPPLY_PURPOSE.equals(purpose)) {
+            AssignedStorageService.reserveCourierTransferClaims(
+                    villager,
+                    storage,
+                    HiredVillagerRoles.courierTransferLimit(context.aptitude()));
+        }
         HiredStorageNavigationGoal.Result movement = HiredStorageNavigationGoal.moveToStorageTarget(
                 level, context, villager, storage, MOVE_SPEED);
         if (movement == HiredStorageNavigationGoal.Result.MOVING) {
@@ -318,6 +326,7 @@ public final class CourierWorker implements HiredRoleWorker {
         }
         HiredStorageNavigationGoal.clearStorageTarget(context);
         if (movement == HiredStorageNavigationGoal.Result.FAILED) {
+            AssignedStorageService.reconcileCourierClaims(villager, cargoStacks(context));
             workState.setReturningToRouteNode(true);
             if (AssignedStorageService.OUTPUT_PURPOSE.equals(purpose)) {
                 AssignedStorageService.rememberOutputStorageFailure(
@@ -337,6 +346,7 @@ public final class CourierWorker implements HiredRoleWorker {
         if (AssignedStorageService.OUTPUT_PURPOSE.equals(purpose)) {
             result = depositAtOutput(level, villager, context, route, storage);
         } else {
+            AssignedStorageService.reconcileCourierClaims(villager, cargoStacks(context));
             int moved = collectInput(villager, context, storage);
             HiredWorkerBrain.clearFailure(context);
             HiredWorkerBrain.setState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, storage);
@@ -347,6 +357,7 @@ public final class CourierWorker implements HiredRoleWorker {
                     "interaction.work.courier.collected_items",
                     Map.of("count", Integer.toString(moved)));
         }
+        AssignedStorageService.reconcileCourierClaims(villager, cargoStacks(context));
 
         BlockPos nextStorage = takeNextStorageInBatch(level, villager, context, purpose);
         if (nextStorage != null) {
@@ -368,7 +379,7 @@ public final class CourierWorker implements HiredRoleWorker {
         if (!context.inventory().hasOutputSpace()) {
             return List.of();
         }
-        return AssignedStorageService.assignedStoragePositionsContaining(
+        return AssignedStorageService.assignedCourierInputStoragePositionsContaining(
                         level,
                         villager,
                         stack -> !stack.isEmpty())
@@ -569,6 +580,14 @@ public final class CourierWorker implements HiredRoleWorker {
                 context.inventory()::insertOutput);
     }
 
+    private static List<ItemStack> cargoStacks(HiredWorkContext context) {
+        return context.inventory().collectOutputItems().stream()
+                .map(output -> output.stack())
+                .filter(stack -> !stack.isEmpty())
+                .map(ItemStack::copy)
+                .toList();
+    }
+
     private static int cargoItemCount(HiredWorkContext context) {
         return context.inventory().collectOutputItems().stream()
                 .mapToInt(output -> output.stack().getCount())
@@ -578,11 +597,7 @@ public final class CourierWorker implements HiredRoleWorker {
     private static AssignedStorageService.AssignedOutputState compatibleOutputState(
             Villager villager,
             HiredWorkContext context) {
-        List<ItemStack> cargo = context.inventory().collectOutputItems().stream()
-                .map(output -> output.stack())
-                .filter(stack -> !stack.isEmpty())
-                .toList();
-        return AssignedStorageService.assignedOutputStateFor(villager, cargo);
+        return AssignedStorageService.assignedOutputStateFor(villager, cargoStacks(context));
     }
 
     private static Set<BlockPos> purposePositions(ServerLevel level, Villager villager, String purpose) {
