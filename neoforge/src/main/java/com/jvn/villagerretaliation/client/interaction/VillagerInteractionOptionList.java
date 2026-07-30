@@ -25,6 +25,7 @@ final class VillagerInteractionOptionList {
     private static final int PIXEL_OPTION_DISABLED_HIGHLIGHT_COLOR = 0x20FFFFFF;
     private static final int PIXEL_OPTION_HIGHLIGHT_INSET = 2;
     private static final float PIXEL_OPTION_EDGE_SCALE = 0.92F;
+    private static final int PIXEL_OPTION_SCISSOR_OVERFLOW = 7;
 
     private VillagerInteractionOptionList() {
     }
@@ -85,6 +86,61 @@ final class VillagerInteractionOptionList {
 
     static float optionContentHeight(Context context) {
         return layout(context).contentHeight();
+    }
+
+    static float nextSnappedScroll(Context context, float currentScroll, int direction) {
+        LayoutCache layout = layout(context);
+        float maxScroll = Math.max(0.0F, layout.contentHeight() - context.optionViewportHeight());
+        float current = Mth.clamp(currentScroll, 0.0F, maxScroll);
+        if (direction == 0 || maxScroll <= 0.0F) {
+            return current;
+        }
+
+        float threshold = 0.5F;
+        if (direction > 0) {
+            for (int index = 1; index < context.optionCount(); index++) {
+                float candidate = Mth.clamp(layout.offset(index), 0.0F, maxScroll);
+                if (candidate > current + threshold) {
+                    return candidate;
+                }
+            }
+            return maxScroll;
+        }
+
+        for (int index = context.optionCount() - 1; index >= 0; index--) {
+            float candidate = Mth.clamp(layout.offset(index), 0.0F, maxScroll);
+            if (candidate < current - threshold) {
+                return candidate;
+            }
+        }
+        return 0.0F;
+    }
+
+    static float scrollToReveal(Context context, float currentScroll, int optionIndex) {
+        LayoutCache layout = layout(context);
+        if (optionIndex < 0 || optionIndex >= context.optionCount()) {
+            return currentScroll;
+        }
+
+        float maxScroll = Math.max(0.0F, layout.contentHeight() - context.optionViewportHeight());
+        float current = Mth.clamp(currentScroll, 0.0F, maxScroll);
+        float optionTop = layout.offset(optionIndex);
+        float optionBottom = optionTop + layout.height(optionIndex);
+        if (optionTop < current) {
+            return Mth.clamp(optionTop, 0.0F, maxScroll);
+        }
+        if (optionBottom <= current + context.optionViewportHeight()) {
+            return current;
+        }
+
+        float minimumScroll = optionBottom - context.optionViewportHeight();
+        for (int index = 0; index <= optionIndex; index++) {
+            float candidate = Mth.clamp(layout.offset(index), 0.0F, maxScroll);
+            if (candidate >= minimumScroll - 0.5F) {
+                return candidate;
+            }
+        }
+        return maxScroll;
     }
 
     private static LayoutCache layout(Context context) {
@@ -163,7 +219,8 @@ final class VillagerInteractionOptionList {
             scissorRight += context.pixelOptionSelectionArrowGap() + context.pixelOptionSelectionArrowWidth();
         }
         int scissorOffsetX = context.guiScissorOffsetX();
-        graphics.enableScissor(left + scissorOffsetX, top + scissorOffsetY, scissorRight + scissorOffsetX, viewportBottom + scissorOffsetY);
+        graphics.enableScissor(Math.max(0, left - PIXEL_OPTION_SCISSOR_OVERFLOW + scissorOffsetX), top + scissorOffsetY,
+                scissorRight + PIXEL_OPTION_SCISSOR_OVERFLOW + scissorOffsetX, viewportBottom + scissorOffsetY);
         LayoutCache layout = layout(context);
         List<Integer> visibleIndices = new java.util.ArrayList<>();
         float maxScroll = Math.max(0.0F, layout.contentHeight() - context.optionViewportHeight());
