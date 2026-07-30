@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import com.jvn.villagerretaliation.party.PartyWeaponPreference;
 import com.jvn.villagerretaliation.util.VillagerRetaliationVillagerCombatUtil;
+import com.jvn.villagerretaliation.villager.VillagerEquipmentMending;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.function.Predicate;
@@ -83,6 +84,7 @@ public final class VillagerCombatLoadoutService {
         return villager != null
                 && !VillagerRetaliationVillagerCombatUtil.isInCombat(villager)
                 && !HiredVillagerWorkService.isActivelyWorking(villager)
+                && !VillagerEquipmentMending.shouldKeepMainHandEquipped(villager)
                 && stowWeapons(villager, false);
     }
 

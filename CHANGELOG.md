@@ -1,4 +1,5 @@
 # Changelog
+- Animal handlers now collect cull drops and nearby work XP before selecting another cull target, and keep a held Mending weapon equipped until it is repaired and any excess villager-owned XP is consumed.
 - Fixed animal handlers overlooking distant herds within large job sites by periodically caching animals across the full assigned area and using bounded intermediate path steps for breeding, culling, and product collection.
 - Consolidated assigned Tool and Input storage into Supplies; existing assignments and saved Clipboard modes migrate automatically, and both workers and couriers use the unified chest purpose.
 - Villagers now stow held weapons outside combat whenever personal or party storage has room, while active workers keep and dynamically switch the tool needed for their current job action; saved melee/range preferences still control which weapon they draw for combat.

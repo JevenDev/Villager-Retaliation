@@ -30,6 +30,17 @@ public final class VillagerEquipmentMending {
         return false;
     }
 
+    public static boolean shouldKeepMainHandEquipped(Villager villager) {
+        ItemStack held = villager.getMainHandItem();
+        if (!hasRepairWithXpEffect(held, EquipmentSlot.MAINHAND, villager)) {
+            return false;
+        }
+        if (held.isDamaged()) {
+            return true;
+        }
+        return VillagerWorkExperience.hasNearbyOwnedExperience(villager);
+    }
+
     public static boolean repairWithXp(Villager villager, int value) {
         if (!(villager.level() instanceof ServerLevel serverLevel) || value <= 0) {
             return false;

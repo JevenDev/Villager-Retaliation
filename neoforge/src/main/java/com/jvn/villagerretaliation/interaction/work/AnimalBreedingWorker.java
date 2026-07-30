@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.inventory.AssignedStorageService;
 import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.skill.HiredWorkPractice;
 import com.jvn.villagerretaliation.villager.VillagerTaskNavigationUtil;
+import com.jvn.villagerretaliation.villager.VillagerWorkExperience;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -53,6 +54,9 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private static final int VANILLA_PARENT_BREEDING_COOLDOWN_TICKS = 6000;
     private static final int ANIMAL_SCAN_INTERVAL_TICKS = 100;
     private static final int ANIMAL_INTERMEDIATE_STEP = 12;
+    private static final String CULL_CLEANUP_PENDING_TAG = "AnimalCullCleanupPending";
+    private static final String CULL_CLEANUP_STARTED_TAG = "AnimalCullCleanupStarted";
+    private static final int CULL_CLEANUP_TIMEOUT_TICKS = 100;
     private static final int ANIMAL_INTERMEDIATE_HORIZONTAL_RADIUS = 3;
     private static final int ANIMAL_INTERMEDIATE_VERTICAL_RADIUS = 3;
     private static final int MAX_ANIMAL_INTERMEDIATE_PATH_ATTEMPTS = 16;
@@ -97,6 +101,11 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     public WorkResult tick(ServerLevel level, Villager villager, ServerPlayer hirer, HiredWorkContext context) {
         if (!context.hasWorkArea()) {
             return waitForWorkAreaAssignment(level, villager, context);
+        }
+
+        WorkResult cullCleanupResult = continueCullCleanup(level, villager, context);
+        if (cullCleanupResult != null) {
+            return cullCleanupResult;
         }
 
         WorkResult shearingDepositResult = continuePeriodicShearingDeposit(level, villager, context);
@@ -281,6 +290,7 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
 
         damageTool(context, villager, weaponResult.tool());
         swingWorkTool(villager);
+        beginCullCleanup(level, context);
         setTaskState(context, HiredWorkerTaskState.IDLE, animal.blockPosition());
         return WorkResult.completedWithPractice(
                 "interaction.work.animal_breeding.culled_animal",
@@ -749,6 +759,41 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
                 ANIMAL_DROP_PICKUP_REACH_SQR,
                 0.45D,
                 ANIMAL_DROP_PICKUP_MESSAGES);
+    }
+
+    private WorkResult continueCullCleanup(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context) {
+        CompoundTag state = context.state();
+        if (!state.getBoolean(CULL_CLEANUP_PENDING_TAG)) {
+            return null;
+        }
+
+        WorkResult drops = collectAnimalDrops(level, villager, context);
+        if (drops != null) {
+            return drops;
+        }
+
+        long elapsed = level.getGameTime() - state.getLong(CULL_CLEANUP_STARTED_TAG);
+        boolean waitingForDropsToSettle = elapsed < 2L;
+        boolean waitingForExperience = VillagerWorkExperience.hasNearbyOwnedExperience(villager);
+        if (elapsed < CULL_CLEANUP_TIMEOUT_TICKS
+                && (waitingForDropsToSettle || waitingForExperience)) {
+            stopWorkNavigation(villager);
+            context.setProgressTicks(0);
+            setTaskState(context, HiredWorkerTaskState.COLLECTING_OUTPUT, villager.blockPosition());
+            return WorkResult.progressed("interaction.work.animal_breeding.collected_animal_drops");
+        }
+
+        state.remove(CULL_CLEANUP_PENDING_TAG);
+        state.remove(CULL_CLEANUP_STARTED_TAG);
+        return null;
+    }
+
+    private static void beginCullCleanup(ServerLevel level, HiredWorkContext context) {
+        context.state().putBoolean(CULL_CLEANUP_PENDING_TAG, true);
+        context.state().putLong(CULL_CLEANUP_STARTED_TAG, level.getGameTime());
     }
 
     private AnimalProductTarget findAnimalProductTarget(ServerLevel level, Villager villager, HiredWorkContext context) {

@@ -7,6 +7,7 @@ import net.minecraft.world.phys.Vec3;
 
 public final class VillagerWorkExperience {
     private static final String OWNER_TAG = "VillagerRetaliationWorkExperienceOwner";
+    public static final double PICKUP_RANGE = 8.0D;
 
     private VillagerWorkExperience() {
     }
@@ -24,5 +25,12 @@ public final class VillagerWorkExperience {
     public static boolean belongsTo(ExperienceOrb orb, Villager villager) {
         return orb.getPersistentData().hasUUID(OWNER_TAG)
                 && orb.getPersistentData().getUUID(OWNER_TAG).equals(villager.getUUID());
+    }
+
+    public static boolean hasNearbyOwnedExperience(Villager villager) {
+        return !villager.level().getEntitiesOfClass(
+                ExperienceOrb.class,
+                villager.getBoundingBox().inflate(PICKUP_RANGE),
+                orb -> orb.isAlive() && belongsTo(orb, villager)).isEmpty();
     }
 }

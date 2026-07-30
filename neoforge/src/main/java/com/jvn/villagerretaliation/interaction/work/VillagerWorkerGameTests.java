@@ -844,6 +844,59 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 160)
+    public static void animalHandlerCollectsCullDropsBeforeNextTarget(GameTestHelper helper) {
+        buildFloor(helper, 0, 7, 0, 7, 1);
+        ServerLevel level = helper.getLevel();
+        level.getGameRules().getRule(GameRules.RULE_DOMOBLOOT).set(true, level.getServer());
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalCullDropOrder");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(2, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(3, 2, 4));
+        spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 4));
+
+        CompoundTag state = new CompoundTag();
+        HiredAnimalCullSettings.setCap(state, 2);
+        HiredWorkContext context = context(
+                helper,
+                villager,
+                state,
+                new BlockPos(1, 2, 1),
+                new BlockPos(6, 4, 6),
+                true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 100, () ->
+                countAliveAnimals(level, helper, Cow.class, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6)) == 3);
+
+        ItemEntity guaranteedDrop = new ItemEntity(
+                level,
+                villager.getX(),
+                villager.getY(),
+                villager.getZ(),
+                new ItemStack(Items.BEEF));
+        guaranteedDrop.setNoPickUpDelay();
+        level.addFreshEntity(guaranteedDrop);
+
+        for (int tick = 0; tick < 3; tick++) {
+            worker.tick(level, villager, hirer, context);
+        }
+
+        helper.assertValueEqual(
+                countAliveAnimals(level, helper, Cow.class, new BlockPos(1, 2, 1), new BlockPos(6, 4, 6)),
+                3,
+                "animal handler must finish post-cull cleanup before starting another cull");
+        helper.assertTrue(
+                countInventoryItem(context.inventory(), Items.BEEF) > 0,
+                "animal handler should pick up the completed cull's drops during cleanup");
+
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void hunterCollectsLootNearRoute(GameTestHelper helper) {
         buildFloor(helper, 0, 8, 0, 8, 1);
