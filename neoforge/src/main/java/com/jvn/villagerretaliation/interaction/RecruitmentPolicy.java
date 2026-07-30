@@ -40,13 +40,16 @@ public final class RecruitmentPolicy {
                     ? Decision.allowedDecision()
                     : Decision.denied(DenialReason.OWNED_BY_ANOTHER_PLAYER);
         }
-        if (command != VillagerAssignmentCommand.FOLLOW) {
+        if (command != VillagerAssignmentCommand.FOLLOW && command != VillagerAssignmentCommand.STAY) {
             return Decision.denied(DenialReason.NOT_HIRED);
         }
+        VillagerReputationLevel requiredReputation = command == VillagerAssignmentCommand.STAY
+                ? VillagerReputationLevel.REVERED
+                : VillagerReputationLevel.NEUTRAL;
         return VillagerAssignmentStore.commandOwner(villager)
                 .filter(owner -> !owner.equals(player.getUUID()))
                 .map(owner -> Decision.denied(DenialReason.COMMANDED_BY_ANOTHER_PLAYER))
-                .orElseGet(() -> hasTrust(level, villager, player, VillagerReputationLevel.NEUTRAL)
+                .orElseGet(() -> hasTrust(level, villager, player, requiredReputation)
                         ? Decision.allowedDecision()
                         : Decision.denied(DenialReason.INSUFFICIENT_REPUTATION));
     }

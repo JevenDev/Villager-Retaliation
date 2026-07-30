@@ -32,6 +32,8 @@ public record OpenVillagerInteractionPayload(
         VillagerMood primaryMood,
         boolean followingPlayer,
         boolean stayingHere,
+        boolean followCommandAvailable,
+        boolean stayCommandAvailable,
         long assignmentRevision,
         boolean routineChatMuted,
         boolean forcedDialogue,
@@ -114,6 +116,8 @@ public record OpenVillagerInteractionPayload(
         buffer.writeEnum(payload.primaryMood());
         buffer.writeBoolean(payload.followingPlayer());
         buffer.writeBoolean(payload.stayingHere());
+        buffer.writeBoolean(payload.followCommandAvailable());
+        buffer.writeBoolean(payload.stayCommandAvailable());
         buffer.writeVarLong(payload.assignmentRevision());
         buffer.writeBoolean(payload.routineChatMuted());
         buffer.writeBoolean(payload.forcedDialogue());
@@ -186,6 +190,8 @@ public record OpenVillagerInteractionPayload(
                 buffer.readEnum(VillagerReputationLevel.class),
                 buffer.readEnum(DialogueDisposition.class),
                 buffer.readEnum(VillagerMood.class),
+                buffer.readBoolean(),
+                buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readVarLong(),

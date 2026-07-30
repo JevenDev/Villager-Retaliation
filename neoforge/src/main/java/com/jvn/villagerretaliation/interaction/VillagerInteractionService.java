@@ -392,7 +392,7 @@ public final class VillagerInteractionService {
         return List.of(
                 DialogueOptionDefinition.simple(BLUEPRINT_START_OPTION_ID, "Start job", DialogueRequestType.QUESTION, 0),
                 DialogueOptionDefinition.simple(BLUEPRINT_CHANGE_OPTION_ID, "Change blueprint", DialogueRequestType.QUESTION, 1),
-                DialogueOptionDefinition.simple(BLUEPRINT_NEVERMIND_OPTION_ID, "Nevermind", DialogueRequestType.QUESTION, 2));
+                DialogueOptionDefinition.simple(BLUEPRINT_NEVERMIND_OPTION_ID, "Never mind", DialogueRequestType.QUESTION, 2));
     }
 
     public static void openInteractionScreen(ServerPlayer player, Villager villager) {

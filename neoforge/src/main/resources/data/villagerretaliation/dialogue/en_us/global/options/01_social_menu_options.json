@@ -11,7 +11,7 @@
   "options": [
     {
       "id": "adult_family",
-      "label": "Ask About Family",
+      "label": "Ask about family",
       "type": "dialogue_option",
       "request": "question",
       "order": 2,
@@ -24,7 +24,7 @@
     },
     {
       "id": "adult_relationships",
-      "label": "Ask About Relationships",
+      "label": "Ask about relationships",
       "type": "dialogue_option",
       "request": "question",
       "order": 3,

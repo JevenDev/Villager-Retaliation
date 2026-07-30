@@ -11,7 +11,7 @@
   "options": [
     {
       "id": "baby_greeting",
-      "label": "Say Hello",
+      "label": "Say hello",
       "type": "dialogue_option",
       "request": "greeting",
       "order": 0,
@@ -19,7 +19,7 @@
     },
     {
       "id": "baby_today_question",
-      "label": "Ask About Today",
+      "label": "Ask about today",
       "type": "dialogue_option",
       "request": "question",
       "order": 1,
@@ -27,7 +27,7 @@
     },
     {
       "id": "baby_question",
-      "label": "Ask What They Know",
+      "label": "Ask what they know",
       "type": "dialogue_option",
       "request": "question",
       "order": 2,
@@ -35,7 +35,7 @@
     },
     {
       "id": "baby_family",
-      "label": "Ask About Family",
+      "label": "Ask about family",
       "type": "dialogue_option",
       "request": "question",
       "order": 2,
@@ -48,7 +48,7 @@
     },
     {
       "id": "baby_gift_preferences",
-      "label": "Ask About Gifts",
+      "label": "Ask about gifts",
       "type": "dialogue_option",
       "request": "gift_preferences",
       "order": 3,
@@ -56,7 +56,7 @@
     },
     {
       "id": "baby_story",
-      "label": "Ask for a Story",
+      "label": "Ask for a story",
       "type": "dialogue_option",
       "request": "story",
       "order": 4,
@@ -64,7 +64,7 @@
     },
     {
       "id": "baby_share_story",
-      "label": "Share a Story",
+      "label": "Share a story",
       "type": "dialogue_option",
       "request": "share_story",
       "order": 5,
@@ -73,7 +73,7 @@
     },
     {
       "id": "baby_joke",
-      "label": "Tell Joke",
+      "label": "Tell a joke",
       "type": "dialogue_option",
       "request": "joke",
       "order": 6,
@@ -81,7 +81,7 @@
     },
     {
       "id": "baby_insult",
-      "label": "Be Mean",
+      "label": "Be mean",
       "type": "dialogue_option",
       "request": "insult",
       "order": 7,
