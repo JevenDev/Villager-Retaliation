@@ -273,6 +273,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private VillagerMood primaryMood;
     private boolean followingPlayer;
     private boolean stayingHere;
+    private final boolean followCommandAvailable;
+    private final boolean stayCommandAvailable;
     private long assignmentRevision;
     private boolean routineChatMuted;
     private final boolean forcedDialogue;
@@ -421,6 +423,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             VillagerMood primaryMood,
             boolean followingPlayer,
             boolean stayingHere,
+            boolean followCommandAvailable,
+            boolean stayCommandAvailable,
             long assignmentRevision,
             boolean routineChatMuted,
             boolean forcedDialogue,
@@ -489,6 +493,8 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.primaryMood = primaryMood == null ? VillagerMood.NEUTRAL : primaryMood;
         this.followingPlayer = followingPlayer;
         this.stayingHere = stayingHere;
+        this.followCommandAvailable = followCommandAvailable;
+        this.stayCommandAvailable = stayCommandAvailable;
         this.assignmentRevision = Math.max(0L, assignmentRevision);
         this.routineChatMuted = routineChatMuted;
         this.forcedDialogue = forcedDialogue;
@@ -1431,9 +1437,24 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.partyRecruitAvailable) {
             addOption("party.recruit", this::openPartyRecruitConfirmationPage);
         }
-        if (this.hiredByPlayer && !this.oneOffBuilderJob) {
-            addOption("recruit.about_contract", this::openContractPage);
-        } else if (this.hiredByOtherPlayer) {
+        if (this.hiredByPlayer) {
+            addOption("recruit.work", this::openWorkPage);
+            if (!this.oneOffBuilderJob) {
+                addOption("recruit.about_role", this::openRolePage);
+            }
+            if (this.jobInventoryAvailable) {
+                addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
+            }
+            addOption("recruit.storage", this::openStoragePage);
+            if (!this.oneOffBuilderJob) {
+                addOption("recruit.payment", this::openPaymentPage);
+                addOption("recruit.about_contract", this::openContractPage);
+            } else if (this.mountFeatureAvailable) {
+                addMountAssignmentOption();
+            }
+            return;
+        }
+        if (this.hiredByOtherPlayer) {
             addOption("recruit.contract", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
         } else if (canHireVillager()) {
             addOption("recruit.hire", this::openHirePage);
@@ -1441,33 +1462,13 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (this.jobInventoryAvailable) {
             addOption("recruit.job_inventory", () -> requestRecruit(VillagerRecruitRequestPayload.Action.OPEN_JOB_INVENTORY));
         }
-        if (this.hiredByPlayer) {
-            addOption("recruit.storage", this::openStoragePage);
-        }
-        if (this.hiredByPlayer) {
-            if (!this.oneOffBuilderJob) {
-                addOption("recruit.payment", this::openPaymentPage);
-                addOption("recruit.about_role", this::openRolePage);
-            }
-            addOption("recruit.work", this::openWorkPage);
-            if (this.mountFeatureAvailable) {
-                addOption(this.assignedMount ? "recruit.unassign_mount" : "recruit.assign_mount",
-                        () -> requestRecruit(this.assignedMount
-                                ? VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT
-                                : VillagerRecruitRequestPayload.Action.START_MOUNT_ASSIGNMENT));
-            }
-        }
-        if (this.hiredByPlayer && !this.oneOffBuilderJob) {
-            addOption("recruit.end_hire", () -> {
-                openEndContractConfirmationPage();
-                requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_END_HIRE_CONFIRMATION);
-            });
-        }
-        if (this.followingPlayer) {
-            addOption("recruit.stop_following", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_FOLLOWING));
-        } else if (this.stayingHere) {
-            addOption("recruit.stop_staying_here", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_STAYING_HERE));
-        }
+    }
+
+    private void addMountAssignmentOption() {
+        addOption(this.assignedMount ? "recruit.unassign_mount" : "recruit.assign_mount",
+                () -> requestRecruit(this.assignedMount
+                        ? VillagerRecruitRequestPayload.Action.UNASSIGN_MOUNT
+                        : VillagerRecruitRequestPayload.Action.START_MOUNT_ASSIGNMENT));
     }
 
     private void addStorageOptions() {
@@ -1529,6 +1530,12 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         addOption(this.recruitedPartyVillager ? "party.contract_days_left" : "recruit.contract_days_left",
                 () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_CONTRACT));
         addOption("recruit.extend_contract", this::openContractExtensionPage);
+        if (this.hiredByPlayer && !this.oneOffBuilderJob) {
+            addOption("recruit.end_hire", () -> {
+                openEndContractConfirmationPage();
+                requestRecruit(VillagerRecruitRequestPayload.Action.PROMPT_END_HIRE_CONFIRMATION);
+            });
+        }
         addOption("recruit.nevermind", this::openRecruitPage);
     }
 
@@ -1587,6 +1594,9 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private void addRoleOptions() {
         addOption("recruit.current_role", () -> requestRecruit(VillagerRecruitRequestPayload.Action.VIEW_ROLE));
         addOption("recruit.change_role", this::openRoleChangePage);
+        if (this.mountFeatureAvailable) {
+            addMountAssignmentOption();
+        }
         if (this.mountFeatureAvailable && this.assignedMount) {
             addOption(this.mountedTravelEnabled
                             ? "recruit.mounted_travel.disable"
@@ -1634,7 +1644,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (isActiveHiredRole(HiredVillagerRole.FARMING)) {
             addOption("recruit.work_config_farming", this::openFarmingOptionsPage);
         }
-        addRoleWorkConfigOption(HiredVillagerRole.FISHING, "recruit.work_config_fishing", VillagerRecruitRequestPayload.Action.CONFIGURE_FISHING);
         if (isActiveHiredRole(HiredVillagerRole.BREWING)) {
             if (this.activeBrewingOrder) {
                 addOption("recruit.stop_brewing", () -> requestRecruit(VillagerRecruitRequestPayload.Action.STOP_BREWING));
@@ -1655,7 +1664,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (isActiveHiredRole(HiredVillagerRole.ANIMAL_HANDLING)) {
             addOption("recruit.work_config_animal_handling", this::openAnimalHandlingOptionsPage);
         }
-        addRoleWorkConfigOption(HiredVillagerRole.NITWIT, "recruit.work_config_nitwit", VillagerRecruitRequestPayload.Action.CONFIGURE_NITWIT);
         addOption("recruit.nevermind", this::openRecruitPage);
     }
 
@@ -1979,8 +1987,20 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 && this.reputationLevel.trustRank() >= VillagerReputationLevel.NEUTRAL.trustRank();
     }
 
+    private boolean canCommandFollow() {
+        return this.followCommandAvailable;
+    }
+
     private boolean canCommandStayHere() {
-        return this.hiredByPlayer;
+        return this.stayCommandAvailable;
+    }
+
+    private boolean canOpenHireJobMenu() {
+        return this.recruitedPartyVillager
+                || this.hiredByPlayer
+                || this.hiredByOtherPlayer
+                || this.partyRecruitAvailable
+                || canHireVillager();
     }
 
     private void addClipboardMenuOptions() {
@@ -3450,6 +3470,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private List<InteractionMenuButton> interactionMenuButtons() {
         boolean inventoryAvailable = canRequestVillagerInventory();
+        boolean hireJobAvailable = canOpenHireJobMenu();
         boolean stayAvailable = this.recruitedPartyVillager
                 ? this.partyVillagerAuthorized
                 : this.stayingHere || canCommandStayHere();
@@ -3511,14 +3532,16 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                     VillagerRetaliationClientAssets.PARTY_RECRUITMENT_PLACEHOLDER_ICON,
                     translate(this.recruitedPartyVillager
                             ? "root.party"
-                            : this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "interaction_button.hire_job"),
-                    translate(this.recruitedPartyVillager
-                            ? "interaction_button.party.description"
-                            : this.hiredByPlayer || this.hiredByOtherPlayer
-                                    ? "interaction_button.job.description"
-                                    : "interaction_button.hire_job.description"),
+                            : this.hiredByPlayer || this.hiredByOtherPlayer ? "root.job" : "root.recruit"),
+                    translate(hireJobAvailable
+                            ? this.recruitedPartyVillager
+                                    ? "interaction_button.party.description"
+                                    : this.hiredByPlayer || this.hiredByOtherPlayer
+                                            ? "interaction_button.job.description"
+                                            : "interaction_button.hire_job.description"
+                            : "interaction_button.hire_job.locked_description"),
                     this::openRecruitPage,
-                    true));
+                    hireJobAvailable));
         }
         buttons.add(new InteractionMenuButton(
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_INVENTORY_TEXTURE,
@@ -3557,9 +3580,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return new InteractionMenuButton(
                 VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_START_FOLLOW_TEXTURE,
                 translate("recruit.follow_me"),
-                translate("interaction_button.follow_me.description"),
+                translate(canCommandFollow()
+                        ? "interaction_button.follow_me.description"
+                        : "interaction_button.follow_me.locked_description"),
                 () -> requestRecruit(VillagerRecruitRequestPayload.Action.FOLLOW),
-                true);
+                canCommandFollow());
     }
 
     private InteractionMenuButton stayInteractionButton(boolean active) {

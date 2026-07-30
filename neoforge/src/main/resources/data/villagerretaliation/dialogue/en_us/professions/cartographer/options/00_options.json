@@ -11,7 +11,7 @@
   "options": [
     {
       "id": "cartographer_map_report",
-      "label": "Report Discovery",
+      "label": "Report discovery",
       "type": "dialogue_option",
       "request": "map_report",
       "order": 4,

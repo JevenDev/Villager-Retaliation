@@ -11,7 +11,7 @@
   "options": [
     {
       "id": "adult_general_question",
-      "label": "Small Talk",
+      "label": "Small talk",
       "type": "dialogue_option",
       "request": "question",
       "order": 1,
@@ -27,7 +27,7 @@
     },
     {
       "id": "adult_question",
-      "label": "Ask Question",
+      "label": "Ask a question",
       "type": "dialogue_option",
       "request": "question",
       "order": 2,
@@ -35,7 +35,7 @@
     },
     {
       "id": "adult_gift_preferences",
-      "label": "Ask About Gifts",
+      "label": "Ask about gifts",
       "type": "dialogue_option",
       "request": "gift_preferences",
       "order": 3,
@@ -43,7 +43,7 @@
     },
     {
       "id": "adult_story",
-      "label": "Ask for Story",
+      "label": "Ask for a story",
       "type": "dialogue_option",
       "request": "story",
       "order": 4,
@@ -51,7 +51,7 @@
     },
     {
       "id": "adult_share_story",
-      "label": "Share a Story",
+      "label": "Share a story",
       "type": "dialogue_option",
       "request": "share_story",
       "order": 5,
@@ -60,7 +60,7 @@
     },
     {
       "id": "adult_joke",
-      "label": "Tell Joke",
+      "label": "Tell a joke",
       "type": "dialogue_option",
       "request": "joke",
       "order": 6,

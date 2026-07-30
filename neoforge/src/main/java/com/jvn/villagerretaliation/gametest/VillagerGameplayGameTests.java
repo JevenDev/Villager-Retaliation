@@ -809,6 +809,31 @@ public final class VillagerGameplayGameTests {
         helper.assertTrue(
                 VillagerRecruitmentService.stopFollowing(level, villager, followerOwner),
                 "a player should be able to stop their own unpaid follower");
+        helper.assertFalse(
+                VillagerRecruitmentService.stayHere(level, villager, followerOwner),
+                "an unhired neutral villager should reject a stay request");
+        helper.assertValueEqual(
+                RecruitmentPolicy.mayCommand(level, villager, followerOwner, VillagerAssignmentCommand.STAY).reason(),
+                RecruitmentPolicy.DenialReason.INSUFFICIENT_REPUTATION,
+                "unhired stay commands should require revered reputation");
+        VillagerReputationManager.setReputation(
+                level, villager, followerOwner.getUUID(), VillagerRetaliationConfig.REVERED_THRESHOLD.get());
+        helper.assertTrue(
+                VillagerRecruitmentService.stayHere(level, villager, followerOwner),
+                "a revered villager should accept a stay request without a hire contract");
+        VillagerReputationManager.setReputation(
+                level, villager, otherPlayer.getUUID(), VillagerRetaliationConfig.REVERED_THRESHOLD.get());
+        helper.assertFalse(
+                VillagerRecruitmentService.stayHere(level, villager, otherPlayer),
+                "a revered villager should preserve another player's active command");
+        helper.assertValueEqual(
+                RecruitmentPolicy.mayCommand(level, villager, otherPlayer, VillagerAssignmentCommand.STAY).reason(),
+                RecruitmentPolicy.DenialReason.COMMANDED_BY_ANOTHER_PLAYER,
+                "revered stay commands should still respect command ownership");
+        helper.assertTrue(
+                VillagerRecruitmentService.stopFollowing(level, villager, followerOwner),
+                "the revered player should be able to release their stay command");
+        VillagerReputationManager.setReputation(level, villager, followerOwner.getUUID(), 0);
         helper.assertTrue(
                 HiredRoleWorkerRegistry.get(HiredVillagerRole.COMBAT) != null
                         && HiredRoleWorkerRegistry.get(HiredVillagerRole.FARMING) != null,

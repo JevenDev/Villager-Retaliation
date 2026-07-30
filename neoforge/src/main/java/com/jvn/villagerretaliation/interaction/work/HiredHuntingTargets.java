@@ -76,7 +76,7 @@ public final class HiredHuntingTargets {
             case ANIMALS -> "Hunt animals";
             case HOSTILES -> "Hunt hostiles";
             case PLAYERS -> "Hunt players";
-            case ALL -> "Hunt all";
+            case ALL -> "Hunt animals and hostiles";
             default -> "Hunting target";
         };
     }
@@ -124,10 +124,10 @@ public final class HiredHuntingTargets {
 
         public String label() {
             if (this.animals && this.hostiles && this.players) {
-                return "Hunt all + players";
+                return "Hunt animals, hostiles, and players";
             }
             if (this.animals && this.hostiles) {
-                return "Hunt all";
+                return "Hunt animals and hostiles";
             }
             if (this.animals && this.players && !this.hostiles) {
                 return "Hunt animals + players";

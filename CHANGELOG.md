@@ -1,4 +1,6 @@
 # Changelog
+- Unhired villagers at Revered reputation or higher can now be told to stay, while active hirers retain access regardless of reputation.
+- Standardized normal, hired-job, and party-villager interaction options; locked unavailable commands consistently and removed misleading no-op work configuration entries.
 - Animal handlers now collect cull drops and nearby work XP before selecting another cull target, and keep a held Mending weapon equipped until it is repaired and any excess villager-owned XP is consumed.
 - Fixed animal handlers overlooking distant herds within large job sites by periodically caching animals across the full assigned area and using bounded intermediate path steps for breeding, culling, and product collection.
 - Consolidated assigned Tool and Input storage into Supplies; existing assignments and saved Clipboard modes migrate automatically, and both workers and couriers use the unified chest purpose.
