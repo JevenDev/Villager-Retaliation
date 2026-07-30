@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.client;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import com.jvn.villagerretaliation.interaction.HiredVillagerRole;
 import com.jvn.villagerretaliation.reputation.VillagerReputationLevel;
 import net.minecraft.resources.ResourceLocation;
 
@@ -276,6 +277,27 @@ public final class VillagerRetaliationClientAssets {
             case HOSTILE -> texture("gui/container/icons/hostile");
             case DESPISED -> texture("gui/container/icons/despised");
             case FEARED -> texture("gui/container/icons/feared");
+        };
+    }
+
+    public static ResourceLocation hiredJobIcon(HiredVillagerRole role) {
+        if (role == null) {
+            return null;
+        }
+        return switch (role) {
+            case COMBAT -> texture("gui/villager_interaction_screen/job_icons/combat");
+            case HUNTING -> texture("gui/villager_interaction_screen/job_icons/hunting");
+            case MINING -> texture("gui/villager_interaction_screen/job_icons/mining");
+            case LOGGING -> texture("gui/villager_interaction_screen/job_icons/logging");
+            case FARMING -> texture("gui/villager_interaction_screen/job_icons/farming");
+            case FISHING -> texture("gui/villager_interaction_screen/job_icons/fishing");
+            case BREWING -> texture("gui/villager_interaction_screen/job_icons/brewing");
+            case CRAFTSMAN -> texture("gui/villager_interaction_screen/job_icons/craftsman");
+            case ANIMAL_HANDLING -> texture("gui/villager_interaction_screen/job_icons/animal_handling");
+            case COOK -> texture("gui/villager_interaction_screen/job_icons/cook");
+            case SMELTER -> texture("gui/villager_interaction_screen/job_icons/smelter");
+            case COURIER -> texture("gui/villager_interaction_screen/job_icons/courier");
+            case BUILDER, NITWIT -> null;
         };
     }
 

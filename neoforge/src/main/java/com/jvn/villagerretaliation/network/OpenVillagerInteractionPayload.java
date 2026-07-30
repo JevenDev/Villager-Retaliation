@@ -41,6 +41,7 @@ public record OpenVillagerInteractionPayload(
         boolean clipboardSelectionAssigned,
         boolean hiredByPlayer,
         boolean hiredByOtherPlayer,
+        String hirerName,
         int hiredRemainingDays,
         boolean inventoryAvailable,
         boolean jobInventoryAvailable,
@@ -97,6 +98,7 @@ public record OpenVillagerInteractionPayload(
     private static final int PROFESSION_NAME_LENGTH = 128;
     private static final int GENDER_NAME_LENGTH = 32;
     private static final int CURRENCY_LABEL_LENGTH = 64;
+    private static final int HIRER_NAME_LENGTH = 64;
     public static final Type<OpenVillagerInteractionPayload> TYPE = VillagerPayloads.type("open_villager_interaction");
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenVillagerInteractionPayload> STREAM_CODEC =
             VillagerPayloads.codec(OpenVillagerInteractionPayload::encode, OpenVillagerInteractionPayload::decode);
@@ -125,6 +127,7 @@ public record OpenVillagerInteractionPayload(
         buffer.writeBoolean(payload.clipboardSelectionAssigned());
         buffer.writeBoolean(payload.hiredByPlayer());
         buffer.writeBoolean(payload.hiredByOtherPlayer());
+        buffer.writeUtf(payload.hirerName(), HIRER_NAME_LENGTH);
         buffer.writeVarInt(payload.hiredRemainingDays());
         buffer.writeBoolean(payload.inventoryAvailable());
         buffer.writeBoolean(payload.jobInventoryAvailable());
@@ -201,6 +204,7 @@ public record OpenVillagerInteractionPayload(
                 buffer.readBoolean(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),
+                buffer.readUtf(HIRER_NAME_LENGTH),
                 buffer.readVarInt(),
                 buffer.readBoolean(),
                 buffer.readBoolean(),

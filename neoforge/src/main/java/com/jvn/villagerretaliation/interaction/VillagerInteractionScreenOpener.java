@@ -40,6 +40,7 @@ import com.jvn.villagerretaliation.party.PartyVillagerRecord;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
@@ -170,6 +171,7 @@ public final class VillagerInteractionScreenOpener {
         ReputationSnapshot reputation = reputationSnapshot(level, villager, player);
         boolean hiredByPlayer = HiredVillagerContractService.isHiredBy(level, villager, player);
         boolean hiredAnyPlayer = HiredVillagerContractService.isHired(level, villager);
+        String hirerName = hiredAnyPlayer ? hirerName(level, villager) : "";
         PartyRecord villagerParty = PartyService.getPartyForVillager(level, villager.getUUID()).orElse(null);
         PartyVillagerRecord partyVillager = villagerParty == null ? null : villagerParty.villager(villager.getUUID());
         PartyRecord playerParty = PartyService.getPartyForPlayer(level, player.getUUID()).orElse(null);
@@ -221,6 +223,7 @@ public final class VillagerInteractionScreenOpener {
                 clipboardMenu && VillagerInteractionService.clipboardSelectionHasAssignment(player, level, villager),
                 hiredByPlayer,
                 hiredAnyPlayer && !hiredByPlayer,
+                hirerName,
                 HiredVillagerContractService.getRemainingHireDays(level, villager),
                 com.jvn.villagerretaliation.inventory.VillagerInventoryAccess.canOpenPreferred(
                         level, villager, player),
@@ -276,6 +279,26 @@ public final class VillagerInteractionScreenOpener {
         VillagerReputationManager.ReputationSnapshot reputation =
                 VillagerReputationManager.getReputationSnapshot(level, villager, player.getUUID());
         return new ReputationSnapshot(reputation.value(), reputation.level());
+    }
+
+    private static String hirerName(ServerLevel level, Villager villager) {
+        UUID hirerId = HiredVillagerContractService.currentContractHirer(villager).orElse(null);
+        if (hirerId == null) {
+            return "Player";
+        }
+        ServerPlayer online = level.getServer().getPlayerList().getPlayer(hirerId);
+        if (online != null) {
+            return online.getGameProfile().getName();
+        }
+        var profileCache = level.getServer().getProfileCache();
+        if (profileCache == null) {
+            return "Player";
+        }
+        return profileCache
+                .get(hirerId)
+                .map(profile -> profile.getName())
+                .filter(name -> !name.isBlank())
+                .orElse("Player");
     }
 
     private static String professionTranslationKey(Villager villager) {

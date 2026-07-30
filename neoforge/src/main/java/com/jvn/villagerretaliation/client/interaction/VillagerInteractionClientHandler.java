@@ -129,6 +129,7 @@ public final class VillagerInteractionClientHandler {
                 payload.clipboardSelectionAssigned(),
                 payload.hiredByPlayer(),
                 payload.hiredByOtherPlayer(),
+                payload.hirerName(),
                 payload.hiredRemainingDays(),
                 payload.inventoryAvailable(),
                 payload.jobInventoryAvailable(),
