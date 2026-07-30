@@ -899,6 +899,7 @@ public final class VillagerRetaliationEvents {
             if (villager.level() instanceof ServerLevel level) {
                 HiredVillagerWorkService.onVillagerLeaveLevel(level, villager);
             }
+            AssignedStorageService.releaseCourierClaims(villager);
             VillagerCombatSurvivalService.onVillagerLeaveLevel(villager);
             HiredJobInventory.clearRuntimeState(villager);
             VillagerTaskNavigationUtil.clearRuntimeState(villager);
