@@ -207,6 +207,7 @@ public final class VillagerRetaliationEvents {
                 java.util.concurrent.CompletableFuture
                         .runAsync(() -> {
                             VillagerDataWarmup.clearResourceCaches();
+                            com.jvn.villagerretaliation.item.VillagerRecipeSemantics.markReloaded();
                             BUILDER_CATALOG_SYNC_DIRTY.set(true);
                         }, backgroundExecutor)
                         .thenCompose(barrier::wait));

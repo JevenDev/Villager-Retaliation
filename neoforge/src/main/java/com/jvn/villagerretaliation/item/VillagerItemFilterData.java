@@ -323,14 +323,21 @@ public final class VillagerItemFilterData {
 
     /** Combines every configured entry uniformly, then applies the outer allow/deny mode. */
     public static boolean matches(Level level, ItemStack filter, ItemStack candidate) {
-        return matches(level, filter, candidate, 0);
+        return VillagerFilterMatcher.matches(level, filter, candidate);
     }
 
-    private static boolean matches(Level level, ItemStack filter, ItemStack candidate, int depth) {
-        if (depth > MAX_NESTING_DEPTH
-                || !VillagerRetaliationItems.isItemFilter(filter)
+    static boolean rawMatches(
+            Level level,
+            ItemStack filter,
+            ItemStack candidate,
+            VillagerFilterMatcher.MatchContext context) {
+        if (!VillagerRetaliationItems.isItemFilter(filter)
                 || candidate == null
                 || candidate.isEmpty()) {
+            return false;
+        }
+        if (!isWellFormed(filter) || !VillagerFilterPolicy.read(filter).valid()) {
+            context.invalidate();
             return false;
         }
         VillagerItemFilterData data = read(filter);
@@ -348,7 +355,7 @@ public final class VillagerItemFilterData {
             configured = true;
             boolean matched;
             if (VillagerRetaliationItems.isFilter(entry)) {
-                matched = filterEntryMatches(level, entry, candidate, depth + 1);
+                matched = context.nestedMatches(level, entry, candidate);
                 nestedMatches &= matched;
             } else {
                 matched = identityMatches(entry, candidate);
@@ -358,9 +365,8 @@ public final class VillagerItemFilterData {
             anyMatches |= matched;
             allMatch &= matched;
         }
-        boolean listed = data.entryCombination.combine(
+        return data.entryCombination.combine(
                 configured, hasIdentityEntries, identityMatches, nestedMatches, anyMatches, allMatch);
-        return data.mode == Mode.ALLOWLIST ? listed : !listed;
     }
 
     /**
@@ -564,15 +570,72 @@ public final class VillagerItemFilterData {
         return new ItemStack(entry.getItem());
     }
 
-    private static boolean filterEntryMatches(
-            Level level, ItemStack entry, ItemStack candidate, int depth) {
-        if (VillagerRetaliationItems.isAttributeFilter(entry)) {
-            return VillagerAttributeFilterData.matches(level, entry, candidate);
+    private static boolean isWellFormed(ItemStack filter) {
+        CustomData data = filter.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        if (data.isEmpty()) {
+            return true;
         }
-        if (VillagerRetaliationItems.isItemFilter(entry)) {
-            return matches(level, entry, candidate, depth);
+        CompoundTag customData = data.copyTag();
+        if (!customData.contains(ROOT_TAG)) {
+            return true;
         }
-        return false;
+        if (!customData.contains(ROOT_TAG, Tag.TAG_COMPOUND)) {
+            return false;
+        }
+        CompoundTag root = customData.getCompound(ROOT_TAG);
+        if (root.contains(MODE_TAG)
+                && (!root.contains(MODE_TAG, Tag.TAG_STRING)
+                || !root.getString(MODE_TAG).equalsIgnoreCase(Mode.ALLOWLIST.id)
+                && !root.getString(MODE_TAG).equalsIgnoreCase(Mode.DENYLIST.id))) {
+            return false;
+        }
+        if (root.contains(ENTRY_COMBINATION_TAG)
+                && (!root.contains(ENTRY_COMBINATION_TAG, Tag.TAG_STRING)
+                || !root.getString(ENTRY_COMBINATION_TAG).equalsIgnoreCase(EntryCombination.ANY.id)
+                && !root.getString(ENTRY_COMBINATION_TAG).equalsIgnoreCase(EntryCombination.ALL.id)
+                && !root.getString(ENTRY_COMBINATION_TAG).equalsIgnoreCase(EntryCombination.LEGACY.id))) {
+            return false;
+        }
+        if (!root.contains(ENTRIES_TAG)) {
+            return true;
+        }
+        if (!root.contains(ENTRIES_TAG, Tag.TAG_LIST)) {
+            return false;
+        }
+        ListTag entries = root.getList(ENTRIES_TAG, Tag.TAG_COMPOUND);
+        if (entries.size() > ENTRY_COUNT) {
+            return false;
+        }
+        boolean[] occupied = new boolean[ENTRY_COUNT];
+        for (Tag raw : entries) {
+            if (!(raw instanceof CompoundTag entry)
+                    || !entry.contains(SLOT_TAG, Tag.TAG_INT)
+                    || !entry.contains(ITEM_TAG, Tag.TAG_STRING)) {
+                return false;
+            }
+            int slot = entry.getInt(SLOT_TAG);
+            ResourceLocation itemId = ResourceLocation.tryParse(entry.getString(ITEM_TAG));
+            if (slot < 0 || slot >= ENTRY_COUNT || occupied[slot]
+                    || itemId == null || !BuiltInRegistries.ITEM.containsKey(itemId)) {
+                return false;
+            }
+            occupied[slot] = true;
+            if (entry.contains(DATA_TAG) && !entry.contains(DATA_TAG, Tag.TAG_COMPOUND)) {
+                return false;
+            }
+            if (entry.contains(AMOUNT_TAG)
+                    && (!entry.contains(AMOUNT_TAG, Tag.TAG_INT)
+                    || entry.getInt(AMOUNT_TAG) < UNLIMITED_AMOUNT
+                    || entry.getInt(AMOUNT_TAG) > MAX_ENTRY_AMOUNT)) {
+                return false;
+            }
+            Tag encodedPotion = entry.get(POTION_TAG);
+            if (encodedPotion != null
+                    && PotionContents.CODEC.parse(POTION_NBT_OPS, encodedPotion).result().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static boolean identityMatches(ItemStack configured, ItemStack candidate) {

@@ -22,6 +22,11 @@ public final class VillagerRetaliationRecipes {
                     "attribute_filter_copying",
                     () -> new SimpleCraftingRecipeSerializer<>(VillagerAttributeFilterCopyRecipe::new));
 
+    public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<VillagerRecipeFilterCopyRecipe>>
+            RECIPE_FILTER_COPYING = SERIALIZERS.register(
+                    "recipe_filter_copying",
+                    () -> new SimpleCraftingRecipeSerializer<>(VillagerRecipeFilterCopyRecipe::new));
+
     public static final DeferredHolder<RecipeSerializer<?>, RecipeSerializer<VillagerFilterResetRecipe>>
             FILTER_RESETTING = SERIALIZERS.register(
                     "filter_resetting",

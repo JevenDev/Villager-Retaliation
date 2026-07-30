@@ -74,7 +74,7 @@ public final class VillagerAttributeFilterMenu extends AbstractContainerMenu
     }
 
     public void setClientSelection(VillagerAttributeFilterData.Attribute attribute, boolean inverted) {
-        VillagerAttributeFilterData.setSelected(this.contentHolder, attribute, inverted);
+        VillagerAttributeFilterData.toggleSelected(this.contentHolder, attribute);
     }
 
     public boolean isEditingHeldFilter() {
@@ -168,9 +168,7 @@ public final class VillagerAttributeFilterMenu extends AbstractContainerMenu
         if (!offeredByReference) {
             return false;
         }
-        boolean effectiveInverted = filterPolicy().listMode()
-                == VillagerFilterPolicy.ListMode.DENY_MATCHING;
-        boolean changed = VillagerAttributeFilterData.setSelected(this.contentHolder, attribute, effectiveInverted);
+        boolean changed = VillagerAttributeFilterData.toggleSelected(this.contentHolder, attribute);
         if (changed) {
             this.playerInventory.setChanged();
             broadcastChanges();

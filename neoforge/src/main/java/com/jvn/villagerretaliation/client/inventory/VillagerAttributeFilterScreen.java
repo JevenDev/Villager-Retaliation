@@ -200,7 +200,6 @@ public final class VillagerAttributeFilterScreen
             this.scrollVisibilityTicks = SCROLL_VISIBILITY_TICKS;
             if (nextIndex != this.focusedIndex) {
                 this.focusedIndex = nextIndex;
-                select(this.attributes.get(nextIndex));
             }
             return true;
         }
@@ -317,7 +316,7 @@ public final class VillagerAttributeFilterScreen
     private int selectorWidth() {
         int width = SELECTOR_WIDTH;
         for (VillagerAttributeFilterData.Attribute attribute : this.attributes) {
-            width = Math.max(width, this.font.width(attribute.display()) + ATTRIBUTE_TEXT_PADDING);
+            width = Math.max(width, this.font.width(attributeLabel(attribute)) + ATTRIBUTE_TEXT_PADDING);
         }
         return width;
     }
@@ -329,7 +328,7 @@ public final class VillagerAttributeFilterScreen
             int y) {
         graphics.drawString(
                 this.font,
-                attribute.display(),
+                attributeLabel(attribute),
                 x + 4,
                 y + 5,
                 0xFFFFFFFF,
@@ -343,7 +342,7 @@ public final class VillagerAttributeFilterScreen
             int y) {
         graphics.drawString(
                 this.font,
-                trimmed(attribute.display(), SELECTOR_WIDTH - ATTRIBUTE_TEXT_PADDING),
+                trimmed(attributeLabel(attribute), SELECTOR_WIDTH - ATTRIBUTE_TEXT_PADDING),
                 x + 4,
                 y + 5,
                 0xFFFFFFFF,
@@ -390,8 +389,11 @@ public final class VillagerAttributeFilterScreen
         }
         this.lastReference = reference.copy();
         this.attributes = VillagerAttributeFilterData.availableAttributes(reference, this.minecraft.level);
-        VillagerAttributeFilterData.Attribute selected = this.menu.configuration().attribute();
-        int selectedIndex = selected == null ? -1 : this.attributes.indexOf(selected);
+        int selectedIndex = this.menu.configuration().attributes().stream()
+                .mapToInt(this.attributes::indexOf)
+                .filter(index -> index >= 0)
+                .findFirst()
+                .orElse(-1);
         this.focusedIndex = selectedIndex >= 0 ? selectedIndex : 0;
         this.scrollVisibilityTicks = 0;
     }
@@ -434,12 +436,8 @@ public final class VillagerAttributeFilterScreen
     }
 
     private void select(VillagerAttributeFilterData.Attribute attribute) {
-        VillagerAttributeFilterData.Configuration current = this.menu.configuration();
         boolean inverted = this.menu.filterPolicy().listMode()
                 == VillagerFilterPolicy.ListMode.DENY_MATCHING;
-        if (attribute.equals(current.attribute()) && inverted == current.inverted()) {
-            return;
-        }
         this.menu.setClientSelection(attribute, inverted);
         PacketDistributor.sendToServer(new AttributeFilterSelectPayload(
                 attribute.type(), attribute.value(), inverted));
@@ -481,6 +479,13 @@ public final class VillagerAttributeFilterScreen
         this.decreaseStockButton.active = quantitative && policy.stockTarget().isPresent();
         this.increaseStockButton.active = quantitative
                 && policy.stockTarget().orElse(0) < VillagerFilterPolicy.MAX_STOCK_TARGET;
+    }
+
+    private Component attributeLabel(VillagerAttributeFilterData.Attribute attribute) {
+        boolean selected = this.menu.configuration().attributes().contains(attribute);
+        return Component.literal(selected ? "[x] " : "  ")
+                .withStyle(selected ? ChatFormatting.GREEN : ChatFormatting.DARK_GRAY)
+                .append(attribute.display().copy().withStyle(ChatFormatting.WHITE));
     }
 
     private Component trimmed(Component component, int width) {

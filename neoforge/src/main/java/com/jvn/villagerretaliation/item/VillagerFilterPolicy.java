@@ -304,6 +304,8 @@ public final class VillagerFilterPolicy {
                             amount)
                     .withStyle(ChatFormatting.GRAY));
         }
+        lines.add(Component.translatable("item.villagerretaliation.filter_policy.nested_matcher")
+                .withStyle(ChatFormatting.DARK_GRAY));
         return List.copyOf(lines);
     }
 

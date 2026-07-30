@@ -7,5 +7,9 @@ import net.minecraft.world.level.Level;
 public interface VillagerFilterType {
     boolean supports(ItemStack filter);
 
-    boolean matches(Level level, ItemStack filter, ItemStack candidate);
+    boolean rawMatches(
+            Level level,
+            ItemStack filter,
+            ItemStack candidate,
+            VillagerFilterMatcher.MatchContext context);
 }

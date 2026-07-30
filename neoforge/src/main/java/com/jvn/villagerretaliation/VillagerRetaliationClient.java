@@ -144,6 +144,10 @@ public final class VillagerRetaliationClient {
                 com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.ATTRIBUTE_FILTER.get(),
                 com.jvn.villagerretaliation.client.inventory.VillagerAttributeFilterScreen::new
         );
+        event.register(
+                com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus.RECIPE_FILTER.get(),
+                com.jvn.villagerretaliation.client.inventory.VillagerRecipeFilterScreen::new
+        );
     }
 
     private static void registerTooltipComponents(RegisterClientTooltipComponentFactoriesEvent event) {

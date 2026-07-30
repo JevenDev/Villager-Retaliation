@@ -22,6 +22,8 @@ public final class VillagerRetaliationItems {
             ITEMS.register("item_filter", () -> new VillagerItemFilterItem(new Item.Properties().stacksTo(64)));
     public static final DeferredHolder<Item, Item> ATTRIBUTE_FILTER =
             ITEMS.register("attribute_filter", () -> new VillagerAttributeFilterItem(new Item.Properties().stacksTo(64)));
+    public static final DeferredHolder<Item, Item> RECIPE_FILTER =
+            ITEMS.register("recipe_filter", () -> new VillagerRecipeFilterItem(new Item.Properties().stacksTo(64)));
     public static final DeferredHolder<Item, BlockItem> PAYMENT_BOX =
             ITEMS.register(
                     "payment_box",
@@ -54,7 +56,11 @@ public final class VillagerRetaliationItems {
         return stack != null && stack.is(ATTRIBUTE_FILTER.get());
     }
 
+    public static boolean isRecipeFilter(ItemStack stack) {
+        return stack != null && stack.is(RECIPE_FILTER.get());
+    }
+
     public static boolean isFilter(ItemStack stack) {
-        return isItemFilter(stack) || isAttributeFilter(stack);
+        return isItemFilter(stack) || isAttributeFilter(stack) || isRecipeFilter(stack);
     }
 }

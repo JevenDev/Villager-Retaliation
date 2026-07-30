@@ -2,6 +2,8 @@ package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
+import com.jvn.villagerretaliation.item.VillagerFilterMatcher;
+import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerItemFilterItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
@@ -112,6 +114,61 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void attributeFiltersSupportMultipleMatcherPolicies(GameTestHelper helper) {
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
+        VillagerAttributeFilterData.Attribute placeable = new VillagerAttributeFilterData.Attribute(
+                VillagerAttributeFilterData.AttributeType.PLACEABLE, "");
+        VillagerAttributeFilterData.Attribute fuel = new VillagerAttributeFilterData.Attribute(
+                VillagerAttributeFilterData.AttributeType.FURNACE_FUEL, "");
+        helper.assertTrue(VillagerAttributeFilterData.setSelected(filter, placeable, false),
+                "the first attribute should be stored");
+        helper.assertTrue(VillagerAttributeFilterData.toggleSelected(filter, fuel),
+                "a second distinct attribute should be stored");
+        helper.assertValueEqual(VillagerAttributeFilterData.read(filter).attributes().size(), 2,
+                "multi-attribute configuration size");
+
+        helper.assertTrue(VillagerFilterMatcher.matches(
+                        helper.getLevel(), filter, new ItemStack(Items.STONE)),
+                "Match Any should accept a placeable non-fuel");
+        helper.assertTrue(VillagerFilterMatcher.matches(
+                        helper.getLevel(), filter, new ItemStack(Items.STICK)),
+                "Match Any should accept a fuel that is not placeable");
+        helper.assertFalse(VillagerFilterMatcher.matches(
+                        helper.getLevel(), filter, new ItemStack(Items.APPLE)),
+                "Match Any should reject a candidate satisfying neither attribute");
+
+        VillagerFilterPolicy.setPolicy(
+                filter,
+                VillagerFilterPolicy.TransferDirection.BOTH,
+                VillagerFilterPolicy.ListMode.ALLOW_MATCHING,
+                VillagerFilterPolicy.CombinationMode.MATCH_ALL,
+                java.util.OptionalInt.empty());
+        helper.assertTrue(VillagerFilterMatcher.matches(
+                        helper.getLevel(), filter, new ItemStack(Items.OAK_PLANKS)),
+                "Match All should accept a block that is also furnace fuel");
+        helper.assertFalse(VillagerFilterMatcher.matches(
+                        helper.getLevel(), filter, new ItemStack(Items.STONE)),
+                "Match All should reject a partial match");
+
+        VillagerFilterPolicy.setListMode(filter, VillagerFilterPolicy.ListMode.DENY_MATCHING);
+        helper.assertFalse(VillagerFilterMatcher.matches(
+                        helper.getLevel(), filter, new ItemStack(Items.OAK_PLANKS)),
+                "Deny Matching should reject the complete intersection");
+        helper.assertTrue(VillagerFilterMatcher.matches(
+                        helper.getLevel(), filter, new ItemStack(Items.STONE)),
+                "Deny Matching should permit a partial match");
+
+        CompoundTag malformedData = filter.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        malformedData.getCompound("villagerretaliation:attribute_filter")
+                .putInt("Version", VillagerAttributeFilterData.CURRENT_VERSION + 1);
+        filter.set(DataComponents.CUSTOM_DATA, CustomData.of(malformedData));
+        helper.assertFalse(VillagerFilterMatcher.matches(
+                        helper.getLevel(), filter, new ItemStack(Items.STONE)),
+                "malformed matcher data must fail closed even in Deny Matching mode");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void attributeFiltersMatchDirectlyAndConstrainItemFilterEntries(GameTestHelper helper) {
         ItemStack fuelFilter = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
         VillagerAttributeFilterData.Attribute furnaceFuel = new VillagerAttributeFilterData.Attribute(
@@ -170,7 +227,7 @@ public final class VillagerInventoryGameTests {
         helper.succeed();
     }
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
-    public static void itemFiltersPreservePotionsAndCombineNestedModes(GameTestHelper helper) {
+    public static void itemFiltersPreserveComponentsAndUseRawNestedMatchers(GameTestHelper helper) {
         ItemStack healing = PotionContents.createItemStack(Items.POTION, Potions.HEALING);
         ItemStack poison = PotionContents.createItemStack(Items.POTION, Potions.POISON);
         ItemStack potionFilter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
@@ -192,6 +249,12 @@ public final class VillagerInventoryGameTests {
         ItemStack deniedSticks = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
         VillagerItemFilterData.setMode(deniedSticks, VillagerItemFilterData.Mode.DENYLIST);
         VillagerItemFilterData.setEntry(deniedSticks, 0, new ItemStack(Items.STICK));
+        VillagerFilterPolicy.setPolicy(
+                deniedSticks,
+                VillagerFilterPolicy.TransferDirection.PROVIDE,
+                VillagerFilterPolicy.ListMode.DENY_MATCHING,
+                VillagerFilterPolicy.CombinationMode.MATCH_ANY,
+                java.util.OptionalInt.of(64));
 
         ItemStack combined = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
         VillagerItemFilterData.setEntryCombination(
@@ -203,12 +266,12 @@ public final class VillagerInventoryGameTests {
         helper.assertTrue(VillagerRetaliationItems.isItemFilter(
                         VillagerItemFilterData.entry(combined, 0)),
                 "nested filter configuration should survive serialization");
-        helper.assertTrue(VillagerItemFilterData.matches(
-                        helper.getLevel(), combined, new ItemStack(Items.WOODEN_PICKAXE)),
-                "an item allowed by the nested allowlist and not denied should pass");
         helper.assertFalse(VillagerItemFilterData.matches(
+                        helper.getLevel(), combined, new ItemStack(Items.WOODEN_PICKAXE)),
+                "Match All should reject a candidate outside the nested raw matcher");
+        helper.assertTrue(VillagerItemFilterData.matches(
                         helper.getLevel(), combined, new ItemStack(Items.STICK)),
-                "the nested denylist should exclude an otherwise allowed item");
+                "nested mode, direction, and stock must not change its raw predicate");
         helper.assertFalse(VillagerItemFilterData.matches(
                         helper.getLevel(), combined, new ItemStack(Items.STONE_PICKAXE)),
                 "the nested allowlist should still reject unrelated items");
@@ -225,6 +288,22 @@ public final class VillagerInventoryGameTests {
         ItemStack tooDeep = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
         helper.assertFalse(VillagerItemFilterData.setEntry(tooDeep, 0, nested),
                 "nesting beyond the supported depth should be rejected");
+        helper.assertTrue(VillagerItemFilterData.setEntry(
+                        tooDeep, 0, new ItemStack(Items.STICK)),
+                "a shallow entry should provide a bounded malformed-data fixture");
+        CompoundTag tooDeepData = tooDeep.getOrDefault(
+                DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        CompoundTag tooDeepEntry = tooDeepData
+                .getCompound("villagerretaliation:item_filter")
+                .getList("Entries", Tag.TAG_COMPOUND)
+                .getCompound(0);
+        tooDeepEntry.putString("Item", "villagerretaliation:item_filter");
+        tooDeepEntry.put("Data", nested.getOrDefault(
+                DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag());
+        tooDeep.set(DataComponents.CUSTOM_DATA, CustomData.of(tooDeepData));
+        helper.assertFalse(VillagerFilterMatcher.matches(
+                        helper.getLevel(), tooDeep, new ItemStack(Items.STICK)),
+                "serialized nesting beyond the runtime limit must fail closed");
         helper.succeed();
     }
 
