@@ -461,7 +461,7 @@ final class VillagerInventoryOverflowService {
         static ContainerCandidate resolve(ServerLevel level, BlockPos pos, Container fallback) {
             BlockState state = level.getBlockState(pos);
             if (state.getBlock() instanceof ChestBlock chest) {
-                Container combined = ChestBlock.getContainer(chest, state, level, pos, false);
+                Container combined = ChestBlock.getContainer(chest, state, level, pos, true);
                 if (combined != null) {
                     List<BlockPos> connectedPositions = connectedChestPositions(level, state, pos);
                     return new ContainerCandidate(canonicalPosition(connectedPositions), combined, connectedPositions);

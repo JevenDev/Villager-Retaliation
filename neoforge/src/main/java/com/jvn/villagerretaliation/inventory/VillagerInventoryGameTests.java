@@ -676,12 +676,7 @@ public final class VillagerInventoryGameTests {
         BlockPos rightRel = leftRel.east();
         BlockPos left = helper.absolutePos(leftRel);
         BlockPos right = helper.absolutePos(rightRel);
-        setBlock(helper, leftRel, Blocks.CHEST.defaultBlockState()
-                .setValue(ChestBlock.FACING, Direction.NORTH)
-                .setValue(ChestBlock.TYPE, ChestType.LEFT));
-        setBlock(helper, rightRel, Blocks.CHEST.defaultBlockState()
-                .setValue(ChestBlock.FACING, Direction.NORTH)
-                .setValue(ChestBlock.TYPE, ChestType.RIGHT));
+        setDoubleChest(helper, leftRel, rightRel);
 
         ItemStack listFilter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
         VillagerItemFilterData.setEntry(listFilter, 0, new ItemStack(Items.DIRT));
@@ -2349,6 +2344,22 @@ public final class VillagerInventoryGameTests {
 
     private static void setBlock(GameTestHelper helper, BlockPos relativePos, BlockState state) {
         helper.getLevel().setBlock(helper.absolutePos(relativePos), state, Block.UPDATE_ALL);
+    }
+
+    private static void setDoubleChest(GameTestHelper helper, BlockPos leftRelative, BlockPos rightRelative) {
+        ServerLevel level = helper.getLevel();
+        level.setBlock(
+                helper.absolutePos(leftRelative),
+                Blocks.CHEST.defaultBlockState()
+                        .setValue(ChestBlock.FACING, Direction.NORTH)
+                        .setValue(ChestBlock.TYPE, ChestType.LEFT),
+                Block.UPDATE_CLIENTS);
+        level.setBlock(
+                helper.absolutePos(rightRelative),
+                Blocks.CHEST.defaultBlockState()
+                        .setValue(ChestBlock.FACING, Direction.NORTH)
+                        .setValue(ChestBlock.TYPE, ChestType.RIGHT),
+                Block.UPDATE_CLIENTS);
     }
 
     private static Villager spawnVillager(GameTestHelper helper, BlockPos relativePos) {

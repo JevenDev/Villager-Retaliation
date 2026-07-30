@@ -280,7 +280,7 @@ public final class AssignedStorageSavedData extends SavedData {
     }
 
     public void updateOutputFilterSnapshot(AssignedContainerRecord record, List<ItemStack> filters) {
-        List<ItemStack> safeFilters = copyFilters(filters);
+        List<ItemStack> safeFilters = filters == null ? List.of() : filters;
         if (record.outputFilterSnapshotKnown() && sameFilters(record.outputFilters(), safeFilters)) {
             return;
         }
