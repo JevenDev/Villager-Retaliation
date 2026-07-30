@@ -98,4 +98,21 @@ public final class VillagerItemFilterItem extends Item implements MenuProvider {
         player.getInventory().setChanged();
         player.containerMenu.broadcastChanges();
     }
+
+    public static void handleCombinationChange(ServerPlayer player, int combinationId) {
+        VillagerItemFilterData.EntryCombination requested =
+                VillagerItemFilterData.EntryCombination.fromNetworkId(combinationId);
+        if (requested == null
+                || !(player.containerMenu instanceof VillagerItemFilterMenu menu)
+                || !menu.isEditingHeldFilter()) {
+            return;
+        }
+        ItemStack filter = player.getMainHandItem();
+        if (!VillagerRetaliationItems.isItemFilter(filter)
+                || !VillagerItemFilterData.setEntryCombination(filter, requested)) {
+            return;
+        }
+        player.getInventory().setChanged();
+        player.containerMenu.broadcastChanges();
+    }
 }

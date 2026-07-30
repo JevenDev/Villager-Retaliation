@@ -23,8 +23,8 @@ import net.minecraft.world.level.Level;
 
 /**
  * Owns the complete persistent format and matching semantics for villager item filters.
- * Ordinary entries intentionally retain item identity only, except potion contents. Nested
- * filters retain their configuration and act as additional constraints.
+ * Ordinary entries intentionally retain item identity only, except potion contents. Every entry
+ * is a predicate composed by an explicit entry-combination mode.
  */
 public final class VillagerItemFilterData {
     public static final int ENTRY_COUNT = 9;
@@ -33,6 +33,7 @@ public final class VillagerItemFilterData {
     public static final int UNLIMITED_AMOUNT = 0;
     private static final String ROOT_TAG = VillagerRetaliation.MOD_ID + ":item_filter";
     private static final String MODE_TAG = "Mode";
+    private static final String ENTRY_COMBINATION_TAG = "EntryCombination";
     private static final String ENTRIES_TAG = "Entries";
     private static final String SLOT_TAG = "Slot";
     private static final String ITEM_TAG = "Item";
@@ -45,10 +46,12 @@ public final class VillagerItemFilterData {
                     List.of(BuiltInRegistries.POTION, BuiltInRegistries.MOB_EFFECT)));
 
     private final Mode mode;
+    private final EntryCombination entryCombination;
     private final List<ConfiguredEntry> entries;
 
-    private VillagerItemFilterData(Mode mode, List<ConfiguredEntry> entries) {
+    private VillagerItemFilterData(Mode mode, EntryCombination entryCombination, List<ConfiguredEntry> entries) {
         this.mode = mode == null ? Mode.ALLOWLIST : mode;
+        this.entryCombination = entryCombination == null ? EntryCombination.ANY : entryCombination;
         List<ConfiguredEntry> normalized = emptyEntries();
         for (int slot = 0; slot < Math.min(ENTRY_COUNT, entries.size()); slot++) {
             ConfiguredEntry rawEntry = entries.get(slot);
@@ -79,7 +82,7 @@ public final class VillagerItemFilterData {
     }
 
     public static VillagerItemFilterData empty() {
-        return new VillagerItemFilterData(Mode.ALLOWLIST, emptyEntries());
+        return new VillagerItemFilterData(Mode.ALLOWLIST, EntryCombination.ANY, emptyEntries());
     }
 
     public static VillagerItemFilterData read(ItemStack filter) {
@@ -90,11 +93,18 @@ public final class VillagerItemFilterData {
         if (customData.isEmpty()) {
             return empty();
         }
-        CompoundTag root = customData.copyTag().getCompound(ROOT_TAG);
+        CompoundTag customTag = customData.copyTag();
+        if (!customTag.contains(ROOT_TAG, Tag.TAG_COMPOUND)) {
+            return empty();
+        }
+        CompoundTag root = customTag.getCompound(ROOT_TAG);
         if (root.isEmpty()) {
             return empty();
         }
         Mode mode = Mode.byId(root.getString(MODE_TAG));
+        EntryCombination entryCombination = EntryCombination.byStoredId(
+                root.getString(ENTRY_COMBINATION_TAG),
+                root.contains(ENTRY_COMBINATION_TAG, Tag.TAG_STRING));
         List<ConfiguredEntry> entries = emptyEntries();
         ListTag storedEntries = root.getList(ENTRIES_TAG, Tag.TAG_COMPOUND);
         for (Tag rawEntry : storedEntries) {
@@ -124,7 +134,7 @@ public final class VillagerItemFilterData {
                 entries.set(slot, new ConfiguredEntry(restored, amount));
             });
         }
-        return new VillagerItemFilterData(mode, entries);
+        return new VillagerItemFilterData(mode, entryCombination, entries);
     }
 
     public static Mode mode(ItemStack filter) {
@@ -133,7 +143,25 @@ public final class VillagerItemFilterData {
 
     public static void setMode(ItemStack filter, Mode mode) {
         VillagerItemFilterData current = read(filter);
-        write(filter, new VillagerItemFilterData(mode, current.entries));
+        write(filter, new VillagerItemFilterData(mode, current.entryCombination, current.entries));
+    }
+
+    public static EntryCombination entryCombination(ItemStack filter) {
+        return read(filter).entryCombination;
+    }
+
+    public static boolean setEntryCombination(ItemStack filter, EntryCombination entryCombination) {
+        if (!VillagerRetaliationItems.isItemFilter(filter)
+                || entryCombination == null
+                || !entryCombination.authorable()) {
+            return false;
+        }
+        VillagerItemFilterData current = read(filter);
+        if (current.entryCombination == entryCombination) {
+            return false;
+        }
+        write(filter, new VillagerItemFilterData(current.mode, entryCombination, current.entries));
+        return true;
     }
 
     public static void toggleMode(ItemStack filter) {
@@ -227,7 +255,7 @@ public final class VillagerItemFilterData {
 
         List<ConfiguredEntry> updated = copyEntries(current.entries);
         updated.set(slot, new ConfiguredEntry(normalizedEntry, amount));
-        write(filter, new VillagerItemFilterData(current.mode, updated));
+        write(filter, new VillagerItemFilterData(current.mode, current.entryCombination, updated));
         return true;
     }
 
@@ -247,7 +275,7 @@ public final class VillagerItemFilterData {
         }
         List<ConfiguredEntry> updated = copyEntries(current.entries);
         updated.set(slot, new ConfiguredEntry(selected.stack().copy(), amount));
-        write(filter, new VillagerItemFilterData(current.mode, updated));
+        write(filter, new VillagerItemFilterData(current.mode, current.entryCombination, updated));
         return true;
     }
 
@@ -278,7 +306,9 @@ public final class VillagerItemFilterData {
 
     public static boolean isDefault(ItemStack filter) {
         VillagerItemFilterData data = read(filter);
-        return data.mode == Mode.ALLOWLIST && data.entries.stream().allMatch(entry -> entry.stack().isEmpty());
+        return data.mode == Mode.ALLOWLIST
+                && data.entryCombination == EntryCombination.ANY
+                && data.entries.stream().allMatch(entry -> entry.stack().isEmpty());
     }
 
     public static void copyConfiguration(ItemStack source, ItemStack target) {
@@ -289,11 +319,7 @@ public final class VillagerItemFilterData {
         return matches(null, filter, candidate);
     }
 
-    /**
-     * Ordinary entries are alternatives; each nested attribute or item filter is an additional
-     * required constraint. A nested denylist therefore excludes its matches from an outer
-     * allowlist. The outer mode is applied to the complete expression.
-     */
+    /** Combines every configured entry uniformly, then applies the outer allow/deny mode. */
     public static boolean matches(Level level, ItemStack filter, ItemStack candidate) {
         return matches(level, filter, candidate, 0);
     }
@@ -306,26 +332,32 @@ public final class VillagerItemFilterData {
             return false;
         }
         VillagerItemFilterData data = read(filter);
+        boolean configured = false;
         boolean hasIdentityEntries = false;
         boolean identityMatches = false;
-        boolean constraintsMatch = true;
-        boolean configured = false;
+        boolean nestedMatches = true;
+        boolean anyMatches = false;
+        boolean allMatch = true;
         for (ConfiguredEntry configuredEntry : data.entries) {
             ItemStack entry = configuredEntry.stack();
             if (entry.isEmpty()) {
                 continue;
             }
             configured = true;
-            if (VillagerRetaliationItems.isAttributeFilter(entry)) {
-                constraintsMatch &= VillagerAttributeFilterData.matches(level, entry, candidate);
-            } else if (VillagerRetaliationItems.isItemFilter(entry)) {
-                constraintsMatch &= matches(level, entry, candidate, depth + 1);
+            boolean matched;
+            if (VillagerRetaliationItems.isFilter(entry)) {
+                matched = filterEntryMatches(level, entry, candidate, depth + 1);
+                nestedMatches &= matched;
             } else {
+                matched = identityMatches(entry, candidate);
                 hasIdentityEntries = true;
-                identityMatches |= identityMatches(entry, candidate);
+                identityMatches |= matched;
             }
+            anyMatches |= matched;
+            allMatch &= matched;
         }
-        boolean listed = configured && (!hasIdentityEntries || identityMatches) && constraintsMatch;
+        boolean listed = data.entryCombination.combine(
+                configured, hasIdentityEntries, identityMatches, nestedMatches, anyMatches, allMatch);
         return data.mode == Mode.ALLOWLIST ? listed : !listed;
     }
 
@@ -381,6 +413,9 @@ public final class VillagerItemFilterData {
         tooltip.add(Component.translatable("item.villagerretaliation.item_filter.mode")
                 .withStyle(ChatFormatting.GRAY)
                 .append(data.mode.label().copy().withStyle(ChatFormatting.GOLD)));
+        tooltip.add(Component.translatable("item.villagerretaliation.item_filter.entry_combination")
+                .withStyle(ChatFormatting.GRAY)
+                .append(data.entryCombination.label().copy().withStyle(ChatFormatting.AQUA)));
         int shown = 0;
         for (ConfiguredEntry configuredEntry : data.entries) {
             ItemStack entry = configuredEntry.stack();
@@ -450,11 +485,14 @@ public final class VillagerItemFilterData {
         }
         CustomData existing = filter.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         CompoundTag customData = existing.isEmpty() ? new CompoundTag() : existing.copyTag();
-        if (data.mode == Mode.ALLOWLIST && data.entries.stream().allMatch(entry -> entry.stack().isEmpty())) {
+        if (data.mode == Mode.ALLOWLIST
+                && data.entryCombination == EntryCombination.ANY
+                && data.entries.stream().allMatch(entry -> entry.stack().isEmpty())) {
             customData.remove(ROOT_TAG);
         } else {
             CompoundTag root = new CompoundTag();
             root.putString(MODE_TAG, data.mode.id());
+            root.putString(ENTRY_COMBINATION_TAG, data.entryCombination.id());
             ListTag storedEntries = new ListTag();
             for (int slot = 0; slot < ENTRY_COUNT; slot++) {
                 ConfiguredEntry configured = data.entries.get(slot);
@@ -530,6 +568,17 @@ public final class VillagerItemFilterData {
         return new ItemStack(entry.getItem());
     }
 
+    private static boolean filterEntryMatches(
+            Level level, ItemStack entry, ItemStack candidate, int depth) {
+        if (VillagerRetaliationItems.isAttributeFilter(entry)) {
+            return VillagerAttributeFilterData.matches(level, entry, candidate);
+        }
+        if (VillagerRetaliationItems.isItemFilter(entry)) {
+            return matches(level, entry, candidate, depth);
+        }
+        return false;
+    }
+
     private static boolean identityMatches(ItemStack configured, ItemStack candidate) {
         if (!candidate.is(configured.getItem())) {
             return false;
@@ -583,6 +632,78 @@ public final class VillagerItemFilterData {
             boolean hitLimit) {
         private static AmountAdjustment invalid() {
             return new AmountAdjustment(false, UNLIMITED_AMOUNT, UNLIMITED_AMOUNT, false, false);
+        }
+    }
+
+    public enum EntryCombination {
+        ANY("any", true),
+        ALL("all", true),
+        LEGACY("legacy", false);
+
+        private final String id;
+        private final boolean authorable;
+
+        EntryCombination(String id, boolean authorable) {
+            this.id = id;
+            this.authorable = authorable;
+        }
+
+        public String id() {
+            return this.id;
+        }
+
+        public boolean authorable() {
+            return this.authorable;
+        }
+
+        public Component label() {
+            return Component.translatable("item.villagerretaliation.item_filter.entry_combination." + this.id);
+        }
+
+        public int networkId() {
+            return switch (this) {
+                case ANY -> 0;
+                case ALL -> 1;
+                case LEGACY -> -1;
+            };
+        }
+
+        public static EntryCombination fromNetworkId(int id) {
+            return switch (id) {
+                case 0 -> ANY;
+                case 1 -> ALL;
+                default -> null;
+            };
+        }
+
+        private static EntryCombination byStoredId(String id, boolean explicitlyStored) {
+            if (!explicitlyStored) {
+                return LEGACY;
+            }
+            if (ANY.id.equalsIgnoreCase(id)) {
+                return ANY;
+            }
+            if (ALL.id.equalsIgnoreCase(id)) {
+                return ALL;
+            }
+            return LEGACY;
+        }
+
+        private boolean combine(
+                boolean configured,
+                boolean hasIdentityEntries,
+                boolean identityMatches,
+                boolean nestedMatches,
+                boolean anyMatches,
+                boolean allMatch) {
+            if (!configured) {
+                return false;
+            }
+            return switch (this) {
+                case ANY -> anyMatches;
+                case ALL -> allMatch;
+                case LEGACY -> (!hasIdentityEntries || identityMatches) && nestedMatches;
+            };
         }
     }
 

@@ -22,7 +22,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 
 public final class VillagerReputationNetworking {
-    private static final String PROTOCOL_VERSION = "64";
+    private static final String PROTOCOL_VERSION = "65";
 
     private VillagerReputationNetworking() {
     }
@@ -577,6 +577,15 @@ public final class VillagerReputationNetworking {
                                         player,
                                         payload.menuSlotIndex(),
                                         payload.modeId())))
+        );
+        network.playToServer(
+                ItemFilterCombinationChangePayload.TYPE,
+                ItemFilterCombinationChangePayload.STREAM_CODEC,
+                (payload, context) -> ToucanNetwork.enqueue(context, () ->
+                        ToucanNetwork.withServerPlayer(context, player ->
+                                com.jvn.villagerretaliation.item.VillagerItemFilterItem.handleCombinationChange(
+                                        player,
+                                        payload.combinationId())))
         );
         network.playToServer(
                 ItemFilterAmountChangePayload.TYPE,

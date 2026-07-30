@@ -4,6 +4,7 @@ import com.jvn.villagerretaliation.client.VillagerRetaliationClientAssets;
 import com.jvn.villagerretaliation.inventory.VillagerItemFilterMenu;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.network.ItemFilterAmountChangePayload;
+import com.jvn.villagerretaliation.network.ItemFilterCombinationChangePayload;
 import com.jvn.villagerretaliation.network.ItemFilterModeChangePayload;
 import com.jvn.toucanlib.client.interaction.ToucanInputModifiers;
 import com.jvn.toucanlib.client.interaction.ToucanLimitFeedback;
@@ -32,6 +33,7 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
     private final ToucanLimitFeedback[] limitFeedback = createLimitFeedback();
     private Button allowlistButton;
     private Button denylistButton;
+    private Button entryCombinationButton;
 
     public VillagerItemFilterScreen(VillagerItemFilterMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -46,7 +48,7 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
         this.allowlistButton = Button.builder(
                         Component.translatable("villagerretaliation.gui.item_filter.mode.allowlist"),
                         button -> setMode(VillagerItemFilterData.Mode.ALLOWLIST))
-                .bounds(this.leftPos + 8, this.topPos + 43, 78, 20)
+                .bounds(this.leftPos + 8, this.topPos + 43, 52, 20)
                 .tooltip(modeTooltip(
                         "villagerretaliation.gui.item_filter.mode.allowlist",
                         ChatFormatting.GREEN,
@@ -55,14 +57,19 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
         this.denylistButton = Button.builder(
                         Component.translatable("villagerretaliation.gui.item_filter.mode.denylist"),
                         button -> setMode(VillagerItemFilterData.Mode.DENYLIST))
-                .bounds(this.leftPos + 90, this.topPos + 43, 78, 20)
+                .bounds(this.leftPos + 62, this.topPos + 43, 52, 20)
                 .tooltip(modeTooltip(
                         "villagerretaliation.gui.item_filter.mode.denylist",
                         ChatFormatting.RED,
                         "villagerretaliation.gui.item_filter.mode.denylist.description"))
                 .build();
+        this.entryCombinationButton = Button.builder(
+                        Component.empty(), button -> cycleEntryCombination())
+                .bounds(this.leftPos + 116, this.topPos + 43, 52, 20)
+                .build();
         addRenderableWidget(this.allowlistButton);
         addRenderableWidget(this.denylistButton);
+        addRenderableWidget(this.entryCombinationButton);
         refreshButtons();
     }
 
@@ -220,13 +227,41 @@ public final class VillagerItemFilterScreen extends AbstractContainerScreen<Vill
         refreshButtons();
     }
 
+    private void cycleEntryCombination() {
+        VillagerItemFilterData.EntryCombination current = this.menu.entryCombination();
+        VillagerItemFilterData.EntryCombination next =
+                current == VillagerItemFilterData.EntryCombination.ANY
+                        ? VillagerItemFilterData.EntryCombination.ALL
+                        : VillagerItemFilterData.EntryCombination.ANY;
+        this.menu.setClientEntryCombination(next);
+        PacketDistributor.sendToServer(new ItemFilterCombinationChangePayload(next));
+        refreshButtons();
+    }
+
+    private static Tooltip entryCombinationTooltip(
+            VillagerItemFilterData.EntryCombination combination) {
+        String description = "villagerretaliation.gui.item_filter.entry_combination."
+                + combination.id() + ".description";
+        return modeTooltip(
+                "villagerretaliation.gui.item_filter.entry_combination.title",
+                combination == VillagerItemFilterData.EntryCombination.LEGACY
+                        ? ChatFormatting.YELLOW : ChatFormatting.AQUA,
+                description);
+    }
+
     private void refreshButtons() {
-        if (this.allowlistButton == null || this.denylistButton == null) {
+        if (this.allowlistButton == null
+                || this.denylistButton == null
+                || this.entryCombinationButton == null) {
             return;
         }
         VillagerItemFilterData.Mode mode = this.menu.mode();
         this.allowlistButton.active = mode != VillagerItemFilterData.Mode.ALLOWLIST;
         this.denylistButton.active = mode != VillagerItemFilterData.Mode.DENYLIST;
+        VillagerItemFilterData.EntryCombination combination = this.menu.entryCombination();
+        this.entryCombinationButton.setMessage(Component.translatable(
+                "villagerretaliation.gui.item_filter.entry_combination." + combination.id()));
+        this.entryCombinationButton.setTooltip(entryCombinationTooltip(combination));
     }
 
     /**
