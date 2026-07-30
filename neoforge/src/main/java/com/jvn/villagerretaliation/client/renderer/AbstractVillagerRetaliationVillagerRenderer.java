@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.client.model.VanillaVillagerModelAdapter;
 import com.jvn.villagerretaliation.client.interaction.VillagerDialogueMouthAnimation;
 import com.jvn.villagerretaliation.client.pose.VillagerPoseProvider;
 import com.jvn.villagerretaliation.client.reputation.FearedVillagerAnimationClientCache;
+import com.jvn.villagerretaliation.client.villager.VillagerNameClientCache;
 import com.jvn.villagerretaliation.client.renderer.layer.CombatItemInHandLayer;
 import com.jvn.villagerretaliation.client.renderer.layer.VillagerCrossedArmsItemLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -109,7 +110,8 @@ public abstract class AbstractVillagerRetaliationVillagerRenderer<T extends Abst
                 || attackTime > 0.0F
                 || VillagerRenderEquipmentState.hasArmorEquipped(villager)
                 || !VillagerRenderEquipmentState.visibleMainHand(villager).isEmpty()
-                || !villager.getOffhandItem().isEmpty();
+                || !villager.getOffhandItem().isEmpty()
+                || VillagerNameClientCache.isHired(villager.getId());
         if (needsSideArmModel) {
             return true;
         }

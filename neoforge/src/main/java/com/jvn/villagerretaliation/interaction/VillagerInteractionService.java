@@ -665,8 +665,8 @@ public final class VillagerInteractionService {
                 : recruitedParty.villager(villager.getUUID());
         boolean ownsPartyContract = recruitedParty != null
                 && partyVillager != null
-                && recruitedParty.leaderId().equals(player.getUUID())
-                && partyVillager.recruiterId().equals(player.getUUID());
+                && recruitedParty.playerIds().contains(player.getUUID())
+                && recruitedParty.hasAdminPrivileges(player.getUUID());
         boolean belongsToPartyContract = recruitedParty != null
                 && partyVillager != null
                 && recruitedParty.playerIds().contains(player.getUUID());
@@ -1135,11 +1135,9 @@ public final class VillagerInteractionService {
             return true;
         }
         if (action == VillagerRecruitRequestPayload.Action.UNEQUIP_PARTY_WEAPONS) {
-            boolean stowed = com.jvn.villagerretaliation.combat.VillagerCombatLoadoutService
-                    .stowWeapons(villager, true);
-            player.sendSystemMessage(Component.translatable(stowed
-                    ? "villagerretaliation.party.weapons_unequipped"
-                    : "villagerretaliation.party.weapons_not_unequipped"));
+            com.jvn.villagerretaliation.party.PartyVillagerContractService.ContractResult result =
+                    com.jvn.villagerretaliation.party.PartyVillagerContractService.sheatheWeapons(player, villager);
+            player.sendSystemMessage(Component.translatable(result.messageKey()));
             VillagerInteractionScreenOpener.refreshNormal(player, villager);
             return true;
         }

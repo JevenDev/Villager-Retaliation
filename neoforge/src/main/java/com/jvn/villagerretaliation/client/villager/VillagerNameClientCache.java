@@ -19,7 +19,8 @@ public final class VillagerNameClientCache {
     }
 
     public static void accept(VillagerNameSyncPayload payload) {
-        if (payload.nameKey().isBlank() && payload.fallbackName().isBlank()) {
+        if (payload.nameKey().isBlank() && payload.fallbackName().isBlank()
+                && !payload.hired()) {
             BY_ENTITY_ID.remove(payload.entityId());
             return;
         }

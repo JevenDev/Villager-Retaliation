@@ -38,6 +38,7 @@ public final class PartyVillagerRecord {
     private static final String TAG_DROP_COLLECTION = "DropCollection";
     private static final String TAG_QUICK_COMMANDS_ENABLED = "QuickCommandsEnabled";
     private static final String TAG_WEAPON_PREFERENCE = "WeaponPreference";
+    private static final String TAG_WEAPONS_SHEATHED = "WeaponsSheathed";
     private static final String TAG_REGROUPING = "Regrouping";
     private static final String TAG_MOVE_TO_RETURN_COMMANDER = "MoveToReturnCommander";
     private static final String TAG_MOVE_TO_HOLDING = "MoveToHolding";
@@ -65,6 +66,7 @@ public final class PartyVillagerRecord {
     private PartyDropCollectionMode dropCollectionMode = PartyDropCollectionMode.OFF;
     private boolean quickCommandsEnabled = true;
     private PartyWeaponPreference weaponPreference = PartyWeaponPreference.AUTO;
+    private boolean weaponsSheathed;
     private boolean regrouping;
     private UUID moveToReturnCommanderId;
     private boolean moveToHolding;
@@ -186,6 +188,10 @@ public final class PartyVillagerRecord {
         return this.weaponPreference;
     }
 
+    public boolean weaponsSheathed() {
+        return this.weaponsSheathed;
+    }
+
     public boolean regrouping() {
         return this.regrouping;
     }
@@ -229,6 +235,10 @@ public final class PartyVillagerRecord {
 
     void setWeaponPreference(PartyWeaponPreference preference) {
         this.weaponPreference = preference == null ? PartyWeaponPreference.AUTO : preference;
+    }
+
+    void setWeaponsSheathed(boolean weaponsSheathed) {
+        this.weaponsSheathed = weaponsSheathed;
     }
 
     void setRegrouping(boolean regrouping) {
@@ -347,6 +357,7 @@ public final class PartyVillagerRecord {
         tag.putString(TAG_DROP_COLLECTION, this.dropCollectionMode.name());
         tag.putBoolean(TAG_QUICK_COMMANDS_ENABLED, this.quickCommandsEnabled);
         tag.putString(TAG_WEAPON_PREFERENCE, this.weaponPreference.name());
+        tag.putBoolean(TAG_WEAPONS_SHEATHED, this.weaponsSheathed);
         tag.putBoolean(TAG_REGROUPING, this.regrouping);
         if (this.moveToReturnCommanderId != null) {
             tag.putUUID(TAG_MOVE_TO_RETURN_COMMANDER, this.moveToReturnCommanderId);
@@ -402,6 +413,7 @@ public final class PartyVillagerRecord {
         record.setQuickCommandsEnabled(!tag.contains(TAG_QUICK_COMMANDS_ENABLED)
                 || tag.getBoolean(TAG_QUICK_COMMANDS_ENABLED));
         record.setWeaponPreference(PartyWeaponPreference.byName(tag.getString(TAG_WEAPON_PREFERENCE)));
+        record.setWeaponsSheathed(tag.getBoolean(TAG_WEAPONS_SHEATHED));
         record.setRegrouping(tag.getBoolean(TAG_REGROUPING));
         record.cachedGender = safeText(tag.getString(TAG_GENDER), 32);
         if (tag.hasUUID(TAG_MOVE_TO_RETURN_COMMANDER)) {

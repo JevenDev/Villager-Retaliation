@@ -327,13 +327,22 @@ public final class VillagerRetaliationHandler {
                 && !VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
                 && !RETALIATION.hasTemporaryWeapon(villager)
                 && !VillagerCombatStateMachine.hasActiveMode(villager)) {
-            VillagerCombatLoadoutService.stowIdleWeapon(villager);
+            if (VillagerCombatLoadoutService.shouldKeepPartyWeaponReady(villager)) {
+                VillagerCombatLoadoutService.maintainPartyReadiness(villager);
+            } else {
+                VillagerCombatLoadoutService.stowIdleWeapon(villager);
+            }
             transientMainHandActive = RETALIATION.hasTemporaryWeapon(villager)
                     || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager);
         }
         if (!transientMainHandActive
                 && !VillagerCombatLoadoutService.hasPersistentEquippedPreference(villager)) {
             HiredJobInventory.maintainEquipmentSlots(villager);
+        }
+        if (!transientMainHandActive
+                && !VillagerClericPotionHelper.isActivelyHandlingPotion(villager)
+                && !VillagerCombatStateMachine.hasActiveMode(villager)) {
+            VillagerCombatLoadoutService.maintainPartyReadiness(villager);
         }
         VillagerArmorerCombatTactics.ensureSpawnShieldRoll(villager);
         if (!transientMainHandActive

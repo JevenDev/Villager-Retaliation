@@ -143,6 +143,7 @@ public final class PartyGameTests {
         helper.assertValueEqual(record.weaponPreference(), PartyWeaponPreference.AUTO,
                 "legacy/default weapon preference should be AUTO");
         record.setWeaponPreference(PartyWeaponPreference.RANGED);
+        record.setWeaponsSheathed(true);
         UUID moveCommanderId = UUID.randomUUID();
         record.setStaying(Level.OVERWORLD.location(), new BlockPos(8, 64, 3));
         record.setMoveToReturnCommander(moveCommanderId);
@@ -153,6 +154,8 @@ public final class PartyGameTests {
         PartyVillagerRecord loaded = PartyVillagerRecord.load(record.save());
         helper.assertValueEqual(loaded.weaponPreference(), PartyWeaponPreference.RANGED,
                 "weapon preference should survive party record serialization");
+        helper.assertTrue(loaded.weaponsSheathed(),
+                "the explicit sheathe order should survive party record serialization");
         helper.assertTrue(loaded.regrouping(),
                 "regroup acquisition suppression should survive unload/reload");
         helper.assertValueEqual(loaded.moveToReturnCommanderId(), moveCommanderId,
@@ -165,16 +168,19 @@ public final class PartyGameTests {
         CompoundTag legacy = record.save();
         legacy.remove("WeaponPreference");
         legacy.remove("Regrouping");
+        legacy.remove("WeaponsSheathed");
         PartyVillagerRecord legacyLoaded = PartyVillagerRecord.load(legacy);
         helper.assertValueEqual(legacyLoaded.weaponPreference(), PartyWeaponPreference.AUTO,
                 "missing legacy preference should migrate to AUTO");
         helper.assertFalse(legacyLoaded.regrouping(),
                 "legacy records should not begin with target suppression");
+        helper.assertFalse(legacyLoaded.weaponsSheathed(),
+                "legacy party members should default to weapons ready");
         helper.succeed();
     }
 
     @GameTest(template = EMPTY_TEMPLATE)
-    public static void rangeAndMeleeCommandsKeepWeaponsStowedOutsideCombat(GameTestHelper helper) {
+    public static void rangeAndMeleeCommandsKeepWeaponsDrawnOutsideCombat(GameTestHelper helper) {
         ServerLevel level = helper.getLevel();
         ServerPlayer leader = fakePlayer(level, uniqueName("party_idle_loadout"));
         Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
@@ -191,18 +197,18 @@ public final class PartyGameTests {
 
         PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
                 PartyQuickCommand.MELEE));
-        helper.assertTrue(villager.getMainHandItem().isEmpty(),
-                "melee preference should keep the weapon stowed while idle");
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
+                "melee preference should visibly draw the sword while idle");
 
         PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
                 PartyQuickCommand.RANGE));
-        helper.assertTrue(villager.getMainHandItem().isEmpty(),
-                "range preference should keep the bow stowed while idle");
+        helper.assertTrue(villager.getMainHandItem().is(Items.BOW),
+                "range preference should visibly draw the bow while idle");
 
         PartyQuickCommandService.handle(leader, new com.jvn.villagerretaliation.network.PartyQuickCommandRequestPayload(
                 PartyQuickCommand.MELEE));
-        helper.assertTrue(villager.getMainHandItem().isEmpty(),
-                "switching preferences should not draw a weapon outside combat");
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD),
+                "switching preferences should visibly switch the drawn weapon outside combat");
 
         PartyService.deleteParty(level, party.id());
         PartyQuickCommandService.clearRuntimeState();
