@@ -9,6 +9,7 @@ import com.jvn.villagerretaliation.interaction.work.mining.MiningExcavationSuppo
 import com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules;
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
+import com.jvn.villagerretaliation.debug.HiredStressGridService;
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceService;
 import com.jvn.villagerretaliation.interaction.ClipboardWorkforceSnapshot;
@@ -58,6 +59,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -6460,6 +6462,105 @@ public final class VillagerWorkerGameTests {
 
         HiredVillagerContractService.endHireContract(level, villager, hirer);
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void stressWorkerStaysActiveDuringVanillaRestWithTarget(GameTestHelper helper) {
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        level.setDayTime(13000L);
+        ServerPlayer hirer = helper.makeMockServerPlayerInLevel();
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(3, 2, 3));
+        villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FARMER));
+        villager.setCustomName(Component.literal("Stress Farming #1"));
+
+        HiredVillagerContractService.startHireContract(
+                level, villager, hirer, 1, 8, HiredVillagerRole.FARMING);
+        HiredVillagerWorkService.initializeWorkArea(level, villager);
+        HiredWorkSession session = HiredWorkSession.active(level, villager);
+        CompoundTag state = session.state();
+        state.putBoolean("Enabled", true);
+        HiredWorkerBrain.setState(state, HiredWorkerTaskState.SELECTING_TARGET, null);
+
+        Cow target = spawnAnimal(helper, EntityType.COW, new BlockPos(4, 2, 3));
+        villager.getBrain().setActiveActivityIfPossible(Activity.REST);
+        villager.startSleeping(villager.blockPosition());
+        villager.setTarget(target);
+
+        helper.assertTrue(villager.getTarget() == target, "test should exercise the active-target scheduler path");
+        helper.assertTrue(HiredStressGridService.isStressWorker(villager), "legacy stress-grid name should be recognized");
+        helper.assertFalse(
+                HiredVillagerFocusService.shouldUseVanillaRest(level, villager),
+                "stress workers should not enter the vanilla rest pause");
+        HiredVillagerWorkService.onVillagerTickPost(villager);
+        helper.assertFalse(villager.isSleeping(), "stress worker should be woken for continuous load testing");
+        helper.assertFalse(
+                state.getString("Status").equals("interaction.work.status.sleeping")
+                        || state.getString("Status").equals("interaction.work.status.tired"),
+                "stress worker should not report a vanilla rest status");
+
+        HiredVillagerContractService.endHireContract(level, villager, hirer);
+        target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void stressCombatAndHuntingTargetsRenewAfterDefeat(GameTestHelper helper) {
+        buildFloor(helper, 0, 14, 0, 8, 1);
+        ServerLevel level = helper.getLevel();
+        BlockPos combatCell = helper.absolutePos(new BlockPos(3, 2, 3));
+        BlockPos huntingCell = helper.absolutePos(new BlockPos(10, 2, 3));
+        Villager combat = spawnVillager(helper, new BlockPos(3, 2, 3));
+        Villager hunting = spawnVillager(helper, new BlockPos(10, 2, 3));
+
+        combat.getPersistentData().putBoolean("VillagerRetaliationHiredStressWorker", true);
+        combat.getPersistentData().putString("VillagerRetaliationHiredStressRole", "combat");
+        combat.getPersistentData().putLong("VillagerRetaliationHiredStressCell", combatCell.asLong());
+        hunting.getPersistentData().putBoolean("VillagerRetaliationHiredStressWorker", true);
+        hunting.getPersistentData().putString("VillagerRetaliationHiredStressRole", "hunting");
+        hunting.getPersistentData().putLong("VillagerRetaliationHiredStressCell", huntingCell.asLong());
+
+        HiredStressGridService.maintainStressWorker(level, combat);
+        HiredStressGridService.maintainStressWorker(level, hunting);
+        List<Cow> firstCombatTargets = level.getEntitiesOfClass(
+                Cow.class, new AABB(combatCell).inflate(3.0D), Cow::isAlive);
+        List<Cow> firstHuntingTargets = level.getEntitiesOfClass(
+                Cow.class, new AABB(huntingCell).inflate(3.0D), Cow::isAlive);
+        helper.assertValueEqual(firstCombatTargets.size(), 1, "combat should receive one initial stress target");
+        helper.assertValueEqual(firstHuntingTargets.size(), 1, "hunting should receive one initial stress target");
+        Cow firstCombat = firstCombatTargets.getFirst();
+        Cow firstHunting = firstHuntingTargets.getFirst();
+        helper.assertFalse(firstCombat.isInvulnerable(), "combat target must be killable");
+        helper.assertFalse(firstHunting.isInvulnerable(), "hunting target must be killable");
+        UUID firstCombatId = firstCombat.getUUID();
+        UUID firstHuntingId = firstHunting.getUUID();
+
+        firstCombat.discard();
+        firstHunting.discard();
+        combat.setTarget(null);
+        HiredStressGridService.maintainStressWorker(level, combat);
+        HiredStressGridService.maintainStressWorker(level, hunting);
+
+        List<Cow> renewedCombatTargets = level.getEntitiesOfClass(
+                Cow.class, new AABB(combatCell).inflate(3.0D), Cow::isAlive);
+        List<Cow> renewedHuntingTargets = level.getEntitiesOfClass(
+                Cow.class, new AABB(huntingCell).inflate(3.0D), Cow::isAlive);
+        helper.assertValueEqual(renewedCombatTargets.size(), 1, "combat should receive one replacement target");
+        helper.assertValueEqual(renewedHuntingTargets.size(), 1, "hunting should receive one replacement target");
+        helper.assertFalse(
+                renewedCombatTargets.getFirst().getUUID().equals(firstCombatId),
+                "combat replacement should be a new mob");
+        helper.assertFalse(
+                renewedHuntingTargets.getFirst().getUUID().equals(firstHuntingId),
+                "hunting replacement should be a new mob");
+
+        renewedCombatTargets.getFirst().discard();
+        renewedHuntingTargets.getFirst().discard();
+        combat.discard();
+        hunting.discard();
         helper.succeed();
     }
 

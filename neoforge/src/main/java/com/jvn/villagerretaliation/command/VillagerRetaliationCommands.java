@@ -19,6 +19,7 @@ import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.duel.DuelLoadout;
 import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.debug.HiredDebugPreviewService;
+import com.jvn.villagerretaliation.debug.HiredStressGridService;
 import com.jvn.villagerretaliation.dialogue.DialogueContext;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueRequestType;
 import com.jvn.villagerretaliation.dialogue.normal.VillagerDialogueService;
@@ -1050,8 +1051,36 @@ public final class VillagerRetaliationCommands {
                                                         DoubleArgumentType.getDouble(context, "radius")))))
                                 .then(literal("off")
                                         .executes(context -> setHiredDebugPreviews(context, false, HiredDebugPreviewService.DEFAULT_RADIUS))))
+                        .then(literal("stress_grid")
+                                .executes(context -> spawnHiredStressGrid(context, HiredStressGridService.ROLE_COUNT))
+                                .then(argument("count", IntegerArgumentType.integer(1, HiredStressGridService.MAX_COUNT))
+                                        .executes(context -> spawnHiredStressGrid(
+                                                context,
+                                                IntegerArgumentType.getInteger(context, "count")))))
                         .then(targetArgument()
                                 .executes(VillagerRetaliationCommands::debugHiredWork)));
+    }
+
+    private static int spawnHiredStressGrid(CommandContext<CommandSourceStack> context, int count)
+            throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        ServerPlayer player = source.getPlayerOrException();
+        HiredStressGridService.Result result = HiredStressGridService.spawn(player, count);
+        source.sendSuccess(() -> Component.literal("Spawned " + result.spawned() + "/" + count
+                + " active production workers in a " + result.columns() + "x" + result.rows()
+                + " grid. Normal contracts are prepaid for " + HiredStressGridService.CONTRACT_DAYS
+                + " days; builder jobs use their real one-off escrow. Total debug funding: "
+                + result.prepaidCurrency() + " emeralds. Roles: " + result.roleSummary()), true);
+        if (count < HiredStressGridService.ROLE_COUNT) {
+            source.sendSuccess(() -> Component.literal("This count exercises the first " + count
+                    + " role(s); use " + HiredStressGridService.ROLE_COUNT
+                    + " or more to include every job in the same run."), false);
+        }
+        if (result.blocked() > 0) {
+            source.sendFailure(Component.literal("Skipped " + result.blocked()
+                    + " cell(s) because a villager, contract, or builder structure could not be initialized."));
+        }
+        return result.spawned();
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> villageDebugCommands() {

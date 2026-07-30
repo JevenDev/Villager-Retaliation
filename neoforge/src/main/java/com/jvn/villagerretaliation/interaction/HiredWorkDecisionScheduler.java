@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
+import com.jvn.villagerretaliation.debug.HiredStressGridService;
 import com.jvn.villagerretaliation.interaction.work.HiredRoleWorkerRegistry;
 import com.jvn.villagerretaliation.villager.VillagerRecoveryService;
 import java.util.ArrayList;
@@ -107,15 +108,16 @@ public final class HiredWorkDecisionScheduler {
     }
 
     private static boolean canRequestDecision(ServerLevel level, Villager villager) {
+        boolean stressWorker = HiredStressGridService.isStressWorker(villager);
         if (!villager.isAlive()
                 || villager.isBaby()
                 || villager.isTrading()
                 || VillagerConversationService.isConversing(villager)
                 || VillagerRecoveryService.isForcingRecovery(villager)
-                || villager.getTarget() != null
+                || (!stressWorker && villager.getTarget() != null)
                 || villager.getLastHurtByMob() != null
                 || VillagerRecruitmentService.isFollowingAnyPlayer(villager)
-                || HiredVillagerFocusService.isVanillaRestActive(villager)) {
+                || (!stressWorker && HiredVillagerFocusService.isVanillaRestActive(villager))) {
             return false;
         }
         HireContractSnapshot contract = HiredVillagerContractService.snapshot(level, villager);
