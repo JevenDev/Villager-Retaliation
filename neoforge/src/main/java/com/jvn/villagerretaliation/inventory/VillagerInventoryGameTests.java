@@ -380,6 +380,38 @@ public final class VillagerInventoryGameTests {
     }
 
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void explicitMatchAnyPolicyOverridesLegacyItemFilterComposition(GameTestHelper helper) {
+        ItemStack cookedFood = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(cookedFood, 0, attributeTag("minecraft:meat"));
+        VillagerItemFilterData.setEntry(cookedFood, 1, new ItemStack(Items.SALMON));
+        VillagerItemFilterData.setEntry(cookedFood, 2, new ItemStack(Items.COOKED_SALMON));
+
+        CompoundTag customData = cookedFood.getOrDefault(
+                DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        customData.getCompound("villagerretaliation:item_filter").remove("EntryCombination");
+        cookedFood.set(DataComponents.CUSTOM_DATA, CustomData.of(customData));
+        VillagerFilterPolicy.setPolicy(
+                cookedFood,
+                VillagerFilterPolicy.TransferDirection.BOTH,
+                VillagerFilterPolicy.ListMode.ALLOW_MATCHING,
+                VillagerFilterPolicy.CombinationMode.MATCH_ANY,
+                java.util.OptionalInt.empty());
+
+        helper.assertValueEqual(
+                VillagerItemFilterData.entryCombination(cookedFood),
+                VillagerItemFilterData.EntryCombination.LEGACY,
+                "fixture should retain its legacy item-filter composition");
+        helper.assertValueEqual(
+                VillagerFilterPolicy.read(cookedFood).combinationMode(),
+                VillagerFilterPolicy.CombinationMode.MATCH_ANY,
+                "fixture should carry the newer explicit Match Any policy");
+        helper.assertTrue(
+                VillagerFilterMatcher.matches(helper.getLevel(), cookedFood, new ItemStack(Items.COOKED_MUTTON)),
+                "explicit Match Any should accept cooked mutton through the meat-tag entry");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void itemFilterCombinationMigrationCopyAndPacketsAreSafe(GameTestHelper helper) {
         ItemStack fuel = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
         VillagerAttributeFilterData.setSelected(

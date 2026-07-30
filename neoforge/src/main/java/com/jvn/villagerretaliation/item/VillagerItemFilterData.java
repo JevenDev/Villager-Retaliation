@@ -336,7 +336,8 @@ public final class VillagerItemFilterData {
                 || candidate.isEmpty()) {
             return false;
         }
-        if (!isWellFormed(filter) || !VillagerFilterPolicy.read(filter).valid()) {
+        VillagerFilterPolicy.Policy policy = VillagerFilterPolicy.read(filter);
+        if (!isWellFormed(filter) || !policy.valid()) {
             context.invalidate();
             return false;
         }
@@ -365,7 +366,12 @@ public final class VillagerItemFilterData {
             anyMatches |= matched;
             allMatch &= matched;
         }
-        return data.entryCombination.combine(
+        EntryCombination effectiveCombination = switch (policy.combinationMode()) {
+            case MATCH_ANY -> EntryCombination.ANY;
+            case MATCH_ALL -> EntryCombination.ALL;
+            case LEGACY -> EntryCombination.LEGACY;
+        };
+        return effectiveCombination.combine(
                 configured, hasIdentityEntries, identityMatches, nestedMatches, anyMatches, allMatch);
     }
 

@@ -4346,6 +4346,11 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                             Component.translatable(GUI_KEY_PREFIX + "job_icon.tooltip.job", job)
                                     .withStyle(ChatFormatting.GRAY),
                             Component.translatable(GUI_KEY_PREFIX + "job_icon.tooltip.hired_by", playerName)
+                                    .withStyle(ChatFormatting.GRAY),
+                            Component.translatable(
+                                            GUI_KEY_PREFIX + (this.hiredRemainingDays == 1
+                                                    ? "job_icon.tooltip.contract.one"
+                                                    : "job_icon.tooltip.contract.many"), this.hiredRemainingDays)
                                     .withStyle(ChatFormatting.GRAY)),
                     mouseX,
                     mouseY);
