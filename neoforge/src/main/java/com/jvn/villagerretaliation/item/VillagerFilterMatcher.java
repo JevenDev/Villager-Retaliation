@@ -42,9 +42,14 @@ public final class VillagerFilterMatcher {
 
     /** Matches only the configured predicate graph, without direction, stock, or allow/deny policy. */
     public static boolean rawMatches(Level level, ItemStack filter, ItemStack candidate) {
+        return rawMatchResult(level, filter, candidate).matched();
+    }
+
+    /** Reports malformed predicate graphs separately from valid non-matches. */
+    public static RawMatchResult rawMatchResult(Level level, ItemStack filter, ItemStack candidate) {
         MatchContext context = new MatchContext();
         boolean matched = rawMatches(level, filter, candidate, context);
-        return context.valid() && matched;
+        return new RawMatchResult(context.valid(), context.valid() && matched);
     }
 
     private static boolean rawMatches(
@@ -116,6 +121,9 @@ public final class VillagerFilterMatcher {
     @FunctionalInterface
     private interface MatchFunction {
         boolean matches(Level level, ItemStack filter, ItemStack candidate, MatchContext context);
+    }
+
+    public record RawMatchResult(boolean valid, boolean matched) {
     }
 
     /** One predicate-graph traversal. Repeated configurations and excessive depth invalidate it. */
