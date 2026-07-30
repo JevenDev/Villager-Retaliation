@@ -1,18 +1,22 @@
 package com.jvn.villagerretaliation.inventory;
 
+import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
 import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerItemFilterData;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.mojang.authlib.GameProfile;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalInt;
 import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
@@ -26,8 +30,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
+import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.neoforged.neoforge.common.util.FakePlayerFactory;
@@ -437,6 +444,163 @@ public final class ContainerTransferPolicyGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void legacySavedFiltersAndOrdinaryFramesRemainCourierCompatible(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        BlockPos source = helper.absolutePos(new BlockPos(2, 2, 2));
+        BlockPos destination = helper.absolutePos(new BlockPos(6, 2, 2));
+        setBlock(helper, new BlockPos(2, 2, 2), Blocks.CHEST.defaultBlockState());
+        setBlock(helper, new BlockPos(6, 2, 2), Blocks.CHEST.defaultBlockState());
+        Container sourceContainer = container(level, source);
+        Container destinationContainer = container(level, destination);
+        setItemCount(sourceContainer, Items.EMERALD, 5);
+        sourceContainer.setItem(1, new ItemStack(Items.DIRT, 3));
+        destinationContainer.setItem(0, new ItemStack(Items.EMERALD, 30));
+
+        ItemStack legacyFilter = legacySavedRule(new ItemStack(Items.EMERALD), 32);
+        ItemFrame frame = attachRule(level, destination, legacyFilter, Direction.SOUTH);
+        Villager villager = spawnVillager(helper, new BlockPos(4, 2, 2));
+        ServerPlayer hirer = fakePlayer(level, "P8Legacy");
+        assignStorage(helper, hirer, villager, source, AssignedStorageService.SUPPLY_PURPOSE);
+        assignStorage(helper, hirer, villager, destination, AssignedStorageService.OUTPUT_PURPOSE);
+
+        SimpleContainer legacyCargo = new SimpleContainer(9);
+        int legacyMoved = AssignedStorageService.transferCourierItemsAtAssignedStorage(
+                villager,
+                source,
+                10,
+                stack -> VillagerInventoryOverflowService.insertIntoContainer(legacyCargo, stack));
+        helper.assertValueEqual(legacyMoved, 2,
+                "legacy saved amount filters should retain their receive cap in the courier path");
+        helper.assertValueEqual(countItem(sourceContainer, Items.EMERALD), 3,
+                "legacy filtering should extract only remaining destination demand");
+        helper.assertValueEqual(countItem(sourceContainer, Items.DIRT), 3,
+                "legacy allowlists should keep rejecting other source identities");
+        helper.assertTrue(AssignedStorageService.depositStackAtAssignedStorage(
+                        villager, destination, legacyCargo.getItem(0).copy()).isEmpty(),
+                "the legacy-filtered destination should accept its reserved demand");
+        helper.assertValueEqual(countItem(destinationContainer, Items.EMERALD), 32,
+                "legacy destination stock should stop at its stored entry amount");
+
+        legacyCargo.clearContent();
+        AssignedStorageService.reconcileCourierClaims(villager, List.of());
+        sourceContainer.setItem(2, new ItemStack(Items.DIAMOND, 3));
+        frame.setItem(new ItemStack(Items.DIAMOND));
+        ContainerFilterResolver.invalidateFrame(level, frame);
+        SimpleContainer ordinaryCargo = new SimpleContainer(9);
+        int ordinaryMoved = AssignedStorageService.transferCourierItemsAtAssignedStorage(
+                villager,
+                source,
+                10,
+                stack -> VillagerInventoryOverflowService.insertIntoContainer(ordinaryCargo, stack));
+        helper.assertValueEqual(ordinaryMoved, 3,
+                "ordinary item frames should remain exact-item courier routes");
+        helper.assertValueEqual(countItem(ordinaryCargo, Items.DIAMOND), 3,
+                "ordinary framed identities should reach courier cargo unchanged");
+        helper.assertValueEqual(countItem(ordinaryCargo, Items.DIRT), 0,
+                "ordinary item frames should reject non-matching cargo");
+        helper.assertValueEqual(
+                AssignedStorageService.assignedOutputCapacityFor(
+                        villager, new ItemStack(Items.DIRT), 1),
+                0,
+                "ordinary framed routes should expose no capacity for other identities");
+
+        cleanup(level, villager, List.of(frame));
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void attributeClaimsSpanDamagedSwordVariants(GameTestHelper helper) {
+        buildFloor(helper, 0, 10, 0, 4, 1);
+        ServerLevel level = helper.getLevel();
+        BlockPos sourceLeftRelative = new BlockPos(2, 2, 2);
+        BlockPos sourceRightRelative = sourceLeftRelative.east();
+        BlockPos destinationRelative = new BlockPos(8, 2, 2);
+        BlockPos sourceLeft = helper.absolutePos(sourceLeftRelative);
+        BlockPos sourceRight = helper.absolutePos(sourceRightRelative);
+        BlockPos destination = helper.absolutePos(destinationRelative);
+        setDoubleChest(helper, sourceLeftRelative, sourceRightRelative);
+        setBlock(helper, destinationRelative, Blocks.CHEST.defaultBlockState());
+        Container leftContainer = container(level, sourceLeft);
+        Container rightContainer = container(level, sourceRight);
+        for (int index = 0; index < 40; index++) {
+            ItemStack sword = new ItemStack(Items.IRON_SWORD);
+            sword.setDamageValue(index + 1);
+            if (index < 27) {
+                leftContainer.setItem(index, sword);
+            } else {
+                rightContainer.setItem(index - 27, sword);
+            }
+        }
+        helper.assertFalse(
+                ItemStack.isSameItemSameComponents(leftContainer.getItem(0), rightContainer.getItem(12)),
+                "the reserve fixture should contain distinct damaged variants");
+
+        ItemStack sourceRule = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
+        helper.assertTrue(VillagerAttributeFilterData.setSelected(
+                        sourceRule,
+                        new VillagerAttributeFilterData.Attribute(
+                                VillagerAttributeFilterData.AttributeType.IN_TAG,
+                                "minecraft:swords"),
+                        false),
+                "the sword attribute rule should be configured");
+        VillagerFilterPolicy.setPolicy(
+                sourceRule,
+                VillagerFilterPolicy.TransferDirection.PROVIDE,
+                VillagerFilterPolicy.ListMode.ALLOW_MATCHING,
+                VillagerFilterPolicy.CombinationMode.MATCH_ANY,
+                OptionalInt.of(32));
+        ItemFrame sourceFrame = attachRule(level, sourceLeft, sourceRule, Direction.SOUTH);
+
+        Villager first = spawnVillager(helper, new BlockPos(5, 2, 2));
+        Villager second = spawnVillager(helper, new BlockPos(5, 2, 3));
+        ServerPlayer hirer = fakePlayer(level, "P8Variants");
+        assignStorage(helper, hirer, first, sourceLeft, AssignedStorageService.SUPPLY_PURPOSE);
+        assignStorage(helper, hirer, first, destination, AssignedStorageService.OUTPUT_PURPOSE);
+        assignStorage(helper, hirer, second, sourceLeft, AssignedStorageService.SUPPLY_PURPOSE);
+        assignStorage(helper, hirer, second, destination, AssignedStorageService.OUTPUT_PURPOSE);
+        AssignedStorageService.reconcileCourierClaims(first, List.of());
+        AssignedStorageService.reconcileCourierClaims(second, List.of());
+
+        helper.assertValueEqual(
+                AssignedStorageService.reserveCourierTransferClaims(first, sourceLeft, 8),
+                8,
+                "forty matching sword variants should expose eight above Keep 32");
+        helper.assertValueEqual(
+                AssignedStorageService.reserveCourierTransferClaims(second, sourceLeft, 8),
+                0,
+                "outbound claims must reserve the complete attribute match group");
+        VillagerInventoryOverflowService.ContainerCandidate sourceCandidate =
+                VillagerInventoryOverflowService.ContainerCandidate.resolve(level, sourceLeft);
+        helper.assertTrue(sourceCandidate != null, "variant source double chest should resolve");
+        helper.assertValueEqual(ContainerTransferClaimLedger.count(
+                        level,
+                        sourceCandidate,
+                        null,
+                        VillagerFilterPolicy.TransferOperation.PROVIDE,
+                        stack -> stack.is(Items.IRON_SWORD)),
+                8,
+                "all claimed sword variants should count against one Keep target");
+        Map<BlockPos, List<ItemStack>> claims = ContainerTransferClaimLedger.snapshot(
+                level, first.getUUID(), VillagerFilterPolicy.TransferOperation.PROVIDE);
+        List<ItemStack> claimedVariants = claims.getOrDefault(sourceCandidate.pos(), List.of());
+        helper.assertValueEqual(claimedVariants.size(), 8,
+                "component-distinct claimed variants should remain individually represented");
+        helper.assertValueEqual(
+                (int) claimedVariants.stream().mapToInt(ItemStack::getDamageValue).distinct().count(),
+                8,
+                "outbound claims should preserve each damaged variant identity");
+        helper.assertValueEqual(
+                countItem(leftContainer, Items.IRON_SWORD) + countItem(rightContainer, Items.IRON_SWORD),
+                40,
+                "claiming variants must not mutate source inventory");
+
+        cleanup(level, first, List.of());
+        cleanup(level, second, List.of(sourceFrame));
+        helper.succeed();
+    }
+
     private static FixtureResult runFixture(
             GameTestHelper helper,
             String name,
@@ -484,6 +648,16 @@ public final class ContainerTransferPolicyGameTests {
                 accepted[0]);
         cleanup(level, villager, frames);
         return result;
+    }
+
+    private static ItemStack legacySavedRule(ItemStack entry, int amount) {
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(filter, 0, entry.copyWithCount(1));
+        VillagerItemFilterData.setAmount(filter, 0, amount);
+        CompoundTag customData = filter.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        customData.getCompound("villagerretaliation:item_filter").remove("EntryCombination");
+        filter.set(DataComponents.CUSTOM_DATA, CustomData.of(customData));
+        return filter;
     }
 
     private static ItemStack configuredRule(
@@ -592,6 +766,25 @@ public final class ContainerTransferPolicyGameTests {
                 setBlock(helper, new BlockPos(x, y + 2, z), Blocks.AIR.defaultBlockState());
             }
         }
+    }
+
+    private static void setDoubleChest(
+            GameTestHelper helper,
+            BlockPos leftRelative,
+            BlockPos rightRelative) {
+        ServerLevel level = helper.getLevel();
+        level.setBlock(
+                helper.absolutePos(leftRelative),
+                Blocks.CHEST.defaultBlockState()
+                        .setValue(ChestBlock.FACING, Direction.NORTH)
+                        .setValue(ChestBlock.TYPE, ChestType.LEFT),
+                Block.UPDATE_CLIENTS);
+        level.setBlock(
+                helper.absolutePos(rightRelative),
+                Blocks.CHEST.defaultBlockState()
+                        .setValue(ChestBlock.FACING, Direction.NORTH)
+                        .setValue(ChestBlock.TYPE, ChestType.RIGHT),
+                Block.UPDATE_CLIENTS);
     }
 
     private static void setBlock(GameTestHelper helper, BlockPos relativePos, BlockState state) {
