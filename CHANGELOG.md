@@ -1,287 +1,159 @@
 # Changelog
-- Unhired villagers at Revered reputation or higher can now be told to stay, while active hirers retain access regardless of reputation.
-- Standardized normal, hired-job, and party-villager interaction options; locked unavailable commands consistently and removed misleading no-op work configuration entries.
-- Animal handlers now collect cull drops and nearby work XP before selecting another cull target, and keep a held Mending weapon equipped until it is repaired and any excess villager-owned XP is consumed.
-- Fixed animal handlers overlooking distant herds within large job sites by periodically caching animals across the full assigned area and using bounded intermediate path steps for breeding, culling, and product collection.
-- Consolidated assigned Tool and Input storage into Supplies; existing assignments and saved Clipboard modes migrate automatically, and both workers and couriers use the unified chest purpose.
-- Villagers now stow held weapons outside combat whenever personal or party storage has room, while active workers keep and dynamically switch the tool needed for their current job action; saved melee/range preferences still control which weapon they draw for combat.
-- Added an Unequip Weapon(s) action for authorized party villagers, moving held weapons and shields into party hotbar slots first and then other party inventory slots.
-- Standardized unmounted villager movement across vanilla AI and mod-owned routes: ordinary roaming, work, gathering, and nearby following now use vanilla walking speed, while retaliation, fleeing, regrouping, and following beyond eight blocks use Vindicator-equivalent running speed.
-- Fixed Chat Heads player icons disappearing after animated villager dialogue caused Villager Retaliation to replace the vanilla chat renderer. When Chat Heads is installed, chat now stays on the compatible vanilla rendering path while villager dialogue retains its static styling.
-- Added a titled, top-layer scrolling-instructions tooltip to the Gift button and the item-filter-style preview shake when scrolling reaches or pushes past the selected stack limit.
-- Reworked gift selection so clicking leaves the source stack untouched and shows an unnumbered give-all item preview, scrolling visually moves individual items between the inventory and preview without mutating inventory, and gifting resolves the chosen amount only on confirmation; the slot, hover, highlight, scroll, and tooltip behavior now comes from unreleased ToucanLib 0.4.0.
-- Fixed recent FPS and integrated-server frame-time regressions by caching output item-frame queries until placement, interaction, removal, load, or unload invalidates them and reusing parsed clipboard preview owner labels instead of rebuilding them every frame.
-- Persisted assigned output item-frame filters and amount limits so unloaded frame entities retain their last known routing and backpressure configuration; loaded frames refresh the snapshot automatically.
-- Hardened multiblock assigned storage so either half of a double chest shares assignment lookup, removal, route tethering, visit tracking, cooldown clearing, and courier pickup without relinking.
-- Fixed severe integrated-server stutter from output backpressure checks repeatedly rescanning assigned containers and nearby item frames for every courier inventory slot.
-- Added hired-work output backpressure: workers pause without warning when every assigned output is full or filter-capped, resume automatically when capacity returns, and couriers preflight and collect only the downstream allowance.
-- Fixed animal handlers and fishermen leaving excess work experience orbs behind after their Mending equipment reached full durability; they now attract and consume the remaining work XP without retaining it.
-- Added clipboard actions to remove only selected container or payment-box assignments and to change selected assignments to the clipboard type.
-- Fixed long-route branch couriers skipping unloaded branch containers by prioritizing storage near the active branch within the bounded chunk-ticket window.
-- Fixed terminal branches being traversed twice at route reversal, gave overlapping branch storage priority at branch endpoints, and extended active yellow route highlighting onto branches.
-- Added clipboard Branch Mode for one-node route extensions, including light-blue normal and debug previews and courier input and output servicing along branch endpoints.
-- Wired branch anchors and endpoints into the courier traversal as ordinary out-and-back route nodes, so branch containers use the established route-node servicing path.
-- Fixed newly added branches disappearing from the clipboard preview until the route was assigned to a villager.
-- Fixed long-route couriers stalling at the endpoint after an unavailable output sweep by retracing route nodes before retrying from the start.
-- Improved courier node stops so they visit every eligible assigned container tethered to that node before returning to the route.
-- Added cooperative villager traffic handling: villagers approaching the same narrow passage or route now use stable right-of-way, briefly queue when blocked, and sidestep when nearby terrain provides a safe passing space.
-- Fixed checkbox and icon option labels being clipped instead of wrapping, and added an "Assign and Keep Selection" clipboard action for reusing selected containers across villagers.
-- Fixed party follow reconciliation repeatedly restarting an active follow command and interfering with combat navigation, which could cause extreme movement-speed spikes after retaliation began.
-- Added each party villager's gender above their profession in the inventory name-hover tooltip.
-- Fixed mounted party villagers having their Move To horse route canceled as a stay order; they now hold at the destination and automatically regroup when the commander returns within three blocks.
-- Fixed unscoped profession greetings and farewells bleeding into reputation-specific opening and closing pools.
-- Fixed hired-work checkbox options being rejected by the recruitment trust gate instead of reporting the updated setting naturally.
-- Fixed currency gift names such as Emerald appearing lowercase in the known-gifts tooltip.
-- Fixed disliked and hated gifts being accepted or consumed instead of being rejected while still applying their negative reputation.
-- Fixed empty villager hunger being harmless; villagers now take player-equivalent starvation damage based on world difficulty.
-- Removed accidental two-line dialogue combinations introduced during the dialogue expansion while preserving the individual authored lines.
-- Fixed the Stay Here interaction remaining locked for a villager's active hirer when their reputation was below Trusted.
-- Added composable villager downed-state settings for universal, raid, hired, and party eligibility, plus independent player, mob/entity, and environmental lethal-damage filters.
 
-- Added villager hunger to the overhead reputation debug view and made the vanilla Hunger status effect drain villager hunger through a default-on balance option.
-- Fixed normal conversation openings that could stitch two separate greetings together.
-- Fixed awake hired villagers refusing to follow during the vanilla rest schedule; follow navigation now clears stale Brain pathing state and retries the owner's coordinates before falling back to entity pathing.
-- Reverted the clipboard-wide state reset introduced in `af9892fd`; applying a work-area draft now clears only that draft and preserves the selected clipboard mode and other clipboard state.
-- Fixed the entity-specific interaction guard intercepting clipboard, construction-blueprint, and item-filter interactions before their dedicated villager handlers could open.
-- Routed payment-box assignment through the same villager clipboard menu as every storage assignment mode, added 20 unique opening lines before a choice is made, and replaced doubled assignment-result text with single unique villager responses.
-- Fixed stale assignment-only villager data making a failed hire appear successful, leaving the apparent hirer unable to issue follow commands or assign storage and courier routes.
+## 1.0.0-beta.13 - Unreleased
 
-- Rebalanced couriers to collect a separate skill-scaled allowance from every assigned input container: one guaranteed stack plus up to one bonus stack, capped at two stacks per container.
+Beta.13 is the Hired Help and Village Life update. It adds complete worker logistics, player parties, persistent village allegiance, Player Raids, protected villagers, duels, quest scenes and encounters, and a much larger quest catalog.
 
-- Refined courier routes so assigned input and output containers tether to their nearest route node within 16 blocks, use node-to-container-and-back detours, collect from later inputs consistently, and retrace route nodes on the return trip.
-
-- Moved remaining player-facing party-adjacent, interaction, quest, inventory, clipboard, village-naming, map, and raid text into localization entries.
-
-- Fixed the dialogue gift inventory shrinking independently from the interaction container at GUI scale 4.
-
-- Added GUI scale 4 support for the player party inventory, centering the player inventory and its adaptive left-side villager panels together as one group.
-
-- Added optional EMI compatibility so recipe/item panels wrap around villager inventory tabs and expanded party inventory panels instead of covering them.
-
-- Added a live hired-contract countdown beside the villager timer stat, with a full remaining-time tooltip in villager and party inventory views.
-
-- Fixed duel participants transferring items during a fight: player drop input is now rejected before inventory removal, and both players and villagers are prevented from picking up or dropping world items for the duration of the duel.
-- Fixed assigned duels allowing party villagers to pull weapons or ammunition from party/job inventory; duel combat now isolates its live loadout from every external work-inventory read, write, synchronization, and equipment-maintenance path.
-
-- Added a default-on Player Raid horn confirmation. The first horn use warns the player in chat, and a second use by the same player in the same village within 30 seconds declares the raid.
-
-- Fixed recruited-villager retaliation limits ignoring high reputation; Revered recruits now allow five hits before disciplining the player, while Royalty recruits retain their retaliation bypass.
-
-- Improved heavy clipboard and hitbox debug-preview performance by culling off-screen containers, job sites, routes, markers, and text; limiting worst-case visible route and label work; and caching terrain-following route geometry between frames. The visible node, label, and route-segment limits are configurable in the Debug Overlay settings.
-
-- Hidden Job Inventory and Storage job-menu entries until the player has hired that villager; former hirers still see Job Inventory while reclaimable contract gear remains.
-- Job-inventory stacks deposited into assigned storage after completed work or contract expiry now shed their job metadata so they merge with identical normal items.
-
-- Added item-frame filters for courier output storage. Attached frames apply automatically: couriers prioritize framed containers for matching cargo, route other items to other outputs, and treat both halves of a double chest as one filtered container. A Villager Item Filter displayed in a frame now applies its configured allowlist or denylist to that output chest. Clipboard storage previews now outline a connected chest with one combined box for clearer feedback.
-
-- Fixed hired party villagers duplicating party-owned weapons and armor into personal inventory while attempting to scavenge ground upgrades; authoritative party equipment now rejects both path selection and stale pickup completion.
-- Fixed recruited and hired villagers sometimes opening the vanilla trading menu; controlled contract states now consistently suppress trading.
-
-- Villagers in combat can now pursue and equip stronger dropped armor, preserving displaced pieces in their personal inventory when space is available.
-- Improved dropped-weapon scavenging so villagers prefer melee weapons over ranged weapons, choose the strongest eligible nearby upgrade before distance, and revalidate drops at pickup time.
-
-- Added The Mark You Chose advancement for starting a villager conversation while displaying the ominous banner on a worn helmet or held shield.
-
-- Added automatic Totem of Undying handling for adult villagers. Carried totems now take priority in the off-hand unless a player explicitly assigned that slot, replenish after use, and remain equipped while party villagers raise a stored shield from the main hand.
-- Expanded Raise Shields combat behavior so guarded villagers swap to melee weapons only for in-range attacks and raise the shield again afterward, while bow and crossbow users retain their weapon through each complete shot cycle and guard between shots.
-
-- Prevented gift reputation farming with persisted per-player/per-villager daily caps, sharply reduced gains from repeated stacks of the same item, and a server-side gift request cooldown. Added server config controls for all three limits.
-
-- Reworked hired-job qualification around two relevant skills: ordinary roles now require a cumulative total above 60, while canonical vanilla professions automatically qualify for their matching role. Courier remains universal for adults, Nitwit remains profession-restricted, and Builder remains a one-off service.
-- Added skill-based hired-work throughput. Weighted 70/30 role aptitude now scales worker cadence, block work, fishing waits, hired attack recovery, courier cargo, and facility collection trips without changing vanilla workstation processing timers.
-- Added a third Job Stats interaction view with role readiness, qualification progress, profession overrides, aptitude, work speed, transfer capacity, and contributing-skill details.
-- Successful hired work now preserves each action's practice budget while splitting it between the role's primary and support skills at 70/30.
-
-- Fixed villagers attempting to collect seeds and other unrelated item drops while fighting or fleeing; combat threat state now suspends vanilla, hired-farming, and party drop pickup so higher-priority behavior keeps control.
-
-- Fixed defending Player Raid villagers recognizing only their current player target as hostile; every participating raider player now remains an aggressor while defenders fight other party players or recruited villagers.
-- Fixed hired villagers rejecting Follow Me and Stay Here commands from their own hirer as though another player held the contract, then clearing or interfering with accepted follow routes; hired work now pauses before follower navigation begins and yields to the ordinary follow AI while they follow or hold position, while commands from other players remain blocked.
-- Prevented a Ride On rear passenger from damaging an allied front-seat driver, covering players and villagers, melee, projectiles, indirect damage, mutual parties and alliances, vanilla teams, shared village allegiance, and active hirers.
-- Fixed recruited villagers duplicating party equipment into their personal inventory when party gear replaced a temporarily borrowed personal weapon; party/job main-hand equipment now retains sole authority.
-- Fixed party villager contracts locking the recruiter out of leftover supplied gear after expiry, dismissal, party disbanding, or raid-driven release; the recruiter now receives the existing three-day job-inventory claim window.
-- Fixed completed Player Raids allowing the same village to be raided again after a player victory or relog; the configured village cooldown now persists after either outcome.
-- Fixed permanently removed defenders leaving Player Raid boss bars stuck at one, and added a disabled-by-default debug option to make loaded tracked defenders glow.
-- Fixed damaged Mending armor and held equipment on villagers, including fishing rods, not attracting and absorbing nearby experience orbs.
-- Restored hired-fishing catch experience for fishermen with an equipped Mending fishing rod while keeping catch experience disabled for ordinary rods.
-- Fixed builders showing a missing-storage warning when they already carry the materials needed to continue building.
-- Fixed couriers stopping when assigned input storage was empty; they now keep patrolling their route and collect items that appear at later inputs.
-- Fixed unemployed recruited villagers claiming job-site professions while actively in a party; rejected job sites are released and can be claimed normally after the villager leaves the party.
-
-- Fixed villagers created during village world generation being permanently marked as Wanderers before their village POIs and footprint became available; initial allegiance discovery now uses the bounded retry queue until the surrounding observation is complete.
-- Reworked assigned mounts to use Minecraft's native mob-jockey control path without requiring a companion mod, while optionally integrating with Ride On 1.0.0-pre-release.3 or newer for two villagers or a player and villager on one mount.
-- Added coordinated Ride On seat transitions: the front passenger controls the mount, rear villagers do not compete for movement or rotation, authorized players can take the driver seat even when both seats are occupied, and assigned villagers promote and remount after the player leaves.
-- Fixed mounted party followers retaining only their last regroup route; ordinary follow now keeps the villager mounted, refreshes the horse's route against the moving leader, and uses full horse speed with catch-up scaling.
-- Lowered mounted villagers into the saddle using vanilla's humanoid mob-rider offset instead of leaving them hovering above horses, mules, and donkeys.
-- Mounted villagers now walk at normal mount speed within eight blocks of their leader or movement target and switch to the mount's catch-up sprint beyond that range.
-- Fixed mounted villagers retaining combat targets without landing melee attacks; saddle combat now measures reach from the controlled mount's body while the villager remains the attacker.
-- Fixed mounted ranged villagers failing to complete crossbow attacks; committed shots now reserve their projectile, retain the crossbow through the full charge/load/fire cycle, and synchronize the loaded stack with the job inventory.
-- Added persisted one-to-one mount assignments, party and hired-worker controls, long-distance mounted travel, precise-work dismounting, unload/remount retry behavior, parking anchors, and cleanup for terminal villager, mount, and contract lifecycle events.
-- Added GameTests for single-seat assignment, vanilla controlling-passenger selection, rider-to-horse navigation delegation, travel, parking, lifecycle cleanup, and remount behavior.
-- Kept authorized player takeover for saddled assigned mounts, with automatic villager remounting after the player yields the horse.
-- Added chat-command party membership and mutual alliances under `/villagerretaliation party`; allied players and recruited villagers no longer target or retaliate against one another.
-- Added a mercy stage to Player Raids: after armed defenders fall, raiders can right-click snapshotted babies and nitwits to spare them, leave them for a manual kill, or say nothing. Spared villagers survive with exactly `-1000` reputation toward every raider player, while nearby unresolved survivors occasionally plead for their lives.
-- Added 15 victory reactions and 15 loss reactions for recruited party villagers at the end of Player Raids.
-- Added built-in optional Second Wind compatibility for every VR-protected villager. Second Wind can channel an early player revive, while VR remains authoritative and villagers continue to recover automatically instead of bleeding out.
-- Added a persisted fourth downed presentation using Second Wind's crawl posture alongside sitting, side-lying, and hands-and-knees variants.
-- Prevented a held Second Wind revive input from immediately opening the recovered villager's interaction menu.
-- Kept widened downed-villager hitboxes out of adjacent solid blocks, including a compact-pose fallback for tight spaces.
-
-- Added party quick commands that send participating villagers to gather nearby ground drops or loot containers around the ping location; Move To and Regroup supersede either gathering order.
-- Made active drop-gathering and container-looting orders override villager combat targeting, and placed the command wheel directly below the vanilla chat layer so translucent chat no longer masks it out.
-- Fixed shared-story dialogue resolving the location placeholder `{target}` as a recent retaliation target, such as calling a Pillager a place instead of naming the Pillager Outpost.
-- Tightened village footprints so POI padding stays horizontal and tagged paths extend bounds only when their actual blocks connect, eliminating empty sky/depth sections and unrelated section-level path bridges.
-- Made generated village names additive and data-driven through `data/villagerretaliation/village_names/`, and expanded the built-in prefix/suffix pool from 1,944 to 7,998 possible combinations.
-- Reworked village homes: spawned villagers join only when created inside a village, outside spawns become Wanderers, Wanderers settle after one continuous day, party members do not settle automatically, and Revered same-party players can explicitly choose a party villager's home.
-- Reworked newborn allegiance so birthplace takes priority, while babies born outside a village inherit the first parent's known home; replaced the technical Allegiance readout with player-facing questions and villager dialogue about home and local belonging.
-- Optimized village-home maintenance with indexed section lookups, priority-scheduled villagers and uncertainty retries, hard per-tick work budgets, O(1) same-village residency checks, and staggered lifecycle scans instead of periodic full entity sweeps.
-- Improved village allegiance assignment with durable uncertainty retries, evidence scoring, parent-aware inheritance, protected mixed parentage, shrinkable current footprints, conservative automatic merges, merge recovery, residency-based reassignment, confirmation prompts, bounded assignment history, stale-roster filtering, and explain/repair diagnostics.
-- Added global and per-villager party combat modes for kill on sight, attack with party, or self defense, plus target modes for animals, hostiles, players, other parties, or all targets. New parties and recruits default to attack with party.
-- Added a server-authoritative downed state for protected villagers. Active party members, quest-v2 providers, protected scene actors, and villagers tagged `villagerretaliation_essential` survive ordinary lethal damage, suspend AI and interactions, and recover after a configurable quiet period.
-- Added quest-v2 provider `death_protection` policies (`none`, `while_active`, and `after_start`) plus scene-v1 actor `lethal_damage_policy` values (`normal` and `downed`), including generated schemas, durable state, client synchronization, and an incapacitated whole-body pose.
-
-- Hardened persistent quest scenes with player-scoped and shared-party run IDs, immutable startup ordering, durable legacy operation aliases, exact overall deadline wakes, centralized failure/cancellation policy transitions, uniform terminal cleanup, persisted `wait_for_result` continuations, typed quest transitions, and bounded terminal tombstones.
-- Added regression coverage for scene resource diagnostics, repeatable and party run identity, repeated legacy migrations, operation reuse, waiting/blocked deadlines, policy recovery, cleanup queuing, continuation reload/outcomes, quest-transition self-cancellation, and replay-safe history compaction.
-
-- Added receipt-guarded per-wave, phase, and completion encounter rewards, named trophy items, validated loot-table grants, and retry-safe normal/suppress/authored-only/trophy-only mob drop policies.
-- Added participant-only, dimension-aware encounter navigation with coordinate privacy, durable discovery and arrival, distance and compass tracker values, temporary HUD markers, directional particles, and terminal cleanup.
-- Added bounded encounter-owned environmental cues and temporary blocks, including participant sounds/music, particles, glowing columns, persisted block ownership, reload-safe reconciliation, and cleanup that never overwrites later player edits.
-- Added deterministic weighted encounter variants on selector templates and `start_encounter` steps, with persisted seeds, selected IDs, resolved templates, recursive-reference diagnostics, scene branches, tracker placeholders, and operator inspection.
-- Added datapack-authored encounter failure handling for player or protected-actor death, with bounded fail, wave reset, full restart, timed pause, and receipt-guarded scene-branch actions plus durable attempts, deadlines, and retained progress.
-- Added controlled encounter allies from entity definitions or bound scene actors, with separate durable identity, survival, invulnerability, revival, replacement, completion-gating, targeting, and cleanup policies.
-- Added composable `all`/`any` encounter completion objectives for survival, protection, entry defense, escorts, target destruction, leader defeats, item retrieval, area control, and legacy enemy-clear conditions, with durable tracker and operator state.
-- Added durable mid-fight encounter phases triggered by waves, remaining enemy percentage, elapsed time, or named elite defeats, with receipt-guarded notifications, dialogue, fact sets, and scene transitions.
-- Added named encounter spawn points sourced from scene actors, marker aliases, or explicit coordinates, with durable random, sequential, weighted, participant-distance, and member-group selection.
-- Added allowlisted elite and boss encounter members with safe names, visibility, glow, persistence, bounded combat attributes, correct post-initialization health, and participant-only reload-safe boss bars.
-- Added explicit raid-wave compositions with stable wave IDs, per-wave members, delays, triggers, boss-bar titles, equipment defaults, and durable participant hooks while retaining `members` plus `wave_count` shorthand.
-- Added optional, durable encounter areas with bounded horizontal and vertical radii, participant `ignore`, `warn`, `pause`, and `fail` leave policies, and owned-mob `ignore`, `return`, and timed `teleport` policies.
-- Added datapack-authored encounter equipment, enchantments, drop chances, and `group`, `near_player`, `fixed`, and persistent `raid_waves` spawn modes.
-- Added participant-only raid-wave boss bars, enabled by default and configurable with the encounter template's `boss_bar` field.
-- Updated Standing Watch into a two-wave village defense, moved Night Run's attack to a surfaced destination away from its quest giver, and made the remaining built-in encounter placement modes explicit.
-
-## Unreleased
-
-- Consolidated hired ownership, commands, roles, anchors, lifecycle timestamps, schema, and state revisions into a canonical villager assignment; recruitment now validates stale state and returns authoritative success/failure snapshots instead of optimistically toggling the client.
-
-### Fixed
-
-- Fixed recruited party villagers failing to target defending iron golems during active Player Raids; the Villagers attack mode now includes iron golems.
-- Fixed active Player Raids becoming difficult to finish when a remaining defender is hidden or invisible; banner-helmet raiders can now reuse a goat horn to reveal nearby tracked defenders.
-- Fixed the party attack quick-wheel losing or rejecting its crosshair target, including Player Raid defenders excluded by a villager's normal attack mode.
-- Fixed outside-spawned recruited villagers incorrectly inheriting a nearby village's grievance and confronting their own party leader.
-- Fixed villager trade-level XP previews drifting from the actual award during rapid or shift-click trading, including when server multiplier settings differ from the client.
-- Fixed low-XP trades consuming fractional trade-level XP banked by earlier trades without awarding that progress.
 
 ### Added
 
-- Reworked villager skill growth around successful practice: hired workers now learn only from measurable completed actions, larger jobs train more than trivial ones, repeated equivalent work has diminishing returns, and higher skill levels take longer to improve. Existing villager skill values are preserved.
-- Added bounded soft loading for assigned payment boxes when automatic contract renewal is due; payment chunks load at FULL-only status without block or entity ticking, release immediately after charging, and use short timeouts plus per-renewal and server-wide rate caps.
-- Added `/villagerretaliation debug raid win` and `/villagerretaliation debug raid lose` operator commands for settling the relevant Player Raid.
-- Expanded personal, job, and party villager inventories with nine-slot hotbars; assigned job tools now prefer mainhand then hotbar storage, while ordinary supplies, outputs, and party drops use the hotbar only for overflow.
-- Added durable POI-backed village identities with generated names, canonical aliases, resident rosters, automatic connected-footprint merging, loaded-only empty-grace observation, and archival after 72,000 fully observed ticks.
-- Added permanent villager and natural-golem allegiance, neutral Wanderers for outside spawns, lazy v1 reset-on-load migration, conversion handling, and trusted reassignment from the Allegiance interaction page.
-- Added allegiance-aware combat and community response: recruits can fight Wanderers or foreign villages without the victim having a party, same-party and same-village damage is blocked, actual landed damage rallies only the victim's village, and foreign golems become reactive defense targets.
-- Added banner-on-bell village naming with server-side validation and a Revered-or-Royalty gate covering at least half of tracked living adult residents; operators can bypass the trust gate.
-- Added `debugOverlay.showVillageBounds`, a bounded subscription-based POI-section outline preview with canonical village names shown at the top center of the HUD while inside a synchronized footprint.
-- Added allegiance village administration commands for inspecting, listing, and renaming tracked villages.
-- Expanded village footprints to include every tagged village structure piece and connected tagged terrain such as vanilla dirt paths, with datapack tags for modded village structures and terrain blocks.
-- Added separate horizontal and vertical excavation orders for hired miners. Horizontal excavation uses five-block reach, cuts and later removes temporary access stairs for tall spaces, avoids ladder shafts, and can patch unsafe floors with mined or user-supplied blocks.
-- Added 15 repeatable village commissions spanning early, mid, and late game, with distinct gathering, trading, building, mining, combat, structure-survey, Nether, End, Ancient City, and Wither objectives.
-- Added five four-quest branching questlines: Green Thumb, Deep Delvers, Redstone Works, Nether Routes, and End Survey. Each line records a player choice, provides two playable stage routes, and unlocks a different fact-gated finale.
-- Added dedicated built-in quest-content validation for title length, repeatable dialogue variation, hand-in consumption, cooldowns, loot references, parent graphs, stage reachability, objective predicates, terminal turn-ins, choice routes, branch children, and expansion objective uniqueness.
+#### Hiring, Contracts, And Progression
+
+- Added renewable hired-villager contracts with role and duration selection, reputation- and aptitude-aware prices, daily wages, extension limits, early-cancellation refunds, payment grace, automatic renewal, and live contract countdowns.
+- Added thirteen contract roles: Combat, Hunting, Mining, Logging, Farming, Fishing, Brewing, Craftsman, Animal Handling, Nitwit, Cook, Smelter, and Courier. Builder is offered separately as a paid one-off construction service.
+- Added role qualification through primary and support skills. Canonical professions qualify automatically, Courier is available to every adult, Nitwit remains profession-restricted, and Builder uses its own service eligibility.
+- Added a Job Stats view with role readiness, profession overrides, the two contributing skills, weighted aptitude, work speed, transfer capacity, and role-specific job icons and explanations.
+- Added skill-based hired-work practice and throughput. Completed work trains both role skills at a 70/30 split; the same weighted aptitude scales work cadence from 75% to 125% and transfer capacity from 50% to 150% without changing vanilla workstation timers.
+- Added a persistent, server-authoritative worker runtime with bounded work areas, route focus, work plans, task states, status and final reports, path backoff, unreachable-target memory, stall recovery, storage navigation, and budgeted scans.
+
+#### Worker Roles
+
+- Added Combat workers that guard or roam assigned areas and routes, use configurable target policies, switch weapons for the threat, recover between fights, and keep job combat separate from ordinary retaliation.
+- Added Hunting workers with selectable animal, hostile-mob, and player targets; patrol behavior; melee and ranged weapon support; ammunition recovery; and collection and deposit of hunting drops.
+- Added Mining workers with exposed-ore, horizontal excavation, and vertical excavation modes; vein plans; stairs and ladders; torch and support placement; hazard checks; water navigation; tool and supply retrieval; and output delivery.
+- Added Logging workers with selectable log families, natural-tree and Nether-fungus harvesting, optional stripping, leaf clearing and collection, decay-drop pickup, sapling replanting and bonemeal, and interrupted-tree recovery.
+- Added Farming workers that directly harvest mature crops, replant from job supplies, fill empty farmland, optionally till suitable soil, use hoes correctly, and deposit crop output.
+- Added Fishing workers with a real villager fishing hook, open-water spot selection, rod durability and enchantment handling, skill-scaled bite timing, catch XP handling, and immediate output deposits.
+- Added Brewing workers with selectable potion orders and batch sizes, water-bottle filling, ingredient and blaze-powder supply handling, support for potion variants, multiple brewing stands, and finished-potion collection.
+- Added Craftsman workers that use Recipe Filters to choose ordinary crafting recipes, pull exact ingredients from Supplies storage, work at crafting tables, and send crafted results to Output storage.
+- Added Cook workers that use filters and vanilla cooking recipes across available cooking workstations, fetch ingredients and fuel, and collect and deposit finished food.
+- Added Smelter workers that manage furnaces and blast furnaces, fetch raw materials and fuel, preserve fuel remainders, collect results, and spread work across multiple stations.
+- Added Animal Handling workers with selectable breeding targets, breeding and culling limits, safe culling drops and XP, sheep shearing, cow milking, egg and other product collection, tool retrieval, and periodic output deposits.
+- Added Courier workers that move filtered cargo between assigned containers, patrol empty inputs, honor per-container extraction allowances, collect Sell Box proceeds, and scale each transfer with villager aptitude.
+- Added Builder services with construction blueprints, placement and material previews, work-site validation, paid escrow, cancellation refunds, safe block-entity handling, clearing rules, pause/cancel/finalize states, and a data-driven village-house catalog.
+- Added a deliberately low-productivity Nitwit role with periodic supervision reports and its own configurable practice rate.
+
+#### Storage, Logistics, And Economy
+
+- Added persistent villager wallets with lifetime earnings, spending, and deposit totals. Trade income, wages, deposits, refunds, duel stakes, payment boxes, worker earnings, and Sell Box proceeds use the wallet economy.
+- Added data-driven currency definitions and the `villagerretaliation:currency` item tag so wallets, contracts, deposits, refunds, payment boxes, duels, drops, worker earnings, and sales no longer assume emeralds.
+- Added the Payment Box with a dedicated inventory and screen, recurring contract payment, shared-owner support, bounded chunk loading, automatic renewal, and configured-currency handling.
+- Added the Sell Box and daily market with 293 built-in price definitions, animated block art and UI, server-authoritative daily sale values, configured-currency payouts, and courier collection.
+- Added the Clipboard, Construction Blueprint, Villager Item Filter, Attribute Filter, and Recipe Filter items with crafting recipes, dedicated screens, previews, tooltips, and copy/reset utility recipes.
+- Added Clipboard workforce management for live worker lists, multi-selection, assignment and removal, role changes, warnings, work-area drafting and resizing, route editing, storage assignment, reusable drafts, and world-space previews.
+- Added per-purpose container assignments for Supplies, Output, General, and Payment storage. Shared and double containers retain every worker assignment and are resolved as one logical inventory where appropriate.
+- Added separate Personal, Job, and Party inventory views on top of the beta.12 storage foundation, with nine-slot hotbars, job equipment and filter slots, protected gear, authorization rules, reclaim windows, overflow handling, and safe return of supplied equipment.
+- Added role-aware tool selection, dynamic combat weapon switching, automatic weapon stowing outside combat, an Unequip Weapon(s) command, transient-gear tracking, and safeguards against duplicated or leaked equipment.
+- Added item filters with item and tag entries, quantities, allow/deny modes, all/any combination rules, stock targets, and configurable transfer policies.
+- Added Attribute Filters for component and item-property matching and Recipe Filters for selecting crafted, cooked, or processed outputs; EMI drag-and-drop can populate compatible ghost slots.
+- Added composable container filters, including attached item-frame rules, persisted filter snapshots, per-container collection and destination policies, and cached matching for large logistics networks.
+- Added output backpressure so workers pause when every valid destination is full or filter-capped, report the blocking reason, and resume when capacity returns.
+- Added Courier routes with ordered nodes, out-and-back branches, branch previews, reach hints, node-tethered container stops, bounded chunk tickets, nearest-node recovery, batching, and return traversal.
+- Added cooperative villager traffic handling for narrow passages and shared routes, with stable right-of-way, short queues, safe sidesteps, and Clipboard visualization controls.
+
+#### Parties, Commands, And Mounts
+
+- Added persistent player parties with paid villager recruitment, invitations, player and villager rosters, leader/admin controls, contract renewal and expiry, dismissal, disbanding, death cleanup, and saved party state.
+- Added shared Party inventory and management tabs, authorization-aware container access, protected party gear, preferred inventory opening, and cleanup when membership or contracts end.
+- Added party-wide quest credit, retaliation and witness context, raid memories, villager last-known positions, player-party membership commands, and mutual party alliances.
+- Added a party quick-command wheel with Follow, Stay, Move To, Regroup, Stand Guard, attack targeting, heal/recover, Ride Mount, Dismount Mount, gather drops, loot containers, equipment, and policy controls.
+- Added global and per-villager combat modes, target categories, weapon preferences, drop-collection rules, formation targets, friendly-fire protection, attack raycasting, and server-authoritative permission and target validation.
+- Added Stay Here for Revered unhired villagers and authorized hirers, plus one command policy that arbitrates following, holding position, Move To, Regroup, work, party orders, combat, and mounted travel.
+- Added persisted one-to-one mount assignments for party villagers and hired workers, supporting horses, donkeys, mules, llamas, and camels through native Minecraft mob-jockey control.
+- Added mounted following and long-distance work travel, precise-work dismounts, idle parking, unload/reload recovery, remount and seat promotion, leashed-mount selection, player takeover, and quick mount commands.
+- Added optional Ride On integration for two villager seats, front-rider control, rear-rider safety, player seat takeover, and automatic passenger reshuffling without competing navigation.
+
+#### Villages, Allegiance, Raids, And Villager Life
+
+- Added durable POI-backed village identities with canonical UUIDs and aliases, resident rosters, lifecycle state, merge history, retirement and archival, and persisted home allegiance.
+- Added connected village footprints built from occupied POIs, complete village structure pieces, and tagged connected terrain such as paths, with datapack tags for modded village worldgen.
+- Added data-driven generated village names, custom naming by using a banner on a village bell, synced Home dialogue, village-bound HUD labels, and operator inspect, rename, merge, prune, and reassignment tools.
+- Added Wanderer identity for villagers created outside tracked villages, one-day settlement for stable Wanderers, newborn home inheritance, delayed natural-spawn assignment, trusted home reassignment, and party-member settlement protection.
+- Added allegiance-aware behavior for villagers and natural iron golems. Locals, allied parties, Wanderers, and foreign communities are distinguished for reputation, gossip, retaliation, discipline, aid, and combat authorization.
+- Added a bounded village-footprint debug overlay with gold section outlines, current-village naming, subscription cleanup, and configurable render limits.
+- Added Player Raids started by displaying an ominous banner and using a goat horn, with an optional double-use confirmation, preparation and abandonment timers, boss bars, and persistent per-village cooldowns.
+- Added snapshotted raid parties and defenders, data-driven militia loadouts, golem reinforcements, defender highlighting, siege targeting, pursuit rules, betrayal handling, and persistent raid memories.
+- Added a raid mercy phase for babies and nitwits, village victory and defeat outcomes, fifteen outcome reactions, reputation consequences, dialogue follow-ups, and operator win/lose testing controls.
+- Added configurable downed protection for party members, hired villagers, quest providers, scene actors, raid participants, and tagged essential villagers, with source filters, threat checks, synchronized poses and collision sizes, quiet-period recovery, and optional Second Wind revival.
+- Added villager duels with server-authoritative offers and confirmation, configurable terms, optional stakes, isolated inventories and loadouts, arena boundaries, spectators, knockout recovery, cooldowns, sounds, post-duel dialogue, and witness stories.
+- Added villager hunger, visible hunger status, hunger-driven natural recovery, Hunger-effect drain, difficulty-scaled starvation damage, food recovery behavior, and healing after completed sleep, all with balance controls.
+- Added natural data-driven profession armor, per-piece mixing, armor scavenging and upgrade ranking, shields and guard loadouts, charged-crossbow preservation, arrow recovery, automatic Totem of Undying use, and Mending for armor and held equipment.
+- Added ominous banners as wearable player and villager head attachments and four advancements: Sound the Horn, Steady Gaze, The Mark You Chose, and The Village Falls.
+- Added in-game MarkedDown guide content covering reputation, interaction, quests, hiring, jobs, Clipboard storage, Builder work, parties, mounts, villages, gifts, watched property, downed villagers, Player Raids, controls, and advancements.
+
+#### Quests, Scenes, Dialogue, And Interfaces
+
+- Added 64 built-in quests, expanding the exact beta.12 catalog from 21 to 85 quests, including 33 repeatable requests and Cartographer's Atlas, Green Thumb, Deep Delvers, Redstone Works, Nether Routes, End Survey, Hearthbound, Field Medicine, Workshop Oaths, Courier Roads, and Last Ember.
+- Added five four-quest branching adventure lines with two choice-gated endings apiece, plus connected quest prerequisites, restart rules, provider policies, and end-game progression.
+- Added quest module v2 with one-file modules, declarative stages and aliases, branches and choice history, facts and scopes, availability rules, completion limits, provider binding, lifecycle hooks, shared actions and conditions, and v1 compatibility.
+- Added objective and trigger support for locations, structures, mob kills, block breaking, placing and interaction, trades, gifts, reputation, inventory, memory events, choices, facts, quest-state changes, and composite requirements.
+- Added failed and recoverable quest states, missing-provider rebind rules, provider death protection, deferred lifecycle work, deterministic transition evaluation, and traceable blocker reasons.
+- Added persistent quest scenes with typed durable actors, multi-tick steps, waits and continuations, deadlines, exactly-once operation receipts, saved run identities, disconnect and chunk-return recovery, cleanup, audits, and operator repair.
+- Added encounter templates with anchored areas, leave policies, authored spawn points and offsets, explicit waves, equipment and enchantments, drop chances, elites, bosses, boss bars, and deterministic weighted variants.
+- Added encounter phases, friendly participants, composite victory objectives, retries and failure policies, navigation markers and particles, temporary environmental blocks and restoration, rewards, trophy and mob-drop policies, and safe cleanup.
+- Added 10 built-in persistent scenes and five encounter templates for Atlas choices and patrols, Standing Watch, Night Ward, Night Run, Trial Chamber Recall, Nether and End choices, Mansion Warning, and Last Ember.
+- Added multi-quest tracking, completion history, selected-quest highlighting, bookmarks, count badges, reward and prerequisite previews, objective item counts, locked-adventure hints, saved journal position, and improved tracker navigation.
+- Added a standalone Quest Builder and expanded Datapack Generator support for quest v2, scene v1, and encounter v1 projects, including import, preview, validation, migration guidance, and datapack ZIP export.
+- Added dialogue and story coverage for hired work, parties, discipline, village allegiance, raids, downed recovery, duels, mount ownership, gifts, combat outcomes, return visits, and retaliation disengagement.
+- Added villager mouth movement while dialogue text appears, configurable text speed, cinematic transitions and bars, styled text effects, blip audio every few visible characters, and configurable routine chat broadcasting and muting.
+- Added a non-destructive gift amount selector, scrollable item selection, reaction previews and tooltips, per-player/per-villager daily reputation caps, repeated-item diminishing returns, request throttling, and keepsake-aware validation.
+- Added non-binary villager gender support across profiles, family data, breeding compatibility, preset names, UI labels, networking, persistence, and the operator `set_gender` command.
+- Added a centralized breeding and birth policy for managed villagers so party, hired, downed, and otherwise protected villagers keep consistent eligibility and newborn initialization.
+- Added configurable villager stat nameplates with health, armor, and hunger in Always, Hired Only, Party Only, or Never modes, plus a reputation debug overlay and an optional reputation icon in the vanilla trade screen.
+- Added optional EMI exclusion zones and filter-slot drag-and-drop so recipe panels avoid villager, party, Payment Box, and filter interfaces.
+- Added resource-pack support for dual-arm combat villagers, crossed-arm and side-arm layouts, armor and profession overlays, and OptiFine CEM/EMF-style villager models.
 
 ### Changed
 
-- Rebalanced skill-based trade leveling to scale linearly across a villager's profession skill, giving average-skilled villagers fairer progress while retaining the configured minimum and maximum multipliers.
-- Upgraded ten built-in quests with persistent scenes. Standing Watch, The Night Ward, The Night Run, and The Atlas Test's risky route now use controlled cleanup-safe encounters; Choose the Horizon, Choose a Road, and Choose a Star use choice-aware scene branches; and Trial Chamber Recall, House of Ill Omens, and After the Roar receive durable cinematic briefings.
-- Rewrote the remaining built-in v1 quests as self-contained quest module v2 resources while keeping their stable quest IDs, rewards, provider requirements, completion triggers, and saved quest identity.
-- Replaced repeated template dialogue with concise, Minecraft-specific offer, acceptance, reminder, decline, abandonment, and turn-in variations.
-- Rebalanced Trial Chamber Recall to consume its Trial Key and Breeze Rod, reduced its excessive repeat payout, and made every structure/proof requirement explicit in the quest stages.
-- Rebalanced Gilded Debt so completing the village's agreement grants positive gossip instead of an unexplained penalty.
-- Renamed overlong or awkward display titles to Stronghold Eye, Dark Roof Ink, Lost Civilization, and Choose the Horizon. All built-in quest titles now use one to four words.
-- Expanded the built-in catalog from 50 to 85 quests and regenerated the player-wiki quest data.
+- Beta.12 trade-based skill growth now uses continuous practice XP, advances more slowly at high skill values, and applies per-day and repeated-offer diminishing returns. Existing skill values and saved fractional trade progress are preserved.
+- Beta.12 skill-based merchant leveling now uses linear rather than squared skill scaling, guarantees at least one visible XP for an XP-bearing trade, persists fractional carry, and shows the same adjusted award on the merchant screen that the server applies.
+- The beta.12 villager interaction screen was redesigned with animated page transitions, scrollable option stacks, profession-colored art, portraits and ornaments, pixel controls, scale-aware tooltips, dedicated work and party pages, and consistent layouts across GUI scales.
+- The beta.12 quest runtime and tracker now compile staged quest state, facts, scopes, triggers, transitions, provider bindings, failure states, and blocker reasons instead of assuming a single live-provider objective flow.
+- The 21 beta.12 built-in quests were migrated from the v1 resource shape to self-contained quest module v2 files while preserving stable quest IDs and legacy v1 pack loading; their existing objectives, dialogue, rewards, prerequisites, and presentation were reauthored for the staged runtime.
+- Beta.12 dialogue trees, forced dialogue, and quest dialogue now share localized text metadata, actions and conditions, payload codecs, dry-run diagnostics, and consistent reload, replacement, removal, and session-clearing behavior.
+- The beta.12 active-quest journal is now a tabbed active/completed/history interface with multi-tracking, persistent selection and scroll state, richer objective and reward details, and updated HUD highlighting.
+- Beta.12 Skill Trade refreshes and Special Orders now use stricter server-authoritative request state, clearer readiness and refusal results, targetable schema validation, safer refresh replacement, and full Datapack Generator round-tripping.
+- The beta.12 Trade option is now shown only for villagers with a trade-capable profession instead of presenting an unusable trade path for every adult villager.
+- Beta.12 villager AI suppression now uses a central priority policy so active retaliation, conversation, trading, following, hired work, party orders, combat, support, sleep, and vanilla schedules do not overwrite one another.
+- Beta.12 profession combat and support now use unified weapon and action state so compatible vanilla and modded villagers can switch melee, shield, bow, charged crossbow, trident, potion, support, and recovery behavior without stale goals or conflicting animations.
+- Beta.12 witness retaliation no longer treats every nearby villager as the same community: witnesses must share the harmed villager's village allegiance, and indirect damage resolves the actual attacker before the community response is chosen.
+- Beta.12 Follow Me no longer uses a fixed `0.62` navigation speed: followers use vanilla villager walking speed (`0.5`) within eight blocks and Vindicator-equivalent running speed (`0.7`) beyond eight blocks.
+- New-config defaults changed from Despised `-250` and Feared `-750` in beta.12 to Despised `-400` and Feared `-1000`. Existing Feared `-750` values migrate to `-1000`; every other stored value, including Despised `-250`, is left untouched.
+- Normal beta.12 villager conversation now requires at least one empty hand. Shift-right-click bypass remains available, and the beta.12 Clipboard plus beta.13 purpose-built items use dedicated interaction handlers.
+- Beta.12's blanket rejection of baby-villager interaction was removed; babies can now use the conversation surfaces appropriate to them while adult-only trading, hiring, inventory, and combat actions remain gated.
+- Beta.12 profile and skill descriptions were rewritten to explain practical effects, practice gains, profession overrides, job aptitude, and progression more clearly.
 
 ### Fixed
 
-- Fixed controlled quest scenes becoming operator-blocked or leaving provider-locked quests stranded when the issuing villager died during the authored attack. Combat scenes now retain their saved anchor, skip unavailable presentation safely, and allow a compatible quest giver to finish the work.
-- Fixed `start_scene` actions rejecting the documented `scene` field even though the quest authoring tools and example pack emit it.
-- Fixed provider-bound abandonment and expiration hooks being lost when their issuing villager was unavailable. Deferred lifecycle events now survive saves and replay once after provider return or an audited compatible rebind.
-- Fixed Bread Delivery, Village Lanterns, and Trial Chamber Recall allowing repeat turn-ins without consuming their required items.
-- Fixed End City Survey lacking a parent link to Lost Civilization.
-- Fixed the dialogue validator rejecting the live work-status placeholders `{cap}` and `{types}`.
-- Fixed miners forcing direct ladder entries through blocked corners, abandoning persisted shafts after impossible obstructions, and stalling while extending a shaft beneath an existing ladder.
-- Fixed excavation safety state around unloaded chunks so unknown fluid faces remain blocked and permanent hazard seals are not forgotten while their chunks are unavailable.
+- Fixed beta.12 skill-trade registration adding duplicate villager or wandering-trader offers when registration ran more than once.
+- Fixed beta.12 skill-adjusted merchant XP losing or desynchronizing fractional carry after trades and offer refreshes, and fixed the merchant-screen preview drifting from the server award.
+- Fixed the beta.12 interaction and gift screens double-firing into vanilla interaction or trading paths and sizing the gift inventory incorrectly at GUI scale 4.
+- Fixed Chat Heads player icons disappearing after animated villager dialogue replaced the vanilla chat rendering path.
+- Fixed beta.12 generic profession greetings and farewells leaking into reputation-specific dialogue pools.
+- Fixed beta.12 disliked and hated gifts being accepted and removed from the player's inventory instead of being rejected.
+- Fixed villagers interrupting beta.12 retaliation or fleeing to collect unrelated vanilla item drops.
+- Fixed Bread Delivery, Village Lanterns, and Trial Chamber Recall allowing repeat turn-ins without consuming their required hand-in items.
+- Fixed quest abandonment and expiration hooks being lost while their original provider was unavailable; deferred lifecycle work now survives saves and replays only after a valid provider return or explicit compatible rebind.
+- Fixed beta.12 shared-story dialogue replacing the story's `{target}` structure placeholder with an unrelated remembered-retaliation target.
 
-## 1.0.0-beta.13 - 2026-06-21
+### Technical / Pack Development
 
-The Hired Help update turns recruitment into a full hired-worker system with contracts, job roles, assigned storage, work areas, payment boxes, wallets, and workforce management, while also expanding quests, dialogue authoring, villager AI, UI, and pack-development tooling.
+#### Added For Pack Authors
 
-- Added the Smelter hired role. Smelters use furnaces or blast furnaces inside their work area, retrieve raw iron, copper, or gold and fuel from job supplies or assigned storage, and deposit finished ingots as job output.
-- Added the universally available Courier hired role, including for unemployed villagers. Couriers collect up to 64 items per trip from assigned input storage, follow their required route to assigned output storage, deposit the delivery, and follow the route back for another load.
-- Storage and payment-container assignments can now be shared by multiple hired villagers without one villager removing another villager's assignment.
+- Added versioned JSON Schemas and registry metadata for `villagerretaliation:quest/v2`, `villagerretaliation:scene/v1`, encounter templates, skill trades, builder structures, and shared actor, provider, objective, trigger, condition, action, and scene-step registries.
+- Added data-driven roots for currency, 293 sell prices, builder structures, village names, natural job armor, Player Raid loadouts, localized counted-item text, quest module v2 resources, quest scenes, and quest encounters.
+- Added pack-extensible tags for village structures and terrain, allegiance holders, protected civilians, assignable mounts, currencies, ominous-banner equivalents, equipment, worker targets, and logistics matching.
+- Added public scene and quest extension registries with explicit recovery and client-sync contracts, stable IDs, registry freezing, duplicate checks, and compiled source diagnostics.
+- Added structured diagnostics, trace and explain commands, provider and lifecycle audits, objective and transition inspection, scene repair, village administration, hired-work previews, payload bounds, migration helpers, and example packs.
+- Added save schemas and migrations for assignments, parties, villages, quests, scenes, encounters, raids, mounts, wallets, storage, filters, profiles, and completion history, plus bounded server-to-client payloads for their user interfaces.
+- Added broad GameTest and lightweight regression coverage for worker roles, inventories, filters, transfers, parties, mounts, villages, allegiance, raids, duels, downed villagers, quest v1/v2 compatibility, scenes, encounters, dialogue, combat, rendering state, and save recovery.
+- Added player-wiki, pack-wiki, README, JSON-reference, first-quest, scene-runtime, tracked-village, Builder, Sell Box, raid, model, localization, and example-pack documentation for the beta.13 surface.
 
-### Added
+#### Changed For Pack Authors
 
-- Added hired villager contracts with role and duration selection, reputation/skill-based daily pricing, early-end refunds, recurring payment handling, unpaid/loaded-chunk status tracking, and dedicated hire menus.
-- Added hired roles for Combat, Mining, Logging, Farming, Fishing, Brewing, Builder, Animal Handling, and Nitwit, with profession preferences, skill unlock thresholds, role scoring, optional skill growth, and configurable efficiency.
-- Added hired worker sessions, work plans, focus tracking, bounded work areas, path reservations, blacklisting, stall detection, return-to-area behavior, storage navigation, and batched target scans so jobs can run with bounded server work instead of constant world scans.
-- Added split villager inventory management with Personal and Job views, job equipment slots, protected worker gear, supply and output slots, full-output handling, assigned output storage, and safeguards for preserving or displacing gear without duplication.
-- Added persistent villager wallets, lifetime earnings/spending/deposits, natural worker income, assigned-storage deposits, wallet UI, wallet-capacity tuning, and optional unlimited wallets.
-- Added the Payment Box block with item, menu, screen, recipe, loot-table, and currency-tag support for recurring worker pay and stored currency.
-- Added clipboard workforce management with assigned storage, payment storage, work-area drafting, move/resize/clear controls, storage and work-area previews, synced workforce snapshots, status pages, and warnings for missing storage, missing areas, full inventories, unpaid contracts, or straying workers.
-- Added Stay Here recruit behavior so recruited villagers can hold position when ordered instead of only following the player.
-- Added hired combat work with guard, roaming, attack-all, and hunting modes for patrolling assigned areas and targeting non-villager threats or animals without treating players, villagers, golems, or tamed animals as job targets.
-- Added mining, logging, and farming workers with exposed-ore and excavation mining modes, support placement, natural-tree harvesting, log filters, optional stripping/leaf handling/sapling replanting, mature-crop harvesting, replanting, and output delivery.
-- Added fishing, brewing, builder, animal-handling, and nitwit hired work, including villager fishing hooks, brewing orders and potion variants, construction blueprint placement/previews, data-driven build sites, animal breeding and product gathering, and lightweight nitwit job status behavior.
-- Added construction blueprints, builder placement controls, material and tool checks, paid build jobs, block-entity sanitization, material-storage lookup, and a data-driven default structure catalog based on vanilla village houses.
-- Added 14 built-in quests, bringing the built-in quest set to 35 with the Cartographer's Atlas questline, Standing Watch, and additional Village Supply requests for beetroots, bottles, eggs, feathers, and torches.
-- Added five new built-in questlines with 12 quests total: Hearthbound, Field Medicine, Workshop Oaths, Courier Roads, and the end-game Last Ember line.
-- Added quest module v2 support with one-file quest modules, providers, availability rules, lifecycle data, stages, stage aliases, branching responses, inline or extracted quest scenes, rewards, scoped completion limits, and legacy v1 compatibility.
-- Added new quest objective, trigger, fact, condition, and action support for locations, structure visits, mob kills, block break/place/interact tasks, memory events, trades, gifts, reputation checks, choices, facts, and condition-backed progress.
-- Added quest journal and HUD support for completion history, multiple tracked quests, selected-quest highlight mode, persisted quest selection and scroll position, tab-specific empty states, count badges, bookmarks, status styling, and scrollbar/highlight assets.
-- Added shared dialogue and quest action execution support, localized text keys, message prefixes, dialogue control flags, forced-dialogue replacement/removal controls, configurable dialogue text speed, dialogue blip audio, and configurable villager chat broadcasting.
-- Added non-binary villager gender support, broader deterministic name selection, opposite-gender breeding configuration, and `/villagerretaliation profile set_gender` for operator profile correction.
-- Added villager rendering and resource-pack support for dual-arm layouts, combat-capable model behavior, profession/type/level overlays, and vanilla OptiFine CEM/EMF-style model compatibility.
-
-### Changed
-
-- Expanded recruitment from follow/inventory management into contract-driven hired help with role selection, job inventory, assigned storage, payment, work areas, status pages, and workforce controls in the interaction UI.
-- Changed villager trades, wallets, deposits, payment boxes, villager drops, hire refunds, worker deposits, and trade costs to use the shared currency resource and `villagerretaliation:currency` item tag instead of assuming an emerald-only economy.
-- Reworked the villager interaction screen with new container art, currency icons, pixel option buttons, portrait/nameplate ornament assets, expanded work pages, synced status text, and currency-colored wallet labels.
-- Changed merchant trade leveling to support skill-based trade XP scaling, persisted fractional progress, synced profile payloads, and adjusted client-side merchant XP displays.
-- Reworked the quest runtime and tracker around staged progress, branch locking, current-stage persistence, blocker reasons, village-scoped facts, deterministic response transitions, choice history, and saved-condition evaluation without requiring a live issuer.
-- Changed the quest journal from the older single-surface tracker into a tabbed journal with better active/completed/history views, tracked-quest selection, scrolling behavior, status badges, and highlight rendering.
-- Reworked forced dialogue, quest dialogue, and authored dialogue trees to share localized text metadata, action execution, dry-run support, payload codecs, and runtime clear/reload behavior.
-- Changed villager AI and combat suppression so armed, angered, hired, or actively controlled villagers can avoid conflicting vanilla panic, flee, hide, bell, raid, food-sharing, hero-gift, and trader-avoidance behaviors when custom retaliation or work logic should be in charge.
-- Reworked retaliation and support behavior with extracted combat tactics, hostile-tier harassment throws, armorer/smith/golem repair support, passive cleric ally healing line-of-sight, and throttled natural hostile targeting.
-- Changed villager job, chest, pickup, and storage behavior so workers prefer assigned storage, recover from missing or blocked containers, extract dropped items more reliably, and keep job supplies/outputs separate from personal inventory.
-- Changed villager social and profile behavior with non-binary gender labels, breeding compatibility controls, persisted gender overrides, and expanded profile command support.
-- Changed the `despised` reputation threshold default to `-400`, making the most hostile reputation tier easier to reach than in older betas.
-- Changed config coverage with hire balance, worker food, per-role efficiency, skill growth, builder, storage, currency, dialogue animation, dialogue audio, and villager chat broadcast options.
-- Changed player and pack documentation for the larger feature surface, including updated README/wiki counts, quest authoring guidance, builder structure notes, resource-pack model notes, and generated datapack-builder metadata.
-
-### Fixed
-
-- Fixed duplicate skill-trade registration paths so repeated registration no longer appends duplicate villager or wandering-trader offers.
-- Fixed UI scale, text scale, tooltip bounds, hover regions, gift-page controls, profile/options hit detection, and merchant-screen XP display drift across common GUI scale settings.
-- Fixed merchant trade XP desync and fractional adjusted-progress loss after trades, offer refreshes, and merchant result/container updates.
-- Fixed hired worker inventory edge cases around protected gear, trade previews, hero gifts, food sharing, legacy overflow migration, output deposits, missing supplies, full storage, and equipment restoration.
-- Fixed worker pathing and job reliability issues around water, ladders, unreachable targets, blocked storage, returning to assigned areas, stale targets, storage recovery, pickup extraction, leaf bridges, and farming/logging/mining flow interruptions.
-- Fixed quest tracker, completion-history, objective-count, trigger-index, branch-locking, action-result, diagnostic-buffer, and payload-size edge cases that could leave progress stale, hidden, overreported, or unsafe to sync.
-- Fixed forced-dialogue and dialogue reload cases involving global replacement, removal files, localized text metadata, control-only dialogue entries, payload codec clearing, and action execution diagnostics.
-- Fixed villager AI compatibility issues where vanilla flee, avoid, panic, hide, raid, bell, gift, and food-sharing behaviors could fight custom combat, anger, retaliation, or hired-work behavior.
-- Fixed performance hot spots with spread tick work, gossip-distance checks, item-count caches, storage scans, hostile target polling, work-area scans, and worker target searches.
-- Fixed resource-pack and rendering compatibility around villager name rendering, profession/type/level overlays, combat model layout, and OptiFine CEM/EMF-style model behavior.
-
-### Technical / Pack Dev
-
-- Added data-driven currency definitions at `data/villagerretaliation/currency/`, currency item tags, configurable currency text color, and shared lookup paths for wallets, trades, drops, payment boxes, refunds, deposits, and hire costs.
-- Added data-driven builder structure definitions at `data/<namespace>/builder_structures/`, synced builder structure catalogs, placement/material diagnostics, and default generated village-house structure entries.
-- Added quest module v2 schemas, docs, migration helpers, diagnostics, trace/explain tooling, datapack-builder support, embedded/extracted scene handling, and compatibility adapters so v1 quests continue to load while new packs can target v2.
-- Added or expanded `/villagerretaliation` debug commands for hired-worker previews and target lines, quest provider/start/inspect/availability/trace/objective/stage/action/fact diagnostics, village registry inspection/merge tools, dialogue diagnostics, and profile gender overrides.
-- Added networking and save support for hired-worker, quest, dialogue, and builder systems, including protocol version `25`, server config sync, builder catalog sync, quest tracker sync, clipboard storage/work-area/workforce previews, construction blueprint placement, hired role settings, dialogue responses, completion history, choice history, current quest stages, and bounded payload collection reads.
-- Added structured quest, dialogue, action, objective, trigger, condition, village-scope, and builder validation warnings so datapacks fail with clearer diagnostics instead of silent partial loads.
-- Added GameTest and lightweight regression coverage for hired workers, villager inventories, quest v1/v2 compatibility, quest registries, completion history, tracker presentation, deterministic choices, suppressing vanilla trade/gift behavior, and worker storage/job flows.
-- Added pack-facing language keys, assets, GUI textures, tooltip text, config comments, and wiki snapshots for hired workers, quest v2 authoring, builder structures, villager models, dialogue controls, and the expanded quest journal.
+- Beta.12 v1 quest JSON remains supported through a compatibility adapter, while v2 is the maintained authoring target for new or intentionally migrated quests; stable quest IDs do not change.
+- Shared conditions and actions now drive dialogue and quests. Older helper-heavy dialogue fields still load where documented, but conditions are the maintained replacement and authoring tools flag planned deprecations.
+- The beta.12 Datapack Generator now preserves unknown and legacy pass-through content instead of silently rewriting it, and its beta.13 target can author quest, scene, encounter, dialogue, skill-trade, and other supported resources.
 
 ## 1.0.0-beta.12-hotfix.2 - 2026-06-06
 

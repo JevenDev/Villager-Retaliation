@@ -128,7 +128,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private static final String ITEM_FILTER_NEVERMIND_OPTION_ID = "item_filter_nevermind";
     private static final String QUEST_V2_TAG = "quest_v2";
     private static final String QUEST_OFFER_HINT_TAG = "quest_offer_hint";
-    private static final float OPTION_SCROLL_LERP = 0.32F;
+    private static final float OPTION_SCROLL_LERP = 0.42F;
     private static final float OPTION_SCROLL_STEP = 23.0F;
     private static final float OPTION_HOVER_SCALE = 0.055F;
     private static final float OPTION_SELECTED_SCALE = 0.02F;
@@ -895,7 +895,15 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
-        setTargetOptionScroll(this.state.targetOptionScroll() - (float) scrollY * OPTION_SCROLL_STEP);
+        if (usesInteractionOptionStack()) {
+            int direction = scrollY < 0.0D ? 1 : -1;
+            setTargetOptionScroll(VillagerInteractionOptionList.nextSnappedScroll(
+                    this.optionListContext,
+                    this.state.targetOptionScroll(),
+                    direction));
+        } else {
+            setTargetOptionScroll(this.state.targetOptionScroll() - (float) scrollY * OPTION_SCROLL_STEP);
+        }
         return true;
     }
 
@@ -5215,6 +5223,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
 
     private void ensureSelectedVisible() {
         if (this.state.selectedOption() < 0 || this.state.selectedOption() >= this.options.size()) {
+            return;
+        }
+
+        if (usesInteractionOptionStack()) {
+            setTargetOptionScroll(VillagerInteractionOptionList.scrollToReveal(
+                    this.optionListContext,
+                    this.state.targetOptionScroll(),
+                    this.state.selectedOption()));
             return;
         }
 
