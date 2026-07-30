@@ -56,6 +56,25 @@ public final class VillagerItemFilterMenu extends AbstractContainerMenu {
         VillagerItemFilterData.setMode(filterStack(), mode);
     }
 
+    public VillagerItemFilterData.EntryCombination entryCombination() {
+        return VillagerItemFilterData.entryCombination(filterStack());
+    }
+
+    public boolean setEntryCombination(VillagerItemFilterData.EntryCombination entryCombination) {
+        if (!isEditingHeldFilter()) {
+            return false;
+        }
+        boolean changed = VillagerItemFilterData.setEntryCombination(filterStack(), entryCombination);
+        if (changed) {
+            markFilterChanged();
+        }
+        return changed;
+    }
+
+    public void setClientEntryCombination(VillagerItemFilterData.EntryCombination entryCombination) {
+        VillagerItemFilterData.setEntryCombination(filterStack(), entryCombination);
+    }
+
     public int amount(int slot) {
         return VillagerItemFilterData.amount(filterStack(), slot);
     }

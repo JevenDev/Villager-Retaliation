@@ -7,6 +7,7 @@ import com.jvn.villagerretaliation.item.VillagerItemFilterItem;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import com.jvn.villagerretaliation.interaction.HiredVillagerContractService;
 import com.jvn.villagerretaliation.interaction.work.HiredFarmingInventoryBridge;
+import com.jvn.villagerretaliation.network.ItemFilterCombinationChangePayload;
 import com.jvn.villagerretaliation.recipe.VillagerAttributeFilterCopyRecipe;
 import com.jvn.villagerretaliation.recipe.VillagerFilterResetRecipe;
 import com.jvn.villagerretaliation.recipe.VillagerItemFilterCopyRecipe;
@@ -53,6 +54,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.crafting.CraftingBookCategory;
 import net.minecraft.world.item.crafting.CraftingInput;
@@ -134,6 +136,8 @@ public final class VillagerInventoryGameTests {
                 false);
 
         ItemStack combined = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntryCombination(
+                combined, VillagerItemFilterData.EntryCombination.ALL);
         helper.assertTrue(VillagerItemFilterData.setEntry(
                         combined, 0, new ItemStack(Items.WOODEN_PICKAXE)),
                 "ordinary identity entry should be accepted");
@@ -188,6 +192,8 @@ public final class VillagerInventoryGameTests {
         VillagerItemFilterData.setEntry(deniedSticks, 0, new ItemStack(Items.STICK));
 
         ItemStack combined = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntryCombination(
+                combined, VillagerItemFilterData.EntryCombination.ALL);
         helper.assertTrue(VillagerItemFilterData.setEntry(combined, 0, allowedWood),
                 "a nested allowlist should be accepted");
         helper.assertTrue(VillagerItemFilterData.setEntry(combined, 1, deniedSticks),
@@ -217,6 +223,160 @@ public final class VillagerInventoryGameTests {
         ItemStack tooDeep = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
         helper.assertFalse(VillagerItemFilterData.setEntry(tooDeep, 0, nested),
                 "nesting beyond the supported depth should be rejected");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void itemFilterCombinationModesCoverMixedEntriesAndDenylists(GameTestHelper helper) {
+        ItemStack cookedMeat = attributeTag("c:foods/cooked_meat");
+        ItemStack wool = attributeTag("minecraft:wool");
+        ItemStack emmitt = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(emmitt, 0, cookedMeat);
+        VillagerItemFilterData.setEntry(emmitt, 1, wool);
+        VillagerItemFilterData.setEntry(emmitt, 2, new ItemStack(Items.COOKED_COD));
+        VillagerItemFilterData.setEntry(emmitt, 3, new ItemStack(Items.COOKED_SALMON));
+        VillagerItemFilterData.setEntry(emmitt, 4, new ItemStack(Items.LEATHER));
+        helper.assertValueEqual(
+                VillagerItemFilterData.entryCombination(emmitt),
+                VillagerItemFilterData.EntryCombination.ANY,
+                "new filters should default to ANY composition");
+        for (Item item : List.of(
+                Items.COOKED_MUTTON,
+                Items.WHITE_WOOL,
+                Items.COOKED_COD,
+                Items.COOKED_SALMON,
+                Items.LEATHER)) {
+            helper.assertTrue(
+                    VillagerItemFilterData.matches(helper.getLevel(), emmitt, new ItemStack(item)),
+                    item + " should match Emmitt's mixed category-or-identity allowlist");
+        }
+        helper.assertFalse(
+                VillagerItemFilterData.matches(helper.getLevel(), emmitt, new ItemStack(Items.MUTTON)),
+                "raw mutton should not match Emmitt's mixed allowlist");
+
+        ItemStack intersection = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntryCombination(
+                intersection, VillagerItemFilterData.EntryCombination.ALL);
+        VillagerItemFilterData.setEntry(intersection, 0, new ItemStack(Items.WHITE_WOOL));
+        VillagerItemFilterData.setEntry(intersection, 1, wool);
+        helper.assertTrue(
+                VillagerItemFilterData.matches(
+                        helper.getLevel(), intersection, new ItemStack(Items.WHITE_WOOL)),
+                "ALL should accept an item satisfying every entry");
+        helper.assertFalse(
+                VillagerItemFilterData.matches(
+                        helper.getLevel(), intersection, new ItemStack(Items.BLACK_WOOL)),
+                "ALL should reject a partial match");
+
+        ItemStack deniedAny = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setMode(deniedAny, VillagerItemFilterData.Mode.DENYLIST);
+        VillagerItemFilterData.setEntry(deniedAny, 0, wool);
+        VillagerItemFilterData.setEntry(deniedAny, 1, new ItemStack(Items.LEATHER));
+        helper.assertFalse(
+                VillagerItemFilterData.matches(
+                        helper.getLevel(), deniedAny, new ItemStack(Items.BLACK_WOOL)),
+                "ANY denylist should reject any matching entry");
+        helper.assertFalse(
+                VillagerItemFilterData.matches(
+                        helper.getLevel(), deniedAny, new ItemStack(Items.LEATHER)),
+                "ANY denylist should reject a concrete match");
+        helper.assertTrue(
+                VillagerItemFilterData.matches(helper.getLevel(), deniedAny, new ItemStack(Items.DIRT)),
+                "ANY denylist should allow candidates outside every entry");
+
+        ItemStack deniedAll = intersection.copy();
+        VillagerItemFilterData.setMode(deniedAll, VillagerItemFilterData.Mode.DENYLIST);
+        helper.assertFalse(
+                VillagerItemFilterData.matches(
+                        helper.getLevel(), deniedAll, new ItemStack(Items.WHITE_WOOL)),
+                "ALL denylist should reject the complete intersection");
+        helper.assertTrue(
+                VillagerItemFilterData.matches(
+                        helper.getLevel(), deniedAll, new ItemStack(Items.BLACK_WOOL)),
+                "ALL denylist should allow a partial match");
+
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void itemFilterCombinationMigrationCopyAndPacketsAreSafe(GameTestHelper helper) {
+        ItemStack fuel = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
+        VillagerAttributeFilterData.setSelected(
+                fuel,
+                new VillagerAttributeFilterData.Attribute(
+                        VillagerAttributeFilterData.AttributeType.FURNACE_FUEL, ""),
+                false);
+        ItemStack legacy = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(legacy, 0, new ItemStack(Items.STICK));
+        VillagerItemFilterData.setEntry(legacy, 1, fuel);
+        CompoundTag legacyData =
+                legacy.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        legacyData.getCompound("villagerretaliation:item_filter").remove("EntryCombination");
+        legacy.set(DataComponents.CUSTOM_DATA, CustomData.of(legacyData));
+        helper.assertValueEqual(
+                VillagerItemFilterData.entryCombination(legacy),
+                VillagerItemFilterData.EntryCombination.LEGACY,
+                "roots without combination data should retain compatibility semantics");
+        helper.assertTrue(
+                VillagerItemFilterData.matches(helper.getLevel(), legacy, new ItemStack(Items.STICK)),
+                "legacy identity-OR plus nested-AND behavior should remain intact");
+        helper.assertFalse(
+                VillagerItemFilterData.matches(
+                        helper.getLevel(), legacy, new ItemStack(Items.WOODEN_PICKAXE)),
+                "migration must not silently reinterpret an established filter");
+
+        ItemStack copied = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.copyConfiguration(legacy, copied);
+        helper.assertValueEqual(
+                VillagerItemFilterData.entryCombination(copied),
+                VillagerItemFilterData.EntryCombination.LEGACY,
+                "copy normalization should preserve compatibility mode");
+        CompoundTag copiedRoot = copied.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY)
+                .copyTag()
+                .getCompound("villagerretaliation:item_filter");
+        helper.assertValueEqual(
+                copiedRoot.getString("EntryCombination"),
+                "legacy",
+                "copied legacy filters should persist an explicit marker");
+
+        ItemStack unknown = copied.copy();
+        CompoundTag unknownData =
+                unknown.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
+        unknownData.getCompound("villagerretaliation:item_filter")
+                .putString("EntryCombination", "future_mode");
+        unknown.set(DataComponents.CUSTOM_DATA, CustomData.of(unknownData));
+        helper.assertValueEqual(
+                VillagerItemFilterData.entryCombination(unknown),
+                VillagerItemFilterData.EntryCombination.LEGACY,
+                "unknown persisted values should fail safely to compatibility mode");
+
+        ItemFilterCombinationChangePayload invalid = new ItemFilterCombinationChangePayload(99);
+        helper.assertTrue(
+                !invalid.isValid() && invalid.requestedCombination() == null,
+                "invalid packet values should not author a logic mode");
+        ServerPlayer player = fakePlayer(helper.getLevel(), "VrCombinationPacket");
+        player.getInventory().setItem(player.getInventory().selected, copied);
+        VillagerItemFilterMenu menu = new VillagerItemFilterMenu(103, player.getInventory(), copied);
+        player.containerMenu = menu;
+        VillagerItemFilterItem.handleCombinationChange(player, invalid.combinationId());
+        helper.assertValueEqual(
+                VillagerItemFilterData.entryCombination(player.getMainHandItem()),
+                VillagerItemFilterData.EntryCombination.LEGACY,
+                "an invalid packet should leave the filter untouched");
+        VillagerItemFilterItem.handleCombinationChange(
+                player, VillagerItemFilterData.EntryCombination.ANY.networkId());
+        helper.assertValueEqual(
+                VillagerItemFilterData.entryCombination(player.getMainHandItem()),
+                VillagerItemFilterData.EntryCombination.ANY,
+                "the server handler should accept ANY");
+        VillagerItemFilterItem.handleCombinationChange(
+                player, VillagerItemFilterData.EntryCombination.ALL.networkId());
+        helper.assertValueEqual(
+                VillagerItemFilterData.entryCombination(player.getMainHandItem()),
+                VillagerItemFilterData.EntryCombination.ALL,
+                "the server handler should synchronize ALL");
+        menu.removed(player);
+        player.containerMenu = player.inventoryMenu;
         helper.succeed();
     }
 
@@ -2024,6 +2184,16 @@ public final class VillagerInventoryGameTests {
         BlockPos spawn = level.getSharedSpawnPos();
         player.moveTo(spawn.getX() + 0.5D, spawn.getY() + 1.0D, spawn.getZ() + 0.5D, 0.0F, 0.0F);
         return player;
+    }
+
+    private static ItemStack attributeTag(String tag) {
+        ItemStack filter = new ItemStack(VillagerRetaliationItems.ATTRIBUTE_FILTER.get());
+        VillagerAttributeFilterData.setSelected(
+                filter,
+                new VillagerAttributeFilterData.Attribute(
+                        VillagerAttributeFilterData.AttributeType.IN_TAG, tag),
+                false);
+        return filter;
     }
 
     private static void configureGameTestStructures() {
