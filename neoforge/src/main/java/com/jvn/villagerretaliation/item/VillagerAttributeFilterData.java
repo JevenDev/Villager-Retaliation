@@ -175,25 +175,18 @@ public final class VillagerAttributeFilterData {
 
     public static List<Component> tooltip(ItemStack filter) {
         Configuration configuration = read(filter);
+        List<Component> tooltip = new ArrayList<>(VillagerFilterPolicy.tooltip(filter));
         if (configuration.attribute() == null) {
-            return List.of(
-                    Component.translatable("item.villagerretaliation.attribute_filter.empty")
-                            .withStyle(ChatFormatting.DARK_GRAY),
-                    Component.translatable("item.villagerretaliation.attribute_filter.controls")
-                            .withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable("item.villagerretaliation.attribute_filter.empty")
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        } else {
+            tooltip.add(Component.literal("- ")
+                    .withStyle(ChatFormatting.DARK_GRAY)
+                    .append(configuration.attribute().display().copy().withStyle(ChatFormatting.GRAY)));
         }
-        return List.of(
-                Component.translatable("item.villagerretaliation.attribute_filter.mode")
-                        .withStyle(ChatFormatting.GRAY)
-                        .append(Component.translatable(configuration.inverted()
-                                        ? "item.villagerretaliation.attribute_filter.mode.exclude"
-                                        : "item.villagerretaliation.attribute_filter.mode.match")
-                                .withStyle(ChatFormatting.GOLD)),
-                Component.literal("- ")
-                        .withStyle(ChatFormatting.DARK_GRAY)
-                        .append(configuration.attribute().display().copy().withStyle(ChatFormatting.GRAY)),
-                Component.translatable("item.villagerretaliation.attribute_filter.controls")
-                        .withStyle(ChatFormatting.DARK_GRAY));
+        tooltip.add(Component.translatable("item.villagerretaliation.attribute_filter.controls")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        return List.copyOf(tooltip);
     }
 
     private static CompoundTag customRoot(ItemStack filter) {

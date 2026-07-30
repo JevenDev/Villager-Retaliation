@@ -1,10 +1,13 @@
 package com.jvn.villagerretaliation.item;
 
 import com.jvn.villagerretaliation.VillagerRetaliation;
+import java.util.List;
 import java.util.OptionalInt;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.CustomData;
 
@@ -119,6 +122,82 @@ public final class VillagerFilterPolicy {
                 current.stockTarget()));
     }
 
+    /** Applies one fully validated editor action to a held configured filter. */
+    public static boolean applyChange(ItemStack filter, PolicyField field, int value) {
+        if (!VillagerRetaliationItems.isFilter(filter) || field == null) {
+            return false;
+        }
+        return switch (field) {
+            case DIRECTION -> {
+                TransferDirection direction = TransferDirection.fromNetworkId(value);
+                yield direction != null && setDirection(filter, direction);
+            }
+            case LIST_MODE -> {
+                ListMode listMode = ListMode.fromNetworkId(value);
+                if (listMode == null) {
+                    yield false;
+                }
+                boolean matcherChanged = false;
+                if (VillagerRetaliationItems.isItemFilter(filter)) {
+                    VillagerItemFilterData.Mode itemMode = listMode == ListMode.DENY_MATCHING
+                            ? VillagerItemFilterData.Mode.DENYLIST
+                            : VillagerItemFilterData.Mode.ALLOWLIST;
+                    matcherChanged = VillagerItemFilterData.mode(filter) != itemMode;
+                    if (matcherChanged) {
+                        VillagerItemFilterData.setMode(filter, itemMode);
+                    }
+                } else if (VillagerRetaliationItems.isAttributeFilter(filter)) {
+                    boolean inverted = listMode == ListMode.DENY_MATCHING;
+                    matcherChanged = VillagerAttributeFilterData.read(filter).attribute() != null
+                            && VillagerAttributeFilterData.read(filter).inverted() != inverted;
+                    if (matcherChanged) {
+                        VillagerAttributeFilterData.setInverted(filter, inverted);
+                    }
+                }
+                yield setListMode(filter, listMode) || matcherChanged;
+            }
+            case COMBINATION -> {
+                CombinationMode combination = CombinationMode.fromNetworkId(value);
+                if (combination == null) {
+                    yield false;
+                }
+                boolean matcherChanged = false;
+                if (VillagerRetaliationItems.isItemFilter(filter)) {
+                    VillagerItemFilterData.EntryCombination itemCombination =
+                            combination == CombinationMode.MATCH_ALL
+                                    ? VillagerItemFilterData.EntryCombination.ALL
+                                    : VillagerItemFilterData.EntryCombination.ANY;
+                    matcherChanged = VillagerItemFilterData.setEntryCombination(filter, itemCombination);
+                }
+                yield setCombinationMode(filter, combination) || matcherChanged;
+            }
+            case STOCK_TARGET -> {
+                Policy policy = read(filter);
+                yield value >= 0
+                        && value <= MAX_STOCK_TARGET
+                        && policy.valid()
+                        && policy.listMode() == ListMode.ALLOW_MATCHING
+                        && setStockTarget(filter, value);
+            }
+            case STOCK_DELTA -> {
+                Policy policy = read(filter);
+                if (!validStockDelta(value)
+                        || !policy.valid()
+                        || policy.listMode() != ListMode.ALLOW_MATCHING) {
+                    yield false;
+                }
+                int previous = policy.stockTarget().orElse(0);
+                int requested = (int) Math.clamp((long) previous + value, 0L, MAX_STOCK_TARGET);
+                yield requested != previous && setStockTarget(filter, requested);
+            }
+        };
+    }
+
+    public static boolean validStockDelta(int delta) {
+        return delta == -100 || delta == -10 || delta == -5 || delta == -1
+                || delta == 1 || delta == 5 || delta == 10 || delta == 100;
+    }
+
     public static boolean setStockTarget(ItemStack filter, int requestedTarget) {
         Policy current = editablePolicy(filter);
         OptionalInt target = requestedTarget <= 0
@@ -192,6 +271,40 @@ public final class VillagerFilterPolicy {
 
     public static int provideAllowance(Policy policy, int currentStock, int outboundClaims) {
         return allowance(policy, TransferOperation.PROVIDE, currentStock, outboundClaims);
+    }
+
+    public static List<Component> tooltip(ItemStack filter) {
+        Policy policy = read(filter);
+        if (!policy.valid()) {
+            return List.of(Component.translatable("item.villagerretaliation.filter_policy.invalid")
+                    .withStyle(ChatFormatting.RED));
+        }
+        Component direction = Component.translatable(
+                "item.villagerretaliation.filter_policy.direction." + policy.direction().id());
+        Component mode = Component.translatable(
+                "item.villagerretaliation.filter_policy.mode." + policy.listMode().id());
+        Component combination = Component.translatable(
+                "item.villagerretaliation.filter_policy.combination." + policy.combinationMode().id());
+        java.util.ArrayList<Component> lines = new java.util.ArrayList<>();
+        lines.add(Component.translatable("item.villagerretaliation.filter_policy.direction")
+                .withStyle(ChatFormatting.GRAY)
+                .append(direction.copy().withStyle(ChatFormatting.GOLD)));
+        lines.add(Component.translatable("item.villagerretaliation.filter_policy.mode")
+                .withStyle(ChatFormatting.GRAY)
+                .append(mode.copy().withStyle(ChatFormatting.GOLD)));
+        lines.add(Component.translatable("item.villagerretaliation.filter_policy.combination")
+                .withStyle(ChatFormatting.GRAY)
+                .append(combination.copy().withStyle(ChatFormatting.AQUA)));
+        if (policy.listMode() == ListMode.ALLOW_MATCHING) {
+            Component amount = policy.stockTarget().isPresent()
+                    ? Component.literal(Integer.toString(policy.stockTarget().getAsInt()))
+                    : Component.translatable("item.villagerretaliation.filter_policy.unlimited");
+            lines.add(Component.translatable(
+                            "item.villagerretaliation.filter_policy.stock." + policy.direction().id(),
+                            amount)
+                    .withStyle(ChatFormatting.GRAY));
+        }
+        return List.copyOf(lines);
     }
 
     public static int allowance(
@@ -298,6 +411,28 @@ public final class VillagerFilterPolicy {
         LEGACY,
         EXPLICIT,
         INVALID
+    }
+
+    public enum PolicyField {
+        DIRECTION(0),
+        LIST_MODE(1),
+        COMBINATION(2),
+        STOCK_TARGET(3),
+        STOCK_DELTA(4);
+
+        private final int networkId;
+
+        PolicyField(int networkId) {
+            this.networkId = networkId;
+        }
+
+        public int networkId() {
+            return this.networkId;
+        }
+
+        public static PolicyField fromNetworkId(int id) {
+            return id >= 0 && id < values().length ? values()[id] : null;
+        }
     }
 
     public enum TransferOperation {

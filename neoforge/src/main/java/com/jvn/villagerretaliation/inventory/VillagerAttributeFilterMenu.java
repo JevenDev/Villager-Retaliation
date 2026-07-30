@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.inventory;
 
 import com.jvn.villagerretaliation.item.VillagerAttributeFilterData;
+import com.jvn.villagerretaliation.item.VillagerFilterPolicy;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.Container;
@@ -13,7 +14,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /** Server-authoritative editor for a single selected item attribute. */
-public final class VillagerAttributeFilterMenu extends AbstractContainerMenu {
+public final class VillagerAttributeFilterMenu extends AbstractContainerMenu
+        implements VillagerFilterPolicyMenu {
     public static final int REFERENCE_SLOT = 0;
     private static final int PLAYER_INVENTORY_COUNT = 27;
     private static final int PLAYER_HOTBAR_COUNT = 9;
@@ -36,6 +38,31 @@ public final class VillagerAttributeFilterMenu extends AbstractContainerMenu {
         this.contentHolder = VillagerRetaliationItems.isAttributeFilter(selected) ? selected : openingStack;
         addSlot(new ReferenceSlot(this.referenceInventory, 0, 8, 18));
         addPlayerSlots(playerInventory);
+    }
+
+    @Override
+    public VillagerFilterPolicy.Policy filterPolicy() {
+        return VillagerFilterPolicy.read(this.contentHolder);
+    }
+
+    @Override
+    public boolean applyPolicyChange(VillagerFilterPolicy.PolicyField field, int value) {
+        if (!isEditingHeldFilter()) {
+            return false;
+        }
+        boolean changed = VillagerFilterPolicy.applyChange(this.contentHolder, field, value);
+        if (changed) {
+            this.playerInventory.setChanged();
+            broadcastChanges();
+        }
+        return changed;
+    }
+
+    @Override
+    public void applyClientPolicyChange(VillagerFilterPolicy.PolicyField field, int value) {
+        if (isEditingHeldFilter()) {
+            VillagerFilterPolicy.applyChange(this.contentHolder, field, value);
+        }
     }
 
     public ItemStack referenceItem() {
@@ -141,7 +168,9 @@ public final class VillagerAttributeFilterMenu extends AbstractContainerMenu {
         if (!offeredByReference) {
             return false;
         }
-        boolean changed = VillagerAttributeFilterData.setSelected(this.contentHolder, attribute, inverted);
+        boolean effectiveInverted = filterPolicy().listMode()
+                == VillagerFilterPolicy.ListMode.DENY_MATCHING;
+        boolean changed = VillagerAttributeFilterData.setSelected(this.contentHolder, attribute, effectiveInverted);
         if (changed) {
             this.playerInventory.setChanged();
             broadcastChanges();

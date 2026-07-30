@@ -87,10 +87,16 @@ public final class VillagerItemFilterItem extends Item implements MenuProvider {
             return;
         }
 
-        if (requestedMode == null) {
-            VillagerItemFilterData.toggleMode(filter);
+        VillagerItemFilterData.Mode nextMode = requestedMode == null
+                ? VillagerItemFilterData.mode(filter).opposite()
+                : requestedMode;
+        if (VillagerFilterPolicy.hasStoredPolicy(filter)) {
+            VillagerFilterPolicy.applyChange(
+                    filter,
+                    VillagerFilterPolicy.PolicyField.LIST_MODE,
+                    nextMode == VillagerItemFilterData.Mode.DENYLIST ? 1 : 0);
         } else {
-            VillagerItemFilterData.setMode(filter, requestedMode);
+            VillagerItemFilterData.setMode(filter, nextMode);
         }
         if (hoveredSlot != null) {
             hoveredSlot.setChanged();
@@ -108,8 +114,16 @@ public final class VillagerItemFilterItem extends Item implements MenuProvider {
             return;
         }
         ItemStack filter = player.getMainHandItem();
-        if (!VillagerRetaliationItems.isItemFilter(filter)
-                || !VillagerItemFilterData.setEntryCombination(filter, requested)) {
+        if (!VillagerRetaliationItems.isItemFilter(filter)) {
+            return;
+        }
+        boolean changed = VillagerFilterPolicy.hasStoredPolicy(filter)
+                ? VillagerFilterPolicy.applyChange(
+                        filter,
+                        VillagerFilterPolicy.PolicyField.COMBINATION,
+                        requested == VillagerItemFilterData.EntryCombination.ALL ? 1 : 0)
+                : VillagerItemFilterData.setEntryCombination(filter, requested);
+        if (!changed) {
             return;
         }
         player.getInventory().setChanged();
