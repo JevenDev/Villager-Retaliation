@@ -89,11 +89,13 @@ public final class VillagerAttributeFilterData {
     }
 
     public static boolean isDefault(ItemStack filter) {
-        return read(filter).attribute() == null;
+        return read(filter).attribute() == null
+                && !VillagerFilterPolicy.hasStoredPolicy(filter);
     }
 
     public static void copyConfiguration(ItemStack source, ItemStack target) {
         write(target, read(source));
+        VillagerFilterPolicy.copyConfiguration(source, target);
     }
 
     public static boolean matches(Level level, ItemStack filter, ItemStack candidate) {
