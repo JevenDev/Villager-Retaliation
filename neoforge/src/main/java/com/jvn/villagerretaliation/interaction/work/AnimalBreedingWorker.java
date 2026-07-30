@@ -51,11 +51,19 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private static final int PRODUCT_WORK_TICKS = 3;
     private static final int CULLING_WORK_TICKS = 3;
     private static final int VANILLA_PARENT_BREEDING_COOLDOWN_TICKS = 6000;
-    private static final int NO_TARGET_SCAN_COOLDOWN_TICKS = 100;
+    private static final int ANIMAL_SCAN_INTERVAL_TICKS = 100;
+    private static final int ANIMAL_INTERMEDIATE_STEP = 12;
+    private static final int ANIMAL_INTERMEDIATE_HORIZONTAL_RADIUS = 3;
+    private static final int ANIMAL_INTERMEDIATE_VERTICAL_RADIUS = 3;
+    private static final int MAX_ANIMAL_INTERMEDIATE_PATH_ATTEMPTS = 16;
+    private static final int ANIMAL_INTERMEDIATE_CLOSE_ENOUGH = 2;
     static final int PERIODIC_SHEARING_DEPOSIT_INTERVAL_TICKS = 20 * 30;
     static final String NEXT_SHEARING_DEPOSIT_GAME_TIME_TAG = "NextShearingDepositGameTime";
     private static final String PERIODIC_SHEARING_DEPOSIT_PENDING_TAG = "PeriodicShearingDepositPending";
     private static final String NEXT_ANIMAL_SCAN_GAME_TIME_TAG = "NextAnimalBreedingScanGameTime";
+    private static final String CACHED_ANIMALS_TAG = "CachedAnimalHandlingTargets";
+    private static final String CACHED_WORK_MIN_TAG = "CachedAnimalHandlingWorkMin";
+    private static final String CACHED_WORK_MAX_TAG = "CachedAnimalHandlingWorkMax";
     private static final String RECENTLY_HANDLED_ANIMALS_TAG = "RecentlyHandledAnimalBreeding";
     private static final String ANIMAL_ID_TAG = "Animal";
     private static final String COOLDOWN_UNTIL_TAG = "CooldownUntil";
@@ -284,11 +292,12 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
 
     private CullTarget findCullTarget(ServerLevel level, Villager villager, HiredWorkContext context, int cap) {
         Set<ResourceLocation> selectedTargets = HiredAnimalBreedingTargets.selectedTargetIds(context.state());
-        AABB bounds = workAreaBounds(context);
-        List<Animal> animals = new ArrayList<>(level.getEntitiesOfClass(
-                Animal.class,
-                bounds,
-                animal -> isEligibleCullAnimal(level, context, villager, animal, selectedTargets)));
+        List<Animal> animals = new ArrayList<>();
+        for (Animal animal : animalsInWorkArea(level, context).animals()) {
+            if (isEligibleCullAnimal(level, context, villager, animal, selectedTargets)) {
+                animals.add(animal);
+            }
+        }
         Map<ResourceLocation, List<Animal>> animalsByType = new LinkedHashMap<>();
         for (Animal animal : animals) {
             animalsByType.computeIfAbsent(typeId(animal), ignored -> new ArrayList<>()).add(animal);
@@ -314,18 +323,15 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
 
     private BreedingSearch findBreedingPair(ServerLevel level, Villager villager, HiredWorkContext context) {
         long gameTime = level.getGameTime();
-        boolean scanCooldown = gameTime < context.state().getLong(NEXT_ANIMAL_SCAN_GAME_TIME_TAG);
-        if (scanCooldown) {
-            return new BreedingSearch(null, false, true);
-        }
-
         pruneHandledAnimalCooldowns(context, gameTime);
         Set<ResourceLocation> selectedTargets = HiredAnimalBreedingTargets.selectedTargetIds(context.state());
-        AABB bounds = workAreaBounds(context);
-        List<Animal> animals = new ArrayList<>(level.getEntitiesOfClass(
-                Animal.class,
-                bounds,
-                animal -> isEligibleAnimal(level, context, animal, selectedTargets)));
+        AnimalScan scan = animalsInWorkArea(level, context);
+        List<Animal> animals = new ArrayList<>();
+        for (Animal animal : scan.animals()) {
+            if (isEligibleAnimal(level, context, animal, selectedTargets)) {
+                animals.add(animal);
+            }
+        }
         animals.sort(Comparator.comparingDouble(villager::distanceToSqr));
         Map<ResourceLocation, List<Animal>> animalsByType = new LinkedHashMap<>();
         for (Animal animal : animals) {
@@ -335,43 +341,28 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
         boolean hasPairWithoutFood = false;
         BreedingPair best = null;
         double bestScore = Double.MAX_VALUE;
-        Map<ResourceLocation, Integer> carriedFoodByType = new LinkedHashMap<>();
-        Map<ResourceLocation, Boolean> storedFoodByType = new LinkedHashMap<>();
         for (Map.Entry<ResourceLocation, List<Animal>> entry : animalsByType.entrySet()) {
             ResourceLocation animalType = entry.getKey();
             List<Animal> sameTypeAnimals = entry.getValue();
-            for (int i = 0; i < sameTypeAnimals.size(); i++) {
-                Animal first = sameTypeAnimals.get(i);
-                for (int j = i + 1; j < sameTypeAnimals.size(); j++) {
-                    Animal second = sameTypeAnimals.get(j);
-                    if (!canAttemptPair(first, second)) {
-                        continue;
-                    }
-                    Predicate<ItemStack> food = stack -> first.isFood(stack) && second.isFood(stack);
-                    int carried = carriedFoodByType.computeIfAbsent(
-                            animalType,
-                            ignored -> HiredSupplyCrafting.countCarried(context, food));
-                    if (carried < 2 && !storedFoodByType.computeIfAbsent(
-                            animalType,
-                            ignored -> AssignedStorageService.countItems(villager, food) > 0)) {
-                        hasPairWithoutFood = true;
-                        continue;
-                    }
-                    double score = villager.distanceToSqr(first) + first.distanceToSqr(second) * 0.25D;
-                    if (score < bestScore) {
-                        bestScore = score;
-                        best = new BreedingPair(first, second, food, animalType);
-                    }
-                }
+            if (sameTypeAnimals.size() < 2) {
+                continue;
+            }
+            Animal first = sameTypeAnimals.get(0);
+            Animal second = sameTypeAnimals.get(1);
+            Predicate<ItemStack> food = stack -> first.isFood(stack) && second.isFood(stack);
+            int carried = HiredSupplyCrafting.countCarried(context, food);
+            if (carried < 2 && AssignedStorageService.countItems(villager, food) <= 0) {
+                hasPairWithoutFood = true;
+                continue;
+            }
+            double score = villager.distanceToSqr(first) + first.distanceToSqr(second) * 0.25D;
+            if (score < bestScore) {
+                bestScore = score;
+                best = new BreedingPair(first, second, food, animalType);
             }
         }
 
-        if (best == null && !hasPairWithoutFood) {
-            context.state().putLong(NEXT_ANIMAL_SCAN_GAME_TIME_TAG, gameTime + NO_TARGET_SCAN_COOLDOWN_TICKS);
-        } else {
-            context.state().remove(NEXT_ANIMAL_SCAN_GAME_TIME_TAG);
-        }
-        return new BreedingSearch(best, hasPairWithoutFood, false);
+        return new BreedingSearch(best, hasPairWithoutFood, !scan.refreshed());
     }
 
     private WorkResult gatherBreedingFood(
@@ -763,11 +754,12 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     private AnimalProductTarget findAnimalProductTarget(ServerLevel level, Villager villager, HiredWorkContext context) {
         Set<ResourceLocation> selectedTargets = HiredAnimalBreedingTargets.selectedTargetIds(context.state());
         boolean shearSheep = HiredAnimalHandlingOptions.shearSheep(context.state());
-        AABB bounds = workAreaBounds(context);
-        List<Animal> animals = new ArrayList<>(level.getEntitiesOfClass(
-                Animal.class,
-                bounds,
-                animal -> isEligibleProductAnimal(level, context, villager, animal, selectedTargets, shearSheep)));
+        List<Animal> animals = new ArrayList<>();
+        for (Animal animal : animalsInWorkArea(level, context).animals()) {
+            if (isEligibleProductAnimal(level, context, villager, animal, selectedTargets, shearSheep)) {
+                animals.add(animal);
+            }
+        }
         animals.sort(Comparator.comparingDouble(villager::distanceToSqr));
         for (Animal animal : animals) {
             if (shearSheep && animal instanceof Sheep sheep && sheep.readyForShearing()) {
@@ -945,8 +937,151 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
             }
             return moved;
         }
+        BlockPos intermediate = bestAnimalIntermediateTarget(level, villager, context, targetPos);
+        if (intermediate != null) {
+            Path intermediatePath = HiredPathMemory.createPath(level, villager, intermediate, 0);
+            if (intermediatePath != null
+                    && intermediatePath.canReach()
+                    && HiredMoveToBlockFaceJob.pathStaysInsideFilter(intermediatePath, context::isInsideWorkArea)) {
+                villager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, new BlockPosTracker(targetPos));
+                boolean moved = VillagerTaskNavigationUtil.moveToHiredPath(
+                        villager,
+                        intermediatePath,
+                        intermediate,
+                        speed,
+                        ANIMAL_INTERMEDIATE_CLOSE_ENOUGH);
+                if (moved) {
+                    HiredPathMemory.rememberNavigationProgress(
+                            level,
+                            villager,
+                            intermediate,
+                            villager.distanceToSqr(intermediate.getCenter()));
+                    return true;
+                }
+            }
+        }
         HiredPathMemory.clearNavigationProgress(villager);
         return false;
+    }
+
+    private BlockPos bestAnimalIntermediateTarget(
+            ServerLevel level,
+            Villager villager,
+            HiredWorkContext context,
+            BlockPos animalPos) {
+        BlockPos origin = villager.blockPosition();
+        double dx = animalPos.getX() - origin.getX();
+        double dz = animalPos.getZ() - origin.getZ();
+        double horizontalDistance = Math.sqrt(dx * dx + dz * dz);
+        if (horizontalDistance <= ANIMAL_INTERMEDIATE_STEP) {
+            return null;
+        }
+        double scale = ANIMAL_INTERMEDIATE_STEP / horizontalDistance;
+        int projectedY = origin.getY() + Math.clamp(
+                animalPos.getY() - origin.getY(),
+                -ANIMAL_INTERMEDIATE_VERTICAL_RADIUS,
+                ANIMAL_INTERMEDIATE_VERTICAL_RADIUS);
+        BlockPos projected = BlockPos.containing(
+                origin.getX() + dx * scale,
+                projectedY,
+                origin.getZ() + dz * scale);
+        double currentDistance = origin.distSqr(animalPos);
+        List<AnimalIntermediate> candidates = new ArrayList<>();
+        for (BlockPos raw : BlockPos.betweenClosed(
+                projected.offset(
+                        -ANIMAL_INTERMEDIATE_HORIZONTAL_RADIUS,
+                        -ANIMAL_INTERMEDIATE_VERTICAL_RADIUS,
+                        -ANIMAL_INTERMEDIATE_HORIZONTAL_RADIUS),
+                projected.offset(
+                        ANIMAL_INTERMEDIATE_HORIZONTAL_RADIUS,
+                        ANIMAL_INTERMEDIATE_VERTICAL_RADIUS,
+                        ANIMAL_INTERMEDIATE_HORIZONTAL_RADIUS))) {
+            BlockPos candidate = raw.immutable();
+            if (!context.isInsideWorkArea(candidate)
+                    || !context.isLoaded(level, candidate)
+                    || HiredPathMemory.isAvoided(level, villager, candidate)
+                    || candidate.distSqr(animalPos) >= currentDistance - 4.0D
+                    || !HiredMoveToBlockFaceJob.isValidApproachPosition(level, candidate)) {
+                continue;
+            }
+            double score = candidate.distSqr(animalPos)
+                    + villager.distanceToSqr(candidate.getCenter()) * 0.15D
+                    + HiredMoveToBlockFaceJob.terrainCost(level, candidate);
+            candidates.add(new AnimalIntermediate(candidate, score));
+        }
+        candidates.sort(Comparator.comparingDouble(AnimalIntermediate::score));
+        int attempts = 0;
+        for (AnimalIntermediate candidate : candidates) {
+            if (attempts++ >= MAX_ANIMAL_INTERMEDIATE_PATH_ATTEMPTS) {
+                break;
+            }
+            Path path = HiredPathMemory.createPath(level, villager, candidate.pos(), 0);
+            if (path != null
+                    && path.canReach()
+                    && HiredMoveToBlockFaceJob.pathStaysInsideFilter(path, context::isInsideWorkArea)) {
+                return candidate.pos();
+            }
+        }
+        return null;
+    }
+
+    private AnimalScan animalsInWorkArea(ServerLevel level, HiredWorkContext context) {
+        long gameTime = level.getGameTime();
+        CompoundTag state = context.state();
+        boolean areaChanged = !state.contains(CACHED_WORK_MIN_TAG, Tag.TAG_LONG)
+                || !state.contains(CACHED_WORK_MAX_TAG, Tag.TAG_LONG)
+                || state.getLong(CACHED_WORK_MIN_TAG) != context.workMin().asLong()
+                || state.getLong(CACHED_WORK_MAX_TAG) != context.workMax().asLong();
+        boolean refresh = areaChanged
+                || !state.contains(CACHED_ANIMALS_TAG, Tag.TAG_LIST)
+                || gameTime >= state.getLong(NEXT_ANIMAL_SCAN_GAME_TIME_TAG);
+        if (refresh) {
+            List<Animal> animals = new ArrayList<>(level.getEntitiesOfClass(
+                    Animal.class,
+                    workAreaBounds(context),
+                    animal -> animal.isAlive()
+                            && context.isInsideWorkArea(animal.blockPosition())
+                            && context.isLoaded(level, animal.blockPosition())));
+            cacheAnimals(context, animals);
+            state.putLong(CACHED_WORK_MIN_TAG, context.workMin().asLong());
+            state.putLong(CACHED_WORK_MAX_TAG, context.workMax().asLong());
+            state.putLong(NEXT_ANIMAL_SCAN_GAME_TIME_TAG, gameTime + ANIMAL_SCAN_INTERVAL_TICKS);
+            return new AnimalScan(animals, true);
+        }
+
+        ListTag cached = state.getList(CACHED_ANIMALS_TAG, Tag.TAG_COMPOUND);
+        List<Animal> animals = new ArrayList<>(cached.size());
+        boolean pruned = false;
+        for (int i = 0; i < cached.size(); i++) {
+            CompoundTag entry = cached.getCompound(i);
+            if (!entry.hasUUID(ANIMAL_ID_TAG)) {
+                pruned = true;
+                continue;
+            }
+            net.minecraft.world.entity.Entity entity = level.getEntity(entry.getUUID(ANIMAL_ID_TAG));
+            if (!(entity instanceof Animal animal)
+                    || !animal.isAlive()
+                    || !context.isInsideWorkArea(animal.blockPosition())
+                    || !context.isLoaded(level, animal.blockPosition())) {
+                pruned = true;
+                continue;
+            }
+            animals.add(animal);
+        }
+        if (pruned) {
+            cacheAnimals(context, animals);
+        }
+        return new AnimalScan(animals, false);
+    }
+
+    private static void cacheAnimals(HiredWorkContext context, List<Animal> animals) {
+        ListTag cached = new ListTag();
+        for (Animal animal : animals) {
+            CompoundTag entry = new CompoundTag();
+            entry.putUUID(ANIMAL_ID_TAG, animal.getUUID());
+            cached.add(entry);
+        }
+        context.state().put(CACHED_ANIMALS_TAG, cached);
     }
 
     private static AABB workAreaBounds(HiredWorkContext context) {
@@ -1076,6 +1211,12 @@ public final class AnimalBreedingWorker extends AbstractBlockWorker {
     }
 
     private record CullTarget(Animal animal, ResourceLocation typeId, int count, int cap) {
+    }
+
+    private record AnimalScan(List<Animal> animals, boolean refreshed) {
+    }
+
+    private record AnimalIntermediate(BlockPos pos, double score) {
     }
 
     private enum AnimalProductKind {

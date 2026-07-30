@@ -685,6 +685,65 @@ public final class VillagerWorkerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void animalHandlerCullsAnimalsAcrossLargeWorkArea(GameTestHelper helper) {
+        buildFloor(helper, 0, 32, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalCullDistant");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        Cow first = spawnAnimal(helper, EntityType.COW, new BlockPos(26, 2, 3));
+        Cow second = spawnAnimal(helper, EntityType.COW, new BlockPos(28, 2, 3));
+        Cow third = spawnAnimal(helper, EntityType.COW, new BlockPos(30, 2, 3));
+        first.setNoAi(true);
+        second.setNoAi(true);
+        third.setNoAi(true);
+
+        CompoundTag state = new CompoundTag();
+        HiredAnimalCullSettings.setCap(state, 2);
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(31, 4, 5), true);
+        context.inventory().setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 240, () ->
+                countAliveAnimals(level, helper, Cow.class, new BlockPos(1, 2, 1), new BlockPos(31, 4, 5)) == 2);
+
+        helper.assertValueEqual(
+                countAliveAnimals(level, helper, Cow.class, new BlockPos(1, 2, 1), new BlockPos(31, 4, 5)),
+                2,
+                "animal handler should cull a distant over-cap herd anywhere in its work area");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 300)
+    public static void animalHandlerBreedsAnimalsAcrossLargeWorkArea(GameTestHelper helper) {
+        buildFloor(helper, 0, 32, 0, 6, 1);
+        ServerLevel level = helper.getLevel();
+        ServerPlayer hirer = fakePlayer(level, "VrAnimalBreedDistant");
+        movePlayer(helper, hirer, new BlockPos(1, 2, 1));
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 3));
+        Cow first = spawnAnimal(helper, EntityType.COW, new BlockPos(28, 2, 3));
+        Cow second = spawnAnimal(helper, EntityType.COW, new BlockPos(30, 2, 3));
+        first.setNoAi(true);
+        second.setNoAi(true);
+
+        CompoundTag state = new CompoundTag();
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(31, 4, 5), true);
+        context.inventory().insertSupply(new ItemStack(Items.WHEAT, 2));
+        AnimalBreedingWorker worker = new AnimalBreedingWorker();
+
+        runWorkerUntil(helper, worker, level, villager, hirer, context, 240, () -> first.isInLove() && second.isInLove());
+
+        helper.assertTrue(
+                first.isInLove() && second.isInLove(),
+                "animal handler should breed a distant pair anywhere in its work area");
+        villager.discard();
+        helper.succeed();
+    }
+
     @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
     public static void animalHandlerCullCapDoesNotCullBabies(GameTestHelper helper) {
         buildFloor(helper, 0, 7, 0, 7, 1);
