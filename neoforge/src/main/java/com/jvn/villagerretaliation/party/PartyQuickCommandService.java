@@ -1158,11 +1158,6 @@ public final class PartyQuickCommandService {
         syncRuntimeState(villager, party);
     }
 
-    private static void clearStandGuardAndSync(Villager villager, PartyRecord party) {
-        clearStandGuard(villager);
-        syncRuntimeState(villager, party);
-    }
-
     private static void syncRuntimeState(Villager villager, PartyRecord party) {
         if (party != null && villager.level().getServer() != null) {
             PartySyncService.syncParty(villager.level().getServer(), party.id());

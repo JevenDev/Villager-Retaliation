@@ -1145,21 +1145,6 @@ public final class AssignedStorageService {
         }
     }
 
-    private static int countItemsTowardLimit(
-            ServerLevel level,
-            Container container,
-            ItemStack filter,
-            ItemStack candidate) {
-        int count = 0;
-        for (int slot = 0; slot < container.getContainerSize(); slot++) {
-            ItemStack stored = container.getItem(slot);
-            if (VillagerItemFilterData.countsTowardAmountLimit(level, filter, candidate, stored)) {
-                count += stored.getCount();
-            }
-        }
-        return count;
-    }
-
     private static BlockPos nearestAssignedStoragePos(
             ServerLevel level,
             Villager villager,

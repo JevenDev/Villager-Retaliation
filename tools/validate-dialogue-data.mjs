@@ -495,7 +495,6 @@ const questLocationObjectiveTypes = new Set(["location_visit", "coordinate", "co
 const questMobKillObjectiveTypes = new Set(["mob_kill", "entity_kill", "kill"]);
 const questBlockObjectiveTypes = new Set(["block_break", "break_block", "mine_block", "mine", "block_place", "place_block", "place", "block_interact", "interact_block", "right_click_block", "use_block", "block_use"]);
 const questMemoryObjectiveTypes = new Set(["memory_event", "village_event", "village_memory", "memory", "event"]);
-const questGiftObjectiveTypes = new Set(["gift", "give_gift", "gift_given"]);
 const questReputationObjectiveTypes = new Set(["reputation", "rep", "reputation_level", "trust"]);
 const questChoiceObjectiveTypes = new Set(["choice", "dialogue_choice", "branch_choice", "quest_choice"]);
 const questFactObjectiveTypes = new Set(["fact", "quest_fact", "quest_tag", "quest_variable", "quest_counter", "quest_stage", "stage"]);

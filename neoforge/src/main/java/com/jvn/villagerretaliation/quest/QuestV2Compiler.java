@@ -977,18 +977,6 @@ public final class QuestV2Compiler {
         return ui == null ? "" : DatapackJsonReader.readString(ui, key);
     }
 
-    private static String firstResourceLocationString(JsonObject object, String key) {
-        if (object == null) {
-            return "";
-        }
-        for (String value : DatapackJsonReader.readStringList(object, key)) {
-            if (!value.isBlank()) {
-                return value;
-            }
-        }
-        return "";
-    }
-
     private static boolean hasAny(JsonObject object, String... keys) {
         if (object == null || keys == null) {
             return false;

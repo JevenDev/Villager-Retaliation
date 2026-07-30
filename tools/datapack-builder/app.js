@@ -1379,11 +1379,6 @@ function normalizeWikiHighlights(values) {
   return highlights.slice(0, 80);
 }
 
-function wikiSavedHighlightEntries() {
-  return normalizeWikiHighlights(wikiState.highlights)
-    .filter((entry) => !entry.file || entry.file === wikiState.selectedFile);
-}
-
 function sanitizeWikiHighlightHtml(value) {
   const template = document.createElement("template");
   template.innerHTML = String(value || "");

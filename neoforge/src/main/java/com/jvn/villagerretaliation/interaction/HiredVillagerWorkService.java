@@ -1761,10 +1761,6 @@ public final class HiredVillagerWorkService {
         return Mth.clamp(base + (int) Math.round((max - base) * progress), MIN_WORK_RADIUS, max);
     }
 
-    private static int baseWorkRadiusCap() {
-        return Mth.clamp(VillagerRetaliationConfig.HIRED_WORK_DEFAULT_RADIUS.get(), MIN_WORK_RADIUS, MAX_SKILLED_WORK_RADIUS);
-    }
-
     private static String dimensions(HiredWorkArea area) {
         return (area.max().getX() - area.min().getX() + 1)
                 + "x" + (area.max().getY() - area.min().getY() + 1)

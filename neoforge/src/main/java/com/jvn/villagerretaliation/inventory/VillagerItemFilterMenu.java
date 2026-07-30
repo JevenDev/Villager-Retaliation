@@ -17,10 +17,8 @@ public final class VillagerItemFilterMenu extends AbstractContainerMenu
         implements VillagerFilterPolicyMenu {
     public static final int GHOST_SLOT_COUNT = VillagerItemFilterData.ENTRY_COUNT;
     private static final int PLAYER_INVENTORY_COUNT = 27;
-    private static final int PLAYER_HOTBAR_COUNT = 9;
     private static final int PLAYER_SLOT_START = GHOST_SLOT_COUNT;
     private static final int PLAYER_HOTBAR_START = PLAYER_SLOT_START + PLAYER_INVENTORY_COUNT;
-    private static final int PLAYER_SLOT_END = PLAYER_HOTBAR_START + PLAYER_HOTBAR_COUNT;
     private static final int GHOST_X = 8;
     private static final int GHOST_Y = 18;
     private static final int PLAYER_X = 8;

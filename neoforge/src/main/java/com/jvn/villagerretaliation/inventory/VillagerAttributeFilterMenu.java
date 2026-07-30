@@ -18,7 +18,6 @@ public final class VillagerAttributeFilterMenu extends AbstractContainerMenu
         implements VillagerFilterPolicyMenu {
     public static final int REFERENCE_SLOT = 0;
     private static final int PLAYER_INVENTORY_COUNT = 27;
-    private static final int PLAYER_HOTBAR_COUNT = 9;
     private static final int PLAYER_SLOT_START = 1;
     private static final int PLAYER_HOTBAR_START = PLAYER_SLOT_START + PLAYER_INVENTORY_COUNT;
     private static final int SLOT_SIZE = 18;

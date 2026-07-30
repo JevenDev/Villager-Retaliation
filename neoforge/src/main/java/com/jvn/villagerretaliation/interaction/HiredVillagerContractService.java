@@ -27,24 +27,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.entity.npc.VillagerProfession;
 
 public final class HiredVillagerContractService {
     private static final String CONTRACT_TAG = "VillagerRetaliationHireContract";
     private static final String CONTRACT_ID_TAG = "ContractId";
-    private static final String OVERFLOW_CLAIM_TAG = "VillagerRetaliationJobInventoryOverflowClaim";
     private static final String HIRER_TAG = "Hirer";
-    private static final String OVERFLOW_CLAIM_OWNER_TAG = "Owner";
-    private static final String OVERFLOW_CLAIM_CREATED_GAME_TIME_TAG = "CreatedGameTime";
-    private static final String OVERFLOW_CLAIM_EXPIRES_GAME_TIME_TAG = "ExpiresGameTime";
-    private static final String OVERFLOW_CLAIM_LAST_REMINDER_DAY_TAG = "LastReminderDay";
-    private static final String START_GAME_TIME_TAG = "StartGameTime";
     private static final String END_GAME_TIME_TAG = "EndGameTime";
     private static final String DURATION_DAYS_TAG = "DurationDays";
     private static final String DAILY_COST_TAG = "DailyCost";
     private static final String EMERALDS_PAID_TAG = "EmeraldsPaid";
-    private static final String EMERALDS_RELEASED_TAG = "EmeraldsReleased";
-    private static final String EMERALDS_REFUNDED_TAG = "EmeraldsRefunded";
     private static final String AUTO_PAYMENT_TAG = "AutoPayment";
     private static final String MOUNTED_TRAVEL_TAG = "MountedTravel";
     private static final String ONE_OFF_BUILDER_JOB_TAG = "OneOffBuilderJob";
@@ -52,18 +43,13 @@ public final class HiredVillagerContractService {
     private static final String AWAITING_AUTO_PAYMENT_START_GAME_TIME_TAG = "AwaitingAutoPaymentStartGameTime";
     private static final String ROLE_TAG = "Role";
     private static final String STATUS_TAG = "Status";
-    private static final String PROFESSION_LOCK_ARTIFICIAL_TAG = "ProfessionLockArtificial";
-    private static final String PROFESSION_LOCK_ORIGINAL_XP_TAG = "ProfessionLockOriginalXp";
-    private static final String PROFESSION_LOCK_APPLIED_XP_TAG = "ProfessionLockAppliedXp";
     private static final String STATUS_ACTIVE = "active";
     private static final String STATUS_ENDED = "ended";
     private static final String STATUS_EXPIRED = "expired";
     private static final String STATUS_AWAITING_AUTO_PAYMENT = "awaiting_auto_payment";
     private static final long DAY_TICKS = VillagerContractTime.DAY_TICKS;
-    private static final long OVERFLOW_CLAIM_TICKS = 3L * DAY_TICKS;
     private static final long CONTRACT_MAINTENANCE_INTERVAL_TICKS = 20L;
     private static final long AUTO_PAYMENT_RETRY_INTERVAL_TICKS = 100L;
-    private static final int HIRED_PROFESSION_LOCK_XP = 1;
 
     private HiredVillagerContractService() {
     }
@@ -842,48 +828,6 @@ public final class HiredVillagerContractService {
         tag.putInt(DAILY_COST_TAG, Math.max(1, emeraldsPaid / safeDays));
     }
 
-    private static void lockProfessionForHire(Villager villager, CompoundTag tag) {
-        clearProfessionLockTags(tag);
-        if (villager.isBaby()) {
-            return;
-        }
-        VillagerProfession profession = villager.getVillagerData().getProfession();
-        if (profession == VillagerProfession.NONE || profession == VillagerProfession.NITWIT) {
-            return;
-        }
-        int originalXp = villager.getVillagerXp();
-        if (originalXp > 0) {
-            return;
-        }
-        villager.setVillagerXp(HIRED_PROFESSION_LOCK_XP);
-        tag.putBoolean(PROFESSION_LOCK_ARTIFICIAL_TAG, true);
-        tag.putInt(PROFESSION_LOCK_ORIGINAL_XP_TAG, originalXp);
-        tag.putInt(PROFESSION_LOCK_APPLIED_XP_TAG, HIRED_PROFESSION_LOCK_XP);
-    }
-
-    private static void unlockProfessionAfterHire(Villager villager, CompoundTag tag) {
-        if (!tag.getBoolean(PROFESSION_LOCK_ARTIFICIAL_TAG)) {
-            clearProfessionLockTags(tag);
-            return;
-        }
-        int originalXp = tag.getInt(PROFESSION_LOCK_ORIGINAL_XP_TAG);
-        int appliedXp = tag.getInt(PROFESSION_LOCK_APPLIED_XP_TAG);
-        if (appliedXp <= 0) {
-            appliedXp = HIRED_PROFESSION_LOCK_XP;
-        }
-        if (villager.getVillagerXp() == appliedXp) {
-            villager.setVillagerXp(originalXp);
-        }
-        clearProfessionLockTags(tag);
-        villager.setPersistenceRequired();
-    }
-
-    private static void clearProfessionLockTags(CompoundTag tag) {
-        tag.remove(PROFESSION_LOCK_ARTIFICIAL_TAG);
-        tag.remove(PROFESSION_LOCK_ORIGINAL_XP_TAG);
-        tag.remove(PROFESSION_LOCK_APPLIED_XP_TAG);
-    }
-
     private static int clampedContractDays(int days) {
         return VillagerContractTime.clampedPurchaseDays(days);
     }
@@ -942,11 +886,6 @@ public final class HiredVillagerContractService {
 
     private static void clearOverflowClaim(Villager villager) {
         HireOverflowClaimService.clear(villager);
-    }
-
-    private static int remainingOverflowDays(ServerLevel level, CompoundTag claim) {
-        long remainingTicks = Math.max(0L, claim.getLong(OVERFLOW_CLAIM_EXPIRES_GAME_TIME_TAG) - level.getGameTime());
-        return (int) Math.max(1L, (remainingTicks + DAY_TICKS - 1L) / DAY_TICKS);
     }
 
     private static Map<String, String> overflowReplacements(

@@ -63,9 +63,6 @@ public final class ClipboardStorageOutlineRenderer {
     private static final int WORK_AREA_CENTER_COLOR = 0xFFFFF176;
     private static final int WORK_AREA_CORNER_COLOR = 0xFFFF8A65;
     private static final int ROUTE_COLOR = 0xFF95CD41;
-    private static final int ROUTE_NODE_COLOR = 0xFFA9E85D;
-    private static final int ROUTE_FIRST_COLOR = 0xFF7CFF6B;
-    private static final int ROUTE_LAST_COLOR = 0xFFC8F06A;
     private static final int ROUTE_LOOP_COLOR = 0xFFE1FF6E;
     private static final int ROUTE_INVALID_COLOR = 0xFFEA5C2B;
     private static final int ROUTE_REACH_COLOR = 0xFFFFA43A;

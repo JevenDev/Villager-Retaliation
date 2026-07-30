@@ -11,7 +11,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 
 final class VillagerInteractionSkillsPage {
@@ -116,84 +115,6 @@ final class VillagerInteractionSkillsPage {
         y = wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), y, width, scale);
         y = wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), y + context.uiUnit(4), width, scale);
         return wrappedInfoLineBottom(context.font(), Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), y + context.uiUnit(4), width, scale);
-    }
-
-    private static void renderSkillsInfo(Context context, GuiGraphics graphics) {
-        int left = context.skillInfoTextLeft();
-        int viewportTop = context.skillInfoViewportTop();
-        int viewportBottom = context.skillInfoViewportBottom();
-        int top = Mth.floor(viewportTop + context.optionTextYOffset() - context.skillScroll());
-        float scale = context.textScale();
-        int width = VillagerInteractionUiUtil.scaledWrapWidth(context.optionWidth() - context.uiUnit(12), scale);
-        int scissorOffsetY = context.guiScissorOffsetY();
-        int scissorOffsetX = context.guiScissorOffsetX();
-        graphics.enableScissor(
-                context.skillInfoScissorLeft() + scissorOffsetX,
-                viewportTop + scissorOffsetY,
-                context.skillInfoScissorRight() + scissorOffsetX,
-                viewportBottom + scissorOffsetY);
-        VillagerInteractionUiUtil.drawScaledString(
-                graphics,
-                context.font(),
-                context.selectedSkillDetails() == null
-                        ? context.translate("profile.skills.info.title")
-                        : context.localizedSkill(context.selectedSkillDetails()),
-                left,
-                top,
-                context.infoValueColor(),
-                scale);
-        int y = top + context.optionStride();
-        Optional<VillagerProfileClientCache.DisplayEntry> entry = context.profileEntry();
-        if (context.selectedSkillDetails() != null && entry.isPresent()) {
-            VillagerProfileClientCache.DisplayEntry profile = entry.get();
-            y = renderWrappedSkillInfoLine(
-                    context,
-                    graphics,
-                    Component.translatable(
-                            GUI_KEY_PREFIX + "profile.tooltip.level",
-                            context.localizedSkillRank(profile.skillRank(context.selectedSkillDetails()))),
-                    left,
-                    y,
-                    width);
-            y = renderWrappedSkillInfoLine(
-                    context,
-                    graphics,
-                    Component.translatable(GUI_KEY_PREFIX + "profile.tooltip.score", profile.skillValue(context.selectedSkillDetails())),
-                    left,
-                    y + context.uiUnit(2),
-                    width);
-            renderWrappedSkillInfoLine(
-                    context,
-                    graphics,
-                    Component.literal(context.localizedExpandedSkillDescription(context.selectedSkillDetails())),
-                    left,
-                    y + context.uiUnit(4),
-                    width);
-        } else {
-            y = renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.trade"), left, y, width);
-            y = renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.specialty"), left, y + context.uiUnit(4), width);
-            renderWrappedSkillInfoLine(context, graphics, Component.translatable(GUI_KEY_PREFIX + "profile.skills.info.recruit"), left, y + context.uiUnit(4), width);
-        }
-        graphics.disableScissor();
-        context.renderSkillInfoScrollbar(graphics);
-    }
-
-    private static int renderWrappedSkillInfoLine(
-            Context context,
-            GuiGraphics graphics,
-            Component component,
-            int left,
-            int top,
-            int width) {
-        int y = top;
-        int viewportTop = context.skillInfoViewportTop();
-        int viewportBottom = context.skillInfoViewportBottom();
-        for (FormattedCharSequence line : context.font().split(component, width)) {
-            float alpha = context.skillInfoEdgeFadeAlpha(y, viewportTop, viewportBottom);
-            VillagerInteractionUiUtil.drawScaledString(graphics, context.font(), line, left, y, VillagerInteractionUiUtil.withAlpha(context.infoSecondaryColor(), alpha), context.textScale());
-            y += VillagerInteractionUiUtil.scaledLineStep(context.font(), context.textScale());
-        }
-        return y;
     }
 
     private static void renderSkillsContainer(

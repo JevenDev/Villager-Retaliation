@@ -1365,21 +1365,6 @@ public final class VillagerRetaliationHandler {
         WanderingTraderRetaliationHandler.angerNearbyTradersFrom(alarmVillager, attacker, radius);
     }
 
-    private static void rallyFromNearbyNitwits(Entity sourceEntity, LivingEntity attacker, double radius) {
-        if (!(sourceEntity.level() instanceof ServerLevel level)) {
-            return;
-        }
-
-        AABB area = sourceEntity.getBoundingBox().inflate(radius);
-        for (Villager nearby : level.getEntitiesOfClass(Villager.class, area)) {
-            if (isNitwitAlarm(nearby)
-                    && belongsToHarmedCommunity(level, nearby, sourceEntity)
-                    && canWitnessRetaliationEvent(nearby, sourceEntity)) {
-                rallyNearbyVillagers(nearby, attacker, radius);
-            }
-        }
-    }
-
     private static void triggerNitwitWitnessedDeathFlee(List<Villager> witnesses, LivingEntity attacker) {
         long gameTime = attacker == null ? 0L : attacker.level().getGameTime();
         for (Villager nearby : witnesses) {

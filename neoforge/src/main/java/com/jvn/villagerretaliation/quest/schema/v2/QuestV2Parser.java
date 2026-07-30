@@ -1525,19 +1525,6 @@ public final class QuestV2Parser {
                 readStringList(object.get("lines")));
     }
 
-    private static Map<String, String> readStringMap(JsonObject object) {
-        Map<String, String> values = new LinkedHashMap<>();
-        if (object == null) {
-            return Map.of();
-        }
-        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
-            if (entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isString()) {
-                values.put(entry.getKey(), entry.getValue().getAsString());
-            }
-        }
-        return Map.copyOf(values);
-    }
-
     private static String readString(JsonObject object, String... keys) {
         if (object == null) {
             return "";
