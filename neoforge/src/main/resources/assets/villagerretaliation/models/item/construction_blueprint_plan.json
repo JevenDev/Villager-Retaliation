@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "villagerretaliation:item/construction_blueprint_plan"
+  }
+}

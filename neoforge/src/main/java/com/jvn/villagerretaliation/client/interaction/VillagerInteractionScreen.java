@@ -3485,14 +3485,14 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
                 this::openProfilePage,
                 true));
         buttons.add(new InteractionMenuButton(
-                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_PROFILE_TEXTURE,
+                VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_HOME_TEXTURE,
                 translate("root.allegiance"),
                 translate("interaction_button.allegiance.description"),
                 this::openAllegiancePage,
                 true));
         if (!this.baby && this.duelVisible) {
             buttons.add(new InteractionMenuButton(
-                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE,
+                    VillagerRetaliationClientAssets.INTERACTION_BUTTON_ICON_DUEL_TEXTURE,
                     translate("root.duel"),
                     translate("interaction_button.duel.description"),
                     this::openDuelPage,

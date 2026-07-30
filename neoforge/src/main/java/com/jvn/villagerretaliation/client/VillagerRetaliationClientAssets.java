@@ -104,6 +104,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_talk");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_TRADE_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_trade");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_DUEL_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_duel");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_ADVENTURES_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_adventures");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_PROFILE_TEXTURE =
@@ -122,6 +124,8 @@ public final class VillagerRetaliationClientAssets {
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_stop_follow");
     public static final ResourceLocation INTERACTION_BUTTON_ICON_STAY_TEXTURE =
             texture("gui/villager_interaction_screen/icons/interaction_button_icon_stay");
+    public static final ResourceLocation INTERACTION_BUTTON_ICON_HOME_TEXTURE =
+            texture("gui/villager_interaction_screen/icons/interaction_button_icon_home");
     public static final ResourceLocation INTERACTION_SCROLL_ICON_DOWN_TEXTURE =
             texture("gui/villager_interaction_screen/icons/scroll_icon_down");
     public static final ResourceLocation INTERACTION_SCROLL_ICON_UP_TEXTURE =

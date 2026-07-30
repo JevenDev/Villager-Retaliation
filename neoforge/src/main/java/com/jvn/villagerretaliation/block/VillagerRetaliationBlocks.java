@@ -21,7 +21,7 @@ public final class VillagerRetaliationBlocks {
     public static final DeferredHolder<Block, SellBoxBlock> SELL_BOX =
             BLOCKS.register(
                     "sell_box",
-                    () -> new SellBoxBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BARREL)));
+                    () -> new SellBoxBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.BARREL).noOcclusion()));
 
     public static final List<DeferredHolder<Block, PaymentBoxBlock>> PAYMENT_BOXES = List.of(PAYMENT_BOX);
 
