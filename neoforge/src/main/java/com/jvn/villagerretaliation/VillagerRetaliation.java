@@ -16,6 +16,7 @@ import com.jvn.villagerretaliation.debug.VillagerRetaliationDebugItems;
 import com.jvn.villagerretaliation.duel.DuelService;
 import com.jvn.villagerretaliation.entity.VillagerRetaliationEntityTypes;
 import com.jvn.villagerretaliation.event.VillagerRetaliationEvents;
+import com.jvn.villagerretaliation.inventory.ContainerFilterResolver;
 import com.jvn.villagerretaliation.inventory.VillagerRetaliationMenus;
 import com.jvn.villagerretaliation.item.VillagerRetaliationCreativeTabs;
 import com.jvn.villagerretaliation.item.VillagerRetaliationItems;
@@ -118,6 +119,7 @@ public class VillagerRetaliation {
                 .listener(VillagerRetaliationEvents::onBlockPlace)
                 .listener(HiredOreBlockTracker::onBlockPlace)
                 .listener(HiredOreBlockTracker::onFluidPlaceBlock)
+                .listener(ContainerFilterResolver::onChunkUnload)
                 .listener(HiredPathMemory::onFluidPlaceBlock)
                 .listener(HiredOreBlockTracker::onChunkUnload)
                 .listener(VillagerReputationEvents::onTradeWithVillager)

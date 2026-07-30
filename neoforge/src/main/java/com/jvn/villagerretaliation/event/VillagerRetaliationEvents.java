@@ -37,6 +37,7 @@ import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.interaction.VillagerRecruitmentService;
 import com.jvn.villagerretaliation.interaction.VillagerWalletService;
 import com.jvn.villagerretaliation.inventory.AssignedStorageService;
+import com.jvn.villagerretaliation.inventory.ContainerFilterResolver;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.item.HiredStorageClipboardItem;
@@ -441,7 +442,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
-            AssignedStorageService.invalidateOutputFilterCache(level, frame);
+            ContainerFilterResolver.invalidateFrame(level, frame);
         }
         if (event.getEntity() instanceof LivingEntity livingEntity) {
             VillagerCombatAttributeCompat.ensureCombatAttributes(livingEntity);
@@ -487,7 +488,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
         if (event.getTarget() instanceof ItemFrame frame && frame.level() instanceof ServerLevel level) {
-            AssignedStorageService.invalidateOutputFilterCache(level, frame);
+            ContainerFilterResolver.invalidateFrame(level, frame);
         }
         if (com.jvn.villagerretaliation.mount.VillagerMountAssignmentService.handleEntityInteract(event)) {
             return;
@@ -803,6 +804,7 @@ public final class VillagerRetaliationEvents {
                 VillagerQuestService.onBlockBroken(level, serverPlayer, event.getPos(), event.getState());
             }
             HiredOreBlockTracker.onBlockBreak(event);
+            ContainerFilterResolver.invalidateContainer(level, event.getPos());
             AssignedStorageService.removeAssignedContainer(level, event.getPos());
         }
         ForcedDialogueService.onContainerBreak(event);
@@ -810,6 +812,9 @@ public final class VillagerRetaliationEvents {
 
     public static void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
         HiredPathMemory.onBlockPlace(event);
+        if (!event.isCanceled() && event.getLevel() instanceof ServerLevel level) {
+            ContainerFilterResolver.invalidateContainer(level, event.getPos());
+        }
         if (!event.isCanceled()
                 && event.getLevel() instanceof ServerLevel level
                 && event.getEntity() instanceof ServerPlayer serverPlayer) {
@@ -859,7 +864,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onEntityLeaveLevel(EntityLeaveLevelEvent event) {
         if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
-            AssignedStorageService.invalidateOutputFilterCache(level, frame);
+            ContainerFilterResolver.invalidateFrame(level, frame);
         }
         VillageCombatAuthorizationService.clearFor(event.getEntity());
         Entity.RemovalReason removalReason = event.getEntity().getRemovalReason();

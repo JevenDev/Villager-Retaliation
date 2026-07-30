@@ -42,6 +42,7 @@ import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.decoration.GlowItemFrame;
 import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.GiveGiftToHero;
@@ -68,6 +69,7 @@ import net.neoforged.neoforge.common.util.FakePlayerFactory;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
+import net.neoforged.neoforge.items.ItemStackHandler;
 
 @GameTestHolder
 @PrefixGameTestTemplate(false)
@@ -582,6 +584,111 @@ public final class VillagerInventoryGameTests {
         AssignedStorageService.removeAllAssignedStorage(level, villager);
         frame.discard();
         villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void attachedFilterResolverTracksLogicalContainerAndInvalidation(GameTestHelper helper) {
+        buildFloor(helper, 0, 8, 0, 5, 1);
+        ServerLevel level = helper.getLevel();
+        BlockPos leftRel = new BlockPos(4, 2, 2);
+        BlockPos rightRel = leftRel.east();
+        BlockPos left = helper.absolutePos(leftRel);
+        BlockPos right = helper.absolutePos(rightRel);
+        setBlock(helper, leftRel, Blocks.CHEST.defaultBlockState()
+                .setValue(ChestBlock.FACING, Direction.NORTH)
+                .setValue(ChestBlock.TYPE, ChestType.LEFT));
+        setBlock(helper, rightRel, Blocks.CHEST.defaultBlockState()
+                .setValue(ChestBlock.FACING, Direction.NORTH)
+                .setValue(ChestBlock.TYPE, ChestType.RIGHT));
+
+        ItemStack listFilter = new ItemStack(VillagerRetaliationItems.ITEM_FILTER.get());
+        VillagerItemFilterData.setEntry(listFilter, 0, new ItemStack(Items.DIRT));
+        ItemFrame listFrame = new ItemFrame(level, left.relative(Direction.SOUTH), Direction.SOUTH);
+        listFrame.setItem(listFilter);
+        helper.assertTrue(level.addFreshEntity(listFrame), "list filter frame should spawn");
+
+        ItemStack attributeFilter = attributeTag("minecraft:logs");
+        GlowItemFrame glowFrame = new GlowItemFrame(level, right.relative(Direction.SOUTH), Direction.SOUTH);
+        glowFrame.setItem(attributeFilter);
+        helper.assertTrue(level.addFreshEntity(glowFrame), "glow filter frame should spawn");
+
+        ItemFrame legacyFrame = new ItemFrame(level, right.relative(Direction.NORTH), Direction.NORTH);
+        legacyFrame.setItem(new ItemStack(Items.DIAMOND));
+        helper.assertTrue(level.addFreshEntity(legacyFrame), "legacy exact-item frame should spawn");
+
+        level.setBlockAndUpdate(left.above(), Blocks.STONE.defaultBlockState());
+        ItemFrame nearbyFrame = new ItemFrame(level, left.above().relative(Direction.SOUTH), Direction.SOUTH);
+        nearbyFrame.setItem(new ItemStack(Items.GOLD_INGOT));
+        helper.assertTrue(level.addFreshEntity(nearbyFrame), "nearby unrelated frame should spawn");
+
+        ContainerFilterResolver.clearRuntimeState();
+        VillagerInventoryOverflowService.ContainerCandidate candidate =
+                VillagerInventoryOverflowService.ContainerCandidate.resolve(level, left);
+        helper.assertTrue(candidate != null, "double chest should resolve as one logical container");
+        helper.assertValueEqual(candidate.positions().size(), 2, "logical double-chest positions");
+
+        ContainerFilterResolver.Resolution first = ContainerFilterResolver.resolve(level, candidate);
+        helper.assertTrue(first.live(), "loaded frame neighborhood should resolve live");
+        helper.assertValueEqual(first.rules().size(), 3, "both halves and glow frames should be combined once");
+        helper.assertTrue(first.rules().stream().anyMatch(stack -> ItemStack.matches(stack, listFilter.copyWithCount(1))),
+                "configured list filter should be preserved");
+        helper.assertTrue(first.rules().stream().anyMatch(stack -> ItemStack.matches(stack, attributeFilter.copyWithCount(1))),
+                "configured attribute filter should be preserved");
+        helper.assertTrue(first.rules().stream().anyMatch(stack -> stack.is(Items.DIAMOND)),
+                "ordinary framed items should retain legacy exact-item behavior");
+        helper.assertValueEqual(ContainerFilterResolver.cachedContainerCount(), 1,
+                "both halves should share one cache entry");
+
+        listFrame.setRotation(5);
+        ContainerFilterResolver.invalidateFrame(level, listFrame);
+        ContainerFilterResolver.Resolution rotated = ContainerFilterResolver.resolve(level, candidate);
+        helper.assertValueEqual(rotated.rules().size(), 3,
+                "frame rotation must not change its attached container");
+
+        listFrame.setItem(new ItemStack(Items.EMERALD));
+        ContainerFilterResolver.invalidateFrame(level, listFrame);
+        ContainerFilterResolver.Resolution replaced = ContainerFilterResolver.resolve(level, candidate);
+        helper.assertTrue(replaced.rules().stream().anyMatch(stack -> stack.is(Items.EMERALD)),
+                "replacing a framed rule should invalidate the cached result");
+        helper.assertFalse(replaced.rules().stream().anyMatch(stack -> ItemStack.matches(stack, listFilter)),
+                "the replaced configured rule must not remain cached");
+
+        glowFrame.setItem(ItemStack.EMPTY);
+        ContainerFilterResolver.invalidateFrame(level, glowFrame);
+        helper.assertValueEqual(ContainerFilterResolver.resolve(level, candidate).rules().size(), 2,
+                "removing a framed rule should invalidate the cached result");
+
+        ContainerFilterResolver.invalidateContainer(level, right);
+        helper.assertValueEqual(ContainerFilterResolver.cachedContainerCount(), 0,
+                "changing either chest half should invalidate the logical container");
+
+        listFrame.discard();
+        glowFrame.discard();
+        legacyFrame.discard();
+        nearbyFrame.discard();
+        ContainerFilterResolver.clearRuntimeState();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void itemHandlerContainerAdapterSimulatesAndCommitsSafely(GameTestHelper helper) {
+        ItemStackHandler handler = new ItemStackHandler(2);
+        ItemHandlerContainerAdapter adapter = new ItemHandlerContainerAdapter(handler);
+        helper.assertValueEqual(adapter.insertionCapacity(new ItemStack(Items.EMERALD), 100), 100,
+                "simulated capacity should span capability slots without mutation");
+        helper.assertTrue(handler.getStackInSlot(0).isEmpty() && handler.getStackInSlot(1).isEmpty(),
+                "capacity simulation must not mutate the item handler");
+        ItemStack remainder = adapter.insert(new ItemStack(Items.EMERALD, 80), false);
+        helper.assertTrue(remainder.isEmpty(), "capability insertion should accept available space");
+        helper.assertValueEqual(
+                handler.getStackInSlot(0).getCount() + handler.getStackInSlot(1).getCount(), 80,
+                "committed insertion should preserve the full item count");
+        helper.assertValueEqual(adapter.extract(0, 20, false).getCount(), 20,
+                "capability extraction should return the amount actually removed");
+        helper.assertValueEqual(
+                handler.getStackInSlot(0).getCount() + handler.getStackInSlot(1).getCount(), 60,
+                "capability extraction should neither duplicate nor lose the remaining stock");
         helper.succeed();
     }
 
