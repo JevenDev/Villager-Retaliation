@@ -200,6 +200,7 @@ public final class VillagerRetaliationEvents {
         ClipboardWorkforceService.clearRuntimeState();
         ServerRuntimeState.clear(event.getServer());
         com.jvn.villagerretaliation.duel.DuelService.clearRuntimeState(event.getServer());
+        VillagerProfileManager.clearRuntimeState();
     }
 
     public static void onAddReloadListeners(AddReloadListenerEvent event) {
@@ -454,6 +455,7 @@ public final class VillagerRetaliationEvents {
         }
         VillagerNaturalJobArmor.onEntityJoinLevel(event);
         VillagerRetaliationHandler.onEntityJoinLevel(event);
+        VillagerProfileManager.onEntityJoinLevel(event);
         if (event.getEntity() instanceof net.minecraft.world.entity.item.ItemEntity itemEntity
                 && !event.getLevel().isClientSide()) {
             com.jvn.villagerretaliation.party.PartyVillagerDropCollection.onItemEntityLoaded(itemEntity);
@@ -890,6 +892,7 @@ public final class VillagerRetaliationEvents {
         VillagerRetaliationHandler.onEntityLeaveLevel(event);
         WanderingTraderRetaliationHandler.onEntityLeaveLevel(event);
         VillagerSocialGraphService.onEntityLeaveLevel(event.getEntity());
+        VillagerProfileManager.onEntityLeaveLevel(event);
         VillagerConversationService.endForEntityLeaving(event.getEntity(), true);
         if (event.getEntity() instanceof AbstractVillager villager) {
             VillagerTradeUseTracker.forget(villager);

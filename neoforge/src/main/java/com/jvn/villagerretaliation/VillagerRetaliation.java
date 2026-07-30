@@ -24,6 +24,7 @@ import com.jvn.villagerretaliation.interaction.work.HiredPathMemory;
 import com.jvn.villagerretaliation.interaction.work.mining.HiredOreBlockTracker;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
 import com.jvn.villagerretaliation.mount.VillagerMountedCombatPolicy;
+import com.jvn.villagerretaliation.profile.VillagerProfileManager;
 import com.jvn.villagerretaliation.reputation.VillagerReputationEvents;
 import com.jvn.villagerretaliation.raid.PlayerRaidDialogueService;
 import com.jvn.villagerretaliation.raid.PlayerRaidService;
@@ -93,6 +94,7 @@ public class VillagerRetaliation {
                 .listener(VillageAllegianceService::onServerTickPost)
                 .listener(VillageCombatAuthorizationService::onServerTickPost)
                 .listener(VillagerReputationEvents::onServerTickPost)
+                .listener(VillagerProfileManager::onServerTickPost)
                 .listener(PlayerRaidService::onServerTickPost)
                 .listener(PlayerRaidService::onUseItemStart)
                 .listener(VillagerSocialGraphService::onLivingConversionPost)

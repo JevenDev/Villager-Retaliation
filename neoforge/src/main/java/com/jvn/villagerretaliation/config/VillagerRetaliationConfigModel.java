@@ -95,6 +95,9 @@ public final class VillagerRetaliationConfigModel {
         public boolean enableWanderingTraderDrops = true;
 
         public boolean enableVillagerDeathMessages = true;
+
+        @RangeConstraint(min = 0, max = 3650)
+        public int retiredVillagerProfileRetentionDays = 30;
     }
 
     public static final class Dialogue {
