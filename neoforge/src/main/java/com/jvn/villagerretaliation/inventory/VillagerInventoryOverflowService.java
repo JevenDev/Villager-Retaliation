@@ -38,6 +38,8 @@ import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.ChestType;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.items.IItemHandler;
 
 final class VillagerInventoryOverflowService {
     private static final int SCAN_INTERVAL_TICKS = 100;
@@ -215,6 +217,9 @@ final class VillagerInventoryOverflowService {
     }
 
     static ItemStack insertIntoContainer(Container container, ItemStack stack) {
+        if (container instanceof ItemHandlerContainerAdapter adapter) {
+            return adapter.insert(stack, false);
+        }
         ItemStack remainder = stack.copy();
         boolean changed = false;
         for (int slot = 0; slot < container.getContainerSize(); slot++) {
@@ -430,6 +435,27 @@ final class VillagerInventoryOverflowService {
         ContainerCandidate {
             pos = pos.immutable();
             positions = normalizePositions(pos, positions);
+        }
+
+        static ContainerCandidate resolve(ServerLevel level, BlockPos pos) {
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof Container container) {
+                return resolve(level, pos, container);
+            }
+
+            IItemHandler handler = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, null);
+            if (handler == null) {
+                for (Direction direction : Direction.values()) {
+                    handler = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, direction);
+                    if (handler != null) {
+                        break;
+                    }
+                }
+            }
+            return handler == null
+                    ? null
+                    : new ContainerCandidate(
+                            pos, new ItemHandlerContainerAdapter(handler), List.of(pos));
         }
 
         static ContainerCandidate resolve(ServerLevel level, BlockPos pos, Container fallback) {

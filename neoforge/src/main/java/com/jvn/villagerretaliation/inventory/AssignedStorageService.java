@@ -24,7 +24,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
-import net.minecraft.world.entity.decoration.ItemFrame;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ClipContext;
@@ -32,7 +31,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class AssignedStorageService {
@@ -46,24 +44,13 @@ public final class AssignedStorageService {
     private static final long STORAGE_RETRY_COOLDOWN_TICKS = 20L * 15L;
     private static final long STORAGE_FULL_COOLDOWN_TICKS = 20L * 45L;
     private static final Map<StorageFailureKey, StorageFailure> STORAGE_FAILURES = new HashMap<>();
-    private static final Map<OutputFilterCacheKey, List<ItemStack>> OUTPUT_FILTER_CACHE = new HashMap<>();
 
     private AssignedStorageService() {
     }
 
     public static void clearRuntimeState() {
         STORAGE_FAILURES.clear();
-        OUTPUT_FILTER_CACHE.clear();
-    }
-
-    public static void invalidateOutputFilterCache(ServerLevel level, ItemFrame frame) {
-        if (level == null || frame == null) {
-            return;
-        }
-        BlockPos attachedPos = frame.getPos().relative(frame.getDirection().getOpposite());
-        OUTPUT_FILTER_CACHE.keySet().removeIf(key ->
-                key.dimension().equals(level.dimension())
-                        && key.pos().distManhattan(attachedPos) <= 1);
+        ContainerFilterResolver.clearRuntimeState();
     }
 
     public static boolean hasAssignedStorage(ServerLevel level, Villager villager) {
@@ -135,12 +122,13 @@ public final class AssignedStorageService {
             }
             List<ItemStack> outputFilters = List.of();
             boolean outputFilterSnapshotKnown = false;
-            if (OUTPUT_PURPOSE.equals(normalizedPurpose)
-                    && targetLevel.getBlockEntity(position.pos()) instanceof Container container) {
-                outputFilters = courierItemFrameFilters(
-                        targetLevel,
-                        VillagerInventoryOverflowService.ContainerCandidate.resolve(targetLevel, position.pos(), container));
-                outputFilterSnapshotKnown = true;
+            VillagerInventoryOverflowService.ContainerCandidate candidate =
+                    VillagerInventoryOverflowService.ContainerCandidate.resolve(targetLevel, position.pos());
+            if (OUTPUT_PURPOSE.equals(normalizedPurpose) && candidate != null) {
+                ContainerFilterResolver.Resolution resolution =
+                        ContainerFilterResolver.resolve(targetLevel, candidate);
+                outputFilters = resolution.rules();
+                outputFilterSnapshotKnown = resolution.live();
             }
             AssignmentResult result = data.assign(new AssignedContainerRecord(
                     position.dimension(),
@@ -239,26 +227,23 @@ public final class AssignedStorageService {
         if (level == null || pos == null || !level.hasChunkAt(pos)) {
             return pos == null ? List.of() : List.of(pos.immutable());
         }
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!(blockEntity instanceof Container container)) {
-            return List.of(pos.immutable());
-        }
-        return VillagerInventoryOverflowService.ContainerCandidate.resolve(
-                level, pos.immutable(), container).positions();
+        VillagerInventoryOverflowService.ContainerCandidate candidate =
+                VillagerInventoryOverflowService.ContainerCandidate.resolve(level, pos);
+        return candidate == null ? List.of(pos.immutable()) : candidate.positions();
     }
 
     public static boolean isValidContainer(ServerLevel level, BlockPos pos) {
-        return level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof Container;
+        return level != null
+                && pos != null
+                && level.hasChunkAt(pos)
+                && VillagerInventoryOverflowService.ContainerCandidate.resolve(level, pos) != null;
     }
 
     public static boolean isValidContainerForPurpose(ServerLevel level, BlockPos pos, String purpose) {
-        if (!level.hasChunkAt(pos)) {
+        if (!isValidContainer(level, pos)) {
             return false;
         }
         BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (!(blockEntity instanceof Container)) {
-            return false;
-        }
         String normalizedPurpose = normalizePurpose(purpose);
         if (PAYMENT_PURPOSE.equals(normalizedPurpose)) {
             return blockEntity instanceof PaymentBoxBlockEntity;
@@ -280,7 +265,7 @@ public final class AssignedStorageService {
             return stack;
         }
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
-        ItemStack remainder = insertIntoOutputContainers(level, containers, stack, usedContainers);
+        ItemStack remainder = insertIntoOutputContainers(level, villager, containers, stack, usedContainers);
         VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
         return remainder;
     }
@@ -299,7 +284,7 @@ public final class AssignedStorageService {
             return stack;
         }
         List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
-        ItemStack remainder = insertIntoOutputContainers(level, containers, stack, usedContainers);
+        ItemStack remainder = insertIntoOutputContainers(level, villager, containers, stack, usedContainers);
         VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
         return remainder;
     }
@@ -313,7 +298,7 @@ public final class AssignedStorageService {
                 continue;
             }
             List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers = new ArrayList<>();
-            ItemStack remainder = insertIntoOutputContainers(level, List.of(candidate), stack, usedContainers);
+            ItemStack remainder = insertIntoOutputContainers(level, villager, List.of(candidate), stack, usedContainers);
             VillagerInventoryOverflowService.openUsedContainers(level, usedContainers);
             return remainder;
         }
@@ -322,6 +307,7 @@ public final class AssignedStorageService {
 
     private static ItemStack insertIntoOutputContainers(
             ServerLevel level,
+            Villager villager,
             List<VillagerInventoryOverflowService.ContainerCandidate> containers,
             ItemStack stack,
             List<VillagerInventoryOverflowService.ContainerCandidate> usedContainers) {
@@ -330,7 +316,11 @@ public final class AssignedStorageService {
             if (remainder.isEmpty()) {
                 return ItemStack.EMPTY;
             }
-            int allowance = outputAllowance(level, candidate, remainder);
+            OutputTarget target = durableOutputTarget(level, villager, candidate);
+            if (!target.filterSnapshotKnown()) {
+                continue;
+            }
+            int allowance = outputAllowance(level, candidate, target.filters(), remainder);
             if (allowance <= 0) {
                 continue;
             }
@@ -588,15 +578,6 @@ public final class AssignedStorageService {
     private static int outputContainerCapacity(
             ServerLevel level,
             VillagerInventoryOverflowService.ContainerCandidate candidate,
-            ItemStack stack,
-            int maximum) {
-        return outputContainerCapacity(
-                level, candidate, courierItemFrameFilters(level, candidate), stack, maximum);
-    }
-
-    private static int outputContainerCapacity(
-            ServerLevel level,
-            VillagerInventoryOverflowService.ContainerCandidate candidate,
             List<ItemStack> filters,
             ItemStack stack,
             int maximum) {
@@ -607,6 +588,9 @@ public final class AssignedStorageService {
         Container container = candidate.container();
         if (container instanceof SellBoxBlockEntity) {
             return allowance;
+        }
+        if (container instanceof ItemHandlerContainerAdapter adapter) {
+            return Math.min(allowance, adapter.insertionCapacity(stack, allowance));
         }
         int capacity = 0;
         for (int slot = 0; slot < container.getContainerSize(); slot++) {
@@ -625,13 +609,6 @@ public final class AssignedStorageService {
             }
         }
         return Math.min(capacity, allowance);
-    }
-
-    private static int outputAllowance(
-            ServerLevel level,
-            VillagerInventoryOverflowService.ContainerCandidate candidate,
-            ItemStack stack) {
-        return outputAllowance(level, candidate, courierItemFrameFilters(level, candidate), stack);
     }
 
     private static int outputAllowance(
@@ -675,13 +652,6 @@ public final class AssignedStorageService {
 
     private static boolean outputFilterMatches(
             ServerLevel level,
-            VillagerInventoryOverflowService.ContainerCandidate candidate,
-            ItemStack stack) {
-        return outputFilterMatches(level, courierItemFrameFilters(level, candidate), stack);
-    }
-
-    private static boolean outputFilterMatches(
-            ServerLevel level,
             List<ItemStack> filters,
             ItemStack stack) {
         if (filters.isEmpty()) {
@@ -716,20 +686,12 @@ public final class AssignedStorageService {
                 .filter(java.util.Objects::nonNull)
                 .distinct()
                 .toList();
-        boolean frameEntitiesAvailable = candidate.positions().stream()
-                .allMatch(level::isPositionEntityTicking);
-        if (frameEntitiesAvailable) {
-            OutputFilterCacheKey cacheKey =
-                    new OutputFilterCacheKey(level.dimension(), candidate.pos().immutable(), villager.getUUID());
-            List<ItemStack> liveFilters = OUTPUT_FILTER_CACHE.get(cacheKey);
-            if (liveFilters == null) {
-                liveFilters = List.copyOf(courierItemFrameFilters(level, candidate));
-                OUTPUT_FILTER_CACHE.put(cacheKey, liveFilters);
-                for (AssignedContainerRecord record : records) {
-                    data.updateOutputFilterSnapshot(record, liveFilters);
-                }
+        ContainerFilterResolver.Resolution resolution = ContainerFilterResolver.resolve(level, candidate);
+        if (resolution.live()) {
+            for (AssignedContainerRecord record : records) {
+                data.updateOutputFilterSnapshot(record, resolution.rules());
             }
-            return new OutputTarget(candidate, liveFilters, true);
+            return new OutputTarget(candidate, resolution.rules(), true);
         }
         return records.stream()
                 .filter(AssignedContainerRecord::outputFilterSnapshotKnown)
@@ -787,26 +749,6 @@ public final class AssignedStorageService {
             }
         }
         return count;
-    }
-
-
-    private static List<ItemStack> courierItemFrameFilters(
-            ServerLevel level,
-            VillagerInventoryOverflowService.ContainerCandidate candidate) {
-        List<ItemStack> filters = new ArrayList<>();
-        for (BlockPos containerPos : candidate.positions()) {
-            for (ItemFrame frame : level.getEntitiesOfClass(
-                    ItemFrame.class,
-                    new AABB(containerPos).inflate(1.0D),
-                    candidateFrame -> candidateFrame.isAlive()
-                            && candidateFrame.getPos()
-                                    .relative(candidateFrame.getDirection().getOpposite())
-                                    .equals(containerPos)
-                            && !candidateFrame.getItem().isEmpty())) {
-                filters.add(frame.getItem().copyWithCount(1));
-            }
-        }
-        return filters;
     }
 
     private static BlockPos nearestAssignedStoragePos(
@@ -1672,18 +1614,17 @@ public final class AssignedStorageService {
                 data.updateValidation(record, "unloaded");
                 continue;
             }
-            BlockEntity blockEntity = level.getBlockEntity(record.pos());
-            if (!(blockEntity instanceof Container container)) {
-                data.removeAssignment(record);
-                continue;
-            }
             if (!isValidContainerForPurpose(level, record.pos(), record.purpose())) {
                 data.removeAssignment(record);
                 continue;
             }
-            data.updateValidation(record, "valid");
             VillagerInventoryOverflowService.ContainerCandidate candidate =
-                    VillagerInventoryOverflowService.ContainerCandidate.resolve(level, record.pos().immutable(), container);
+                    VillagerInventoryOverflowService.ContainerCandidate.resolve(level, record.pos());
+            if (candidate == null) {
+                data.removeAssignment(record);
+                continue;
+            }
+            data.updateValidation(record, "valid");
             containers.putIfAbsent(candidate.pos(), candidate);
         }
         return new ArrayList<>(containers.values());
@@ -1856,9 +1797,6 @@ public final class AssignedStorageService {
     }
 
     private record StorageFailureKey(UUID villagerId, ResourceKey<Level> dimension, BlockPos pos, StorageUse use) {
-    }
-
-    private record OutputFilterCacheKey(ResourceKey<Level> dimension, BlockPos pos, UUID villagerId) {
     }
 
     private record StorageFailure(String reason, long expiresGameTime) {
