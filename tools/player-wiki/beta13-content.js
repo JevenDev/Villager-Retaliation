@@ -4,13 +4,6 @@
   const beta13ExistingPages = new Map(PAGES.map((page) => [page.id, page]));
   const beta13OriginalQuestRender = beta13ExistingPages.get("quests")?.render || renderQuests;
 
-  const beta13DespisedTier = Array.isArray(DATA.reputation)
-    ? DATA.reputation.find((tier) => tier.level === "Despised")
-    : null;
-  if (beta13DespisedTier) {
-    beta13DespisedTier.threshold = "-400 or below";
-    beta13DespisedTier.effect = "Most peaceful options are unavailable. Villagers may refuse service or attack on sight when that behavior is enabled.";
-  }
 
   function beta13ExistingPage(id, patch = {}) {
     const page = beta13ExistingPages.get(id);
@@ -225,6 +218,97 @@
           "Treat Builder as a paid project with a start and finish, not as a permanent workforce slot.",
           "A selectable role may still need more setup. Warnings identify missing areas, stations, tools, fuel, materials, or storage."
         ])}
+      `)}
+    `;
+  }
+
+  function beta13RenderMarket() {
+    const prices = Array.isArray(DATA.sellPrices) ? DATA.sellPrices : [];
+    const rows = prices.map((price) => {
+      const searchValue = `${price.item} ${price.itemId}`.toLowerCase();
+      return `
+        <tr data-market-row data-market-search="${escapeHtml(searchValue)}">
+          <td><strong>${escapeHtml(price.item)}</strong><br><code>${escapeHtml(price.itemId)}</code></td>
+          <td>${escapeHtml(price.itemCount)}</td>
+          <td>${escapeHtml(price.currencyCount)}</td>
+        </tr>
+      `;
+    }).join("");
+
+    return `
+      ${section("Using A Sell Box", `
+        <p>Craft a Sell Box from a barrel and any item in the server's Villager Retaliation currency tag. Open the box, place one supported stack in the pending slot, review its exact value, then choose Sell. Use Withdraw to collect whole currency units from the saved balance.</p>
+        <ol class="step-list icon-step-list">
+          <li>${icon("package-plus")}<strong>Insert a supported item.</strong><span>The single pending slot shows the current daily rate and the exact value of the stack.</span></li>
+          <li>${icon("badge-dollar-sign")}<strong>Confirm the sale.</strong><span>The item stack is consumed and its exact value moves into the box's persistent balance.</span></li>
+          <li>${icon("hand-coins")}<strong>Withdraw the proceeds.</strong><span>Whole currency units move to your inventory. Fractional value stays safely in the balance for later sales.</span></li>
+        </ol>
+      `)}
+      ${section("How Daily Prices Work", `
+        ${beta13FeatureCards([
+          { icon: "sun", title: "One rate per Minecraft day", text: "Each supported item receives a deterministic daily rate based on the world, the day, and its price definition." },
+          { icon: "server", title: "Shared server market", text: "Sell Boxes on the same server use the same current rate for an item. The next Minecraft day can select another allowed rate." },
+          { icon: "scale", title: "Exact fractional balances", text: "Rates such as one currency for several items retain their fractional value instead of rounding each sale down." },
+          { icon: "file-cog", title: "Datapack controlled", text: "Servers can add, remove, disable, or rebalance sell-price definitions and can replace the default currency." }
+        ])}
+        <p>Replacing an occupied pending slot with another supported stack sells the previous pending stack first. Unsupported items and configured currency items are rejected.</p>
+      `)}
+      ${section("Workers And Automation", `
+        ${simpleList([
+          "Couriers can collect whole currency proceeds from a Sell Box when it is used as a route pickup.",
+          "Automation can insert supported sale items and extract available whole currency through the box's sided item handlers.",
+          "The pending slot holds at most one normal item stack. The balance is stored separately and survives closing or moving the box as an item.",
+          "Server datapacks are authoritative, so the in-game screen is the final source for today's exact price."
+        ])}
+      `)}
+      ${section("Built-In Price Catalog", `
+        <p>The default pack currently defines ${plural(prices.length, "sellable item")}. A range means the daily market chooses one allowed rate within that range; it is not a guaranteed minimum payout for every sale.</p>
+        <label class="market-filter" for="market-filter">
+          <span>Filter items</span>
+          <input id="market-filter" type="search" autocomplete="off" spellcheck="false" placeholder="Coal, diamond pickaxe, minecraft:apple">
+        </label>
+        <p id="market-result-count" class="market-result-count" aria-live="polite">Showing all ${prices.length} items.</p>
+        <div class="table-wrap">
+          <table class="market-price-table">
+            <thead><tr><th>Item</th><th>Items sold</th><th>Currency returned</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `)}
+    `;
+  }
+
+  function beta13RenderContainers() {
+    return `
+      ${section("What Counts As Village Property", `
+        <p>By default, watched-container reactions target generated loot containers registered by Villager Retaliation's data. Servers can broaden this to all blocks in the watched-container tag, including tagged containers without a generated loot table.</p>
+        ${beta13FeatureCards([
+          { icon: "package-open", title: "Opening", text: "The default setup can interrupt you as soon as a watched container is opened, before anything is taken." },
+          { icon: "hand", title: "Taking items", text: "Removed items can trigger a theft confrontation, reputation loss, memories, and later gossip." },
+          { icon: "hammer", title: "Breaking", text: "Breaking watched property carries a base penalty and generated containers add a penalty for every item count released." },
+          { icon: "eye", title: "Witnesses matter", text: "Nearby eligible villagers provide the reaction context. Their relationship with you can change the warning and available response." }
+        ])}
+      `)}
+      ${section("Default Behavior", `
+        ${beta13FactList([
+          ["Watch mode", "Generated loot containers only"],
+          ["Reaction timing", "On opening, with theft and breaking reactions still active"],
+          ["Base break reputation", "-30 with a witnessing villager"],
+          ["Generated contents", "An additional -1 per item count dropped when the container is broken"],
+          ["Trusted players", "Can receive more forgiving opening responses, but taking items can still count as theft"]
+        ])}
+        <p>These are server defaults. A modpack can change the watch mode, trigger timing, penalties, eligible loot tables, dialogue, payment choices, and item-return outcomes.</p>
+      `)}
+      ${section("Resolving A Confrontation", `
+        ${simpleList([
+          "Read the villager's options before closing the scene. Some confrontations allow an apology, payment, or return of the stolen items.",
+          "Returned or paid items can go back to the source container, to the witness, to a nearby drop, or to another datapack-defined destination.",
+          "A confrontation can end without immediate combat while still leaving a theft memory or reputation consequence.",
+          "The villager who confronts you may tell others later, so leaving the area does not necessarily erase what happened."
+        ])}
+      `)}
+      ${section("Avoiding Accidental Theft", `
+        <p>Generated-container tooltips identify protected loot where supported. If you are unsure, avoid opening village chests in view of residents, do not break stocked containers, and use your own placed storage for worker logistics.</p>
       `)}
     `;
   }
@@ -893,6 +977,58 @@
     `;
   }
 
+  function beta13RenderDuels() {
+    return `
+      ${section("Who Can Duel", `
+        <p>The Duel option appears only for an adult villager whose Guts meets the server threshold. The default minimum is 60. Open the villager interaction screen, choose Duel, review the available terms, and confirm the challenge.</p>
+        ${simpleList([
+          "Creative or spectator players cannot start a normal duel.",
+          "The villager must be alive, awake, nearby, out of combat, and not trading.",
+          "Hired, recruited-party, downed, death-protected, or already-busy villagers cannot duel.",
+          "A duel cannot begin during a vanilla raid, and one player or villager cannot join two duels at once.",
+          "A villager can refuse future challenges after losing three consecutive duels by default."
+        ])}
+      `)}
+      ${section("Choose The Terms", `
+        ${beta13Table(
+          ["Loadout", "Equipment during the duel"],
+          [
+            ["Bare Handed", "Fists only"],
+            ["Melee", "Iron swords and shields"],
+            ["Ranged", "Bows and 64 arrows"],
+            ["Armored", "Full iron armor, iron swords, iron axes, and shields"],
+            ["Bring Your Own", "Both sides use what they already carry; disabled by default"]
+          ]
+        )}
+        <p>Wager options are no stake, 8, 16, 32, or 64 currency, plus the maximum both sides can cover. The maximum is limited by the currency in your inventory and the villager's wallet. Both stakes are removed when the duel starts.</p>
+      `)}
+      ${section("Arena Rules", `
+        ${beta13FactList([
+          ["Countdown", "3 seconds"],
+          ["Arena radius", "16 blocks from the midpoint between both duelists"],
+          ["Boundary grace", "10 seconds outside the arena before forfeiting"],
+          ["Time limit", "5 minutes after the countdown, then a draw"],
+          ["Spectators", "Up to 16 nearby villagers found within 48 blocks"],
+          ["Rematch cooldown", "3 Minecraft days from the start of the previous duel"]
+        ])}
+        <p>The arena boundary is shown with particles by default. Leaving the ring starts a visible countdown; return before it expires or the other duelist wins.</p>
+      `)}
+      ${section("Inventory And Safety", `
+        <p>Assigned loadouts temporarily replace both inventories, health, hunger, effects, and equipment. The duel blocks ordinary container access, item dropping, and outside interference, then restores the saved state when it ends. Bring Your Own keeps the carried inventory but still isolates the fight.</p>
+        <p>A knockout decides the duel without ordinary reputation damage. A player who loses receives a brief slowness and attack lockout. The villager's combat and survival skills can gain practice after a completed duel.</p>
+      `)}
+      ${section("Results, Stakes, And Stories", `
+        ${simpleList([
+          "The winner receives both stakes.",
+          "A draw or cancelled duel refunds each side's own stake.",
+          "A player win can grant the default +2 reputation with each eligible spectator.",
+          "Completed duels update the villager's win-loss record and can become stories discussed by witnesses.",
+          "Server owners can change eligibility, timing, arena size, spectators, reputation, cooldowns, and refusal limits."
+        ])}
+      `)}
+    `;
+  }
+
   function beta13RenderPlayerRaids() {
     return `
       ${section("Declaring A Player Raid", `
@@ -969,11 +1105,29 @@
       ${section("Settings Categories", `
         ${pillList([
           "General", "Dialogue", "Notifications", "Gifts", "Social", "Balance", "Retaliation", "Reputation",
-          "Player Raids", "Trade", "Combat", "Wandering Trader", "Quest"
+          "Player Raids", "Duels", "Trade", "Combat", "Hired Work", "Wandering Trader", "Quest"
         ])}
       `)}
     `;
   }
+
+  document.addEventListener("input", (event) => {
+    if (!(event.target instanceof HTMLInputElement) || event.target.id !== "market-filter") return;
+    const query = event.target.value.trim().toLowerCase();
+    const rows = [...document.querySelectorAll("[data-market-row]")];
+    let visible = 0;
+    rows.forEach((row) => {
+      const matches = !query || String(row.dataset.marketSearch || "").includes(query);
+      row.hidden = !matches;
+      if (matches) visible++;
+    });
+    const status = document.querySelector("#market-result-count");
+    if (status) {
+      status.textContent = query
+        ? `Showing ${visible} of ${rows.length} items.`
+        : `Showing all ${rows.length} items.`;
+    }
+  });
 
   const beta13Pages = [
     beta13ExistingPage("home", {
@@ -985,7 +1139,7 @@
     beta13NewPage(
       "hiring",
       "Hiring And Contracts",
-      "Hired Workers",
+      "Work And Economy",
       "hand-coins",
       "Hire villagers, understand daily wages and 1-30 day contracts, use Payment Boxes, renew work, cancel, and recover items.",
       beta13RenderHiring
@@ -993,7 +1147,7 @@
     beta13NewPage(
       "workforce",
       "Clipboard And Workforce",
-      "Hired Workers",
+      "Work And Economy",
       "clipboard-list",
       "Use the Clipboard dashboard, assign storage purposes, edit work areas and routes, and resolve worker warnings.",
       beta13RenderWorkforce
@@ -1007,7 +1161,7 @@
     beta13NewPage(
       "jobs",
       "Jobs And Professions",
-      "Hired Workers",
+      "Work And Economy",
       "briefcase-business",
       "All thirteen worker roles, qualification rules, required tools and stations, outputs, modes, and important rules.",
       beta13RenderJobs
@@ -1015,7 +1169,7 @@
     beta13NewPage(
       "work-management",
       "Schedules, States, And Efficiency",
-      "Hired Workers",
+      "Work And Economy",
       "gauge",
       "When work runs or pauses, work areas and routes, job states, idle and blocked warnings, mood, skills, and efficiency.",
       beta13RenderWorkManagement
@@ -1023,10 +1177,18 @@
     beta13NewPage(
       "storage-inventory",
       "Storage, Inventory, And Equipment",
-      "Hired Workers",
+      "Work And Economy",
       "package-open",
       "Assigned Supplies, Output, General, and Payment storage, plus job inventories, protected items, filters, supplies, and equipment.",
       beta13RenderStorageInventory
+    ),
+    beta13NewPage(
+      "market",
+      "Sell Box And Daily Market",
+      "Work And Economy",
+      "store",
+      "Craft and use the Sell Box, understand exact daily prices, withdraw proceeds, automate sales, and browse all built-in market rates.",
+      beta13RenderMarket
     ),
     beta13NewPage(
       "villager-needs",
@@ -1047,7 +1209,7 @@
     beta13NewPage(
       "building",
       "Builder And Blueprints",
-      "Hired Workers",
+      "Work And Economy",
       "hammer",
       "Order one-off construction, place a blueprint, supply materials, understand escrow, defaults, site checks, and project rules.",
       beta13RenderBuilding
@@ -1055,7 +1217,7 @@
     beta13NewPage(
       "parties",
       "Parties And Recruits",
-      "Parties",
+      "Parties And Travel",
       "users",
       "Recruit paid party villagers, use follow and quick commands, configure combat and drop collection, share inventory, and form alliances.",
       beta13RenderParties
@@ -1063,7 +1225,7 @@
     beta13NewPage(
       "mounts",
       "Assigned Mounts",
-      "Parties",
+      "Parties And Travel",
       "route",
       "Assign mounts, control mounted travel, parking, and retries, and understand which two-seat features require Ride On.",
       beta13RenderMounts
@@ -1078,21 +1240,29 @@
     ),
     beta13ExistingPage("combat", {
       title: "Retaliation And Combat",
-      group: "Combat And Consequences",
+      group: "Conflict And Safety",
       description: "Natural retaliation, profession equipment, hostile-mob defense, hired guards and hunters, party targeting, recovery, and lethal limits.",
       render: beta13RenderCombat
     }),
     beta13NewPage(
       "downed",
       "Downed Villagers",
-      "Combat And Consequences",
+      "Conflict And Safety",
       "shield-check",
       "Protected downed villagers, automatic recovery, lethal bypasses, and the early-revive features that require Second Wind.",
       beta13RenderDowned
     ),
+    beta13NewPage(
+      "duels",
+      "Villager Duels",
+      "Conflict And Safety",
+      "swords",
+      "Challenge eligible villagers, choose a loadout and wager, follow arena rules, protect inventories, and understand outcomes.",
+      beta13RenderDuels
+    ),
     beta13ExistingPage("player-raids", {
       title: "Player Raids",
-      group: "Combat And Consequences",
+      group: "Conflict And Safety",
       description: "Declare a village raid, understand the party snapshot, defenders, horn reveal, mercy stage, outcomes, and cooldown.",
       render: beta13RenderPlayerRaids
     }),
@@ -1108,9 +1278,13 @@
       description: "Open and bypass the interaction screen, understand when menu options appear, quests, hiring, parties, memories, and refusal conditions.",
       render: beta13RenderDialogue
     }),
-    beta13ExistingPage("gifts", { group: "Social Systems" }),
-    beta13ExistingPage("skill-trades", { group: "Social Systems" }),
-    beta13ExistingPage("watched-containers", { group: "Social Systems" }),
+    beta13ExistingPage("gifts", { group: "Relationships And Trade" }),
+    beta13ExistingPage("skill-trades", { group: "Relationships And Trade" }),
+    beta13ExistingPage("watched-containers", {
+      group: "Conflict And Safety",
+      description: "Generated village property, opening and theft confrontations, breaking penalties, witnesses, item returns, and server overrides.",
+      render: beta13RenderContainers
+    }),
     beta13ExistingPage("advancements", { group: "Reference" }),
     beta13ExistingPage("settings", {
       title: "Controls And Configuration",

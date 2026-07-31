@@ -805,6 +805,32 @@ function buildSkillTrades() {
   })).sort((a, b) => a.profession.localeCompare(b.profession));
 }
 
+function rangeText(value) {
+  if (typeof value === "number") return String(value);
+  if (!value || typeof value !== "object") return "";
+  const min = Number(value.min);
+  const max = Number(value.max);
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return "";
+  return min === max ? String(min) : `${min}-${max}`;
+}
+
+function buildSellPrices() {
+  return walkJson(path.join(dataDir, "sell_prices")).flatMap((file) => {
+    const definition = readJson(file);
+    if (definition.enabled === false || !definition.item) return [];
+    const itemCount = rangeText(definition.item_count);
+    const currencyCount = rangeText(definition.currency_count);
+    if (!itemCount || !currencyCount) return [];
+    return [{
+      id: path.basename(file, ".json"),
+      item: itemName(definition.item),
+      itemId: String(definition.item),
+      itemCount,
+      currencyCount
+    }];
+  }).sort((a, b) => a.item.localeCompare(b.item));
+}
+
 function buildAdvancements() {
   const langFile = path.join(assetsDir, "lang", "en_us.json");
   const lang = fs.existsSync(langFile) ? readJson(langFile) : {};
@@ -865,20 +891,21 @@ const data = {
     { level: "Neutral", threshold: "-74 to 74", effect: "Default relationship. Most systems stay available unless other conditions block them." },
     { level: "Suspicious", threshold: "-75 or below", effect: "Villagers become colder and trade pressure can worsen." },
     { level: "Hostile", threshold: "-100 or below", effect: "Villagers may refuse interaction and can be pacified if the tier is not too low." },
-    { level: "Despised", threshold: "-250 or below", effect: "Villagers can become dangerous, may refuse pacification, and may attack on sight when enabled." },
+    { level: "Despised", threshold: "-400 or below", effect: "Most peaceful options are unavailable. Villagers may refuse service or attack on sight when that behavior is enabled." },
     { level: "Feared", threshold: "-1000 or below", effect: "The worst tier. Nearby villagers visibly react and systems become least forgiving." }
   ],
   quests: buildQuests(),
   gifts: buildGifts(),
   pacification: buildPacification(),
   skillTrades: buildSkillTrades(),
+  sellPrices: buildSellPrices(),
   advancements: buildAdvancements(),
   stats: buildStats()
 };
 
 const output = `window.VR_WIKI_DATA = ${JSON.stringify(data, null, 2)};\n`;
 const outputPath = path.join(scriptDir, "site-data.js");
-const summary = `${data.quests.length} quests, ${data.advancements.length} advancements, ${data.skillTrades.reduce((sum, group) => sum + group.count, 0)} skill trades`;
+const summary = `${data.quests.length} quests, ${data.advancements.length} advancements, ${data.skillTrades.reduce((sum, group) => sum + group.count, 0)} skill trades, ${data.sellPrices.length} sell prices`;
 
 if (checkOnly) {
   const current = fs.existsSync(outputPath) ? fs.readFileSync(outputPath, "utf8") : "";

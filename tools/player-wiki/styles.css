@@ -1492,6 +1492,63 @@ table {
   width: 16%;
 }
 
+.market-filter {
+  max-width: 520px;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.market-filter span {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.market-filter input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--code);
+  color: var(--text);
+  padding: 8px 10px;
+}
+
+.market-filter input:focus-visible {
+  border-color: rgba(231, 183, 79, 0.8);
+  outline: 1px solid rgba(231, 183, 79, 0.34);
+  outline-offset: 0;
+}
+
+.market-result-count {
+  min-height: 24px;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.market-price-table {
+  min-width: 680px;
+}
+
+.market-price-table code {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.market-price-table tr[hidden] {
+  display: none;
+}
+
+.market-price-table th:nth-child(2),
+.market-price-table th:nth-child(3),
+.market-price-table td:nth-child(2),
+.market-price-table td:nth-child(3) {
+  width: 18%;
+  text-align: right;
+}
+
 .advancement-flow-table {
   min-width: 980px;
   table-layout: fixed;

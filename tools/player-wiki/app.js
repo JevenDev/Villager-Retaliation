@@ -1,4 +1,4 @@
-const DATA = window.VR_WIKI_DATA || { quests: [], reputation: [], gifts: {}, pacification: [], skillTrades: [], advancements: [] };
+const DATA = window.VR_WIKI_DATA || { quests: [], reputation: [], gifts: {}, pacification: [], skillTrades: [], sellPrices: [], advancements: [] };
 
 const PAGES = [
   {
@@ -330,6 +330,7 @@ function questRewardPreview(quest) {
 
 function resultIcon(type) {
   if (type === "Advancement") return "trophy";
+  if (type === "Market") return "store";
   return type === "Quest" ? "scroll-text" : "file-text";
 }
 
@@ -1504,6 +1505,13 @@ function searchIndex() {
     url: questUrl(quest.slug),
     haystack: `${quest.title} ${quest.description} ${quest.questlineLabel} ${quest.groupLabel} ${(quest.tags || []).join(" ")} ${quest.objectives.join(" ")} ${quest.requirements.professions.join(" ")} ${quest.requirements.skills.map((skill) => skill.skill).join(" ")}`.toLowerCase()
   }));
+  const marketResults = (Array.isArray(DATA.sellPrices) ? DATA.sellPrices : []).map((price) => ({
+    type: "Market",
+    title: price.item,
+    description: `${price.itemCount} item${price.itemCount === "1" ? "" : "s"} for ${price.currencyCount} currency`,
+    url: pageUrl("market"),
+    haystack: `${price.item} ${price.itemId} sell box market price currency ${price.itemCount} ${price.currencyCount}`.toLowerCase()
+  }));
   const advancements = Array.isArray(DATA.advancements) ? DATA.advancements : [];
   const advancementResults = advancements.filter((advancement) => !advancement.hidden).map((advancement) => ({
     type: "Advancement",
@@ -1512,7 +1520,7 @@ function searchIndex() {
     url: advancementUrl(advancement.id),
     haystack: `${advancement.title} ${advancement.id} ${compactId(advancement.id)} ${advancement.parent || ""} ${advancement.frame} ${advancement.description || ""} reputation advancement challenge hidden`.toLowerCase()
   }));
-  return [...pageResults, ...questResults, ...advancementResults];
+  return [...pageResults, ...questResults, ...marketResults, ...advancementResults];
 }
 
 function renderSearch() {
@@ -1527,7 +1535,7 @@ function renderSearch() {
           <strong>${escapeHtml(result.title)}</strong>
           <p>${escapeHtml(result.description)}</p>
         </a>
-      `).join("")}</div>` : `<p>${query ? "No matches found. Try a quest name, villager profession, reward, or feature." : "Search for a quest, villager profession, reward, control, or feature."}</p>`}
+      `).join("")}</div>` : `<p>${query ? "No matches found. Try a quest, market item, villager profession, reward, or feature." : "Search for a quest, market item, villager profession, reward, control, or feature."}</p>`}
     `)}
   `, {
     icon: "search",
