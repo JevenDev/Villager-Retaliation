@@ -152,6 +152,7 @@ public final class VillagerRetaliationEvents {
 
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
+            com.jvn.villagerretaliation.duel.DuelService.recoverPendingPlayer(player);
             SceneLifecycleIntegration.onPlayerConnection(player);
             VillagerQuestService.clearRuntimeState(player);
             ClipboardWorkforceService.clearRuntimeState(player);
@@ -446,7 +447,11 @@ public final class VillagerRetaliationEvents {
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
         if (!event.getLevel().isClientSide() && event.getEntity() instanceof AbstractVillager villager) {
             VillagerRetaliationVillagerEquipment.clearRuntimeState(villager);
+            if (villager instanceof Villager regular) {
+                com.jvn.villagerretaliation.duel.DuelService.recoverPendingVillager(regular);
+            }
         }
+        com.jvn.villagerretaliation.duel.DuelService.onEntityJoinLevel(event);
         if (event.getEntity() instanceof ItemFrame frame && event.getLevel() instanceof ServerLevel level) {
             ContainerFilterResolver.invalidateFrame(level, frame);
         }
