@@ -510,8 +510,8 @@ public final class PartyQuickCommandService {
                 || DuelService.isParticipant(target)
                 || !target.isAlive()
                 || !villager.canAttack(target)
-                || target.isAlliedTo(villager)
-                || PartyService.areInSameOrAlliedParty(villager, target)
+                || !playerRaidOpponents && target.isAlliedTo(villager)
+                || !playerRaidOpponents && PartyService.areInSameOrAlliedParty(villager, target)
                 || !playerRaidOpponents && !PartyTargetPolicy.allows(record.attackMode(), villager, target)) {
             return false;
         }

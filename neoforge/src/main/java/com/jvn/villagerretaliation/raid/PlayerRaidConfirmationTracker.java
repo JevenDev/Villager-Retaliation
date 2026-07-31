@@ -26,6 +26,10 @@ final class PlayerRaidConfirmationTracker {
         armedUntil.values().removeIf(expiresAt -> now >= expiresAt);
     }
 
+    void clear() {
+        armedUntil.clear();
+    }
+
     private record ConfirmationKey(UUID playerId, VillageAllegianceId villageId) {
     }
 }

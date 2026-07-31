@@ -74,7 +74,8 @@ public final class VillagerRetaliationRetaliationUtil {
                 || !villager.isAlive()
                 || VillagerRetaliationVillagerCombatUtil.isConcealedFromVillagers(attacker)
                 || attacker == villager
-                || PartyService.areInSameOrAlliedParty(villager, attacker)) {
+                || PartyService.areInSameOrAlliedParty(villager, attacker)
+                    && !PlayerRaidService.areOpposingParticipants(villager, attacker)) {
             return false;
         }
 
@@ -316,7 +317,8 @@ public final class VillagerRetaliationRetaliationUtil {
             clearAnger.run();
             return null;
         }
-        if (PartyService.areInSameOrAlliedParty(villager, target)) {
+        if (PartyService.areInSameOrAlliedParty(villager, target)
+                && !PlayerRaidService.areOpposingParticipants(villager, target)) {
             clearAnger.run();
             return null;
         }

@@ -77,6 +77,9 @@ public final class PlayerRaidGameTests {
                         firstVillage,
                         104L + PlayerRaidConfirmationTracker.CONFIRMATION_WINDOW_TICKS),
                 "confirmation should expire after 30 seconds");
+        tracker.clear();
+        helper.assertFalse(tracker.consumeOrArm(firstPlayer, firstVillage, 105L),
+                "runtime cleanup should discard an armed confirmation");
         helper.succeed();
     }
 
@@ -702,7 +705,11 @@ public final class PlayerRaidGameTests {
         helper.assertTrue(helper.getLevel().addFreshEntity(defender), "defender should spawn");
         helper.assertTrue(helper.getLevel().addFreshEntity(golem), "golem should spawn");
 
-        VillageAllegianceId village = VillageAllegianceId.random();
+        VillageAllegianceRegistrySavedData registry = VillageAllegianceRegistrySavedData.get(helper.getLevel());
+        VillageAllegianceId village = registry.create(
+                helper.getLevel().getGameTime(), helper.getLevel().dimension().location(), center, "Golem Source");
+        VillageAllegianceId mergedVillage = registry.create(
+                helper.getLevel().getGameTime(), helper.getLevel().dimension().location(), center, "Golem Target");
         VillageAllegianceApi.assignKnown(
                 helper.getLevel(), golem, village, AllegianceAssignmentSource.EXPLICIT_API);
         PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
@@ -712,18 +719,74 @@ public final class PlayerRaidGameTests {
                 Set.of(SectionPos.asLong(center)), "Golem Defense Village", player, UUID.randomUUID(),
                 Set.of(player), Set.of(raider.getUUID()), Set.of(defender.getUUID()), Set.of(), 42L);
         raid.setPhase(PlayerRaidSavedData.Phase.ACTIVE, 43L);
+        helper.assertTrue(registry.merge(village, mergedVillage),
+                "the raid village should merge into a new canonical record");
 
         helper.assertTrue(PlayerRaidService.areOpposingParticipants(raider, golem),
-                "an aligned village golem should count as a Player Raid defender");
+                "a golem should remain a Player Raid defender after its village is merged");
         PlayerRaidService.reconcileCombat(helper.getLevel().getServer(), raid);
         VillagerRetaliationHandler.onEntityTickPost(new EntityTickEvent.Post(raider));
         helper.assertTrue(VillagerRetaliationHandler.hasRetaliationTarget(raider, golem),
                 "a raiding party villager should retain a distant aligned village golem after its AI tick");
 
         data.remove(raid.id());
+        registry.undoMerge(village);
         raider.discard();
         defender.discard();
         golem.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void missingRaidDimensionSettlesAndReleasesParticipants(GameTestHelper helper) {
+        PlayerRaidSavedData data = PlayerRaidSavedData.get(helper.getLevel());
+        UUID player = UUID.randomUUID();
+        PlayerRaidSavedData.RaidRecord raid = data.create(
+                VillageAllegianceId.random(),
+                VillagerRetaliation.id("missing_raid_dimension_" + UUID.randomUUID()),
+                helper.absolutePos(new BlockPos(4, 2, 4)),
+                Set.of(),
+                "Missing Dimension Village",
+                player,
+                null,
+                Set.of(player),
+                Set.of(),
+                Set.of(UUID.randomUUID()),
+                Set.of(),
+                42L);
+        raid.setPhase(PlayerRaidSavedData.Phase.ACTIVE, 43L);
+
+        PlayerRaidService.tickRaid(helper.getLevel().getServer(), data, raid, 44L);
+
+        helper.assertValueEqual(raid.phase(), PlayerRaidSavedData.Phase.DEFENDER_VICTORY,
+                "a raid whose dimension disappeared should settle as defended");
+        helper.assertTrue(data.activeForParticipant(player) == null,
+                "settling a missing-dimension raid should release its participants");
+        data.remove(raid.id());
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void raidLoadoutsCanRefillSlotsInLaterRaids(GameTestHelper helper) {
+        Villager defender = EntityType.VILLAGER.create(helper.getLevel());
+        helper.assertTrue(defender != null, "raid defender should be creatable");
+        defender.moveTo(helper.absolutePos(new BlockPos(4, 2, 4)), 0.0F, 0.0F);
+        helper.assertTrue(helper.getLevel().addFreshEntity(defender), "raid defender should spawn");
+        UUID firstRaid = UUID.randomUUID();
+        UUID secondRaid = UUID.randomUUID();
+
+        PlayerRaidLoadoutService.equip(defender, firstRaid);
+        helper.assertFalse(defender.getMainHandItem().isEmpty(),
+                "the first raid should equip an empty main hand");
+        defender.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+        PlayerRaidLoadoutService.equip(defender, firstRaid);
+        helper.assertTrue(defender.getMainHandItem().isEmpty(),
+                "the same raid should not reroll its loadout every reconciliation tick");
+        PlayerRaidLoadoutService.equip(defender, secondRaid);
+        helper.assertFalse(defender.getMainHandItem().isEmpty(),
+                "a later raid should refill an equipment slot that became empty");
+
+        defender.discard();
         helper.succeed();
     }
 }
