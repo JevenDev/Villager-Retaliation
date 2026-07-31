@@ -1,5 +1,6 @@
 package com.jvn.villagerretaliation.party;
 
+import com.jvn.villagerretaliation.quest.tracking.QuestTrackerLimits;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -9,6 +10,7 @@ import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 
 public final class PartyRecord {
     private static final String TAG_ID = "Id";
@@ -19,6 +21,8 @@ public final class PartyRecord {
     private static final String TAG_PLAYER = "Player";
     private static final String TAG_VILLAGERS = "Villagers";
     private static final String TAG_SHARED_QUESTS = "SharedQuests";
+    private static final String TAG_TRACKED_QUESTS = "TrackedQuests";
+    private static final String TAG_QUEST = "Quest";
     private static final String TAG_ATTACK_WITH_PARTY = "AttackWithParty";
     private static final String TAG_COMBAT_MODE = "PartyCombatMode";
     private static final String TAG_ATTACK_MODE = "AttackMode";
@@ -36,11 +40,13 @@ public final class PartyRecord {
     private final Set<UUID> adminPlayerIds;
     private final List<PartyVillagerRecord> villagers;
     private final List<PartySharedQuestRecord> sharedQuests;
+    private final List<ResourceLocation> trackedQuests;
     private final Set<UUID> alliedPartyIds;
     private final Set<UUID> allianceRequestPartyIds;
     private final List<UUID> playerIdsView;
     private final List<PartyVillagerRecord> villagersView;
     private final List<PartySharedQuestRecord> sharedQuestsView;
+    private final List<ResourceLocation> trackedQuestsView;
     private final Set<UUID> alliedPartyIdsView;
     private PartyCombatMode combatMode;
     private PartyAttackMode attackMode;
@@ -49,7 +55,7 @@ public final class PartyRecord {
 
     PartyRecord(UUID id, UUID leaderId, long createdGameTime) {
         this(id, leaderId, createdGameTime, new ArrayList<>(List.of(leaderId)), new LinkedHashSet<>(),
-                new ArrayList<>(), new ArrayList<>(), new LinkedHashSet<>(), new LinkedHashSet<>(),
+                new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new LinkedHashSet<>(), new LinkedHashSet<>(),
                 PartyCombatMode.ATTACK_WITH_PARTY, PartyAttackMode.ALL,
                 true, false);
     }
@@ -62,6 +68,7 @@ public final class PartyRecord {
             Set<UUID> adminPlayerIds,
             List<PartyVillagerRecord> villagers,
             List<PartySharedQuestRecord> sharedQuests,
+            List<ResourceLocation> trackedQuests,
             Set<UUID> alliedPartyIds,
             Set<UUID> allianceRequestPartyIds,
             PartyCombatMode combatMode,
@@ -75,11 +82,13 @@ public final class PartyRecord {
         this.adminPlayerIds = adminPlayerIds;
         this.villagers = villagers;
         this.sharedQuests = sharedQuests;
+        this.trackedQuests = trackedQuests;
         this.alliedPartyIds = alliedPartyIds;
         this.allianceRequestPartyIds = allianceRequestPartyIds;
         this.playerIdsView = Collections.unmodifiableList(this.playerIds);
         this.villagersView = Collections.unmodifiableList(this.villagers);
         this.sharedQuestsView = Collections.unmodifiableList(this.sharedQuests);
+        this.trackedQuestsView = Collections.unmodifiableList(this.trackedQuests);
         this.alliedPartyIdsView = Collections.unmodifiableSet(this.alliedPartyIds);
         this.combatMode = combatMode == null ? PartyCombatMode.ATTACK_WITH_PARTY : combatMode;
         this.attackMode = attackMode == null ? PartyAttackMode.ALL : attackMode;
@@ -119,6 +128,40 @@ public final class PartyRecord {
 
     public List<PartySharedQuestRecord> sharedQuests() {
         return this.sharedQuestsView;
+    }
+
+    public List<ResourceLocation> trackedQuests() {
+        return this.trackedQuestsView;
+    }
+
+    public boolean setTrackedQuest(ResourceLocation questId) {
+        return trackQuest(questId);
+    }
+
+    public boolean removeTrackedQuest(ResourceLocation questId) {
+        return questId != null && this.trackedQuests.remove(questId);
+    }
+
+    public boolean toggleTrackedQuest(ResourceLocation questId) {
+        if (questId == null) {
+            return false;
+        }
+        if (this.trackedQuests.remove(questId)) {
+            return true;
+        }
+        return trackQuest(questId);
+    }
+
+    private boolean trackQuest(ResourceLocation questId) {
+        if (questId == null) {
+            return false;
+        }
+        this.trackedQuests.remove(questId);
+        this.trackedQuests.addFirst(questId);
+        while (this.trackedQuests.size() > QuestTrackerLimits.MAX_TRACKED_QUESTS) {
+            this.trackedQuests.removeLast();
+        }
+        return true;
     }
 
     Set<UUID> alliedPartyIds() {
@@ -204,7 +247,18 @@ public final class PartyRecord {
     }
 
     public boolean removeSharedQuest(UUID instanceId) {
-        return this.sharedQuests.removeIf(sharedQuest -> sharedQuest.instanceId().equals(instanceId));
+        PartySharedQuestRecord removed = this.sharedQuests.stream()
+                .filter(sharedQuest -> sharedQuest.instanceId().equals(instanceId))
+                .findFirst()
+                .orElse(null);
+        if (removed == null || !this.sharedQuests.remove(removed)) {
+            return false;
+        }
+        if (this.sharedQuests.stream().noneMatch(sharedQuest -> !sharedQuest.completed()
+                && sharedQuest.questId().equals(removed.questId()))) {
+            this.trackedQuests.remove(removed.questId());
+        }
+        return true;
     }
 
     boolean addPlayer(UUID playerId) {
@@ -291,6 +345,13 @@ public final class PartyRecord {
             sharedQuestsTag.add(sharedQuest.save());
         }
         tag.put(TAG_SHARED_QUESTS, sharedQuestsTag);
+        ListTag trackedQuestsTag = new ListTag();
+        for (ResourceLocation questId : this.trackedQuests) {
+            CompoundTag questTag = new CompoundTag();
+            questTag.putString(TAG_QUEST, questId.toString());
+            trackedQuestsTag.add(questTag);
+        }
+        tag.put(TAG_TRACKED_QUESTS, trackedQuestsTag);
         tag.putString(TAG_COMBAT_MODE, this.combatMode.name());
         tag.putString(TAG_ATTACK_MODE, this.attackMode.name());
         tag.putBoolean(TAG_SHARED_VILLAGER_INVENTORIES, this.sharedVillagerInventories);
@@ -331,6 +392,15 @@ public final class PartyRecord {
                 }
             }
         }
+        List<ResourceLocation> trackedQuests = new ArrayList<>();
+        for (Tag rawTrackedQuest : tag.getList(TAG_TRACKED_QUESTS, Tag.TAG_COMPOUND)) {
+            if (rawTrackedQuest instanceof CompoundTag trackedQuestTag) {
+                ResourceLocation questId = ResourceLocation.tryParse(trackedQuestTag.getString(TAG_QUEST));
+                if (questId != null && !trackedQuests.contains(questId)) {
+                    trackedQuests.add(questId);
+                }
+            }
+        }
         return new PartyRecord(
                 tag.getUUID(TAG_ID),
                 leaderId,
@@ -339,6 +409,7 @@ public final class PartyRecord {
                 loadPlayerIds(tag, TAG_ADMIN_PLAYERS),
                 villagers,
                 sharedQuests,
+                trackedQuests,
                 loadPartyIds(tag, TAG_ALLIED_PARTIES),
                 loadPartyIds(tag, TAG_ALLIANCE_REQUESTS),
                 loadCombatMode(tag),
@@ -362,6 +433,13 @@ public final class PartyRecord {
             this.villagers.subList(PartyService.MAX_VILLAGERS, this.villagers.size()).clear();
         }
         pruneSharedQuests();
+        LinkedHashSet<ResourceLocation> uniqueTrackedQuests = new LinkedHashSet<>(this.trackedQuests);
+        this.trackedQuests.clear();
+        this.trackedQuests.addAll(uniqueTrackedQuests.stream()
+                .filter(questId -> this.sharedQuests.stream().anyMatch(sharedQuest -> !sharedQuest.completed()
+                        && sharedQuest.questId().equals(questId)))
+                .limit(QuestTrackerLimits.MAX_TRACKED_QUESTS)
+                .toList());
     }
 
     private static PartyCombatMode loadCombatMode(CompoundTag tag) {
@@ -425,5 +503,7 @@ public final class PartyRecord {
         this.sharedQuests.removeIf(sharedQuest -> sharedQuest.enrollments().isEmpty()
                 || sharedQuest.settled()
                 || !questInstances.add(sharedQuest.instanceId()));
+        this.trackedQuests.removeIf(questId -> this.sharedQuests.stream().noneMatch(sharedQuest ->
+                !sharedQuest.completed() && sharedQuest.questId().equals(questId)));
     }
 }

@@ -30,10 +30,12 @@ import com.jvn.villagerretaliation.mount.VillagerMountAssignment;
 import com.jvn.villagerretaliation.mount.VillagerMountAssignmentSavedData;
 import com.jvn.villagerretaliation.mount.VillagerMountAssignmentService;
 import com.jvn.villagerretaliation.mount.VillagerMountTravelService;
+import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.quest.PartyQuestService;
 import com.jvn.villagerretaliation.quest.QuestDefinition;
 import com.jvn.villagerretaliation.quest.QuestFactScope;
 import com.jvn.villagerretaliation.quest.VillagerQuestSavedData;
+import com.jvn.villagerretaliation.quest.VillagerQuestService;
 import com.jvn.villagerretaliation.reputation.VillagerReputationManager;
 import com.jvn.villagerretaliation.social.VillagerSocialGraphSavedData;
 import com.jvn.villagerretaliation.util.TickThrottle;
@@ -329,6 +331,7 @@ public final class PartyGameTests {
         helper.assertTrue(shared.markDeathProcessed("kills", death), "first death credit should be recorded");
         helper.assertFalse(shared.markDeathProcessed("kills", death), "same death must not be recorded twice");
         party.addSharedQuest(shared);
+        party.setTrackedQuest(shared.questId());
 
         PartyInvitation invitation = new PartyInvitation(
                 UUID.randomUUID(), leader, rejectedPlayer, party.id(), now, now + 200L);
@@ -390,6 +393,8 @@ public final class PartyGameTests {
                 "stable shared quest instance persistence");
         helper.assertValueEqual(restored.sharedQuests().getFirst().objectiveCounter("kills"), 2,
                 "shared objective progress persistence");
+        helper.assertValueEqual(restored.trackedQuests(), List.of(shared.questId()),
+                "party tracked quests should persist independently of player tracker choices");
 
         CompoundTag legacySaved = saved.copy();
         CompoundTag legacyParty = (CompoundTag) legacySaved
@@ -414,6 +419,77 @@ public final class PartyGameTests {
         helper.assertValueEqual(migrated.villager(villagers.getFirst()).combatMode(),
                 PartyCombatMode.KILL_ON_SIGHT,
                 "legacy KOS setting migrates to kill-on-sight combat mode");
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void partyTrackedQuestsRequireLeaderOrAdminAndPreservePersonalTracking(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        ServerPlayer leader = fakePlayer(level, uniqueName("party_quest_leader"));
+        ServerPlayer member = fakePlayer(level, uniqueName("party_quest_member"));
+        PartySavedData partyData = PartySavedData.get(level);
+        PartyRecord party = partyData.createParty(leader.getUUID(), level.getGameTime());
+        ResourceLocation partyQuestId = VillagerRetaliation.id("party_tracking_authority_fixture");
+        ResourceLocation personalQuestId = VillagerRetaliation.id("personal_tracking_preserved_fixture");
+        PartySharedQuestRecord shared = new PartySharedQuestRecord(
+                partyQuestId,
+                UUID.randomUUID(),
+                level.getGameTime());
+        VillagerQuestSavedData questData = VillagerQuestSavedData.get(level);
+        try {
+            helper.assertTrue(partyData.addPlayer(party, member.getUUID()), "fixture member should join party");
+            shared.enroll(leader.getUUID(), false);
+            shared.enroll(member.getUUID(), false);
+            party.addSharedQuest(shared);
+            party.setTrackedQuest(partyQuestId);
+            questData.setTrackedQuest(member.getUUID(), personalQuestId);
+            VillagerQuestService.setClientEffectsSuppressedForTests(leader, true);
+            VillagerQuestService.setClientEffectsSuppressedForTests(member, true);
+
+            VillagerQuestService.handleTrackerRequest(
+                    member,
+                    partyQuestId.toString(),
+                    QuestTrackerRequestPayload.Action.UNTRACK);
+            helper.assertValueEqual(party.trackedQuests(), List.of(partyQuestId),
+                    "ordinary members must not change party tracked quests");
+            helper.assertValueEqual(questData.getTrackedQuests(member.getUUID()), List.of(personalQuestId),
+                    "rejected party tracking changes must preserve personal tracking");
+
+            helper.assertTrue(party.setAdminPrivileges(member.getUUID(), true),
+                    "fixture member should receive party admin privileges");
+            VillagerQuestService.handleTrackerRequest(
+                    member,
+                    partyQuestId.toString(),
+                    QuestTrackerRequestPayload.Action.UNTRACK);
+            helper.assertTrue(party.trackedQuests().isEmpty(),
+                    "party admins should be able to clear the party tracked quest");
+            helper.assertValueEqual(questData.getTrackedQuests(member.getUUID()), List.of(personalQuestId),
+                    "clearing the party override must keep personal tracked quests for fallback");
+
+            helper.assertTrue(party.setAdminPrivileges(member.getUUID(), false),
+                    "fixture member should lose party admin privileges");
+            VillagerQuestService.handleTrackerRequest(
+                    member,
+                    personalQuestId.toString(),
+                    QuestTrackerRequestPayload.Action.UNTRACK);
+            helper.assertValueEqual(questData.getTrackedQuests(member.getUUID()), List.of(personalQuestId),
+                    "ordinary members cannot replace the personal fallback while the party has no tracked quests");
+
+            party.setTrackedQuest(partyQuestId);
+            VillagerQuestService.handleTrackerRequest(
+                    leader,
+                    partyQuestId.toString(),
+                    QuestTrackerRequestPayload.Action.UNTRACK);
+            helper.assertTrue(party.trackedQuests().isEmpty(),
+                    "the party leader should be able to clear the party tracked quest");
+        } finally {
+            questData.remove(member.getUUID(), personalQuestId);
+            VillagerQuestService.setClientEffectsSuppressedForTests(leader, false);
+            VillagerQuestService.setClientEffectsSuppressedForTests(member, false);
+            PartyService.deleteParty(level, party.id());
+            leader.discard();
+            member.discard();
+        }
         helper.succeed();
     }
 

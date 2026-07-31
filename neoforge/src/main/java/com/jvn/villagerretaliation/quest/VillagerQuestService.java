@@ -47,6 +47,8 @@ import com.jvn.villagerretaliation.interaction.VillagerGiftPreferences;
 import com.jvn.villagerretaliation.interaction.VillagerInteractionService;
 import com.jvn.villagerretaliation.mood.VillagerMoodSavedData;
 import com.jvn.villagerretaliation.mood.VillagerMoodState;
+import com.jvn.villagerretaliation.party.PartyRecord;
+import com.jvn.villagerretaliation.party.PartyService;
 import com.jvn.villagerretaliation.network.QuestTrackerRequestPayload;
 import com.jvn.villagerretaliation.network.QuestTrackerSyncPayload;
 import com.jvn.villagerretaliation.network.VillagerReputationNetworking;
@@ -1347,12 +1349,46 @@ public final class VillagerQuestService {
             sendTrackerSync(player, false, true);
             return;
         }
-        if (questId == null || !canTrackQuest(level, player, questId)) {
+        if (questId == null) {
             sendTrackerSync(player, false, true);
             return;
         }
 
-        switch (action == null ? QuestTrackerRequestPayload.Action.TOGGLE : action) {
+        QuestTrackerRequestPayload.Action requestedAction =
+                action == null ? QuestTrackerRequestPayload.Action.TOGGLE : action;
+        PartyRecord party = PartyService.getPartyForPlayer(level, player.getUUID()).orElse(null);
+        if (party != null) {
+            if (!party.hasAdminPrivileges(player.getUUID())) {
+                player.sendSystemMessage(Component.translatable(
+                        "villagerretaliation.party.error.admin_privileges_required"));
+                sendTrackerSync(player, false, true);
+                return;
+            }
+            boolean alreadyTracked = party.trackedQuests().contains(questId);
+            boolean addsTracking = requestedAction == QuestTrackerRequestPayload.Action.TRACK
+                    || requestedAction == QuestTrackerRequestPayload.Action.TOGGLE && !alreadyTracked;
+            if (addsTracking && !canTrackPartyQuest(level, player, party, questId)) {
+                sendTrackerSync(player, false, true);
+                return;
+            }
+            boolean changed = switch (requestedAction) {
+                case TRACK -> party.setTrackedQuest(questId);
+                case UNTRACK -> party.removeTrackedQuest(questId);
+                case TOGGLE -> party.toggleTrackedQuest(questId);
+                case ABANDON, REFRESH -> false;
+            };
+            if (changed) {
+                PartyService.markChanged(level);
+            }
+            sendPartyTrackerSync(player, party, false);
+            return;
+        }
+
+        if (!canTrackQuest(level, player, questId)) {
+            sendTrackerSync(player, false, true);
+            return;
+        }
+        switch (requestedAction) {
             case TRACK -> data.setTrackedQuest(player.getUUID(), questId);
             case UNTRACK -> data.removeTrackedQuest(player.getUUID(), questId);
             case TOGGLE -> data.toggleTrackedQuest(player.getUUID(), questId);
@@ -2165,7 +2201,15 @@ public final class VillagerQuestService {
             started.markHasProof();
         }
         data.setDirty();
-        data.setTrackedQuest(context.player().getUUID(), definition.id());
+        PartyRecord currentParty = PartyService
+                .getPartyForPlayer(context.level(), context.player().getUUID())
+                .orElse(null);
+        if (currentParty == null) {
+            data.setTrackedQuest(context.player().getUUID(), definition.id());
+        } else if (partyStart != null && currentParty.hasAdminPrivileges(context.player().getUUID())) {
+            currentParty.setTrackedQuest(definition.id());
+            PartyService.markChanged(context.level());
+        }
         VillagerQuestDeathProtectionService.markAfterSuccessfulStart(
                 context.level(),
                 context.villager(),
@@ -2361,7 +2405,6 @@ public final class VillagerQuestService {
         markQuestLifecycleFact(level, member, definition, QUEST_STARTED_FACT, "started");
         initializeQuestStage(memberContext, definition, linked);
         lockBranchQuests(memberContext, definition, QuestDefinition.BranchLockEvent.STARTED);
-        data.setTrackedQuest(member.getUUID(), definition.id());
         if (target != null) {
             rememberQuestStoryHint(memberContext, definition, target);
             maybeGiveQuestTargetMap(memberContext, definition, target);
@@ -2598,6 +2641,9 @@ public final class VillagerQuestService {
                         .getPartyForPlayer(completingContext.level(), completingContext.player().getUUID())
                         .orElse(null);
         shared.markCompleted();
+        if (party != null && party.removeTrackedQuest(definition.id())) {
+            PartyService.markChanged(completingContext.level());
+        }
         com.jvn.villagerretaliation.party.PartySharedQuestRecord.Enrollment completingEnrollment =
                 shared.enrollment(completingContext.player().getUUID());
         if (completingEnrollment != null) {
@@ -5344,6 +5390,22 @@ public final class VillagerQuestService {
         sendTrackerSync(player, flash, false);
     }
 
+    public static void refreshTracker(ServerPlayer player) {
+        sendTrackerSync(player, false, true);
+    }
+
+    private static void sendPartyTrackerSync(ServerPlayer source, PartyRecord party, boolean flash) {
+        if (source == null || party == null) {
+            return;
+        }
+        for (UUID playerId : party.playerIds()) {
+            ServerPlayer member = source.getServer().getPlayerList().getPlayer(playerId);
+            if (member != null) {
+                sendTrackerSync(member, flash, true);
+            }
+        }
+    }
+
     private static void sendTrackerSync(ServerPlayer player, boolean flash, boolean force) {
         if (clientEffectsSuppressedForTests(player)) {
             return;
@@ -5352,16 +5414,22 @@ public final class VillagerQuestService {
             return;
         }
         VillagerQuestSavedData data = VillagerQuestSavedData.get(level);
-        List<ResourceLocation> trackedQuestIds = new ArrayList<>(data.getTrackedQuests(player.getUUID()));
-        boolean trackedChanged = false;
+        PartyRecord party = PartyService.getPartyForPlayer(level, player.getUUID()).orElse(null);
+        boolean partyOverride = party != null && !party.trackedQuests().isEmpty();
+        List<ResourceLocation> trackedQuestIds = new ArrayList<>(partyOverride
+                ? party.trackedQuests()
+                : data.getTrackedQuests(player.getUUID()));
+        boolean personalTrackedChanged = false;
         for (ResourceLocation trackedQuestId : List.copyOf(trackedQuestIds)) {
             if (!canTrackQuest(level, player, trackedQuestId)) {
-                data.removeTrackedQuest(player.getUUID(), trackedQuestId);
+                if (!partyOverride) {
+                    data.removeTrackedQuest(player.getUUID(), trackedQuestId);
+                    personalTrackedChanged = true;
+                }
                 trackedQuestIds.remove(trackedQuestId);
-                trackedChanged = true;
             }
         }
-        if (trackedChanged) {
+        if (personalTrackedChanged) {
             trackedQuestIds = new ArrayList<>(data.getTrackedQuests(player.getUUID()));
         }
         ResourceLocation trackedQuestId = trackedQuestIds.isEmpty() ? null : trackedQuestIds.getFirst();
@@ -5847,6 +5915,18 @@ public final class VillagerQuestService {
             return activeConditions != ConditionMatch.UNMET || !definition.rules().activeState().hideWhenUnmet();
         }
         return shouldSyncTrackerEntry(level, questId, progress);
+    }
+
+    private static boolean canTrackPartyQuest(
+            ServerLevel level,
+            ServerPlayer player,
+            PartyRecord party,
+            ResourceLocation questId) {
+        return party != null
+                && canTrackQuest(level, player, questId)
+                && party.sharedQuests().stream().anyMatch(shared -> !shared.completed()
+                        && shared.questId().equals(questId)
+                        && shared.enrollment(player.getUUID()) != null);
     }
 
     private static void clearTrackedQuestIf(
