@@ -38,7 +38,6 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -378,6 +377,7 @@ public class VillagerFishingHook extends Projectile {
         int rodDamage = 0;
         List<ItemStack> loot = List.of();
         int experience = 0;
+        boolean completedCatch = false;
         if (this.hookedIn != null) {
             this.pullEntity(this.hookedIn);
             this.level().broadcastEntityEvent(this, (byte)31);
@@ -390,40 +390,17 @@ public class VillagerFishingHook extends Projectile {
                     .withParameter(LootContextParams.ATTACKING_ENTITY, owner)
                     .withLuck(this.luck)
                     .create(LootContextParamSets.FISHING);
-            ResourceKey<LootTable> lootTableKey = this.selectFishingLootTable(lootParams.getLuck());
-            LootTable lootTable = this.level().getServer().reloadableRegistries().getLootTable(lootTableKey);
+            LootTable lootTable = this.level().getServer().reloadableRegistries().getLootTable(BuiltInLootTables.FISHING);
             loot = lootTable.getRandomItems(lootParams);
             experience = this.random.nextInt(6) + 1;
             rodDamage = this.onGround() ? 2 : 1;
+            completedCatch = true;
         }
         if (this.onGround()) {
             rodDamage = 2;
         }
         this.discard();
-        return new CatchResult(loot, rodDamage, experience);
-    }
-
-    private ResourceKey<LootTable> selectFishingLootTable(float luck) {
-        int fishWeight = fishingLootWeight(85, -1, luck);
-        int junkWeight = fishingLootWeight(10, -2, luck);
-        int treasureWeight = this.openWater ? fishingLootWeight(5, 2, luck) : 0;
-        int totalWeight = fishWeight + junkWeight + treasureWeight;
-        if (totalWeight <= 0) {
-            return BuiltInLootTables.FISHING_FISH;
-        }
-        int roll = this.random.nextInt(totalWeight);
-        if (roll < fishWeight) {
-            return BuiltInLootTables.FISHING_FISH;
-        }
-        roll -= fishWeight;
-        if (roll < junkWeight) {
-            return BuiltInLootTables.FISHING_JUNK;
-        }
-        return BuiltInLootTables.FISHING_TREASURE;
-    }
-
-    private static int fishingLootWeight(int weight, int quality, float luck) {
-        return Math.max(Mth.floor(weight + quality * luck), 0);
+        return new CatchResult(loot, rodDamage, experience, completedCatch);
     }
 
     public boolean isBiting() {
@@ -432,6 +409,14 @@ public class VillagerFishingHook extends Projectile {
 
     public boolean isOpenWaterFishing() {
         return this.openWater;
+    }
+
+    public boolean shouldRetrieveWithoutCatch() {
+        return this.hookedIn != null
+                || this.onGround()
+                || this.horizontalCollision
+                || this.currentState == FishHookState.BOBBING
+                        && this.outOfWaterTime >= MAX_OUT_OF_WATER_TIME;
     }
 
     public static boolean isOpenWater(Level level, BlockPos pos) {
@@ -545,8 +530,12 @@ public class VillagerFishingHook extends Projectile {
         INVALID
     }
 
-    public record CatchResult(List<ItemStack> items, int rodDamage, int experience) {
-        private static final CatchResult EMPTY = new CatchResult(List.of(), 0, 0);
+    public record CatchResult(List<ItemStack> items, int rodDamage, int experience, boolean completedCatch) {
+        private static final CatchResult EMPTY = new CatchResult(List.of(), 0, 0, false);
+
+        public CatchResult(List<ItemStack> items, int rodDamage, int experience) {
+            this(items, rodDamage, experience, true);
+        }
 
         public boolean hasFish() {
             for (ItemStack item : this.items) {
