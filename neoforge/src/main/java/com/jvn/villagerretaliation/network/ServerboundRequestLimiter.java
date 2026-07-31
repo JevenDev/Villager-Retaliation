@@ -51,9 +51,6 @@ public final class ServerboundRequestLimiter {
         NEXT_ALLOWED_TICKS.clear();
     }
 
-    static int trackedRequestCount() {
-        return NEXT_ALLOWED_TICKS.size();
-    }
 
     private record RequestKey(UUID playerId, ResourceLocation requestId) {
     }

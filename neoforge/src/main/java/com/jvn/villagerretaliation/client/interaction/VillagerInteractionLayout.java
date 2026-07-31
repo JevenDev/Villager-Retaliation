@@ -7,11 +7,9 @@ final class VillagerInteractionLayout {
     private static final float OPTIONS_LEFT_RATIO = 0.7F;
     private static final float OPTIONS_TOP_RATIO = 0.9F;
     private static final float PAGE_LEFT_RATIO = 0.7F;
-    private static final float INFO_RIGHT_RATIO = 0.60F;
     private static final int SCROLLBAR_RIGHT_MARGIN = 36;
     private static final int SCREEN_EDGE_MARGIN = 8;
     private static final int MIN_SCREEN_MARGIN = 20;
-    private static final int INFO_TO_OPTIONS_GAP = 28;
     private static final int PAGE_RIGHT_MARGIN = 20;
 
     private VillagerInteractionLayout() {
@@ -50,12 +48,6 @@ final class VillagerInteractionLayout {
         return Mth.clamp(preferredLeft, minLeft, maxLeft);
     }
 
-    static int infoRight(int screenWidth, int optionsLeft) {
-        int preferredRight = Mth.floor(screenWidth * INFO_RIGHT_RATIO);
-        int minRight = unit(MIN_SCREEN_MARGIN);
-        int maxRight = Math.max(minRight, optionsLeft - unit(INFO_TO_OPTIONS_GAP));
-        return Mth.clamp(preferredRight, minRight, maxRight);
-    }
 
     static int scrollbarLeft(int screenWidth, int optionsLeft, int optionWidth, int scrollbarOffset, int scrollbarWidth) {
         int minLeftMargin = unit(MIN_SCREEN_MARGIN);

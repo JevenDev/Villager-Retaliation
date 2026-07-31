@@ -1,7 +1,6 @@
 package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
-import com.jvn.villagerretaliation.dialogue.normal.DialogueTextEffects;
 import com.jvn.villagerretaliation.dialogue.normal.DialogueTextSegment;
 import java.util.List;
 import net.minecraft.client.GuiMessage;
@@ -17,7 +16,6 @@ public final class VillagerChatEffectRenderer {
     private static final int MESSAGE_INDENT = 4;
     private static final int BOTTOM_MARGIN = 40;
     private static final int CHAT_X_OFFSET = 4;
-    static final int STATIC_EFFECT_TEXT_COLOR = VillagerStyledTextRenderer.STATIC_EFFECT_TEXT_COLOR;
 
     private VillagerChatEffectRenderer() {
     }
@@ -179,7 +177,4 @@ public final class VillagerChatEffectRenderer {
         return factor * factor;
     }
 
-    static boolean usesAnimatedRenderer(DialogueTextEffects effects) {
-        return VillagerStyledTextRenderer.usesAnimatedRenderer(effects);
-    }
 }

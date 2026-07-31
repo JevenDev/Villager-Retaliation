@@ -105,10 +105,6 @@ public final class HiredVillagerIndex {
         BY_OWNER.clear();
     }
 
-    static int indexedVillagerCountFor(UUID owner) {
-        Set<UUID> villagerIds = BY_OWNER.get(owner);
-        return villagerIds == null ? 0 : villagerIds.size();
-    }
 
     private static void upsert(ServerLevel level, Villager villager, UUID owner) {
         UUID villagerId = villager.getUUID();

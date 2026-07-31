@@ -3,7 +3,6 @@ package com.jvn.villagerretaliation.interaction.work.builder;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules;
 import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.interaction.HiredWorkArea;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import net.minecraft.core.BlockPos;
@@ -15,35 +14,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
 public final class BuilderSitePlanner {
-    private static final int MAX_CANDIDATE_RING = 8;
-    private static final int MAX_AREA_CANDIDATES = 512;
-
     private BuilderSitePlanner() {
     }
 
-    public static SiteResult chooseSite(
-            ServerLevel level,
-            Player player,
-            Villager villager,
-            HiredWorkArea area,
-            BuilderStructureScanner.StructurePlan plan) {
-        if (level == null || player == null || villager == null || plan == null) {
-            return SiteResult.failed("interaction.work.builder.site_missing");
-        }
-        for (BlockPos candidateCenter : candidateCenters(player, villager, area, plan)) {
-            BlockPos origin = originFor(level, candidateCenter, plan);
-            SiteResult validation = validateSite(level, player, villager, area, plan, origin);
-            if (validation.valid()) {
-                return validation;
-            }
-        }
-        return SiteResult.failed("interaction.work.builder.no_safe_site");
-    }
 
     public static SiteResult validateSite(
             ServerLevel level,
@@ -152,112 +129,6 @@ public final class BuilderSitePlanner {
                 && pos.getX() <= area.max().getX()
                 && pos.getZ() >= area.min().getZ()
                 && pos.getZ() <= area.max().getZ();
-    }
-
-    private static List<BlockPos> candidateCenters(
-            Player player,
-            Villager villager,
-            HiredWorkArea area,
-            BuilderStructureScanner.StructurePlan plan) {
-        List<BlockPos> candidates = new ArrayList<>();
-        addCandidateCenters(candidates, player.blockPosition().relative(player.getDirection(), 5));
-        addCandidateCenters(candidates, villager.blockPosition().relative(player.getDirection(), 4));
-        if (area != null && area.usable()) {
-            addCandidateCenters(candidates, area.center());
-            addAreaCandidateCenters(candidates, player, villager, area, plan);
-        }
-        return candidates;
-    }
-
-    private static void addCandidateCenters(List<BlockPos> candidates, BlockPos anchor) {
-        for (BlockPos candidate : candidateRing(anchor)) {
-            addUnique(candidates, candidate);
-        }
-    }
-
-    private static List<BlockPos> candidateRing(BlockPos anchor) {
-        List<BlockPos> candidates = new ArrayList<>();
-        candidates.add(anchor);
-        for (int radius = 2; radius <= MAX_CANDIDATE_RING; radius += 2) {
-            for (int x = -radius; x <= radius; x += radius) {
-                for (int z = -radius; z <= radius; z += 2) {
-                    candidates.add(anchor.offset(x, 0, z));
-                }
-            }
-            for (int z = -radius; z <= radius; z += radius) {
-                for (int x = -radius + 2; x <= radius - 2; x += 2) {
-                    candidates.add(anchor.offset(x, 0, z));
-                }
-            }
-        }
-        return candidates;
-    }
-
-    private static void addAreaCandidateCenters(
-            List<BlockPos> candidates,
-            Player player,
-            Villager villager,
-            HiredWorkArea area,
-            BuilderStructureScanner.StructurePlan plan) {
-        List<BlockPos> areaCandidates = new ArrayList<>();
-        int step = areaCandidateStep(plan);
-        int minX = area.min().getX();
-        int maxX = area.max().getX();
-        int minZ = area.min().getZ();
-        int maxZ = area.max().getZ();
-        int y = area.center().getY();
-        for (int x = minX; x <= maxX; x += step) {
-            for (int z = minZ; z <= maxZ; z += step) {
-                addUnique(areaCandidates, new BlockPos(x, y, z));
-            }
-            addUnique(areaCandidates, new BlockPos(x, y, maxZ));
-        }
-        for (int z = minZ; z <= maxZ; z += step) {
-            addUnique(areaCandidates, new BlockPos(maxX, y, z));
-        }
-        addUnique(areaCandidates, new BlockPos(maxX, y, maxZ));
-        addUnique(areaCandidates, area.center());
-        areaCandidates.sort((left, right) -> Double.compare(
-                candidateScore(left, player, villager),
-                candidateScore(right, player, villager)));
-        int added = 0;
-        for (BlockPos candidate : areaCandidates) {
-            if (added >= MAX_AREA_CANDIDATES) {
-                break;
-            }
-            if (addUnique(candidates, candidate)) {
-                added++;
-            }
-        }
-    }
-
-    private static int areaCandidateStep(BuilderStructureScanner.StructurePlan plan) {
-        int width = plan.localMax().getX() - plan.localMin().getX() + 1;
-        int depth = plan.localMax().getZ() - plan.localMin().getZ() + 1;
-        int footprint = Math.max(width, depth);
-        return Math.max(2, Math.min(6, Math.max(2, footprint / 2)));
-    }
-
-    private static double candidateScore(BlockPos candidate, Player player, Villager villager) {
-        return candidate.distSqr(player.blockPosition()) + candidate.distSqr(villager.blockPosition()) * 0.5D;
-    }
-
-    private static boolean addUnique(List<BlockPos> candidates, BlockPos candidate) {
-        BlockPos immutable = candidate.immutable();
-        if (candidates.contains(immutable)) {
-            return false;
-        }
-        candidates.add(immutable);
-        return true;
-    }
-
-    private static BlockPos originFor(ServerLevel level, BlockPos center, BuilderStructureScanner.StructurePlan plan) {
-        int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, center.getX(), center.getZ());
-        BlockPos localCenter = plan.localCenter();
-        return new BlockPos(
-                center.getX() - localCenter.getX(),
-                groundY - plan.localMin().getY(),
-                center.getZ() - localCenter.getZ());
     }
 
     private static boolean withinAllowedBounds(

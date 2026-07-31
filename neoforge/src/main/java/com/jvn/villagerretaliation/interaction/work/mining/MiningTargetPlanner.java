@@ -76,47 +76,6 @@ final class MiningTargetPlanner {
                 : chooseReachableOreTarget(level, villager, context, candidates);
     }
 
-    HiredPathTarget findNearestExcavation(
-            ServerLevel level,
-            Villager villager,
-            HiredWorkContext context) {
-        if (!MiningBlockRules.isExcavationAreaLoaded(level, context)) {
-            HiredWorkAreaScan.clearCursor(context, MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG);
-            context.state().remove(MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG);
-            HiredWorkerBrain.setLastTargetScanResult(context, "excavation_chunks_unloaded");
-            return null;
-        }
-        HiredMiningMode mode = HiredMiningMode.fromState(context.state());
-        LongSet protectedBarriers = MiningHazardManager.protectedBarrierPositions(context);
-        HiredWorkAreaScan.Result scan = HiredWorkAreaScan.collect(
-                context,
-                MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG,
-                MAX_EXCAVATION_SCAN_POSITIONS,
-                pos -> isValidExcavationTarget(level, villager, context, pos, mode, protectedBarriers));
-        if (!scan.candidates().isEmpty()) {
-            context.state().remove(MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG);
-            HiredWorkerBrain.setLastTargetScanResult(context, "excavation_targets_found");
-            return rebuildExcavationObjective(level, villager, context, scan.candidates());
-        }
-        if (!scan.completedFullPass()) {
-            HiredWorkerBrain.setLastTargetScanResult(context, "excavation_scan_in_progress");
-            return null;
-        }
-        if (HiredMiningMode.fromState(context.state()).excavatesHorizontally()
-                && !MiningHorizontalStairPlan.cleanup(context)
-                && MiningHorizontalStairPlan.hasRemainingSupport(level, context)) {
-            MiningHorizontalStairPlan.beginCleanup(context);
-            context.state().remove(MiningWorkerState.EXCAVATION_SCAN_CURSOR_TAG);
-            HiredWorkPlan.clear(context);
-            HiredWorkerBrain.setLastTargetScanResult(context, "horizontal_stair_cleanup");
-            return null;
-        }
-        context.state().putLong(
-                MiningWorkerState.NEXT_FULL_SCAN_GAME_TIME_TAG,
-                level.getGameTime() + MiningWorkerState.noTargetScanCooldownTicks());
-        HiredWorkerBrain.setLastTargetScanResult(context, "no_targets");
-        return null;
-    }
 
     boolean isValidExcavationTarget(
             ServerLevel level,

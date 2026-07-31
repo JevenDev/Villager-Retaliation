@@ -37,9 +37,6 @@ final class VillagerAnimatedChatText {
         }
     }
 
-    static List<DialogueTextSegment> segmentsForLine(String lineText) {
-        return beginRenderFrame().segmentsForLine(lineText, true);
-    }
 
     static RenderState beginRenderFrame() {
         return new RenderState(List.copyOf(ENTRIES));

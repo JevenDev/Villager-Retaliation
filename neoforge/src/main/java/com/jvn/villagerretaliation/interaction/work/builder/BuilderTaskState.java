@@ -194,20 +194,6 @@ public final class BuilderTaskState {
         return task == null ? "" : task.getString(MISSING_MATERIALS_TAG);
     }
 
-    public static void setPlacement(
-            CompoundTag state,
-            BuilderStructureScanner.StructurePlan plan,
-            BlockPos origin,
-            Rotation rotation) {
-        CompoundTag task = task(state);
-        task.putLong(ORIGIN_TAG, origin.asLong());
-        task.putString(ROTATION_TAG, (rotation == null ? Rotation.NONE : rotation).name());
-        if (plan != null) {
-            task.putInt(TOTAL_BLOCKS_TAG, plan.blocks().size());
-            task.putString(MATERIAL_SUMMARY_TAG, plan.materialSummary(5));
-        }
-        task.remove(BLOCKED_REASON_TAG);
-    }
 
     public static Optional<UUID> jobId(CompoundTag state) {
         CompoundTag task = task(state);

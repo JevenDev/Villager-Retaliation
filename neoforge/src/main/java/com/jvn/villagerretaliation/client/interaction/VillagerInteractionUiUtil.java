@@ -8,10 +8,8 @@ import com.jvn.toucanlib.client.tooltip.ToucanTooltips;
 import java.util.List;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.ItemStack;
 
 final class VillagerInteractionUiUtil {
     private VillagerInteractionUiUtil() {
@@ -73,9 +71,6 @@ final class VillagerInteractionUiUtil {
         ToucanGuiText.drawScaledString(graphics, font, text, left, top, color, scale);
     }
 
-    static void drawScaledString(GuiGraphics graphics, Font font, FormattedCharSequence text, int left, int top, int color, float scale) {
-        ToucanGuiText.drawScaledString(graphics, font, text, left, top, color, scale);
-    }
 
     static void renderScaledComponentTooltip(GuiGraphics graphics, Font font, List<Component> tooltip, int mouseX, int mouseY, float scale) {
         graphics.pose().pushPose();
@@ -104,24 +99,6 @@ final class VillagerInteractionUiUtil {
         ToucanTooltips.renderBounded(graphics, font, tooltip, mouseX, mouseY, scale, originX, originY);
     }
 
-    static void renderBoundedItemTooltipInCurrentPose(
-            GuiGraphics graphics,
-            Font font,
-            ItemStack stack,
-            int mouseX,
-            int mouseY,
-            float scale,
-            float originX,
-            float originY) {
-        if (stack.isEmpty()) {
-            return;
-        }
-        renderBoundedComponentTooltipInCurrentPose(graphics, font, itemTooltipLines(stack), mouseX, mouseY, scale, originX, originY);
-    }
 
-    static List<Component> itemTooltipLines(ItemStack stack) {
-        return ToucanTooltips.itemTooltipLines(stack);
-
-    }
 
 }

@@ -80,9 +80,6 @@ final class VillagerInteractionScreenState {
         this.optionScroll.jumpToTarget();
     }
 
-    void jumpDetailsScrollToTarget() {
-        this.detailsScroll.jumpToTarget();
-    }
 
     void resetDetailsScroll() {
         this.detailsScroll.reset();
