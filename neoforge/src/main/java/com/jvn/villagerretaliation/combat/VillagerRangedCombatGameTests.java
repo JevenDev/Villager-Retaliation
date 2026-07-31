@@ -192,11 +192,12 @@ public final class VillagerRangedCombatGameTests {
         HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
         inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.IRON_SWORD));
         inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.CROSSBOW));
+        inventory.setItem(HiredJobInventory.HOTBAR_START + 1, new ItemStack(Items.ARROW));
         inventory.markPlayerPlacedSupply(HiredJobInventory.HOTBAR_START);
         VillagerCombatStateMachine.prepare(villager, target, 64.0D);
-        helper.assertTrue(villager.getMainHandItem().is(Items.CROSSBOW), EMPTY_TEMPLATE);
+        helper.assertTrue(villager.getMainHandItem().is(Items.CROSSBOW), "ranged mode should equip a supplied crossbow");
         VillagerCombatStateMachine.prepare(villager, target, 9.0D);
-        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD), EMPTY_TEMPLATE);
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_SWORD), "melee mode should restore the job sword");
         VillagerCombatStateMachine.clearState(villager);
         target.discard();
         villager.discard();

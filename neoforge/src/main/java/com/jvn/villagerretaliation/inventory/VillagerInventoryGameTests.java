@@ -13,6 +13,7 @@ import com.jvn.villagerretaliation.network.ItemFilterCombinationChangePayload;
 import com.jvn.villagerretaliation.recipe.VillagerAttributeFilterCopyRecipe;
 import com.jvn.villagerretaliation.recipe.VillagerFilterResetRecipe;
 import com.jvn.villagerretaliation.recipe.VillagerItemFilterCopyRecipe;
+import com.jvn.villagerretaliation.util.TickThrottle;
 import com.jvn.villagerretaliation.party.PartyVillagerDropCollection;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerEquipment;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
@@ -1566,9 +1567,19 @@ public final class VillagerInventoryGameTests {
                 "displaced personal main hand should be stored exactly once");
         helper.assertValueEqual(countStored(villager, Items.IRON_PICKAXE), 0,
                 "active job gear must not be copied into personal inventory");
-        helper.assertFalse(
+        helper.assertTrue(
                 VillagerInventoryContainer.tryBorrowCombatWeapon(villager),
-                "personal weapons must not displace authoritative job equipment");
+                "personal combat weapons may temporarily overlay authoritative job equipment");
+        helper.assertTrue(villager.getMainHandItem().is(Items.NETHERITE_SWORD)
+                        && jobInventory.getItem(HiredJobInventory.MAINHAND_SLOT).is(Items.IRON_PICKAXE),
+                "the borrowed weapon must not remove the authoritative job stack");
+        VillagerInventoryContainer.returnBorrowedCombatWeapon(villager);
+        helper.assertFalse(VillagerInventoryContainer.hasBorrowedCombatWeapon(villager),
+                "returning the personal loan should clear its runtime ownership");
+        helper.assertTrue(villager.getMainHandItem().is(Items.IRON_PICKAXE),
+                "returning the personal loan should restore authoritative job equipment");
+        helper.assertValueEqual(countStored(villager, Items.NETHERITE_SWORD), 1,
+                "the overlaid personal weapon should return exactly once");
 
         villager.discard();
         helper.succeed();
@@ -2121,7 +2132,7 @@ public final class VillagerInventoryGameTests {
                 villager, EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
         VillagerInventoryAccess.addItem(villager, new ItemStack(Items.TOTEM_OF_UNDYING));
 
-        VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
+        runDefensiveLoadoutScan(helper.getLevel(), villager);
         helper.assertTrue(villager.getOffhandItem().is(Items.TOTEM_OF_UNDYING),
                 "a carried totem should replace role-controlled off-hand gear");
         helper.assertValueEqual(countStored(villager, Items.SHIELD), 1,
@@ -2144,7 +2155,7 @@ public final class VillagerInventoryGameTests {
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(
                 offhandOverride, EquipmentSlot.OFFHAND, new ItemStack(Items.SHIELD));
         VillagerInventoryAccess.addItem(offhandOverride, new ItemStack(Items.TOTEM_OF_UNDYING));
-        VillagerDefensiveLoadoutService.onVillagerTickPost(offhandOverride);
+        runDefensiveLoadoutScan(helper.getLevel(), offhandOverride);
         helper.assertTrue(offhandOverride.getOffhandItem().is(Items.SHIELD)
                         && countStored(offhandOverride, Items.TOTEM_OF_UNDYING) == 1,
                 "an explicitly assigned off-hand should remain authoritative");
@@ -2153,7 +2164,7 @@ public final class VillagerInventoryGameTests {
         VillagerRetaliationVillagerEquipment.setInventoryEquipment(
                 mainhandOverride, EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
         VillagerInventoryAccess.addItem(mainhandOverride, new ItemStack(Items.TOTEM_OF_UNDYING));
-        VillagerDefensiveLoadoutService.onVillagerTickPost(mainhandOverride);
+        runDefensiveLoadoutScan(helper.getLevel(), mainhandOverride);
         helper.assertTrue(mainhandOverride.getMainHandItem().is(Items.IRON_SWORD)
                         && mainhandOverride.getOffhandItem().is(Items.TOTEM_OF_UNDYING),
                 "manual main-hand gear should not block automatic off-hand protection");
@@ -2168,7 +2179,7 @@ public final class VillagerInventoryGameTests {
         Villager villager = spawnVillager(helper, new BlockPos(1, 2, 1));
         VillagerInventoryAccess.addItem(villager, new ItemStack(Items.TOTEM_OF_UNDYING));
         VillagerInventoryAccess.addItem(villager, new ItemStack(Items.TOTEM_OF_UNDYING));
-        VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
+        runDefensiveLoadoutScan(helper.getLevel(), villager);
 
         villager.hurt(helper.getLevel().damageSources().generic(), 1000.0F);
         helper.assertTrue(villager.isAlive(), "the automatically borrowed totem should prevent death");
@@ -2362,6 +2373,16 @@ public final class VillagerInventoryGameTests {
             }
         }
         return count;
+    }
+
+    private static void runDefensiveLoadoutScan(ServerLevel level, Villager villager) {
+        long now = level.getGameTime();
+        long interval = 20L;
+        long offset = TickThrottle.spreadOffset(villager.getUUID(), interval);
+        long delta = Math.floorMod(offset - Math.floorMod(now, interval), interval);
+        ((net.minecraft.world.level.storage.ServerLevelData) level.getLevelData())
+                .setGameTime(now + delta);
+        VillagerDefensiveLoadoutService.onVillagerTickPost(villager);
     }
 
     private static void buildFloor(GameTestHelper helper, int minX, int maxX, int minZ, int maxZ, int y) {

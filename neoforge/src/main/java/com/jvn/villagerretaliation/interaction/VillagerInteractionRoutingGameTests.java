@@ -68,10 +68,9 @@ public final class VillagerInteractionRoutingGameTests {
                 RecruitmentActionMappings.hireDays(VillagerRecruitRequestPayload.Action.SET_ROLE_COURIER),
                 0,
                 "non-hire action duration");
-        helper.assertValueEqual(
-                RecruitmentActionMappings.role(VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY),
-                null,
-                "non-role action mapping");
+        helper.assertTrue(
+                RecruitmentActionMappings.role(VillagerRecruitRequestPayload.Action.HIRE_ONE_DAY) == null,
+                "non-role actions must not map to a role");
         helper.succeed();
     }
 

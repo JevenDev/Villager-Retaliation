@@ -1,6 +1,7 @@
 package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+import com.jvn.villagerretaliation.party.PartyWeaponPreference;
 import com.jvn.villagerretaliation.villager.VillagerRetaliationVillagerWeapons;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,8 +35,15 @@ final class VillagerCombatStateMachine {
                 villager, VillagerRetaliationVillagerWeapons::isMeleeWeapon);
         boolean hasRanged = VillagerCombatLoadoutService.hasCombatWeapon(
                 villager, stack -> VillagerCombatLoadoutService.canUseRangedWeapon(villager, stack));
-        CombatMode selected = selectMode(
-                previous, distanceSqr, targetBlocking, hasAxe, hasMelee, hasRanged);
+        PartyWeaponPreference preference = VillagerCombatLoadoutService.preference(villager);
+        CombatMode selected;
+        if (!targetBlocking && preference == PartyWeaponPreference.RANGED && hasRanged) {
+            selected = CombatMode.RANGED;
+        } else if (!targetBlocking && preference == PartyWeaponPreference.MELEE && hasMelee) {
+            selected = CombatMode.MELEE;
+        } else {
+            selected = selectMode(previous, distanceSqr, targetBlocking, hasAxe, hasMelee, hasRanged);
+        }
 
         ItemStack before = villager.getMainHandItem().copy();
         if (selected != CombatMode.RANGED) {
@@ -105,6 +113,7 @@ final class VillagerCombatStateMachine {
         }
         if (target instanceof ServerPlayer player) {
             player.disableShield();
+            player.stopUsingItem();
         } else {
             target.stopUsingItem();
         }
