@@ -264,8 +264,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final int villagerEntityId;
     private final String villagerName;
     private final String professionName;
-    private final VillagerProfessionUiColors.ColorPair professionUiColors;
-    private final String genderName;
     private final boolean baby;
     private final boolean canTrade;
     private final boolean duelVisible;
@@ -278,7 +276,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private final boolean followCommandAvailable;
     private final boolean stayCommandAvailable;
     private long assignmentRevision;
-    private boolean routineChatMuted;
     private final boolean forcedDialogue;
     private final boolean clipboardMenu;
     private final boolean clipboardSelectionAssigned;
@@ -298,9 +295,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     private int partyRemainingDays;
     private final int walletEmeralds;
     private final int maxWalletEmeralds;
-    private final int lifetimeWalletEarned;
-    private final int lifetimeWalletDeposited;
-    private final String walletCurrencyName;
     private final String walletCurrencyPluralName;
     private final String walletCurrencyLabel;
     private final ResourceLocation walletCurrencyIconSprite;
@@ -415,8 +409,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             int villagerEntityId,
             String villagerName,
             String professionName,
-            VillagerProfessionUiColors.ColorPair professionUiColors,
-            String genderName,
             boolean baby,
             boolean canTrade,
             boolean duelVisible,
@@ -429,7 +421,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             boolean followCommandAvailable,
             boolean stayCommandAvailable,
             long assignmentRevision,
-            boolean routineChatMuted,
             boolean forcedDialogue,
             boolean clipboardMenu,
             boolean clipboardSelectionAssigned,
@@ -449,9 +440,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
             int partyRemainingDays,
             int walletEmeralds,
             int maxWalletEmeralds,
-            int lifetimeWalletEarned,
-            int lifetimeWalletDeposited,
-            String walletCurrencyName,
             String walletCurrencyPluralName,
             String walletCurrencyLabel,
             ResourceLocation walletCurrencyIconSprite,
@@ -486,8 +474,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.villagerEntityId = villagerEntityId;
         this.villagerName = villagerName;
         this.professionName = professionName;
-        this.professionUiColors = professionUiColors == null ? VillagerProfessionUiColors.DEFAULT_COLORS : professionUiColors;
-        this.genderName = localizedGenderName(genderName);
         this.baby = baby;
         this.canTrade = canTrade;
         this.duelVisible = duelVisible;
@@ -500,7 +486,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.followCommandAvailable = followCommandAvailable;
         this.stayCommandAvailable = stayCommandAvailable;
         this.assignmentRevision = Math.max(0L, assignmentRevision);
-        this.routineChatMuted = routineChatMuted;
         this.forcedDialogue = forcedDialogue;
         this.clipboardMenu = clipboardMenu;
         this.clipboardSelectionAssigned = clipboardSelectionAssigned;
@@ -520,9 +505,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         this.partyRemainingDays = Math.max(0, partyRemainingDays);
         this.walletEmeralds = Math.max(0, walletEmeralds);
         this.maxWalletEmeralds = Math.max(0, maxWalletEmeralds);
-        this.lifetimeWalletEarned = Math.max(0, lifetimeWalletEarned);
-        this.lifetimeWalletDeposited = Math.max(0, lifetimeWalletDeposited);
-        this.walletCurrencyName = blankToDefault(walletCurrencyName, "emerald");
         this.walletCurrencyPluralName = blankToDefault(walletCurrencyPluralName, "emeralds");
         this.walletCurrencyLabel = blankToDefault(walletCurrencyLabel, "Emeralds");
         this.walletCurrencyIconSprite = walletCurrencyIconSprite == null ? DEFAULT_CURRENCY_ICON_SPRITE : walletCurrencyIconSprite;
@@ -959,7 +941,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         }
 
         if (!this.replacingFromServer) {
-            VillagerInteractionChatVisibility.restoreHiddenVillagerMessages(Minecraft.getInstance());
             VillagerChatEffectRenderer.startReappearFade();
             ClientVillagerConversationState.clear();
         }
@@ -4892,7 +4873,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
     }
 
     private int skillsPanelHeight() {
-        return VillagerInteractionLayoutMetrics.skillsPanelHeight(this.font);
+        return VillagerInteractionLayoutMetrics.skillsPanelHeight();
     }
 
     private int skillsContainerPaddingX() {
@@ -5118,7 +5099,7 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         if (usesInteractionOptionStack()) {
             return interactionOptionViewportHeight();
         }
-        return VillagerInteractionLayoutMetrics.optionViewportHeight(this.options.size());
+        return VillagerInteractionLayoutMetrics.optionViewportHeight();
     }
 
     private int interactionOptionViewportHeight() {
@@ -5529,13 +5510,6 @@ public class VillagerInteractionScreen extends Screen implements VillagerInterac
         return translate("mood." + mood.serializedName());
     }
 
-    private static String localizedGenderName(String genderName) {
-        if (genderName == null || genderName.isBlank()) {
-            return translate("gender.unknown");
-        }
-        String key = "gender." + genderName.trim().toLowerCase(Locale.ROOT);
-        return hasTranslation(key) ? translate(key) : genderName;
-    }
 
     private static String blankToDefault(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;

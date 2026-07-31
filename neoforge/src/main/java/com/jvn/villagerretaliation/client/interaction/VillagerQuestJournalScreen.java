@@ -738,7 +738,6 @@ public final class VillagerQuestJournalScreen extends Screen {
         int left = detailsLeft();
         int top = detailsTop();
         int right = left + DETAILS_WIDTH;
-        int bottom = top + DETAILS_HEIGHT;
         List<QuestDetailLine> detailLines = buildQuestDetailLines(selected, DETAILS_WIDTH, DETAILS_LINE_STEP);
         int contentHeight = detailContentHeight(detailLines);
         int viewportHeight = detailsPageViewportHeight(selected);

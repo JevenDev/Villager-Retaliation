@@ -145,8 +145,6 @@ public final class ClipboardWorkforceScreen extends Screen {
     private HiredVillagerRole selectedRole = HiredVillagerRole.MINING;
     private WarningSummary selectedWarning;
     private WorkerRow selectedWorker;
-    private boolean showOverviewSelection;
-    private int workerScroll;
     private int jobScroll;
     private int warningScroll;
     private int assignmentTrackingScroll;
@@ -175,7 +173,6 @@ public final class ClipboardWorkforceScreen extends Screen {
     private final TabSlideAnimation numberedTab3Animation = new TabSlideAnimation(NUMBERED_TAB_ANIMATION_DURATION_MILLIS);
     private ClipboardPreviewTab activePreviewTab;
     private int suppressedTabHover;
-    private HiredVillagerRole hoveredOverviewRole;
     private final Set<HiredVillagerRole> trackedAssignmentRoles = new LinkedHashSet<>();
     private String lastPreviewStateKey = "";
 
@@ -235,7 +232,6 @@ public final class ClipboardWorkforceScreen extends Screen {
         this.numberedTab1Animation.reset(this.activePreviewTab == ClipboardPreviewTab.WORKFORCE);
         this.numberedTab2Animation.reset(this.activePreviewTab == ClipboardPreviewTab.ASSIGNMENTS);
         this.numberedTab3Animation.reset(this.activePreviewTab == ClipboardPreviewTab.PROBLEMS);
-        this.hoveredOverviewRole = null;
         syncActivePreview();
         if (!this.openedSoundPlayed) {
             this.openedSoundPlayed = true;
@@ -264,7 +260,6 @@ public final class ClipboardWorkforceScreen extends Screen {
         this.renderPanelScale = scale;
         double panelMouseX = (mouseX - left) / scale;
         double panelMouseY = (mouseY - top) / scale;
-        this.hoveredOverviewRole = null;
 
         graphics.pose().pushPose();
         graphics.pose().translate(left, top, 0.0F);
@@ -624,7 +619,6 @@ public final class ClipboardWorkforceScreen extends Screen {
                     && mouseX < JOB_DETAIL_BAND_RIGHT
                     && mouseY >= rowTop - 2
                     && mouseY < rowTop + TEXT_PIXEL_HEIGHT + 2) {
-                this.hoveredOverviewRole = row.role();
                 graphics.fill(
                         JOB_DETAIL_BAND_LEFT,
                         rowTop - 2,
@@ -2574,8 +2568,6 @@ public final class ClipboardWorkforceScreen extends Screen {
 
     private void openOverview() {
         this.page = Page.OVERVIEW;
-        this.workerScroll = 0;
-        this.showOverviewSelection = false;
         this.selectedWorker = null;
         this.selectedWarning = null;
         this.warningScroll = 0;
@@ -2587,8 +2579,6 @@ public final class ClipboardWorkforceScreen extends Screen {
         }
         this.selectedRole = role;
         this.page = Page.JOB;
-        this.workerScroll = 0;
-        this.showOverviewSelection = false;
         this.selectedWorker = this.snapshot.workers().stream()
                 .filter(worker -> worker.role() == role)
                 .sorted(Comparator.comparing(WorkerRow::displayName, String.CASE_INSENSITIVE_ORDER))
@@ -2603,7 +2593,6 @@ public final class ClipboardWorkforceScreen extends Screen {
         this.selectedWorker = worker;
         this.selectedRole = worker.role();
         this.page = Page.JOB_SITE;
-        this.showOverviewSelection = false;
     }
 
     private void openWorkerAssignment(WorkerRow worker) {
@@ -2614,7 +2603,6 @@ public final class ClipboardWorkforceScreen extends Screen {
             this.selectedWorker = worker;
             this.selectedRole = worker.role();
             this.page = Page.ROUTE;
-            this.showOverviewSelection = false;
             return;
         }
         openJobSite(worker);
@@ -2623,7 +2611,6 @@ public final class ClipboardWorkforceScreen extends Screen {
     private void navigateBack() {
         if (this.page == Page.JOB_SITE || this.page == Page.ROUTE) {
             this.page = Page.JOB;
-            this.showOverviewSelection = false;
             return;
         }
         if (this.page == Page.WORKER_ERRORS) {

@@ -2,7 +2,6 @@ package com.jvn.villagerretaliation.client.interaction;
 
 import com.jvn.toucanlib.client.ToucanScrollState;
 import com.jvn.villagerretaliation.client.ui.VillagerAdaptiveGuiScale;
-import net.minecraft.client.gui.Font;
 import net.minecraft.util.Mth;
 
 final class VillagerInteractionLayoutMetrics {
@@ -18,7 +17,6 @@ final class VillagerInteractionLayoutMetrics {
     private static final int TOP_BACK_BUTTON_GAP = 8;
     private static final int SCREEN_BOTTOM_MARGIN = 48;
     private static final int SKILLS_EDGE_MARGIN = 4;
-    private static final int SKILLS_BOTTOM_MARGIN = 5;
     private static final int SKILLS_CONTAINER_WIDTH = 431;
     private static final int SKILLS_CONTAINER_HEIGHT = 139;
     private static final int SKILLS_CONTAINER_PADDING_X = 8;
@@ -67,7 +65,7 @@ final class VillagerInteractionLayoutMetrics {
         return VillagerInteractionLayout.unit(TOP_BACK_BUTTON_GAP);
     }
 
-    static int optionViewportHeight(int optionCount) {
+    static int optionViewportHeight() {
         return fullOptionViewportHeight();
     }
 
@@ -91,7 +89,7 @@ final class VillagerInteractionLayoutMetrics {
         return SKILLS_CONTAINER_WIDTH;
     }
 
-    static int skillsPanelHeight(Font font) {
+    static int skillsPanelHeight() {
         return skillsContainerHeight();
     }
 
@@ -103,26 +101,12 @@ final class VillagerInteractionLayoutMetrics {
         return VillagerAdaptiveGuiScale.unit(SKILLS_CONTAINER_PADDING_Y);
     }
 
-    static int skillsContainerHeight(int skillsPanelHeight) {
-        return skillsContainerHeight();
-    }
 
     static int skillsContainerHeight() {
         return SKILLS_CONTAINER_HEIGHT;
     }
 
-    static int skillsPanelTop(int screenHeight, int skillsContainerHeight) {
-        int edgeMargin = SKILLS_EDGE_MARGIN;
-        int bottomMargin = SKILLS_BOTTOM_MARGIN;
-        return Mth.clamp(
-                screenHeight - skillsContainerHeight - bottomMargin,
-                edgeMargin,
-                Math.max(edgeMargin, screenHeight - skillsContainerHeight - edgeMargin));
-    }
 
-    static int skillsPanelLeft(int screenWidth, int panelWidth, int targetLeft) {
-        return skillsPanelLeft(screenWidth, panelWidth);
-    }
 
     static int skillsPanelLeft(int screenWidth, int panelWidth) {
         int edgeMargin = SKILLS_EDGE_MARGIN;

@@ -210,9 +210,6 @@ final class VillagerInventoryContainer implements Container {
         return slot >= 0 && slot < ARMOR_SLOT_COUNT;
     }
 
-    static boolean isVillagerInventorySlot(int slot) {
-        return slot >= ARMOR_SLOT_COUNT && slot < HELD_SLOT;
-    }
 
     static boolean isInventorySlot(int inventorySlot) {
         return inventorySlot >= 0 && inventorySlot < INVENTORY_SLOT_COUNT;
