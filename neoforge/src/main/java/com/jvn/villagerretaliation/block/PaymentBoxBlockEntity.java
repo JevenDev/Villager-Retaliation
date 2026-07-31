@@ -5,8 +5,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -22,7 +27,15 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class PaymentBoxBlockEntity extends RandomizableContainerBlockEntity {
     static final int SLOT_COUNT = 27;
+    private static final String DISPLAY_ITEM_TAG = "DisplayCurrencyItem";
+    private static final String DISPLAY_AMOUNT_TAG = "DisplayCurrencyAmount";
+    private static final String DISPLAY_COLOR_TAG = "DisplayCurrencyColor";
+    private static final int DEFAULT_CURRENCY_COLOR = 0xFF55FF55;
+
     private NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
+    private ItemStack displayCurrency = ItemStack.EMPTY;
+    private String displayCurrencyAmount = "";
+    private int displayCurrencyColor = DEFAULT_CURRENCY_COLOR;
     private final ContainerOpenersCounter openersCounter = new ContainerOpenersCounter() {
         @Override
         protected void onOpen(Level level, BlockPos pos, BlockState state) {
@@ -68,6 +81,18 @@ public final class PaymentBoxBlockEntity extends RandomizableContainerBlockEntit
         return VillagerCurrencyResources.isCurrency(this.level == null ? null : this.level.getServer(), stack);
     }
 
+    public ItemStack displayCurrency() {
+        return this.displayCurrency;
+    }
+
+    public String displayCurrencyAmount() {
+        return this.displayCurrencyAmount;
+    }
+
+    public int displayCurrencyColor() {
+        return this.displayCurrencyColor;
+    }
+
     @Override
     public void startOpen(Player player) {
         if (!this.remove && !player.isSpectator()) {
@@ -105,6 +130,16 @@ public final class PaymentBoxBlockEntity extends RandomizableContainerBlockEntit
         if (!tryLoadLootTable(tag)) {
             ContainerHelper.loadAllItems(tag, this.items, registries);
         }
+        ResourceLocation displayItemId = ResourceLocation.tryParse(tag.getString(DISPLAY_ITEM_TAG));
+        this.displayCurrency = displayItemId == null
+                ? ItemStack.EMPTY
+                : BuiltInRegistries.ITEM.getOptional(displayItemId)
+                        .map(ItemStack::new)
+                        .orElse(ItemStack.EMPTY);
+        this.displayCurrencyAmount = tag.getString(DISPLAY_AMOUNT_TAG);
+        this.displayCurrencyColor = tag.contains(DISPLAY_COLOR_TAG)
+                ? tag.getInt(DISPLAY_COLOR_TAG)
+                : DEFAULT_CURRENCY_COLOR;
     }
 
     @Override
@@ -112,6 +147,41 @@ public final class PaymentBoxBlockEntity extends RandomizableContainerBlockEntit
         super.saveAdditional(tag, registries);
         if (!trySaveLootTable(tag)) {
             ContainerHelper.saveAllItems(tag, this.items, registries);
+        }
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        CompoundTag tag = new CompoundTag();
+        if (level != null && !level.isClientSide && level.getServer() != null) {
+            int amount = 0;
+            for (ItemStack stack : this.items) {
+                if (VillagerCurrencyResources.isCurrency(level.getServer(), stack)) {
+                    amount += stack.getCount();
+                }
+            }
+            if (amount > 0) {
+                VillagerCurrencyResources.Text currencyText = VillagerCurrencyResources.text(level.getServer());
+                tag.putString(
+                        DISPLAY_ITEM_TAG,
+                        BuiltInRegistries.ITEM.getKey(VillagerCurrencyResources.primaryItem(level.getServer())).toString());
+                tag.putString(DISPLAY_AMOUNT_TAG, Integer.toString(amount));
+                tag.putInt(DISPLAY_COLOR_TAG, currencyText.textColor());
+            }
+        }
+        return tag;
+    }
+
+    @Override
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 
