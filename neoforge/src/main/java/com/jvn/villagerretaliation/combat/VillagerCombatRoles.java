@@ -46,7 +46,13 @@ public final class VillagerCombatRoles {
             return false;
         }
 
-        return profession(villager) != VillagerProfession.NITWIT
+        VillagerProfession profession = profession(villager);
+        BooleanSupplier configuredRule = FIGHT_BACK_RULES.get(profession);
+        if (configuredRule != null) {
+            return configuredRule.getAsBoolean();
+        }
+
+        return profession != VillagerProfession.NITWIT
                 || VillagerRetaliationVillagerWeapons.hasUsableWeapon(villager)
                 || VillagerInventoryAccess.hasBorrowedCombatWeapon(villager)
                 || VillagerInventoryAccess.hasUsableWeapon(villager)
@@ -175,6 +181,7 @@ public final class VillagerCombatRoles {
         rules.put(VillagerProfession.ARMORER, VillagerRetaliationConfig.ARMORERS_FIGHT_BACK::get);
         rules.put(VillagerProfession.FLETCHER, VillagerRetaliationConfig.FLETCHERS_FIGHT_BACK::get);
         rules.put(VillagerProfession.BUTCHER, VillagerRetaliationConfig.BUTCHERS_FIGHT_BACK::get);
+        rules.put(VillagerProfession.CLERIC, VillagerRetaliationConfig.CLERICS_USE_POTIONS::get);
         return Map.copyOf(rules);
     }
 

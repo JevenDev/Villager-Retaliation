@@ -2,6 +2,7 @@ package com.jvn.villagerretaliation.combat;
 
 import com.jvn.villagerretaliation.combat.downed.VillagerDeathProtectionResolver;
 import com.jvn.villagerretaliation.combat.downed.VillagerDownedService;
+import com.jvn.villagerretaliation.config.VillagerRetaliationConfig;
 import com.jvn.villagerretaliation.inventory.HiredJobInventory;
 import com.jvn.villagerretaliation.inventory.VillagerInventoryAccess;
 import com.jvn.villagerretaliation.villager.VillagerMovementSpeedPolicy;
@@ -10,10 +11,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.StructureUtils;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.InteractionHand;
@@ -24,8 +27,12 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.entity.npc.VillagerProfession;
+import net.minecraft.world.entity.npc.WanderingTrader;
+import net.minecraft.world.entity.projectile.ThrownTrident;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -339,6 +346,165 @@ public final class VillagerRangedCombatGameTests {
         helper.assertTrue(villager.getBoundingBox().clip(headStart, headEnd).isPresent(), EMPTY_TEMPLATE);
 
         VillagerCombatStateMachine.clearState(villager);
+        target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, batch = "combat_config_gates")
+    public static void professionCombatTogglesGateArmedVillagers(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        boolean weaponsmiths = VillagerRetaliationConfig.WEAPONSMITHS_FIGHT_BACK.get();
+        boolean toolsmiths = VillagerRetaliationConfig.TOOLSMITHS_FIGHT_BACK.get();
+        boolean armorers = VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.get();
+        boolean fletchers = VillagerRetaliationConfig.FLETCHERS_FIGHT_BACK.get();
+        boolean butchers = VillagerRetaliationConfig.BUTCHERS_FIGHT_BACK.get();
+        boolean clerics = VillagerRetaliationConfig.CLERICS_USE_POTIONS.get();
+        try {
+            VillagerRetaliationConfig.WEAPONSMITHS_FIGHT_BACK.set(false);
+            VillagerRetaliationConfig.TOOLSMITHS_FIGHT_BACK.set(false);
+            VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.set(false);
+            VillagerRetaliationConfig.FLETCHERS_FIGHT_BACK.set(false);
+            VillagerRetaliationConfig.BUTCHERS_FIGHT_BACK.set(false);
+            VillagerRetaliationConfig.CLERICS_USE_POTIONS.set(false);
+            villager.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.IRON_SWORD));
+
+            for (VillagerProfession profession : List.of(
+                    VillagerProfession.WEAPONSMITH,
+                    VillagerProfession.TOOLSMITH,
+                    VillagerProfession.MASON,
+                    VillagerProfession.ARMORER,
+                    VillagerProfession.FLETCHER,
+                    VillagerProfession.BUTCHER,
+                    VillagerProfession.CLERIC)) {
+                villager.setVillagerData(villager.getVillagerData().setProfession(profession));
+                helper.assertFalse(
+                        VillagerCombatRoles.canFightBack(villager),
+                        profession + " should obey its disabled combat setting even while armed");
+            }
+
+            VillagerRetaliationConfig.FLETCHERS_FIGHT_BACK.set(true);
+            villager.setVillagerData(villager.getVillagerData().setProfession(VillagerProfession.FLETCHER));
+            helper.assertTrue(VillagerCombatRoles.canFightBack(villager), "enabled fletcher should retaliate");
+        } finally {
+            VillagerRetaliationConfig.WEAPONSMITHS_FIGHT_BACK.set(weaponsmiths);
+            VillagerRetaliationConfig.TOOLSMITHS_FIGHT_BACK.set(toolsmiths);
+            VillagerRetaliationConfig.ARMORERS_FIGHT_BACK.set(armorers);
+            VillagerRetaliationConfig.FLETCHERS_FIGHT_BACK.set(fletchers);
+            VillagerRetaliationConfig.BUTCHERS_FIGHT_BACK.set(butchers);
+            VillagerRetaliationConfig.CLERICS_USE_POTIONS.set(clerics);
+            villager.discard();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void clericsSupportAndProtectWanderingTradersFromSplash(GameTestHelper helper) {
+        Villager cleric = spawnVillager(helper, new BlockPos(2, 2, 2));
+        cleric.setVillagerData(cleric.getVillagerData().setProfession(VillagerProfession.CLERIC));
+        Zombie hostile = spawnZombie(helper, new BlockPos(4, 2, 2));
+        WanderingTrader trader = EntityType.WANDERING_TRADER.create(helper.getLevel());
+        if (trader == null) {
+            throw new GameTestAssertException("Could not create wandering trader");
+        }
+        BlockPos traderPos = helper.absolutePos(new BlockPos(4, 2, 3));
+        trader.moveTo(traderPos.getX() + 0.5D, traderPos.getY(), traderPos.getZ() + 0.5D, 0.0F, 0.0F);
+        helper.getLevel().addFreshEntity(trader);
+        trader.setHealth(Math.max(1.0F, trader.getMaxHealth() * 0.25F));
+
+        helper.assertTrue(
+                VillagerClericPotionHelper.isSupportTarget(cleric, trader, 0.6F, false),
+                "injured wandering trader should be a cleric support target");
+        helper.assertFalse(
+                VillagerClericPotionHelper.isSafeOffensiveThrow(
+                        cleric,
+                        hostile,
+                        PotionContents.createItemStack(Items.SPLASH_POTION, Potions.HARMING)),
+                "cleric should not throw a harmful splash potion beside a wandering trader");
+
+        trader.discard();
+        hostile.discard();
+        cleric.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void firedBowLosesDurability(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = spawnZombie(helper, new BlockPos(5, 2, 2));
+        ItemStack bow = new ItemStack(Items.BOW);
+        villager.setItemInHand(InteractionHand.MAIN_HAND, bow);
+        VillagerInventoryAccess.addItem(villager, new ItemStack(Items.ARROW));
+
+        helper.assertTrue(
+                VillagerRangedCombatHelper.fireBowLikeIllusioner(villager, target, helper.getLevel(), 1.0F),
+                "bow attack should fire");
+        helper.assertValueEqual(villager.getMainHandItem().getDamageValue(), 1, "bow durability after one shot");
+
+        target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void thrownTridentPreservesHeldStackComponents(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = spawnZombie(helper, new BlockPos(5, 2, 2));
+        Component marker = Component.literal("component-preserving trident");
+        ItemStack trident = new ItemStack(Items.TRIDENT);
+        trident.set(DataComponents.CUSTOM_NAME, marker);
+        villager.setItemInHand(InteractionHand.MAIN_HAND, trident);
+
+        helper.assertTrue(
+                VillagerRangedCombatHelper.tryAttack(
+                        villager, target, helper.getLevel(), villager.distanceToSqr(target)),
+                "trident attack should fire");
+        List<ThrownTrident> projectiles = helper.getLevel().getEntitiesOfClass(
+                ThrownTrident.class,
+                villager.getBoundingBox().inflate(16.0D));
+        helper.assertFalse(projectiles.isEmpty(), "trident projectile should be spawned");
+        helper.assertValueEqual(
+                projectiles.getFirst().getWeaponItem().get(DataComponents.CUSTOM_NAME),
+                marker,
+                "thrown trident should preserve held stack components");
+        helper.assertValueEqual(villager.getMainHandItem().getDamageValue(), 1, "held trident durability after one throw");
+
+        projectiles.forEach(ThrownTrident::discard);
+        target.discard();
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE)
+    public static void interruptedCrossbowChargeReusesReservedArrow(GameTestHelper helper) {
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        Zombie target = spawnZombie(helper, new BlockPos(5, 2, 2));
+        HiredJobInventory inventory = HiredJobInventory.getJobInventory(villager);
+        inventory.setItem(HiredJobInventory.MAINHAND_SLOT, new ItemStack(Items.CROSSBOW));
+        inventory.setItem(HiredJobInventory.HOTBAR_START, new ItemStack(Items.ARROW, 2));
+        inventory.syncMainHandEquipment();
+
+        for (int tick = 0; tick < 5; tick++) {
+            VillagerRangedCombatHelper.tryAttack(
+                    villager, target, helper.getLevel(), villager.distanceToSqr(target));
+        }
+        helper.assertValueEqual(
+                inventory.getItem(HiredJobInventory.HOTBAR_START).getCount(),
+                1,
+                "starting the first charge should reserve one arrow");
+        helper.assertTrue(VillagerRangedCombatHelper.hasLoadedCrossbowProjectile(villager), "arrow should be reserved");
+
+        villager.stopUsingItem();
+        VillagerRangedCombatHelper.tryAttack(
+                villager, target, helper.getLevel(), villager.distanceToSqr(target));
+        VillagerRangedCombatHelper.tryAttack(
+                villager, target, helper.getLevel(), villager.distanceToSqr(target));
+
+        helper.assertValueEqual(
+                inventory.getItem(HiredJobInventory.HOTBAR_START).getCount(),
+                1,
+                "restarting an interrupted charge must not consume another arrow");
+        VillagerRangedCombatHelper.clearState(villager);
         target.discard();
         villager.discard();
         helper.succeed();
