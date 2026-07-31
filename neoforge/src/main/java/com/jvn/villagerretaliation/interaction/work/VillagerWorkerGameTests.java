@@ -8,6 +8,7 @@ import com.jvn.villagerretaliation.interaction.work.mining.MiningHorizontalOptio
 import com.jvn.villagerretaliation.interaction.work.mining.MiningExcavationSupport;
 import com.jvn.villagerretaliation.interaction.work.mining.MiningBlockRules;
 import com.jvn.villagerretaliation.interaction.work.brewing.BrewingWorker;
+import com.jvn.villagerretaliation.interaction.work.brewing.HiredBrewingRecipeCatalog;
 import com.jvn.villagerretaliation.block.VillagerRetaliationBlocks;
 import com.jvn.villagerretaliation.debug.HiredStressGridService;
 import com.jvn.villagerretaliation.entity.VillagerFishingHook;
@@ -89,6 +90,8 @@ import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.entity.projectile.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.alchemy.PotionContents;
+import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -792,6 +795,219 @@ public final class VillagerWorkerGameTests {
         helper.assertValueEqual(result.status(), "interaction.work.cooking.loaded_input", "second furnace work status");
         helper.assertValueEqual(available.getItem(0).getCount(), 4, "cook should load the available furnace");
         helper.assertValueEqual(busy.getItem(0).getCount(), 8, "busy furnace input should remain in place");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void brewerCollectsIngredientRemainderBeforeCompletingOrder(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        BlockPos standRel = new BlockPos(3, 2, 2);
+        setBlock(helper, standRel, Blocks.BREWING_STAND.defaultBlockState());
+        Container stand = container(level, helper.absolutePos(standRel));
+        HiredBrewingRecipeCatalog.BrewingRoute route = brewingRoute(
+                level, PotionContents.createItemStack(Items.LINGERING_POTION, Potions.SWIFTNESS));
+        stand.setItem(0, route.output().copy());
+        stand.setItem(3, new ItemStack(Items.GLASS_BOTTLE));
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = new CompoundTag();
+        BrewingWorker.setOrder(state, route.itemId(), route.potionId(), 6, false);
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(4, 4, 4), true);
+
+        WorkResult result = new BrewingWorker().tick(
+                level, villager, fakePlayer(level, "VrBrewerRemainder"), context);
+
+        helper.assertValueEqual(
+                result.status(),
+                "interaction.work.brewing.collected_ingredient_remainder",
+                "brewer remainder status");
+        helper.assertTrue(stand.getItem(3).isEmpty(), "brewer should clear the ingredient remainder");
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.GLASS_BOTTLE),
+                1,
+                "brewer should recover the glass bottle as supply");
+        helper.assertTrue(
+                ItemStack.isSameItemSameComponents(stand.getItem(0), route.output()),
+                "remainder cleanup should leave the finished potion in place");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void brewerSkipsIncompatibleCachedStand(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        BlockPos blockedRel = new BlockPos(3, 2, 2);
+        BlockPos usableRel = new BlockPos(2, 2, 3);
+        setBlock(helper, blockedRel, Blocks.BREWING_STAND.defaultBlockState());
+        setBlock(helper, usableRel, Blocks.BREWING_STAND.defaultBlockState());
+        Container blocked = container(level, helper.absolutePos(blockedRel));
+        Container usable = container(level, helper.absolutePos(usableRel));
+        HiredBrewingRecipeCatalog.BrewingRoute route = brewingRoute(
+                level, PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS));
+        blocked.setItem(0, PotionContents.createItemStack(Items.POTION, Potions.POISON));
+        usable.setItem(0, route.output().copy());
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = new CompoundTag();
+        state.putLong("BrewingCachedStandPos", helper.absolutePos(blockedRel).asLong());
+        BrewingWorker.setOrder(state, route.itemId(), route.potionId(), 1, false);
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+
+        WorkResult result = new BrewingWorker().tick(
+                level, villager, fakePlayer(level, "VrBrewerAlternateStand"), context);
+
+        helper.assertValueEqual(
+                result.status(), "interaction.work.brewing.collected_output", "alternate stand work status");
+        helper.assertTrue(usable.getItem(0).isEmpty(), "brewer should collect from the compatible stand");
+        helper.assertFalse(blocked.getItem(0).isEmpty(), "brewer should leave the incompatible stand untouched");
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), route.output().getItem()),
+                1,
+                "brewer should store the requested potion");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void brewerTrimsFullWaterBottleBatchToOrderSize(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        BlockPos standRel = new BlockPos(3, 2, 2);
+        setBlock(helper, standRel, Blocks.BREWING_STAND.defaultBlockState());
+        Container stand = container(level, helper.absolutePos(standRel));
+        ItemStack waterBottle = PotionContents.createItemStack(Items.POTION, Potions.WATER);
+        for (int slot = 0; slot < 3; slot++) {
+            stand.setItem(slot, waterBottle.copy());
+        }
+        HiredBrewingRecipeCatalog.BrewingRoute route = brewingRoute(
+                level, PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS));
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = new CompoundTag();
+        BrewingWorker.setOrder(state, route.itemId(), route.potionId(), 1, false);
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(4, 4, 4), true);
+        for (var ingredient : route.ingredients()) {
+            helper.assertTrue(
+                    context.inventory().insertSupply(new ItemStack(ingredient)).isEmpty(),
+                    "brewing ingredient should fit");
+        }
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.BLAZE_POWDER)).isEmpty(),
+                "brewing fuel should fit");
+
+        WorkResult result = new BrewingWorker().tick(
+                level, villager, fakePlayer(level, "VrBrewerExactBatch"), context);
+
+        helper.assertValueEqual(
+                result.status(), "interaction.work.brewing.cleared_extra_bottles", "trimmed batch status");
+        int standWaterBottles = 0;
+        for (int slot = 0; slot < 3; slot++) {
+            if (HiredBrewingRecipeCatalog.isWaterPotion(stand.getItem(slot))) {
+                standWaterBottles++;
+            }
+        }
+        helper.assertValueEqual(standWaterBottles, 1, "one-bottle order should leave one bottle in the stand");
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.POTION),
+                2,
+                "extra water bottles should return to job supplies");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void brewerCannotFillWaterBottlesThroughWall(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 6, 0, 6, 1);
+        BlockPos standRel = new BlockPos(2, 2, 3);
+        setBlock(helper, standRel, Blocks.BREWING_STAND.defaultBlockState());
+        setBlock(helper, new BlockPos(4, 2, 2), Blocks.WATER.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 2, 2), Blocks.STONE.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 3, 2), Blocks.STONE.defaultBlockState());
+        HiredBrewingRecipeCatalog.BrewingRoute route = brewingRoute(
+                level, PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS));
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = new CompoundTag();
+        BrewingWorker.setOrder(state, route.itemId(), route.potionId(), 1, false);
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(5, 4, 5), true);
+        for (var ingredient : route.ingredients()) {
+            helper.assertTrue(
+                    context.inventory().insertSupply(new ItemStack(ingredient)).isEmpty(),
+                    "brewing ingredient should fit");
+        }
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.BLAZE_POWDER)).isEmpty(),
+                "brewing fuel should fit");
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.GLASS_BOTTLE)).isEmpty(),
+                "glass bottle should fit");
+
+        new BrewingWorker().tick(level, villager, fakePlayer(level, "VrBrewerWaterWall"), context);
+
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.GLASS_BOTTLE),
+                1,
+                "wall should prevent the brewer from consuming the glass bottle");
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.POTION),
+                0,
+                "wall should prevent the brewer from filling a water bottle");
+        villager.discard();
+        helper.succeed();
+    }
+
+    @GameTest(template = EMPTY_TEMPLATE, timeoutTicks = 100)
+    public static void brewerFillsBottleFromVisibleWaterSource(GameTestHelper helper) {
+        ServerLevel level = helper.getLevel();
+        buildFloor(helper, 0, 5, 0, 5, 1);
+        BlockPos standRel = new BlockPos(2, 2, 3);
+        setBlock(helper, standRel, Blocks.BREWING_STAND.defaultBlockState());
+        setBlock(helper, new BlockPos(3, 2, 2), Blocks.WATER.defaultBlockState());
+        HiredBrewingRecipeCatalog.BrewingRoute route = brewingRoute(
+                level, PotionContents.createItemStack(Items.POTION, Potions.SWIFTNESS));
+
+        Villager villager = spawnVillager(helper, new BlockPos(2, 2, 2));
+        CompoundTag state = new CompoundTag();
+        BrewingWorker.setOrder(state, route.itemId(), route.potionId(), 1, false);
+        HiredWorkContext context = context(
+                helper, villager, state, new BlockPos(1, 2, 1), new BlockPos(4, 4, 4), true);
+        for (var ingredient : route.ingredients()) {
+            helper.assertTrue(
+                    context.inventory().insertSupply(new ItemStack(ingredient)).isEmpty(),
+                    "brewing ingredient should fit");
+        }
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.BLAZE_POWDER)).isEmpty(),
+                "brewing fuel should fit");
+        helper.assertTrue(
+                context.inventory().insertSupply(new ItemStack(Items.GLASS_BOTTLE)).isEmpty(),
+                "glass bottle should fit");
+
+        new BrewingWorker().tick(level, villager, fakePlayer(level, "VrBrewerVisibleWater"), context);
+        Container stand = container(level, helper.absolutePos(standRel));
+        int standWaterBottles = 0;
+        for (int slot = 0; slot < 3; slot++) {
+            if (HiredBrewingRecipeCatalog.isWaterPotion(stand.getItem(slot))) {
+                standWaterBottles++;
+            }
+        }
+
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.GLASS_BOTTLE),
+                0,
+                "visible water should consume the glass bottle");
+        helper.assertValueEqual(
+                countInventoryItem(context.inventory(), Items.POTION) + standWaterBottles,
+                1,
+                "visible water should produce or load a water bottle");
         villager.discard();
         helper.succeed();
     }
@@ -8826,6 +9042,15 @@ public final class VillagerWorkerGameTests {
                 max.getY() + 1.0D,
                 max.getZ() + 1.0D);
         return level.getEntitiesOfClass(animalClass, bounds, animal -> animal.isAlive() && animal.isBaby()).size();
+    }
+
+    private static HiredBrewingRecipeCatalog.BrewingRoute brewingRoute(
+            ServerLevel level,
+            ItemStack output) {
+        return HiredBrewingRecipeCatalog.routes(level).stream()
+                .filter(route -> ItemStack.isSameItemSameComponents(route.output(), output))
+                .findFirst()
+                .orElseThrow(() -> new GameTestAssertException("Expected brewing route for " + output));
     }
 
     private static ServerPlayer fakePlayer(ServerLevel level, String name) {

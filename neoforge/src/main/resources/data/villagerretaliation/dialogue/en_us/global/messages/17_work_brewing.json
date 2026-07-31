@@ -308,6 +308,13 @@
         "Brewing stopped."
       ],
       "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.stopped.041"
+    },
+    {
+      "key": "interaction.work.brewing.collected_ingredient_remainder",
+      "lines": [
+        "I recovered {item} from the brewing stand."
+      ],
+      "id": "global.messages.17_work_brewing.messages.interaction.work.brewing.collected_ingredient_remainder.042"
     }
   ]
 }
